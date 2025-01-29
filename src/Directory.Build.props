@@ -37,6 +37,8 @@
         -->
         <NoWarnCodeAnalysis>CA1014,CA2007,CA1040,CA1812</NoWarnCodeAnalysis>
 
+        <NoWarnCodeAnalysis>CA1303</NoWarnCodeAnalysis>
+        
         <!-- Combine all the warnings to suppress -->
         <NoWarn>$(NoWarnCodeStyle),$(NoWarnCodeAnalysis)</NoWarn>
 
