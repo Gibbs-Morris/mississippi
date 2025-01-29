@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-
-namespace Grove.Core.Mapping;
+namespace Mississippi.Core.Abstractions.Mapping;
 
 /// <summary>
 ///     Provides an implementation of <see cref="IAsyncEnumerableMapper{TFrom, TTo}" /> that maps asynchronous collections

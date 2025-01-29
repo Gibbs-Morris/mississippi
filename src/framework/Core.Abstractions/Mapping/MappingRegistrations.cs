@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-
-namespace Grove.Core.Mapping;
+namespace Mississippi.Core.Abstractions.Mapping;
 
 /// <summary>
 ///     Provides extension methods for registering mappers in the dependency injection container.

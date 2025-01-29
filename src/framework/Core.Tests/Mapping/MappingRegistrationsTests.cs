@@ -1,11 +1,8 @@
 ﻿using System.Globalization;
-
-using Grove.Core.Mapping;
-
 using Microsoft.Extensions.DependencyInjection;
+using Mississippi.Core.Abstractions.Mapping;
 
-
-namespace Grove.Core.Tests.Mapping;
+namespace Mississippi.Core.Tests.Mapping;
 
 /// <summary>
 ///     Contains unit tests for verifying the registration of mappers in the service collection.
