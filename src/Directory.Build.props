@@ -1,7 +1,6 @@
 <Project>
     <PropertyGroup>
         <Deterministic>true</Deterministic>
-        <WarningsAsErrors>false</WarningsAsErrors>
         <AnalysisMode>All</AnalysisMode>
         <TargetFramework>net9.0</TargetFramework>
         <LangVersion>13.0</LangVersion>
@@ -14,33 +13,8 @@
         <IncludeSymbols>true</IncludeSymbols>
         <IncludeSource>true</IncludeSource>
         <RepositoryUrl>https://github.com/Gibbs-Morris/mississippi</RepositoryUrl>
-        <!-- 
-        NoWarnCodeStyle Warnings:
-          SA1633: File must have header.
-          SA1111: Closing parenthesis should be on a line of its own.
-          SA1200: A C# file should have a single 'using' directive section.
-          SA1009: Closing parenthesis should be spaced correctly.
-          SA1507: Code should not contain multiple blank lines in a row.
-          SA1101: Prefix local calls with 'this.'.
-          SA1202: Elements should be ordered by access.
-          SA1204: Static elements should appear before instance elements.
-          SA1600: Require Comments.
-        -->
-        <NoWarn>SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600</NoWarn>
-
-        <!-- 
-        NoWarnCodeAnalysis Warnings:
-          CA1014: Mark assemblies with CLSCompliant.
-          CA2007: Consider calling ConfigureAwait on the awaited Task.
-          CA1040: Avoid empty interfaces.
-          CA1812: Avoid uninstantiated internal classes.
-        -->
-        <NoWarn>CA1014,CA2007,CA1040,CA1812</NoWarn>
-
-        <NoWarn>CA1303</NoWarn>
-        
-        <!-- Combine all the warnings to suppress -->
-        <NoWarn>$(NoWarnCodeStyle),$(NoWarnCodeAnalysis)</NoWarn>
+        <NoWarn>SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600,CA1014,CA2007,CA1040,CA1812,CA1014,CA2007,CA1040,CA1812,CA1303
+        </NoWarn>
 
 
         <AssemblyName>Mississippi.$(MSBuildProjectName)</AssemblyName>
