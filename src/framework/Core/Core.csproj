@@ -7,4 +7,7 @@
       <PackageReference Include="Microsoft.Extensions.Features" />
       <PackageReference Include="Microsoft.Orleans.Sdk" />
     </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Core.Abstractions\Core.Abstractions.csproj" />
+    </ItemGroup>
 </Project>

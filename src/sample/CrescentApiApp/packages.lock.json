@@ -575,7 +575,14 @@
         "dependencies": {
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[9.0.1, )",
           "Microsoft.Extensions.Features": "[9.0.1, )",
-          "Microsoft.Orleans.Sdk": "[9.0.1, )"
+          "Microsoft.Orleans.Sdk": "[9.0.1, )",
+          "Mississippi.Core.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Core.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.1, )"
         }
       },
       "Microsoft.AspNetCore.Authentication.JwtBearer": {
@@ -599,8 +606,8 @@
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "CentralTransitive",
         "requested": "[9.0.1, )",
-        "resolved": "8.0.2",
-        "contentHash": "3iE7UF7MQkCv1cxzCahz+Y/guQbTqieyxyaWKhrRO91itI9cOKO76OHeQDahqG4MmW5umr3CcCvGmK92lWNlbg=="
+        "resolved": "9.0.1",
+        "contentHash": "Tr74eP0oQ3AyC24ch17N8PuEkrPbD0JqIfENCYqmgKYNOmL8wQKzLJu3ObxTUDrjnn4rHoR1qKa37/eQyHmCDA=="
       },
       "Microsoft.Extensions.Features": {
         "type": "CentralTransitive",
