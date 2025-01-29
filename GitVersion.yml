@@ -1,0 +1,65 @@
+assembly-file-versioning-scheme: MajorMinorPatchTag
+assembly-versioning-scheme: MajorMinorPatch
+branches:
+  feature:
+    increment: Minor
+    is-release-branch: false
+    mode: ContinuousDelivery
+    regex: ^feature(s)?[/-]
+    source-branches: ["main", "feature"]
+    label: useBranchName
+    track-merge-target: false
+    tracks-release-branches: false
+  hotfix:
+    increment: Patch
+    is-release-branch: false
+    mode: ContinuousDelivery
+    regex: ^hotfix(es)?[/-]
+    label: useBranchName
+    track-merge-target: false
+    tracks-release-branches: false
+  main:
+    increment: Minor
+    is-main-branch: true
+    is-release-branch: false
+    mode: ContinuousDeployment
+    regex: ^main
+    label: "next"
+    track-merge-target: true
+    tracks-release-branches: false
+  pull-request:
+    increment: Inherit
+    is-release-branch: false
+    mode: ContinuousDelivery
+    regex: ^(pull|pull\-requests|pr)[/-]
+    label: PullRequest
+    track-merge-target: false
+    tracks-release-branches: false
+  release:
+    increment: Patch
+    is-release-branch: true
+    mode: ContinuousDeployment
+    pre-release-weight: 1000
+    regex: ^release(s)?[/-]
+    label: ""
+    track-merge-target: false
+    tracks-release-branches: false
+  topic:
+    increment: Minor
+    is-release-branch: false
+    mode: ContinuousDelivery
+    regex: ^topic[/-]
+    source-branches: ["main", "feature"]
+    label: useBranchName
+    track-merge-target: false
+    tracks-release-branches: false
+commit-message-incrementing: Enabled
+increment: Inherit
+major-version-bump-message: '\+semver:\s?(breaking|major)'
+minor-version-bump-message: '\+semver:\s?(feature|minor)'
+mode: ContinuousDelivery
+next-version: 0.0.1
+no-bump-message: '\+semver:\s?(none|skip)'
+patch-version-bump-message: '\+semver:\s?(fix|patch)'
+tag-prefix: "[vV]?"
+version-in-branch-pattern: (?<version>[vV]?\d+(\.\d+)?(\.\d+)?).*

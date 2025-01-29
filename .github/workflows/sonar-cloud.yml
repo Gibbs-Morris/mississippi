@@ -1,0 +1,90 @@
+name: SonarCloud
+on:
+  push:
+    branches:
+      - main
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+jobs:
+  Build:
+    name: "Build"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache GitVersion tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.gitversion
+          key: ${{ runner.os }}-gitversion
+          restore-keys: ${{ runner.os }}-gitversion
+
+      - name: Cache nugets
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: Cache Sonar Cloud Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: |
+            ${{ runner.os }}-sonar
+
+      - name: Cache Sonar Cloud Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/sonar/scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: |
+            ${{ runner.os }}-sonar-scanner
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3.0.1
+        with:
+          versionSpec: "6.x"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v3.0.1
+        with:
+          useConfigFile: true
+
+      - name: Setup Java for Sonar Scanner
+        uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: "21"
+
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dotnet packages
+        run: |
+          dotnet tool restore
+          dotnet tool install dotnet-coverage
+          dotnet tool install dotnet-sonarscanner
+
+      - name: Sonar restore-build-report
+        run: |
+          dotnet dotnet-sonarscanner begin /k:"Gibbs-Morris_mississippi" /o:"gibbs-morris" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json"
+          dotnet restore ${{ github.workspace }}/src/mississippi.sln
+          dotnet build ${{ github.workspace }}/src/mississippi.sln --configuration Release --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet dotnet-coverage collect "dotnet test ${{ github.workspace }}/src/mississippi.sln -p:Version=${{ steps.gitversion.outputs.SemVer }} --no-restore --verbosity normal"  -f xml -o "coverage.xml"
+          dotnet dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}

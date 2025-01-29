@@ -1,0 +1,59 @@
+name: "Build (perfect)"
+on:
+  push:
+    branches:
+      - main
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+
+jobs:
+  Build:
+    name: "Build"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache GitVersion tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.gitversion
+          key: ${{ runner.os }}-gitversion
+          restore-keys: ${{ runner.os }}-gitversion
+
+      - name: Cache nugets
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3.0.1
+        with:
+          versionSpec: "6.x"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v3.0.1
+        with:
+          useConfigFile: true
+
+      - name: Restore dotnet packages
+        run: |
+          dotnet restore ${{ github.workspace }}/src/mississippi.sln
+
+        # Note -warnaserror here.
+      - name: Build dotnet projects
+        run: |
+          dotnet build ${{ github.workspace }}/src/mississippi.sln --configuration Release --no-restore --no-incremental -warnaserror -p:Version=${{ steps.gitversion.outputs.SemVer }}
