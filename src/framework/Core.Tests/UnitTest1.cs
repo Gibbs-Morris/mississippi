@@ -1,3 +1,5 @@
+using Allure.Xunit.Attributes;
+
 namespace Mississippi.Core.Tests;
 
 /// <summary>
@@ -8,6 +10,9 @@ public class UnitTest1
     /// <summary>
     /// A test method.
     /// </summary>
+    [AllureEpic("EF-1")]
+    [AllureParentSuite("Web interface")]
+    [AllureSuite("Essential features")]
     [Fact]
     public void Test1()
     {
