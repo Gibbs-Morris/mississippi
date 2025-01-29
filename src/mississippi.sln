@@ -1,0 +1,72 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Abstractions", "framework\Core.Abstractions\Core.Abstractions.csproj", "{EE40D6A9-F4B4-424F-9489-9CB0627C04F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "framework\Core\Core.csproj", "{8E53D71E-E17D-468D-9ABA-3772FC19F256}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hosting", "framework\Hosting\Hosting.csproj", "{DE7412C8-731C-463C-AA6C-EA0C83A95379}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Framework", "framework", "{57948CF5-EE80-4D37-BD6F-053AA01D669E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sample", "Sample", "{94E98F13-C1F4-4BF7-A58A-4833BA77FBAA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrescentConsoleApp", "sample\CrescentConsoleApp\CrescentConsoleApp.csproj", "{2D76F962-BD03-4FEF-AFD6-1F2E62CAB1BA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{6F89A96A-26E3-49E0-81CC-6CEABC620063}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\full-build.yml = ..\.github\workflows\full-build.yml
+		..\.github\workflows\sonar-cloud.yml = ..\.github\workflows\sonar-cloud.yml
+		..\.github\workflows\stryker.yml = ..\.github\workflows\stryker.yml
+		..\.github\workflows\unit-tests.yml = ..\.github\workflows\unit-tests.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{DB7D5A77-8A50-49B7-8D2B-48B40A8A50EF}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrescentApiApp", "sample\CrescentApiApp\CrescentApiApp.csproj", "{25932F47-34F2-4D65-B344-C6A45E07A9DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Tests", "framework\Core.Tests\Core.Tests.csproj", "{0DA3C23F-9082-4CBF-B6C8-FC5EB204BBF4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EE40D6A9-F4B4-424F-9489-9CB0627C04F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE40D6A9-F4B4-424F-9489-9CB0627C04F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE40D6A9-F4B4-424F-9489-9CB0627C04F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE40D6A9-F4B4-424F-9489-9CB0627C04F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E53D71E-E17D-468D-9ABA-3772FC19F256}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E53D71E-E17D-468D-9ABA-3772FC19F256}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E53D71E-E17D-468D-9ABA-3772FC19F256}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E53D71E-E17D-468D-9ABA-3772FC19F256}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE7412C8-731C-463C-AA6C-EA0C83A95379}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE7412C8-731C-463C-AA6C-EA0C83A95379}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE7412C8-731C-463C-AA6C-EA0C83A95379}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE7412C8-731C-463C-AA6C-EA0C83A95379}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D76F962-BD03-4FEF-AFD6-1F2E62CAB1BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D76F962-BD03-4FEF-AFD6-1F2E62CAB1BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D76F962-BD03-4FEF-AFD6-1F2E62CAB1BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D76F962-BD03-4FEF-AFD6-1F2E62CAB1BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25932F47-34F2-4D65-B344-C6A45E07A9DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25932F47-34F2-4D65-B344-C6A45E07A9DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25932F47-34F2-4D65-B344-C6A45E07A9DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25932F47-34F2-4D65-B344-C6A45E07A9DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0DA3C23F-9082-4CBF-B6C8-FC5EB204BBF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0DA3C23F-9082-4CBF-B6C8-FC5EB204BBF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0DA3C23F-9082-4CBF-B6C8-FC5EB204BBF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0DA3C23F-9082-4CBF-B6C8-FC5EB204BBF4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8E53D71E-E17D-468D-9ABA-3772FC19F256} = {57948CF5-EE80-4D37-BD6F-053AA01D669E}
+		{EE40D6A9-F4B4-424F-9489-9CB0627C04F1} = {57948CF5-EE80-4D37-BD6F-053AA01D669E}
+		{DE7412C8-731C-463C-AA6C-EA0C83A95379} = {57948CF5-EE80-4D37-BD6F-053AA01D669E}
+		{2D76F962-BD03-4FEF-AFD6-1F2E62CAB1BA} = {94E98F13-C1F4-4BF7-A58A-4833BA77FBAA}
+		{25932F47-34F2-4D65-B344-C6A45E07A9DD} = {94E98F13-C1F4-4BF7-A58A-4833BA77FBAA}
+		{0DA3C23F-9082-4CBF-B6C8-FC5EB204BBF4} = {57948CF5-EE80-4D37-BD6F-053AA01D669E}
+	EndGlobalSection
+EndGlobal
