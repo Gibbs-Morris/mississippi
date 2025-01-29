@@ -8,15 +8,6 @@
         "resolved": "4.0.8",
         "contentHash": "vNi4NMG0CcJyjXxiNDcQ21FwV/whM9o9OEZKD+oP7tuxAqFEzX/x5OhC3OZJqW/w+8GOtCmJPBquYgMWgz0rfQ=="
       },
-      "Microsoft.AspNetCore.OpenApi": {
-        "type": "Direct",
-        "requested": "[9.0.1, )",
-        "resolved": "9.0.1",
-        "contentHash": "xRJe8UrLnOGs6hOBrT/4r74q97626H0mABb/DV0smlReIx6uQCENAe+TUqF6hD3NtT4sB+qrvWhAej6kxPxgew==",
-        "dependencies": {
-          "Microsoft.OpenApi": "1.6.17"
-        }
-      },
       "Microsoft.CodeAnalysis.NetAnalyzers": {
         "type": "Direct",
         "requested": "[9.0.0, )",
@@ -374,11 +365,6 @@
         "dependencies": {
           "Microsoft.IdentityModel.Logging": "8.0.1"
         }
-      },
-      "Microsoft.OpenApi": {
-        "type": "Transitive",
-        "resolved": "1.6.17",
-        "contentHash": "Le+kehlmrlQfuDFUt1zZ2dVwrhFQtKREdKBo+rexOwaCoYP0/qpgT9tLxCsZjsgR5Itk1UKPcbgO+FyaNid/bA=="
       },
       "Microsoft.Orleans.Analyzers": {
         "type": "Transitive",
