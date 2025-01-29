@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-
-using Grove.Core.Mapping;
-
+﻿using System.Globalization;
+using Mississippi.Core.Abstractions.Mapping;
 using Moq;
 
-
-namespace Grove.Core.Tests.Mapping;
+namespace Mississippi.Core.Tests.Mapping;
 
 /// <summary>
 ///     Contains unit tests for the <see cref="EnumerableMapper{TFrom,TTo}" /> class.

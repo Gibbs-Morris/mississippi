@@ -1,4 +1,4 @@
-﻿namespace Grove.Core.Mapping;
+﻿namespace Mississippi.Core.Abstractions.Mapping;
 
 /// <summary>
 ///     Defines a generic interface for mapping objects of type <typeparamref name="TFrom" /> to objects of type
