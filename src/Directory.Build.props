@@ -26,7 +26,7 @@
           SA1204: Static elements should appear before instance elements.
           SA1600: Require Comments.
         -->
-        <NoWarnCodeStyle>SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600</NoWarnCodeStyle>
+        <NoWarn>SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600</NoWarn>
 
         <!-- 
         NoWarnCodeAnalysis Warnings:
@@ -35,9 +35,9 @@
           CA1040: Avoid empty interfaces.
           CA1812: Avoid uninstantiated internal classes.
         -->
-        <NoWarnCodeAnalysis>CA1014,CA2007,CA1040,CA1812</NoWarnCodeAnalysis>
+        <NoWarn>CA1014,CA2007,CA1040,CA1812</NoWarn>
 
-        <NoWarnCodeAnalysis>CA1303</NoWarnCodeAnalysis>
+        <NoWarn>CA1303</NoWarn>
         
         <!-- Combine all the warnings to suppress -->
         <NoWarn>$(NoWarnCodeStyle),$(NoWarnCodeAnalysis)</NoWarn>
