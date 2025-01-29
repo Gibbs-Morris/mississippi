@@ -13,7 +13,7 @@
         <RepositoryType>git</RepositoryType>
         <IncludeSymbols>true</IncludeSymbols>
         <IncludeSource>true</IncludeSource>
-        <RepositoryUrl>https://github.com/Gibbs-Morris/grove</RepositoryUrl>
+        <RepositoryUrl>https://github.com/Gibbs-Morris/mississippi</RepositoryUrl>
         <!-- 
         NoWarnCodeStyle Warnings:
           SA1633: File must have header.

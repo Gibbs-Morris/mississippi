@@ -7,7 +7,7 @@
     "mutate": [
       "**/*"
     ],
-    "solution": "grove.sln",
+    "solution": "mississippi.sln",
     "coverage-analysis": "perTest",
     "disable-bail": false,
     "disable-mix-mutants": false,
