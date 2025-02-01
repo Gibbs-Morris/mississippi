@@ -1,4 +1,7 @@
 name: Stryker
+env:
+  CONFIGURATION: Release
+  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
 on:
   push:
     branches:
@@ -14,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout
@@ -60,9 +63,10 @@ jobs:
 
       - name: Stryker restore-build-report
         run: |
-          dotnet restore ${{ github.workspace }}/src/mississippi.sln
-          dotnet build ${{ github.workspace }}/src/mississippi.sln --configuration Release --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-          cd ${{ github.workspace }}/src
+          dotnet restore "${{ env.SOLUTION_PATH }}"
+          dotnet clean ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }}
+          dotnet build "${{ env.SOLUTION_PATH }}" --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          cd "$(dirname "${{ env.SOLUTION_PATH }}")"
           dotnet stryker
 
       - name: Upload HTML Results
