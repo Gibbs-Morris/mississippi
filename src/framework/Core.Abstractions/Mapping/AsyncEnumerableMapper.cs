@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
+
 namespace Mississippi.Core.Abstractions.Mapping;
 
 /// <summary>
@@ -18,10 +19,8 @@ public sealed class AsyncEnumerableMapper<TFrom, TTo> : IAsyncEnumerableMapper<T
     /// <param name="mapper">The mapper used to map individual objects.</param>
     public AsyncEnumerableMapper(
         IMapper<TFrom, TTo> mapper
-    )
-    {
+    ) =>
         Mapper = mapper;
-    }
 
     /// <summary>
     ///     Gets the mapper used to map individual objects.
@@ -43,6 +42,9 @@ public sealed class AsyncEnumerableMapper<TFrom, TTo> : IAsyncEnumerableMapper<T
     )
     {
         ArgumentNullException.ThrowIfNull(input);
-        await foreach (var item in input) yield return Mapper.Map(item);
+        await foreach (var item in input)
+        {
+            yield return Mapper.Map(item);
+        }
     }
 }

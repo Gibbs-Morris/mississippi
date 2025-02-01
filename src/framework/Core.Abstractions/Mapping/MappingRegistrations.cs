@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
+
 namespace Mississippi.Core.Abstractions.Mapping;
 
 /// <summary>

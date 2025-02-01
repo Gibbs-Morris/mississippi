@@ -1,7 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+
 using Mississippi.Core.Abstractions.Mapping;
+
 using Moq;
+
 
 namespace Mississippi.Core.Tests.Mapping;
 
@@ -26,7 +29,7 @@ public class AsyncEnumerableMapperTests
             {
                 1,
                 2,
-                3
+                3,
             });
 
         // Act
@@ -38,7 +41,7 @@ public class AsyncEnumerableMapperTests
             {
                 "1",
                 "2",
-                "3"
+                "3",
             },
             result);
     }
@@ -96,7 +99,7 @@ public class AsyncEnumerableMapperTests
             {
                 1,
                 null,
-                3
+                3,
             });
 
         // Act
@@ -108,7 +111,7 @@ public class AsyncEnumerableMapperTests
             {
                 "1",
                 "null",
-                "3"
+                "3",
             },
             result);
     }

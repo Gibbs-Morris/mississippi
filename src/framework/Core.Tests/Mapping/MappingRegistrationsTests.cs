@@ -1,6 +1,9 @@
 ﻿using System.Globalization;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using Mississippi.Core.Abstractions.Mapping;
+
 
 namespace Mississippi.Core.Tests.Mapping;
 
@@ -66,9 +69,7 @@ public class MappingRegistrationsTests
         /// <returns>The string representation of the integer.</returns>
         public string Map(
             int source
-        )
-        {
-            return source.ToString(CultureInfo.InvariantCulture);
-        }
+        ) =>
+            source.ToString(CultureInfo.InvariantCulture);
     }
 }

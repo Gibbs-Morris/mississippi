@@ -10,12 +10,12 @@ internal static class Program
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
     /// <returns>A <see cref="Task" /> representing the asynchronous operation.</returns>
-    public static async Task Main(string[] args)
+    public static async Task Main(
+        string[] args
+    )
     {
         var builder = WebApplication.CreateBuilder(args);
-
         var app = builder.Build();
-
         await app.RunAsync();
     }
 }
