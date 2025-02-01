@@ -43,7 +43,9 @@ jobs:
           # Verify if any files have been modified by the cleanup run.
           if [ -n "$(git status --porcelain)" ]; then
             echo "ReSharper cleanup modified files. Please run 'jb cleanupcode' locally before pushing."
-            git status --porcelain
+            git diff --color=always | while IFS= read -r line; do
+              echo "$line"
+            done
             exit 1
           else
             echo "No modifications detected. Cleanup check passed."
