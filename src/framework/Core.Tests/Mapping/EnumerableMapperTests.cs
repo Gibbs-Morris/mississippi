@@ -23,7 +23,7 @@ public class EnumerableMapperTests
         {
             1,
             2,
-            3,
+            3
         };
 
         // Act
@@ -35,7 +35,7 @@ public class EnumerableMapperTests
             {
                 "1",
                 "2",
-                "3",
+                "3"
             },
             result);
     }
@@ -90,7 +90,7 @@ public class EnumerableMapperTests
         {
             1,
             null,
-            3,
+            3
         };
 
         // Act
@@ -102,7 +102,7 @@ public class EnumerableMapperTests
             {
                 "1",
                 "null",
-                "3",
+                "3"
             },
             result);
     }

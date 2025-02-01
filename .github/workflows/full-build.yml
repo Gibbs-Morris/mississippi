@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ ubuntu-latest ]
     env:
       SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
       CONFIGURATION: Release
