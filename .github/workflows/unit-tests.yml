@@ -1,4 +1,9 @@
 name: "Tests"
+env:
+  CONFIGURATION: Release
+  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+  TEST_RESULTS_DIR: ${{ github.workspace }}/test-results
+  ALLURE_REPORT_DIR: ${{ github.workspace }}/allure-report
 on:
   push:
     branches:
@@ -15,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout
@@ -56,12 +61,13 @@ jobs:
 
       - name: Restore dotnet packages
         run: |
-          dotnet restore ${{ github.workspace }}/src/mississippi.sln
+          dotnet restore "${{ env.SOLUTION_PATH }}"
 
       - name: Build and test dotnet projects
         run: |
-          dotnet build ${{ github.workspace }}/src/mississippi.sln --configuration Release --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-          dotnet test ${{ github.workspace }}/src/mississippi.sln --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/test-results -- RunConfiguration.ReporterSwitch=allure
+          dotnet clean ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }}
+          dotnet build "${{ env.SOLUTION_PATH }}" --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet test "${{ env.SOLUTION_PATH }}" --logger "trx;LogFileName=test_results.trx" --results-directory "${{ env.TEST_RESULTS_DIR }}" -- RunConfiguration.ReporterSwitch=allure
 
       - name: Install Allure
         run: |
@@ -72,10 +78,10 @@ jobs:
 
       - name: Generate Allure Report
         run: |
-          allure generate ${{ github.workspace }}/test-results -o ${{ github.workspace }}/allure-report
+          allure generate "${{ env.TEST_RESULTS_DIR }}" -o "${{ env.ALLURE_REPORT_DIR }}"
 
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
         with:
           name: allure-test-results-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
-          path: ${{ github.workspace }}/allure-report
+          path: "${{ env.ALLURE_REPORT_DIR }}"
