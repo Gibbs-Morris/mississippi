@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+      DOTSETTINGS_PATH: ${{ github.workspace }}/src/mississippi.sln.DotSettings
       CONFIGURATION: Release
     steps:
       - name: Checkout repository
@@ -35,8 +36,8 @@ jobs:
       - name: Run ReSharper Cleanup Code
         run: |
           # Run the cleanupcode command using the locally restored ReSharper Global Tools.
-          # Using 'dotnet tool run jb' ensures the correct tool version is used.
-          dotnet tool run jb cleanupcode "${{ env.SOLUTION_PATH }}"
+          # The custom cleanup settings are specified with the --profile option.
+          dotnet tool run jb cleanupcode --profile "${{ env.DOTSETTINGS_PATH }}" "${{ env.SOLUTION_PATH }}"
 
       - name: Check for Uncommitted Changes
         run: |
