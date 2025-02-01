@@ -33,7 +33,7 @@ public class AsyncEnumerableMapperTests
             });
 
         // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        var result = await asyncEnumerableMapper.Map(input).ToListAsync();
 
         // Assert
         Assert.Equal(
@@ -59,7 +59,7 @@ public class AsyncEnumerableMapperTests
         var input = GetAsyncEnumerableAsync(new List<int>());
 
         // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        var result = await asyncEnumerableMapper.Map(input).ToListAsync();
 
         // Assert
         Assert.Empty(result);
@@ -103,7 +103,7 @@ public class AsyncEnumerableMapperTests
             });
 
         // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        var result = await asyncEnumerableMapper.Map(input).ToListAsync();
 
         // Assert
         Assert.Equal(

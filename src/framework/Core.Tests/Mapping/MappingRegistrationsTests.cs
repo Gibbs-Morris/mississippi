@@ -21,7 +21,7 @@ public class MappingRegistrationsTests
         ServiceCollection services = new();
         services.AddMapper<int, string, MockMapper>();
         using var serviceProvider = services.BuildServiceProvider();
-        IMapper<int, string>? mapper = serviceProvider.GetService<IMapper<int, string>>();
+        var mapper = serviceProvider.GetService<IMapper<int, string>>();
         Assert.NotNull(mapper);
         Assert.IsType<MockMapper>(mapper);
     }
@@ -36,7 +36,7 @@ public class MappingRegistrationsTests
         services.AddMapper<int, string, MockMapper>();
         services.AddIEnumerableMapper();
         using var serviceProvider = services.BuildServiceProvider();
-        IEnumerableMapper<int, string>? mapper = serviceProvider.GetService<IEnumerableMapper<int, string>>();
+        var mapper = serviceProvider.GetService<IEnumerableMapper<int, string>>();
         Assert.NotNull(mapper);
         Assert.IsType<EnumerableMapper<int, string>>(mapper);
     }
@@ -51,7 +51,7 @@ public class MappingRegistrationsTests
         services.AddMapper<int, string, MockMapper>();
         services.AddIAsyncEnumerableMapper();
         using var serviceProvider = services.BuildServiceProvider();
-        IAsyncEnumerableMapper<int, string>? mapper = serviceProvider.GetService<IAsyncEnumerableMapper<int, string>>();
+        var mapper = serviceProvider.GetService<IAsyncEnumerableMapper<int, string>>();
         Assert.NotNull(mapper);
         Assert.IsType<AsyncEnumerableMapper<int, string>>(mapper);
     }
