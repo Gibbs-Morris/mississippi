@@ -16,6 +16,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
+    env:
+      SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+      CONFIGURATION: Release
 
     steps:
       - name: Checkout
@@ -56,9 +59,12 @@ jobs:
 
       - name: Restore dotnet packages
         run: |
-          dotnet restore ${{ github.workspace }}/src/mississippi.sln
+          dotnet restore ${{ env.SOLUTION_PATH }}
 
-        # Note -warnaserror here.
+      - name: Clean build artifacts
+        run: |
+          dotnet clean ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }}
+
       - name: Build dotnet projects
         run: |
-          dotnet build ${{ github.workspace }}/src/mississippi.sln --configuration Release --no-restore --no-incremental -warnaserror -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -warnaserror -p:Version=${{ steps.gitversion.outputs.SemVer }}
