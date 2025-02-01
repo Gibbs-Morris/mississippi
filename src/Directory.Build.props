@@ -13,7 +13,8 @@
         <IncludeSymbols>true</IncludeSymbols>
         <IncludeSource>true</IncludeSource>
         <RepositoryUrl>https://github.com/Gibbs-Morris/mississippi</RepositoryUrl>
-        <NoWarn>SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600,CA1014,CA2007,CA1040,CA1812,CA1014,CA2007,CA1040,CA1812,CA1303
+        <NoWarn>
+            SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600,CA1014,CA2007,CA1040,CA1812,CA1014,CA2007,CA1040,CA1812,CA1303
         </NoWarn>
 
 
@@ -24,10 +25,10 @@
 
 
     <ItemGroup>
-        <InternalsVisibleTo Include="$(AssemblyName).Tests"/>
-        <InternalsVisibleTo Include="$(AssemblyName).UnitTests"/>
-        <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests"/>
-        <InternalsVisibleTo Include="DynamicProxyGenAssembly2"/>
+        <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+        <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
+        <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers">
@@ -56,10 +57,10 @@
         </PackageReference>
     </ItemGroup>
     <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
-        <PackageReference Include="Moq"/>
-        <PackageReference Include="Allure.Xunit"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
-        <PackageReference Include="xunit"/>
+        <PackageReference Include="Moq" />
+        <PackageReference Include="Allure.Xunit" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
         <PackageReference Include="xunit.runner.visualstudio">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
