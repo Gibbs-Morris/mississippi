@@ -1,0 +1,50 @@
+name: ReSharper Cleanup Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - feature/**
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+      CONFIGURATION: Release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore .NET Tools
+        run: |
+          # This will restore all tools defined in your dotnet-tools.json file.
+          dotnet tool restore
+          dotnet tool install JetBrains.ReSharper.GlobalTools
+
+      - name: Run ReSharper Cleanup Code
+        run: |
+          # Run the cleanupcode command using the locally restored ReSharper Global Tools.
+          # Using 'dotnet tool run jb' ensures the correct tool version is used.
+          dotnet tool run jb cleanupcode "${{ env.SOLUTION_PATH }}"
+
+      - name: Check for Uncommitted Changes
+        run: |
+          # Verify if any files have been modified by the cleanup run.
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "ReSharper cleanup modified files. Please run 'jb cleanupcode' locally before pushing."
+            git status --porcelain
+            exit 1
+          else
+            echo "No modifications detected. Cleanup check passed."
+          fi

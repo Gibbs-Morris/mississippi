@@ -25,6 +25,12 @@
       "commands": [
         "dotnet-coverage"
       ]
+    },
+    "JetBrains.ReSharper.GlobalTools": {
+      "version": "2024.3.4",
+      "commands": [
+        "jb"
+      ]
     }
   }
 }
