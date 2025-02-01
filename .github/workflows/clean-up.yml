@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Running ReSharper Cleanup Code..."
-          dotnet tool run jb cleanupcode --profile "Built-in: Full Cleanup" "${{ env.SOLUTION_PATH }}"
+          dotnet tool run jb cleanupcode "${{ env.SOLUTION_PATH }}"
           echo "Cleanup completed."
 
       - name: Check for Uncommitted Changes
