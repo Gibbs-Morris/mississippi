@@ -1,12 +1,12 @@
 namespace Mississippi.Core.Tests;
 
 /// <summary>
-/// A test class.
+///     A test class.
 /// </summary>
 public class UnitTest1
 {
     /// <summary>
-    /// A test method.
+    ///     A test method.
     /// </summary>
     [Fact]
     public void Test1()

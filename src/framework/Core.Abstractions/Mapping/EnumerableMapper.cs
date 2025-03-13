@@ -17,8 +17,10 @@ public sealed class EnumerableMapper<TFrom, TTo> : IEnumerableMapper<TFrom, TTo>
     /// <param name="mapper">The mapper used to map individual objects.</param>
     public EnumerableMapper(
         IMapper<TFrom, TTo> mapper
-    ) =>
+    )
+    {
         Mapper = mapper;
+    }
 
     /// <summary>
     ///     Gets the mapper used to map individual objects.
