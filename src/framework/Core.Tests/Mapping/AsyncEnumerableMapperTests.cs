@@ -37,7 +37,7 @@ public class AsyncEnumerableMapperTests
 
         // Assert
         Assert.Equal(
-            new List<string>
+            new()
             {
                 "1",
                 "2",
@@ -107,7 +107,7 @@ public class AsyncEnumerableMapperTests
 
         // Assert
         Assert.Equal(
-            new List<string>
+            new()
             {
                 "1",
                 "null",
