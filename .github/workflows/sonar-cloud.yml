@@ -8,6 +8,12 @@ on:
     branches:
       - main
       - feature/**
+env:
+  SONAR_PROJECT_KEY: "Gibbs-Morris_mississippi"
+  SONAR_ORGANIZATION: "gibbs-morris"
+  SONAR_HOST_URL: "https://sonarcloud.io"
+  CONFIGURATION: Release
+  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
 jobs:
   Build:
     name: "Build"
@@ -83,8 +89,8 @@ jobs:
 
       - name: Sonar restore-build-report
         run: |
-          dotnet dotnet-sonarscanner begin /k:"Gibbs-Morris_mississippi" /o:"gibbs-morris" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json"
-          dotnet restore ${{ github.workspace }}/src/mississippi.sln
-          dotnet build ${{ github.workspace }}/src/mississippi.sln --configuration Release --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-          dotnet dotnet-coverage collect "dotnet test ${{ github.workspace }}/src/mississippi.sln -p:Version=${{ steps.gitversion.outputs.SemVer }} --no-restore --verbosity normal"  -f xml -o "coverage.xml"
+          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json"
+          dotnet restore ${{ env.SOLUTION_PATH }}
+          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet dotnet-coverage collect "dotnet test ${{ env.SOLUTION_PATH }} -p:Version=${{ steps.gitversion.outputs.SemVer }} --no-restore --verbosity normal"  -f xml -o "coverage.xml"
           dotnet dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}

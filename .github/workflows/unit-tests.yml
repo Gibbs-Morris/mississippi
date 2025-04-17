@@ -9,6 +9,10 @@ on:
       - main
       - feature/**
 
+env:
+  CONFIGURATION: Release
+  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+
 jobs:
   Build:
     name: "Unit Tests"
@@ -56,12 +60,12 @@ jobs:
 
       - name: Restore dotnet packages
         run: |
-          dotnet restore ${{ github.workspace }}/src/mississippi.sln
+          dotnet restore ${{ env.SOLUTION_PATH }}
 
       - name: Build and test dotnet projects
         run: |
-          dotnet build ${{ github.workspace }}/src/mississippi.sln --configuration Release --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-          dotnet test ${{ github.workspace }}/src/mississippi.sln --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/test-results -- RunConfiguration.ReporterSwitch=allure
+          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet test ${{ env.SOLUTION_PATH }} --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/test-results -- RunConfiguration.ReporterSwitch=allure
 
       - name: Install Allure
         run: |

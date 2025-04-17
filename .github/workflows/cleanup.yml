@@ -9,12 +9,13 @@ on:
       - main
       - feature/**
 
+env:
+  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+  DOTSETTINGS_PATH: ${{ github.workspace }}/src/mississippi.sln.DotSettings
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    env:
-      SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
-      DOTSETTINGS_PATH: ${{ github.workspace }}/src/mississippi.sln.DotSettings
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

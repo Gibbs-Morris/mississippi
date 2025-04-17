@@ -8,6 +8,9 @@ on:
     branches:
       - main
       - feature/**
+env:
+  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+  CONFIGURATION: Release
 jobs:
   Stryker:
     name: "Stryker"
@@ -60,8 +63,8 @@ jobs:
 
       - name: Stryker restore-build-report
         run: |
-          dotnet restore ${{ github.workspace }}/src/mississippi.sln
-          dotnet build ${{ github.workspace }}/src/mississippi.sln --configuration Release --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet restore ${{ env.SOLUTION_PATH }}
+          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
           cd ${{ github.workspace }}/src
           dotnet stryker
 
