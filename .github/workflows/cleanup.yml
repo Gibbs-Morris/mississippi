@@ -1,0 +1,79 @@
+name: ReSharper Cleanup Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - feature/**
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+      DOTSETTINGS_PATH: ${{ github.workspace }}/src/mississippi.sln.DotSettings
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Check for dotnet tools manifest
+        id: check-tools-manifest
+        run: |
+          set -euo pipefail
+          if [ -f ".config/dotnet-tools.json" ]; then
+            echo "manifest_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "manifest_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Restore .NET Tools
+        if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
+        run: |
+          set -euo pipefail
+          echo "Restoring dotnet tools..."
+          dotnet tool restore
+        continue-on-error: false
+        
+      - name: Install ReSharper Global Tools
+        if: steps.check-tools-manifest.outputs.manifest_exists != 'true'
+        run: |
+          set -euo pipefail
+          echo "Installing JetBrains.ReSharper.GlobalTools..."
+          dotnet tool install -g JetBrains.ReSharper.GlobalTools
+        continue-on-error: false
+
+      - name: Run ReSharper Cleanup Code
+        run: |
+          set -euo pipefail
+          echo "Running ReSharper Cleanup Code..."
+          # Use consistent profile and settings in the actual command
+          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "${{ env.SOLUTION_PATH }}"
+          echo "Cleanup completed."
+          
+      - name: Check for Uncommitted Changes
+        run: |
+          set -euo pipefail
+          echo "Checking for modifications after cleanup..."
+          # Capture any git changes made by the cleanup run.
+          CHANGES=$(git status --porcelain)
+          if [ -n "$CHANGES" ]; then
+            echo "ERROR: ReSharper cleanup modified files. The following changes are required:"
+            # Output the diff to show exactly what must be changed.
+            git diff --color=always
+            echo ""
+            echo "To resolve this, run the following command locally to apply the required cleanup changes:"
+            echo "dotnet tool run jb cleanupcode --profile=\"Built-in: Full Cleanup\" --settings=\"${DOTSETTINGS_PATH}\" \"${SOLUTION_PATH}\""
+            exit 1
+          else
+            echo "No modifications detected. Cleanup check passed."
+          fi

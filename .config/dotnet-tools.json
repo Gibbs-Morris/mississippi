@@ -4,27 +4,23 @@
   "tools": {
     "dotnet-stryker": {
       "version": "4.4.1",
-      "commands": [
-        "dotnet-stryker"
-      ]
+      "commands": ["dotnet-stryker"]
     },
     "dotnet-sonarscanner": {
       "version": "8.0.2",
-      "commands": [
-        "dotnet-sonarscanner"
-      ]
+      "commands": ["dotnet-sonarscanner"]
     },
     "gitversion.tool": {
       "version": "6.0.5",
-      "commands": [
-        "dotnet-gitversion"
-      ]
+      "commands": ["dotnet-gitversion"]
     },
     "dotnet-coverage": {
       "version": "17.12.6",
-      "commands": [
-        "dotnet-coverage"
-      ]
+      "commands": ["dotnet-coverage"]
+    },
+    "JetBrains.ReSharper.GlobalTools": {
+      "version": "2024.3.4",
+      "commands": ["jb"]
     }
   }
 }
