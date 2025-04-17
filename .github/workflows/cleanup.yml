@@ -57,7 +57,7 @@ jobs:
           set -euo pipefail
           echo "Running ReSharper Cleanup Code..."
           # Use consistent profile and settings in the actual command
-          dotnet tool run jb cleanupcode --profile "Built-in: Full Cleanup" --settings "${{ env.DOTSETTINGS_PATH }}" "${{ env.SOLUTION_PATH }}"
+          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "${{ env.SOLUTION_PATH }}"
           echo "Cleanup completed."
           
       - name: Check for Uncommitted Changes
@@ -72,7 +72,7 @@ jobs:
             git diff --color=always
             echo ""
             echo "To resolve this, run the following command locally to apply the required cleanup changes:"
-            echo "dotnet tool run jb cleanupcode --profile \"Built-in: Full Cleanup\" --settings \"${DOTSETTINGS_PATH}\" \"${SOLUTION_PATH}\""
+            echo "dotnet tool run jb cleanupcode --profile=\"Built-in: Full Cleanup\" --settings=\"${DOTSETTINGS_PATH}\" \"${SOLUTION_PATH}\""
             exit 1
           else
             echo "No modifications detected. Cleanup check passed."
