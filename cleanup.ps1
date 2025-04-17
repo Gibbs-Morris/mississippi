@@ -120,10 +120,10 @@ else {
 # Step 2: Run ReSharper Cleanup
 Write-Header "Running ReSharper Cleanup"
 if ($useDotSettings) {
-    Invoke-CommandLine -Command "dotnet" -Arguments "jb cleanupcode --profile `"$Profile`" --settings `"$DotSettingsPath`" `"$SolutionPath`""
+    Invoke-CommandLine -Command "dotnet" -Arguments "jb cleanupcode --profile=`"$Profile`" --settings=`"$DotSettingsPath`" `"$SolutionPath`""
 }
 else {
-    Invoke-CommandLine -Command "dotnet" -Arguments "jb cleanupcode --profile `"$Profile`" `"$SolutionPath`""
+    Invoke-CommandLine -Command "dotnet" -Arguments "jb cleanupcode --profile=`"$Profile`" `"$SolutionPath`""
 }
 
 # Step 3: Check for any remaining issues
