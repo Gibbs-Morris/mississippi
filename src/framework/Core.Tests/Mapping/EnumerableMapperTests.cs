@@ -1,6 +1,9 @@
 ﻿using System.Globalization;
+
 using Mississippi.Core.Abstractions.Mapping;
+
 using Moq;
+
 
 namespace Mississippi.Core.Tests.Mapping;
 
@@ -27,7 +30,7 @@ public class EnumerableMapperTests
         };
 
         // Act
-        IEnumerable<string> result = enumerableMapper.Map(input);
+        var result = enumerableMapper.Map(input);
 
         // Assert
         Assert.Equal(
@@ -54,7 +57,7 @@ public class EnumerableMapperTests
         List<int> input = [];
 
         // Act
-        IEnumerable<string> result = enumerableMapper.Map(input);
+        var result = enumerableMapper.Map(input);
 
         // Assert
         Assert.Empty(result);
@@ -94,7 +97,7 @@ public class EnumerableMapperTests
         };
 
         // Act
-        IEnumerable<string> result = enumerableMapper.Map(input);
+        var result = enumerableMapper.Map(input);
 
         // Assert
         Assert.Equal(
