@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 
 namespace Mississippi.Core.Abstractions.Mapping;
@@ -42,7 +40,7 @@ public sealed class AsyncEnumerableMapper<TFrom, TTo> : IAsyncEnumerableMapper<T
     )
     {
         ArgumentNullException.ThrowIfNull(input);
-        await foreach (var item in input)
+        await foreach (TFrom? item in input)
         {
             yield return Mapper.Map(item);
         }

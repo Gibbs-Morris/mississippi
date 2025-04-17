@@ -24,7 +24,7 @@ public class AsyncEnumerableMapperTests
         Mock<IMapper<int, string>> mockMapper = new();
         mockMapper.Setup(m => m.Map(It.IsAny<int>())).Returns<int>(i => i.ToString(CultureInfo.InvariantCulture));
         AsyncEnumerableMapper<int, string> asyncEnumerableMapper = new(mockMapper.Object);
-        var input = GetAsyncEnumerableAsync(
+        IAsyncEnumerable<int> input = GetAsyncEnumerableAsync(
             new List<int>
             {
                 1,
@@ -33,11 +33,11 @@ public class AsyncEnumerableMapperTests
             });
 
         // Act
-        var result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
 
         // Assert
         Assert.Equal(
-            new List<string>
+            new()
             {
                 "1",
                 "2",
@@ -56,10 +56,10 @@ public class AsyncEnumerableMapperTests
         // Arrange
         Mock<IMapper<int, string>> mockMapper = new();
         AsyncEnumerableMapper<int, string> asyncEnumerableMapper = new(mockMapper.Object);
-        var input = GetAsyncEnumerableAsync(new List<int>());
+        IAsyncEnumerable<int> input = GetAsyncEnumerableAsync(new List<int>());
 
         // Act
-        var result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
 
         // Assert
         Assert.Empty(result);
@@ -94,7 +94,7 @@ public class AsyncEnumerableMapperTests
         mockMapper.Setup(m => m.Map(It.IsAny<int?>()))
             .Returns<int?>(i => i?.ToString(CultureInfo.InvariantCulture) ?? "null");
         AsyncEnumerableMapper<int?, string> asyncEnumerableMapper = new(mockMapper.Object);
-        var input = GetAsyncEnumerableAsync(
+        IAsyncEnumerable<int?> input = GetAsyncEnumerableAsync(
             new List<int?>
             {
                 1,
@@ -103,11 +103,11 @@ public class AsyncEnumerableMapperTests
             });
 
         // Act
-        var result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
 
         // Assert
         Assert.Equal(
-            new List<string>
+            new()
             {
                 "1",
                 "null",
@@ -131,7 +131,7 @@ public class AsyncEnumerableMapperTests
     )
     {
         ArgumentNullException.ThrowIfNull(items);
-        foreach (var item in items)
+        foreach (T? item in items)
         {
             yield return item;
             await Task.Yield();
