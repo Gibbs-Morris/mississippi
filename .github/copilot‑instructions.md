@@ -1,4 +1,4 @@
-We follow the Microsoft C# coding conventions (https://learn.microsoft.com/dotnet/csharp/fundamentals/coding-style).
+We follow the Microsoft C# coding conventions.
 When generating or refactoring code, always match those conventions—including file‑scoped namespaces, expression‑bodied members where beneficial, and the latest nullable‑reference guidelines.
 
 Before answering questions about how to run or use this project, read **README.md** at the repository root.
