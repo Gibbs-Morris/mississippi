@@ -4,7 +4,7 @@
         <AnalysisMode>All</AnalysisMode>
         <TargetFramework>net9.0</TargetFramework>
         <LangVersion>13.0</LangVersion>
-        <ImplicitUsings>false</ImplicitUsings>
+        <ImplicitUsings>true</ImplicitUsings>
         <Nullable>enable</Nullable>
         <ServerGarbageCollection>true</ServerGarbageCollection>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -16,11 +16,8 @@
         <NoWarn>
             SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600,CA1014,CA2007,CA1040,CA1812,CA1014,CA2007,CA1040,CA1812,CA1303
         </NoWarn>
-
-
         <AssemblyName>Mississippi.$(MSBuildProjectName)</AssemblyName>
         <RootNamespace>Mississippi.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
-
     </PropertyGroup>
 
 

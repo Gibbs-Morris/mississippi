@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+
+
 namespace Mississippi.CrescentApiApp;
 
 /// <summary>
@@ -10,6 +13,7 @@ internal static class Program
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
     /// <returns>A <see cref="Task" /> representing the asynchronous operation.</returns>
+    [ExcludeFromCodeCoverage]
     public static async Task Main(
         string[] args
     )
