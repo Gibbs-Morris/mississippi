@@ -2,7 +2,6 @@
     <ItemGroup>
         <PackageReference Include="System.Linq.Async"/>
         <PackageReference Include="CloudNative.CloudEvents"/>
-        <PackageReference Include="Moq"/>
     </ItemGroup>
     
     <ItemGroup>
