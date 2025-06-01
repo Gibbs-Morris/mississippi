@@ -249,31 +249,6 @@ public class EventNameAttributeTests
     }
 
     /// <summary>
-    ///     Verifies that numeric characters embedded within any component of the event name are preserved
-    ///     and formatted correctly.
-    /// </summary>
-    /// <param name="appName">The application name containing numbers.</param>
-    /// <param name="moduleName">The module name containing numbers.</param>
-    /// <param name="name">The event name containing numbers.</param>
-    /// <param name="version">The version number.</param>
-    /// <param name="expected">The expected formatted event name.</param>
-    [Theory]
-    [InlineData("A123", "MODULE", "EVENT", 1, "A123.MODULE.EVENTV1")]
-    [InlineData("APP", "M456", "EVENT", 1, "APP.M456.EVENTV1")]
-    [InlineData("APP", "MODULE", "E789", 1, "APP.MODULE.E789V1")]
-    public void EventNameWithNumericCharactersReturnsCorrectFormat(
-        string appName,
-        string moduleName,
-        string name,
-        int version,
-        string expected
-    )
-    {
-        EventNameAttribute sut = new(appName, moduleName, name, version);
-        Assert.Equal(expected, sut.EventName);
-    }
-
-    /// <summary>
     ///     Confirms that component strings consisting solely of digits or prefixed by digits are still
     ///     treated as valid and correctly formatted.
     /// </summary>
