@@ -46,6 +46,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcing.Cosmos.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hosting.Tests", "framework\Hosting.Tests\Hosting.Tests.csproj", "{77C5B206-23DD-4D9E-A409-A0319E371704}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcing.Abstractions.Tests", "framework\EventSourcing.Abstractions.Tests\EventSourcing.Abstractions.Tests.csproj", "{A6C073B9-4EB9-4A46-9088-02FB160FA816}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,6 +110,10 @@ Global
 		{77C5B206-23DD-4D9E-A409-A0319E371704}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77C5B206-23DD-4D9E-A409-A0319E371704}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77C5B206-23DD-4D9E-A409-A0319E371704}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6C073B9-4EB9-4A46-9088-02FB160FA816}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6C073B9-4EB9-4A46-9088-02FB160FA816}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6C073B9-4EB9-4A46-9088-02FB160FA816}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6C073B9-4EB9-4A46-9088-02FB160FA816}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{8E53D71E-E17D-468D-9ABA-3772FC19F256} = {57948CF5-EE80-4D37-BD6F-053AA01D669E}
@@ -124,5 +130,6 @@ Global
 		{FFB7EDCB-C9EF-4791-984C-8A338141CA97} = {57948CF5-EE80-4D37-BD6F-053AA01D669E}
 		{37BA181F-E10A-4F6F-A9BC-D8B535082F25} = {57948CF5-EE80-4D37-BD6F-053AA01D669E}
 		{77C5B206-23DD-4D9E-A409-A0319E371704} = {57948CF5-EE80-4D37-BD6F-053AA01D669E}
+		{A6C073B9-4EB9-4A46-9088-02FB160FA816} = {57948CF5-EE80-4D37-BD6F-053AA01D669E}
 	EndGlobalSection
 EndGlobal
