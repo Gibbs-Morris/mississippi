@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="System.Linq.Async"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Hosting\Hosting.csproj"/>
+    </ItemGroup>
+</Project>
