@@ -1101,12 +1101,6 @@
           "xunit.abstractions": "2.0.3"
         }
       },
-      "Mississippi.EventSourcing": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.EventSourcing.Abstractions": "[1.0.0, )"
-        }
-      },
       "Mississippi.EventSourcing.Abstractions": {
         "type": "Project",
         "dependencies": {

@@ -3,6 +3,6 @@
         <PackageReference Include="System.Linq.Async"/>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\EventSourcing\EventSourcing.csproj" />
+      <ProjectReference Include="..\EventSourcing.Abstractions\EventSourcing.Abstractions.csproj" />
     </ItemGroup>
 </Project>
