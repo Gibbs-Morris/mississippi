@@ -37,10 +37,7 @@
     "dashboard-url": "https://dashboard.stryker-mutator.io",
     "test-projects": [],
     "test-case-filter": "",
-    "ignore-mutations": [],
-    "mutators": {
-      "StringLiteral": false
-    },
+    "ignore-mutations": ["StringLiteral"],
     "ignore-methods": [],
     "report-file-name": "mutation-report",
     "break-on-initial-test-failure": false
