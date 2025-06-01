@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
+        <PackageReference Include="FluentAssertions" />
         <PackageReference Include="System.Linq.Async"/>
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\EventSourcing.Abstractions\EventSourcing.Abstractions.csproj" />
     </ItemGroup>
 </Project>
