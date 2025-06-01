@@ -38,8 +38,12 @@
     "test-projects": [],
     "test-case-filter": "",
     "ignore-mutations": [],
+    "mutators": {
+      "StringLiteral": false
+    },
     "ignore-methods": [],
     "report-file-name": "mutation-report",
     "break-on-initial-test-failure": false
   }
 }
+
