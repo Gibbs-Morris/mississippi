@@ -1,11 +1,14 @@
 #!/usr/bin/env pwsh
+# Description: Cross-platform cleanup script that restores tools and uses
+# JetBrains ReSharper command line utilities to enforce formatting rules across
+# the solution. Designed for automated environments on Windows, Linux and macOS.
 [CmdletBinding()]
 param (
     # Path to the solution file
-    [string]$SolutionPath = (Join-Path $PSScriptRoot "src\mississippi.sln"),
+    [string]$SolutionPath = (Join-Path $PSScriptRoot (Join-Path 'src' 'mississippi.sln')),
     
     # Path to the DotSettings file
-    [string]$DotSettingsPath = (Join-Path $PSScriptRoot "src\mississippi.sln.DotSettings"),
+    [string]$DotSettingsPath = (Join-Path $PSScriptRoot (Join-Path 'src' 'mississippi.sln.DotSettings')),
     
     # Profile to use for cleanup
     [string]$Profile = "Built-in: Full Cleanup"
@@ -34,7 +37,8 @@ function Write-Header {
 function Invoke-CommandLine {
     param (
         [string]$Command,
-        [string]$Arguments
+        [string]$Arguments,
+        [int[]]$AllowedExitCodes = @(0)
     )
 
     Write-Host "> $Command $Arguments" -ForegroundColor Yellow
@@ -62,7 +66,7 @@ function Invoke-CommandLine {
     if ($stderr) { Write-Host $stderr -ForegroundColor Red }
 
     # Throw an exception if the command failed
-    if ($process.ExitCode -ne 0) {
+    if ($AllowedExitCodes -notcontains $process.ExitCode) {
         throw "Command failed with exit code $($process.ExitCode)"
     }
 
@@ -120,17 +124,18 @@ else {
 # Step 2: Run ReSharper Cleanup
 Write-Header "Running ReSharper Cleanup"
 if ($useDotSettings) {
-    Invoke-CommandLine -Command "dotnet" -Arguments "jb cleanupcode --profile=`"$Profile`" --settings=`"$DotSettingsPath`" `"$SolutionPath`""
+    Invoke-CommandLine -Command "dotnet" -Arguments "tool run jb cleanupcode --profile=`"$Profile`" --settings=`"$DotSettingsPath`" `"$SolutionPath`"" -AllowedExitCodes @(0,3)
 }
 else {
-    Invoke-CommandLine -Command "dotnet" -Arguments "jb cleanupcode --profile=`"$Profile`" `"$SolutionPath`""
+    Invoke-CommandLine -Command "dotnet" -Arguments "tool run jb cleanupcode --profile=`"$Profile`" `"$SolutionPath`"" -AllowedExitCodes @(0,3)
 }
 
 # Step 3: Check for any remaining issues
 Write-Header "Checking for any remaining ReSharper issues"
-Invoke-CommandLine -Command "dotnet" -Arguments "jb inspectcode `"$SolutionPath`" --output=`"$RepoRoot\resharper-report.xml`""
+$InspectionReport = Join-Path $RepoRoot 'resharper-report.xml'
+Invoke-CommandLine -Command "dotnet" -Arguments "tool run jb inspectcode `"$SolutionPath`" --output=`"$InspectionReport`"" -AllowedExitCodes @(0,3)
 
-Write-Host "ReSharper inspection report saved to $RepoRoot\resharper-report.xml" -ForegroundColor Green
+Write-Host "ReSharper inspection report saved to $InspectionReport" -ForegroundColor Green
 Write-Host "You can open this file to view any remaining issues that need to be addressed manually." -ForegroundColor Green
 
 Write-Header "Cleanup Completed Successfully"

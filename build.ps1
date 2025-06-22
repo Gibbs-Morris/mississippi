@@ -1,4 +1,8 @@
 #!/usr/bin/env pwsh
+# Description: Cross-platform build script used by automation. Restores tools,
+# builds the solution, runs tests with coverage and optionally executes Stryker
+# mutation testing. Designed to run under PowerShell Core on Windows, Linux and
+# macOS.
 [CmdletBinding()]
 param (
     # Skip the build step entirely - useful when you just want to run tests on already built code
@@ -20,10 +24,10 @@ $ErrorActionPreference = "Stop"
 
 # Script variables
 $RepoRoot = $PSScriptRoot  # Root directory of the repository (where this script is located)
-$SolutionPath = Join-Path $RepoRoot "src\mississippi.sln"  # Path to the solution file
-$TestResultsDir = Join-Path $RepoRoot "test-results"  # Directory for test result outputs
-$CoverageOutputFile = Join-Path $RepoRoot "coverage.xml"  # Path for test coverage report
-$StrykerOutputDir = Join-Path $RepoRoot "src\StrykerOutput"  # Directory for mutation testing results
+$SolutionPath = Join-Path $RepoRoot (Join-Path 'src' 'mississippi.sln')  # Path to the solution file
+$TestResultsDir = Join-Path $RepoRoot 'test-results'  # Directory for test result outputs
+$CoverageOutputFile = Join-Path $RepoRoot 'coverage.xml'  # Path for test coverage report
+$StrykerOutputDir = Join-Path $RepoRoot (Join-Path 'src' 'StrykerOutput')  # Directory for mutation testing results
 
 # Ensure the test results directory exists
 if (-not (Test-Path $TestResultsDir)) {
@@ -65,7 +69,8 @@ function Get-SafePercentage {
 function Invoke-CommandLine {
     param (
         [string]$Command,
-        [string]$Arguments
+        [string]$Arguments,
+        [int[]]$AllowedExitCodes = @(0)
     )
 
     Write-Host "> $Command $Arguments" -ForegroundColor Yellow
@@ -93,7 +98,7 @@ function Invoke-CommandLine {
     if ($stderr) { Write-Host $stderr -ForegroundColor Red }
 
     # Throw an exception if the command failed
-    if ($process.ExitCode -ne 0) {
+    if ($AllowedExitCodes -notcontains $process.ExitCode) {
         throw "Command failed with exit code $($process.ExitCode)"
     }
 
