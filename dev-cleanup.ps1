@@ -1,3 +1,69 @@
+<#
+.SYNOPSIS
+    Code cleanup script for the Mississippi framework solution using ReSharper.
+
+.DESCRIPTION
+    This script performs automated code cleanup on the Mississippi framework solution using
+    JetBrains ReSharper command-line tools. It applies code formatting, style corrections,
+    and best practices according to the project's ReSharper settings. This script is essential
+    for maintaining consistent code quality and ensuring the codebase passes GitHub Actions
+    cleanup checks.
+
+.PARAMETER SolutionPath
+    Path to the solution file. Defaults to "src\mississippi.sln" relative to the script location.
+
+.PARAMETER DotSettingsPath
+    Path to the ReSharper DotSettings file containing project-specific rules.
+    Defaults to "src\mississippi.sln.DotSettings" relative to the script location.
+
+.PARAMETER Profile
+    The ReSharper cleanup profile to use. Defaults to "Built-in: Full Cleanup".
+
+.EXAMPLE
+    .\cleanup.ps1
+    # Runs cleanup using default settings and the "Built-in: Full Cleanup" profile
+
+.EXAMPLE
+    .\cleanup.ps1 -Profile "Built-in: Reformat Code"
+    # Runs cleanup using only code reformatting without other corrections
+
+.EXAMPLE
+    .\cleanup.ps1 -SolutionPath "path\to\custom.sln"
+    # Runs cleanup on a custom solution file
+
+.NOTES
+    This script is part of the local development toolset for the Mississippi framework:
+    - build-only.ps1: Quick build verification
+    - build-and-test.ps1: Standard development workflow with tests
+    - build-test-mutate.ps1: Comprehensive quality assurance
+    - cleanup.ps1: Code cleanup and formatting (this script)
+
+    For Cursor and Copilot: Use this script when you need to:
+    - Clean up code formatting and style issues
+    - Apply consistent code standards across the solution
+    - Fix ReSharper warnings and suggestions automatically
+    - Prepare code for GitHub Actions cleanup checks
+    - Maintain code quality standards
+    - Resolve formatting inconsistencies after merging code
+
+    The script will:
+    1. Restore .NET tools and ensure ReSharper CLI tools are available
+    2. Check for and install JetBrains.ReSharper.GlobalTools if needed
+    3. Run ReSharper cleanup using the specified profile and settings
+    4. Generate an inspection report of any remaining issues
+    5. Save the report to resharper-report.xml for manual review
+
+    IMPORTANT: This script modifies your source code files. Make sure you have:
+    - Committed or backed up your current changes
+    - Reviewed the cleanup profile to understand what changes will be made
+    - Tested the cleanup on a small subset of files if unsure
+
+    The cleanup process may take several minutes depending on the size of the solution.
+
+.LINK
+    Related scripts: build-only.ps1, build-and-test.ps1, build-test-mutate.ps1
+#>
+
 #!/usr/bin/env pwsh
 [CmdletBinding()]
 param (
