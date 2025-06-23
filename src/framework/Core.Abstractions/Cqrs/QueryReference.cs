@@ -1,15 +1,13 @@
-using Orleans.Serialization;
-
 namespace Mississippi.Core.Abstractions.Cqrs;
 
 /// <summary>
-/// Represents an unversioned reference to a query.
+///     Represents an unversioned reference to a query.
 /// </summary>
 [GenerateSerializer]
 public readonly record struct QueryReference
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="QueryReference"/> struct.
+    ///     Initializes a new instance of the <see cref="QueryReference" /> struct.
     /// </summary>
     /// <param name="queryType">The query type.</param>
     /// <param name="id">The query identifier.</param>
@@ -25,17 +23,17 @@ public readonly record struct QueryReference
     }
 
     /// <summary>
-    /// Gets the query type.
+    ///     Gets the query type.
     /// </summary>
     public string QueryType { get; }
 
     /// <summary>
-    /// Gets the query identifier.
+    ///     Gets the query identifier.
     /// </summary>
     public string Id { get; }
 
     /// <summary>
-    /// Gets the path in <c>type/id</c> form.
+    ///     Gets the path in <c>type/id</c> form.
     /// </summary>
     public string Path => $"{QueryType}/{Id}";
 }

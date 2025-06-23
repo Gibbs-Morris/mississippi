@@ -1,14 +1,15 @@
 using Mississippi.Core.Abstractions.Cqrs;
 
+
 namespace Mississippi.Core.Tests.Cqrs;
 
 /// <summary>
-/// Tests for <see cref="QuerySnapshot{TState}"/>.
+///     Tests for <see cref="QuerySnapshot{TState}" />.
 /// </summary>
 public class QuerySnapshotTests
 {
     /// <summary>
-    /// Verifies that the constructor sets all properties as expected.
+    ///     Verifies that the constructor sets all properties as expected.
     /// </summary>
     [Fact]
     public void ConstructorSetsProperties()
@@ -20,7 +21,7 @@ public class QuerySnapshotTests
     }
 
     /// <summary>
-    /// Ensures an <see cref="ArgumentException"/> is thrown when the reference is default.
+    ///     Ensures an <see cref="ArgumentException" /> is thrown when the reference is default.
     /// </summary>
     [Fact]
     public void ConstructorThrowsWhenReferenceDefault()
@@ -29,7 +30,7 @@ public class QuerySnapshotTests
     }
 
     /// <summary>
-    /// Ensures an <see cref="ArgumentNullException"/> is thrown when the state is null.
+    ///     Ensures an <see cref="ArgumentNullException" /> is thrown when the state is null.
     /// </summary>
     [Fact]
     public void ConstructorThrowsWhenStateNull()
@@ -39,7 +40,7 @@ public class QuerySnapshotTests
     }
 
     /// <summary>
-    /// Allows default value for value types.
+    ///     Allows default value for value types.
     /// </summary>
     [Fact]
     public void ConstructorAllowsDefaultStruct()

@@ -1,14 +1,15 @@
 using Mississippi.Core.Abstractions.Cqrs;
 
+
 namespace Mississippi.Core.Tests.Cqrs;
 
 /// <summary>
-/// Tests for query reference related types.
+///     Tests for query reference related types.
 /// </summary>
 public class QueryReferenceTests
 {
     /// <summary>
-    /// Ensures that the <see cref="QueryReference"/> constructor stores values correctly.
+    ///     Ensures that the <see cref="QueryReference" /> constructor stores values correctly.
     /// </summary>
     [Fact]
     public void QueryReferenceStoresValues()
@@ -20,7 +21,7 @@ public class QueryReferenceTests
     }
 
     /// <summary>
-    /// Ensures that the <see cref="VersionedQueryReference"/> constructor stores values correctly.
+    ///     Ensures that the <see cref="VersionedQueryReference" /> constructor stores values correctly.
     /// </summary>
     [Fact]
     public void VersionedQueryReferenceStoresValues()
@@ -33,7 +34,7 @@ public class QueryReferenceTests
     }
 
     /// <summary>
-    /// Verifies that an invalid token causes an <see cref="ArgumentException"/>.
+    ///     Verifies that an invalid token causes an <see cref="ArgumentException" />.
     /// </summary>
     [Fact]
     public void QueryReferenceInvalidTokenThrows()
@@ -42,7 +43,7 @@ public class QueryReferenceTests
     }
 
     /// <summary>
-    /// Verifies that a version of zero causes an <see cref="ArgumentOutOfRangeException"/>.
+    ///     Verifies that a version of zero causes an <see cref="ArgumentOutOfRangeException" />.
     /// </summary>
     [Fact]
     public void VersionedQueryReferenceInvalidVersionThrows()
@@ -51,7 +52,7 @@ public class QueryReferenceTests
     }
 
     /// <summary>
-    /// Verifies that a null token causes an <see cref="ArgumentNullException"/>.
+    ///     Verifies that a null token causes an <see cref="ArgumentNullException" />.
     /// </summary>
     [Fact]
     public void QueryReferenceNullTokenThrows()
@@ -60,19 +61,21 @@ public class QueryReferenceTests
     }
 
     /// <summary>
-    /// Verifies that whitespace tokens cause an <see cref="ArgumentException"/>.
+    ///     Verifies that whitespace tokens cause an <see cref="ArgumentException" />.
     /// </summary>
     /// <param name="token">The whitespace token.</param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
-    public void QueryReferenceWhitespaceTokenThrows(string token)
+    public void QueryReferenceWhitespaceTokenThrows(
+        string token
+    )
     {
         Assert.Throws<ArgumentException>(() => new QueryReference(token, "id"));
     }
 
     /// <summary>
-    /// Verifies that negative versions are allowed.
+    ///     Verifies that negative versions are allowed.
     /// </summary>
     [Fact]
     public void VersionedQueryReferenceAllowsNegativeVersion()

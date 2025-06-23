@@ -1,9 +1,10 @@
 using System.Text.RegularExpressions;
 
+
 namespace Mississippi.Core.Abstractions.Cqrs;
 
 /// <summary>
-/// Provides validation helpers for query identifiers and versions.
+///     Provides validation helpers for query identifiers and versions.
 /// </summary>
 internal static partial class QueryValidation
 {
@@ -13,7 +14,7 @@ internal static partial class QueryValidation
     private static partial Regex AllowedTokenRegex();
 
     /// <summary>
-    /// Validates an entity-type or identifier token.
+    ///     Validates an entity-type or identifier token.
     /// </summary>
     /// <param name="token">The token value to validate.</param>
     /// <param name="paramName">The name of the parameter being validated.</param>
@@ -30,7 +31,7 @@ internal static partial class QueryValidation
     }
 
     /// <summary>
-    /// Validates that the supplied version number is non-zero.
+    ///     Validates that the supplied version number is non-zero.
     /// </summary>
     /// <param name="version">The version number to validate.</param>
     /// <param name="paramName">The name of the parameter being validated.</param>
