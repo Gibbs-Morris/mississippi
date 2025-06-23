@@ -4,6 +4,7 @@ namespace Mississippi.Core.Abstractions.Cqrs;
 ///     Represents an unversioned reference to a query.
 /// </summary>
 [GenerateSerializer]
+[Alias("Mississippi.Core.Abstractions.Cqrs.QueryReference")]
 public readonly record struct QueryReference
 {
     /// <summary>
@@ -25,11 +26,13 @@ public readonly record struct QueryReference
     /// <summary>
     ///     Gets the query type.
     /// </summary>
+    [Id(0)]
     public string QueryType { get; }
 
     /// <summary>
     ///     Gets the query identifier.
     /// </summary>
+    [Id(1)]
     public string Id { get; }
 
     /// <summary>

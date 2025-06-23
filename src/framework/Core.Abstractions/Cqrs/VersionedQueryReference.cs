@@ -4,6 +4,7 @@ namespace Mississippi.Core.Abstractions.Cqrs;
 ///     Represents a versioned reference to a query.
 /// </summary>
 [GenerateSerializer]
+[Alias("Mississippi.Core.Abstractions.Cqrs.VersionedQueryReference")]
 public readonly record struct VersionedQueryReference
 {
     /// <summary>
@@ -29,16 +30,19 @@ public readonly record struct VersionedQueryReference
     /// <summary>
     ///     Gets the query type.
     /// </summary>
+    [Id(0)]
     public string QueryType { get; }
 
     /// <summary>
     ///     Gets the query identifier.
     /// </summary>
+    [Id(1)]
     public string Id { get; }
 
     /// <summary>
     ///     Gets the query version.
     /// </summary>
+    [Id(2)]
     public long Version { get; }
 
     /// <summary>

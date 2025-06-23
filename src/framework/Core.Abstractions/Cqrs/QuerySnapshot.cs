@@ -5,6 +5,7 @@ namespace Mississippi.Core.Abstractions.Cqrs;
 /// </summary>
 /// <typeparam name="TState">The type of the query state.</typeparam>
 [GenerateSerializer]
+[Alias("Mississippi.Core.Abstractions.Cqrs.QuerySnapshot`1")]
 public record QuerySnapshot<TState>
 {
     /// <summary>
@@ -34,10 +35,12 @@ public record QuerySnapshot<TState>
     /// <summary>
     ///     Gets the versioned query reference associated with this snapshot.
     /// </summary>
+    [Id(0)]
     public VersionedQueryReference Reference { get; }
 
     /// <summary>
     ///     Gets the query state held by this snapshot.
     /// </summary>
+    [Id(1)]
     public TState State { get; init; }
 }

@@ -33,7 +33,7 @@ public class AsyncEnumerableMapperTests
             });
 
         // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync().ConfigureAwait(true);
 
         // Assert
         Assert.Equal(
@@ -59,7 +59,7 @@ public class AsyncEnumerableMapperTests
         IAsyncEnumerable<int> input = GetAsyncEnumerableAsync(new List<int>());
 
         // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync().ConfigureAwait(true);
 
         // Assert
         Assert.Empty(result);
@@ -78,7 +78,8 @@ public class AsyncEnumerableMapperTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            await asyncEnumerableMapper.Map(null!).ToListAsync());
+                await asyncEnumerableMapper.Map(null!).ToListAsync().ConfigureAwait(false))
+            .ConfigureAwait(true);
     }
 
     /// <summary>
@@ -103,7 +104,7 @@ public class AsyncEnumerableMapperTests
             });
 
         // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync().ConfigureAwait(true);
 
         // Assert
         Assert.Equal(
