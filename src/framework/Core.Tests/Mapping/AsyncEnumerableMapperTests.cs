@@ -77,8 +77,8 @@ public class AsyncEnumerableMapperTests
         AsyncEnumerableMapper<int, string> asyncEnumerableMapper = new(mockMapper.Object);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await asyncEnumerableMapper.Map(null!).ToListAsync());
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await asyncEnumerableMapper.Map(null!).ToListAsync());
     }
 
     /// <summary>
