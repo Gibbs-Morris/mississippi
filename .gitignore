@@ -400,4 +400,7 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 .idea/**/*.name
+.idea/
+**/.idea/**/*.name
+**/.idea/
 resharper-report.xml
