@@ -1,5 +1,5 @@
-﻿  <Project Sdk="Microsoft.NET.Sdk">
-              <ItemGroup>
-          <PackageReference Include="TngTech.ArchUnitNET.xUnit" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="TngTech.ArchUnitNET.xUnit"/>
     </ItemGroup>
-  </Project>
+</Project>
