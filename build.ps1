@@ -143,37 +143,86 @@ if (-not $SkipTests) {
     
     # Display coverage summary
     Write-Header "Code Coverage Summary"
-    
-    # Parse the coverage XML and display summary
     if (Test-Path $CoverageOutputFile) {
         try {
-            [xml]$coverageReport = Get-Content $CoverageOutputFile
-            if ($coverageReport -and $coverageReport.CoverageSession -and $coverageReport.CoverageSession.Summary) {
-                $coverageSummary = $coverageReport.CoverageSession.Summary
-                
-                $linesCovered = [int]$coverageSummary.LinesCovered
-                $linesTotal = [int]$coverageSummary.LinesTotal
-                $linePercentage = Get-SafePercentage -Numerator $linesCovered -Denominator $linesTotal
-                
-                $branchesCovered = [int]$coverageSummary.BranchesCovered
-                $branchesTotal = [int]$coverageSummary.BranchesTotal
-                $branchPercentage = Get-SafePercentage -Numerator $branchesCovered -Denominator $branchesTotal
-                
-                $methodsCovered = [int]$coverageSummary.MethodsCovered
-                $methodsTotal = [int]$coverageSummary.MethodsTotal
-                $methodPercentage = Get-SafePercentage -Numerator $methodsCovered -Denominator $methodsTotal
-                
-                Write-Host "Line Coverage: $linesCovered/$linesTotal = $linePercentage%" -ForegroundColor Green
-                Write-Host "Branch Coverage: $branchesCovered/$branchesTotal = $branchPercentage%" -ForegroundColor Green
-                Write-Host "Method Coverage: $methodsCovered/$methodsTotal = $methodPercentage%" -ForegroundColor Green
-            } else {
-                Write-Warning "Coverage report doesn't contain summary information."
+            [xml]$cov = Get-Content $CoverageOutputFile
+            $mods = $cov.results.modules.module
+            # Only include our own assemblies (Mississippi.*) and exclude test assemblies
+            $ourMods = $mods | Where-Object {
+                $_.name -like 'Mississippi.*.dll' `
+                -and $_.name -notlike '*.Tests.dll' `
+                -and $_.name -notlike '*.UnitTests.dll' `
+                -and $_.name -notlike '*.IntegrationTests.dll'
+            }
+            
+            # Overall totals
+            $sumLinesCovered = ($ourMods | Measure-Object -Property lines_covered -Sum).Sum
+            $sumLinesNot = ($ourMods | Measure-Object -Property lines_not_covered -Sum).Sum
+            $totalLines = $sumLinesCovered + $sumLinesNot
+            $pctLines = Get-SafePercentage -Numerator $sumLinesCovered -Denominator $totalLines
+
+            $sumBlocksCov = ($ourMods | Measure-Object -Property blocks_covered -Sum).Sum
+            $sumBlocksNot = ($ourMods | Measure-Object -Property blocks_not_covered -Sum).Sum
+            $totalBlocks = $sumBlocksCov + $sumBlocksNot
+            $pctBlocks = Get-SafePercentage -Numerator $sumBlocksCov -Denominator $totalBlocks
+
+            Write-Host "Line Coverage: $sumLinesCovered/$totalLines = $pctLines%" -ForegroundColor Green
+            Write-Host "Block Coverage: $sumBlocksCov/$totalBlocks = $pctBlocks%" -ForegroundColor Green
+
+            # Per-project breakdown
+            Write-Header "Per-Project Coverage Summary"
+            # Determine console width (default 80, max 120)
+            $width = 80
+            try {
+                if ($Host -and $Host.UI -and $Host.UI.RawUI) {
+                    $w = $Host.UI.RawUI.BufferSize.Width
+                    if ($w -gt 0) { $width = [Math]::Min($w, 120) }
+                } elseif ([Console]::WindowWidth -gt 0) {
+                    $width = [Console]::WindowWidth
+                }
+            } catch {}
+            # Prepare names, stripping prefix
+            $names = $ourMods | ForEach-Object { ([IO.Path]::GetFileNameWithoutExtension($_.name) -replace '^Mississippi\.', '') }
+            $maxName = ($names | Measure-Object Length -Maximum).Maximum
+            # Fixed column widths for metrics
+            $lineCol = 18  # e.g. '123/456 (78%)'
+            $blockCol = 18
+            # Compute project column width, capping to available space
+            $colWidth = $maxName + 1
+            $maxProjCol = $width - ($lineCol + $blockCol + 10)  # account for separators and spaces
+            if ($colWidth -gt $maxProjCol) { $colWidth = $maxProjCol }
+            # Define table format
+            $fmt = "| {0,-$colWidth} | {1,$lineCol} | {2,$blockCol} |"
+            $sep = '+' + '-'*($colWidth + 2) + '+' + '-'*($lineCol + 2) + '+' + '-'*($blockCol + 2) + '+'
+            # Print header
+            Write-Host $sep -ForegroundColor Cyan
+            Write-Host ($fmt -f 'Project','Lines','Blocks') -ForegroundColor Cyan
+            Write-Host $sep -ForegroundColor Cyan
+            # Print rows
+            foreach ($mod in $ourMods) {
+                $proj = ([IO.Path]::GetFileNameWithoutExtension($mod.name) -replace '^Mississippi\.', '')
+                if ($proj.Length -gt $colWidth) { $proj = $proj.Substring(0, $colWidth - 3) + '...' }
+                $lc = [int]$mod.lines_covered; $ln = [int]$mod.lines_not_covered; $lp = Get-SafePercentage -Numerator $lc -Denominator ($lc + $ln)
+                $bc = [int]$mod.blocks_covered; $bn = [int]$mod.blocks_not_covered; $bp = Get-SafePercentage -Numerator $bc -Denominator ($bc + $bn)
+                $lineStr = "{0}/{1} ({2}%)" -f $lc, ($lc + $ln), $lp
+                $blockStr = "{0}/{1} ({2}%)" -f $bc, ($bc + $bn), $bp
+                Write-Host ($fmt -f $proj, $lineStr, $blockStr) -ForegroundColor Green
+            }
+            Write-Host $sep -ForegroundColor Cyan
+             # Machine-readable CSV for AI
+            Write-Host ''
+            Write-Host '##COVERAGE_CSV##' -ForegroundColor Magenta
+            Write-Host 'Project,LinesCovered,LinesTotal,LinePct,BlocksCovered,BlocksTotal,BlockPct' -ForegroundColor Magenta
+            foreach ($mod in $ourMods) {
+                $proj = [IO.Path]::GetFileNameWithoutExtension($mod.name)
+                $lc = [int]$mod.lines_covered; $ln = [int]$mod.lines_not_covered; $lineTotal = $lc + $ln; $lp = Get-SafePercentage -Numerator $lc -Denominator $lineTotal
+                $bc = [int]$mod.blocks_covered; $bn = [int]$mod.blocks_not_covered; $blockTotal = $bc + $bn; $bp = Get-SafePercentage -Numerator $bc -Denominator $blockTotal
+                Write-Host "$proj,$lc,$lineTotal,$lp,$bc,$blockTotal,$bp" -ForegroundColor Magenta
             }
         } catch {
             Write-Warning "Error parsing coverage report: $_"
         }
-    }
-    else {
+    } else {
         Write-Warning "No coverage report found at $CoverageOutputFile"
     }
 }
@@ -194,7 +243,7 @@ if (-not $SkipStryker) {
         # Run Stryker mutation testing - it will create mutants (code changes) and check if tests catch them
         Invoke-CommandLine -Command "dotnet" -Arguments "stryker"
         
-        # Find the latest Stryker report directory by sorting by creation time
+        # Find the latest Stryker report directory by sorting with creation time
         # Stryker creates a timestamped directory for each run
         $latestStrykerDir = Get-ChildItem -Path $StrykerOutputDir -Directory | Sort-Object CreationTime -Descending | Select-Object -First 1
         
