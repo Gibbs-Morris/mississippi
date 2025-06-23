@@ -609,7 +609,8 @@
       "Mississippi.Core.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.6, )"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.6, )",
+          "Microsoft.Orleans.Sdk": "[9.1.2, )"
         }
       },
       "Microsoft.Extensions.DependencyInjection": {
