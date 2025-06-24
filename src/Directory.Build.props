@@ -14,7 +14,7 @@
         <IncludeSource>true</IncludeSource>
         <RepositoryUrl>https://github.com/Gibbs-Morris/mississippi</RepositoryUrl>
         <NoWarn>
-            SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600,CA1014,CA2007,CA1040,CA1812,CA1014,CA2007,CA1040,CA1812,CA1303
+            SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600,CA1014,CA2007,CA1040,CA1812,CA1014,CA2007,CA1040,CA1812,CA1303,VSTHRD111
         </NoWarn>
         <AssemblyName>Mississippi.$(MSBuildProjectName)</AssemblyName>
         <RootNamespace>Mississippi.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
