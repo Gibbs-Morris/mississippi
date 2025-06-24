@@ -4,7 +4,7 @@ using Mississippi.Core.Abstractions.Cqrs;
 namespace Mississippi.Core.Abstractions.Tests.Cqrs;
 
 /// <summary>
-///     Tests for query reference related types.
+///     Tests for <see cref="QueryReference" />.
 /// </summary>
 public class QueryReferenceTests
 {
@@ -21,34 +21,12 @@ public class QueryReferenceTests
     }
 
     /// <summary>
-    ///     Ensures that the <see cref="VersionedQueryReference" /> constructor stores values correctly.
-    /// </summary>
-    [Fact]
-    public void VersionedQueryReferenceStoresValues()
-    {
-        VersionedQueryReference reference = new("order", "123", 5);
-        Assert.Equal("order", reference.QueryType);
-        Assert.Equal("123", reference.Id);
-        Assert.Equal(5, reference.Version);
-        Assert.Equal("order/123/5", reference.VersionedPath);
-    }
-
-    /// <summary>
     ///     Verifies that an invalid token causes an <see cref="ArgumentException" />.
     /// </summary>
     [Fact]
     public void QueryReferenceInvalidTokenThrows()
     {
         Assert.Throws<ArgumentException>(() => new QueryReference("invalid*", "id"));
-    }
-
-    /// <summary>
-    ///     Verifies that a version of zero causes an <see cref="ArgumentOutOfRangeException" />.
-    /// </summary>
-    [Fact]
-    public void VersionedQueryReferenceInvalidVersionThrows()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new VersionedQueryReference("type", "id", 0));
     }
 
     /// <summary>
@@ -72,15 +50,5 @@ public class QueryReferenceTests
     )
     {
         Assert.Throws<ArgumentException>(() => new QueryReference(token, "id"));
-    }
-
-    /// <summary>
-    ///     Verifies that negative versions are allowed.
-    /// </summary>
-    [Fact]
-    public void VersionedQueryReferenceAllowsNegativeVersion()
-    {
-        VersionedQueryReference reference = new("type", "id", -1);
-        Assert.Equal(-1, reference.Version);
     }
 }
