@@ -78,8 +78,7 @@ public class AsyncEnumerableMapperTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await asyncEnumerableMapper.Map(null!).ToListAsync())
-            ;
+            await asyncEnumerableMapper.Map(null!).ToListAsync());
     }
 
     /// <summary>
