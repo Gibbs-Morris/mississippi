@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Core.Abstractions.Mapping;
 
 
-namespace Mississippi.Core.Tests.Mapping;
+namespace Mississippi.Core.Abstractions.Tests.Mapping;
 
 /// <summary>
 ///     Contains unit tests for verifying the registration of mappers in the service collection.
