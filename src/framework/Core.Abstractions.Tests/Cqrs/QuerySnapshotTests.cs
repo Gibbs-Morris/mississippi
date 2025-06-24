@@ -1,7 +1,7 @@
 using Mississippi.Core.Abstractions.Cqrs;
 
 
-namespace Mississippi.Core.Tests.Cqrs;
+namespace Mississippi.Core.Abstractions.Tests.Cqrs;
 
 /// <summary>
 ///     Tests for <see cref="QuerySnapshot{TState}" />.

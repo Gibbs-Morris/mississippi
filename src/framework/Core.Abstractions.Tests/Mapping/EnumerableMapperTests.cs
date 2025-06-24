@@ -5,7 +5,7 @@ using Mississippi.Core.Abstractions.Mapping;
 using Moq;
 
 
-namespace Mississippi.Core.Tests.Mapping;
+namespace Mississippi.Core.Abstractions.Tests.Mapping;
 
 /// <summary>
 ///     Contains unit tests for the <see cref="EnumerableMapper{TFrom,TTo}" /> class.
