@@ -23,11 +23,7 @@ public record QuerySnapshot<TState>
             throw new ArgumentException("Reference must be supplied.", nameof(reference));
         }
 
-        if (state is null)
-        {
-            ArgumentNullException.ThrowIfNull(state);
-        }
-
+        ArgumentNullException.ThrowIfNull(state, nameof(state));
         Reference = reference;
         State = state!;
     }
