@@ -131,7 +131,7 @@ public class AsyncEnumerableMapperTests
     )
     {
         ArgumentNullException.ThrowIfNull(items);
-        foreach (T? item in items)
+        foreach (T item in items)
         {
             yield return item;
             await Task.Yield();
