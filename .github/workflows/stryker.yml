@@ -65,15 +65,14 @@ jobs:
       # ────────────────────────────── .NET & SLN generation ──────────────────────────────
       - name: Generate legacy .sln from .slnx
         run: |
-          dotnet tool install -g Microsoft.VisualStudio.SlnGen.Tool
+          # Restore tools defined in the repo manifest (includes SlnGen)
+          dotnet tool restore
           dotnet tool run slngen "${SLNX_PATH}" --solutionfile "${SLN_PATH}" --launch false
           ls -al "${SLN_PATH}"   # prove the file exists
 
       # ────────────────────────────── restore, build, mutation test ──────────────────────────────
-      - name: Restore dotnet tools
-        run: |
-          dotnet tool restore
-          dotnet tool install dotnet-stryker
+      - name: Restore dotnet tools (incl. Stryker)
+        run: dotnet tool restore
 
       - name: Restore packages
         run: dotnet restore "${SLN_PATH}"
