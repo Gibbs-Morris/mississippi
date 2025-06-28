@@ -5,7 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\EventSourcing.Cosmos\EventSourcing.Cosmos.csproj"/>
-        <ProjectReference Include="..\EventSourcing.Abstractions\EventSourcing.Abstractions.csproj"/>
+        <ProjectReference Include="..\..\src\EventSourcing.Cosmos\EventSourcing.Cosmos.csproj"/>
+        <ProjectReference Include="..\..\src\EventSourcing.Abstractions\EventSourcing.Abstractions.csproj"/>
     </ItemGroup>
 </Project>

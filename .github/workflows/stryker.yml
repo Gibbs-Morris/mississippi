@@ -1,4 +1,5 @@
 name: Stryker
+
 on:
   push:
     branches:
@@ -8,22 +9,30 @@ on:
     branches:
       - main
       - feature/**
+
 env:
-  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+  SLNX_PATH: ${{ github.workspace }}/mississippi.slnx
+  SLN_PATH: ${{ github.workspace }}/mississippi.sln
   CONFIGURATION: Release
+
 jobs:
   Stryker:
     name: "Stryker"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ubuntu-latest]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
 
       - name: Cache GitVersion tools
         uses: actions/cache@v4
@@ -51,26 +60,28 @@ jobs:
         with:
           useConfigFile: true
 
-      - name: Setup Dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 9.0.x
-
-      - name: Restore dotnet packages
+      - name: Generate legacy .sln from .slnx
         run: |
           dotnet tool restore
-          dotnet tool install dotnet-stryker
+          dotnet tool run slngen "${SLNX_PATH}" --solutionfile "${SLN_PATH}" --launch false
+          ls -al "${SLN_PATH}"
 
-      - name: Stryker restore-build-report
+      - name: Restore dotnet tools (incl. Stryker)
+        run: dotnet tool restore
+
+      - name: Restore packages
+        run: dotnet restore "${SLN_PATH}"
+
+      - name: Build (Release)
         run: |
-          dotnet restore ${{ env.SOLUTION_PATH }}
-          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-          cd ${{ github.workspace }}/src
-          dotnet stryker
+          dotnet build "${SLN_PATH}" --configuration "${CONFIGURATION}" --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+
+      - name: Run Stryker
+        run: dotnet stryker --solution "${SLN_PATH}"
 
       - name: Upload HTML Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
-          path: ${{ github.workspace }}/src/StrykerOutput/**/**/*.html
+          path: ${{ github.workspace }}/StrykerOutput/**/**/*.html

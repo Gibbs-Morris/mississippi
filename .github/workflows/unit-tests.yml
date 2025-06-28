@@ -11,7 +11,6 @@ on:
 
 env:
   CONFIGURATION: Release
-  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
 
 jobs:
   Build:
@@ -20,12 +19,18 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
+        solution: [ mississippi.slnx, samples.slnx ]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
 
       - name: Cache GitVersion tools
         uses: actions/cache@v4
@@ -53,19 +58,14 @@ jobs:
         with:
           useConfigFile: true
 
-      - name: Setup Dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 9.0.x
-
       - name: Restore dotnet packages
         run: |
-          dotnet restore ${{ env.SOLUTION_PATH }}
+          dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
 
       - name: Build and test dotnet projects
         run: |
-          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-          dotnet test ${{ env.SOLUTION_PATH }} --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/test-results -- RunConfiguration.ReporterSwitch=allure
+          dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/test-results -- RunConfiguration.ReporterSwitch=allure
 
       - name: Install Allure
         run: |
@@ -81,5 +81,5 @@ jobs:
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
         with:
-          name: allure-test-results-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
+          name: allure-test-results-${{ matrix.solution }}-${{ matrix.os }}-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
           path: ${{ github.workspace }}/allure-report

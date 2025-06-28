@@ -36,6 +36,13 @@
         "jb"
       ],
       "rollForward": false
+    },
+    "Microsoft.VisualStudio.SlnGen.Tool": {
+      "version": "12.0.19",
+      "commands": [
+        "slngen"
+      ],
+      "rollForward": false
     }
   }
 }

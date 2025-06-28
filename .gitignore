@@ -404,3 +404,6 @@ FodyWeavers.xsd
 **/.idea/**/*.name
 **/.idea/
 resharper-report.xml
+
+# Ignore generated classic solution files (.sln) created from .slnx during automation
+*.sln

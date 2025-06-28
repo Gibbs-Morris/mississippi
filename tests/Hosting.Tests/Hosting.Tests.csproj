@@ -4,6 +4,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Hosting\Hosting.csproj"/>
+        <ProjectReference Include="..\..\src\Hosting\Hosting.csproj"/>
     </ItemGroup>
 </Project>
