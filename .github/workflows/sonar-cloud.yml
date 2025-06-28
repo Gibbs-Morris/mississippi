@@ -83,22 +83,16 @@ jobs:
 
       - name: Restore dotnet tools & packages
         run: |
-          # Restore tools defined in the repo manifest (includes dotnet-coverage & SonarScanner)
           dotnet tool restore
-          # Regular NuGet restore for the solution will be performed in the next step
           true
 
       - name: Sonar restore-build-report
         run: |
-          # Begin analysis with the tool from the manifest
           dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json"
 
-          # Restore & build
           dotnet restore ${{ env.SOLUTION_PATH }}
           dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
-          # Collect coverage using the restored dotnet-coverage tool
           dotnet dotnet-coverage collect "dotnet test ${{ env.SOLUTION_PATH }} -p:Version=${{ steps.gitversion.outputs.SemVer }} --no-restore --verbosity normal"  -f xml -o "coverage.xml"
 
-          # End analysis
           dotnet dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}

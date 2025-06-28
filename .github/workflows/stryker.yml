@@ -11,8 +11,8 @@ on:
       - feature/**
 
 env:
-  SLNX_PATH: ${{ github.workspace }}/mississippi.slnx # existing file in the repo
-  SLN_PATH: ${{ github.workspace }}/mississippi.sln # temporary file created in CI
+  SLNX_PATH: ${{ github.workspace }}/mississippi.slnx
+  SLN_PATH: ${{ github.workspace }}/mississippi.sln
   CONFIGURATION: Release
 
 jobs:
@@ -29,13 +29,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ────────────────────────────── .NET SDK ──────────────────────────────
       - name: Setup Dotnet
         uses: actions/setup-dotnet@v4
         with:
-          global-json-file: global.json # auto-detect SDK version
+          global-json-file: global.json
 
-      # ────────────────────────────── caches & GitVersion ──────────────────────────────
       - name: Cache GitVersion tools
         uses: actions/cache@v4
         with:
@@ -62,15 +60,12 @@ jobs:
         with:
           useConfigFile: true
 
-      # ────────────────────────────── .NET & SLN generation ──────────────────────────────
       - name: Generate legacy .sln from .slnx
         run: |
-          # Restore tools defined in the repo manifest (includes SlnGen)
           dotnet tool restore
           dotnet tool run slngen "${SLNX_PATH}" --solutionfile "${SLN_PATH}" --launch false
-          ls -al "${SLN_PATH}"   # prove the file exists
+          ls -al "${SLN_PATH}"
 
-      # ────────────────────────────── restore, build, mutation test ──────────────────────────────
       - name: Restore dotnet tools (incl. Stryker)
         run: dotnet tool restore
 
@@ -84,7 +79,6 @@ jobs:
       - name: Run Stryker
         run: dotnet stryker --solution "${SLN_PATH}"
 
-      # ────────────────────────────── publish HTML report ──────────────────────────────
       - name: Upload HTML Results
         if: always()
         uses: actions/upload-artifact@v4
