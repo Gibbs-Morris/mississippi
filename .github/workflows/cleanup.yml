@@ -60,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           SLNX_PATH="${{ github.workspace }}/${{ matrix.solution }}"
-          SLN_PATH="${SLNX_PATH%nx}" # strip the trailing 'nx' -> .sln
+          SLN_PATH="${SLNX_PATH%.slnx}.sln" # replace .slnx with .sln correctly
           echo "Generating $SLN_PATH from $SLNX_PATH ..."
           dotnet tool run slngen "$SLNX_PATH" --solutionfile "$SLN_PATH" --launch false
           ls -al "$SLN_PATH"
@@ -69,7 +69,7 @@ jobs:
         run: |
           set -euo pipefail
           SLNX_PATH="${{ github.workspace }}/${{ matrix.solution }}"
-          SLN_PATH="${SLNX_PATH%nx}" # convert mysolution.slnx -> mysolution.sln
+          SLN_PATH="${SLNX_PATH%.slnx}.sln" # convert mysolution.slnx -> mysolution.sln properly
           echo "Running ReSharper Cleanup Code on $SLN_PATH ..."
           dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$SLN_PATH"
           echo "Cleanup completed."
