@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\CrescentWebApp\CrescentWebApp\CrescentWebApp.csproj" />
+    <ProjectReference Include="..\CrescentWebApp\CrescentWebApp.Client\CrescentWebApp.Client.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="bunit" />
   </ItemGroup>
 </Project>
