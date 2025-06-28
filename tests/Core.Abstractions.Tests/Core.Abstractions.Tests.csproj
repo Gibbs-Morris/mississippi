@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <ProjectReference Include="..\Core.Abstractions\Core.Abstractions.csproj"/>
+        <ProjectReference Include="..\..\src\Core.Abstractions\Core.Abstractions.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="System.Linq.Async"/>
