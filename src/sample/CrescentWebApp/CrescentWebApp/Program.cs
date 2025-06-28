@@ -1,7 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Mississippi.CrescentWebApp.Components;
 
 using _Imports = Mississippi.CrescentWebApp.Client._Imports;
 
+
+[assembly: ExcludeFromCodeCoverage]
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
