@@ -78,10 +78,8 @@ jobs:
         run: dotnet restore "${SLN_PATH}"
 
       - name: Build (Release)
-        run: dotnet build "${SLN_PATH}" \
-          --configuration "${CONFIGURATION}" \
-          --no-restore --no-incremental \
-          -p:Version=${{ steps.gitversion.outputs.SemVer }}
+        run: |
+          dotnet build "${SLN_PATH}" --configuration "${CONFIGURATION}" --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
       - name: Run Stryker
         run: dotnet stryker --solution-path "${SLN_PATH}"
