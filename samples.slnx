@@ -1,23 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
 <Solution>
-  <Configurations>
-    <Configuration Name="Debug|Any CPU" />
-    <Configuration Name="Release|Any CPU" />
-  </Configurations>
-
-  <Folder Name="/Sample Applications/">
-    <Project Path="samples\CrescentConsoleApp\CrescentConsoleApp.csproj" />
-    <Project Path="samples\CrescentApiApp\CrescentApiApp.csproj" />
-  </Folder>
-
-  <Folder Name="/Sample Tests/">
-    <Project Path="samples\CrescentApiApp.Tests\CrescentApiApp.Tests.csproj" />
-    <Project Path="samples\CrescentConsoleApp.Tests\CrescentConsoleApp.Tests.csproj" />
-  </Folder>
-
+  <Configurations />
   <Folder Name="/Build/">
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
     <File Path="global.json" />
+  </Folder>
+  <Folder Name="/Sample Applications/">
+    <Project Path="samples\CrescentApiApp\CrescentApiApp.csproj" />
+    <Project Path="samples\CrescentConsoleApp\CrescentConsoleApp.csproj" />
+    <Project Path="samples\CrescentWebApp\CrescentWebApp.Client\CrescentWebApp.Client.csproj" Type="Classic C#" />
+    <Project Path="samples\CrescentWebApp\CrescentWebApp\CrescentWebApp.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/Sample Tests/">
+    <Project Path="samples\CrescentApiApp.Tests\CrescentApiApp.Tests.csproj" />
+    <Project Path="samples\CrescentConsoleApp.Tests\CrescentConsoleApp.Tests.csproj" />
+    <Project Path="samples\CrescentWebApp.Tests\CrescentWebApp.Tests.csproj" Type="Classic C#" />
   </Folder>
 </Solution>
