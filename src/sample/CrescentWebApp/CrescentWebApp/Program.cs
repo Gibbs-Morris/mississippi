@@ -34,7 +34,7 @@ await app.RunAsync().ConfigureAwait(true);
 /// <summary>
 /// Marker type used by ASP.NET Core to locate the assembly containing Blazor components.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "This is a marker type, no implementation needed.")]
 internal static partial class Program
 {
 }
