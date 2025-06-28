@@ -6,7 +6,6 @@ using _Imports = Mississippi.CrescentWebApp.Client._Imports;
 
 
 #pragma warning disable SA1516 // ElementsMustBeSeparatedByBlankLine
-[assembly: ExcludeFromCodeCoverage]
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -31,3 +30,11 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveWebAssemblyRenderMode().AddAdditionalAssemblies(typeof(_Imports).Assembly);
 await app.RunAsync().ConfigureAwait(true);
+
+/// <summary>
+/// Marker type used by ASP.NET Core to locate the assembly containing Blazor components.
+/// </summary>
+[ExcludeFromCodeCoverage]
+internal static partial class Program
+{
+}

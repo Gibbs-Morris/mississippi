@@ -3,7 +3,13 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 
-#pragma warning disable SA1516 // ElementsMustBeSeparatedByBlankLine
-[assembly: ExcludeFromCodeCoverage]
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 await builder.Build().RunAsync().ConfigureAwait(true);
+
+/// <summary>
+/// Marker type used by ASP.NET Core to locate the assembly containing Blazor components.
+/// </summary>
+[ExcludeFromCodeCoverage]
+internal static partial class Program
+{
+}
