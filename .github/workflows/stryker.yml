@@ -60,7 +60,7 @@ jobs:
       - name: Setup Dotnet
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x # ≥ 9.0.200 for full SLNX support
+          global-json-file: global.json # auto-detect SDK version
 
       - name: Generate legacy .sln from .slnx
         run: |
