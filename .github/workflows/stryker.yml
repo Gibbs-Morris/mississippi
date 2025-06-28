@@ -82,7 +82,7 @@ jobs:
           dotnet build "${SLN_PATH}" --configuration "${CONFIGURATION}" --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
       - name: Run Stryker
-        run: dotnet stryker --solution-path "${SLN_PATH}"
+        run: dotnet stryker --solution "${SLN_PATH}"
 
       # ────────────────────────────── publish HTML report ──────────────────────────────
       - name: Upload HTML Results
