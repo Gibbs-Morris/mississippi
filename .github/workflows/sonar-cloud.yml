@@ -13,7 +13,7 @@ env:
   SONAR_ORGANIZATION: "gibbs-morris"
   SONAR_HOST_URL: "https://sonarcloud.io"
   CONFIGURATION: Release
-  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+  SOLUTION_PATH: ${{ github.workspace }}/mississippi.slnx
 jobs:
   Build:
     name: "Build"

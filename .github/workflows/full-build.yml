@@ -9,7 +9,6 @@ on:
       - main
       - feature/**
 env:
-  SOLUTION_PATH: "${{ github.workspace }}/src/mississippi.sln"
   CONFIGURATION: Release
 
 jobs:
@@ -19,6 +18,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
+        solution: [ mississippi.slnx, samples.slnx ]
 
     steps:
       - name: Checkout
@@ -59,9 +59,8 @@ jobs:
 
       - name: Restore dotnet packages
         run: |
-          dotnet restore ${{ env.SOLUTION_PATH }}
+          dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
 
-        # Note -warnaserror here.
       - name: Build dotnet projects
         run: |
-          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -warnaserror -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -warnaserror -p:Version=${{ steps.gitversion.outputs.SemVer }}

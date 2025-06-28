@@ -1,4 +1,5 @@
 name: Stryker
+
 on:
   push:
     branches:
@@ -8,16 +9,19 @@ on:
     branches:
       - main
       - feature/**
+
 env:
-  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
+  SLNX_PATH: ${{ github.workspace }}/mississippi.slnx # existing file in the repo
+  SLN_PATH: ${{ github.workspace }}/mississippi.sln # temporary file created in CI
   CONFIGURATION: Release
+
 jobs:
   Stryker:
     name: "Stryker"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ubuntu-latest]
 
     steps:
       - name: Checkout
@@ -25,6 +29,7 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ────────────────────────────── caches & GitVersion (unchanged) ──────────────────────────────
       - name: Cache GitVersion tools
         uses: actions/cache@v4
         with:
@@ -51,26 +56,40 @@ jobs:
         with:
           useConfigFile: true
 
+      # ────────────────────────────── .NET & SLN generation ──────────────────────────────
       - name: Setup Dotnet
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 9.0.x # ≥ 9.0.200 for full SLNX support
 
-      - name: Restore dotnet packages
+      - name: Generate legacy .sln from .slnx
+        run: |
+          dotnet tool install -g Microsoft.VisualStudio.SlnGen.Tool
+          dotnet slngen "${SLNX_PATH}" --solutionfile "${SLN_PATH}" --launch false
+          ls -al "${SLN_PATH}"   # prove the file exists
+
+      # ────────────────────────────── restore, build, mutation test ──────────────────────────────
+      - name: Restore dotnet tools
         run: |
           dotnet tool restore
           dotnet tool install dotnet-stryker
 
-      - name: Stryker restore-build-report
-        run: |
-          dotnet restore ${{ env.SOLUTION_PATH }}
-          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-          cd ${{ github.workspace }}/src
-          dotnet stryker
+      - name: Restore packages
+        run: dotnet restore "${SLN_PATH}"
 
+      - name: Build (Release)
+        run: dotnet build "${SLN_PATH}" \
+          --configuration "${CONFIGURATION}" \
+          --no-restore --no-incremental \
+          -p:Version=${{ steps.gitversion.outputs.SemVer }}
+
+      - name: Run Stryker
+        run: dotnet stryker --solution-path "${SLN_PATH}"
+
+      # ────────────────────────────── publish HTML report ──────────────────────────────
       - name: Upload HTML Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
-          path: ${{ github.workspace }}/src/StrykerOutput/**/**/*.html
+          path: ${{ github.workspace }}/StrykerOutput/**/**/*.html

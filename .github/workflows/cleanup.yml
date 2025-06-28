@@ -10,12 +10,14 @@ on:
       - feature/**
 
 env:
-  SOLUTION_PATH: ${{ github.workspace }}/src/mississippi.sln
-  DOTSETTINGS_PATH: ${{ github.workspace }}/src/mississippi.sln.DotSettings
+  DOTSETTINGS_PATH: ${{ github.workspace }}/Directory.DotSettings
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        solution: [ mississippi.slnx, samples.slnx ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -56,9 +58,8 @@ jobs:
       - name: Run ReSharper Cleanup Code
         run: |
           set -euo pipefail
-          echo "Running ReSharper Cleanup Code..."
-          # Use consistent profile and settings in the actual command
-          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "${{ env.SOLUTION_PATH }}"
+          echo "Running ReSharper Cleanup Code on ${{ matrix.solution }}..."
+          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "${{ github.workspace }}/${{ matrix.solution }}"
           echo "Cleanup completed."
           
       - name: Check for Uncommitted Changes
