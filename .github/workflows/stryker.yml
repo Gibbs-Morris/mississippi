@@ -66,7 +66,7 @@ jobs:
       - name: Generate legacy .sln from .slnx
         run: |
           dotnet tool install -g Microsoft.VisualStudio.SlnGen.Tool
-          dotnet slngen "${SLNX_PATH}" --solutionfile "${SLN_PATH}" --launch false
+          dotnet tool run slngen "${SLNX_PATH}" --solutionfile "${SLN_PATH}" --launch false
           ls -al "${SLN_PATH}"   # prove the file exists
 
       # ────────────────────────────── restore, build, mutation test ──────────────────────────────
