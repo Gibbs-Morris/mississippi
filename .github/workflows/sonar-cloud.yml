@@ -28,6 +28,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
       - name: Cache GitVersion tools
         uses: actions/cache@v4
         with:
@@ -75,11 +80,6 @@ jobs:
         with:
           distribution: microsoft
           java-version: "21"
-
-      - name: Setup Dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
 
       - name: Restore dotnet packages
         run: |

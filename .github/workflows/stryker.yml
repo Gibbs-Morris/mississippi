@@ -29,7 +29,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ────────────────────────────── caches & GitVersion (unchanged) ──────────────────────────────
+      # ────────────────────────────── .NET SDK ──────────────────────────────
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json # auto-detect SDK version
+
+      # ────────────────────────────── caches & GitVersion ──────────────────────────────
       - name: Cache GitVersion tools
         uses: actions/cache@v4
         with:
@@ -57,11 +63,6 @@ jobs:
           useConfigFile: true
 
       # ────────────────────────────── .NET & SLN generation ──────────────────────────────
-      - name: Setup Dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json # auto-detect SDK version
-
       - name: Generate legacy .sln from .slnx
         run: |
           dotnet tool install -g Microsoft.VisualStudio.SlnGen.Tool
