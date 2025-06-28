@@ -5,8 +5,8 @@ using Mississippi.CrescentWebApp.Components;
 using _Imports = Mississippi.CrescentWebApp.Client._Imports;
 
 
+#pragma warning disable SA1516 // ElementsMustBeSeparatedByBlankLine
 [assembly: ExcludeFromCodeCoverage]
-
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
