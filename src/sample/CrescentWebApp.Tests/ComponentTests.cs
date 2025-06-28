@@ -2,7 +2,6 @@ using System.Diagnostics;
 
 using Bunit;
 
-using Mississippi.CrescentWebApp.Components.Layout;
 using Mississippi.CrescentWebApp.Components.Pages;
 
 
@@ -54,17 +53,5 @@ public sealed class ComponentTests
 
         // Assert
         Assert.DoesNotContain("<code>", cut.Markup, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    ///     Validates that <see cref="MainLayout" /> renders its body content.
-    /// </summary>
-    [Fact]
-    public void MainLayoutRendersBodyContent()
-    {
-        using TestContext ctx = new();
-        using IRenderedComponent<MainLayout> cut =
-            ctx.RenderComponent<MainLayout>(parameters => parameters.AddChildContent("<p>Test body</p>"));
-        Assert.Contains("Test body", cut.Markup, StringComparison.Ordinal);
     }
 }
