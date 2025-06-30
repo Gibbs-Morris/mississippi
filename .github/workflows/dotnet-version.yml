@@ -42,27 +42,29 @@ jobs:
     # ------------------------------------------------------------
     - name: Validate project target frameworks
       shell: pwsh
+      continue-on-error: true
       run: |
-        $supported = $Env:SUPPORTED_CHANNELS -split ',' | ForEach-Object Trim
-        $tfms      = [System.Collections.Generic.List[string]]::new()
+        $supported        = $Env:SUPPORTED_CHANNELS -split ',' | ForEach-Object Trim
+        $foundTfms        = [System.Collections.Generic.List[object]]::new()
+        $unsupportedList  = [System.Collections.Generic.List[string]]::new()
+        $supportedList    = [System.Collections.Generic.List[string]]::new()
 
         function Extract-TFMsFromProject ([string]$file) {
-          try {
-            $xml = [xml](Get-Content $file -Raw)
-          } catch {
+          try { $xml = [xml](Get-Content $file -Raw) } catch {
             Write-Warning "⚠️  Skipping unparsable XML file $file"
             return
           }
-
-          if (-not $xml.Project) { return }     # No <Project> root ⇒ nothing to do
+          if (-not $xml.Project) { return }
 
           foreach ($grp in $xml.Project.PropertyGroup) {
             foreach ($prop in 'TargetFramework','TargetFrameworks') {
               $node = $grp.$prop
               if ($node) {
                 $raw = $node.'#text'
-                if ($raw) {                     # Avoid “method on null-valued expression”
-                  $raw.Split(';') | ForEach-Object { $tfms.Add($_.Trim()) }
+                if ($raw) {
+                  $raw.Split(';') | ForEach-Object {
+                    $foundTfms.Add([pscustomobject]@{ Path = $file; Item = $_.Trim() })
+                  }
                 }
               }
             }
@@ -74,75 +76,119 @@ jobs:
 
         if (Test-Path global.json) {
           $gj = Get-Content global.json -Raw | ConvertFrom-Json
-          if ($gj.sdk.version) { $tfms.Add("sdk:$($gj.sdk.version)") }
+          if ($gj.sdk.version) {
+            $foundTfms.Add([pscustomobject]@{ Path = 'global.json'; Item = "sdk:$($gj.sdk.version)" })
+          }
         }
 
-        $tfms = $tfms | Sort-Object -Unique
-        Write-Host "🔍 Found TFMs/SDKs: $($tfms -join ', ')"
-
-        # --- avoid empty-pipe parser error -----------------------
-        $unsupportedTargets = foreach ($item in $tfms) {
+        foreach ($entry in $foundTfms) {
+          $item    = $entry.Item
           $version = switch -Regex ($item) {
             '^sdk:(\d+)\.(\d+)'        { "$($matches[1]).$($matches[2])"; break }
             '^netcoreapp(\d+)\.(\d+)'  { "$($matches[1]).$($matches[2])"; break }
             '^net(\d+)\.(\d+)'         { "$($matches[1]).$($matches[2])"; break }
             default                    { $null; break }
           }
-          if ($version -and ($supported -notcontains $version)) { $item }
+          if ($version -and ($supported -contains $version)) {
+            Write-Host "✅ $($entry.Path) → $item"
+            $supportedList.Add("$($entry.Path) → $item")
+          } else {
+            Write-Host "❌ $($entry.Path) → $item"
+            $unsupportedList.Add("$($entry.Path) → $item")
+          }
         }
-        # ---------------------------------------------------------
 
-        if ($unsupportedTargets) {
-          Write-Error "❌ Unsupported TFMs/SDKs: $($unsupportedTargets -join ', ')"
-          exit 1
-        } else {
-          Write-Host "🎉 All project targets are in support."
-        }
+        # export lists for later steps (use :: as delimiter)
+        if ($supportedList.Count)   { "SUPPORTED_TFMS_LIST=$($supportedList -join '::')"   >> $Env:GITHUB_ENV }
+        if ($unsupportedList.Count) { "UNSUPPORTED_TFMS_LIST=$($unsupportedList -join '::')" >> $Env:GITHUB_ENV; "HAS_UNSUPPORTED=true" >> $Env:GITHUB_ENV }
 
     # ------------------------------------------------------------
     # 4. Validate explicit installs in workflow YAML
     # ------------------------------------------------------------
     - name: Validate workflow installs
       shell: pwsh
+      continue-on-error: true
       run: |
-        $supported = $Env:SUPPORTED_CHANNELS -split ',' | ForEach-Object Trim
-        $yamlFiles = Get-ChildItem .github/workflows -Recurse -File -Include *.yml,*.yaml -ErrorAction SilentlyContinue
-        $versions  = [System.Collections.Generic.List[string]]::new()
+        $supported        = $Env:SUPPORTED_CHANNELS -split ',' | ForEach-Object Trim
+        $yamlFiles        = Get-ChildItem .github/workflows -Recurse -File -Include *.yml,*.yaml -ErrorAction SilentlyContinue
+        $foundInstalls    = [System.Collections.Generic.List[object]]::new()
+        $unsupportedList  = [System.Collections.Generic.List[string]]::new()
+        $supportedList    = [System.Collections.Generic.List[string]]::new()
 
         foreach ($file in $yamlFiles) {
           $text = Get-Content $file.FullName -Raw
 
-          # a) dotnet-version: 6.0.x  OR dotnet-version: |  (multiline)
+          # pattern a) dotnet-version: …
           [regex]::Matches($text,'(?im)^\s*dotnet-version\s*:\s*(.+?)(?=\r?\n\S|\r?\n$)') |
             ForEach-Object {
               $v = $_.Groups[1].Value.Trim()
               if ($v -eq '|') {
                 $after = $text.Substring($_.Index) -split '\r?\n'
                 foreach ($line in $after[1..($after.Length-1)]) {
-                  if ($line -match '^\s+[0-9]+\.[^\s]+') { $versions.Add($line.Trim()) }
+                  if ($line -match '^\s+[0-9]+\.[^\s]+') { $foundInstalls.Add([pscustomobject]@{ Path = $file.FullName; Item = $line.Trim() }) }
                   elseif ($line -match '^\s*\S') { break }
                 }
-              } else { $versions.Add($v) }
+              } else {
+                $foundInstalls.Add([pscustomobject]@{ Path = $file.FullName; Item = $v })
+              }
             }
 
-          # b) dotnet-install.* --version / -Version
+          # pattern b) dotnet-install.* --version …
           [regex]::Matches($text,'(?im)dotnet-install\.(?:ps1|sh).*?--?version\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)') |
-            ForEach-Object { $versions.Add($_.Groups[1].Value) }
+            ForEach-Object { $foundInstalls.Add([pscustomobject]@{ Path = $file.FullName; Item = $_.Groups[1].Value }) }
         }
 
-        $versions = $versions | Sort-Object -Unique | Where-Object { $_ -match '^\d+\.\d+' }
-        Write-Host "🔍 Workflow installs: $($versions -join ', ')"
-
-        $unsupportedInstalls = foreach ($v in $versions) {
-          if ($v -match '^(\d+)\.(\d+)') {
+        foreach ($entry in $foundInstalls | Sort-Object -Property Path,Item -Unique) {
+          $item = $entry.Item
+          if ($item -match '^(\d+)\.(\d+)') {
             $chan = "$($matches[1]).$($matches[2])"
-            if ($supported -notcontains $chan) { $v }
+            if ($supported -contains $chan) {
+              Write-Host "✅ $($entry.Path) → $item"
+              $supportedList.Add("$($entry.Path) → $item")
+            } else {
+              Write-Host "❌ $($entry.Path) → $item"
+              $unsupportedList.Add("$($entry.Path) → $item")
+            }
           }
         }
 
-        if ($unsupportedInstalls) {
-          Write-Error "❌ Unsupported SDK installs in workflow: $($unsupportedInstalls -join ', ')"
-          exit 1
+        if ($supportedList.Count)   { "SUPPORTED_INSTALLS_LIST=$($supportedList -join '::')"   >> $Env:GITHUB_ENV }
+        if ($unsupportedList.Count) { "UNSUPPORTED_INSTALLS_LIST=$($unsupportedList -join '::')" >> $Env:GITHUB_ENV; "HAS_UNSUPPORTED=true" >> $Env:GITHUB_ENV }
+
+    # ------------------------------------------------------------
+    # 5. Human-friendly summary & final decision
+    # ------------------------------------------------------------
+    - name: Summarise supported / unsupported items
+      if: always()
+      shell: pwsh
+      run: |
+        $supportedTfms     = ($Env:SUPPORTED_TFMS_LIST     ?? '') -split '::' | Where-Object { $_ }
+        $unsupportedTfms   = ($Env:UNSUPPORTED_TFMS_LIST   ?? '') -split '::' | Where-Object { $_ }
+        $supportedInstalls = ($Env:SUPPORTED_INSTALLS_LIST ?? '') -split '::' | Where-Object { $_ }
+        $unsupportedInst   = ($Env:UNSUPPORTED_INSTALLS_LIST ?? '') -split '::' | Where-Object { $_ }
+
+        $sb = [System.Text.StringBuilder]::new()
+
+        $sb.AppendLine('## .NET support checker summary').AppendLine()
+
+        if ($unsupportedTfms.Count -or $unsupportedInst.Count) {
+          $sb.AppendLine('### ❌ **Action required**').AppendLine()
+          foreach ($row in $unsupportedTfms + $unsupportedInst) { $sb.AppendLine("- $row") }
+          $needsFix = $true
         } else {
-          Write-Host "🎉 All workflow installs are in support."
+          $sb.AppendLine('### ✅ Everything in support – no action needed').AppendLine()
+          $needsFix = $false
+        }
+
+        if ($supportedTfms.Count -or $supportedInstalls.Count) {
+          $sb.AppendLine('### ℹ️  Items already in support').AppendLine()
+          foreach ($row in $supportedTfms + $supportedInstalls) { $sb.AppendLine("- $row") }
+        }
+
+        # write to the job summary tab
+        $sb.ToString() | Set-Content -Path $Env:GITHUB_STEP_SUMMARY
+
+        if ($needsFix) {
+          Write-Error "One or more TFMs / SDK installs are out of support – fix them and re-run."
+          exit 1
         }
