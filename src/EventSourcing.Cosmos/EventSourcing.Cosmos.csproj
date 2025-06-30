@@ -5,7 +5,4 @@
         <PackageReference Include="Microsoft.Extensions.Options"/>
         <PackageReference Include="Newtonsoft.Json"/>
     </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\EventSourcing.Abstractions\EventSourcing.Abstractions.csproj"/>
-    </ItemGroup>
 </Project>

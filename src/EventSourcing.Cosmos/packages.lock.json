@@ -840,7 +840,8 @@
       "Mississippi.EventSourcing.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "CloudNative.CloudEvents": "[2.8.0, )"
+          "CloudNative.CloudEvents": "[2.8.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.6, )"
         }
       },
       "CloudNative.CloudEvents": {

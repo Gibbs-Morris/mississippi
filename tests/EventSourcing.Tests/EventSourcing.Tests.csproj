@@ -1,8 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-        <PackageReference Include="System.Linq.Async"/>
-    </ItemGroup>
-    <ItemGroup>
+     <ItemGroup>
       <ProjectReference Include="..\..\src\EventSourcing\EventSourcing.csproj" />
     </ItemGroup>
 </Project>

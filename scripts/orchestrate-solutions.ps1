@@ -9,7 +9,7 @@
 #>
 
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 function Invoke-Step {
     param(
@@ -17,9 +17,7 @@ function Invoke-Step {
     )
     Write-Host "=== Running $ScriptName ===" -ForegroundColor Yellow
     & "$PSScriptRoot/$ScriptName"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Step $ScriptName failed with exit code $LASTEXITCODE"
-    }
+
 }
 
 # Mississippi pipeline

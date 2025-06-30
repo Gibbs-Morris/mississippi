@@ -80,12 +80,6 @@
         "resolved": "1.2.0.556",
         "contentHash": "zvn9Mqs/ox/83cpYPignI8hJEM2A93s2HkHs8HYMOAQW0PkampyoErAiIyKxgTLqbbad29HX/shv/6LGSjPJNQ=="
       },
-      "System.Linq.Async": {
-        "type": "Direct",
-        "requested": "[6.0.3, )",
-        "resolved": "6.0.3",
-        "contentHash": "hSHiq2m1ky7zUQgTp+/2h1K3lABIQ+GltRixoclHPg/Sc1vnfeS6g/Uy5moOVZKrZJdQiFPFZd6OobBp3tZcFg=="
-      },
       "xunit": {
         "type": "Direct",
         "requested": "[2.9.3, )",
@@ -1096,13 +1090,8 @@
       "Mississippi.EventSourcing": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.EventSourcing.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "CloudNative.CloudEvents": "[2.8.0, )"
+          "CloudNative.CloudEvents": "[2.8.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.6, )"
         }
       },
       "CloudNative.CloudEvents": {
@@ -1110,6 +1099,12 @@
         "requested": "[2.8.0, )",
         "resolved": "2.8.0",
         "contentHash": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA=="
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.6, )",
+        "resolved": "9.0.6",
+        "contentHash": "0Zn6nR/6g+90MxskZyOOMPQvnPnrrGu6bytPwkV+azDcTtCSuQ1+GJUrg8Klmnrjk1i6zMpw2lXijl+tw7Q3kA=="
       },
       "Newtonsoft.Json": {
         "type": "CentralTransitive",

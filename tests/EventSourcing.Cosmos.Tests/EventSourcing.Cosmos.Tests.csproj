@@ -1,11 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="System.Linq.Async"/>
         <PackageReference Include="CloudNative.CloudEvents"/>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\EventSourcing.Cosmos\EventSourcing.Cosmos.csproj"/>
-        <ProjectReference Include="..\..\src\EventSourcing.Abstractions\EventSourcing.Abstractions.csproj"/>
     </ItemGroup>
 </Project>

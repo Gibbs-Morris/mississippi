@@ -1,13 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
-    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer"/>
         <PackageReference Include="Microsoft.Extensions.Features"/>
         <PackageReference Include="Microsoft.Orleans.Sdk"/>
     </ItemGroup>
+
     <ItemGroup>
-        <ProjectReference Include="..\Core.Abstractions\Core.Abstractions.csproj"/>
+      <Folder Include="Cqrs\Command\" />
     </ItemGroup>
 </Project>

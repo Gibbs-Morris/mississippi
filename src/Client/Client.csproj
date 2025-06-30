@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Orleans.Sdk" />
+      <PackageReference Include="Microsoft.Orleans.Streaming" />
+      <PackageReference Include="System.Reactive" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Core\Core.csproj" />
+    </ItemGroup>
+
+</Project>

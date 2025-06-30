@@ -2,6 +2,12 @@
   "version": 2,
   "dependencies": {
     "net9.0": {
+      "CloudNative.CloudEvents": {
+        "type": "Direct",
+        "requested": "[2.8.0, )",
+        "resolved": "2.8.0",
+        "contentHash": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA=="
+      },
       "IDisposableAnalyzers": {
         "type": "Direct",
         "requested": "[4.0.8, )",
@@ -13,6 +19,12 @@
         "requested": "[9.0.0, )",
         "resolved": "9.0.0",
         "contentHash": "JajbvkrBgtdRghavIjcJuNHMOja4lqBmEezbhZyqWPYh2cpLhT5mPpfC7NQVDO4IehWQum9t/nwF4v+qQGtYWg=="
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "Direct",
+        "requested": "[9.0.6, )",
+        "resolved": "9.0.6",
+        "contentHash": "0Zn6nR/6g+90MxskZyOOMPQvnPnrrGu6bytPwkV+azDcTtCSuQ1+GJUrg8Klmnrjk1i6zMpw2lXijl+tw7Q3kA=="
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -51,18 +63,6 @@
         "type": "Transitive",
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
-      },
-      "Mississippi.EventSourcing.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "CloudNative.CloudEvents": "[2.8.0, )"
-        }
-      },
-      "CloudNative.CloudEvents": {
-        "type": "CentralTransitive",
-        "requested": "[2.8.0, )",
-        "resolved": "2.8.0",
-        "contentHash": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA=="
       }
     }
   }

@@ -1,8 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-        <PackageReference Include="System.Linq.Async"/>
-    </ItemGroup>
-
+   
     <ItemGroup>
         <ProjectReference Include="..\..\src\Hosting\Hosting.csproj"/>
     </ItemGroup>

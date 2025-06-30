@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\EventSourcing.Abstractions\EventSourcing.Abstractions.csproj" />
+    <PackageReference Include="CloudNative.CloudEvents" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 </Project>

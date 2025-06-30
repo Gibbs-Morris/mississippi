@@ -86,12 +86,6 @@
         "resolved": "1.2.0.556",
         "contentHash": "zvn9Mqs/ox/83cpYPignI8hJEM2A93s2HkHs8HYMOAQW0PkampyoErAiIyKxgTLqbbad29HX/shv/6LGSjPJNQ=="
       },
-      "System.Linq.Async": {
-        "type": "Direct",
-        "requested": "[6.0.3, )",
-        "resolved": "6.0.3",
-        "contentHash": "hSHiq2m1ky7zUQgTp+/2h1K3lABIQ+GltRixoclHPg/Sc1vnfeS6g/Uy5moOVZKrZJdQiFPFZd6OobBp3tZcFg=="
-      },
       "xunit": {
         "type": "Direct",
         "requested": "[2.9.3, )",
@@ -1296,19 +1290,12 @@
           "xunit.abstractions": "2.0.3"
         }
       },
-      "Mississippi.EventSourcing.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "CloudNative.CloudEvents": "[2.8.0, )"
-        }
-      },
       "Mississippi.EventSourcing.Cosmos": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Azure.Cosmos": "[3.52.0, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.6, )",
           "Microsoft.Extensions.Options": "[9.0.6, )",
-          "Mississippi.EventSourcing.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.3, )"
         }
       },
