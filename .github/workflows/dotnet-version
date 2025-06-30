@@ -1,0 +1,136 @@
+name: Verify .NET support
+
+on:
+  push:
+    branches: [ main ]
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+
+jobs:
+  dotnet-support-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    # ------------------------------------------------------------
+    # 1. Checkout
+    # ------------------------------------------------------------
+    - uses: actions/checkout@v4
+
+    # ------------------------------------------------------------
+    # 2. Fetch supported channels from Microsoft
+    # ------------------------------------------------------------
+    - name: Fetch supported .NET channels
+      id: fetch-matrix
+      shell: pwsh
+      run: |
+        $url = 'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json'
+        Write-Host "↘️  Downloading $url"
+        $today = Get-Date
+        $json  = Invoke-RestMethod $url -UseBasicParsing
+        $supported = $json.'releases-index' |
+          Where-Object { ($null -eq $_.'eol-date') -or ((Get-Date $_.'eol-date') -ge $today) } |
+          ForEach-Object { $_.'channel-version' }
+
+        Write-Host "✅ Supported channels: $($supported -join ', ')"
+        "SUPPORTED_CHANNELS=$($supported -join ',')" >> $Env:GITHUB_ENV
+
+    # ------------------------------------------------------------
+    # 3. Validate TFMs / SDK pins in the repository
+    # ------------------------------------------------------------
+    - name: Validate project target frameworks
+      shell: pwsh
+      run: |
+        $supported = $Env:SUPPORTED_CHANNELS -split ',' | ForEach-Object Trim
+        $tfms      = [System.Collections.Generic.List[string]]::new()
+
+        function Add-TfmsFromProject ([string]$file) {
+          $xml = [xml](Get-Content $file -Raw)
+          foreach ($grp in $xml.Project.PropertyGroup) {
+            foreach ($prop in 'TargetFramework','TargetFrameworks') {
+              if ($grp.$prop) {
+                $grp.$prop.'#text'.Split(';') | ForEach-Object { $tfms.Add($_.Trim()) }
+              }
+            }
+          }
+        }
+
+        Get-ChildItem -Recurse -File -Include *.csproj,*.fsproj,*.vbproj,Directory.Build.props,Directory.Build.targets |
+          ForEach-Object { Add-TfmsFromProject $_.FullName }
+
+        if (Test-Path global.json) {
+          $gj = Get-Content global.json -Raw | ConvertFrom-Json
+          if ($gj.sdk.version) { $tfms.Add("sdk:$($gj.sdk.version)") }
+        }
+
+        $tfms = $tfms | Sort-Object -Unique
+        Write-Host "🔍 Found TFMs/SDKs: $($tfms -join ', ')"
+
+        $bad = foreach ($item in $tfms) {
+          switch -Regex ($item) {
+            '^sdk:(\d+)\.(\d+)'        { "$($matches[1]).$($matches[2])" }
+            '^netcoreapp(\d+)\.(\d+)'  { "$($matches[1]).$($matches[2])" }
+            '^net(\d+)\.(\d+)'         { "$($matches[1]).$($matches[2])" }
+            default                    { continue }
+          } | Where-Object { $supported -notcontains $_ } | ForEach-Object { $item }
+        }
+
+        if ($bad) {
+          Write-Error "❌ Unsupported TFMs/SDKs: $($bad -join ', ')"
+          exit 1
+        } else {
+          Write-Host "🎉 All project targets are in support."
+        }
+
+    # ------------------------------------------------------------
+    # 4. Validate explicit installs in workflow YAML
+    # ------------------------------------------------------------
+    - name: Validate workflow installs
+      shell: pwsh
+      run: |
+        $supported = $Env:SUPPORTED_CHANNELS -split ',' | ForEach-Object Trim
+        $yamlFiles = Get-ChildItem .github/workflows -Recurse -File -Include *.yml,*.yaml -ErrorAction SilentlyContinue
+        $versions  = [System.Collections.Generic.List[string]]::new()
+
+        foreach ($file in $yamlFiles) {
+          $text = Get-Content $file.FullName -Raw
+
+          # a) dotnet-version: 6.0.x  OR dotnet-version: |  (multiline)
+          [regex]::Matches($text,'(?im)^\s*dotnet-version\s*:\s*(.+?)(?=\r?\n\S|\r?\n$)') |
+            ForEach-Object {
+              $v = $_.Groups[1].Value.Trim()
+              if ($v -eq '|') {
+                # Multiline scalar: collect following indented numeric lines
+                if ($_.Index -lt $text.Length) {
+                  $after = $text.Substring($_.Index) -split '\r?\n'
+                  foreach ($line in $after[1..($after.Length-1)]) {
+                    if ($line -match '^\s+[0-9]+\.[^\s]+') { $versions.Add($line.Trim()) }
+                    elseif ($line -match '^\s*\S') { break }  # indent ended
+                  }
+                }
+              } else { $versions.Add($v) }
+            }
+
+          # b) dotnet-install.* --version / -Version
+          [regex]::Matches($text,'(?im)dotnet-install\.(?:ps1|sh).*?--?version\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)') |
+            ForEach-Object { $versions.Add($_.Groups[1].Value) }
+        }
+
+        $versions = $versions | Sort-Object -Unique | Where-Object { $_ -match '^\d+\.\d+' }
+        Write-Host "🔍 Workflow installs: $($versions -join ', ')"
+
+        $bad = foreach ($v in $versions) {
+          if ($v -match '^(\d+)\.(\d+)') {
+            $chan = "$($matches[1]).$($matches[2])"
+            if ($supported -notcontains $chan) { $v }
+          }
+        }
+
+        if ($bad) {
+          Write-Error "❌ Unsupported SDK installs in workflow: $($bad -join ', ')"
+          exit 1
+        } else {
+          Write-Host "🎉 All workflow installs are in support."
+        }
