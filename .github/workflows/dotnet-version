@@ -46,7 +46,7 @@ jobs:
         $supported = $Env:SUPPORTED_CHANNELS -split ',' | ForEach-Object Trim
         $tfms      = [System.Collections.Generic.List[string]]::new()
 
-        function Add-TfmsFromProject ([string]$file) {
+        function Extract-TFMsFromProject ([string]$file) {
           $xml = [xml](Get-Content $file -Raw)
           foreach ($grp in $xml.Project.PropertyGroup) {
             foreach ($prop in 'TargetFramework','TargetFrameworks') {
@@ -58,7 +58,7 @@ jobs:
         }
 
         Get-ChildItem -Recurse -File -Include *.csproj,*.fsproj,*.vbproj,Directory.Build.props,Directory.Build.targets |
-          ForEach-Object { Add-TfmsFromProject $_.FullName }
+          ForEach-Object { Extract-TFMsFromProject $_.FullName }
 
         if (Test-Path global.json) {
           $gj = Get-Content global.json -Raw | ConvertFrom-Json
@@ -68,7 +68,7 @@ jobs:
         $tfms = $tfms | Sort-Object -Unique
         Write-Host "🔍 Found TFMs/SDKs: $($tfms -join ', ')"
 
-        $bad = foreach ($item in $tfms) {
+        $unsupportedTargets = foreach ($item in $tfms) {
           switch -Regex ($item) {
             '^sdk:(\d+)\.(\d+)'        { "$($matches[1]).$($matches[2])" }
             '^netcoreapp(\d+)\.(\d+)'  { "$($matches[1]).$($matches[2])" }
@@ -77,8 +77,8 @@ jobs:
           } | Where-Object { $supported -notcontains $_ } | ForEach-Object { $item }
         }
 
-        if ($bad) {
-          Write-Error "❌ Unsupported TFMs/SDKs: $($bad -join ', ')"
+        if ($unsupportedTargets) {
+          Write-Error "❌ Unsupported TFMs/SDKs: $($unsupportedTargets -join ', ')"
           exit 1
         } else {
           Write-Host "🎉 All project targets are in support."
@@ -102,13 +102,10 @@ jobs:
             ForEach-Object {
               $v = $_.Groups[1].Value.Trim()
               if ($v -eq '|') {
-                # Multiline scalar: collect following indented numeric lines
-                if ($_.Index -lt $text.Length) {
-                  $after = $text.Substring($_.Index) -split '\r?\n'
-                  foreach ($line in $after[1..($after.Length-1)]) {
-                    if ($line -match '^\s+[0-9]+\.[^\s]+') { $versions.Add($line.Trim()) }
-                    elseif ($line -match '^\s*\S') { break }  # indent ended
-                  }
+                $after = $text.Substring($_.Index) -split '\r?\n'
+                foreach ($line in $after[1..($after.Length-1)]) {
+                  if ($line -match '^\s+[0-9]+\.[^\s]+') { $versions.Add($line.Trim()) }
+                  elseif ($line -match '^\s*\S') { break }
                 }
               } else { $versions.Add($v) }
             }
@@ -121,15 +118,15 @@ jobs:
         $versions = $versions | Sort-Object -Unique | Where-Object { $_ -match '^\d+\.\d+' }
         Write-Host "🔍 Workflow installs: $($versions -join ', ')"
 
-        $bad = foreach ($v in $versions) {
+        $unsupportedInstalls = foreach ($v in $versions) {
           if ($v -match '^(\d+)\.(\d+)') {
             $chan = "$($matches[1]).$($matches[2])"
             if ($supported -notcontains $chan) { $v }
           }
         }
 
-        if ($bad) {
-          Write-Error "❌ Unsupported SDK installs in workflow: $($bad -join ', ')"
+        if ($unsupportedInstalls) {
+          Write-Error "❌ Unsupported SDK installs in workflow: $($unsupportedInstalls -join ', ')"
           exit 1
         } else {
           Write-Host "🎉 All workflow installs are in support."
