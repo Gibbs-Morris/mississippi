@@ -12,5 +12,8 @@ public sealed record StreamSliceGrainKey : IOrleansKey
 
     public long ToVersion { get; init; }
 
-    public string ToOrleansKey() => $"/name={StreamType}/id={Id}/f={FromVersion}/t={ToVersion}";
+    public string ToOrleansKey()
+    {
+        return $"/name={StreamType}/id={Id}/f={FromVersion}/t={ToVersion}";
+    }
 }

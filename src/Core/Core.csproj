@@ -7,6 +7,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Cqrs\Command\" />
+        <Folder Include="Cqrs\Command\"/>
     </ItemGroup>
 </Project>

@@ -9,32 +9,38 @@ public class StreamWriterGrain : IStreamWriterGrain
 {
     public StreamWriterGrain(
         IStreamWriterService streamWriterService
-    ) =>
+    )
+    {
         StreamWriterService = streamWriterService;
+    }
 
     private IStreamWriterService StreamWriterService { get; }
 
     public Task AppendEventAsync(
         MississippiEvent eventData,
         long expectedVersion = -1
-    ) =>
-        StreamWriterService.AppendEventAsync(
+    )
+    {
+        return StreamWriterService.AppendEventAsync(
             new()
             {
                 Id = this.GetPrimaryKeyString(),
             },
             eventData,
             expectedVersion);
+    }
 
     public Task AppendEventsAsync(
         ImmutableArray<MississippiEvent>[] events,
         long expectedVersion = -1
-    ) =>
-        StreamWriterService.AppendEventsAsync(
+    )
+    {
+        return StreamWriterService.AppendEventsAsync(
             new()
             {
                 Id = this.GetPrimaryKeyString(),
             },
             events,
             expectedVersion);
+    }
 }

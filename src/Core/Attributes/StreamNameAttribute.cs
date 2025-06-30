@@ -53,7 +53,10 @@ public sealed partial class StreamNameAttribute : Attribute
     /// <summary>
     ///     Gets the fully qualified stream name in the format {AppName}.{ModuleName}.{Name}.
     /// </summary>
-    public string StreamName => $"{AppName}.{ModuleName}.{Name}";
+    public string StreamName
+    {
+        get { return $"{AppName}.{ModuleName}.{Name}"; }
+    }
 
     private static void ValidateParameter(
         string value,

@@ -10,13 +10,18 @@ public abstract class ReducerBase<TState, TSupportedEvent>
       IEventAwareReducer
 {
     /// <inheritdoc />
-    public Type SupportedEventType => typeof(TSupportedEvent);
+    public Type SupportedEventType
+    {
+        get { return typeof(TSupportedEvent); }
+    }
 
     /// <inheritdoc />
     public bool CanHandle(
         Type eventType
-    ) =>
-        SupportedEventType.IsAssignableFrom(eventType);
+    )
+    {
+        return SupportedEventType.IsAssignableFrom(eventType);
+    }
 
     /// <inheritdoc />
     public virtual TState Reduce<TInputEvent>(

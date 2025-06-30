@@ -48,7 +48,13 @@ public readonly record struct VersionedQueryReference
     /// <summary>
     ///     Gets the versioned path in <c>type/id/version</c> form.
     /// </summary>
-    public string VersionedPath => $"{QueryType}/{Id}/{Version}";
+    public string VersionedPath
+    {
+        get { return $"{QueryType}/{Id}/{Version}"; }
+    }
 
-    public QueryReference ToQueryReference() => new(QueryType, Id);
+    public QueryReference ToQueryReference()
+    {
+        return new(QueryType, Id);
+    }
 }

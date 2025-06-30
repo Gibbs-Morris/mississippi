@@ -4,5 +4,8 @@ public sealed record QueryGrainKey : IOrleansKey
 {
     public string Id { get; init; }
 
-    public string ToOrleansKey() => Id;
+    public string ToOrleansKey()
+    {
+        return Id;
+    }
 }

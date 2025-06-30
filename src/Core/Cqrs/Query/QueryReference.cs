@@ -38,5 +38,8 @@ public readonly record struct QueryReference
     /// <summary>
     ///     Gets the path in <c>type/id</c> form.
     /// </summary>
-    public string Path => $"{QueryType}/{Id}";
+    public string Path
+    {
+        get { return $"{QueryType}/{Id}"; }
+    }
 }

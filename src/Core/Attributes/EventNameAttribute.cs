@@ -62,7 +62,10 @@ public sealed partial class EventNameAttribute : Attribute
     /// <summary>
     ///     Gets the fully qualified event name in the format {AppName}.{ModuleName}.{Name}V{Version}.
     /// </summary>
-    public string EventName => $"{AppName}.{ModuleName}.{Name}V{Version}";
+    public string EventName
+    {
+        get { return $"{AppName}.{ModuleName}.{Name}V{Version}"; }
+    }
 
     private static void ValidateParameter(
         string value,

@@ -10,8 +10,10 @@ public class StreamSliceReaderGrain : IStreamSliceReaderGrain
 {
     public StreamSliceReaderGrain(
         IStreamReaderService streamReaderService
-    ) =>
+    )
+    {
         StreamReaderService = streamReaderService;
+    }
 
     private ImmutableDictionary<long, MississippiEvent> Cache { get; set; } =
         ImmutableDictionary<long, MississippiEvent>.Empty;

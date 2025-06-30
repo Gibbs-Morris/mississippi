@@ -7,8 +7,10 @@ public class StreamReaderGrain : IStreamReaderGrain
 {
     public StreamReaderGrain(
         IEventSourceGrainFactory eventSourceGrainFactory
-    ) =>
+    )
+    {
         EventSourceGrainFactory = eventSourceGrainFactory;
+    }
 
     private IEventSourceGrainFactory EventSourceGrainFactory { get; }
 

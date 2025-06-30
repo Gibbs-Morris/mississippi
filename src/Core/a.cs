@@ -34,12 +34,20 @@ public class BaseQueryGrain<TQuery> : IQueryGrain<TQuery>
         return versionGrain.ReadQuerySnapshotAsync();
     }
 
-    public Task<long> GetCurrentVersionAsync() => Task.FromResult(Result.Reference.Version);
+    public Task<long> GetCurrentVersionAsync()
+    {
+        return Task.FromResult(Result.Reference.Version);
+    }
 
-    public Task<QueryReference> GetReferenceAsync() => Task.FromResult(Result.Reference.ToQueryReference());
+    public Task<QueryReference> GetReferenceAsync()
+    {
+        return Task.FromResult(Result.Reference.ToQueryReference());
+    }
 
     public Task<VersionedQueryReference> GetVersionedReferenceAsync(
         long version
-    ) =>
-        Task.FromResult(Result.Reference);
+    )
+    {
+        return Task.FromResult(Result.Reference);
+    }
 }

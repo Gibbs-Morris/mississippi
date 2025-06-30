@@ -102,12 +102,16 @@ public class FileStreamReaderService : IStreamReaderService
 
     private string GetHeadFilePath(
         StreamGrainKey streamId
-    ) =>
-        Path.Combine(_basePath, $"{streamId.ToOrleansKey()}.head");
+    )
+    {
+        return Path.Combine(_basePath, $"{streamId.ToOrleansKey()}.head");
+    }
 
     private string GetDataFilePath(
         StreamGrainKey streamId,
         long baseSeq
-    ) =>
-        Path.Combine(_basePath, $"{streamId.ToOrleansKey()}-{baseSeq}.json");
+    )
+    {
+        return Path.Combine(_basePath, $"{streamId.ToOrleansKey()}-{baseSeq}.json");
+    }
 }

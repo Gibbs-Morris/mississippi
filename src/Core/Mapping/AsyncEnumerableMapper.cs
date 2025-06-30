@@ -17,8 +17,10 @@ public sealed class AsyncEnumerableMapper<TFrom, TTo> : IAsyncEnumerableMapper<T
     /// <param name="mapper">The mapper used to map individual objects.</param>
     public AsyncEnumerableMapper(
         IMapper<TFrom, TTo> mapper
-    ) =>
+    )
+    {
         Mapper = mapper;
+    }
 
     /// <summary>
     ///     Gets the mapper used to map individual objects.

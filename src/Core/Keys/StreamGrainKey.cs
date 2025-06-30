@@ -8,5 +8,8 @@ public sealed record StreamGrainKey : IOrleansKey
     // ie user
     public string StreamType { get; init; }
 
-    public string ToOrleansKey() => $"/name={StreamType}/id={Id}";
+    public string ToOrleansKey()
+    {
+        return $"/name={StreamType}/id={Id}";
+    }
 }

@@ -6,5 +6,8 @@ public sealed record VersionedQueryGrainKey : IOrleansKey
 
     public long Version { get; init; }
 
-    public string ToOrleansKey() => $"/id={Id}/v+{Version}";
+    public string ToOrleansKey()
+    {
+        return $"/id={Id}/v+{Version}";
+    }
 }
