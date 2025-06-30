@@ -98,8 +98,7 @@ jobs:
           }
         }
 
-        # export lists for later steps (use :: as delimiter)
-        if ($supportedList.Count)   { "SUPPORTED_TFMS_LIST=$($supportedList -join '::')"   >> $Env:GITHUB_ENV }
+        if ($supportedList.Count)   { "SUPPORTED_TFMS_LIST=$($supportedList -join '::')"    >> $Env:GITHUB_ENV }
         if ($unsupportedList.Count) { "UNSUPPORTED_TFMS_LIST=$($unsupportedList -join '::')" >> $Env:GITHUB_ENV; "HAS_UNSUPPORTED=true" >> $Env:GITHUB_ENV }
 
     # ------------------------------------------------------------
@@ -152,7 +151,7 @@ jobs:
           }
         }
 
-        if ($supportedList.Count)   { "SUPPORTED_INSTALLS_LIST=$($supportedList -join '::')"   >> $Env:GITHUB_ENV }
+        if ($supportedList.Count)   { "SUPPORTED_INSTALLS_LIST=$($supportedList -join '::')"    >> $Env:GITHUB_ENV }
         if ($unsupportedList.Count) { "UNSUPPORTED_INSTALLS_LIST=$($unsupportedList -join '::')" >> $Env:GITHUB_ENV; "HAS_UNSUPPORTED=true" >> $Env:GITHUB_ENV }
 
     # ------------------------------------------------------------
@@ -162,27 +161,31 @@ jobs:
       if: always()
       shell: pwsh
       run: |
-        $supportedTfms     = ($Env:SUPPORTED_TFMS_LIST     ?? '') -split '::' | Where-Object { $_ }
-        $unsupportedTfms   = ($Env:UNSUPPORTED_TFMS_LIST   ?? '') -split '::' | Where-Object { $_ }
-        $supportedInstalls = ($Env:SUPPORTED_INSTALLS_LIST ?? '') -split '::' | Where-Object { $_ }
-        $unsupportedInst   = ($Env:UNSUPPORTED_INSTALLS_LIST ?? '') -split '::' | Where-Object { $_ }
+        $supportedTfms     = ($Env:SUPPORTED_TFMS_LIST      ?? '') -split '::' | Where-Object { $_ }
+        $unsupportedTfms   = ($Env:UNSUPPORTED_TFMS_LIST    ?? '') -split '::' | Where-Object { $_ }
+        $supportedInstalls = ($Env:SUPPORTED_INSTALLS_LIST  ?? '') -split '::' | Where-Object { $_ }
+        $unsupportedInst   = ($Env:UNSUPPORTED_INSTALLS_LIST?? '') -split '::' | Where-Object { $_ }
 
         $sb = [System.Text.StringBuilder]::new()
 
-        $sb.AppendLine('## .NET support checker summary').AppendLine()
+        [void]$sb.AppendLine('## .NET support checker summary')
+        [void]$sb.AppendLine()
 
         if ($unsupportedTfms.Count -or $unsupportedInst.Count) {
-          $sb.AppendLine('### ❌ **Action required**').AppendLine()
-          foreach ($row in $unsupportedTfms + $unsupportedInst) { $sb.AppendLine("- $row") }
+          [void]$sb.AppendLine('### ❌ **Action required**')
+          [void]$sb.AppendLine()
+          foreach ($row in $unsupportedTfms + $unsupportedInst) { [void]$sb.AppendLine("- $row") }
           $needsFix = $true
         } else {
-          $sb.AppendLine('### ✅ Everything in support – no action needed').AppendLine()
+          [void]$sb.AppendLine('### ✅ Everything in support – no action needed')
+          [void]$sb.AppendLine()
           $needsFix = $false
         }
 
         if ($supportedTfms.Count -or $supportedInstalls.Count) {
-          $sb.AppendLine('### ℹ️  Items already in support').AppendLine()
-          foreach ($row in $supportedTfms + $supportedInstalls) { $sb.AppendLine("- $row") }
+          [void]$sb.AppendLine('### ℹ️  Items already in support')
+          [void]$sb.AppendLine()
+          foreach ($row in $supportedTfms + $supportedInstalls) { [void]$sb.AppendLine("- $row") }
         }
 
         # write to the job summary tab
