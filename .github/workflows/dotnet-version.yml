@@ -68,14 +68,17 @@ jobs:
         $tfms = $tfms | Sort-Object -Unique
         Write-Host "🔍 Found TFMs/SDKs: $($tfms -join ', ')"
 
+        # --- FIX: avoid empty-pipe parser error -----------------
         $unsupportedTargets = foreach ($item in $tfms) {
-          switch -Regex ($item) {
-            '^sdk:(\d+)\.(\d+)'        { "$($matches[1]).$($matches[2])" }
-            '^netcoreapp(\d+)\.(\d+)'  { "$($matches[1]).$($matches[2])" }
-            '^net(\d+)\.(\d+)'         { "$($matches[1]).$($matches[2])" }
-            default                    { continue }
-          } | Where-Object { $supported -notcontains $_ } | ForEach-Object { $item }
+          $version = switch -Regex ($item) {
+            '^sdk:(\d+)\.(\d+)'        { "$($matches[1]).$($matches[2])"; break }
+            '^netcoreapp(\d+)\.(\d+)'  { "$($matches[1]).$($matches[2])"; break }
+            '^net(\d+)\.(\d+)'         { "$($matches[1]).$($matches[2])"; break }
+            default                    { $null; break }
+          }
+          if ($version -and ($supported -notcontains $version)) { $item }
         }
+        # --------------------------------------------------------
 
         if ($unsupportedTargets) {
           Write-Error "❌ Unsupported TFMs/SDKs: $($unsupportedTargets -join ', ')"
