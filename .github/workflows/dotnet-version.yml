@@ -47,11 +47,23 @@ jobs:
         $tfms      = [System.Collections.Generic.List[string]]::new()
 
         function Extract-TFMsFromProject ([string]$file) {
-          $xml = [xml](Get-Content $file -Raw)
+          try {
+            $xml = [xml](Get-Content $file -Raw)
+          } catch {
+            Write-Warning "⚠️  Skipping unparsable XML file $file"
+            return
+          }
+
+          if (-not $xml.Project) { return }     # No <Project> root ⇒ nothing to do
+
           foreach ($grp in $xml.Project.PropertyGroup) {
             foreach ($prop in 'TargetFramework','TargetFrameworks') {
-              if ($grp.$prop) {
-                $grp.$prop.'#text'.Split(';') | ForEach-Object { $tfms.Add($_.Trim()) }
+              $node = $grp.$prop
+              if ($node) {
+                $raw = $node.'#text'
+                if ($raw) {                     # Avoid “method on null-valued expression”
+                  $raw.Split(';') | ForEach-Object { $tfms.Add($_.Trim()) }
+                }
               }
             }
           }
@@ -68,7 +80,7 @@ jobs:
         $tfms = $tfms | Sort-Object -Unique
         Write-Host "🔍 Found TFMs/SDKs: $($tfms -join ', ')"
 
-        # --- FIX: avoid empty-pipe parser error -----------------
+        # --- avoid empty-pipe parser error -----------------------
         $unsupportedTargets = foreach ($item in $tfms) {
           $version = switch -Regex ($item) {
             '^sdk:(\d+)\.(\d+)'        { "$($matches[1]).$($matches[2])"; break }
@@ -78,7 +90,7 @@ jobs:
           }
           if ($version -and ($supported -notcontains $version)) { $item }
         }
-        # --------------------------------------------------------
+        # ---------------------------------------------------------
 
         if ($unsupportedTargets) {
           Write-Error "❌ Unsupported TFMs/SDKs: $($unsupportedTargets -join ', ')"
