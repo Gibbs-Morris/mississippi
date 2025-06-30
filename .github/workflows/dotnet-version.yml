@@ -164,7 +164,7 @@ jobs:
         $supportedTfms     = ($Env:SUPPORTED_TFMS_LIST      ?? '') -split '::' | Where-Object { $_ }
         $unsupportedTfms   = ($Env:UNSUPPORTED_TFMS_LIST    ?? '') -split '::' | Where-Object { $_ }
         $supportedInstalls = ($Env:SUPPORTED_INSTALLS_LIST  ?? '') -split '::' | Where-Object { $_ }
-        $unsupportedInst   = ($Env:UNSUPPORTED_INSTALLS_LIST?? '') -split '::' | Where-Object { $_ }
+        $unsupportedInst   = ($Env:UNSUPPORTED_INSTALLS_LIST ?? '') -split '::' | Where-Object { $_ }
 
         $sb = [System.Text.StringBuilder]::new()
 
@@ -188,7 +188,6 @@ jobs:
           foreach ($row in $supportedTfms + $supportedInstalls) { [void]$sb.AppendLine("- $row") }
         }
 
-        # write to the job summary tab
         $sb.ToString() | Set-Content -Path $Env:GITHUB_STEP_SUMMARY
 
         if ($needsFix) {
