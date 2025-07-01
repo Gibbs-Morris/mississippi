@@ -42,4 +42,10 @@ public readonly record struct QueryReference
     {
         get { return $"{QueryType}/{Id}"; }
     }
+
+    // not sure i need this or not yet.
+    public string SubscriptionPath
+    {
+        get { return $"query/{Path}"; }
+    }
 }

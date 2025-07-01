@@ -1,5 +1,7 @@
 ﻿using System.Collections.Immutable;
 
+using Microsoft.Extensions.Logging;
+
 using Mississippi.Core.Idea.Storage;
 
 
@@ -8,13 +10,17 @@ namespace Mississippi.Core.Idea.StreamGrains.Imp;
 public class StreamWriterGrain : IStreamWriterGrain
 {
     public StreamWriterGrain(
-        IStreamWriterService streamWriterService
+        IStreamWriterService streamWriterService,
+        ILogger<StreamWriterGrain> logger
     )
     {
         StreamWriterService = streamWriterService;
+        Logger = logger;
     }
 
     private IStreamWriterService StreamWriterService { get; }
+
+    private ILogger<StreamWriterGrain> Logger { get; }
 
     public Task AppendEventAsync(
         MississippiEvent eventData,
