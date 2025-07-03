@@ -7,6 +7,7 @@
   </Folder>
   <Folder Name="/Framework/">
     <Project Path="src\Client\Client.csproj" Type="Classic C#" />
+    <Project Path="src\Core.Web\Core.Web.csproj" Type="Classic C#" />
     <Project Path="src\Core\Core.csproj" />
     <Project Path="src\EventSourcing.Cosmos\EventSourcing.Cosmos.csproj" />
     <Project Path="src\EventSourcing\EventSourcing.csproj" />

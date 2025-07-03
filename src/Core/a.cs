@@ -1,5 +1,6 @@
 ﻿using Mississippi.Core.Abstractions.Cqrs.Query;
-using Mississippi.EventSourcing.Reducer;
+using Mississippi.Core.Cqrs.Query.Grains;
+using Mississippi.Core.Reducer;
 
 
 namespace Mississippi.Core;

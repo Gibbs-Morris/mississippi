@@ -1,4 +1,4 @@
-﻿namespace Mississippi.EventSourcing.Reducer;
+﻿namespace Mississippi.Core.Reducer;
 
 /// <summary>
 ///     Convenience base class for reducers that understand exactly one event type.

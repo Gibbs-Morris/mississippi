@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 
 
-namespace Mississippi.EventSourcing.Reducer;
+namespace Mississippi.Core.Reducer;
 
 /// <summary>
 ///     High-performance implementation that caches a dispatch table

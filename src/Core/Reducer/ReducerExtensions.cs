@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
 
-namespace Mississippi.EventSourcing.Reducer;
+namespace Mississippi.Core.Reducer;
 
 /// <summary>
 ///     Extension methods for registering reducer services.

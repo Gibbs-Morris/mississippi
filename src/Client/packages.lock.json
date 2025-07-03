@@ -673,7 +673,8 @@
         "dependencies": {
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[9.0.6, )",
           "Microsoft.Extensions.Features": "[9.0.6, )",
-          "Microsoft.Orleans.Sdk": "[9.1.2, )"
+          "Microsoft.Orleans.Sdk": "[9.1.2, )",
+          "Microsoft.Orleans.Streaming": "[9.1.2, )"
         }
       },
       "Microsoft.AspNetCore.Authentication.JwtBearer": {

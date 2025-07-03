@@ -1,4 +1,4 @@
-﻿namespace Mississippi.EventSourcing.Reducer;
+﻿namespace Mississippi.Core.Reducer;
 
 /// <summary>
 ///     Dispatches events to the correct reducers and folds the results.

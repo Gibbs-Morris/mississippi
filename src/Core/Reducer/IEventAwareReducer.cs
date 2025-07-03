@@ -1,4 +1,4 @@
-﻿namespace Mississippi.EventSourcing.Reducer;
+﻿namespace Mississippi.Core.Reducer;
 
 /// <summary>
 ///     Optional internal interface exposing the concrete event type a reducer handles.

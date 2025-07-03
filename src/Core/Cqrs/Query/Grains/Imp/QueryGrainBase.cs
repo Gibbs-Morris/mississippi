@@ -1,4 +1,7 @@
-﻿namespace Mississippi.Core.Abstractions.Cqrs.Query;
+﻿using Mississippi.Core.Cqrs.Query.Grains;
+
+
+namespace Mississippi.Core.Abstractions.Cqrs.Query;
 
 public class QueryGrain<T> : IQueryGrain<T>
 {

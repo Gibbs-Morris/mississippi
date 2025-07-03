@@ -1,7 +1,14 @@
+using Mississippi.Core.Abstractions.Cqrs.Query;
+
 using Orleans.Concurrency;
 
 
-namespace Mississippi.Core.Abstractions.Cqrs.Query;
+namespace Mississippi.Core.Cqrs.Query.Grains;
+
+public interface IQueryService<TQuery>
+{
+    Task<QuerySnapshot<TQuery> Get();
+}
 
 /// <summary>
 ///     Defines a grain for querying read models of type <typeparamref name="TQuery" />.

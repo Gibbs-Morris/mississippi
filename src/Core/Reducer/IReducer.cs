@@ -1,4 +1,4 @@
-﻿namespace Mississippi.EventSourcing.Reducer;
+﻿namespace Mississippi.Core.Reducer;
 
 /// <summary>
 ///     Defines a pure function that converts <typeparamref name="TState" /> + event → next state.
