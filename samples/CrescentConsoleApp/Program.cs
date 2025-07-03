@@ -1,10 +1,10 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using CrescentConsoleApp.Grains;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+using Mississippi.CrescentConsoleApp.Grains;
 
 using Orleans.Configuration;
 

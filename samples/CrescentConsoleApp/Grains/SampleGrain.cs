@@ -1,6 +1,4 @@
-#pragma warning disable SA1028 // Code should not contain trailing whitespace
-
-namespace CrescentConsoleApp.Grains;
+namespace Mississippi.CrescentConsoleApp.Grains;
 
 /// <summary>
 ///     A simple grain implementation that returns "Hello, world!".

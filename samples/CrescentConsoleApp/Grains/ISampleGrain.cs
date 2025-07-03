@@ -1,6 +1,4 @@
-#pragma warning disable SA1028 // Code should not contain trailing whitespace
-
-namespace CrescentConsoleApp.Grains;
+namespace Mississippi.CrescentConsoleApp.Grains;
 
 /// <summary>
 ///     A simple sample grain interface that returns a greeting.
@@ -15,5 +13,3 @@ internal interface ISampleGrain : IGrainWithIntegerKey
     [Alias("HelloWorld")]
     Task<string> HelloWorldAsync();
 }
-
-#pragma warning disable SA1028
