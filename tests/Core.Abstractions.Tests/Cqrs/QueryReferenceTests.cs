@@ -30,7 +30,7 @@ public class QueryReferenceTests
     }
 
     /// <summary>
-    ///     Verifies that a null token causes an <see cref="ArgumentNullException" />.
+    ///     Verifies that Projection null token causes an <see cref="ArgumentNullException" />.
     /// </summary>
     [Fact]
     public void QueryReferenceNullTokenThrows()

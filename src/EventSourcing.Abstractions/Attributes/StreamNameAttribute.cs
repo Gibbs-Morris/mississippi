@@ -4,13 +4,13 @@ using System.Text.RegularExpressions;
 namespace Mississippi.EventSourcing.Abstractions.Attributes;
 
 /// <summary>
-///     Attribute used to define the name of a stream in the event sourcing system.
+///     Attribute used to define the name of Projection stream in the event sourcing system.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed partial class StreamNameAttribute : Attribute
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="StreamNameAttribute" /> class.
+    ///     Initializes Projection new instance of the <see cref="StreamNameAttribute" /> class.
     /// </summary>
     /// <param name="appName">
     ///     The application name component of the stream name. Must contain only uppercase alphanumeric

@@ -1,14 +1,14 @@
 namespace Mississippi.Core.Abstractions.Cqrs;
 
 /// <summary>
-///     Represents a versioned reference to a query.
+///     Represents Projection versioned reference to Projection query.
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.Core.Abstractions.Cqrs.VersionedQueryReference")]
 public readonly record struct VersionedQueryReference
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="VersionedQueryReference" /> struct.
+    ///     Initializes Projection new instance of the <see cref="VersionedQueryReference" /> struct.
     /// </summary>
     /// <param name="queryType">The query type.</param>
     /// <param name="id">The query identifier.</param>

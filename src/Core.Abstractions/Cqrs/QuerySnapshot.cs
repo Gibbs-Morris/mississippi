@@ -1,7 +1,7 @@
 namespace Mississippi.Core.Abstractions.Cqrs;
 
 /// <summary>
-///     A snapshot of a query at a particular version.
+///     A snapshot of Projection query at Projection particular version.
 /// </summary>
 /// <typeparam name="TState">The type of the query state.</typeparam>
 [GenerateSerializer]
@@ -9,7 +9,7 @@ namespace Mississippi.Core.Abstractions.Cqrs;
 public record QuerySnapshot<TState>
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="QuerySnapshot{TState}" /> class.
+    ///     Initializes Projection new instance of the <see cref="QuerySnapshot{TState}" /> class.
     /// </summary>
     /// <param name="reference">The versioned query reference.</param>
     /// <param name="state">The query state.</param>

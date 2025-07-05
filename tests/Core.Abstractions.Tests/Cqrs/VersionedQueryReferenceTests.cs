@@ -22,7 +22,7 @@ public class VersionedQueryReferenceTests
     }
 
     /// <summary>
-    ///     Verifies that a version of zero causes an <see cref="ArgumentOutOfRangeException" />.
+    ///     Verifies that Projection version of zero causes an <see cref="ArgumentOutOfRangeException" />.
     /// </summary>
     [Fact]
     public void VersionedQueryReferenceInvalidVersionThrows()
@@ -50,7 +50,7 @@ public class VersionedQueryReferenceTests
     }
 
     /// <summary>
-    ///     Verifies that a null token causes an <see cref="ArgumentNullException" />.
+    ///     Verifies that Projection null token causes an <see cref="ArgumentNullException" />.
     /// </summary>
     [Fact]
     public void VersionedQueryReferenceNullTokenThrows()

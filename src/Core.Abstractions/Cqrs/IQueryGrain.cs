@@ -4,7 +4,7 @@ using Orleans.Concurrency;
 namespace Mississippi.Core.Abstractions.Cqrs;
 
 /// <summary>
-///     Defines a grain for querying read models of type <typeparamref name="TQuery" />.
+///     Defines Projection grain for querying read models of type <typeparamref name="TQuery" />.
 /// </summary>
 /// <typeparam name="TQuery">The query state type.</typeparam>
 [Alias("Mississippi.Core.Abstractions.Cqrs.IQueryGrain")]
@@ -30,7 +30,7 @@ public interface IQueryGrain<TQuery> : IGrainWithStringKey
     Task<long> GetCurrentVersionAsync();
 
     /// <summary>
-    ///     Gets a reference to the query without version information.
+    ///     Gets Projection reference to the query without version information.
     /// </summary>
     /// <returns>A task that returns the <see cref="QueryReference" />.</returns>
     [Alias("GetReferenceAsync")]
@@ -38,7 +38,7 @@ public interface IQueryGrain<TQuery> : IGrainWithStringKey
     Task<QueryReference> GetReferenceAsync();
 
     /// <summary>
-    ///     Gets a versioned reference for the specified query version.
+    ///     Gets Projection versioned reference for the specified query version.
     /// </summary>
     /// <param name="version">The version number for the reference.</param>
     /// <returns>A task that returns the <see cref="VersionedQueryReference" />.</returns>

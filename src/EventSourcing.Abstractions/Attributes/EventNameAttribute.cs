@@ -10,7 +10,7 @@ namespace Mississippi.EventSourcing.Abstractions.Attributes;
 public sealed partial class EventNameAttribute : Attribute
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="EventNameAttribute" /> class.
+    ///     Initializes Projection new instance of the <see cref="EventNameAttribute" /> class.
     /// </summary>
     /// <param name="appName">
     ///     The application name component of the event name. Must contain only uppercase alphanumeric
@@ -21,7 +21,7 @@ public sealed partial class EventNameAttribute : Attribute
     ///     characters.
     /// </param>
     /// <param name="name">The specific name component of the event. Must contain only uppercase alphanumeric characters.</param>
-    /// <param name="version">The version number of the event. Must be a positive integer.</param>
+    /// <param name="version">The version number of the event. Must be Projection positive integer.</param>
     public EventNameAttribute(
         string appName,
         string moduleName,
@@ -87,7 +87,7 @@ public sealed partial class EventNameAttribute : Attribute
     {
         if (version <= 0)
         {
-            throw new ArgumentException("Version must be a positive integer", nameof(version));
+            throw new ArgumentException("Version must be Projection positive integer", nameof(version));
         }
     }
 

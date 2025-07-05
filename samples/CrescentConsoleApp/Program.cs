@@ -3,13 +3,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-
+using Mississippi.Core.Projection;
 using Mississippi.CrescentConsoleApp.Grains;
-
 using Orleans.Configuration;
 
-
-HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+var builder = Host.CreateApplicationBuilder(args);
 builder.UseOrleans(silo =>
 {
     silo.UseLocalhostClustering()
@@ -20,12 +18,29 @@ builder.UseOrleans(silo =>
         });
 });
 builder.Logging.AddConsole();
-using IHost host = builder.Build();
-await host.StartAsync().ConfigureAwait(true);
-IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
-ISampleGrain? grain = client.GetGrain<ISampleGrain>(0);
-string reply = await grain.HelloWorldAsync().ConfigureAwait(true);
-Console.WriteLine($"Grain says: {reply}");
-Console.WriteLine("Press <enter> to exit…");
+using var host = builder.Build();
+await host.StartAsync();
+try
+{
+    var client = host.Services.GetRequiredService<IClusterClient>();
+    var grain = client.GetGrain<ISampleGrain>(0);
+    var reply = await grain.HelloWorldAsync();
+    Console.WriteLine($"Grain says: {reply}");
+    Console.WriteLine("Press <enter> to exit…");
+    var projectionGrain = client.GetGrain<ITestGrain>("ModelA");
+    var sample = await projectionGrain.GetAsync();
+    Console.WriteLine(sample);
+
+    var projectionGrain1 = client.GetGrain<IProjectionGrain<ModelA>>("ModelB");
+    var sample1 = await projectionGrain1.GetAsync();
+    Console.WriteLine(sample1);
+}
+catch (Exception e)
+{
+    Console.WriteLine("An error occurred while running the sample:");
+    Console.WriteLine(e);
+    throw;
+}
+
 Console.ReadLine();
-await host.StopAsync().ConfigureAwait(true);
+await host.StopAsync();
