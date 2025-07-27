@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Abstractions.Mapping;
-using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Batching;
 using Mississippi.EventSourcing.Cosmos.Locking;

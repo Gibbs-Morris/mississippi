@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Locking;
 using Mississippi.EventSourcing.Cosmos.Retry;

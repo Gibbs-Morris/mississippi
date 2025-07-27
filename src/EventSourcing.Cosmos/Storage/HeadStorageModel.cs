@@ -1,4 +1,4 @@
-﻿using Mississippi.EventSourcing.Abstractions.Brooks;
+﻿using Mississippi.EventSourcing.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Storage;

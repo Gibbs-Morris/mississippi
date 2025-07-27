@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
 using Newtonsoft.Json;

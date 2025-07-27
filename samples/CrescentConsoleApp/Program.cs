@@ -8,10 +8,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.CrescentConsoleApp;
-using Mississippi.EventSourcing.Abstractions.Brooks;
-using Mississippi.EventSourcing.Brooks.Grains.Factory;
-using Mississippi.EventSourcing.Brooks.Grains.Reader;
-using Mississippi.EventSourcing.Brooks.Grains.Writer;
+using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Factory;
+using Mississippi.EventSourcing.Reader;
+using Mississippi.EventSourcing.Writer;
 
 using Orleans.Configuration;
 
