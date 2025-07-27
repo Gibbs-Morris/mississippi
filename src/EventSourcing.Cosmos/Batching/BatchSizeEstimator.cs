@@ -1,25 +1,31 @@
-﻿using Mississippi.Core.Abstractions.Streams;
+﻿using System.Text;
+
+using Mississippi.Core.Abstractions.Brooks;
+using Mississippi.EventSourcing.Cosmos.Storage;
+
 using Newtonsoft.Json;
+
 
 namespace Mississippi.EventSourcing.Cosmos.Batching;
 
 /// <summary>
-/// Estimates the size of batches and individual events for Cosmos DB operations.
+///     Estimates the size of batches and individual events for Cosmos DB operations.
 /// </summary>
 internal class BatchSizeEstimator : IBatchSizeEstimator
 {
     private const long BatchOverheadBytes = 2048;
 
     /// <summary>
-    /// Estimates the total size of a batch of events in bytes.
+    ///     Estimates the total size of a batch of events in bytes.
     /// </summary>
     /// <param name="events">The events to estimate the size for.</param>
     /// <returns>The estimated size in bytes.</returns>
-    public long EstimateBatchSize(IReadOnlyList<BrookEvent> events)
+    public long EstimateBatchSize(
+        IReadOnlyList<BrookEvent> events
+    )
     {
         long totalSize = BatchOverheadBytes;
-
-        foreach (var brookEvent in events)
+        foreach (BrookEvent brookEvent in events)
         {
             totalSize += EstimateEventSize(brookEvent);
         }
@@ -28,15 +34,17 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
     }
 
     /// <summary>
-    /// Estimates the size of a single event in bytes.
+    ///     Estimates the size of a single event in bytes.
     /// </summary>
     /// <param name="brookEvent">The event to estimate the size for.</param>
     /// <returns>The estimated size in bytes.</returns>
-    public long EstimateEventSize(BrookEvent brookEvent)
+    public long EstimateEventSize(
+        BrookEvent brookEvent
+    )
     {
         try
         {
-            var eventDoc = new Storage.EventDocument
+            EventDocument eventDoc = new()
             {
                 Id = "sample",
                 Type = "event",
@@ -48,10 +56,8 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
                 Data = brookEvent.Data.ToArray(),
                 Time = brookEvent.Time ?? DateTimeOffset.UtcNow,
             };
-
-            var serialized = JsonConvert.SerializeObject(eventDoc);
-            var actualSize = System.Text.Encoding.UTF8.GetByteCount(serialized);
-
+            string serialized = JsonConvert.SerializeObject(eventDoc);
+            int actualSize = Encoding.UTF8.GetByteCount(serialized);
             return (long)(actualSize * 1.2);
         }
         catch (JsonException)
@@ -64,7 +70,6 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
             size += (brookEvent.DataContentType?.Length ?? 0) * 2;
             size += brookEvent.Data.Length;
             size += 200;
-
             return size;
         }
         catch (OutOfMemoryException)
@@ -77,36 +82,38 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
             size += (brookEvent.DataContentType?.Length ?? 0) * 2;
             size += brookEvent.Data.Length;
             size += 200;
-
             return size;
         }
     }
 
     /// <summary>
-    /// Creates batches of events that respect size and count limits.
+    ///     Creates batches of events that respect size and count limits.
     /// </summary>
     /// <param name="events">The events to batch.</param>
     /// <param name="maxEventsPerBatch">The maximum number of events per batch.</param>
     /// <param name="maxSizeBytes">The maximum size in bytes per batch.</param>
     /// <returns>An enumerable of batches, each containing events within the specified limits.</returns>
     /// <exception cref="InvalidOperationException">Thrown when a single event exceeds the maximum batch size.</exception>
-    public IEnumerable<IReadOnlyList<BrookEvent>> CreateSizeLimitedBatches(IReadOnlyList<BrookEvent> events, int maxEventsPerBatch, long maxSizeBytes)
+    public IEnumerable<IReadOnlyList<BrookEvent>> CreateSizeLimitedBatches(
+        IReadOnlyList<BrookEvent> events,
+        int maxEventsPerBatch,
+        long maxSizeBytes
+    )
     {
-        var currentBatch = new List<BrookEvent>();
+        List<BrookEvent> currentBatch = new();
         long currentBatchSize = BatchOverheadBytes;
-
-        foreach (var brookEvent in events)
+        foreach (BrookEvent brookEvent in events)
         {
-            var eventSize = EstimateEventSize(brookEvent);
-
-            if ((currentBatchSize + eventSize > maxSizeBytes || currentBatch.Count >= maxEventsPerBatch) && currentBatch.Count > 0)
+            long eventSize = EstimateEventSize(brookEvent);
+            if ((((currentBatchSize + eventSize) > maxSizeBytes) || (currentBatch.Count >= maxEventsPerBatch)) &&
+                (currentBatch.Count > 0))
             {
                 yield return currentBatch;
-                currentBatch = new List<BrookEvent>();
+                currentBatch = new();
                 currentBatchSize = BatchOverheadBytes;
             }
 
-            if (eventSize > maxSizeBytes - BatchOverheadBytes)
+            if (eventSize > (maxSizeBytes - BatchOverheadBytes))
             {
                 throw new InvalidOperationException(
                     $"Single event is too large ({eventSize:N0} bytes). Maximum allowed size is {maxSizeBytes - BatchOverheadBytes:N0} bytes.");

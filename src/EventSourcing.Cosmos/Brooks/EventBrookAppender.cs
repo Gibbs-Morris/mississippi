@@ -1,21 +1,24 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Options;
+
+using Mississippi.Core.Abstractions.Brooks;
 using Mississippi.Core.Abstractions.Mapping;
-using Mississippi.Core.Abstractions.Streams;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Batching;
 using Mississippi.EventSourcing.Cosmos.Locking;
 using Mississippi.EventSourcing.Cosmos.Retry;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
+
 namespace Mississippi.EventSourcing.Cosmos.Brooks;
 
 /// <summary>
-/// Cosmos DB implementation of the event brook appender for writing events to brooks.
+///     Cosmos DB implementation of the event brook appender for writing events to brooks.
 /// </summary>
 internal class EventBrookAppender : IEventBrookAppender
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="EventBrookAppender"/> class.
+    ///     Initializes a new instance of the <see cref="EventBrookAppender" /> class.
     /// </summary>
     /// <param name="repository">The Cosmos repository for low-level operations.</param>
     /// <param name="lockManager">The distributed lock manager for concurrency control.</param>
@@ -31,7 +34,8 @@ internal class EventBrookAppender : IEventBrookAppender
         IRetryPolicy retryPolicy,
         IOptions<BrookStorageOptions> options,
         IMapper<BrookEvent, EventStorageModel> eventMapper,
-        IBrookRecoveryService recoveryService)
+        IBrookRecoveryService recoveryService
+    )
     {
         Repository = repository;
         LockManager = lockManager;
@@ -57,92 +61,129 @@ internal class EventBrookAppender : IEventBrookAppender
     private IBrookRecoveryService RecoveryService { get; }
 
     /// <summary>
-    /// Appends a collection of events to the specified brook stream.
+    ///     Appends a collection of events to the specified brook.
     /// </summary>
-    /// <param name="brookId">The brook identifier specifying the target stream.</param>
-    /// <param name="events">The collection of events to append to the stream.</param>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="events">The collection of events to append to the brook.</param>
     /// <param name="expectedVersion">The expected version for optimistic concurrency control.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>The position after successfully appending all events.</returns>
-    public async Task<BrookPosition> AppendEventsAsync(BrookKey brookId, IReadOnlyList<BrookEvent> events, BrookPosition? expectedVersion, CancellationToken cancellationToken = default)
+    public async Task<BrookPosition> AppendEventsAsync(
+        BrookKey brookId,
+        IReadOnlyList<BrookEvent> events,
+        BrookPosition? expectedVersion,
+        CancellationToken cancellationToken = default
+    )
     {
-        await using var distributedLock = await LockManager.AcquireLockAsync(brookId.ToString(), TimeSpan.FromSeconds(Options.LeaseDurationSeconds), cancellationToken);
-
+        await using IDistributedLock distributedLock = await LockManager.AcquireLockAsync(
+            brookId.ToString(),
+            TimeSpan.FromSeconds(Options.LeaseDurationSeconds),
+            cancellationToken);
         return await AppendEventsWithLockAsync(brookId, events, expectedVersion, distributedLock, cancellationToken);
     }
 
-    private async Task<BrookPosition> AppendEventsWithLockAsync(BrookKey brookId, IReadOnlyList<BrookEvent> events, BrookPosition? expectedVersion, IDistributedLock distributedLock, CancellationToken cancellationToken)
+    private async Task<BrookPosition> AppendEventsWithLockAsync(
+        BrookKey brookId,
+        IReadOnlyList<BrookEvent> events,
+        BrookPosition? expectedVersion,
+        IDistributedLock distributedLock,
+        CancellationToken cancellationToken
+    )
     {
-        var currentHead = await RecoveryService.GetOrRecoverHeadPositionAsync(brookId, cancellationToken);
-
-        if (expectedVersion.HasValue && expectedVersion.Value != currentHead)
+        BrookPosition currentHead = await RecoveryService.GetOrRecoverHeadPositionAsync(brookId, cancellationToken);
+        if (expectedVersion.HasValue && (expectedVersion.Value != currentHead))
         {
             throw new OptimisticConcurrencyException(
                 $"Expected version {expectedVersion.Value} but current head is {currentHead}");
         }
 
-        var finalPosition = currentHead.Value + events.Count;
-        var estimatedSize = SizeEstimator.EstimateBatchSize(events);
+        long finalPosition = currentHead.Value + events.Count;
+        long estimatedSize = SizeEstimator.EstimateBatchSize(events);
+        if ((events.Count > Options.MaxEventsPerBatch) || (estimatedSize > Options.MaxRequestSizeBytes))
+        {
+            return await AppendLargeBatchAsync(
+                brookId,
+                events,
+                currentHead,
+                finalPosition,
+                distributedLock,
+                cancellationToken);
+        }
 
-        if (events.Count > Options.MaxEventsPerBatch || estimatedSize > Options.MaxRequestSizeBytes)
-        {
-            return await AppendLargeBatchAsync(brookId, events, currentHead, finalPosition, distributedLock, cancellationToken);
-        }
-        else
-        {
-            return await AppendSingleBatchAsync(brookId, events, currentHead, finalPosition, distributedLock, cancellationToken);
-        }
+        return await AppendSingleBatchAsync(
+            brookId,
+            events,
+            currentHead,
+            finalPosition,
+            distributedLock,
+            cancellationToken);
     }
 
-    private async Task<BrookPosition> AppendSingleBatchAsync(BrookKey brookId, IReadOnlyList<BrookEvent> events, BrookPosition currentHead, long finalPosition, IDistributedLock distributedLock, CancellationToken cancellationToken)
+    private async Task<BrookPosition> AppendSingleBatchAsync(
+        BrookKey brookId,
+        IReadOnlyList<BrookEvent> events,
+        BrookPosition currentHead,
+        long finalPosition,
+        IDistributedLock distributedLock,
+        CancellationToken cancellationToken
+    )
     {
         await distributedLock.RenewAsync(cancellationToken);
-
-        var storageEvents = events.Select(EventMapper.Map).ToList();
-        var response = await RetryPolicy.ExecuteAsync(
-            async () =>
-            await Repository.ExecuteTransactionalBatchAsync(
+        List<EventStorageModel> storageEvents = events.Select(EventMapper.Map).ToList();
+        TransactionalBatchResponse response = await RetryPolicy.ExecuteAsync(
+            async () => await Repository.ExecuteTransactionalBatchAsync(
                 brookId,
                 storageEvents,
                 currentHead,
                 finalPosition,
                 cancellationToken),
             cancellationToken);
-
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException($"Failed to append events: {response.ErrorMessage}");
         }
 
-        return new BrookPosition(finalPosition);
+        return new(finalPosition);
     }
 
-    private async Task<BrookPosition> AppendLargeBatchAsync(BrookKey brookId, IReadOnlyList<BrookEvent> events, BrookPosition currentHead, long finalPosition, IDistributedLock distributedLock, CancellationToken cancellationToken)
+    private async Task<BrookPosition> AppendLargeBatchAsync(
+        BrookKey brookId,
+        IReadOnlyList<BrookEvent> events,
+        BrookPosition currentHead,
+        long finalPosition,
+        IDistributedLock distributedLock,
+        CancellationToken cancellationToken
+    )
     {
         await Repository.CreatePendingHeadAsync(brookId, currentHead, finalPosition, cancellationToken);
-
         try
         {
-            var batches = SizeEstimator.CreateSizeLimitedBatches(events, Options.MaxEventsPerBatch, Options.MaxRequestSizeBytes).ToList();
-            var processedEvents = 0;
-
+            List<IReadOnlyList<BrookEvent>> batches = SizeEstimator.CreateSizeLimitedBatches(
+                    events,
+                    Options.MaxEventsPerBatch,
+                    Options.MaxRequestSizeBytes)
+                .ToList();
+            int processedEvents = 0;
             for (int batchIndex = 0; batchIndex < batches.Count; batchIndex++)
             {
-                if (batchIndex > 0 && batchIndex % 5 == 0)
+                if ((batchIndex > 0) && ((batchIndex % 5) == 0))
                 {
                     await distributedLock.RenewAsync(cancellationToken);
                 }
 
-                var batchEvents = batches[batchIndex];
-                var batchStartPosition = currentHead.Value + processedEvents + 1;
-                var storageBatchEvents = batchEvents.Select(EventMapper.Map).ToList();
-
-                await Repository.AppendEventBatchAsync(brookId, storageBatchEvents, batchStartPosition, cancellationToken);
+                IReadOnlyList<BrookEvent> batchEvents = batches[batchIndex];
+                long batchStartPosition = currentHead.Value + processedEvents + 1;
+                List<EventStorageModel> storageBatchEvents = batchEvents.Select(EventMapper.Map).ToList();
+                await Repository.AppendEventBatchAsync(
+                    brookId,
+                    storageBatchEvents,
+                    batchStartPosition,
+                    cancellationToken);
                 processedEvents += batchEvents.Count;
             }
 
             await Repository.CommitHeadPositionAsync(brookId, finalPosition, cancellationToken);
-            return new BrookPosition(finalPosition);
+            return new(finalPosition);
         }
         catch
         {
@@ -151,25 +192,30 @@ internal class EventBrookAppender : IEventBrookAppender
         }
     }
 
-    private async Task RollbackLargeBatchAsync(BrookKey brookId, BrookPosition originalHead, long failedFinalPosition, CancellationToken cancellationToken)
+    private async Task RollbackLargeBatchAsync(
+        BrookKey brookId,
+        BrookPosition originalHead,
+        long failedFinalPosition,
+        CancellationToken cancellationToken
+    )
     {
         for (long pos = originalHead.Value + 1; pos <= failedFinalPosition; pos++)
         {
             await RetryPolicy.ExecuteAsync(
                 async () =>
-            {
-                await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
-                return true;
-            },
+                {
+                    await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
+                    return true;
+                },
                 cancellationToken);
         }
 
         await RetryPolicy.ExecuteAsync(
             async () =>
-        {
-            await Repository.DeletePendingHeadAsync(brookId, cancellationToken);
-            return true;
-        },
+            {
+                await Repository.DeletePendingHeadAsync(brookId, cancellationToken);
+                return true;
+            },
             cancellationToken);
     }
 }

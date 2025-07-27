@@ -1,15 +1,16 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+
 namespace Mississippi.Core.Abstractions.Providers.Serialization;
 
 /// <summary>
-/// Provides extension methods for registering serialization storage providers in dependency injection containers.
+///     Provides extension methods for registering serialization storage providers in dependency injection containers.
 /// </summary>
 public static class SerializationStorageProviderHelpers
 {
     /// <summary>
-    /// Registers a serialization storage provider in the service collection.
+    ///     Registers a serialization storage provider in the service collection.
     /// </summary>
     /// <typeparam name="TProvider">The type of the serialization provider to register.</typeparam>
     /// <param name="services">The service collection to register the provider in.</param>
@@ -27,7 +28,7 @@ public static class SerializationStorageProviderHelpers
     }
 
     /// <summary>
-    /// Registers a serialization storage provider with configuration options in the service collection.
+    ///     Registers a serialization storage provider with configuration options in the service collection.
     /// </summary>
     /// <typeparam name="TProvider">The type of the serialization provider to register.</typeparam>
     /// <typeparam name="TOptions">The type of the configuration options.</typeparam>
@@ -46,7 +47,7 @@ public static class SerializationStorageProviderHelpers
     }
 
     /// <summary>
-    /// Registers a serialization storage provider with configuration options from an IConfiguration section.
+    ///     Registers a serialization storage provider with configuration options from an IConfiguration section.
     /// </summary>
     /// <typeparam name="TProvider">The type of the serialization provider to register.</typeparam>
     /// <typeparam name="TOptions">The type of the configuration options.</typeparam>

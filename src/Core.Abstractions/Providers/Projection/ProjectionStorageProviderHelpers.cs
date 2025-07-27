@@ -1,15 +1,16 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+
 namespace Mississippi.Core.Abstractions.Providers.Projection;
 
 /// <summary>
-/// Helper methods for registering projection storage providers with dependency injection.
+///     Helper methods for registering projection storage providers with dependency injection.
 /// </summary>
 public static class ProjectionStorageProviderHelpers
 {
     /// <summary>
-    /// Registers a projection storage provider with the service collection.
+    ///     Registers a projection storage provider with the service collection.
     /// </summary>
     /// <typeparam name="TProvider">The type of projection storage provider to register.</typeparam>
     /// <param name="services">The service collection to register the provider with.</param>
@@ -25,7 +26,7 @@ public static class ProjectionStorageProviderHelpers
     }
 
     /// <summary>
-    /// Registers a projection storage provider with options configuration via delegate.
+    ///     Registers a projection storage provider with options configuration via delegate.
     /// </summary>
     /// <typeparam name="TProvider">The type of projection storage provider to register.</typeparam>
     /// <typeparam name="TOptions">The type of options to configure.</typeparam>
@@ -44,7 +45,7 @@ public static class ProjectionStorageProviderHelpers
     }
 
     /// <summary>
-    /// Registers a projection storage provider with options bound from configuration.
+    ///     Registers a projection storage provider with options bound from configuration.
     /// </summary>
     /// <typeparam name="TProvider">The type of projection storage provider to register.</typeparam>
     /// <typeparam name="TOptions">The type of options to configure.</typeparam>

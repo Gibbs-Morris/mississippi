@@ -1,11 +1,14 @@
 using System.Collections.Immutable;
+
 using Orleans.Concurrency;
+
 
 namespace Mississippi.Core.Projection;
 
 [StatelessWorker]
 public abstract class ProjectionGrain<TModel>
-    : Grain, IProjectionGrain<TModel>
+    : Grain,
+      IProjectionGrain<TModel>
     where TModel : new()
 {
     private long HeadPosition { get; set; } = -1;
@@ -14,32 +17,28 @@ public abstract class ProjectionGrain<TModel>
 
     public async Task<Immutable<ProjectionSnapshot<TModel>>> GetAsync()
     {
-        var head =
+        IProjectionHeadGrain<TModel>? head =
             GrainFactory.GetGrain<IProjectionHeadGrain<TModel>>(this.GetPrimaryKeyString());
-        var position = await head.GetHeadPositionAsync();
-
+        long position = await head.GetHeadPositionAsync();
         if (position == HeadPosition)
         {
             return CachedSnapshot;
         }
 
-        var pg =
-            GrainFactory.GetGrain<IPersistantProjectionSnapshotGrain<TModel>>(this.GetPrimaryKeyString() + "/v" +
-                                                                              position);
-        var data = await pg.GetAsync();
+        IPersistantProjectionSnapshotGrain<TModel>? pg =
+            GrainFactory.GetGrain<IPersistantProjectionSnapshotGrain<TModel>>(
+                this.GetPrimaryKeyString() + "/v" + position);
+        Immutable<ProjectionSnapshot<TModel>> data = await pg.GetAsync();
         HeadPosition = position;
         CachedSnapshot = data;
         return data;
     }
 
-    public Task<long> GetHeadPositionAsync()
-    {
-        throw new NotImplementedException();
-    }
+    public Task<long> GetHeadPositionAsync() => throw new NotImplementedException();
 
     public async Task<long> GetHeadPosition()
     {
-        var head =
+        IProjectionHeadGrain<TModel>? head =
             GrainFactory.GetGrain<IProjectionHeadGrain<TModel>>(this.GetPrimaryKeyString());
         return await head.GetHeadPositionAsync();
     }
@@ -47,13 +46,20 @@ public abstract class ProjectionGrain<TModel>
 
 public interface IRootReducer<T>
 {
-    T Reduce(T State, object @event);
+    T Reduce(
+        T State,
+        object @event
+    );
+
     string GetReducerHash();
 }
 
 public interface ISnapshotVersionFinder
 {
-    public static long FindSnapshot(long value, long step)
+    public static long FindSnapshot(
+        long value,
+        long step
+    )
     {
         if (step <= 0)
         {
@@ -71,7 +77,7 @@ public interface ISnapshotVersionFinder
             return 0;
         }
 
-        var candidate = value / step * step;
+        long candidate = (value / step) * step;
 
         // Ensure the result is strictly less than the original value.
         if (candidate == value)

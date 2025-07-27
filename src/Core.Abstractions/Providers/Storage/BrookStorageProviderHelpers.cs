@@ -1,12 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Mississippi.Core.Abstractions.Providers.Storage;
 
+namespace Mississippi.Core.Abstractions.Providers.Storage;
 
 public static class BrookStorageProviderHelpers
 {
-
     public static IServiceCollection RegisterBrookStorageProvider<TProvider>(
         this IServiceCollection services
     )
@@ -17,23 +16,16 @@ public static class BrookStorageProviderHelpers
         return services;
     }
 
-
-
     public static IServiceCollection RegisterBrookStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         Action<TOptions> configureOptions
     )
-        where TProvider : class, IBrookStorageProvider 
-        where TOptions : class, new() 
+        where TProvider : class, IBrookStorageProvider
+        where TOptions : class, new()
     {
-   
         services.Configure(configureOptions);
-
- 
         return services.RegisterBrookStorageProvider<TProvider>();
     }
-
-
 
     public static IServiceCollection RegisterBrookStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,

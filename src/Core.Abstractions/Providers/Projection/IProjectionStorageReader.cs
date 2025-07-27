@@ -1,12 +1,12 @@
 ﻿namespace Mississippi.Core.Abstractions.Providers.Projection;
 
 /// <summary>
-/// Provides read access to projection storage.
+///     Provides read access to projection storage.
 /// </summary>
 public interface IProjectionStorageReader
 {
     /// <summary>
-    /// Reads a projection from storage.
+    ///     Reads a projection from storage.
     /// </summary>
     /// <typeparam name="TProjection">The type of projection to read.</typeparam>
     /// <param name="key">The key identifying the projection.</param>
@@ -16,5 +16,6 @@ public interface IProjectionStorageReader
     Task<TProjection> ReadAsync<TProjection>(
         string key,
         long version,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 }

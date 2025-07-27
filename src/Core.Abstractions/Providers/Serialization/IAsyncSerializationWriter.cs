@@ -1,12 +1,12 @@
 ﻿namespace Mississippi.Core.Abstractions.Providers.Serialization;
 
 /// <summary>
-/// Provides asynchronous serialization functionality for writing objects to streams.
+///     Provides asynchronous serialization functionality for writing objects to streams.
 /// </summary>
 public interface IAsyncSerializationWriter
 {
     /// <summary>
-    /// Asynchronously serializes an object to a stream. May write directly to sockets, files, pipes, etc.
+    ///     Asynchronously serializes an object to a stream. May write directly to sockets, files, pipes, etc.
     /// </summary>
     /// <typeparam name="T">The type of object to serialize.</typeparam>
     /// <param name="value">The object to serialize.</param>
@@ -16,5 +16,6 @@ public interface IAsyncSerializationWriter
     ValueTask WriteAsync<T>(
         T value,
         Stream destination,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 }

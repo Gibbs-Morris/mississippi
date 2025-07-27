@@ -1,12 +1,12 @@
 ﻿namespace Mississippi.Core.Abstractions.Providers.Projection;
 
 /// <summary>
-/// Provides write access to projection storage.
+///     Provides write access to projection storage.
 /// </summary>
 public interface IProjectionStorageWriter
 {
     /// <summary>
-    /// Writes a projection to storage.
+    ///     Writes a projection to storage.
     /// </summary>
     /// <typeparam name="TProjection">The type of projection to write.</typeparam>
     /// <param name="key">The key identifying the projection.</param>
@@ -16,5 +16,6 @@ public interface IProjectionStorageWriter
     Task WriteAsync<TProjection>(
         string key,
         long version,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 }

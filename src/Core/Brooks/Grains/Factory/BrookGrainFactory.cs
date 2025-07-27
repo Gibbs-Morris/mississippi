@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using Mississippi.Core.Abstractions.Streams;
+
+using Mississippi.Core.Abstractions.Brooks;
 using Mississippi.Core.Brooks.Grains.Head;
 using Mississippi.Core.Brooks.Grains.Reader;
 using Mississippi.Core.Brooks.Grains.Writer;
+
 
 namespace Mississippi.Core.Brooks.Grains.Factory;
 
@@ -21,6 +23,7 @@ internal class BrookGrainFactory : IBrookGrainFactory
     }
 
     private IGrainFactory GrainFactory { get; }
+
     private ILogger<BrookGrainFactory> Logger { get; }
 
     /// <summary>
@@ -32,8 +35,7 @@ internal class BrookGrainFactory : IBrookGrainFactory
         BrookKey brookKey
     )
     {
-        Logger.LogDebug("Resolving {GrainType} for stream {BrookKey}", nameof(IBrookWriterGrain),
-            brookKey);
+        Logger.LogDebug("Resolving {GrainType} for stream {BrookKey}", nameof(IBrookWriterGrain), brookKey);
         return GrainFactory.GetGrain<IBrookWriterGrain>(brookKey);
     }
 
@@ -46,8 +48,7 @@ internal class BrookGrainFactory : IBrookGrainFactory
         BrookKey brookKey
     )
     {
-        Logger.LogDebug("Resolving {GrainType} for stream {BrookKey}", nameof(IBrookReaderGrain),
-            brookKey);
+        Logger.LogDebug("Resolving {GrainType} for stream {BrookKey}", nameof(IBrookReaderGrain), brookKey);
         return GrainFactory.GetGrain<IBrookReaderGrain>(brookKey);
     }
 
@@ -60,7 +61,9 @@ internal class BrookGrainFactory : IBrookGrainFactory
         BrookRangeKey brookRangeKey
     )
     {
-        Logger.LogDebug("Resolving {GrainType} for stream {BrookRangeKey}", nameof(IBrookSliceReaderGrain),
+        Logger.LogDebug(
+            "Resolving {GrainType} for stream {BrookRangeKey}",
+            nameof(IBrookSliceReaderGrain),
             brookRangeKey);
         return GrainFactory.GetGrain<IBrookSliceReaderGrain>(brookRangeKey);
     }
@@ -74,8 +77,7 @@ internal class BrookGrainFactory : IBrookGrainFactory
         BrookKey brookKey
     )
     {
-        Logger.LogDebug("Resolving {GrainType} for stream {BrookKey}", nameof(IBrookHeadGrain),
-            brookKey);
+        Logger.LogDebug("Resolving {GrainType} for stream {BrookKey}", nameof(IBrookHeadGrain), brookKey);
         return GrainFactory.GetGrain<IBrookHeadGrain>(brookKey);
     }
 }

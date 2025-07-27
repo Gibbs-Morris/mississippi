@@ -1,17 +1,26 @@
 ﻿using System.Collections.Immutable;
+
 using Microsoft.Extensions.Options;
-using Mississippi.Core.Abstractions.Streams;
+
+using Mississippi.Core.Abstractions.Brooks;
 using Mississippi.Core.Brooks.Grains.Factory;
+using Mississippi.Core.Brooks.Grains.Head;
+
 using Orleans.Concurrency;
+
 
 namespace Mississippi.Core.Brooks.Grains.Reader;
 
 [StatelessWorker]
-internal class BrookReaderGrain : IBrookReaderGrain, IGrainBase
+internal class BrookReaderGrain
+    : IBrookReaderGrain,
+      IGrainBase
 {
     public BrookReaderGrain(
         IBrookGrainFactory brookGrainFactory,
-        IOptions<BrookReaderOptions> options, IGrainContext grainContext)
+        IOptions<BrookReaderOptions> options,
+        IGrainContext grainContext
+    )
     {
         BrookGrainFactory = brookGrainFactory;
         Options = options;
@@ -22,22 +31,19 @@ internal class BrookReaderGrain : IBrookReaderGrain, IGrainBase
 
     private IBrookGrainFactory BrookGrainFactory { get; }
 
-    public IGrainContext GrainContext { get; }
-
-
-    public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(BrookPosition? readFrom = null,
+    public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
+        BrookPosition? readFrom = null,
         BrookPosition? readTo = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         BrookKey brookId = this.GetPrimaryKeyString();
         BrookPosition start = 0;
         BrookPosition end = 0;
-
         start = readFrom ?? new BrookPosition(0);
-
         if (!readTo.HasValue)
         {
-            var headGrain = BrookGrainFactory.GetBrookHeadGrain(brookId);
+            IBrookHeadGrain headGrain = BrookGrainFactory.GetBrookHeadGrain(brookId);
             end = await headGrain.GetLatestPositionAsync();
         }
         else
@@ -45,27 +51,27 @@ internal class BrookReaderGrain : IBrookReaderGrain, IGrainBase
             end = readTo.Value;
         }
 
-        var sliceSize = Options.Value.StreamSliceSize;
-
-        var baseIndexes = GetSliceReads(start.Value, end.Value, sliceSize);
-
-        foreach (var l in baseIndexes)
+        long sliceSize = Options.Value.BrookSliceSize;
+        List<(long BucketId, long First, long Last)> baseIndexes = GetSliceReads(start.Value, end.Value, sliceSize);
+        foreach ((long BucketId, long First, long Last) l in baseIndexes)
         {
-            var sliceGrain = BrookGrainFactory.GetBrookSliceReaderGrain(
+            IBrookSliceReaderGrain sliceGrain = BrookGrainFactory.GetBrookSliceReaderGrain(
                 BrookRangeKey.FromBrookCompositeKey(brookId, l.BucketId, sliceSize));
-            await foreach (var mississippiEvent in sliceGrain.ReadAsync(l.First, l.Last, cancellationToken))
+            await foreach (BrookEvent mississippiEvent in sliceGrain.ReadAsync(l.First, l.Last, cancellationToken))
             {
                 yield return mississippiEvent;
             }
         }
     }
 
-    public async Task<ImmutableArray<BrookEvent>> ReadEventsBatchAsync(BrookPosition? readFrom = null,
+    public async Task<ImmutableArray<BrookEvent>> ReadEventsBatchAsync(
+        BrookPosition? readFrom = null,
         BrookPosition? readTo = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         List<BrookEvent> events = new();
-        await foreach (var ev in ReadEventsAsync(readFrom, readTo, cancellationToken))
+        await foreach (BrookEvent ev in ReadEventsAsync(readFrom, readTo, cancellationToken))
         {
             events.Add(ev);
         }
@@ -73,8 +79,13 @@ internal class BrookReaderGrain : IBrookReaderGrain, IGrainBase
         return [..events];
     }
 
+    public IGrainContext GrainContext { get; }
 
-    private static List<(long BucketId, long First, long Last)> GetSliceReads(long start, long end, long sliceSize)
+    private static List<(long BucketId, long First, long Last)> GetSliceReads(
+        long start,
+        long end,
+        long sliceSize
+    )
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sliceSize);
         if (start > end)
@@ -82,17 +93,14 @@ internal class BrookReaderGrain : IBrookReaderGrain, IGrainBase
             throw new ArgumentException("start must be ≤ end");
         }
 
-        var first = (long)Math.Floor((double)start / sliceSize) * sliceSize;
-        var last = (long)Math.Floor((double)end / sliceSize) * sliceSize;
-
-        var result = new List<(long BucketId, long First, long Last)>();
-
-        for (var b = first; b <= last; b += sliceSize)
+        long first = (long)Math.Floor((double)start / sliceSize) * sliceSize;
+        long last = (long)Math.Floor((double)end / sliceSize) * sliceSize;
+        List<(long BucketId, long First, long Last)> result = new();
+        for (long b = first; b <= last; b += sliceSize)
         {
-            var bucketId = b / sliceSize;
-            var bucketFirst = Math.Max(b, start);
-            var bucketLast = Math.Min(b + sliceSize - 1, end);
-
+            long bucketId = b / sliceSize;
+            long bucketFirst = Math.Max(b, start);
+            long bucketLast = Math.Min((b + sliceSize) - 1, end);
             result.Add((bucketId, bucketFirst, bucketLast));
         }
 

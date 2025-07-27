@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 
-namespace Mississippi.Core.Abstractions.Streams;
+
+namespace Mississippi.Core.Abstractions.Brooks;
 
 /// <summary>
 ///     Represents an event used by the Mississippi event-sourcing subsystem.
@@ -33,7 +34,7 @@ public sealed record BrookEvent
     public string Id { get; init; } = string.Empty;
 
     /// <summary>
-    ///     Gets the logical source (typically a stream name) that produced the event.
+    ///     Gets the logical source (typically a brook name) that produced the event.
     /// </summary>
     [Id(1)]
     public string Source { get; init; } = string.Empty;

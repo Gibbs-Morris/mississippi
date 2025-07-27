@@ -1,24 +1,25 @@
 ﻿using Mississippi.Core.Abstractions.Mapping;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
+
 namespace Mississippi.EventSourcing.Cosmos.Mapping;
 
 /// <summary>
-/// Maps head documents to head storage models.
+///     Maps head documents to head storage models.
 /// </summary>
 internal class HeadDocumentToStorageMapper : IMapper<HeadDocument, HeadStorageModel>
 {
     /// <summary>
-    /// Maps a head document to a head storage model.
+    ///     Maps a head document to a head storage model.
     /// </summary>
     /// <param name="input">The head document to map.</param>
     /// <returns>The mapped head storage model.</returns>
-    public HeadStorageModel Map(HeadDocument input)
-    {
-        return new HeadStorageModel
+    public HeadStorageModel Map(
+        HeadDocument input
+    ) =>
+        new()
         {
             Position = input.Position,
             OriginalPosition = input.OriginalPosition,
         };
-    }
 }

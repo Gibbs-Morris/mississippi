@@ -1,5 +1,7 @@
 ﻿using System.Collections.Immutable;
-using Mississippi.Core.Abstractions.Streams;
+
+using Mississippi.Core.Abstractions.Brooks;
+
 
 namespace Mississippi.Core.Brooks.Services;
 

@@ -5,10 +5,10 @@ namespace Mississippi.Core.Abstractions.Providers.Storage;
 /// </summary>
 public interface IBrookStorageProvider
     : IBrookStorageReader,
-        IBrookStorageWriter
+      IBrookStorageWriter
 {
     /// <summary>
-    /// Gets the format identifier for this brook storage provider.
+    ///     Gets the format identifier for this brook storage provider.
     /// </summary>
     string Format { get; }
 }

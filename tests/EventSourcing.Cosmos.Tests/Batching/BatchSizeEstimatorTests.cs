@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace EventSourcing.Cosmos.Tests.Batching;
 
 public class BatchSizeEstimatorTests

@@ -1,7 +1,10 @@
-namespace Mississippi.Core.Abstractions.Streams;
+using System.Globalization;
+
+
+namespace Mississippi.Core.Abstractions.Brooks;
 
 /// <summary>
-/// Represents a range key for querying brook streams, consisting of type, id, start position, and count components.
+///     Represents a range key for querying brooks, consisting of type, id, start position, and count components.
 /// </summary>
 public readonly record struct BrookRangeKey
 {
@@ -10,14 +13,17 @@ public readonly record struct BrookRangeKey
     private const int MaxLength = 1024;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BrookRangeKey"/> struct.
+    ///     Initializes a new instance of the <see cref="BrookRangeKey" /> struct.
     /// </summary>
     /// <param name="type">The type component of the key.</param>
     /// <param name="id">The id component of the key.</param>
     /// <param name="start">The starting position of the range.</param>
     /// <param name="count">The number of items in the range.</param>
     /// <exception cref="ArgumentNullException">Thrown when type or id is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when the composite key exceeds the maximum length or contains invalid characters.</exception>
+    /// <exception cref="ArgumentException">
+    ///     Thrown when the composite key exceeds the maximum length or contains invalid
+    ///     characters.
+    /// </exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when start or count is negative.</exception>
     public BrookRangeKey(
         string type,
@@ -33,7 +39,12 @@ public readonly record struct BrookRangeKey
 
         // Rough length check (no allocation)
         // +3 separator chars
-        if (type.Length + id.Length + start.ToString(System.Globalization.CultureInfo.InvariantCulture).Length + count.ToString(System.Globalization.CultureInfo.InvariantCulture).Length + 3 > MaxLength)
+        if ((type.Length +
+             id.Length +
+             start.ToString(CultureInfo.InvariantCulture).Length +
+             count.ToString(CultureInfo.InvariantCulture).Length +
+             3) >
+            MaxLength)
         {
             throw new ArgumentException($"Composite key exceeds the {MaxLength}-character limit.");
         }
@@ -45,35 +56,32 @@ public readonly record struct BrookRangeKey
     }
 
     /// <summary>
-    /// Gets the type component of the brook range key.
+    ///     Gets the type component of the brook range key.
     /// </summary>
     public string Type { get; }
 
     /// <summary>
-    /// Gets the id component of the brook range key.
+    ///     Gets the id component of the brook range key.
     /// </summary>
     public string Id { get; }
 
     /// <summary>
-    /// Gets the starting position of the range.
+    ///     Gets the starting position of the range.
     /// </summary>
     public BrookPosition Start { get; }
 
     /// <summary>
-    /// Gets the ending position of the range (Start + Count).
+    ///     Gets the ending position of the range (Start + Count).
     /// </summary>
-    public BrookPosition End
-    {
-        get => Start + Count;
-    }
+    public BrookPosition End => Start + Count;
 
     /// <summary>
-    /// Gets the number of items in the range.
+    ///     Gets the number of items in the range.
     /// </summary>
     public long Count { get; }
 
     /// <summary>
-    /// Creates a brook range key from a brook key and range parameters.
+    ///     Creates a brook range key from a brook key and range parameters.
     /// </summary>
     /// <param name="key">The brook key containing type and id.</param>
     /// <param name="start">The starting position of the range.</param>
@@ -83,53 +91,43 @@ public readonly record struct BrookRangeKey
         BrookKey key,
         long start,
         long count
-    )
-    {
-        return new BrookRangeKey(key.Type, key.Id, start, count);
-    }
+    ) =>
+        new(key.Type, key.Id, start, count);
 
     /// <summary>
-    /// Converts this brook range key to a brook key containing only the type and id components.
+    ///     Converts this brook range key to a brook key containing only the type and id components.
     /// </summary>
     /// <returns>A brook key with the type and id from this range key.</returns>
-    public BrookKey ToBrookCompositeKey()
-    {
-        return new BrookKey(Type, Id);
-    }
+    public BrookKey ToBrookCompositeKey() => new(Type, Id);
 
     /// <summary>
-    /// Returns the string representation of this brook range key.
+    ///     Returns the string representation of this brook range key.
     /// </summary>
     /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
-    public override string ToString()
-    {
-        return this;
-    }
+    public override string ToString() => this;
 
     /// <summary>
-    /// Implicitly converts a <see cref="BrookRangeKey"/> to its string representation.
+    ///     Implicitly converts a <see cref="BrookRangeKey" /> to its string representation.
     /// </summary>
     /// <param name="key">The brook range key to convert.</param>
     /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
     public static implicit operator string(
         BrookRangeKey key
-    )
-    {
-        return $"{key.Type}{Separator}{key.Id}{Separator}{key.Start}{Separator}{key.Count}";
-    }
+    ) =>
+        $"{key.Type}{Separator}{key.Id}{Separator}{key.Start}{Separator}{key.Count}";
 
     /// <summary>
-    /// Converts a brook range key to its string representation.
+    ///     Converts a brook range key to its string representation.
     /// </summary>
     /// <param name="key">The brook range key to convert.</param>
     /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
-    public static string FromBrookRangeKey(BrookRangeKey key)
-    {
-        return key;
-    }
+    public static string FromBrookRangeKey(
+        BrookRangeKey key
+    ) =>
+        key;
 
     /// <summary>
-    /// Implicitly converts a string to a <see cref="BrookRangeKey"/>.
+    ///     Implicitly converts a string to a <see cref="BrookRangeKey" />.
     /// </summary>
     /// <param name="value">The string value to convert.</param>
     /// <returns>A brook range key parsed from the string.</returns>
@@ -137,26 +135,26 @@ public readonly record struct BrookRangeKey
     /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
     public static implicit operator BrookRangeKey(
         string value
-    )
-    {
-        return FromString(value);
-    }
+    ) =>
+        FromString(value);
 
     /// <summary>
-    /// Creates a brook range key from its string representation.
+    ///     Creates a brook range key from its string representation.
     /// </summary>
     /// <param name="value">The string value to convert.</param>
     /// <returns>A brook range key parsed from the string.</returns>
     /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
     /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
-    public static BrookRangeKey FromString(string value)
+    public static BrookRangeKey FromString(
+        string value
+    )
     {
         ArgumentNullException.ThrowIfNull(value);
 
         // Fast path: split once; avoids allocations of String.Split
         Span<int> idx = stackalloc int[3];
         int found = 0;
-        for (var i = 0; i < value.Length && found < 3; i++)
+        for (int i = 0; (i < value.Length) && (found < 3); i++)
         {
             if (value[i] == Separator)
             {
@@ -170,21 +168,21 @@ public readonly record struct BrookRangeKey
                 $"Composite key must be in the form '<type>{Separator}<id>{Separator}<start>{Separator}<count>'.");
         }
 
-        var type = value[..idx[0]];
-        var id = value[(idx[0] + 1)..idx[1]];
-        var startSpan = value.AsSpan(idx[1] + 1, idx[2] - idx[1] - 1);
-        var countSpan = value[(idx[2] + 1)..];
-        if (!long.TryParse(startSpan, out var start))
+        string type = value[..idx[0]];
+        string id = value[(idx[0] + 1)..idx[1]];
+        ReadOnlySpan<char> startSpan = value.AsSpan(idx[1] + 1, idx[2] - idx[1] - 1);
+        string countSpan = value[(idx[2] + 1)..];
+        if (!long.TryParse(startSpan, out long start))
         {
             throw new FormatException($"Could not parse '{startSpan}' as a {nameof(Start)} (long).");
         }
 
-        if (!long.TryParse(countSpan, out var count))
+        if (!long.TryParse(countSpan, out long count))
         {
             throw new FormatException($"Could not parse '{countSpan}' as a {nameof(Count)} (long).");
         }
 
-        return new BrookRangeKey(type, id, start, count);
+        return new(type, id, start, count);
     }
 
     private static void ValidateComponent(

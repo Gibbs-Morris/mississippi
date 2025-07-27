@@ -1,22 +1,28 @@
 ﻿using System.Collections.Immutable;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using Mississippi.Core.Abstractions.Brooks;
 using Mississippi.Core.Abstractions.Providers.Storage;
-using Mississippi.Core.Abstractions.Streams;
 using Mississippi.Core.Brooks.Grains.Head;
 using Mississippi.Core.Brooks.Grains.Reader;
+
+using Orleans.Streams;
+
 
 namespace Mississippi.Core.Brooks.Grains.Writer;
 
 internal class BrookWriterGrain
     : IGrainBase,
-        IBrookWriterGrain
+      IBrookWriterGrain
 {
     public BrookWriterGrain(
         IBrookStorageWriter brookWriterService,
         ILogger<BrookWriterGrain> logger,
-        IGrainContext grainContext, 
-        IOptions<BrookProviderOptions> streamProviderOptions)
+        IGrainContext grainContext,
+        IOptions<BrookProviderOptions> streamProviderOptions
+    )
     {
         BrookWriterService = brookWriterService;
         Logger = logger;
@@ -28,10 +34,7 @@ internal class BrookWriterGrain
 
     private ILogger<BrookWriterGrain> Logger { get; }
 
-    public IGrainContext GrainContext { get; }
-
     private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
-    
 
     public async Task<BrookPosition> AppendEventsAsync(
         ImmutableArray<BrookEvent> events,
@@ -45,10 +48,13 @@ internal class BrookWriterGrain
             events,
             expectedHeadPosition,
             cancellationToken);
-        var stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
-            .GetStream<StreamHeadMovedEvent>(
+        IAsyncStream<BrookHeadMovedEvent>? stream = this
+            .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
+            .GetStream<BrookHeadMovedEvent>(
                 StreamId.Create(EventSourcingOrleansStreamNames.HeadUpdateStreamName, this.GetPrimaryKeyString()));
-        await stream.OnNextAsync(new StreamHeadMovedEvent(newPosition));
+        await stream.OnNextAsync(new(newPosition));
         return newPosition;
     }
+
+    public IGrainContext GrainContext { get; }
 }

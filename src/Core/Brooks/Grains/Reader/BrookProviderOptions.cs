@@ -2,5 +2,5 @@
 
 public class BrookProviderOptions
 {
-    public string OrleansStreamProviderName { get; init; } = "MississippiEventStreamProvider";
+    public string OrleansStreamProviderName { get; init; } = "MississippiBrookStreamProvider";
 }

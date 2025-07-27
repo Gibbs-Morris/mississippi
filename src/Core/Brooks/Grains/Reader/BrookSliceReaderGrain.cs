@@ -1,14 +1,22 @@
 ﻿using System.Collections.Immutable;
+
+using Mississippi.Core.Abstractions.Brooks;
 using Mississippi.Core.Abstractions.Providers.Storage;
-using Mississippi.Core.Abstractions.Streams;
 using Mississippi.Core.Brooks.Grains.Factory;
+using Mississippi.Core.Brooks.Grains.Head;
+
 
 namespace Mississippi.Core.Brooks.Grains.Reader;
 
-internal class BrookSliceReaderGrain : IBrookSliceReaderGrain, IGrainBase
+internal class BrookSliceReaderGrain
+    : IBrookSliceReaderGrain,
+      IGrainBase
 {
     public BrookSliceReaderGrain(
-        IBrookStorageReader brookStorageReader, IGrainContext grainContext, IBrookGrainFactory brookGrainFactory)
+        IBrookStorageReader brookStorageReader,
+        IGrainContext grainContext,
+        IBrookGrainFactory brookGrainFactory
+    )
     {
         BrookStorageReader = brookStorageReader;
         GrainContext = grainContext;
@@ -19,33 +27,20 @@ internal class BrookSliceReaderGrain : IBrookSliceReaderGrain, IGrainBase
 
     private IBrookStorageReader BrookStorageReader { get; }
 
-    public IGrainContext GrainContext { get; }
     private IBrookGrainFactory BrookGrainFactory { get; }
 
-    private async Task PopulateCacheFromStreamAsync(
-        BrookRangeKey brookRangeKey
+    public async IAsyncEnumerable<BrookEvent> ReadAsync(
+        BrookPosition minReadFrom,
+        BrookPosition maxReadTo,
+        CancellationToken cancellationToken = default
     )
     {
-        var l = new List<BrookEvent>();
-        await foreach (var ev in BrookStorageReader.ReadEventsAsync(brookRangeKey))
-        {
-            l.Add(ev);
-        }
-
-        Cache = l.ToImmutableArray();
-    }
-
-
-    public async IAsyncEnumerable<BrookEvent> ReadAsync(BrookPosition minReadFrom, BrookPosition maxReadTo,
-        CancellationToken cancellationToken = default)
-    {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
-        var head = BrookGrainFactory.GetBrookHeadGrain(brookRangeKey.ToBrookCompositeKey());
-        var lastPositionOfBrook = await head.GetLatestPositionAsync();
-        var lastPositionOfSlice = brookRangeKey.End;
-        BrookPosition lastPositionOfCache = (Cache.Length + brookRangeKey.Start);
-
-        if (lastPositionOfCache < lastPositionOfSlice && lastPositionOfCache < lastPositionOfBrook)
+        IBrookHeadGrain head = BrookGrainFactory.GetBrookHeadGrain(brookRangeKey.ToBrookCompositeKey());
+        BrookPosition lastPositionOfBrook = await head.GetLatestPositionAsync();
+        BrookPosition lastPositionOfSlice = brookRangeKey.End;
+        BrookPosition lastPositionOfCache = Cache.Length + brookRangeKey.Start;
+        if ((lastPositionOfCache < lastPositionOfSlice) && (lastPositionOfCache < lastPositionOfBrook))
         {
             await PopulateCacheFromStreamAsync(brookRangeKey);
         }
@@ -53,7 +48,6 @@ internal class BrookSliceReaderGrain : IBrookSliceReaderGrain, IGrainBase
         for (int i = 0; i < Cache.Length; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
             BrookPosition position = brookRangeKey.Start + i; // derive absolute position
             if (position < minReadFrom)
             {
@@ -69,15 +63,33 @@ internal class BrookSliceReaderGrain : IBrookSliceReaderGrain, IGrainBase
         }
     }
 
-    public async Task<ImmutableArray<BrookEvent>> ReadBatchAsync(BrookPosition minReadFrom, BrookPosition maxReadTo,
-        CancellationToken cancellationToken = default)
+    public async Task<ImmutableArray<BrookEvent>> ReadBatchAsync(
+        BrookPosition minReadFrom,
+        BrookPosition maxReadTo,
+        CancellationToken cancellationToken = default
+    )
     {
         List<BrookEvent> events = new();
-        await foreach (var ev in ReadAsync(minReadFrom, maxReadTo, cancellationToken))
+        await foreach (BrookEvent ev in ReadAsync(minReadFrom, maxReadTo, cancellationToken))
         {
             events.Add(ev);
         }
 
         return [..events];
+    }
+
+    public IGrainContext GrainContext { get; }
+
+    private async Task PopulateCacheFromStreamAsync(
+        BrookRangeKey brookRangeKey
+    )
+    {
+        List<BrookEvent> l = new();
+        await foreach (BrookEvent ev in BrookStorageReader.ReadEventsAsync(brookRangeKey))
+        {
+            l.Add(ev);
+        }
+
+        Cache = l.ToImmutableArray();
     }
 }

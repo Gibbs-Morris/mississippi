@@ -1,5 +1,6 @@
 ﻿using Orleans.Concurrency;
 
+
 namespace Mississippi.Core.Projection;
 
 [Alias("Mississippi.Core.Projection.IProjectionHeadGrain")]
