@@ -78,7 +78,7 @@ public readonly record struct BrookRangeKey
 
         // Fast path: split once; avoids allocations of String.Split
         Span<int> idx = stackalloc int[3];
-        int found = 0, pos = -1;
+        int found = 0;
         for (var i = 0; i < value.Length && found < 3; i++)
             if (value[i] == Separator)
                 idx[found++] = i;

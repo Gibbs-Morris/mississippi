@@ -3,15 +3,30 @@ using Microsoft.Azure.Cosmos;
 
 namespace Mississippi.EventSourcing.Cosmos.Retry;
 
+/// <summary>
+/// Retry policy implementation for Cosmos DB operations.
+/// </summary>
 internal class CosmosRetryPolicy : IRetryPolicy
 {
-    private int MaxRetries { get; }
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CosmosRetryPolicy"/> class.
+    /// </summary>
+    /// <param name="maxRetries">The maximum number of retry attempts.</param>
     public CosmosRetryPolicy(int maxRetries = 3)
     {
         MaxRetries = maxRetries;
     }
 
+    private int MaxRetries { get; }
+
+    /// <summary>
+    /// Executes an operation with retry logic for transient failures.
+    /// </summary>
+    /// <typeparam name="T">The return type of the operation.</typeparam>
+    /// <param name="operation">The operation to execute.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
+    /// <exception cref="Exception">Thrown when all retry attempts are exhausted.</exception>
     public async Task<T> ExecuteAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
     {
         Exception? lastException = null;

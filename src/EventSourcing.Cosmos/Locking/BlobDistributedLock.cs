@@ -2,30 +2,53 @@
 
 namespace Mississippi.EventSourcing.Cosmos.Locking;
 
-internal class BlobDistributedLock : IDistributedLock
+/// <summary>
+/// Distributed lock implementation using Azure Blob Storage leases.
+/// </summary>
+internal sealed class BlobDistributedLock : IDistributedLock
 {
-    private BlobLeaseClient LeaseClient { get; }
-    private int LeaseRenewalThresholdSeconds { get; }
-    private int LeaseDurationSeconds { get; }
-    private DateTime _lastRenewalTime;
-    private bool _disposed;
+    private DateTime lastRenewalTime;
 
+    private bool disposed;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BlobDistributedLock"/> class.
+    /// </summary>
+    /// <param name="leaseClient">The blob lease client for managing the lock.</param>
+    /// <param name="lockId">The unique identifier for the lock.</param>
+    /// <param name="leaseRenewalThresholdSeconds">The threshold in seconds for lease renewal.</param>
+    /// <param name="leaseDurationSeconds">The duration in seconds for the lease.</param>
     public BlobDistributedLock(BlobLeaseClient leaseClient, string lockId, int leaseRenewalThresholdSeconds, int leaseDurationSeconds)
     {
         LeaseClient = leaseClient;
         LockId = lockId;
         LeaseRenewalThresholdSeconds = leaseRenewalThresholdSeconds;
         LeaseDurationSeconds = leaseDurationSeconds;
-        _lastRenewalTime = DateTime.UtcNow;
+        lastRenewalTime = DateTime.UtcNow;
     }
 
+    private BlobLeaseClient LeaseClient { get; }
+
+    private int LeaseRenewalThresholdSeconds { get; }
+
+    private int LeaseDurationSeconds { get; }
+
+    /// <summary>
+    /// Gets the unique identifier for the lock.
+    /// </summary>
     public string LockId { get; }
 
+    /// <summary>
+    /// Renews the distributed lock lease.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the lock has been disposed.</exception>
     public async Task RenewAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(BlobDistributedLock));
+        ObjectDisposedException.ThrowIf(disposed, this);
 
-        var timeSinceLastRenewal = DateTime.UtcNow - _lastRenewalTime;
+        var timeSinceLastRenewal = DateTime.UtcNow - lastRenewalTime;
         var renewalThreshold = TimeSpan.FromSeconds(LeaseDurationSeconds - LeaseRenewalThresholdSeconds);
 
         if (timeSinceLastRenewal < renewalThreshold)
@@ -36,7 +59,7 @@ internal class BlobDistributedLock : IDistributedLock
         try
         {
             await LeaseClient.RenewAsync(cancellationToken: cancellationToken);
-            _lastRenewalTime = DateTime.UtcNow;
+            lastRenewalTime = DateTime.UtcNow;
         }
         catch
         {
@@ -44,9 +67,13 @@ internal class BlobDistributedLock : IDistributedLock
         }
     }
 
+    /// <summary>
+    /// Asynchronously disposes the distributed lock and releases the lease.
+    /// </summary>
+    /// <returns>A task representing the asynchronous disposal operation.</returns>
     public async ValueTask DisposeAsync()
     {
-        if (!_disposed)
+        if (!disposed)
         {
             try
             {
@@ -54,8 +81,10 @@ internal class BlobDistributedLock : IDistributedLock
             }
             catch
             {
+                // Ignore exceptions during disposal
             }
-            _disposed = true;
+
+            disposed = true;
         }
     }
 }

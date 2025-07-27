@@ -4,8 +4,16 @@ using Mississippi.EventSourcing.Cosmos.Storage;
 
 namespace Mississippi.EventSourcing.Cosmos.Mapping;
 
-public class EventToStorageMapper : IMapper<BrookEvent, EventStorageModel>
+/// <summary>
+/// Maps brook events to event storage models.
+/// </summary>
+internal class EventToStorageMapper : IMapper<BrookEvent, EventStorageModel>
 {
+    /// <summary>
+    /// Maps a brook event to an event storage model.
+    /// </summary>
+    /// <param name="input">The brook event to map.</param>
+    /// <returns>The mapped event storage model.</returns>
     public EventStorageModel Map(BrookEvent input)
     {
         return new EventStorageModel
@@ -15,7 +23,7 @@ public class EventToStorageMapper : IMapper<BrookEvent, EventStorageModel>
             EventType = input.Type ?? string.Empty,
             DataContentType = input.DataContentType,
             Data = input.Data.ToArray(),
-            Time = input.Time ?? DateTimeOffset.UtcNow
+            Time = input.Time ?? DateTimeOffset.UtcNow,
         };
     }
 }

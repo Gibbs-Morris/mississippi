@@ -3,10 +3,18 @@ using Newtonsoft.Json;
 
 namespace Mississippi.EventSourcing.Cosmos.Batching;
 
+/// <summary>
+/// Estimates the size of batches and individual events for Cosmos DB operations.
+/// </summary>
 internal class BatchSizeEstimator : IBatchSizeEstimator
 {
     private const long BatchOverheadBytes = 2048;
 
+    /// <summary>
+    /// Estimates the total size of a batch of events in bytes.
+    /// </summary>
+    /// <param name="events">The events to estimate the size for.</param>
+    /// <returns>The estimated size in bytes.</returns>
     public long EstimateBatchSize(IReadOnlyList<BrookEvent> events)
     {
         long totalSize = BatchOverheadBytes;
@@ -19,6 +27,11 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
         return totalSize;
     }
 
+    /// <summary>
+    /// Estimates the size of a single event in bytes.
+    /// </summary>
+    /// <param name="brookEvent">The event to estimate the size for.</param>
+    /// <returns>The estimated size in bytes.</returns>
     public long EstimateEventSize(BrookEvent brookEvent)
     {
         try
@@ -33,7 +46,7 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
                 EventType = brookEvent.Type ?? string.Empty,
                 DataContentType = brookEvent.DataContentType,
                 Data = brookEvent.Data.ToArray(),
-                Time = brookEvent.Time ?? DateTimeOffset.UtcNow
+                Time = brookEvent.Time ?? DateTimeOffset.UtcNow,
             };
 
             var serialized = JsonConvert.SerializeObject(eventDoc);
@@ -55,6 +68,14 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
         }
     }
 
+    /// <summary>
+    /// Creates batches of events that respect size and count limits.
+    /// </summary>
+    /// <param name="events">The events to batch.</param>
+    /// <param name="maxEventsPerBatch">The maximum number of events per batch.</param>
+    /// <param name="maxSizeBytes">The maximum size in bytes per batch.</param>
+    /// <returns>An enumerable of batches, each containing events within the specified limits.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when a single event exceeds the maximum batch size.</exception>
     public IEnumerable<IReadOnlyList<BrookEvent>> CreateSizeLimitedBatches(IReadOnlyList<BrookEvent> events, int maxEventsPerBatch, long maxSizeBytes)
     {
         var currentBatch = new List<BrookEvent>();

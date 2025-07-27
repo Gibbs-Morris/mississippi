@@ -7,26 +7,31 @@ using Mississippi.EventSourcing.Cosmos.Locking;
 using Mississippi.EventSourcing.Cosmos.Retry;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
-namespace Mississippi.EventSourcing.Cosmos.Streams;
+namespace Mississippi.EventSourcing.Cosmos.Brooks;
 
-internal class EventStreamAppender : IEventStreamAppender
+/// <summary>
+/// Cosmos DB implementation of the event brook appender for writing events to brooks.
+/// </summary>
+internal class EventBrookAppender : IEventBrookAppender
 {
-    private ICosmosRepository Repository { get; }
-    private IDistributedLockManager LockManager { get; }
-    private IBatchSizeEstimator SizeEstimator { get; }
-    private IRetryPolicy RetryPolicy { get; }
-    private BrookStorageOptions Options { get; }
-    private IMapper<BrookEvent, EventStorageModel> EventMapper { get; }
-    private IStreamRecoveryService RecoveryService { get; }
-
-    public EventStreamAppender(
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EventBrookAppender"/> class.
+    /// </summary>
+    /// <param name="repository">The Cosmos repository for low-level operations.</param>
+    /// <param name="lockManager">The distributed lock manager for concurrency control.</param>
+    /// <param name="sizeEstimator">The batch size estimator for optimizing batch operations.</param>
+    /// <param name="retryPolicy">The retry policy for handling transient failures.</param>
+    /// <param name="options">The configuration options for brook storage.</param>
+    /// <param name="eventMapper">The mapper for converting events to storage models.</param>
+    /// <param name="recoveryService">The brook recovery service for head position management.</param>
+    public EventBrookAppender(
         ICosmosRepository repository,
         IDistributedLockManager lockManager,
         IBatchSizeEstimator sizeEstimator,
         IRetryPolicy retryPolicy,
         IOptions<BrookStorageOptions> options,
         IMapper<BrookEvent, EventStorageModel> eventMapper,
-        IStreamRecoveryService recoveryService)
+        IBrookRecoveryService recoveryService)
     {
         Repository = repository;
         LockManager = lockManager;
@@ -37,6 +42,28 @@ internal class EventStreamAppender : IEventStreamAppender
         RecoveryService = recoveryService;
     }
 
+    private ICosmosRepository Repository { get; }
+
+    private IDistributedLockManager LockManager { get; }
+
+    private IBatchSizeEstimator SizeEstimator { get; }
+
+    private IRetryPolicy RetryPolicy { get; }
+
+    private BrookStorageOptions Options { get; }
+
+    private IMapper<BrookEvent, EventStorageModel> EventMapper { get; }
+
+    private IBrookRecoveryService RecoveryService { get; }
+
+    /// <summary>
+    /// Appends a collection of events to the specified brook stream.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target stream.</param>
+    /// <param name="events">The collection of events to append to the stream.</param>
+    /// <param name="expectedVersion">The expected version for optimistic concurrency control.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The position after successfully appending all events.</returns>
     public async Task<BrookPosition> AppendEventsAsync(BrookKey brookId, IReadOnlyList<BrookEvent> events, BrookPosition? expectedVersion, CancellationToken cancellationToken)
     {
         await using var distributedLock = await LockManager.AcquireLockAsync(brookId.ToString(), TimeSpan.FromSeconds(Options.LeaseDurationSeconds), cancellationToken);
@@ -72,8 +99,15 @@ internal class EventStreamAppender : IEventStreamAppender
         await distributedLock.RenewAsync(cancellationToken);
 
         var storageEvents = events.Select(EventMapper.Map).ToList();
-        var response = await RetryPolicy.ExecuteAsync(async () =>
-            await Repository.ExecuteTransactionalBatchAsync(brookId, storageEvents, currentHead, finalPosition, cancellationToken));
+        var response = await RetryPolicy.ExecuteAsync(
+            async () =>
+            await Repository.ExecuteTransactionalBatchAsync(
+                brookId,
+                storageEvents,
+                currentHead,
+                finalPosition,
+                cancellationToken),
+            cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -121,16 +155,21 @@ internal class EventStreamAppender : IEventStreamAppender
     {
         for (long pos = originalHead.Value + 1; pos <= failedFinalPosition; pos++)
         {
-            await RetryPolicy.ExecuteAsync(async () =>
+            await RetryPolicy.ExecuteAsync(
+                async () =>
             {
                 await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
                 return true;
-            });
+            },
+                cancellationToken);
         }
-        await RetryPolicy.ExecuteAsync(async () =>
+
+        await RetryPolicy.ExecuteAsync(
+            async () =>
         {
             await Repository.DeletePendingHeadAsync(brookId, cancellationToken);
             return true;
-        });
+        },
+            cancellationToken);
     }
 }

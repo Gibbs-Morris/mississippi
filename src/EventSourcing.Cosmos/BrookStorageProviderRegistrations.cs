@@ -3,67 +3,47 @@ using Mississippi.Core.Abstractions.Mapping;
 using Mississippi.Core.Abstractions.Providers.Storage;
 using Mississippi.Core.Abstractions.Streams;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Storage;
-using Mississippi.EventSourcing.Cosmos.Locking;
 using Mississippi.EventSourcing.Cosmos.Batching;
-using Mississippi.EventSourcing.Cosmos.Retry;
-using Mississippi.EventSourcing.Cosmos.Streams;
+using Mississippi.EventSourcing.Cosmos.Brooks;
+using Mississippi.EventSourcing.Cosmos.Locking;
 using Mississippi.EventSourcing.Cosmos.Mapping;
+using Mississippi.EventSourcing.Cosmos.Retry;
+using Mississippi.EventSourcing.Cosmos.Storage;
 
 namespace Mississippi.EventSourcing.Cosmos;
 
+/// <summary>
+/// Extension methods for registering Cosmos DB brook storage provider services.
+/// </summary>
 public static class BrookStorageProviderRegistrations
 {
+    /// <summary>
+    /// Adds Cosmos DB brook storage provider services to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection to add services to.</param>
+    /// <returns>The modified service collection.</returns>
     public static IServiceCollection AddCosmosBrookStorageProvider(this IServiceCollection services)
     {
         services.AddScoped<IBrookStorageProvider, BrookStorageProvider>();
 
-        services.AddScoped<IStreamRecoveryService, StreamRecoveryService>();
-        services.AddScoped<IEventStreamReader, EventStreamReader>();
-        services.AddScoped<IEventStreamAppender, EventStreamAppender>();
-        
+        services.AddScoped<IBrookRecoveryService, BrookRecoveryService>();
+        services.AddScoped<IEventBrookReader, EventBrookReader>();
+        services.AddScoped<IEventBrookAppender, EventBrookAppender>();
+
         services.AddScoped<ICosmosRepository, CosmosRepository>();
-        
+
         services.AddScoped<IDistributedLockManager, BlobDistributedLockManager>();
-        
+
         services.AddSingleton<IBatchSizeEstimator, BatchSizeEstimator>();
-        
+
         services.AddSingleton<IRetryPolicy, CosmosRetryPolicy>();
-        
+
         services.AddMapper<EventStorageModel, BrookEvent, EventStorageToEventMapper>();
         services.AddMapper<BrookEvent, EventStorageModel, EventToStorageMapper>();
-        
+
         services.AddMapper<HeadDocument, HeadStorageModel, HeadDocumentToStorageMapper>();
         services.AddMapper<EventDocument, EventStorageModel, EventDocumentToStorageMapper>();
-        
-        return services;
-    }
-    
-    public static IServiceCollection AddCosmosBrookStorageProvider<TEventFromStorageMapper, TEventToStorageMapper>(
-        this IServiceCollection services)
-        where TEventFromStorageMapper : class, IMapper<EventStorageModel, BrookEvent>
-        where TEventToStorageMapper : class, IMapper<BrookEvent, EventStorageModel>
-    {
-        services.AddScoped<IBrookStorageProvider, BrookStorageProvider>();
-        
-        services.AddScoped<IStreamRecoveryService, StreamRecoveryService>();
-        services.AddScoped<IEventStreamReader, EventStreamReader>();
-        services.AddScoped<IEventStreamAppender, EventStreamAppender>();
-        
-        services.AddScoped<ICosmosRepository, CosmosRepository>();
-        
-        services.AddScoped<IDistributedLockManager, BlobDistributedLockManager>();
-        
-        services.AddSingleton<IBatchSizeEstimator, BatchSizeEstimator>();
-        
-        services.AddSingleton<IRetryPolicy, CosmosRetryPolicy>();
-        
-        services.AddMapper<EventStorageModel, BrookEvent, TEventFromStorageMapper>();
-        services.AddMapper<BrookEvent, EventStorageModel, TEventToStorageMapper>();
-        
-        services.AddMapper<HeadDocument, HeadStorageModel, HeadDocumentToStorageMapper>();
-        services.AddMapper<EventDocument, EventStorageModel, EventDocumentToStorageMapper>();
-        
+
         return services;
     }
 }

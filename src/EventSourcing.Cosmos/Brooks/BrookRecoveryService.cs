@@ -5,16 +5,21 @@ using Mississippi.EventSourcing.Cosmos.Locking;
 using Mississippi.EventSourcing.Cosmos.Retry;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
-namespace Mississippi.EventSourcing.Cosmos.Streams;
+namespace Mississippi.EventSourcing.Cosmos.Brooks;
 
-internal class StreamRecoveryService : IStreamRecoveryService
+/// <summary>
+/// Service for recovering and managing brook head positions in Cosmos DB.
+/// </summary>
+internal class BrookRecoveryService : IBrookRecoveryService
 {
-    private ICosmosRepository Repository { get; }
-    private IRetryPolicy RetryPolicy { get; }
-    private IDistributedLockManager LockManager { get; }
-    private BrookStorageOptions Options { get; }
-
-    public StreamRecoveryService(ICosmosRepository repository, IRetryPolicy retryPolicy, IDistributedLockManager lockManager, IOptions<BrookStorageOptions> options)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BrookRecoveryService"/> class.
+    /// </summary>
+    /// <param name="repository">The Cosmos repository for low-level operations.</param>
+    /// <param name="retryPolicy">The retry policy for handling transient failures.</param>
+    /// <param name="lockManager">The distributed lock manager for concurrency control.</param>
+    /// <param name="options">The configuration options for brook storage.</param>
+    public BrookRecoveryService(ICosmosRepository repository, IRetryPolicy retryPolicy, IDistributedLockManager lockManager, IOptions<BrookStorageOptions> options)
     {
         Repository = repository;
         RetryPolicy = retryPolicy;
@@ -22,15 +27,33 @@ internal class StreamRecoveryService : IStreamRecoveryService
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
+    private ICosmosRepository Repository { get; }
+
+    private IRetryPolicy RetryPolicy { get; }
+
+    private IDistributedLockManager LockManager { get; }
+
+    private BrookStorageOptions Options { get; }
+
+    /// <summary>
+    /// Gets the current head position for a brook stream, or recovers it if necessary.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target stream.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The current or recovered head position of the stream.</returns>
     public async Task<BrookPosition> GetOrRecoverHeadPositionAsync(BrookKey brookId, CancellationToken cancellationToken)
     {
-        var headDocument = await RetryPolicy.ExecuteAsync(async () =>
-            await Repository.GetHeadDocumentAsync(brookId, cancellationToken));
+        var headDocument = await RetryPolicy.ExecuteAsync(
+            async () =>
+            await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+            cancellationToken);
 
         if (headDocument == null)
         {
-            var pendingHead = await RetryPolicy.ExecuteAsync(async () =>
-                await Repository.GetPendingHeadDocumentAsync(brookId, cancellationToken));
+            var pendingHead = await RetryPolicy.ExecuteAsync(
+                async () =>
+                await Repository.GetPendingHeadDocumentAsync(brookId, cancellationToken),
+                cancellationToken);
 
             if (pendingHead != null)
             {
@@ -40,8 +63,10 @@ internal class StreamRecoveryService : IStreamRecoveryService
                     cancellationToken);
 
                 await RecoverFromOrphanedOperationAsync(brookId, pendingHead, cancellationToken);
-                headDocument = await RetryPolicy.ExecuteAsync(async () =>
-                    await Repository.GetHeadDocumentAsync(brookId, cancellationToken));
+                headDocument = await RetryPolicy.ExecuteAsync(
+                    async () =>
+                    await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+                    cancellationToken);
             }
         }
 
@@ -81,6 +106,7 @@ internal class StreamRecoveryService : IStreamRecoveryService
                 return false;
             }
         }
+
         return true;
     }
 
@@ -88,16 +114,21 @@ internal class StreamRecoveryService : IStreamRecoveryService
     {
         for (long pos = originalPosition + 1; pos <= targetPosition; pos++)
         {
-            await RetryPolicy.ExecuteAsync(async () =>
+            await RetryPolicy.ExecuteAsync(
+                async () =>
             {
                 await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
                 return true;
-            });
+            },
+                cancellationToken);
         }
-        await RetryPolicy.ExecuteAsync(async () =>
+
+        await RetryPolicy.ExecuteAsync(
+            async () =>
         {
             await Repository.DeletePendingHeadAsync(brookId, cancellationToken);
             return true;
-        });
+        },
+            cancellationToken);
     }
 }
