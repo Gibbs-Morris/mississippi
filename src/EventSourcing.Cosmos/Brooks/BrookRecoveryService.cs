@@ -63,14 +63,37 @@ internal class BrookRecoveryService : IBrookRecoveryService
                 cancellationToken);
             if (pendingHead != null)
             {
-                await using IDistributedLock recoveryLock = await LockManager.AcquireLockAsync(
-                    brookId.ToString(),
-                    TimeSpan.FromSeconds(Options.LeaseDurationSeconds),
-                    cancellationToken);
-                await RecoverFromOrphanedOperationAsync(brookId, pendingHead, cancellationToken);
-                headDocument = await RetryPolicy.ExecuteAsync(
-                    async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
-                    cancellationToken);
+                // Use a shorter timeout for recovery lock to prevent deadlocks
+                TimeSpan recoveryTimeout = TimeSpan.FromSeconds(Math.Min(Options.LeaseDurationSeconds, 30));
+                try
+                {
+                    await using IDistributedLock recoveryLock = await LockManager.AcquireLockAsync(
+                        $"recovery-{brookId}", // Use different lock key for recovery
+                        recoveryTimeout,
+                        cancellationToken);
+                    await RecoverFromOrphanedOperationAsync(brookId, pendingHead, cancellationToken);
+                    headDocument = await RetryPolicy.ExecuteAsync(
+                        async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+                        cancellationToken);
+                }
+                catch (Exception ex) when (ex.Message.Contains("lock") || ex.Message.Contains("lease"))
+                {
+                    // If we can't acquire the recovery lock, assume another process is handling recovery
+                    // Wait a bit and try to read the head again
+                    await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+                    headDocument = await RetryPolicy.ExecuteAsync(
+                        async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+                        cancellationToken);
+
+                    // If head is still null after waiting, we have a problem
+                    if (headDocument == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Unable to recover head position for brook {brookId}. " +
+                            "Another recovery operation may be in progress or has failed.",
+                            ex);
+                    }
+                }
             }
         }
 

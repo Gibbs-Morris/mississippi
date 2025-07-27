@@ -13,7 +13,9 @@ namespace Mississippi.EventSourcing.Cosmos.Batching;
 /// </summary>
 internal class BatchSizeEstimator : IBatchSizeEstimator
 {
-    private const long BatchOverheadBytes = 2048;
+    // More realistic batch overhead based on Cosmos DB transactional batch structure
+    // This includes: batch headers, response metadata, and internal overhead
+    private const long BatchOverheadBytes = 4096; // Increased from 2048
 
     /// <summary>
     ///     Estimates the total size of a batch of events in bytes.
@@ -42,6 +44,14 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
         BrookEvent brookEvent
     )
     {
+        // First, do a quick size check to avoid memory issues with very large events
+        long dataSize = brookEvent.Data.Length;
+        if (dataSize > 10_000_000) // 10MB threshold
+        {
+            // For very large events, use estimation instead of serialization
+            return EstimateEventSizeWithoutSerialization(brookEvent);
+        }
+
         try
         {
             EventDocument eventDoc = new()
@@ -58,31 +68,22 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
             };
             string serialized = JsonConvert.SerializeObject(eventDoc);
             int actualSize = Encoding.UTF8.GetByteCount(serialized);
-            return (long)(actualSize * 1.2);
+            return (long)(actualSize * 1.2); // 20% overhead for JSON formatting variations
         }
         catch (JsonException)
         {
             // Fall back to estimation if JSON serialization fails
-            long size = 300;
-            size += (brookEvent.Id?.Length ?? 0) * 2;
-            size += (brookEvent.Source?.Length ?? 0) * 2;
-            size += (brookEvent.Type?.Length ?? 0) * 2;
-            size += (brookEvent.DataContentType?.Length ?? 0) * 2;
-            size += brookEvent.Data.Length;
-            size += 200;
-            return size;
+            return EstimateEventSizeWithoutSerialization(brookEvent);
         }
         catch (OutOfMemoryException)
         {
             // Fall back to estimation if we run out of memory
-            long size = 300;
-            size += (brookEvent.Id?.Length ?? 0) * 2;
-            size += (brookEvent.Source?.Length ?? 0) * 2;
-            size += (brookEvent.Type?.Length ?? 0) * 2;
-            size += (brookEvent.DataContentType?.Length ?? 0) * 2;
-            size += brookEvent.Data.Length;
-            size += 200;
-            return size;
+            return EstimateEventSizeWithoutSerialization(brookEvent);
+        }
+        catch (Exception)
+        {
+            // For any other exception, fall back to estimation
+            return EstimateEventSizeWithoutSerialization(brookEvent);
         }
     }
 
@@ -127,5 +128,28 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
         {
             yield return currentBatch;
         }
+    }
+
+    private long EstimateEventSizeWithoutSerialization(
+        BrookEvent brookEvent
+    )
+    {
+        // Base JSON structure overhead
+        long size = 300;
+
+        // String properties (UTF-8 encoding, so multiply by 2 for safety)
+        size += (brookEvent.Id?.Length ?? 0) * 2;
+        size += (brookEvent.Source?.Length ?? 0) * 2;
+        size += (brookEvent.Type?.Length ?? 0) * 2;
+        size += (brookEvent.DataContentType?.Length ?? 0) * 2;
+
+        // Data size (base64 encoding adds ~33% overhead)
+        size += ((brookEvent.Data.Length * 4) / 3) + 4;
+
+        // DateTime serialization overhead
+        size += 200;
+
+        // JSON structure overhead and safety margin
+        return (long)(size * 1.3);
     }
 }

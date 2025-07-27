@@ -75,6 +75,19 @@ internal class EventBrookAppender : IEventBrookAppender
         CancellationToken cancellationToken = default
     )
     {
+        if ((events == null) || (events.Count == 0))
+        {
+            throw new ArgumentException("Events collection cannot be null or empty", nameof(events));
+        }
+
+        // Validate bounds to prevent overflow
+        if (events.Count > (int.MaxValue / 2))
+        {
+            throw new ArgumentException(
+                $"Too many events in single batch: {events.Count}. Maximum allowed: {int.MaxValue / 2}",
+                nameof(events));
+        }
+
         await using IDistributedLock distributedLock = await LockManager.AcquireLockAsync(
             brookId.ToString(),
             TimeSpan.FromSeconds(Options.LeaseDurationSeconds),
@@ -90,11 +103,21 @@ internal class EventBrookAppender : IEventBrookAppender
         CancellationToken cancellationToken
     )
     {
+        // Get current head position while holding the lock to ensure consistency
         BrookPosition currentHead = await RecoveryService.GetOrRecoverHeadPositionAsync(brookId, cancellationToken);
+
+        // Perform optimistic concurrency check inside the lock
         if (expectedVersion.HasValue && (expectedVersion.Value != currentHead))
         {
             throw new OptimisticConcurrencyException(
                 $"Expected version {expectedVersion.Value} but current head is {currentHead}");
+        }
+
+        // Check for potential overflow in position calculation
+        if (currentHead.Value > (long.MaxValue - events.Count))
+        {
+            throw new InvalidOperationException(
+                $"Position overflow: current head {currentHead.Value} + {events.Count} events would exceed maximum position");
         }
 
         long finalPosition = currentHead.Value + events.Count;
@@ -199,23 +222,74 @@ internal class EventBrookAppender : IEventBrookAppender
         CancellationToken cancellationToken
     )
     {
+        List<Exception> rollbackErrors = new();
+
+        // First pass: attempt to delete all events
         for (long pos = originalHead.Value + 1; pos <= failedFinalPosition; pos++)
+        {
+            try
+            {
+                await RetryPolicy.ExecuteAsync(
+                    async () =>
+                    {
+                        await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
+                        return true;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                rollbackErrors.Add(new InvalidOperationException($"Failed to delete event at position {pos}", ex));
+            }
+        }
+
+        // Delete pending head
+        try
         {
             await RetryPolicy.ExecuteAsync(
                 async () =>
                 {
-                    await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
+                    await Repository.DeletePendingHeadAsync(brookId, cancellationToken);
                     return true;
                 },
                 cancellationToken);
         }
+        catch (Exception ex)
+        {
+            rollbackErrors.Add(new InvalidOperationException("Failed to delete pending head", ex));
+        }
 
-        await RetryPolicy.ExecuteAsync(
-            async () =>
+        // Second pass: verify all events are actually deleted
+        List<long> remainingEvents = new();
+        for (long pos = originalHead.Value + 1; pos <= failedFinalPosition; pos++)
+        {
+            try
             {
-                await Repository.DeletePendingHeadAsync(brookId, cancellationToken);
-                return true;
-            },
-            cancellationToken);
+                bool eventExists = await Repository.EventExistsAsync(brookId, pos, cancellationToken);
+                if (eventExists)
+                {
+                    remainingEvents.Add(pos);
+                }
+            }
+            catch (Exception ex)
+            {
+                rollbackErrors.Add(
+                    new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));
+            }
+        }
+
+        // If there are any issues, throw an aggregate exception
+        if ((rollbackErrors.Count > 0) || (remainingEvents.Count > 0))
+        {
+            List<Exception> allErrors = new(rollbackErrors);
+            if (remainingEvents.Count > 0)
+            {
+                allErrors.Add(
+                    new InvalidOperationException(
+                        $"Rollback incomplete: {remainingEvents.Count} events still exist at positions: {string.Join(", ", remainingEvents)}"));
+            }
+
+            throw new AggregateException("Rollback failed - brook may be in an inconsistent state", allErrors);
+        }
     }
 }

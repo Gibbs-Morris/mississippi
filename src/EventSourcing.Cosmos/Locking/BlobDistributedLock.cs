@@ -9,9 +9,11 @@ namespace Mississippi.EventSourcing.Cosmos.Locking;
 /// </summary>
 internal sealed class BlobDistributedLock : IDistributedLock
 {
+    private readonly TimeSpan renewalThreshold;
+
     private bool disposed;
 
-    private DateTime lastRenewalTime;
+    private DateTimeOffset lastRenewalTime;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BlobDistributedLock" /> class.
@@ -31,7 +33,9 @@ internal sealed class BlobDistributedLock : IDistributedLock
         LockId = lockId;
         LeaseRenewalThresholdSeconds = leaseRenewalThresholdSeconds;
         LeaseDurationSeconds = leaseDurationSeconds;
-        lastRenewalTime = DateTime.UtcNow;
+        lastRenewalTime = DateTimeOffset.UtcNow;
+        // Calculate renewal threshold with a safety buffer to account for network latency
+        renewalThreshold = TimeSpan.FromSeconds(Math.Max(1, leaseDurationSeconds - leaseRenewalThresholdSeconds - 1));
     }
 
     private BlobLeaseClient LeaseClient { get; }
@@ -51,13 +55,16 @@ internal sealed class BlobDistributedLock : IDistributedLock
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the lock has been disposed.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the lock cannot be renewed.</exception>
     public async Task RenewAsync(
         CancellationToken cancellationToken = default
     )
     {
         ObjectDisposedException.ThrowIf(disposed, this);
-        TimeSpan timeSinceLastRenewal = DateTime.UtcNow - lastRenewalTime;
-        TimeSpan renewalThreshold = TimeSpan.FromSeconds(LeaseDurationSeconds - LeaseRenewalThresholdSeconds);
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        TimeSpan timeSinceLastRenewal = now - lastRenewalTime;
+
+        // Only renew if we're approaching the expiration threshold
         if (timeSinceLastRenewal < renewalThreshold)
         {
             return;
@@ -66,12 +73,20 @@ internal sealed class BlobDistributedLock : IDistributedLock
         try
         {
             await LeaseClient.RenewAsync(cancellationToken: cancellationToken);
-            lastRenewalTime = DateTime.UtcNow;
+            lastRenewalTime = now;
         }
-        catch
+        catch (RequestFailedException ex) when ((ex.Status == 409) || (ex.Status == 404))
+        {
+            // Lease lost or blob not found - this is a critical failure
+            throw new InvalidOperationException(
+                "Failed to renew brook lock - lease has been lost. Operation aborted to prevent data corruption.",
+                ex);
+        }
+        catch (Exception ex)
         {
             throw new InvalidOperationException(
-                "Failed to renew brook lock. Operation aborted to prevent data corruption.");
+                "Failed to renew brook lock. Operation aborted to prevent data corruption.",
+                ex);
         }
     }
 
