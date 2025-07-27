@@ -63,6 +63,45 @@ The framework includes comprehensive testing:
 
 Test results and coverage reports are generated in the `test-results` directory.
 
+## GitHub Copilot Workspace Preparation
+
+This repository includes a specialized workflow (`.github/workflows/copilot-setup-steps.yml`) that automatically prepares the development environment for GitHub Copilot Workspace and Agents. When Copilot analyzes this repository, it runs this workflow first to ensure all necessary tools and dependencies are available.
+
+### What the Copilot Setup Workflow Does
+
+The `copilot-setup-steps` job automatically:
+
+1. **Detects and sets up the .NET SDK** - Uses the version specified in `global.json` (currently .NET 9.0.301)
+2. **Installs local development tools** - Restores all tools from `.config/dotnet-tools.json` including:
+   - Stryker for mutation testing
+   - SonarScanner for code analysis
+   - GitVersion for semantic versioning
+   - ReSharper command-line tools
+   - And other development utilities
+3. **Restores package dependencies** - Downloads and caches all NuGet packages for both main and sample solutions
+4. **Validates the setup** - Runs a lightweight build to ensure everything is properly configured
+5. **Caches artifacts** - Stores .NET packages, tools, and GitVersion data for faster subsequent runs
+6. **Generates test results** - Provides test output for Copilot to reference when analyzing code issues
+
+### Automatic Triggers
+
+The workflow runs automatically when:
+- Key configuration files change (`global.json`, `Directory.*.props`, `.config/dotnet-tools.json`, `*.slnx`)
+- The workflow file itself is modified
+- Manually triggered via GitHub Actions UI
+
+### Adapting for New Technologies
+
+When adding new technologies to the repository:
+
+1. **New .NET tools**: Add them to `.config/dotnet-tools.json` and they'll be automatically installed
+2. **Different .NET version**: Update `global.json` and the workflow will use the new version
+3. **Additional package sources**: Add `nuget.config` and update the workflow to include it in cache keys
+4. **Container dependencies**: Add Docker services to the workflow's `services:` section
+5. **Non-.NET languages**: Add appropriate setup actions (e.g., `setup-node`, `setup-python`) and restore commands
+
+This ensures Copilot Workspace always has a fully prepared environment without manual setup steps.
+
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for full details.
 
