@@ -28,12 +28,27 @@ $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $mississippiCleanup = Join-Path $repoRoot 'scripts\clean-up-mississippi-solution.ps1'
 $sampleCleanup      = Join-Path $repoRoot 'scripts\clean-up-sample-solution.ps1'
 
-if (-not $SkipMississippi) {
-    Write-Host "Running cleanup for mississippi.slnx…" -ForegroundColor Cyan
-    & $mississippiCleanup
-}
+try {
+    if (-not $SkipMississippi) {
+        Write-Host "Running cleanup for mississippi.slnx…" -ForegroundColor Cyan
+        & $mississippiCleanup
+        if ($LASTEXITCODE -ne 0) {
+            throw "Mississippi solution cleanup failed with exit code: $LASTEXITCODE"
+        }
+        Write-Host "✓ Mississippi solution cleanup completed successfully" -ForegroundColor Green
+    }
 
-if (-not $SkipSamples) {
-    Write-Host "Running cleanup for samples.slnx…" -ForegroundColor Cyan
-    & $sampleCleanup
+    if (-not $SkipSamples) {
+        Write-Host "Running cleanup for samples.slnx…" -ForegroundColor Cyan
+        & $sampleCleanup
+        if ($LASTEXITCODE -ne 0) {
+            throw "Sample solution cleanup failed with exit code: $LASTEXITCODE"
+        }
+        Write-Host "✓ Sample solution cleanup completed successfully" -ForegroundColor Green
+    }
+
+    Write-Host "🎉 All cleanup operations completed successfully!" -ForegroundColor Green
+} catch {
+    Write-Error "Cleanup failed: $_"
+    exit 1
 } 
