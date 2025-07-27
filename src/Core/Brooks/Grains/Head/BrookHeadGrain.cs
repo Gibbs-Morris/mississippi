@@ -1,0 +1,117 @@
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Mississippi.Core.Abstractions.Providers.Storage;
+using Mississippi.Core.Abstractions.Streams;
+using Mississippi.Core.Brooks.Grains.Reader;
+using Orleans.Streams;
+
+namespace Mississippi.Core.Brooks.Grains.Head;
+
+/// <summary>
+///     Orleans grain implementation that observes and maintains the head position of a Mississippi event stream.
+/// </summary>
+[ImplicitStreamSubscription(EventSourcingOrleansStreamNames.HeadUpdateStreamName)]
+internal class BrookHeadGrain
+    : IBrookHeadGrain,
+        IAsyncObserver<StreamHeadMovedEvent>,
+        IGrainBase
+{
+    public BrookHeadGrain(
+        IBrookStorageReader brookReaderProvider,
+        IGrainContext grainContext,
+        ILogger<BrookHeadGrain> logger, IOptions<BrookProviderOptions> streamProviderOptions,
+        IStreamIdFactory streamIdFactory)
+    {
+        BrookReaderProvider = brookReaderProvider;
+        GrainContext = grainContext;
+        Logger = logger;
+        StreamProviderOptions = streamProviderOptions;
+        StreamIdFactory = streamIdFactory;
+    }
+
+    private IAsyncStream<StreamHeadMovedEvent>? Stream { get; set; }
+
+    private StreamSequenceToken? LastToken { get; set; }
+
+    private ILogger<BrookHeadGrain> Logger { get; set; }
+
+    private BrookPosition TrackedHeadPosition { get; set; } = -1;
+
+    private IBrookStorageReader BrookReaderProvider { get; }
+
+    private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
+
+    private IStreamIdFactory StreamIdFactory { get; }
+
+    /// <summary>
+    ///     Handles a head moved event and updates the grain's position if the event is newer.
+    /// </summary>
+    /// <param name="item">The event containing the new stream head position.</param>
+    /// <param name="token">Optional sequence token for ordering updates.</param>
+    public Task OnNextAsync(
+        StreamHeadMovedEvent item,
+        StreamSequenceToken? token = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (LastToken != null && LastToken.Newer(token))
+        {
+            return Task.CompletedTask;
+        }
+
+        LastToken = token;
+
+        if (item.NewPosition.IsNewerThan(TrackedHeadPosition))
+        {
+            TrackedHeadPosition = item.NewPosition;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Handles errors on the subscribed stream and deactivates the grain.
+    /// </summary>
+    /// <param name="ex">The exception encountered on the stream.</param>
+    public Task OnErrorAsync(
+        Exception ex
+    )
+    {
+        this.DeactivateOnIdle();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Subscribes the grain as an observer to the head update stream on activation.
+    /// </summary>
+    /// <param name="token">Cancellation token for activation.</param>
+    public async Task OnActivateAsync(
+        CancellationToken token
+    )
+    {
+        var key = StreamIdFactory.Create(this.GetPrimaryKeyString());
+        Stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
+            .GetStream<StreamHeadMovedEvent>(key);
+        await Stream.SubscribeAsync(this);
+    }
+
+    public IGrainContext GrainContext { get; }
+
+    /// <summary>
+    ///     Gets the latest position of the stream head, loading from storage if not initialized.
+    /// </summary>
+    /// <returns>The most recent persisted head position.</returns>
+    public async Task<BrookPosition> GetLatestPositionAsync()
+    {
+        if (TrackedHeadPosition.NotSet)
+        {
+            var trackedPosition = await BrookReaderProvider.ReadHeadPositionAsync(this.GetPrimaryKeyString());
+            if (trackedPosition.IsNewerThan(TrackedHeadPosition))
+            {
+                TrackedHeadPosition = trackedPosition;
+            }
+        }
+
+        return TrackedHeadPosition;
+    }
+}

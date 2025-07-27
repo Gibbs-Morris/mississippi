@@ -11,4 +11,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Core.Abstractions\Core.Abstractions.csproj"/>
     </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Projection\Grains\"/>
+    </ItemGroup>
 </Project>
