@@ -21,7 +21,7 @@ builder.UseOrleans(silo =>
             opt.ServiceId = "SampleApp";
         });
 
-    silo.Services.RegisterBrookStorageProvider<>();
+
 });
 builder.Logging.AddConsole();
 using var host = builder.Build();
