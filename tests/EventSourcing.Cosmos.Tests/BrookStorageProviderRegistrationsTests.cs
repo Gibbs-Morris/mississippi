@@ -1,4 +1,4 @@
-namespace EventSourcing.Cosmos.Tests;
+namespace Mississippi.EventSourcing.Cosmos.Tests;
 
 public class BrookStorageProviderRegistrationsTests
 {

@@ -7,11 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using Mississippi.Core.Abstractions.Brooks;
-using Mississippi.Core.Brooks.Grains.Factory;
-using Mississippi.Core.Brooks.Grains.Reader;
-using Mississippi.Core.Brooks.Grains.Writer;
 using Mississippi.CrescentConsoleApp;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Brooks.Grains.Factory;
+using Mississippi.EventSourcing.Brooks.Grains.Reader;
+using Mississippi.EventSourcing.Brooks.Grains.Writer;
 
 using Orleans.Configuration;
 

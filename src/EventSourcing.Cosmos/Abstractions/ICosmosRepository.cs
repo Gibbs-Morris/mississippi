@@ -1,6 +1,6 @@
 ﻿using Microsoft.Azure.Cosmos;
 
-using Mississippi.Core.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Brooks;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
 

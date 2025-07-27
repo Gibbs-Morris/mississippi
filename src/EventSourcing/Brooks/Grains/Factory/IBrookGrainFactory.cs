@@ -1,10 +1,10 @@
-using Mississippi.Core.Abstractions.Brooks;
-using Mississippi.Core.Brooks.Grains.Head;
-using Mississippi.Core.Brooks.Grains.Reader;
-using Mississippi.Core.Brooks.Grains.Writer;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Brooks.Grains.Head;
+using Mississippi.EventSourcing.Brooks.Grains.Reader;
+using Mississippi.EventSourcing.Brooks.Grains.Writer;
 
 
-namespace Mississippi.Core.Brooks.Grains.Factory;
+namespace Mississippi.EventSourcing.Brooks.Grains.Factory;
 
 /// <summary>
 ///     Defines a factory for resolving Orleans grains for writing, reading, slicing, and head retrieval.

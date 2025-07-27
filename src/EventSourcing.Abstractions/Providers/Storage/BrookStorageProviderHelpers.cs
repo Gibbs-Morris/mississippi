@@ -2,7 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 
-namespace Mississippi.Core.Abstractions.Providers.Storage;
+namespace Mississippi.EventSourcing.Abstractions.Providers.Storage;
 
 public static class BrookStorageProviderHelpers
 {

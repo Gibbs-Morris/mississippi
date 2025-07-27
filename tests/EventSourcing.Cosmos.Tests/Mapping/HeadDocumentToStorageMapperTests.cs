@@ -1,4 +1,4 @@
-namespace EventSourcing.Cosmos.Tests.Mapping;
+namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
 
 public class HeadDocumentToStorageMapperTests
 {

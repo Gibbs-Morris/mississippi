@@ -1,14 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Brooks;
-using Mississippi.Core.Abstractions.Providers.Storage;
-using Mississippi.Core.Brooks.Grains.Reader;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Providers.Storage;
+using Mississippi.EventSourcing.Brooks.Grains.Reader;
 
 using Orleans.Streams;
 
 
-namespace Mississippi.Core.Brooks.Grains.Head;
+namespace Mississippi.EventSourcing.Brooks.Grains.Head;
 
 /// <summary>
 ///     Orleans grain implementation that observes and maintains the head position of a Mississippi brook.

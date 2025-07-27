@@ -1,7 +1,7 @@
 using System.Globalization;
 
 
-namespace Mississippi.Core.Abstractions.Brooks;
+namespace Mississippi.EventSourcing.Abstractions.Brooks;
 
 /// <summary>
 ///     Represents a range key for querying brooks, consisting of type, id, start position, and count components.

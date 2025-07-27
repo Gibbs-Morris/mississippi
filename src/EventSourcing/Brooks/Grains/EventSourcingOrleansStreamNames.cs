@@ -1,4 +1,4 @@
-namespace Mississippi.Core.Brooks.Grains;
+namespace Mississippi.EventSourcing.Brooks.Grains;
 
 /// <summary>
 ///     Contains constant stream names used for Orleans event sourcing head updates.

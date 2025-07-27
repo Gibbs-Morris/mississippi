@@ -3,7 +3,7 @@
 using Orleans;
 
 
-namespace Mississippi.Core.Abstractions.Brooks;
+namespace Mississippi.EventSourcing.Abstractions.Brooks;
 
 /// <summary>
 ///     Represents an event used by the Mississippi event-sourcing subsystem.

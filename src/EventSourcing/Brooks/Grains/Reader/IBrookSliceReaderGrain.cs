@@ -1,11 +1,11 @@
 ﻿using System.Collections.Immutable;
 
-using Mississippi.Core.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Brooks;
 
 using Orleans.Concurrency;
 
 
-namespace Mississippi.Core.Brooks.Grains.Reader;
+namespace Mississippi.EventSourcing.Brooks.Grains.Reader;
 
 // This is a internal grain which holds a slice to the brook, this means we can keep part in memory without having the whole thing, ie millions of events.
 [Alias("Mississippi.Core.IBrookSliceReaderGrain")]

@@ -1,4 +1,4 @@
-namespace Mississippi.Core.Abstractions.Brooks;
+namespace Mississippi.EventSourcing.Abstractions.Brooks;
 
 /// <summary>
 ///     Represents a composite key for identifying brooks, consisting of a type and id component.

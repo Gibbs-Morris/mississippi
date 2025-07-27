@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Core.Abstractions.Brooks;
 using Mississippi.Core.Abstractions.Mapping;
-using Mississippi.Core.Abstractions.Providers.Storage;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Providers.Storage;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Batching;
 using Mississippi.EventSourcing.Cosmos.Brooks;

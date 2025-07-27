@@ -1,11 +1,11 @@
 ﻿using System.Collections.Immutable;
 
-using Mississippi.Core.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Brooks;
 
 using Orleans.Concurrency;
 
 
-namespace Mississippi.Core.Brooks.Grains.Reader;
+namespace Mississippi.EventSourcing.Brooks.Grains.Reader;
 
 // This is the main entry point for reading events from a brook.
 // This holds no state it always goes to the slice reader for it.

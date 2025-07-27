@@ -2,8 +2,8 @@
 
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Brooks;
 using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.EventSourcing.Abstractions.Brooks;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Retry;
 using Mississippi.EventSourcing.Cosmos.Storage;

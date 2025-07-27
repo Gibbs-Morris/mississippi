@@ -1,10 +1,10 @@
 ﻿using System.Collections.Immutable;
 
-using Mississippi.Core.Abstractions.Brooks;
-using Mississippi.Core.Brooks.Grains.Head;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Brooks.Grains.Head;
 
 
-namespace Mississippi.Core.Brooks.Grains.Writer;
+namespace Mississippi.EventSourcing.Brooks.Grains.Writer;
 
 /// <summary>
 ///     Orleans grain contract that provides append (write) operations for a Mississippi brook.

@@ -1,4 +1,4 @@
-namespace EventSourcing.Cosmos.Tests.Abstractions;
+namespace Mississippi.EventSourcing.Cosmos.Tests.Abstractions;
 
 public class ICosmosRepositoryTests
 {

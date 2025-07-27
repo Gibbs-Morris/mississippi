@@ -1,7 +1,7 @@
-using Mississippi.Core.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Brooks;
 
 
-namespace Mississippi.Core.Abstractions.Providers.Storage;
+namespace Mississippi.EventSourcing.Abstractions.Providers.Storage;
 
 /// <summary>
 ///     Provides write access to brooks.

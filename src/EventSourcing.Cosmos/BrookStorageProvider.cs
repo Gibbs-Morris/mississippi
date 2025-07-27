@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 
-using Mississippi.Core.Abstractions.Brooks;
-using Mississippi.Core.Abstractions.Providers.Storage;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Providers.Storage;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
 
 

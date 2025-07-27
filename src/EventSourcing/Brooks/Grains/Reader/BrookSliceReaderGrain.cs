@@ -1,12 +1,12 @@
 ﻿using System.Collections.Immutable;
 
-using Mississippi.Core.Abstractions.Brooks;
-using Mississippi.Core.Abstractions.Providers.Storage;
-using Mississippi.Core.Brooks.Grains.Factory;
-using Mississippi.Core.Brooks.Grains.Head;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Providers.Storage;
+using Mississippi.EventSourcing.Brooks.Grains.Factory;
+using Mississippi.EventSourcing.Brooks.Grains.Head;
 
 
-namespace Mississippi.Core.Brooks.Grains.Reader;
+namespace Mississippi.EventSourcing.Brooks.Grains.Reader;
 
 internal class BrookSliceReaderGrain
     : IBrookSliceReaderGrain,

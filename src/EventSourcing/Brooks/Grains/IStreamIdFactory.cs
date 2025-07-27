@@ -1,7 +1,7 @@
-﻿using Mississippi.Core.Abstractions.Brooks;
+﻿using Mississippi.EventSourcing.Abstractions.Brooks;
 
 
-namespace Mississippi.Core.Brooks.Grains;
+namespace Mississippi.EventSourcing.Brooks.Grains;
 
 public interface IStreamIdFactory
 {

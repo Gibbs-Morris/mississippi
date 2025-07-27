@@ -1,4 +1,4 @@
-namespace EventSourcing.Cosmos.Tests.Locking;
+namespace Mississippi.EventSourcing.Cosmos.Tests.Locking;
 
 public class IDistributedLockTests
 {

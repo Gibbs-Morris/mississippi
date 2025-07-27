@@ -1,4 +1,4 @@
-namespace EventSourcing.Cosmos.Tests.Storage;
+namespace Mississippi.EventSourcing.Cosmos.Tests.Storage;
 
 public class CosmosRepositoryTests
 {

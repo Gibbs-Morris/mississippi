@@ -4,8 +4,8 @@ using System.Runtime.CompilerServices;
 
 using Microsoft.Azure.Cosmos;
 
-using Mississippi.Core.Abstractions.Brooks;
 using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.EventSourcing.Abstractions.Brooks;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Retry;
 

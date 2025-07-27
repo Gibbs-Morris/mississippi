@@ -1,9 +1,9 @@
 ﻿using System.Collections.Immutable;
 
-using Mississippi.Core.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Brooks;
 
 
-namespace Mississippi.Core.Brooks.Services;
+namespace Mississippi.EventSourcing.Brooks.Services;
 
 // Public entry point.
 public interface IBrookReader

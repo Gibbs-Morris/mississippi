@@ -3,15 +3,15 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Brooks;
-using Mississippi.Core.Abstractions.Providers.Storage;
-using Mississippi.Core.Brooks.Grains.Head;
-using Mississippi.Core.Brooks.Grains.Reader;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Abstractions.Providers.Storage;
+using Mississippi.EventSourcing.Brooks.Grains.Head;
+using Mississippi.EventSourcing.Brooks.Grains.Reader;
 
 using Orleans.Streams;
 
 
-namespace Mississippi.Core.Brooks.Grains.Writer;
+namespace Mississippi.EventSourcing.Brooks.Grains.Writer;
 
 internal class BrookWriterGrain
     : IGrainBase,

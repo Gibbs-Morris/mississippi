@@ -1,4 +1,4 @@
-namespace EventSourcing.Cosmos.Tests.Streams;
+namespace Mississippi.EventSourcing.Cosmos.Tests.Streams;
 
 public class EventBrookReaderTests
 {

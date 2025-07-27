@@ -1,4 +1,4 @@
-﻿namespace Mississippi.Core.Brooks.Grains.Reader;
+﻿namespace Mississippi.EventSourcing.Brooks.Grains.Reader;
 
 public class BrookProviderOptions
 {

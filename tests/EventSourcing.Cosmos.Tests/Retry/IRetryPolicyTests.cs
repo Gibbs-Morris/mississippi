@@ -1,4 +1,4 @@
-namespace EventSourcing.Cosmos.Tests.Retry;
+namespace Mississippi.EventSourcing.Cosmos.Tests.Retry;
 
 public class IRetryPolicyTests
 {

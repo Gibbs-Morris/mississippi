@@ -2,14 +2,14 @@
 
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Brooks;
-using Mississippi.Core.Brooks.Grains.Factory;
-using Mississippi.Core.Brooks.Grains.Head;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Brooks.Grains.Factory;
+using Mississippi.EventSourcing.Brooks.Grains.Head;
 
 using Orleans.Concurrency;
 
 
-namespace Mississippi.Core.Brooks.Grains.Reader;
+namespace Mississippi.EventSourcing.Brooks.Grains.Reader;
 
 [StatelessWorker]
 internal class BrookReaderGrain

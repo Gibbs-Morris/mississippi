@@ -1,9 +1,9 @@
-﻿using Mississippi.Core.Abstractions.Brooks;
+﻿using Mississippi.EventSourcing.Abstractions.Brooks;
 
 using Orleans.Concurrency;
 
 
-namespace Mississippi.Core.Brooks.Grains.Head;
+namespace Mississippi.EventSourcing.Brooks.Grains.Head;
 
 /// <summary>
 ///     Orleans grain contract that exposes the head (latest version) of a Mississippi brook.

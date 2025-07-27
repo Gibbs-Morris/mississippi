@@ -1,4 +1,4 @@
-namespace EventSourcing.Cosmos.Tests.Batching;
+namespace Mississippi.EventSourcing.Cosmos.Tests.Batching;
 
 public class BatchSizeEstimatorTests
 {

@@ -1,10 +1,10 @@
 ﻿using System.Collections.Immutable;
 
-using Mississippi.Core.Abstractions.Brooks;
-using Mississippi.Core.Brooks.Grains.Reader;
+using Mississippi.EventSourcing.Abstractions.Brooks;
+using Mississippi.EventSourcing.Brooks.Grains.Reader;
 
 
-namespace Mississippi.Core.Brooks.Services;
+namespace Mississippi.EventSourcing.Brooks.Services;
 
 public class BrookReader : IBrookReader
 {

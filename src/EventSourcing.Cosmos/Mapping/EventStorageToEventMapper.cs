@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 
-using Mississippi.Core.Abstractions.Brooks;
 using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.EventSourcing.Abstractions.Brooks;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
 
