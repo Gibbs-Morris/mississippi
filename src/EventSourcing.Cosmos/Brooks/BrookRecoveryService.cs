@@ -41,7 +41,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
     /// <param name="brookId">The brook identifier specifying the target stream.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>The current or recovered head position of the stream.</returns>
-    public async Task<BrookPosition> GetOrRecoverHeadPositionAsync(BrookKey brookId, CancellationToken cancellationToken)
+    public async Task<BrookPosition> GetOrRecoverHeadPositionAsync(BrookKey brookId, CancellationToken cancellationToken = default)
     {
         var headDocument = await RetryPolicy.ExecuteAsync(
             async () =>

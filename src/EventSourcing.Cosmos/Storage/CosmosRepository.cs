@@ -223,6 +223,7 @@ internal class CosmosRepository : ICosmosRepository
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
+            // Event doesn't exist, which is the desired outcome for deletion
         }
     }
 
@@ -243,6 +244,7 @@ internal class CosmosRepository : ICosmosRepository
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
+            // Pending head doesn't exist, which is acceptable for deletion
         }
     }
 

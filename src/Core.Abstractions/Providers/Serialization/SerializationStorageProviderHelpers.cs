@@ -3,8 +3,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Mississippi.Core.Abstractions.Providers.Serialization;
 
+/// <summary>
+/// Provides extension methods for registering serialization storage providers in dependency injection containers.
+/// </summary>
 public static class SerializationStorageProviderHelpers
 {
+    /// <summary>
+    /// Registers a serialization storage provider in the service collection.
+    /// </summary>
+    /// <typeparam name="TProvider">The type of the serialization provider to register.</typeparam>
+    /// <param name="services">The service collection to register the provider in.</param>
+    /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection RegisterSerializationStorageProvider<TProvider>(
         this IServiceCollection services
     )
@@ -17,7 +26,14 @@ public static class SerializationStorageProviderHelpers
         return services;
     }
 
-    // Allows callers to register configuration actions for provider-specific options
+    /// <summary>
+    /// Registers a serialization storage provider with configuration options in the service collection.
+    /// </summary>
+    /// <typeparam name="TProvider">The type of the serialization provider to register.</typeparam>
+    /// <typeparam name="TOptions">The type of the configuration options.</typeparam>
+    /// <param name="services">The service collection to register the provider in.</param>
+    /// <param name="configureOptions">An action to configure the provider options.</param>
+    /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection RegisterSerializationStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         Action<TOptions> configureOptions
@@ -29,7 +45,14 @@ public static class SerializationStorageProviderHelpers
         return services.RegisterSerializationStorageProvider<TProvider>();
     }
 
-    // Convenience overload for binding options from an IConfiguration section
+    /// <summary>
+    /// Registers a serialization storage provider with configuration options from an IConfiguration section.
+    /// </summary>
+    /// <typeparam name="TProvider">The type of the serialization provider to register.</typeparam>
+    /// <typeparam name="TOptions">The type of the configuration options.</typeparam>
+    /// <param name="services">The service collection to register the provider in.</param>
+    /// <param name="configurationSection">The configuration section to bind options from.</param>
+    /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection RegisterSerializationStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         IConfiguration configurationSection

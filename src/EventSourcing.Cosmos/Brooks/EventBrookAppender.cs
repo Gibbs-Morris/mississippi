@@ -64,7 +64,7 @@ internal class EventBrookAppender : IEventBrookAppender
     /// <param name="expectedVersion">The expected version for optimistic concurrency control.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>The position after successfully appending all events.</returns>
-    public async Task<BrookPosition> AppendEventsAsync(BrookKey brookId, IReadOnlyList<BrookEvent> events, BrookPosition? expectedVersion, CancellationToken cancellationToken)
+    public async Task<BrookPosition> AppendEventsAsync(BrookKey brookId, IReadOnlyList<BrookEvent> events, BrookPosition? expectedVersion, CancellationToken cancellationToken = default)
     {
         await using var distributedLock = await LockManager.AcquireLockAsync(brookId.ToString(), TimeSpan.FromSeconds(Options.LeaseDurationSeconds), cancellationToken);
 

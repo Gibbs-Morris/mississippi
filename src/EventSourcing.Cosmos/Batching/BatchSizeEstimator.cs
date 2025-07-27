@@ -54,8 +54,22 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
 
             return (long)(actualSize * 1.2);
         }
-        catch
+        catch (JsonException)
         {
+            // Fall back to estimation if JSON serialization fails
+            long size = 300;
+            size += (brookEvent.Id?.Length ?? 0) * 2;
+            size += (brookEvent.Source?.Length ?? 0) * 2;
+            size += (brookEvent.Type?.Length ?? 0) * 2;
+            size += (brookEvent.DataContentType?.Length ?? 0) * 2;
+            size += brookEvent.Data.Length;
+            size += 200;
+
+            return size;
+        }
+        catch (OutOfMemoryException)
+        {
+            // Fall back to estimation if we run out of memory
             long size = 300;
             size += (brookEvent.Id?.Length ?? 0) * 2;
             size += (brookEvent.Source?.Length ?? 0) * 2;

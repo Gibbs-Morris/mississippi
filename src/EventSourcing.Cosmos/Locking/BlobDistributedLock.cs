@@ -79,9 +79,13 @@ internal sealed class BlobDistributedLock : IDistributedLock
             {
                 await LeaseClient.ReleaseAsync();
             }
-            catch
+            catch (Azure.RequestFailedException)
             {
-                // Ignore exceptions during disposal
+                // Ignore request failures during disposal (e.g., blob not found, lease already released)
+            }
+            catch (InvalidOperationException)
+            {
+                // Ignore invalid operation exceptions during disposal (e.g., lease already released)
             }
 
             disposed = true;

@@ -24,6 +24,9 @@ public readonly record struct BrookPosition
         Value = value;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BrookPosition"/> struct with the default value (-1).
+    /// </summary>
     public BrookPosition()
     {
         Value = -1;
