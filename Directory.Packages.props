@@ -13,6 +13,7 @@
     <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.52.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.6" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Features" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
@@ -23,6 +24,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.6" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Microsoft.Orleans.Sdk" Version="9.1.2" />
+    <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="9.1.2" />
     <PackageVersion Include="Microsoft.Orleans.Server" Version="9.1.2" />
     <PackageVersion Include="Microsoft.Orleans.Streaming" Version="9.1.2" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />

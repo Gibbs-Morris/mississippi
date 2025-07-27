@@ -2,4 +2,9 @@
   <ItemGroup>
     <ProjectReference Include="..\EventSourcing.Abstractions\EventSourcing.Abstractions.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Sdk"/>
+    <PackageReference Include="Microsoft.Orleans.Streaming"/>
+  </ItemGroup>
 </Project>

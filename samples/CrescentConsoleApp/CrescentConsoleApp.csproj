@@ -7,6 +7,7 @@
       <PackageReference Include="Microsoft.Orleans.Server" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\..\src\EventSourcing\EventSourcing.csproj" />
       <ProjectReference Include="..\\..\\src\\Core\\Core.csproj" />
     </ItemGroup>
 </Project>

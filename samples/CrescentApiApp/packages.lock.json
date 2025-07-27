@@ -105,14 +105,6 @@
           "Microsoft.Extensions.Primitives": "8.0.0"
         }
       },
-      "Microsoft.Extensions.Configuration.Abstractions": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "3lE/iLSutpgX1CC0NOW70FJoGARRHbyKmG7dc0klnUZ9Dd9hS6N/POPWhKhMLCEuNN5nXEY5agmlFtH562vqhQ==",
-        "dependencies": {
-          "Microsoft.Extensions.Primitives": "8.0.0"
-        }
-      },
       "Microsoft.Extensions.Configuration.Binder": {
         "type": "Transitive",
         "resolved": "8.0.2",
@@ -469,14 +461,6 @@
           "System.IO.Pipelines": "8.0.0"
         }
       },
-      "Microsoft.Orleans.Serialization.Abstractions": {
-        "type": "Transitive",
-        "resolved": "9.1.2",
-        "contentHash": "97QepnH00n67fOhxbmYu5AQZTbgflQbfdkfRu17OawXZgNTTG7wMkYPQH11X9uWEN+3wj8dU+ohPVCyPV53sDg==",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
-        }
-      },
       "Microsoft.SourceLink.Common": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -616,6 +600,15 @@
           "Microsoft.IdentityModel.Protocols.OpenIdConnect": "8.0.1"
         }
       },
+      "Microsoft.Extensions.Configuration.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.6, )",
+        "resolved": "8.0.0",
+        "contentHash": "3lE/iLSutpgX1CC0NOW70FJoGARRHbyKmG7dc0klnUZ9Dd9hS6N/POPWhKhMLCEuNN5nXEY5agmlFtH562vqhQ==",
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "8.0.0"
+        }
+      },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "CentralTransitive",
         "requested": "[9.0.0, )",
@@ -748,6 +741,15 @@
           "System.IO.Hashing": "8.0.0",
           "System.IO.Pipelines": "8.0.0",
           "System.Memory.Data": "8.0.1"
+        }
+      },
+      "Microsoft.Orleans.Serialization.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[9.1.2, )",
+        "resolved": "9.1.2",
+        "contentHash": "97QepnH00n67fOhxbmYu5AQZTbgflQbfdkfRu17OawXZgNTTG7wMkYPQH11X9uWEN+3wj8dU+ohPVCyPV53sDg==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
         }
       },
       "Microsoft.Orleans.Streaming": {

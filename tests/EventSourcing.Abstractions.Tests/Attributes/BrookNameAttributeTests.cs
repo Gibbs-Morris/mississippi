@@ -4,9 +4,9 @@ using Mississippi.EventSourcing.Abstractions.Attributes;
 namespace Mississippi.EventSourcing.Abstractions.Tests.Attributes;
 
 /// <summary>
-///     Contains unit tests that verify the behaviour of the <see cref="StreamNameAttribute" /> class.
+///     Contains unit tests that verify the behaviour of the <see cref="BrookNameAttribute" /> class.
 /// </summary>
-public class StreamNameAttributeTests
+public class BrookNameAttributeTests
 {
     /// <summary>
     ///     Verifies that the constructor assigns the supplied parameters to the corresponding
@@ -18,11 +18,11 @@ public class StreamNameAttributeTests
         const string appName = "APP";
         const string moduleName = "MODULE";
         const string name = "STREAM";
-        StreamNameAttribute sut = new(appName, moduleName, name);
+        BrookNameAttribute sut = new(appName, moduleName, name);
         Assert.Equal(appName, sut.AppName);
         Assert.Equal(moduleName, sut.ModuleName);
         Assert.Equal(name, sut.Name);
-        Assert.Equal("APP.MODULE.STREAM", sut.StreamName);
+        Assert.Equal("APP.MODULE.STREAM", sut.BrookName);
     }
 
     /// <summary>
@@ -44,7 +44,7 @@ public class StreamNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new StreamNameAttribute(appName!, moduleName, name));
+            Assert.Throws<ArgumentException>(() => new BrookNameAttribute(appName!, moduleName, name));
         Assert.Equal("appName", ex.ParamName);
     }
 
@@ -67,7 +67,7 @@ public class StreamNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new StreamNameAttribute(appName, moduleName!, name));
+            Assert.Throws<ArgumentException>(() => new BrookNameAttribute(appName, moduleName!, name));
         Assert.Equal("moduleName", ex.ParamName);
     }
 
@@ -90,7 +90,7 @@ public class StreamNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new StreamNameAttribute(appName, moduleName, name!));
+            Assert.Throws<ArgumentException>(() => new BrookNameAttribute(appName, moduleName, name!));
         Assert.Equal("name", ex.ParamName);
     }
 
@@ -108,7 +108,7 @@ public class StreamNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new StreamNameAttribute(appName, "MODULE", "STREAM"));
+            Assert.Throws<ArgumentException>(() => new BrookNameAttribute(appName, "MODULE", "STREAM"));
         Assert.Equal("appName", ex.ParamName);
     }
 
@@ -126,7 +126,7 @@ public class StreamNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new StreamNameAttribute("APP", moduleName, "STREAM"));
+            Assert.Throws<ArgumentException>(() => new BrookNameAttribute("APP", moduleName, "STREAM"));
         Assert.Equal("moduleName", ex.ParamName);
     }
 
@@ -143,7 +143,7 @@ public class StreamNameAttributeTests
         string name
     )
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() => new StreamNameAttribute("APP", "MODULE", name));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new BrookNameAttribute("APP", "MODULE", name));
         Assert.Equal("name", ex.ParamName);
     }
 
@@ -164,11 +164,11 @@ public class StreamNameAttributeTests
         string name
     )
     {
-        StreamNameAttribute sut = new(appName, moduleName, name);
+        BrookNameAttribute sut = new(appName, moduleName, name);
         Assert.Equal(appName, sut.AppName);
         Assert.Equal(moduleName, sut.ModuleName);
         Assert.Equal(name, sut.Name);
-        Assert.Equal($"{appName}.{moduleName}.{name}", sut.StreamName);
+        Assert.Equal($"{appName}.{moduleName}.{name}", sut.BrookName);
     }
 
     /// <summary>
@@ -187,8 +187,8 @@ public class StreamNameAttributeTests
         string name
     )
     {
-        StreamNameAttribute sut = new(appName, moduleName, name);
-        Assert.Equal($"{appName}.{moduleName}.{name}", sut.StreamName);
+        BrookNameAttribute sut = new(appName, moduleName, name);
+        Assert.Equal($"{appName}.{moduleName}.{name}", sut.BrookName);
     }
 
     /// <summary>
@@ -206,7 +206,7 @@ public class StreamNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new StreamNameAttribute(badName, "MODULE", "STREAM"));
+            Assert.Throws<ArgumentException>(() => new BrookNameAttribute(badName, "MODULE", "STREAM"));
         Assert.Equal("appName", ex.ParamName);
     }
 }

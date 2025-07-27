@@ -3,25 +3,10 @@ using System.Text.RegularExpressions;
 
 namespace Mississippi.EventSourcing.Abstractions.Attributes;
 
-/// <summary>
-///     Attribute used to define the name of Projection stream in the event sourcing system.
-/// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-public sealed partial class StreamNameAttribute : Attribute
+public sealed partial class BrookNameAttribute : Attribute
 {
-    /// <summary>
-    ///     Initializes Projection new instance of the <see cref="StreamNameAttribute" /> class.
-    /// </summary>
-    /// <param name="appName">
-    ///     The application name component of the stream name. Must contain only uppercase alphanumeric
-    ///     characters.
-    /// </param>
-    /// <param name="moduleName">
-    ///     The module name component of the stream name. Must contain only uppercase alphanumeric
-    ///     characters.
-    /// </param>
-    /// <param name="name">The specific name component of the stream. Must contain only uppercase alphanumeric characters.</param>
-    public StreamNameAttribute(
+    public BrookNameAttribute(
         string appName,
         string moduleName,
         string name
@@ -36,24 +21,24 @@ public sealed partial class StreamNameAttribute : Attribute
     }
 
     /// <summary>
-    ///     Gets the application name component of the stream name.
+    ///     Gets the application name component of the brook name.
     /// </summary>
     public string AppName { get; }
 
     /// <summary>
-    ///     Gets the module name component of the stream name.
+    ///     Gets the module name component of the brook name.
     /// </summary>
     public string ModuleName { get; }
 
     /// <summary>
-    ///     Gets the specific name component of the stream.
+    ///     Gets the specific name component of the brook.
     /// </summary>
     public string Name { get; }
 
     /// <summary>
-    ///     Gets the fully qualified stream name in the format {AppName}.{ModuleName}.{Name}.
+    ///     Gets the fully qualified brook name in the format {AppName}.{ModuleName}.{Name}.
     /// </summary>
-    public string StreamName => $"{AppName}.{ModuleName}.{Name}";
+    public string BrookName => $"{AppName}.{ModuleName}.{Name}";
 
     private static void ValidateParameter(
         string value,
