@@ -1,11 +1,11 @@
 namespace EventSourcing.Cosmos.Tests.Streams;
 
-public class EventStreamReaderTests
+public class EventBrookReaderTests
 {
     [Fact]
     public void Test_Placeholder()
     {
-        // TODO: Add tests for EventStreamReader
+        // TODO: Add tests for EventBrookReader
         Assert.True(true);
     }
 }

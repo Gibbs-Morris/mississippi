@@ -42,7 +42,7 @@ internal class BrookSliceReaderGrain
         BrookPosition lastPositionOfCache = Cache.Length + brookRangeKey.Start;
         if ((lastPositionOfCache < lastPositionOfSlice) && (lastPositionOfCache < lastPositionOfBrook))
         {
-            await PopulateCacheFromStreamAsync(brookRangeKey);
+            await PopulateCacheFromBrookAsync(brookRangeKey);
         }
 
         for (int i = 0; i < Cache.Length; i++)
@@ -80,7 +80,7 @@ internal class BrookSliceReaderGrain
 
     public IGrainContext GrainContext { get; }
 
-    private async Task PopulateCacheFromStreamAsync(
+    private async Task PopulateCacheFromBrookAsync(
         BrookRangeKey brookRangeKey
     )
     {

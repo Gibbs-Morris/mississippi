@@ -7,7 +7,7 @@ using Orleans.Concurrency;
 
 namespace Mississippi.Core.Brooks.Grains.Reader;
 
-// This is the main entry point for reading events from a stream.
+// This is the main entry point for reading events from a brook.
 // This holds no state it always goes to the slice reader for it.
 [Alias("Mississippi.Core.IBrookReaderGrain")]
 public interface IBrookReaderGrain : IGrainWithStringKey

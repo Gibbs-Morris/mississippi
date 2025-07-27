@@ -34,7 +34,7 @@ try
     var result = await writerGrain.AppendEventsAsync(SampleEventFactory.CreateEvents(50));
     var readGrain = aaa.GetBrookReaderGrain(new BrookKey("x", "x"));
 
-    await foreach (var mississippiEvent in readGrain.ReadEventsAsync(new StreamReadRange(1, -1)))
+    await foreach (var mississippiEvent in readGrain.ReadEventsAsync(new BrookPosition(1), new BrookPosition(-1)))
     {
         Console.WriteLine(mississippiEvent);
     }

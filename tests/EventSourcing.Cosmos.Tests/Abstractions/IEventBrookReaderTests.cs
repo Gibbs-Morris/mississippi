@@ -1,11 +1,11 @@
 namespace EventSourcing.Cosmos.Tests.Abstractions;
 
-public class IEventStreamReaderTests
+public class IEventBrookReaderTests
 {
     [Fact]
     public void Test_Placeholder()
     {
-        // TODO: Add tests for IEventStreamReader
+        // TODO: Add tests for IEventBrookReader
         Assert.True(true);
     }
 }
