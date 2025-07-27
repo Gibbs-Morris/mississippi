@@ -8,6 +8,7 @@
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\src\EventSourcing\EventSourcing.csproj" />
+      <ProjectReference Include="..\..\src\EventSourcing.Cosmos\EventSourcing.Cosmos.csproj" />
       <ProjectReference Include="..\\..\\src\\Core\\Core.csproj" />
     </ItemGroup>
 </Project>
