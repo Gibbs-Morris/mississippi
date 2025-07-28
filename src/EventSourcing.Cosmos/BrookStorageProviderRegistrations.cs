@@ -49,7 +49,7 @@ public static class BrookStorageProviderRegistrations
         // Register storage provider interfaces using the helper
         services.RegisterBrookStorageProvider<BrookStorageProvider>();
 
-        // Configure Cosmos DB Container factory 
+        // Configure Cosmos DB Container factory
         services.AddScoped<Container>(provider =>
         {
             CosmosClient cosmosClient = provider.GetRequiredService<CosmosClient>();

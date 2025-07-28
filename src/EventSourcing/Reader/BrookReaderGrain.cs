@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 using Microsoft.Extensions.Options;
 
@@ -34,7 +35,7 @@ internal class BrookReaderGrain
     public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
         BrookPosition? readFrom = null,
         BrookPosition? readTo = null,
-        CancellationToken cancellationToken = default
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
         BrookKey brookId = this.GetPrimaryKeyString();

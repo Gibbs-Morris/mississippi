@@ -76,7 +76,8 @@ internal class BrookRecoveryService : IBrookRecoveryService
                         async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
                         cancellationToken);
                 }
-                catch (Exception ex) when (ex.Message.Contains("lock") || ex.Message.Contains("lease"))
+                catch (Exception ex) when (ex.Message.Contains("lock", StringComparison.OrdinalIgnoreCase) ||
+                                           ex.Message.Contains("lease", StringComparison.OrdinalIgnoreCase))
                 {
                     // If we can't acquire the recovery lock, assume another process is handling recovery
                     // Wait a bit and try to read the head again

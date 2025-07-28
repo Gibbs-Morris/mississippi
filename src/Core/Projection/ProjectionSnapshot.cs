@@ -5,14 +5,14 @@
 public sealed record ProjectionSnapshot<TModel>
 {
     [Id(3)]
-    public TModel Data { get; init; }
+    public required TModel Data { get; init; }
 
     [Id(0)]
     public long Version { get; init; }
 
     [Id(1)]
-    public string ProjectionPath { get; init; }
+    public required string ProjectionPath { get; init; }
 
     [Id(2)]
-    public string AggegrateRootPath { get; init; }
+    public required string AggegrateRootPath { get; init; }
 }

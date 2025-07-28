@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Abstractions.Storage;
@@ -32,7 +33,7 @@ internal class BrookSliceReaderGrain
     public async IAsyncEnumerable<BrookEvent> ReadAsync(
         BrookPosition minReadFrom,
         BrookPosition maxReadTo,
-        CancellationToken cancellationToken = default
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();

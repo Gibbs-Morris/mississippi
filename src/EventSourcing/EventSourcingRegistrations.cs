@@ -60,6 +60,8 @@ public static class EventSourcingRegistrations
         this HostApplicationBuilder builder
     )
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         // Add services to DI container
         builder.Services.AddEventSourcing();
 

@@ -13,6 +13,30 @@ namespace Mississippi.EventSourcing.Factory;
 /// </summary>
 internal class BrookGrainFactory : IBrookGrainFactory
 {
+    private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingWriterGrain =
+        LoggerMessage.Define<string, BrookKey>(
+            LogLevel.Debug,
+            new(1, nameof(GetBrookWriterGrain)),
+            "Resolving {GrainType} for Brook {BrookKey}");
+
+    private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingReaderGrain =
+        LoggerMessage.Define<string, BrookKey>(
+            LogLevel.Debug,
+            new(2, nameof(GetBrookReaderGrain)),
+            "Resolving {GrainType} for Brook {BrookKey}");
+
+    private static readonly Action<ILogger, string, BrookRangeKey, Exception?> LogResolvingSliceReaderGrain =
+        LoggerMessage.Define<string, BrookRangeKey>(
+            LogLevel.Debug,
+            new(3, nameof(GetBrookSliceReaderGrain)),
+            "Resolving {GrainType} for Brook {BrookRangeKey}");
+
+    private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingHeadGrain =
+        LoggerMessage.Define<string, BrookKey>(
+            LogLevel.Debug,
+            new(4, nameof(GetBrookHeadGrain)),
+            "Resolving {GrainType} for Brook {BrookKey}");
+
     public BrookGrainFactory(
         IGrainFactory grainFactory,
         ILogger<BrookGrainFactory> logger
@@ -35,7 +59,7 @@ internal class BrookGrainFactory : IBrookGrainFactory
         BrookKey brookKey
     )
     {
-        Logger.LogDebug("Resolving {GrainType} for Brook {BrookKey}", nameof(IBrookWriterGrain), brookKey);
+        LogResolvingWriterGrain(Logger, nameof(IBrookWriterGrain), brookKey, null);
         return GrainFactory.GetGrain<IBrookWriterGrain>(brookKey);
     }
 
@@ -48,7 +72,7 @@ internal class BrookGrainFactory : IBrookGrainFactory
         BrookKey brookKey
     )
     {
-        Logger.LogDebug("Resolving {GrainType} for Brook {BrookKey}", nameof(IBrookReaderGrain), brookKey);
+        LogResolvingReaderGrain(Logger, nameof(IBrookReaderGrain), brookKey, null);
         return GrainFactory.GetGrain<IBrookReaderGrain>(brookKey);
     }
 
@@ -61,10 +85,7 @@ internal class BrookGrainFactory : IBrookGrainFactory
         BrookRangeKey brookRangeKey
     )
     {
-        Logger.LogDebug(
-            "Resolving {GrainType} for Brook {BrookRangeKey}",
-            nameof(IBrookSliceReaderGrain),
-            brookRangeKey);
+        LogResolvingSliceReaderGrain(Logger, nameof(IBrookSliceReaderGrain), brookRangeKey, null);
         return GrainFactory.GetGrain<IBrookSliceReaderGrain>(brookRangeKey);
     }
 
@@ -77,7 +98,7 @@ internal class BrookGrainFactory : IBrookGrainFactory
         BrookKey brookKey
     )
     {
-        Logger.LogDebug("Resolving {GrainType} for Brook {BrookKey}", nameof(IBrookHeadGrain), brookKey);
+        LogResolvingHeadGrain(Logger, nameof(IBrookHeadGrain), brookKey, null);
         return GrainFactory.GetGrain<IBrookHeadGrain>(brookKey);
     }
 }

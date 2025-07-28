@@ -130,7 +130,7 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
         }
     }
 
-    private long EstimateEventSizeWithoutSerialization(
+    private static long EstimateEventSizeWithoutSerialization(
         BrookEvent brookEvent
     )
     {

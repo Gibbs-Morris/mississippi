@@ -34,6 +34,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
         LeaseRenewalThresholdSeconds = leaseRenewalThresholdSeconds;
         LeaseDurationSeconds = leaseDurationSeconds;
         lastRenewalTime = DateTimeOffset.UtcNow;
+
         // Calculate renewal threshold with a safety buffer to account for network latency
         renewalThreshold = TimeSpan.FromSeconds(Math.Max(1, leaseDurationSeconds - leaseRenewalThresholdSeconds - 1));
     }

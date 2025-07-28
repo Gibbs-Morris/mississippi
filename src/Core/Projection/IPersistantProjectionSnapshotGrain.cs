@@ -34,7 +34,7 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
 {
     private Task<Immutable<ProjectionSnapshot<TModel>>>? _inFlight;
 
-    private IGrainFactory GrainFactory { get; }
+    public required IGrainFactory GrainFactory { get; init; }
 
     private Immutable<ProjectionSnapshot<TModel>> CachedState { get; set; }
 
@@ -47,7 +47,7 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
         await generator.BackgroundBuildAsync();
     }
 
-    public IGrainContext GrainContext { get; }
+    public required IGrainContext GrainContext { get; init; }
 
     public async Task<Immutable<ProjectionSnapshot<TModel>>> GetAsync()
     {
