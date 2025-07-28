@@ -237,7 +237,15 @@ internal class EventBrookAppender : IEventBrookAppender
                     },
                     cancellationToken);
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
+            {
+                rollbackErrors.Add(new InvalidOperationException($"Failed to delete event at position {pos}", ex));
+            }
+            catch (TimeoutException ex)
+            {
+                rollbackErrors.Add(new InvalidOperationException($"Failed to delete event at position {pos}", ex));
+            }
+            catch (HttpRequestException ex)
             {
                 rollbackErrors.Add(new InvalidOperationException($"Failed to delete event at position {pos}", ex));
             }
@@ -254,7 +262,15 @@ internal class EventBrookAppender : IEventBrookAppender
                 },
                 cancellationToken);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
+        {
+            rollbackErrors.Add(new InvalidOperationException("Failed to delete pending head", ex));
+        }
+        catch (TimeoutException ex)
+        {
+            rollbackErrors.Add(new InvalidOperationException("Failed to delete pending head", ex));
+        }
+        catch (HttpRequestException ex)
         {
             rollbackErrors.Add(new InvalidOperationException("Failed to delete pending head", ex));
         }
@@ -271,7 +287,17 @@ internal class EventBrookAppender : IEventBrookAppender
                     remainingEvents.Add(pos);
                 }
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
+            {
+                rollbackErrors.Add(
+                    new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));
+            }
+            catch (TimeoutException ex)
+            {
+                rollbackErrors.Add(
+                    new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));
+            }
+            catch (HttpRequestException ex)
             {
                 rollbackErrors.Add(
                     new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));

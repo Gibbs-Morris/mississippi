@@ -82,9 +82,14 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
             // Fall back to estimation if we run out of memory
             return EstimateEventSizeWithoutSerialization(brookEvent);
         }
-        catch (Exception)
+        catch (InvalidOperationException)
         {
-            // For any other exception, fall back to estimation
+            // Fall back to estimation for serialization configuration issues
+            return EstimateEventSizeWithoutSerialization(brookEvent);
+        }
+        catch (ArgumentException)
+        {
+            // Fall back to estimation for invalid data issues
             return EstimateEventSizeWithoutSerialization(brookEvent);
         }
     }
