@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 
+
 namespace Mississippi.Core.Projection;
 
 /// <summary>

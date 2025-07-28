@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+
 using Orleans.Concurrency;
 
 
@@ -10,7 +11,10 @@ namespace Mississippi.Core.Projection;
 /// </summary>
 /// <typeparam name="TModel">The type of the projection model.</typeparam>
 [Alias("Mississippi.Core.Projection.IProjectionHeadGrain")]
-[SuppressMessage("Major Code Smell", "S2326:Unused type parameters should be removed", Justification = "Generic parameter is required for Orleans grain type resolution at runtime.")]
+[SuppressMessage(
+    "Major Code Smell",
+    "S2326:Unused type parameters should be removed",
+    Justification = "Generic parameter is required for Orleans grain type resolution at runtime.")]
 public interface IProjectionHeadGrain<TModel> : IGrainWithStringKey
 {
     /// <summary>
