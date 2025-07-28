@@ -10,7 +10,7 @@ namespace Mississippi.EventSourcing.Abstractions.Attributes;
 public sealed partial class EventNameAttribute : Attribute
 {
     /// <summary>
-    ///     Initializes Projection new instance of the <see cref="EventNameAttribute" /> class.
+    ///     Initializes a new instance of the <see cref="EventNameAttribute" /> class.
     /// </summary>
     /// <param name="appName">
     ///     The application name component of the event name. Must contain only uppercase alphanumeric

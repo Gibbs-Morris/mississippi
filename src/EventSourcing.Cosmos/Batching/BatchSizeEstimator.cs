@@ -46,9 +46,11 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
     {
         // First, do a quick size check to avoid memory issues with very large events
         long dataSize = brookEvent.Data.Length;
-        if (dataSize > 10_000_000) // 10MB threshold
+
+        // For very large events (>10MB), use estimation instead of serialization
+        const long tenMegabytes = 10_000_000;
+        if (dataSize > tenMegabytes)
         {
-            // For very large events, use estimation instead of serialization
             return EstimateEventSizeWithoutSerialization(brookEvent);
         }
 

@@ -73,10 +73,28 @@ public readonly record struct BrookPosition
         new(value);
 
     /// <summary>
+    ///     Creates a <see cref="BrookPosition" /> from an <see cref="long" /> value.
+    ///     Alternative method name for CA2225 compliance.
+    /// </summary>
+    /// <param name="value">The raw position value.</param>
+    /// <returns>A new <see cref="BrookPosition" /> instance.</returns>
+    public static BrookPosition FromInt64(
+        long value
+    ) =>
+        new(value);
+
+    /// <summary>
     ///     Converts this <see cref="BrookPosition" /> to a <see cref="long" />.
     /// </summary>
     /// <returns>The raw <see cref="long" /> value.</returns>
     public long ToLong() => Value;
+
+    /// <summary>
+    ///     Converts this <see cref="BrookPosition" /> to an <see cref="long" />.
+    ///     Alternative method name for CA2225 compliance.
+    /// </summary>
+    /// <returns>The raw <see cref="long" /> value.</returns>
+    public long ToInt64() => Value;
 
     /// <summary>
     ///     Determines whether this brook position is newer than another.

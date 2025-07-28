@@ -5,5 +5,9 @@ namespace Mississippi.EventSourcing;
 /// </summary>
 public static class EventSourcingOrleansStreamNames
 {
+    /// <summary>
+    ///     The stream name used for brook head position update notifications in Orleans.
+    ///     This stream carries notifications when brook head positions change.
+    /// </summary>
     public const string HeadUpdateStreamName = "StreamHeadUpdates";
 }

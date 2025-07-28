@@ -12,11 +12,22 @@ using Orleans.Concurrency;
 
 namespace Mississippi.EventSourcing.Reader;
 
+/// <summary>
+///     Stateless Orleans grain implementation for reading events from a Mississippi brook (event stream).
+///     Serves as the main entry point for brook reading operations and delegates to slice readers.
+/// </summary>
 [StatelessWorker]
 internal class BrookReaderGrain
     : IBrookReaderGrain,
       IGrainBase
 {
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="BrookReaderGrain"/> class.
+    ///     Sets up the grain with required dependencies for brook reading operations.
+    /// </summary>
+    /// <param name="brookGrainFactory">Factory for creating related brook grains.</param>
+    /// <param name="options">Configuration options for brook reader behavior.</param>
+    /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     public BrookReaderGrain(
         IBrookGrainFactory brookGrainFactory,
         IOptions<BrookReaderOptions> options,
@@ -32,6 +43,21 @@ internal class BrookReaderGrain
 
     private IBrookGrainFactory BrookGrainFactory { get; }
 
+    /// <summary>
+    ///     Gets the Orleans grain context for this grain instance.
+    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
+    public IGrainContext GrainContext { get; }
+
+    /// <summary>
+    ///     Reads events from the brook as an asynchronous stream within the specified position range.
+    ///     Delegates to slice reader grains for efficient memory management of large event streams.
+    /// </summary>
+    /// <param name="readFrom">Optional starting position for reading events. Reads from beginning if null.</param>
+    /// <param name="readTo">Optional ending position for reading events. Reads to end if null.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous enumeration.</param>
+    /// <returns>An asynchronous enumerable of brook events within the specified range.</returns>
     public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
         BrookPosition? readFrom = null,
         BrookPosition? readTo = null,
@@ -65,6 +91,14 @@ internal class BrookReaderGrain
         }
     }
 
+    /// <summary>
+    ///     Reads events from the brook as a batch within the specified position range.
+    ///     Returns all matching events as an immutable array for batch processing scenarios.
+    /// </summary>
+    /// <param name="readFrom">Optional starting position for reading events. Reads from beginning if null.</param>
+    /// <param name="readTo">Optional ending position for reading events. Reads to end if null.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>An immutable array containing all brook events within the specified range.</returns>
     public async Task<ImmutableArray<BrookEvent>> ReadEventsBatchAsync(
         BrookPosition? readFrom = null,
         BrookPosition? readTo = null,
@@ -79,8 +113,6 @@ internal class BrookReaderGrain
 
         return [..events];
     }
-
-    public IGrainContext GrainContext { get; }
 
     private static List<(long BucketId, long First, long Last)> GetSliceReads(
         long start,

@@ -12,7 +12,7 @@ namespace Mississippi.Core.Abstractions.Mapping;
 public sealed class AsyncEnumerableMapper<TFrom, TTo> : IAsyncEnumerableMapper<TFrom, TTo>
 {
     /// <summary>
-    ///     Initializes Projection new instance of the <see cref="AsyncEnumerableMapper{TFrom, TTo}" /> class.
+    ///     Initializes a new instance of the <see cref="AsyncEnumerableMapper{TFrom, TTo}" /> class.
     /// </summary>
     /// <param name="mapper">The mapper used to map individual objects.</param>
     public AsyncEnumerableMapper(

@@ -19,6 +19,15 @@ internal class BrookHeadGrain
       IAsyncObserver<BrookHeadMovedEvent>,
       IGrainBase
 {
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="BrookHeadGrain"/> class.
+    ///     Sets up the grain with required dependencies for brook head position tracking.
+    /// </summary>
+    /// <param name="brookReaderProvider">The brook storage reader service for reading head positions.</param>
+    /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="logger">Logger instance for logging head grain operations.</param>
+    /// <param name="streamProviderOptions">Configuration options for the Orleans stream provider.</param>
+    /// <param name="streamIdFactory">Factory for creating Orleans stream identifiers.</param>
     public BrookHeadGrain(
         IBrookStorageReader brookReaderProvider,
         IGrainContext grainContext,
@@ -53,6 +62,7 @@ internal class BrookHeadGrain
     /// </summary>
     /// <param name="item">The event containing the new brook head position.</param>
     /// <param name="token">Optional sequence token for ordering updates.</param>
+    /// <returns>A completed task representing the asynchronous event handling operation.</returns>
     public Task OnNextAsync(
         BrookHeadMovedEvent item,
         StreamSequenceToken? token = null
@@ -77,6 +87,7 @@ internal class BrookHeadGrain
     ///     Handles errors on the subscribed stream and deactivates the grain.
     /// </summary>
     /// <param name="ex">The exception encountered on the stream.</param>
+    /// <returns>A completed task representing the asynchronous error handling operation.</returns>
     public Task OnErrorAsync(
         Exception ex
     )
@@ -107,6 +118,7 @@ internal class BrookHeadGrain
     ///     Subscribes the grain as an observer to the head update stream on activation.
     /// </summary>
     /// <param name="token">Cancellation token for activation.</param>
+    /// <returns>A task representing the asynchronous activation operation.</returns>
     public async Task OnActivateAsync(
         CancellationToken token
     )
@@ -117,5 +129,10 @@ internal class BrookHeadGrain
         await Stream.SubscribeAsync(this);
     }
 
+    /// <summary>
+    ///     Gets the Orleans grain context for this grain instance.
+    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
     public IGrainContext GrainContext { get; }
 }

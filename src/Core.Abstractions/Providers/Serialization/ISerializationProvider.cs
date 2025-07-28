@@ -9,6 +9,9 @@ public interface ISerializationProvider
       ISerializationWriter,
       IAsyncSerializationWriter
 {
-    /// Canonical name for logging / routing (“json”, “avro”, “protobuf”…).
+    /// <summary>
+    ///     Gets the canonical name for logging and routing purposes (e.g., "json", "avro", "protobuf").
+    /// </summary>
+    /// <value>A string representing the format name of this serialization provider.</value>
     string Format { get; }
 }

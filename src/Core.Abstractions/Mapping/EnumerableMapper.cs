@@ -8,7 +8,7 @@
 public sealed class EnumerableMapper<TFrom, TTo> : IEnumerableMapper<TFrom, TTo>
 {
     /// <summary>
-    ///     Initializes Projection new instance of the <see cref="EnumerableMapper{TFrom, TTo}" /> class.
+    ///     Initializes a new instance of the <see cref="EnumerableMapper{TFrom, TTo}" /> class.
     /// </summary>
     /// <param name="mapper">The mapper used to map individual objects.</param>
     public EnumerableMapper(

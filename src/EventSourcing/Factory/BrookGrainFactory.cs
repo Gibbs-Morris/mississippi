@@ -37,6 +37,12 @@ internal class BrookGrainFactory : IBrookGrainFactory
             new(4, nameof(GetBrookHeadGrain)),
             "Resolving {GrainType} for Brook {BrookKey}");
 
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="BrookGrainFactory"/> class.
+    ///     Sets up the factory with Orleans grain factory and logging dependencies.
+    /// </summary>
+    /// <param name="grainFactory">The Orleans grain factory for creating grain instances.</param>
+    /// <param name="logger">Logger instance for logging grain factory operations.</param>
     public BrookGrainFactory(
         IGrainFactory grainFactory,
         ILogger<BrookGrainFactory> logger

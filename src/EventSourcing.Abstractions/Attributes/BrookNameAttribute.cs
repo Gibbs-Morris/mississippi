@@ -3,9 +3,21 @@ using System.Text.RegularExpressions;
 
 namespace Mississippi.EventSourcing.Abstractions.Attributes;
 
+/// <summary>
+///     Attribute that specifies the hierarchical naming convention for a brook (event stream).
+///     Ensures consistent naming across the application with validation for proper format.
+/// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed partial class BrookNameAttribute : Attribute
 {
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="BrookNameAttribute"/> class.
+    ///     Creates a hierarchical brook name from the specified application, module, and specific name components.
+    /// </summary>
+    /// <param name="appName">The application name component. Must contain only uppercase alphanumeric characters.</param>
+    /// <param name="moduleName">The module name component. Must contain only uppercase alphanumeric characters.</param>
+    /// <param name="name">The specific brook name component. Must contain only uppercase alphanumeric characters.</param>
+    /// <exception cref="ArgumentException">Thrown when any parameter is null, whitespace, or contains invalid characters.</exception>
     public BrookNameAttribute(
         string appName,
         string moduleName,
