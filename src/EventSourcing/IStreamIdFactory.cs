@@ -13,7 +13,7 @@ public interface IStreamIdFactory
     ///     Creates an Orleans stream identifier from the specified brook key.
     /// </summary>
     /// <param name="brookKey">The brook key to convert to a stream identifier.</param>
-    /// <returns>An Orleans <see cref="StreamId"/> that corresponds to the brook key.</returns>
+    /// <returns>An Orleans <see cref="StreamId" /> that corresponds to the brook key.</returns>
     StreamId Create(
         BrookKey brookKey
     );

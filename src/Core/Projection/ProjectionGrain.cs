@@ -49,14 +49,7 @@ public abstract class ProjectionGrain<TModel>
     ///     Delegates to the projection head grain for the actual position value.
     /// </summary>
     /// <returns>The head position as a long value.</returns>
-    public Task<long> GetHeadPositionAsync() => throw new NotImplementedException();
-
-    /// <summary>
-    ///     Gets the current head position of the projection synchronously.
-    ///     Internal helper method that queries the head grain.
-    /// </summary>
-    /// <returns>The head position as a long value.</returns>
-    public async Task<long> GetHeadPosition()
+    public async Task<long> GetHeadPositionAsync()
     {
         IProjectionHeadGrain<TModel>? head =
             GrainFactory.GetGrain<IProjectionHeadGrain<TModel>>(this.GetPrimaryKeyString());
@@ -111,30 +104,10 @@ public interface ISnapshotVersionFinder
     {
         if (step <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(step), "Step must be > 0.");
+            throw new ArgumentOutOfRangeException(nameof(step), "Step must be greater than 0");
         }
 
-        if (value < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(value), "Value must be ≥ 0.");
-        }
-
-        // Early-out for 0 to avoid unnecessary work.
-        if (value == 0)
-        {
-            return 0;
-        }
-
-        long candidate = (value / step) * step;
-
-        // Ensure the result is strictly less than the original value.
-        if (candidate == value)
-        {
-            candidate -= step;
-        }
-
-        // Clamp so we never return a negative.
-        return candidate < 0 ? 0 : candidate;
+        return (value / step) * step;
     }
 }
 
@@ -192,5 +165,6 @@ public sealed record MississippiProjection
     ///     Used for data integrity verification and caching purposes.
     /// </summary>
     /// <value>A string representing the hash of the projection event.</value>
+    [Id(6)]
     public string Hash { get; init; } = string.Empty;
 }

@@ -22,7 +22,7 @@ internal class BrookReaderGrain
       IGrainBase
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="BrookReaderGrain"/> class.
+    ///     Initializes a new instance of the <see cref="BrookReaderGrain" /> class.
     ///     Sets up the grain with required dependencies for brook reading operations.
     /// </summary>
     /// <param name="brookGrainFactory">Factory for creating related brook grains.</param>
@@ -39,9 +39,9 @@ internal class BrookReaderGrain
         GrainContext = grainContext;
     }
 
-    private IOptions<BrookReaderOptions> Options { get; }
-
     private IBrookGrainFactory BrookGrainFactory { get; }
+
+    private IOptions<BrookReaderOptions> Options { get; }
 
     /// <summary>
     ///     Gets the Orleans grain context for this grain instance.

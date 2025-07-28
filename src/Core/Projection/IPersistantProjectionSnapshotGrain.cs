@@ -35,6 +35,7 @@ public interface IPersistantProjectionSnapshotGrain<TModel> : IGrainWithStringKe
 ///     Handles the computation-intensive task of generating snapshots from source data.
 /// </summary>
 /// <typeparam name="TModel">The type of the projection model.</typeparam>
+[Alias("Mississippi.Core.Projection.IProjectionSnapshotGeneratorGrain")]
 public interface IProjectionSnapshotGeneratorGrain<TModel> : IGrainWithStringKey
 {
     /// <summary>
@@ -71,6 +72,13 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
     /// <value>The grain factory instance.</value>
     public required IGrainFactory GrainFactory { get; init; }
 
+    /// <summary>
+    ///     Gets or initializes the Orleans grain context for this grain instance.
+    ///     Required Orleans infrastructure dependency for grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
+    public required IGrainContext GrainContext { get; init; }
+
     private Immutable<ProjectionSnapshot<TModel>> CachedState { get; set; }
 
     /// <summary>
@@ -87,13 +95,6 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
             GrainFactory.GetGrain<IProjectionSnapshotGeneratorGrain<TModel>>(this.GetPrimaryKeyString());
         await generator.BackgroundBuildAsync();
     }
-
-    /// <summary>
-    ///     Gets or initializes the Orleans grain context for this grain instance.
-    ///     Required Orleans infrastructure dependency for grain lifecycle management.
-    /// </summary>
-    /// <value>The grain context instance.</value>
-    public required IGrainContext GrainContext { get; init; }
 
     /// <summary>
     ///     Gets the projection snapshot, either from cache or by building a new one.

@@ -20,7 +20,7 @@ internal class BrookHeadGrain
       IGrainBase
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="BrookHeadGrain"/> class.
+    ///     Initializes a new instance of the <see cref="BrookHeadGrain" /> class.
     ///     Sets up the grain with required dependencies for brook head position tracking.
     /// </summary>
     /// <param name="brookReaderProvider">The brook storage reader service for reading head positions.</param>
@@ -56,6 +56,13 @@ internal class BrookHeadGrain
     private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
 
     private IStreamIdFactory StreamIdFactory { get; }
+
+    /// <summary>
+    ///     Gets the Orleans grain context for this grain instance.
+    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
+    public IGrainContext GrainContext { get; }
 
     /// <summary>
     ///     Handles a head moved event and updates the grain's position if the event is newer.
@@ -128,11 +135,4 @@ internal class BrookHeadGrain
             .GetStream<BrookHeadMovedEvent>(key);
         await Stream.SubscribeAsync(this);
     }
-
-    /// <summary>
-    ///     Gets the Orleans grain context for this grain instance.
-    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
-    /// </summary>
-    /// <value>The grain context instance.</value>
-    public IGrainContext GrainContext { get; }
 }

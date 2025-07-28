@@ -13,7 +13,7 @@ public static class BrookStorageProviderHelpers
     /// <summary>
     ///     Registers a brook storage provider in the service collection without additional configuration.
     /// </summary>
-    /// <typeparam name="TProvider">The type of the storage provider that implements <see cref="IBrookStorageProvider"/>.</typeparam>
+    /// <typeparam name="TProvider">The type of the storage provider that implements <see cref="IBrookStorageProvider" />.</typeparam>
     /// <param name="services">The service collection to register the provider in.</param>
     /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection RegisterBrookStorageProvider<TProvider>(
@@ -29,7 +29,7 @@ public static class BrookStorageProviderHelpers
     /// <summary>
     ///     Registers a brook storage provider in the service collection with configuration options.
     /// </summary>
-    /// <typeparam name="TProvider">The type of the storage provider that implements <see cref="IBrookStorageProvider"/>.</typeparam>
+    /// <typeparam name="TProvider">The type of the storage provider that implements <see cref="IBrookStorageProvider" />.</typeparam>
     /// <typeparam name="TOptions">The type of the configuration options.</typeparam>
     /// <param name="services">The service collection to register the provider in.</param>
     /// <param name="configureOptions">An action to configure the options.</param>
@@ -48,7 +48,7 @@ public static class BrookStorageProviderHelpers
     /// <summary>
     ///     Registers a brook storage provider in the service collection with configuration from a configuration section.
     /// </summary>
-    /// <typeparam name="TProvider">The type of the storage provider that implements <see cref="IBrookStorageProvider"/>.</typeparam>
+    /// <typeparam name="TProvider">The type of the storage provider that implements <see cref="IBrookStorageProvider" />.</typeparam>
     /// <typeparam name="TOptions">The type of the configuration options.</typeparam>
     /// <param name="services">The service collection to register the provider in.</param>
     /// <param name="configurationSection">The configuration section containing the options.</param>

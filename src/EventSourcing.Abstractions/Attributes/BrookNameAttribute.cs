@@ -11,7 +11,7 @@ namespace Mississippi.EventSourcing.Abstractions.Attributes;
 public sealed partial class BrookNameAttribute : Attribute
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="BrookNameAttribute"/> class.
+    ///     Initializes a new instance of the <see cref="BrookNameAttribute" /> class.
     ///     Creates a hierarchical brook name from the specified application, module, and specific name components.
     /// </summary>
     /// <param name="appName">The application name component. Must contain only uppercase alphanumeric characters.</param>

@@ -76,9 +76,41 @@ public readonly record struct BrookRangeKey
     public BrookPosition End => Start + Count;
 
     /// <summary>
-    ///     Gets the number of items in the range.
+    ///     Gets the count component of the brook range key.
     /// </summary>
     public long Count { get; }
+
+    /// <summary>
+    ///     Implicitly converts a <see cref="BrookRangeKey" /> to its string representation.
+    /// </summary>
+    /// <param name="key">The brook range key to convert.</param>
+    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
+    public static implicit operator string(
+        BrookRangeKey key
+    ) =>
+        $"{key.Type}{Separator}{key.Id}{Separator}{key.Start}{Separator}{key.Count}";
+
+    /// <summary>
+    ///     Implicitly converts a string to a <see cref="BrookRangeKey" />.
+    /// </summary>
+    /// <param name="value">The string value to convert.</param>
+    /// <returns>A brook range key parsed from the string.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
+    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
+    public static implicit operator BrookRangeKey(
+        string value
+    ) =>
+        FromString(value);
+
+    /// <summary>
+    ///     Converts a brook range key to its string representation.
+    /// </summary>
+    /// <param name="key">The brook range key to convert.</param>
+    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
+    public static string FromBrookRangeKey(
+        BrookRangeKey key
+    ) =>
+        key;
 
     /// <summary>
     ///     Creates a brook range key from a brook key and range parameters.
@@ -105,38 +137,6 @@ public readonly record struct BrookRangeKey
     /// </summary>
     /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
     public override string ToString() => this;
-
-    /// <summary>
-    ///     Implicitly converts a <see cref="BrookRangeKey" /> to its string representation.
-    /// </summary>
-    /// <param name="key">The brook range key to convert.</param>
-    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
-    public static implicit operator string(
-        BrookRangeKey key
-    ) =>
-        $"{key.Type}{Separator}{key.Id}{Separator}{key.Start}{Separator}{key.Count}";
-
-    /// <summary>
-    ///     Converts a brook range key to its string representation.
-    /// </summary>
-    /// <param name="key">The brook range key to convert.</param>
-    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
-    public static string FromBrookRangeKey(
-        BrookRangeKey key
-    ) =>
-        key;
-
-    /// <summary>
-    ///     Implicitly converts a string to a <see cref="BrookRangeKey" />.
-    /// </summary>
-    /// <param name="value">The string value to convert.</param>
-    /// <returns>A brook range key parsed from the string.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
-    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
-    public static implicit operator BrookRangeKey(
-        string value
-    ) =>
-        FromString(value);
 
     /// <summary>
     ///     Creates a brook range key from its string representation.

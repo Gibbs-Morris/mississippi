@@ -22,7 +22,7 @@ internal class BrookWriterGrain
       IBrookWriterGrain
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="BrookWriterGrain"/> class.
+    ///     Initializes a new instance of the <see cref="BrookWriterGrain" /> class.
     ///     Sets up the grain with required dependencies for brook writing operations.
     /// </summary>
     /// <param name="brookWriterService">The brook storage writer service for persisting events.</param>
@@ -49,6 +49,13 @@ internal class BrookWriterGrain
     private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
 
     /// <summary>
+    ///     Gets the Orleans grain context for this grain instance.
+    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
+    public IGrainContext GrainContext { get; }
+
+    /// <summary>
     ///     Appends a collection of events to the brook (event stream).
     ///     Validates the expected head position and publishes head movement events after successful append.
     /// </summary>
@@ -63,23 +70,12 @@ internal class BrookWriterGrain
     )
     {
         BrookKey key = this.GetPrimaryKeyString();
-        BrookPosition newPosition = await BrookWriterService.AppendEventsAsync(
-            key,
-            events,
-            expectedHeadPosition,
-            cancellationToken);
-        IAsyncStream<BrookHeadMovedEvent>? stream = this
-            .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
+        BrookPosition newPosition = await BrookWriterService.AppendEventsAsync(key, events, expectedHeadPosition, cancellationToken);
+
+        IAsyncStream<BrookHeadMovedEvent> stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookHeadMovedEvent>(
                 StreamId.Create(EventSourcingOrleansStreamNames.HeadUpdateStreamName, this.GetPrimaryKeyString()));
         await stream.OnNextAsync(new(newPosition));
         return newPosition;
     }
-
-    /// <summary>
-    ///     Gets the Orleans grain context for this grain instance.
-    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
-    /// </summary>
-    /// <value>The grain context instance.</value>
-    public IGrainContext GrainContext { get; }
 }

@@ -56,16 +56,6 @@ public readonly record struct BrookKey
         $"{key.Type}{Separator}{key.Id}";
 
     /// <summary>
-    ///     Converts a brook key to its string representation.
-    /// </summary>
-    /// <param name="key">The brook key to convert.</param>
-    /// <returns>A string representation of the brook key in the format "type|id".</returns>
-    public static string FromBrookKey(
-        BrookKey key
-    ) =>
-        key;
-
-    /// <summary>
     ///     Implicitly converts a string to a <see cref="BrookKey" />.
     /// </summary>
     /// <param name="value">The string value to convert.</param>
@@ -76,6 +66,16 @@ public readonly record struct BrookKey
         string value
     ) =>
         FromString(value);
+
+    /// <summary>
+    ///     Converts a brook key to its string representation.
+    /// </summary>
+    /// <param name="key">The brook key to convert.</param>
+    /// <returns>A string representation of the brook key in the format "type|id".</returns>
+    public static string FromBrookKey(
+        BrookKey key
+    ) =>
+        key;
 
     /// <summary>
     ///     Creates a brook key from its string representation.

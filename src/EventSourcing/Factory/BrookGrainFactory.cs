@@ -38,7 +38,7 @@ internal class BrookGrainFactory : IBrookGrainFactory
             "Resolving {GrainType} for Brook {BrookKey}");
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="BrookGrainFactory"/> class.
+    ///     Initializes a new instance of the <see cref="BrookGrainFactory" /> class.
     ///     Sets up the factory with Orleans grain factory and logging dependencies.
     /// </summary>
     /// <param name="grainFactory">The Orleans grain factory for creating grain instances.</param>

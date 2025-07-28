@@ -18,7 +18,7 @@ internal class BrookSliceReaderGrain
       IGrainBase
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="BrookSliceReaderGrain"/> class.
+    ///     Initializes a new instance of the <see cref="BrookSliceReaderGrain" /> class.
     ///     Sets up the grain with required dependencies for brook slice reading operations.
     /// </summary>
     /// <param name="brookStorageReader">The brook storage reader service for accessing persisted events.</param>
