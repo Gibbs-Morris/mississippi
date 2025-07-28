@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.TestHost"/>
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\CrescentApiApp\CrescentApiApp.csproj"/>
+        <ProjectReference Include="..\CrescentApiApp\CrescentApiApp.csproj" />
     </ItemGroup>
 </Project>
