@@ -50,6 +50,10 @@ Generated\ Files/
 TestResult.xml
 nunit-*.xml
 
+# Custom test output directories
+test-results/
+StrykerOutput/
+
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/
