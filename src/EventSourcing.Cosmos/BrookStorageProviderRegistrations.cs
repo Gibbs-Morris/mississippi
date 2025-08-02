@@ -33,12 +33,12 @@ public static class BrookStorageProviderRegistrations
         this IServiceCollection services
     )
     {
-        services.AddScoped<IBrookStorageProvider, BrookStorageProvider>();
-        services.AddScoped<IBrookRecoveryService, BrookRecoveryService>();
-        services.AddScoped<IEventBrookReader, EventBrookReader>();
-        services.AddScoped<IEventBrookAppender, EventBrookAppender>();
-        services.AddScoped<ICosmosRepository, CosmosRepository>();
-        services.AddScoped<IDistributedLockManager, BlobDistributedLockManager>();
+        services.AddSingleton<IBrookStorageProvider, BrookStorageProvider>();
+        services.AddSingleton<IBrookRecoveryService, BrookRecoveryService>();
+        services.AddSingleton<IEventBrookReader, EventBrookReader>();
+        services.AddSingleton<IEventBrookAppender, EventBrookAppender>();
+        services.AddSingleton<ICosmosRepository, CosmosRepository>();
+        services.AddSingleton<IDistributedLockManager, BlobDistributedLockManager>();
         services.AddSingleton<IBatchSizeEstimator, BatchSizeEstimator>();
         services.AddSingleton<IRetryPolicy, CosmosRetryPolicy>();
         services.AddMapper<EventStorageModel, BrookEvent, EventStorageToEventMapper>();
@@ -50,11 +50,37 @@ public static class BrookStorageProviderRegistrations
         services.RegisterBrookStorageProvider<BrookStorageProvider>();
 
         // Configure Cosmos DB Container factory
-        services.AddScoped<Container>(provider =>
+        services.AddSingleton<Container>(provider =>
         {
             CosmosClient cosmosClient = provider.GetRequiredService<CosmosClient>();
             BrookStorageOptions options = provider.GetRequiredService<IOptions<BrookStorageOptions>>().Value;
-            return cosmosClient.GetContainer(options.DatabaseId, options.ContainerId);
+            
+            // Create database if it doesn't exist
+            Database database = cosmosClient.CreateDatabaseIfNotExistsAsync(options.DatabaseId).GetAwaiter().GetResult();
+            
+            // Check if container exists and has the correct partition key path
+            try
+            {
+                Container existingContainer = database.GetContainer(options.ContainerId);
+                var containerProperties = existingContainer.ReadContainerAsync().GetAwaiter().GetResult();
+                
+                // If the partition key path is not what we expect, delete and recreate
+                if (containerProperties.Resource.PartitionKeyPath != "/brookPartitionKey")
+                {
+                    Console.WriteLine($"DEBUG: Deleting existing container with wrong partition key path: {containerProperties.Resource.PartitionKeyPath}");
+                    existingContainer.DeleteContainerAsync().GetAwaiter().GetResult();
+                    Console.WriteLine($"DEBUG: Container deleted successfully");
+                }
+            }
+            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                // Container doesn't exist, which is fine
+            }
+            
+            // Create container if it doesn't exist
+            Container container = database.CreateContainerIfNotExistsAsync(options.ContainerId, "/brookPartitionKey").GetAwaiter().GetResult();
+            
+            return container;
         });
         return services;
     }

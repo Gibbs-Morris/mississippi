@@ -1,5 +1,7 @@
 using Mississippi.EventSourcing.Abstractions;
 
+using Orleans.Serialization;
+
 
 namespace Mississippi.EventSourcing.Head;
 
@@ -8,4 +10,6 @@ namespace Mississippi.EventSourcing.Head;
 ///     This event is used to notify subscribers about brook head position changes.
 /// </summary>
 /// <param name="NewPosition">The new position of the brook head after the move operation.</param>
+[GenerateSerializer]
+[Alias("Mississippi.EventSourcing.Head.BrookHeadMovedEvent")]
 public record BrookHeadMovedEvent(BrookPosition NewPosition);

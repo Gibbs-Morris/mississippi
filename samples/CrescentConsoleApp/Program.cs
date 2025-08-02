@@ -28,7 +28,8 @@ builder.UseOrleans(silo =>
         {
             opt.ClusterId = "dev";
             opt.ServiceId = "SampleApp";
-        });
+        })
+        .AddMemoryGrainStorage("PubSubStore");
 });
 
 // Add Cosmos storage provider with configuration
@@ -48,9 +49,11 @@ try
 {
     IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
     IBrookGrainFactory aaa = host.Services.GetRequiredService<IBrookGrainFactory>();
-    IBrookWriterGrain writerGrain = aaa.GetBrookWriterGrain(new("x", "x"));
-    BrookPosition result = await writerGrain.AppendEventsAsync(SampleEventFactory.CreateEvents(50));
-    IBrookReaderGrain readGrain = aaa.GetBrookReaderGrain(new("x", "x"));
+    // Create a brook key for testing
+    BrookKey brookKey = new("test-brook", "sample-brook-001");
+    IBrookWriterGrain writerGrain = aaa.GetBrookWriterGrain(brookKey);
+    BrookPosition result = await writerGrain.AppendEventsAsync(SampleEventFactory.CreateEvents(1));
+    IBrookReaderGrain readGrain = aaa.GetBrookReaderGrain(brookKey);
     await foreach (BrookEvent mississippiEvent in readGrain.ReadEventsAsync(
                        new BrookPosition(1),
                        new BrookPosition(-1)))
