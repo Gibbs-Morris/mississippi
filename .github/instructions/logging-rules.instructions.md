@@ -8,12 +8,28 @@ This document defines the logging standards and best practices for the Mississip
 
 ## Core Logging Principles
 
+### MANDATORY High-Performance Logging Requirements
+
+#### LoggerExtensions Classes - REQUIRED PATTERN
+- **ALL logging MUST use the LoggerExtensions pattern** - Create a `public static class [ComponentName]LoggerExtensions` for each component
+- **NO direct ILogger calls allowed** - All logging must go through static extension methods defined in LoggerExtensions classes
+- **Consistent naming convention** - Class name MUST end with `LoggerExtensions` (e.g., `EventProcessingLoggerExtensions`, `OrderProcessingLoggerExtensions`)
+- **Static Action delegates required** - All LoggerMessage patterns must be implemented as private static readonly Action delegates
+- **Extension method pattern** - Each log operation must be exposed as a public static extension method
+
+#### Performance Requirements
+- **LoggerMessage is mandatory** - NEVER use direct ILogger.Log() calls, always use LoggerMessage.Define pattern
+- **Static Action caching** - Cache all log message templates as static Action delegates for optimal performance
+- **Zero allocations** - Use strongly-typed parameters to avoid boxing of value types
+- **Compile-time optimization** - Leverage LoggerMessage for pre-compiled message templates
+
 ### Structured Logging with ILogger
 - **Always use dependency-injected `ILogger<T>` as a property** - Use `private ILogger<T> Logger { get; }` pattern
 - **Use structured logging** - Log objects and properties, not just strings
 - **Include correlation IDs** - Every log entry should be traceable across services
 - **Log at appropriate levels** - Use the correct log level for the information being recorded
-- **Use high-performance logging patterns** - Always use LoggerMessage for optimal performance
+- **MANDATORY: Use high-performance logging patterns** - ALWAYS use LoggerMessage with static Action delegates - this is required, not optional
+- **MANDATORY: Use LoggerExtensions classes** - ALL logging MUST be implemented using `public static class [ComponentName]LoggerExtensions` pattern - this is a hard requirement
 - **Write AI-debuggable messages** - Ensure log messages are descriptive enough for AI agents to understand and debug issues
 
 ### Log Levels and Usage
@@ -25,7 +41,7 @@ This document defines the logging standards and best practices for the Mississip
 - **External service failures** that impact functionality
 
 ```csharp
-// High-performance logging with LoggerMessage
+// MANDATORY PATTERN: High-performance logging with LoggerMessage and LoggerExtensions class
 public static class EventProcessingLoggerExtensions
 {
     private static readonly Action<ILogger, string, string, Exception> s_eventProcessingFailed =
@@ -38,8 +54,11 @@ public static class EventProcessingLoggerExtensions
         s_eventProcessingFailed(logger, eventId, streamId, ex);
 }
 
-// Usage
+// Usage - ALWAYS call through the LoggerExtensions class
 Logger.EventProcessingFailed(eventId, streamId, ex);
+
+// FORBIDDEN: Direct ILogger calls like this are NOT ALLOWED
+// Logger.LogError(ex, "Failed to process event {EventId} for stream {StreamId}", eventId, streamId);
 ```
 
 #### Warning Level
@@ -49,7 +68,7 @@ Logger.EventProcessingFailed(eventId, streamId, ex);
 - **Configuration issues** that have fallbacks
 
 ```csharp
-// High-performance logging with LoggerMessage
+// MANDATORY PATTERN: LoggerExtensions class with high-performance LoggerMessage
 public static class SystemMonitoringLoggerExtensions
 {
     private static readonly Action<ILogger, int, Exception?> s_highMemoryUsageDetected =
@@ -62,7 +81,7 @@ public static class SystemMonitoringLoggerExtensions
         s_highMemoryUsageDetected(logger, memoryUsage, null);
 }
 
-// Usage
+// Usage - ALWAYS through LoggerExtensions
 Logger.HighMemoryUsageDetected(memoryUsage);
 ```
 
@@ -272,14 +291,16 @@ catch (Exception ex)
 ## Performance and Sensitive Data
 
 ### High-Performance Logging with LoggerMessage
-- **Always use LoggerMessage for all logging** - Reduces allocations and parsing overhead
-- **Define static Action delegates** - Cache log message templates for better performance
+- **MANDATORY: Always use LoggerMessage for ALL logging** - Direct ILogger calls are FORBIDDEN - reduces allocations and parsing overhead
+- **MANDATORY: Use LoggerExtensions classes** - ALL logging must be implemented in `public static class [ComponentName]LoggerExtensions` classes
+- **Define static Action delegates** - Cache log message templates for better performance as private static readonly fields
 - **Use strongly-typed parameters** - Avoid boxing of value types
 - **Leverage source generation** - Use LoggerMessageAttribute in .NET 6+ for compile-time optimization
+- **NO EXCEPTIONS** - This pattern is required for all logging, without exception
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class LoggerExtensions
+// MANDATORY PATTERN: LoggerExtensions class with high-performance LoggerMessage
+public static class EventProcessorLoggerExtensions
 {
     private static readonly Action<ILogger, string, string, Exception?> s_eventProcessed =
         LoggerMessage.Define<string, string>(
@@ -332,8 +353,8 @@ public class EventProcessorGrain : Grain, IEventProcessorGrain
 - **Async logging** - Use async logging providers when available
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class PerformanceLoggerExtensions
+// MANDATORY PATTERN: LoggerExtensions class with high-performance LoggerMessage
+public static class PerformanceServiceLoggerExtensions
 {
     private static readonly Action<ILogger, string, Exception?> s_expensiveOperationResult =
         LoggerMessage.Define<string>(
@@ -354,14 +375,14 @@ public static class PerformanceLoggerExtensions
         s_userDataLogged(logger, userData, null);
 }
 
-// Performance-optimized logging
+// Performance-optimized logging - ALWAYS through LoggerExtensions
 if (Logger.IsEnabled(LogLevel.Debug))
 {
     var result = await ExpensiveOperationAsync();
     Logger.ExpensiveOperationResult(result);
 }
 
-// Lazy evaluation
+// Lazy evaluation - ALWAYS through LoggerExtensions
 Logger.UserDataLogged(userData); // Only serializes if Debug is enabled
 ```
 
@@ -1052,12 +1073,14 @@ public class ExplicitCorrelationController : ControllerBase
 When reviewing code that includes logging, ensure:
 
 - [ ] Uses dependency-injected `ILogger<T>` as a property
+- [ ] **MANDATORY: ALL logging uses LoggerExtensions classes** - Must follow `public static class [ComponentName]LoggerExtensions` pattern
+- [ ] **MANDATORY: NO direct ILogger calls** - All logging must go through static extension methods
+- [ ] **MANDATORY: Uses LoggerMessage pattern** - All logging must use static Action delegates with LoggerMessage.Define
 - [ ] Includes appropriate correlation IDs
 - [ ] Uses correct log levels
 - [ ] Logs structured data, not just strings
 - [ ] Includes exception objects for error logging
 - [ ] Avoids logging sensitive information
-- [ ] Uses performance-optimized logging patterns (LoggerMessage for all logging)
 - [ ] Includes relevant context and metadata
 - [ ] Follows naming conventions for event numbers
 - [ ] Provides sufficient detail for troubleshooting
@@ -1071,7 +1094,7 @@ When reviewing code that includes logging, ensure:
 
 ### Standard Logging Template
 ```csharp
-// High-performance logging with LoggerMessage
+// MANDATORY PATTERN: High-performance logging with LoggerMessage and LoggerExtensions class
 public static class ExampleServiceLoggerExtensions
 {
     private static readonly Action<ILogger, int, string, Exception?> s_dataProcessingStarted =
@@ -1129,10 +1152,15 @@ public class ExampleService
         }
     }
 }
+
+// FORBIDDEN PATTERNS - DO NOT USE:
+// Logger.LogInformation("Starting data processing. DataLength: {DataLength}", data.Length); // WRONG - Direct ILogger call
+// Logger.LogError(ex, "Processing failed"); // WRONG - Direct ILogger call
+// ANY direct ILogger.Log*() method calls are FORBIDDEN
 ```
 
 ```csharp
-// High-performance logging template with LoggerMessage
+// MANDATORY PATTERN: High-performance logging template with LoggerMessage and LoggerExtensions class
 public static class ServiceLoggerExtensions
 {
     private static readonly Action<ILogger, int, string, Exception?> s_dataProcessingStarted =
@@ -1192,7 +1220,16 @@ public class HighPerformanceService
 }
 ```
 
-This logging standard ensures consistent, observable, and maintainable logging across all Mississippi Framework applications and related services. The guidelines are designed to work with standard .NET tooling and can be easily extended with OpenTelemetry or other observability frameworks as needed.
+This logging standard ensures consistent, observable, and maintainable logging across all Mississippi Framework applications and related services. The mandatory LoggerExtensions pattern with high-performance LoggerMessage implementation is designed to work with standard .NET tooling and provides optimal performance while maintaining consistency across the codebase.
+
+## CRITICAL REQUIREMENTS SUMMARY
+
+1. **MANDATORY: LoggerExtensions Classes** - ALL logging must be implemented using `public static class [ComponentName]LoggerExtensions` pattern
+2. **MANDATORY: LoggerMessage Pattern** - ALL logging must use static Action delegates with LoggerMessage.Define
+3. **FORBIDDEN: Direct ILogger calls** - NO direct ILogger.Log*() method calls are allowed anywhere in the codebase
+4. **MANDATORY: High-Performance Pattern** - This is not optional - it's required for all logging without exception
+
+Failure to follow these patterns will result in code review rejection and build failures.
 
 ## References
 
