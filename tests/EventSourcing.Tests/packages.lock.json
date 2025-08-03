@@ -1558,7 +1558,7 @@
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.7, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.7, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.7, )",
-          "Microsoft.Orleans.Serialization.Abstractions": "[9.2.1, )"
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
       "CloudNative.CloudEvents": {
