@@ -32,6 +32,95 @@ This document defines the logging standards and best practices for the Mississip
 - **MANDATORY: Use LoggerExtensions classes** - ALL logging MUST be implemented using `public static class [ComponentName]LoggerExtensions` pattern - this is a hard requirement
 - **Write AI-debuggable messages** - Ensure log messages are descriptive enough for AI agents to understand and debug issues
 
+## MANDATORY Logging Scenarios - When to Add Logging
+
+This section defines **exactly when logging MUST be added** to ensure deterministic behavior for coding agents and complete observability across the Mississippi Framework.
+
+### ALWAYS Add Logging For These Operations (REQUIRED)
+
+#### 1. Method Entry/Exit for Public APIs (MANDATORY)
+- **All public service methods** must log entry and successful completion
+- **Include method parameters** that provide business context (avoid PII)
+- **Log execution time** for performance monitoring
+
+#### 2. Exception Handling (MANDATORY)
+- **Every catch block MUST log the exception** with full context
+- **Include operation details** that were being performed when the exception occurred
+- **Add correlation IDs** to track exceptions across service boundaries
+
+#### 3. Data Mutations (MANDATORY)
+- **All data create/update/delete operations** must be logged
+- **Include entity type and identifier** for audit trails
+- **Log both start and completion** of data operations
+
+#### 4. External Service Calls (MANDATORY)
+- **All calls to external services** (APIs, databases, file systems)
+- **Log request initiation and response/failure**
+- **Include timing and status information**
+
+#### 5. Orleans Grain Lifecycle (MANDATORY)
+- **Grain activation and deactivation** must be logged
+- **All public grain method calls** with timing
+- **Inter-grain communication** with target grain information
+
+#### 6. Business Rule Violations (MANDATORY)
+- **Log when business rules prevent operations**
+- **Include rule name and context** that caused the violation
+- **Provide sufficient detail** for business analysis
+
+#### 7. Event Sourcing Operations (MANDATORY)
+- **All event append and read operations**
+- **Include stream ID, event count, and position information**
+- **Log both successful and failed operations**
+
+#### 8. Performance-Critical Operations (MANDATORY)
+- **Operations that take longer than 1 second**
+- **Significant resource allocations** (> 10MB memory, database connections)
+- **Batch processing operations** with item counts
+
+### Decision Tree for Adding Logging
+
+#### ALWAYS ADD LOGGING IF:
+1. Method is public and part of a service interface
+2. Method can throw an exception
+3. Method performs I/O operations (database, file, network)
+4. Method modifies data (create, update, delete)
+5. Method calls external services
+6. Method is an Orleans grain method
+7. Method implements business logic with rules/validation
+8. Method takes longer than 1 second to execute
+9. Method allocates significant resources (> 10MB memory, database connections)
+10. Method is part of the event sourcing pipeline
+
+#### CONSIDER ADDING LOGGING IF:
+1. Method is complex with multiple decision points
+2. Method is frequently called and performance matters
+3. Method is part of a critical business process
+4. Method handles user input or external data
+5. Method is difficult to test or debug
+
+#### USUALLY DON'T LOG:
+1. Simple getters/setters
+2. Constructors (unless they do significant work)
+3. Private helper methods that are single-purpose
+4. Property accessors
+5. Methods that only transform data without side effects
+
+### MANDATORY Logging Checklist for Code Reviews
+
+When reviewing code, ensure logging is present for:
+
+- [ ] All public service methods have entry/exit logging
+- [ ] All catch blocks have exception logging with context
+- [ ] All data mutations (CRUD operations) are logged
+- [ ] All external service calls are logged (start/success/failure)
+- [ ] All Orleans grain methods have lifecycle and method logging
+- [ ] All business rule violations are logged with context
+- [ ] All event sourcing operations are logged
+- [ ] Long-running operations (>1s) have performance logging
+- [ ] Resource allocations (>10MB) are logged
+- [ ] Inter-grain communication is logged
+
 ### Log Levels and Usage
 
 #### Error Level
@@ -1092,6 +1181,197 @@ When reviewing code that includes logging, ensure:
 
 ## Examples and Templates
 
+### MANDATORY Scenario Examples
+
+#### Public Service Method with Exception Handling
+```csharp
+public static class OrderServiceLoggerExtensions
+{
+    private static readonly Action<ILogger, string, string, Exception?> s_processOrderStarted =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Information,
+            new EventId(1, nameof(ProcessOrderStarted)),
+            "Processing order {OrderId} for customer {CustomerId}");
+
+    private static readonly Action<ILogger, string, string, Exception?> s_processOrderCompleted =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Information,
+            new EventId(2, nameof(ProcessOrderCompleted)),
+            "Order {OrderId} processed successfully with status {Status}");
+
+    private static readonly Action<ILogger, string, Exception> s_processOrderFailed =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(3, nameof(ProcessOrderFailed)),
+            "Failed to process order {OrderId}");
+
+    public static void ProcessOrderStarted(this ILogger<OrderService> logger, string orderId, string customerId) =>
+        s_processOrderStarted(logger, orderId, customerId, null);
+
+    public static void ProcessOrderCompleted(this ILogger<OrderService> logger, string orderId, string status) =>
+        s_processOrderCompleted(logger, orderId, status, null);
+
+    public static void ProcessOrderFailed(this ILogger<OrderService> logger, string orderId, Exception ex) =>
+        s_processOrderFailed(logger, orderId, ex);
+}
+
+// MANDATORY: Public service method with logging
+public class OrderService
+{
+    private ILogger<OrderService> Logger { get; }
+
+    public OrderService(ILogger<OrderService> logger)
+    {
+        Logger = logger;
+    }
+
+    public async Task<OrderResult> ProcessOrderAsync(OrderRequest request)
+    {
+        Logger.ProcessOrderStarted(request.OrderId, request.CustomerId);
+        try
+        {
+            var result = await ProcessOrderInternalAsync(request);
+            Logger.ProcessOrderCompleted(request.OrderId, result.Status);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Logger.ProcessOrderFailed(request.OrderId, ex);
+            throw;
+        }
+    }
+}
+```
+
+#### Data Mutation Operations
+```csharp
+public static class UserRepositoryLoggerExtensions
+{
+    private static readonly Action<ILogger, string, string, Exception?> s_userCreationStarted =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Information,
+            new EventId(1, nameof(UserCreationStarted)),
+            "Creating user {UserId} with email {Email}");
+
+    private static readonly Action<ILogger, string, Exception?> s_userCreated =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(2, nameof(UserCreated)),
+            "User {UserId} created successfully");
+
+    private static readonly Action<ILogger, string, Exception> s_userCreationFailed =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(3, nameof(UserCreationFailed)),
+            "Failed to create user {UserId}");
+
+    public static void UserCreationStarted(this ILogger<UserRepository> logger, string userId, string email) =>
+        s_userCreationStarted(logger, userId, email, null);
+
+    public static void UserCreated(this ILogger<UserRepository> logger, string userId) =>
+        s_userCreated(logger, userId, null);
+
+    public static void UserCreationFailed(this ILogger<UserRepository> logger, string userId, Exception ex) =>
+        s_userCreationFailed(logger, userId, ex);
+}
+
+// MANDATORY: Data mutation logging
+public class UserRepository
+{
+    private ILogger<UserRepository> Logger { get; }
+
+    public UserRepository(ILogger<UserRepository> logger)
+    {
+        Logger = logger;
+    }
+
+    public async Task CreateUserAsync(User user)
+    {
+        Logger.UserCreationStarted(user.Id, user.Email);
+        try
+        {
+            await SaveUserToDatabase(user);
+            Logger.UserCreated(user.Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.UserCreationFailed(user.Id, ex);
+            throw;
+        }
+    }
+}
+```
+
+#### Orleans Grain with Mandatory Logging
+```csharp
+public static class EventProcessingGrainLoggerExtensions
+{
+    private static readonly Action<ILogger, string, string, Exception?> s_grainActivated =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Information,
+            new EventId(1, nameof(GrainActivated)),
+            "Grain {GrainType} activated with ID {GrainId}");
+
+    private static readonly Action<ILogger, string, string, string, Exception?> s_grainMethodStarted =
+        LoggerMessage.Define<string, string, string>(
+            LogLevel.Information,
+            new EventId(2, nameof(GrainMethodStarted)),
+            "Method {MethodName} started on grain {GrainId} for event {EventId}");
+
+    private static readonly Action<ILogger, string, string, string, long, Exception?> s_grainMethodCompleted =
+        LoggerMessage.Define<string, string, string, long>(
+            LogLevel.Information,
+            new EventId(3, nameof(GrainMethodCompleted)),
+            "Method {MethodName} completed on grain {GrainId} for event {EventId} in {Duration}ms");
+
+    public static void GrainActivated(this ILogger<EventProcessingGrain> logger, string grainType, string grainId) =>
+        s_grainActivated(logger, grainType, grainId, null);
+
+    public static void GrainMethodStarted(this ILogger<EventProcessingGrain> logger, string methodName, string grainId, string eventId) =>
+        s_grainMethodStarted(logger, methodName, grainId, eventId, null);
+
+    public static void GrainMethodCompleted(this ILogger<EventProcessingGrain> logger, string methodName, string grainId, string eventId, long duration) =>
+        s_grainMethodCompleted(logger, methodName, grainId, eventId, duration, null);
+}
+
+// MANDATORY: Orleans grain logging
+public class EventProcessingGrain : Grain, IEventProcessingGrain
+{
+    private ILogger<EventProcessingGrain> Logger { get; }
+
+    public EventProcessingGrain(ILogger<EventProcessingGrain> logger)
+    {
+        Logger = logger;
+    }
+
+    public override async Task OnActivateAsync(CancellationToken cancellationToken)
+    {
+        Logger.GrainActivated(this.GetType().Name, this.GetPrimaryKeyString());
+        await base.OnActivateAsync(cancellationToken);
+    }
+
+    public async Task<EventResult> ProcessEventAsync(EventData eventData)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        Logger.GrainMethodStarted(nameof(ProcessEventAsync), this.GetPrimaryKeyString(), eventData.Id);
+        
+        try
+        {
+            var result = await ProcessEventInternalAsync(eventData);
+            stopwatch.Stop();
+            Logger.GrainMethodCompleted(nameof(ProcessEventAsync), this.GetPrimaryKeyString(), eventData.Id, stopwatch.ElapsedMilliseconds);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            Logger.GrainMethodFailed(nameof(ProcessEventAsync), this.GetPrimaryKeyString(), eventData.Id, stopwatch.ElapsedMilliseconds, ex);
+            throw;
+        }
+    }
+}
+```
+
 ### Standard Logging Template
 ```csharp
 // MANDATORY PATTERN: High-performance logging with LoggerMessage and LoggerExtensions class
@@ -1224,10 +1504,22 @@ This logging standard ensures consistent, observable, and maintainable logging a
 
 ## CRITICAL REQUIREMENTS SUMMARY
 
+### Technical Requirements (HOW to log)
 1. **MANDATORY: LoggerExtensions Classes** - ALL logging must be implemented using `public static class [ComponentName]LoggerExtensions` pattern
 2. **MANDATORY: LoggerMessage Pattern** - ALL logging must use static Action delegates with LoggerMessage.Define
 3. **FORBIDDEN: Direct ILogger calls** - NO direct ILogger.Log*() method calls are allowed anywhere in the codebase
 4. **MANDATORY: High-Performance Pattern** - This is not optional - it's required for all logging without exception
+
+### Behavioral Requirements (WHEN to log)
+5. **MANDATORY: Public Service Methods** - ALL public service methods must have entry/exit logging
+6. **MANDATORY: Exception Handling** - ALL catch blocks must log exceptions with context
+7. **MANDATORY: Data Mutations** - ALL create/update/delete operations must be logged
+8. **MANDATORY: External Service Calls** - ALL external service interactions must be logged
+9. **MANDATORY: Orleans Grain Operations** - ALL grain methods and lifecycle events must be logged
+10. **MANDATORY: Business Rule Violations** - ALL business rule failures must be logged with context
+
+### Agent Implementation Rule
+When an AI agent encounters any of the mandatory scenarios above (#5-10), it MUST add appropriate logging following the LoggerExtensions pattern (#1-4). This ensures deterministic behavior and complete observability.
 
 Failure to follow these patterns will result in code review rejection and build failures.
 
