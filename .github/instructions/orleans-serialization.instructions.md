@@ -253,6 +253,8 @@ These serialization standards should be enforced through:
 This document should be read in conjunction with:
 
 - **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection patterns, and immutable object preferences
+- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For service registration patterns when registering Orleans services and serialization providers
 - **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For POCO grain patterns and Orleans-specific development guidelines
+- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For logging patterns when serialization operations need to be logged
 - **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For consistent naming of types, properties, and XML documentation
 - **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy enforcement

@@ -20,6 +20,21 @@ This document codifies our baseline engineering expectations for any C# service 
 - **If Microsoft Orleans is in the project, think like a grain** — avoid blocking calls, shared mutable state, and chatty inter-grain traffic; design for Orleans' single-threaded scheduler, placement, and storage semantics.
 - **Never use `Parallel.ForEach`** — assume any code might execute inside an Orleans grain; instead use `await` + `Task.WhenAll` for fan-out concurrency.
 
+## Access Control and Encapsulation Principles
+
+- **Classes are `sealed` by default** — only make classes inheritable when you have a clear, documented need for polymorphism; prefer composition over inheritance
+- **Members are `private` by default** — only expose what consumers actually need; prefer `internal` over `public` when sharing within assemblies
+- **Interfaces are `internal` by default** — only make interfaces `public` when they're part of your deliberate API surface
+- **Explicit access control decisions** — every `public`, `protected`, or unsealed class must have a documented justification in XML comments
+- **Principle of least privilege** — grant the minimum access level required for the intended use case; you can always widen access later, but narrowing it is a breaking change
+- **Follow Orleans POCO pattern** — all grain classes must be `sealed` and implement `IGrainBase` instead of inheriting from `Grain`
+
+## Service Registration and Configuration
+
+- **Use dedicated service registration pattern** — follow hierarchical feature-based registration using extension methods as defined in the service registration guidelines
+- **Always use Options pattern for configuration** — NEVER use direct configuration parameters in constructors; always use `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>`
+- **Follow dependency injection property pattern** — all registered services must use `private Type Name { get; }` pattern when injected, consistent with logging and Orleans best practices
+
 ## Twelve-Factor Checklist (Required for Cloud-Native Design)
 
 1. **Codebase** – one codebase, many deploys
@@ -169,6 +184,281 @@ public async Task ProcessItemsGood(IEnumerable<string> items)
     await Task.WhenAll(tasks);
 }
 ```
+
+### Access Control and Encapsulation Examples
+
+```csharp
+namespace Mississippi.EventSourcing.Streams
+{
+    /// <summary>
+    /// Processes event streams with Orleans-safe patterns and proper access control.
+    /// This class is sealed to prevent inheritance - composition is preferred.
+    /// Made public as it represents a key product boundary for the EventSourcing feature.
+    /// </summary>
+    public sealed class EventStreamProcessor : IGrainBase, IEventStreamProcessor, IDisposable
+    {
+        public IGrainContext GrainContext { get; }
+        
+        // Following mandatory dependency injection property pattern
+        private ILogger<EventStreamProcessor> Logger { get; }
+        private IEventStore EventStore { get; }
+        private IOptions<StreamSettings> Settings { get; }
+        
+        // Private field following camelCase naming (no underscores)
+        private readonly CancellationTokenSource cancellationTokenSource;
+        
+        public EventStreamProcessor(
+            IGrainContext grainContext,
+            ILogger<EventStreamProcessor> logger,
+            IEventStore eventStore,
+            IOptions<StreamSettings> settings)
+        {
+            GrainContext = grainContext;
+            Logger = logger;
+            EventStore = eventStore;
+            Settings = settings;
+            cancellationTokenSource = new CancellationTokenSource();
+        }
+        
+        /// <summary>
+        /// Gets a value indicating whether the processor is currently active.
+        /// </summary>
+        public bool IsActive { get; private set; }
+        
+        /// <summary>
+        /// Processes events from the specified stream using Orleans-safe patterns.
+        /// </summary>
+        /// <param name="streamId">The unique identifier of the stream.</param>
+        /// <param name="events">The events to process.</param>
+        /// <returns>A task representing the processing result.</returns>
+        public async Task<ProcessingResult> ProcessEventsAsync(string streamId, IReadOnlyList<DomainEvent> events)
+        {
+            try
+            {
+                // Use dependency injection logger following logging rules
+                Logger.EventProcessingStarted(streamId, events.Count);
+                
+                var result = await ProcessEventsInternalAsync(streamId, events);
+                
+                Logger.EventProcessingCompleted(streamId, result.ProcessedCount);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.EventProcessingFailed(streamId, events.Count, ex);
+                throw;
+            }
+        }
+        
+        // Private helper method - not exposed beyond this class
+        private async Task<ProcessingResult> ProcessEventsInternalAsync(string streamId, IReadOnlyList<DomainEvent> events)
+        {
+            // Implementation details kept private
+            return new ProcessingResult { ProcessedCount = events.Count };
+        }
+        
+        public void Dispose()
+        {
+            cancellationTokenSource?.Dispose();
+        }
+    }
+    
+    /// <summary>
+    /// Internal interface for stream validation - not part of public API surface.
+    /// Only exposed within the assembly for testing and internal composition.
+    /// </summary>
+    internal interface IStreamValidator
+    {
+        ValidationResult ValidateStream(string streamId);
+    }
+    
+    /// <summary>
+    /// Internal implementation detail for stream validation.
+    /// Sealed to prevent inheritance and marked internal as it's not a product boundary.
+    /// </summary>
+    internal sealed class StreamValidator : IStreamValidator
+    {
+        private ILogger<StreamValidator> Logger { get; }
+        
+        public StreamValidator(ILogger<StreamValidator> logger)
+        {
+            Logger = logger;
+        }
+        
+        public ValidationResult ValidateStream(string streamId)
+        {
+            // Implementation kept internal
+            return ValidationResult.Success;
+        }
+    }
+}
+```
+
+### Service Registration Pattern Implementation
+
+```csharp
+// Root level service registration - Mississippi.EventSourcing/ServiceRegistration.cs
+namespace Mississippi.EventSourcing
+{
+    /// <summary>
+    /// Provides service registration for the complete EventSourcing feature.
+    /// This is a logical product boundary, so the registration method is public.
+    /// </summary>
+    public static class ServiceRegistration
+    {
+        /// <summary>
+        /// Registers all EventSourcing services including streams, storage, and core components.
+        /// </summary>
+        /// <param name="services">The service collection to register services with.</param>
+        /// <returns>The service collection for method chaining.</returns>
+        public static IServiceCollection AddEventSourcing(this IServiceCollection services)
+        {
+            return services
+                .AddStreams()           // Calls child feature registration
+                .AddEventSourcingCore() // This feature's core services
+                .AddScoped<IEventBus, EventBus>()
+                .AddSingleton<IEventStore, EventStore>();
+        }
+        
+        /// <summary>
+        /// Registers only the core EventSourcing services without storage providers.
+        /// Public method as consumers might want just core functionality.
+        /// </summary>
+        /// <param name="services">The service collection to register services with.</param>
+        /// <returns>The service collection for method chaining.</returns>
+        public static IServiceCollection AddEventSourcingCore(this IServiceCollection services)
+        {
+            return services
+                .AddScoped<IEventSerializer, EventSerializer>()
+                .AddScoped<IEventMetadataFactory, EventMetadataFactory>();
+        }
+    }
+}
+
+// Child feature registration - Mississippi.EventSourcing.Streams/ServiceRegistration.cs
+namespace Mississippi.EventSourcing.Streams
+{
+    /// <summary>
+    /// Provides service registration for stream processing capabilities.
+    /// Internal class as this is an implementation detail of EventSourcing.
+    /// </summary>
+    internal static class ServiceRegistration
+    {
+        /// <summary>
+        /// Registers stream processing services and their dependencies.
+        /// Internal method as consumers shouldn't register streams independently.
+        /// </summary>
+        /// <param name="services">The service collection to register services with.</param>
+        /// <returns>The service collection for method chaining.</returns>
+        internal static IServiceCollection AddStreams(this IServiceCollection services)
+        {
+            return services
+                .AddBatching()          // Calls sub-feature registration
+                .AddScoped<IStreamProcessor, StreamProcessor>()
+                .AddScoped<IStreamValidator, StreamValidator>()
+                .Configure<StreamSettings>(options =>
+                {
+                    options.BatchSize = 100;
+                    options.MaxConcurrency = 10;
+                });
+        }
+    }
+}
+
+// Sub-feature registration - Mississippi.EventSourcing.Streams.Batching/ServiceRegistration.cs  
+namespace Mississippi.EventSourcing.Streams.Batching
+{
+    /// <summary>
+    /// Provides service registration for batch processing within streams.
+    /// Internal class as batching is an implementation detail of stream processing.
+    /// </summary>
+    internal static class ServiceRegistration
+    {
+        /// <summary>
+        /// Registers batch processing services.
+        /// Internal method as batching shouldn't be used without stream processing.
+        /// </summary>
+        /// <param name="services">The service collection to register services with.</param>
+        /// <returns>The service collection for method chaining.</returns>
+        internal static IServiceCollection AddBatching(this IServiceCollection services)
+        {
+            return services
+                .AddScoped<IBatchProcessor, BatchProcessor>()
+                .AddScoped<IBatchSizeCalculator, BatchSizeCalculator>()
+                .Configure<BatchingOptions>(options =>
+                {
+                    options.MaxBatchSize = 1000;
+                    options.TimeoutSeconds = 30;
+                });
+        }
+    }
+}
+
+// Storage provider registration - Mississippi.EventSourcing.Cosmos/ServiceRegistration.cs
+namespace Mississippi.EventSourcing.Cosmos
+{
+    /// <summary>
+    /// Provides service registration for Cosmos DB storage implementation.
+    /// Public class as this represents a logical product boundary for Cosmos storage.
+    /// </summary>
+    public static class ServiceRegistration
+    {
+        /// <summary>
+        /// Registers EventSourcing with Cosmos DB storage provider.
+        /// Public method as consumers choose their storage implementation.
+        /// </summary>
+        /// <param name="services">The service collection to register services with.</param>
+        /// <param name="connectionString">The Cosmos DB connection string.</param>
+        /// <returns>The service collection for method chaining.</returns>
+        public static IServiceCollection AddEventSourcingCosmos(
+            this IServiceCollection services, 
+            string connectionString)
+        {
+            return services
+                .AddEventSourcingCore()  // Include core without full EventSourcing
+                .AddScoped<IBrookStorageProvider, CosmosStorageProvider>()
+                .AddScoped<ICosmosRepository, CosmosRepository>()
+                .Configure<CosmosOptions>(options =>
+                {
+                    options.ConnectionString = connectionString;
+                    options.DatabaseName = "EventStore";
+                })
+                .AddSingleton<CosmosClient>(provider =>
+                {
+                    var options = provider.GetRequiredService<IOptions<CosmosOptions>>();
+                    return new CosmosClient(options.Value.ConnectionString);
+                });
+        }
+    }
+}
+
+// Usage examples showing proper consumption patterns
+namespace SampleApplication
+{
+    public static class Program
+    {
+        public static void Main(string[] args)
+        {
+            var services = new ServiceCollection();
+            
+            // Option 1: Full EventSourcing with default storage
+            services.AddEventSourcing();
+            
+            // Option 2: EventSourcing with specific Cosmos storage
+            services.AddEventSourcingCosmos("cosmosdb-connection-string");
+            
+            // Option 3: Just core EventSourcing for custom implementations
+            services.AddEventSourcingCore();
+            
+            // ❌ WRONG - Cannot register internal features directly
+            // services.AddStreams();     // Compile error - internal method
+            // services.AddBatching();    // Compile error - internal method
+        }
+    }
+}
+```
+
+
 
 ### Cloud-Native Configuration
 
@@ -333,23 +623,122 @@ public class Counter
 }
 ```
 
+### Access Control Anti-Patterns
+
+```csharp
+// ❌ BAD - Overly exposed class without justification
+public class InternalDataProcessor  // Should be internal
+{
+    public string _rawData;  // Should be private
+    public void InternalMethod() { } // Should be private
+}
+
+// ❌ BAD - Unnecessary inheritance enabled
+public class BaseEventHandler  // Should be sealed unless inheritance needed
+{
+    protected virtual void ProcessEvent() { } // Creates coupling
+}
+
+// ❌ BAD - Interface exposed unnecessarily
+public interface IInternalHelper  // Should be internal
+{
+    void HelperMethod();
+}
+
+// ❌ BAD - Violates Orleans POCO pattern
+public class OrderGrain : Grain, IOrderGrain  // Should use IGrainBase
+{
+    // Wrong: Inheriting from Grain instead of using POCO pattern
+}
+
+// ✅ GOOD - Proper access control
+namespace Mississippi.EventSourcing.Internal
+{
+    /// <summary>
+    /// Internal data processor for stream validation.
+    /// Sealed to prevent inheritance, internal to limit exposure.
+    /// </summary>
+    internal sealed class DataProcessor
+    {
+        private string rawData;  // Private field
+        private ILogger<DataProcessor> Logger { get; }  // Following DI pattern
+        
+        public DataProcessor(ILogger<DataProcessor> logger)
+        {
+            Logger = logger;
+        }
+        
+        // Only expose what's needed publicly
+        public ProcessingResult Process(string input)
+        {
+            rawData = input;
+            return ProcessInternal();
+        }
+        
+        // Keep implementation details private
+        private ProcessingResult ProcessInternal()
+        {
+            Logger.DataProcessingStarted(rawData?.Length ?? 0);
+            return new ProcessingResult();
+        }
+    }
+}
+
+// ✅ GOOD - Orleans POCO pattern with proper access control
+namespace Mississippi.EventSourcing.Grains
+{
+    /// <summary>
+    /// Order processing grain using POCO pattern.
+    /// Sealed to prevent inheritance, public as it's a grain interface.
+    /// </summary>
+    public sealed class OrderGrain : IGrainBase, IOrderGrain
+    {
+        public IGrainContext GrainContext { get; }
+        private ILogger<OrderGrain> Logger { get; }
+        
+        public OrderGrain(IGrainContext grainContext, ILogger<OrderGrain> logger)
+        {
+            GrainContext = grainContext;
+            Logger = logger;
+        }
+    }
+}
+```
+
+
+
+
+
 ## Enforcement
 
 These practices should be enforced through:
 
-1. **Code Reviews**: Always verify adherence to SOLID principles
-2. **Static Analysis**: Use .NET analyzers and treat warnings as errors
+1. **Code Reviews**: Always verify adherence to SOLID principles and access control decisions
+2. **Static Analysis**: Use .NET analyzers and treat warnings as errors, especially for access modifier violations
 3. **Unit Tests**: Maintain high test coverage and quality
-4. **Build Pipeline**: Fail builds on quality gate violations
+4. **Build Pipeline**: Fail builds on quality gate violations, including improper access control
 5. **Documentation**: Keep these guidelines updated with examples
 
 ## Related Guidelines
 
 This document should be read in conjunction with:
 
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For high-performance logging patterns and ILogger usage
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans-specific grain development patterns
-- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and build pipeline requirements
+- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For hierarchical service registration patterns, Options pattern implementation, and configuration handling
+- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For high-performance logging patterns, LoggerExtensions classes, and mandatory ILogger usage with dependency injection properties
+- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans-specific grain development patterns, POCO grain requirements, and IGrainBase implementation with sealed classes
+- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attributes and version tolerance patterns
+- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards, zero warnings policy, and build pipeline requirements that enforce access control analyzer rules
+- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For consistent naming patterns, feature-based namespace structure, and XML documentation requirements
+- **Project File Management** (`.github/instructions/projects.instructions.md`) - For proper PackageReference usage and centralized package management
+
+### Cross-Reference Alignment
+
+- **Access Control + Orleans**: All grain classes must be `sealed` and implement `IGrainBase` following POCO pattern
+- **Access Control + Logging**: All LoggerExtensions classes must be `public static` with properly scoped methods following access control principles
+- **Access Control + Service Registration**: All ServiceRegistration classes must follow access control principles with proper public/internal boundaries
+- **Access Control + Build Rules**: Access modifier violations must be fixed through code changes, not analyzer suppressions
+- **C# + Service Registration**: Service registration must follow dependency injection property pattern and access control principles defined in this document
+- **C# + Logging**: All services must use dependency injection property pattern for ILogger injection as specified in both documents
 
 ## Further Reading
 

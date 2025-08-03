@@ -328,8 +328,11 @@ This naming convention document aligns with and reinforces patterns established 
 This document should be read in conjunction with:
 
 - **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection patterns, and immutable object preferences
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For Logger property naming and structured logging support
+- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For ServiceRegistration class naming patterns, Options class naming conventions, and XML documentation requirements for registration methods
+- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For Logger property naming, LoggerExtensions class naming patterns, and structured logging support
 - **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For POCO grain patterns and Orleans-specific naming
+- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attribute usage and type naming in serializable classes
 - **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy
+- **Project File Management** (`.github/instructions/projects.instructions.md`) - For assembly naming conventions and project ID naming patterns
 
 *End of naming.instructions.md*

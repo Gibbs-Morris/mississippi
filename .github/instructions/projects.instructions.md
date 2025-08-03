@@ -342,3 +342,9 @@ The build system will fail if:
 5. **Validate against** Directory.Build.props inheritance
 
 This approach ensures that the solution remains maintainable, prevents version conflicts, and follows modern .NET project management best practices while keeping individual project files clean and focused.
+
+## Related Guidelines
+
+This document should be read in conjunction with:
+
+- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For build pipeline requirements and quality standards that ensure project file compliance

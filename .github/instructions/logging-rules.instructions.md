@@ -1523,6 +1523,17 @@ When an AI agent encounters any of the mandatory scenarios above (#5-10), it MUS
 
 Failure to follow these patterns will result in code review rejection and build failures.
 
+## Related Guidelines
+
+This document should be read in conjunction with:
+
+- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection property patterns, and access control principles
+- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For IHostedService logging patterns, Orleans lifecycle participant logging, and configuration validation logging
+- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans grain logging patterns, POCO grain requirements, and grain lifecycle logging
+- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans-specific logging during serialization operations
+- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards, zero warnings policy, and build pipeline requirements that enforce logging standards
+- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For LoggerExtensions class naming patterns, XML documentation requirements, and structured logging property naming
+
 ## References
 
 - [High-performance logging in .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/high-performance-logging) - Microsoft documentation on LoggerMessage and performance optimization

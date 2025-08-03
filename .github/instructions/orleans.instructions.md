@@ -351,9 +351,20 @@ public abstract class BadGrain<TModel> : Grain, IExampleGrain<TModel>
 This rule should be enforced through:
 
 1. **Code Reviews**: Always check for `Grain` inheritance
-2. **Static Analysis**: Use .NET analyzers to detect violations (aligns with zero tolerance policy)
+2. **Static Analysis**: Use .NET analyzers to detect violations (aligns with zero warnings policy)
 3. **Documentation**: Keep this file updated with examples
 4. **Refactoring**: Gradually migrate existing violations
+
+## Related Guidelines
+
+This document should be read in conjunction with:
+
+- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, access control principles, and sealed class requirements for Orleans grains
+- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For Orleans service registration patterns, Orleans lifecycle participants, and IHostedService patterns for Orleans applications
+- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For Orleans grain logging patterns, LoggerExtensions classes, and mandatory logging for grain operations
+- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attributes and version tolerance patterns used with POCO grains
+- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For Orleans grain naming patterns, interface naming, and XML documentation requirements
+- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy enforcement for Orleans analyzers
 
 ## References
 

@@ -140,3 +140,15 @@ This process should be repeated iteratively until all quality gates pass cleanly
   - Stryker.NET
 
 Run `dotnet tool restore` from the repository root to install all required tools.
+
+## Related Guidelines
+
+This document should be read in conjunction with:
+
+- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For access control analyzer rules and code quality standards that are enforced by the build pipeline
+- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For quality standards on service registration methods and configuration validation
+- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For LoggerExtensions pattern compliance and high-performance logging standards enforced by analyzers
+- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans analyzer compliance and POCO grain pattern enforcement
+- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization analyzer rules and build-time validation
+- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For StyleCop analyzer enforcement and naming violation fixes
+- **Project File Management** (`.github/instructions/projects.instructions.md`) - For centralized package management compliance and project file validation
