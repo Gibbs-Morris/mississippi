@@ -3,6 +3,8 @@ namespace Mississippi.EventSourcing.Abstractions;
 /// <summary>
 ///     Represents a composite key for identifying brooks, consisting of a type and id component.
 /// </summary>
+[GenerateSerializer]
+[Alias("Mississippi.EventSourcing.Abstractions.BrookKey")]
 public readonly record struct BrookKey
 {
     private const char Separator = '|';
@@ -38,11 +40,13 @@ public readonly record struct BrookKey
     /// <summary>
     ///     Gets the type component of the brook key.
     /// </summary>
+    [Id(0)]
     public string Type { get; }
 
     /// <summary>
     ///     Gets the id component of the brook key.
     /// </summary>
+    [Id(1)]
     public string Id { get; }
 
     /// <summary>

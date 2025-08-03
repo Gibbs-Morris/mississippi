@@ -3,6 +3,8 @@ namespace Mississippi.EventSourcing.Abstractions;
 /// <summary>
 ///     Represents a position within a brook.
 /// </summary>
+[GenerateSerializer]
+[Alias("Mississippi.EventSourcing.Abstractions.BrookPosition")]
 public readonly record struct BrookPosition
 {
     /// <summary>
@@ -32,6 +34,7 @@ public readonly record struct BrookPosition
     /// <summary>
     ///     Gets the raw position value. A value of -1 indicates not set.
     /// </summary>
+    [Id(0)]
     public long Value { get; }
 
     /// <summary>

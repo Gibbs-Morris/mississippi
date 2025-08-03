@@ -6,6 +6,8 @@ namespace Mississippi.EventSourcing.Abstractions;
 /// <summary>
 ///     Represents a range key for querying brooks, consisting of type, id, start position, and count components.
 /// </summary>
+[GenerateSerializer]
+[Alias("Mississippi.EventSourcing.Abstractions.BrookRangeKey")]
 public readonly record struct BrookRangeKey
 {
     private const char Separator = '|';
@@ -58,16 +60,19 @@ public readonly record struct BrookRangeKey
     /// <summary>
     ///     Gets the type component of the brook range key.
     /// </summary>
+    [Id(0)]
     public string Type { get; }
 
     /// <summary>
     ///     Gets the id component of the brook range key.
     /// </summary>
+    [Id(1)]
     public string Id { get; }
 
     /// <summary>
     ///     Gets the starting position of the range.
     /// </summary>
+    [Id(2)]
     public BrookPosition Start { get; }
 
     /// <summary>
@@ -78,6 +83,7 @@ public readonly record struct BrookRangeKey
     /// <summary>
     ///     Gets the count component of the brook range key.
     /// </summary>
+    [Id(3)]
     public long Count { get; }
 
     /// <summary>
