@@ -3,14 +3,14 @@
   "isRoot": true,
   "tools": {
     "dotnet-stryker": {
-      "version": "4.6.0",
+      "version": "4.7.0",
       "commands": [
         "dotnet-stryker"
       ],
       "rollForward": false
     },
     "dotnet-sonarscanner": {
-      "version": "10.2.0",
+      "version": "10.3.0",
       "commands": [
         "dotnet-sonarscanner"
       ],
@@ -31,7 +31,7 @@
       "rollForward": false
     },
     "JetBrains.ReSharper.GlobalTools": {
-      "version": "2025.1.3",
+      "version": "2025.1.5",
       "commands": [
         "jb"
       ],
