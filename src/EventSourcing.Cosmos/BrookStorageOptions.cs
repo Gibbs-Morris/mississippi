@@ -28,7 +28,8 @@ public class BrookStorageOptions
     /// <summary>
     ///     Gets or sets the maximum number of events per batch operation.
     /// </summary>
-    public int MaxEventsPerBatch { get; set; } = 95;
+    // Default below 100 to respect Cosmos transactional batch operation limit
+    public int MaxEventsPerBatch { get; set; } = 90;
 
     /// <summary>
     ///     Gets or sets the duration in seconds for lease expiration.
@@ -38,7 +39,8 @@ public class BrookStorageOptions
     /// <summary>
     ///     Gets or sets the maximum request size in bytes for Cosmos DB operations.
     /// </summary>
-    public long MaxRequestSizeBytes { get; set; } = 1_800_000;
+    // Keep under 2MB server-side limit, allow some headroom
+    public long MaxRequestSizeBytes { get; set; } = 1_700_000;
 
     /// <summary>
     ///     Gets or sets the threshold in seconds for lease renewal operations.

@@ -82,8 +82,11 @@ internal class BrookReaderGrain
         List<(long BucketId, long First, long Last)> baseIndexes = GetSliceReads(start.Value, end.Value, sliceSize);
         foreach ((long BucketId, long First, long Last) l in baseIndexes)
         {
+            // Construct slice key using the actual slice start and an inclusive end via Count=(Last-First)
+            long sliceStart = l.First;
+            long sliceCount = l.Last - l.First; // BrookRangeKey.End = Start + Count, so this yields End == l.Last
             IBrookSliceReaderGrain sliceGrain = BrookGrainFactory.GetBrookSliceReaderGrain(
-                BrookRangeKey.FromBrookCompositeKey(brookId, l.BucketId, sliceSize));
+                BrookRangeKey.FromBrookCompositeKey(brookId, sliceStart, sliceCount));
             await foreach (BrookEvent mississippiEvent in sliceGrain.ReadAsync(l.First, l.Last, cancellationToken))
             {
                 yield return mississippiEvent;
@@ -112,6 +115,15 @@ internal class BrookReaderGrain
         }
 
         return [..events];
+    }
+
+    /// <summary>
+    ///     Deactivate the stateless reader grain; this will allow any slice reader activations to expire.
+    /// </summary>
+    public Task DeactivateAsync()
+    {
+        this.DeactivateOnIdle();
+        return Task.CompletedTask;
     }
 
     private static List<(long BucketId, long First, long Last)> GetSliceReads(

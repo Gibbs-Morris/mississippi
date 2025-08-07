@@ -23,4 +23,19 @@ public interface IBrookHeadGrain : IGrainWithStringKey
     [ReadOnly]
     [Alias("GetLatestPositionAsync")]
     Task<BrookPosition> GetLatestPositionAsync();
+
+    /// <summary>
+    ///     Retrieves the most recent version number by forcing a storage read, bypassing cache.
+    ///     Use when a strongly confirmed position is required.
+    /// </summary>
+    /// <returns>The highest persisted version of the brook from storage.</returns>
+    [ReadOnly]
+    [Alias("GetLatestPositionConfirmedAsync")]
+    Task<BrookPosition> GetLatestPositionConfirmedAsync();
+
+    /// <summary>
+    ///     Requests the grain to deactivate when idle, clearing any in-memory caches.
+    /// </summary>
+    [Alias("DeactivateAsync")]
+    Task DeactivateAsync();
 }

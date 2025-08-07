@@ -21,6 +21,12 @@ internal class EventDocument
     public string Type { get; set; } = string.Empty;
 
     /// <summary>
+    ///     Partition key value for the document. Must match container partition key path '/brookPartitionKey'.
+    /// </summary>
+    [JsonProperty("brookPartitionKey")]
+    public string BrookPartitionKey { get; set; } = string.Empty;
+
+    /// <summary>
     ///     Gets or sets the position of the event in the brook.
     /// </summary>
     [JsonProperty("position")]

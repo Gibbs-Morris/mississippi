@@ -76,8 +76,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
                         async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
                         cancellationToken);
                 }
-                catch (Exception ex) when (ex.Message.Contains("lock", StringComparison.OrdinalIgnoreCase) ||
-                                           ex.Message.Contains("lease", StringComparison.OrdinalIgnoreCase))
+                catch (Azure.RequestFailedException)
                 {
                     // If we can't acquire the recovery lock, assume another process is handling recovery
                     // Wait a bit and try to read the head again
@@ -91,8 +90,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
                     {
                         throw new InvalidOperationException(
                             $"Unable to recover head position for brook {brookId}. " +
-                            "Another recovery operation may be in progress or has failed.",
-                            ex);
+                            "Another recovery operation may be in progress or has failed.");
                     }
                 }
             }

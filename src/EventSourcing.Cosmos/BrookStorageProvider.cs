@@ -18,7 +18,7 @@ internal class BrookStorageProvider : IBrookStorageProvider
     /// <param name="recoveryService">The brook recovery service for managing head positions.</param>
     /// <param name="eventReader">The event reader for reading events from brooks.</param>
     /// <param name="eventAppender">The event appender for writing events to brooks.</param>
-    internal BrookStorageProvider(
+    public BrookStorageProvider(
         IBrookRecoveryService recoveryService,
         IEventBrookReader eventReader,
         IEventBrookAppender eventAppender

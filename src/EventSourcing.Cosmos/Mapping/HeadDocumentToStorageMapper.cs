@@ -1,4 +1,5 @@
 ﻿using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
 
@@ -19,7 +20,7 @@ internal class HeadDocumentToStorageMapper : IMapper<HeadDocument, HeadStorageMo
     ) =>
         new()
         {
-            Position = input.Position,
-            OriginalPosition = input.OriginalPosition,
+            Position = new(input.Position),
+            OriginalPosition = input.OriginalPosition.HasValue ? new BrookPosition(input.OriginalPosition.Value) : null,
         };
 }

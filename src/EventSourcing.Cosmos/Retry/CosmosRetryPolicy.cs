@@ -54,7 +54,24 @@ internal class CosmosRetryPolicy : IRetryPolicy
                     "Request size exceeds maximum allowed limit. Consider reducing batch size.",
                     ex);
             }
-            catch (Exception ex) when (attempt < MaxRetries)
+            // Pass through NotFound so callers which expect it (e.g., probing for a missing item) can handle it
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw;
+            }
+            // Retry only on transient Cosmos statuses; allow NotFound and other non-transient errors to bubble up
+            catch (CosmosException ex) when (
+                attempt < MaxRetries &&
+                (ex.StatusCode == HttpStatusCode.ServiceUnavailable ||
+                 ex.StatusCode == HttpStatusCode.RequestTimeout ||
+                 ex.StatusCode == HttpStatusCode.InternalServerError ||
+                 ex.StatusCode == HttpStatusCode.GatewayTimeout))
+            {
+                lastException = ex;
+                TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
+                await Task.Delay(delay, cancellationToken);
+            }
+            catch (TaskCanceledException ex) when (attempt < MaxRetries)
             {
                 lastException = ex;
                 TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);

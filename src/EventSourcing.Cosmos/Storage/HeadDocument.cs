@@ -23,14 +23,20 @@ internal class HeadDocument
     public string Type { get; set; } = string.Empty;
 
     /// <summary>
+    ///     Partition key value for the document. Must match container partition key path '/brookPartitionKey'.
+    /// </summary>
+    [JsonProperty("brookPartitionKey")]
+    public string BrookPartitionKey { get; set; } = string.Empty;
+
+    /// <summary>
     ///     Gets or sets the current position of the brook head.
     /// </summary>
     [JsonProperty("position")]
-    public BrookPosition Position { get; set; }
+    public long Position { get; set; }
 
     /// <summary>
     ///     Gets or sets the original position of the brook head before any updates.
     /// </summary>
     [JsonProperty("originalPosition")]
-    public BrookPosition? OriginalPosition { get; set; }
+    public long? OriginalPosition { get; set; }
 }

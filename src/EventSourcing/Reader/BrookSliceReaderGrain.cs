@@ -125,4 +125,14 @@ internal class BrookSliceReaderGrain
 
         Cache = l.ToImmutableArray();
     }
+
+    /// <summary>
+    ///     Deactivate and clear slice cache.
+    /// </summary>
+    public Task DeactivateAsync()
+    {
+        Cache = ImmutableArray<BrookEvent>.Empty;
+        this.DeactivateOnIdle();
+        return Task.CompletedTask;
+    }
 }

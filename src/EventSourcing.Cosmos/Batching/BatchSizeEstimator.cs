@@ -15,7 +15,7 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
 {
     // More realistic batch overhead based on Cosmos DB transactional batch structure
     // This includes: batch headers, response metadata, and internal overhead
-    private const long BatchOverheadBytes = 4096; // Increased from 2048
+    private const long BatchOverheadBytes = 8192; // be conservative for transactional batch envelope
 
     /// <summary>
     ///     Estimates the total size of a batch of events in bytes.
@@ -70,7 +70,7 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
             };
             string serialized = JsonConvert.SerializeObject(eventDoc);
             int actualSize = Encoding.UTF8.GetByteCount(serialized);
-            return (long)(actualSize * 1.2); // 20% overhead for JSON formatting variations
+            return (long)(actualSize * 1.3); // 30% safety overhead
         }
         catch (JsonException)
         {
@@ -150,13 +150,13 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
         size += (brookEvent.Type?.Length ?? 0) * 2;
         size += (brookEvent.DataContentType?.Length ?? 0) * 2;
 
-        // Data size (base64 encoding adds ~33% overhead)
-        size += ((brookEvent.Data.Length * 4) / 3) + 4;
+        // Data size (Cosmos JSON stores bytes as base64, adds ~33% overhead)
+        size += ((brookEvent.Data.Length * 4) / 3) + 64; // include some JSON structure padding
 
         // DateTime serialization overhead
         size += 200;
 
         // JSON structure overhead and safety margin
-        return (long)(size * 1.3);
+        return (long)(size * 1.4);
     }
 }

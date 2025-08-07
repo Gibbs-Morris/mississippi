@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Abstractions.Mapping;
@@ -34,7 +35,8 @@ internal class EventBrookAppender : IEventBrookAppender
         IRetryPolicy retryPolicy,
         IOptions<BrookStorageOptions> options,
         IMapper<BrookEvent, EventStorageModel> eventMapper,
-        IBrookRecoveryService recoveryService
+        IBrookRecoveryService recoveryService,
+        ILogger<EventBrookAppender> logger
     )
     {
         Repository = repository;
@@ -44,6 +46,7 @@ internal class EventBrookAppender : IEventBrookAppender
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         EventMapper = eventMapper;
         RecoveryService = recoveryService;
+        Logger = logger;
     }
 
     private ICosmosRepository Repository { get; }
@@ -59,6 +62,8 @@ internal class EventBrookAppender : IEventBrookAppender
     private IMapper<BrookEvent, EventStorageModel> EventMapper { get; }
 
     private IBrookRecoveryService RecoveryService { get; }
+
+    private ILogger<EventBrookAppender> Logger { get; }
 
     /// <summary>
     ///     Appends a collection of events to the specified brook.
@@ -122,6 +127,13 @@ internal class EventBrookAppender : IEventBrookAppender
 
         long finalPosition = currentHead.Value + events.Count;
         long estimatedSize = SizeEstimator.EstimateBatchSize(events);
+        Logger.LogInformation(
+            "CosmosAppender: brook={Brook} count={Count} estSize={Size}B head={Head} -> final={Final}",
+            brookId,
+            events.Count,
+            estimatedSize,
+            currentHead.Value,
+            finalPosition);
         if ((events.Count > Options.MaxEventsPerBatch) || (estimatedSize > Options.MaxRequestSizeBytes))
         {
             return await AppendLargeBatchAsync(
@@ -152,6 +164,14 @@ internal class EventBrookAppender : IEventBrookAppender
     )
     {
         await distributedLock.RenewAsync(cancellationToken);
+        long estBatchSize = SizeEstimator.EstimateBatchSize(events);
+        Logger.LogInformation(
+            "CosmosAppender: SingleBatch brook={Brook} count={Count} estSize={Size}B startPos={Start} final={Final}",
+            brookId,
+            events.Count,
+            estBatchSize,
+            currentHead.Value + 1,
+            finalPosition);
         List<EventStorageModel> storageEvents = events.Select(EventMapper.Map).ToList();
         TransactionalBatchResponse response = await RetryPolicy.ExecuteAsync(
             async () => await Repository.ExecuteTransactionalBatchAsync(
@@ -166,6 +186,12 @@ internal class EventBrookAppender : IEventBrookAppender
             throw new InvalidOperationException($"Failed to append events: {response.ErrorMessage}");
         }
 
+        Logger.LogInformation(
+            "CosmosAppender: SingleBatch committed brook={Brook} newHead={Head} status={Status} charge={Charge}",
+            brookId,
+            finalPosition,
+            (int)response.StatusCode,
+            response.RequestCharge);
         return new(finalPosition);
     }
 
@@ -178,24 +204,48 @@ internal class EventBrookAppender : IEventBrookAppender
         CancellationToken cancellationToken
     )
     {
+        // Build batches first while holding the lock, so we fail fast for oversize events
+        List<IReadOnlyList<BrookEvent>> batches = SizeEstimator.CreateSizeLimitedBatches(
+                events,
+                Options.MaxEventsPerBatch,
+                Options.MaxRequestSizeBytes)
+            .ToList();
+
         await Repository.CreatePendingHeadAsync(brookId, currentHead, finalPosition, cancellationToken);
+        int processedEvents = 0;
         try
         {
-            List<IReadOnlyList<BrookEvent>> batches = SizeEstimator.CreateSizeLimitedBatches(
-                    events,
-                    Options.MaxEventsPerBatch,
-                    Options.MaxRequestSizeBytes)
-                .ToList();
-            int processedEvents = 0;
+            Logger.LogInformation(
+                "CosmosAppender: LargeBatch brook={Brook} totalCount={Total} batches={Batches} head={Head} final={Final} maxPerBatch={MaxEv} maxReq={MaxReq}",
+                brookId,
+                events.Count,
+                batches.Count,
+                currentHead.Value,
+                finalPosition,
+                Options.MaxEventsPerBatch,
+                Options.MaxRequestSizeBytes);
+            DateTimeOffset lastRenewal = DateTimeOffset.UtcNow;
             for (int batchIndex = 0; batchIndex < batches.Count; batchIndex++)
             {
-                if ((batchIndex > 0) && ((batchIndex % 5) == 0))
+                // Renew the lease periodically based on threshold or every 5 batches
+                if ((batchIndex > 0) && (((batchIndex % 5) == 0) ||
+                                          (DateTimeOffset.UtcNow - lastRenewal).TotalSeconds >= Options.LeaseRenewalThresholdSeconds))
                 {
                     await distributedLock.RenewAsync(cancellationToken);
+                    lastRenewal = DateTimeOffset.UtcNow;
                 }
 
                 IReadOnlyList<BrookEvent> batchEvents = batches[batchIndex];
                 long batchStartPosition = currentHead.Value + processedEvents + 1;
+                long estBatchSize = SizeEstimator.EstimateBatchSize(batchEvents);
+                Logger.LogInformation(
+                    "CosmosAppender: Batch {BatchIdx}/{BatchCount} brook={Brook} count={Count} estSize={Size}B startPos={Start}",
+                    batchIndex + 1,
+                    batches.Count,
+                    brookId,
+                    batchEvents.Count,
+                    estBatchSize,
+                    batchStartPosition);
                 List<EventStorageModel> storageBatchEvents = batchEvents.Select(EventMapper.Map).ToList();
                 await Repository.AppendEventBatchAsync(
                     brookId,
@@ -206,11 +256,19 @@ internal class EventBrookAppender : IEventBrookAppender
             }
 
             await Repository.CommitHeadPositionAsync(brookId, finalPosition, cancellationToken);
+            Logger.LogInformation(
+                "CosmosAppender: LargeBatch committed brook={Brook} newHead={Head} batches={Batches}",
+                brookId,
+                finalPosition,
+                batches.Count);
             return new(finalPosition);
         }
         catch
         {
-            await RollbackLargeBatchAsync(brookId, currentHead, finalPosition, cancellationToken);
+            // Rollback only what we actually appended
+            long lastSuccessfulPosition = currentHead.Value; // default to head if none succeeded
+            // processedEvents reflects successfully created items
+            await RollbackLargeBatchAsync(brookId, new BrookPosition(currentHead.Value), currentHead.Value + processedEvents, cancellationToken);
             throw;
         }
     }
@@ -315,7 +373,21 @@ internal class EventBrookAppender : IEventBrookAppender
                         $"Rollback incomplete: {remainingEvents.Count} events still exist at positions: {string.Join(", ", remainingEvents)}"));
             }
 
+            Logger.LogError(
+                new AggregateException(allErrors),
+                "CosmosAppender: Rollback failed brook={Brook} originalHead={Head} failedFinal={Final} remainingEvents={Remaining}",
+                brookId,
+                originalHead.Value,
+                failedFinalPosition,
+                string.Join(", ", remainingEvents));
             throw new AggregateException("Rollback failed - brook may be in an inconsistent state", allErrors);
+        }
+        else
+        {
+            Logger.LogWarning(
+                "CosmosAppender: Rollback succeeded brook={Brook} restoredHead={Head}",
+                brookId,
+                originalHead.Value);
         }
     }
 }

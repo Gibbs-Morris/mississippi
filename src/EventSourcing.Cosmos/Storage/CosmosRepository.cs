@@ -58,12 +58,10 @@ internal class CosmosRepository : ICosmosRepository
     {
         try
         {
-            ItemResponse<HeadDocument>? response = await RetryPolicy.ExecuteAsync(
-                async () => await Container.ReadItemAsync<HeadDocument>(
-                    "head",
-                    new(brookId.ToString()),
-                    cancellationToken: cancellationToken),
-                cancellationToken);
+            ItemResponse<HeadDocument>? response = await Container.ReadItemAsync<HeadDocument>(
+                "head",
+                new(brookId.ToString()),
+                cancellationToken: cancellationToken);
             return HeadDocumentMapper.Map(response.Resource);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
@@ -85,12 +83,10 @@ internal class CosmosRepository : ICosmosRepository
     {
         try
         {
-            ItemResponse<HeadDocument>? response = await RetryPolicy.ExecuteAsync(
-                async () => await Container.ReadItemAsync<HeadDocument>(
-                    "head-pending",
-                    new(brookId.ToString()),
-                    cancellationToken: cancellationToken),
-                cancellationToken);
+            ItemResponse<HeadDocument>? response = await Container.ReadItemAsync<HeadDocument>(
+                "head-pending",
+                new(brookId.ToString()),
+                cancellationToken: cancellationToken);
             return HeadDocumentMapper.Map(response.Resource);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
@@ -118,8 +114,9 @@ internal class CosmosRepository : ICosmosRepository
         {
             Id = "head-pending",
             Type = "head-pending",
-            Position = new(finalPosition),
-            OriginalPosition = currentHead,
+            Position = finalPosition,
+            OriginalPosition = currentHead.Value,
+            BrookPartitionKey = brookId.ToString(),
         };
         PartitionKey partitionKey = new(brookId.ToString());
         await RetryPolicy.ExecuteAsync(
@@ -149,7 +146,8 @@ internal class CosmosRepository : ICosmosRepository
         {
             Id = "head",
             Type = "head",
-            Position = new(finalPosition),
+            Position = finalPosition,
+            BrookPartitionKey = brookId.ToString(),
         };
         batch.UpsertItem(headDoc);
         batch.DeleteItem("head-pending");
@@ -298,6 +296,8 @@ internal class CosmosRepository : ICosmosRepository
         PartitionKey partitionKey = new(brookId.ToString());
         TransactionalBatch? batch = Container.CreateTransactionalBatch(partitionKey);
         long position = startPosition;
+        // Track number of operations to avoid Cosmos 100-op limit
+        int operationCount = 0;
         foreach (EventStorageModel eventStorageModel in events)
         {
             EventDocument eventDoc = new()
@@ -305,6 +305,7 @@ internal class CosmosRepository : ICosmosRepository
                 Id = position.ToString(CultureInfo.InvariantCulture),
                 Type = "event",
                 Position = position,
+                BrookPartitionKey = brookId.ToString(),
                 EventId = eventStorageModel.EventId,
                 Source = eventStorageModel.Source,
                 EventType = eventStorageModel.EventType,
@@ -314,14 +315,20 @@ internal class CosmosRepository : ICosmosRepository
             };
             batch.CreateItem(eventDoc);
             position++;
+            operationCount++;
         }
 
-        TransactionalBatchResponse? response = await RetryPolicy.ExecuteAsync(
-            async () => await batch.ExecuteAsync(cancellationToken),
-            cancellationToken);
+        // Defensive: fail fast if we accidentally exceed 100 operations in a single batch
+        if (operationCount > 100)
+        {
+            throw new InvalidOperationException($"Transactional batch operation count {operationCount} exceeds Cosmos limit of 100.");
+        }
+
+        TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"Failed to append event batch: {response.ErrorMessage}");
+            string details = SummarizeBatchFailure(response);
+            throw new InvalidOperationException($"Failed to append event batch: {details}");
         }
     }
 
@@ -348,7 +355,8 @@ internal class CosmosRepository : ICosmosRepository
         {
             Id = "head",
             Type = "head",
-            Position = new(newPosition),
+            Position = newPosition,
+            BrookPartitionKey = brookId.ToString(),
         };
         if (currentHead.NotSet)
         {
@@ -367,6 +375,7 @@ internal class CosmosRepository : ICosmosRepository
                 Id = position.ToString(CultureInfo.InvariantCulture),
                 Type = "event",
                 Position = position,
+                BrookPartitionKey = brookId.ToString(),
                 EventId = eventStorageModel.EventId,
                 Source = eventStorageModel.Source,
                 EventType = eventStorageModel.EventType,
@@ -378,7 +387,83 @@ internal class CosmosRepository : ICosmosRepository
             position++;
         }
 
-        return await batch.ExecuteAsync(cancellationToken);
+        TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);
+        return response;
+    }
+
+    private async Task<TransactionalBatchResponse> ExecuteBatchWithRetryAsync(
+        TransactionalBatch batch,
+        CancellationToken cancellationToken
+    )
+    {
+        Exception? last = null;
+        for (int attempt = 0; attempt <= 3; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                TransactionalBatchResponse response = await batch.ExecuteAsync(cancellationToken);
+                if (response.IsSuccessStatusCode)
+                {
+                    return response;
+                }
+
+                // Transient statuses to retry on
+                if ((response.StatusCode == HttpStatusCode.TooManyRequests) ||
+                    (response.StatusCode == HttpStatusCode.ServiceUnavailable) ||
+                    (response.StatusCode == HttpStatusCode.RequestTimeout) ||
+                    (response.StatusCode == HttpStatusCode.InternalServerError) ||
+                    (response.StatusCode == HttpStatusCode.GatewayTimeout))
+                {
+                    TimeSpan delay = response.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
+                    await Task.Delay(delay, cancellationToken);
+                    continue;
+                }
+
+                return response; // non-transient failure; let caller decide
+            }
+            catch (CosmosException ex)
+            {
+                last = ex;
+                // Surface 413 as a meaningful error
+                if (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
+                {
+                    throw new InvalidOperationException(
+                        "Transactional batch request size exceeds maximum allowed limit. Consider reducing batch size.", ex);
+                }
+
+                if (attempt == 3)
+                {
+                    throw;
+                }
+                TimeSpan delay = ex.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
+                await Task.Delay(delay, cancellationToken);
+            }
+        }
+
+        throw new InvalidOperationException("Transactional batch failed after retries", last);
+    }
+
+    private static string SummarizeBatchFailure(TransactionalBatchResponse response)
+    {
+        try
+        {
+            List<string> ops = new();
+            for (int i = 0; i < response.Count; i++)
+            {
+                TransactionalBatchOperationResult r = response[i];
+                if (!r.IsSuccessStatusCode)
+                {
+                    ops.Add($"#{i}:{(int)r.StatusCode}");
+                }
+            }
+            string opsSummary = ops.Count > 0 ? string.Join(",", ops) : "none";
+            return $"status={(int)response.StatusCode} retryAfter={(response.RetryAfter?.TotalMilliseconds ?? 0)}ms opFailures=[{opsSummary}] error={response.ErrorMessage}";
+        }
+        catch
+        {
+            return response.ErrorMessage ?? response.StatusCode.ToString();
+        }
     }
 
     /// <summary>

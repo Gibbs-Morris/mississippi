@@ -46,4 +46,10 @@ public interface IBrookReaderGrain : IGrainWithStringKey
         BrookPosition? readTo = null,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    ///     Requests the reader grain to deactivate when idle, clearing any caches in its slice readers.
+    /// </summary>
+    [Alias("DeactivateAsync")]
+    Task DeactivateAsync();
 }

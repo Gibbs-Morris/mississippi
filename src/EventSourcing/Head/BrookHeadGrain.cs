@@ -107,15 +107,19 @@ internal class BrookHeadGrain
     ///     Gets the latest position of the brook head, loading from storage if not initialized.
     /// </summary>
     /// <returns>The most recent persisted head position.</returns>
-    public async Task<BrookPosition> GetLatestPositionAsync()
+    public Task<BrookPosition> GetLatestPositionAsync()
     {
-        if (TrackedHeadPosition.NotSet)
+        // Fast path: return cached head. Writers publish updates on success.
+        return Task.FromResult(TrackedHeadPosition);
+    }
+
+    public async Task<BrookPosition> GetLatestPositionConfirmedAsync()
+    {
+        // Strongly consistent path: read from storage and update cache if newer.
+        BrookPosition storagePosition = await BrookReaderProvider.ReadHeadPositionAsync(this.GetPrimaryKeyString());
+        if (storagePosition.IsNewerThan(TrackedHeadPosition))
         {
-            BrookPosition trackedPosition = await BrookReaderProvider.ReadHeadPositionAsync(this.GetPrimaryKeyString());
-            if (trackedPosition.IsNewerThan(TrackedHeadPosition))
-            {
-                TrackedHeadPosition = trackedPosition;
-            }
+            TrackedHeadPosition = storagePosition;
         }
 
         return TrackedHeadPosition;
@@ -134,5 +138,14 @@ internal class BrookHeadGrain
         Stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookHeadMovedEvent>(key);
         await Stream.SubscribeAsync(this);
+    }
+
+    /// <summary>
+    ///     Deactivate the grain on idle, used by tests to flush caches and lifecycle state.
+    /// </summary>
+    public Task DeactivateAsync()
+    {
+        this.DeactivateOnIdle();
+        return Task.CompletedTask;
     }
 }

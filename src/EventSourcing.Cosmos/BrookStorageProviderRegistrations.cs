@@ -64,12 +64,12 @@ public static class BrookStorageProviderRegistrations
                 Container existingContainer = database.GetContainer(options.ContainerId);
                 var containerProperties = existingContainer.ReadContainerAsync().GetAwaiter().GetResult();
                 
-                // If the partition key path is not what we expect, delete and recreate
+                // If the partition key path is not what we expect, fail fast instead of deleting user data
                 if (containerProperties.Resource.PartitionKeyPath != "/brookPartitionKey")
                 {
-                    Console.WriteLine($"DEBUG: Deleting existing container with wrong partition key path: {containerProperties.Resource.PartitionKeyPath}");
-                    existingContainer.DeleteContainerAsync().GetAwaiter().GetResult();
-                    Console.WriteLine($"DEBUG: Container deleted successfully");
+                    throw new InvalidOperationException(
+                        $"Existing Cosmos container '{options.ContainerId}' has partition key path '{containerProperties.Resource.PartitionKeyPath}', " +
+                        "but '/brookPartitionKey' is required. Refuse to delete existing container. Please provision a container with the correct partition key.");
                 }
             }
             catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)

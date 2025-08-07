@@ -74,7 +74,8 @@ internal sealed class BlobDistributedLock : IDistributedLock
         try
         {
             await LeaseClient.RenewAsync(cancellationToken: cancellationToken);
-            lastRenewalTime = now;
+            // Use the actual completion time to avoid drifting too close to expiration
+            lastRenewalTime = DateTimeOffset.UtcNow;
         }
         catch (RequestFailedException ex) when ((ex.Status == 409) || (ex.Status == 404))
         {

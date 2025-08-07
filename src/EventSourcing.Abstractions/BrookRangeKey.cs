@@ -94,7 +94,7 @@ public readonly record struct BrookRangeKey
     public static implicit operator string(
         BrookRangeKey key
     ) =>
-        $"{key.Type}{Separator}{key.Id}{Separator}{key.Start}{Separator}{key.Count}";
+        $"{key.Type}{Separator}{key.Id}{Separator}{key.Start.Value}{Separator}{key.Count}";
 
     /// <summary>
     ///     Implicitly converts a string to a <see cref="BrookRangeKey" />.

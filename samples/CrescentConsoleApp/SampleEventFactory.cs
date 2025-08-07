@@ -30,6 +30,48 @@ public static class SampleEventFactory
         return builder.MoveToImmutable(); // O(1) finalise
     }
 
+    public static ImmutableArray<BrookEvent> CreateFixedSizeEvents(
+        int count,
+        int sizeBytes,
+        string? contentType = null
+    )
+    {
+        if (sizeBytes < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sizeBytes));
+        }
+
+        ImmutableArray<BrookEvent>.Builder builder = ImmutableArray.CreateBuilder<BrookEvent>(count);
+        for (int i = 0; i < count; i++)
+        {
+            builder.Add(CreateEventOfSize(sizeBytes, contentType));
+        }
+
+        return builder.MoveToImmutable();
+    }
+
+    public static ImmutableArray<BrookEvent> CreateRangeSizeEvents(
+        int count,
+        int minBytes,
+        int maxBytes,
+        string? contentType = null
+    )
+    {
+        if ((minBytes < 1) || (maxBytes < minBytes))
+        {
+            throw new ArgumentOutOfRangeException(nameof(minBytes));
+        }
+
+        ImmutableArray<BrookEvent>.Builder builder = ImmutableArray.CreateBuilder<BrookEvent>(count);
+        for (int i = 0; i < count; i++)
+        {
+            int size = Rng.Next(minBytes, maxBytes + 1);
+            builder.Add(CreateEventOfSize(size, contentType));
+        }
+
+        return builder.MoveToImmutable();
+    }
+
     private static BrookEvent CreateRandomEvent()
     {
         byte[] payload = new byte[Rng.Next(512, 4_096)];
@@ -41,6 +83,24 @@ public static class SampleEventFactory
             DataContentType = Pick(MimeTypes),
             Source = GenerateSourceTag(),
             Time = DateTimeOffset.UtcNow.AddSeconds(-Rng.Next(0, 86_400)),
+            Type = Pick(Categories),
+        };
+    }
+
+    private static BrookEvent CreateEventOfSize(
+        int sizeBytes,
+        string? contentType
+    )
+    {
+        byte[] payload = new byte[sizeBytes];
+        RandomNumberGenerator.Fill(payload);
+        return new()
+        {
+            Id = Guid.NewGuid().ToString(),
+            Data = payload.ToImmutableArray(),
+            DataContentType = contentType ?? "application/octet-stream",
+            Source = GenerateSourceTag(),
+            Time = DateTimeOffset.UtcNow,
             Type = Pick(Categories),
         };
     }

@@ -55,7 +55,31 @@ internal class BlobDistributedLockManager : IDistributedLockManager
         }
 
         BlobLeaseClient? leaseClient = blobClient.GetBlobLeaseClient();
-        Response<BlobLease>? lease = await leaseClient.AcquireAsync(duration, cancellationToken: cancellationToken);
+        // Bounded retries for lease conflicts
+        const int maxAcquireAttempts = 5;
+        Response<BlobLease>? lease = null;
+        for (int attempt = 0; attempt < maxAcquireAttempts; attempt++)
+        {
+            try
+            {
+                lease = await leaseClient.AcquireAsync(duration, cancellationToken: cancellationToken);
+                break;
+            }
+            catch (RequestFailedException ex) when (ex.Status == 409 && attempt < (maxAcquireAttempts - 1))
+            {
+                // Lease is already held; backoff with jitter and retry
+                int backoffMs = (int)Math.Min(2000, Math.Pow(2, attempt) * 100);
+                int jitter = Random.Shared.Next(0, 100);
+                await Task.Delay(backoffMs + jitter, cancellationToken);
+                continue;
+            }
+        }
+
+        if (lease is null)
+        {
+            throw new InvalidOperationException("Failed to acquire blob lease for distributed lock after retries.");
+        }
+
         return new BlobDistributedLock(
             leaseClient,
             lease.Value.LeaseId,
