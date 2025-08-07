@@ -321,7 +321,8 @@ internal class CosmosRepository : ICosmosRepository
         // Defensive: fail fast if we accidentally exceed 100 operations in a single batch
         if (operationCount > 100)
         {
-            throw new InvalidOperationException($"Transactional batch operation count {operationCount} exceeds Cosmos limit of 100.");
+            throw new InvalidOperationException(
+                $"Transactional batch operation count {operationCount} exceeds Cosmos limit of 100.");
         }
 
         TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);
@@ -391,6 +392,44 @@ internal class CosmosRepository : ICosmosRepository
         return response;
     }
 
+    /// <summary>
+    ///     Queries events within a specified range from a brook.
+    /// </summary>
+    /// <param name="brookRange">The range of events to query.</param>
+    /// <param name="batchSize">The batch size for querying.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>An async enumerable of event storage models.</returns>
+    public async IAsyncEnumerable<EventStorageModel> QueryEventsAsync(
+        BrookRangeKey brookRange,
+        int batchSize,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    )
+    {
+        PartitionKey partitionKey = new(brookRange.ToBrookCompositeKey().ToString());
+        QueryDefinition? query = new QueryDefinition(
+                "SELECT * FROM c WHERE c.type = 'event' AND c.position >= @start AND c.position <= @end ORDER BY c.position")
+            .WithParameter("@start", brookRange.Start.Value)
+            .WithParameter("@end", brookRange.End.Value);
+        using FeedIterator<EventDocument>? iterator = Container.GetItemQueryIterator<EventDocument>(
+            query,
+            requestOptions: new()
+            {
+                PartitionKey = partitionKey,
+                MaxItemCount = batchSize,
+            });
+        while (iterator.HasMoreResults)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            FeedResponse<EventDocument>? response = await RetryPolicy.ExecuteAsync(
+                async () => await iterator.ReadNextAsync(cancellationToken),
+                cancellationToken);
+            foreach (EventDocument? eventDoc in response)
+            {
+                yield return EventDocumentMapper.Map(eventDoc);
+            }
+        }
+    }
+
     private async Task<TransactionalBatchResponse> ExecuteBatchWithRetryAsync(
         TransactionalBatch batch,
         CancellationToken cancellationToken
@@ -429,13 +468,15 @@ internal class CosmosRepository : ICosmosRepository
                 if (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
                 {
                     throw new InvalidOperationException(
-                        "Transactional batch request size exceeds maximum allowed limit. Consider reducing batch size.", ex);
+                        "Transactional batch request size exceeds maximum allowed limit. Consider reducing batch size.",
+                        ex);
                 }
 
                 if (attempt == 3)
                 {
                     throw;
                 }
+
                 TimeSpan delay = ex.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
                 await Task.Delay(delay, cancellationToken);
             }
@@ -444,7 +485,9 @@ internal class CosmosRepository : ICosmosRepository
         throw new InvalidOperationException("Transactional batch failed after retries", last);
     }
 
-    private static string SummarizeBatchFailure(TransactionalBatchResponse response)
+    private static string SummarizeBatchFailure(
+        TransactionalBatchResponse response
+    )
     {
         try
         {
@@ -457,50 +500,14 @@ internal class CosmosRepository : ICosmosRepository
                     ops.Add($"#{i}:{(int)r.StatusCode}");
                 }
             }
+
             string opsSummary = ops.Count > 0 ? string.Join(",", ops) : "none";
-            return $"status={(int)response.StatusCode} retryAfter={(response.RetryAfter?.TotalMilliseconds ?? 0)}ms opFailures=[{opsSummary}] error={response.ErrorMessage}";
+            return
+                $"status={(int)response.StatusCode} retryAfter={response.RetryAfter?.TotalMilliseconds ?? 0}ms opFailures=[{opsSummary}] error={response.ErrorMessage}";
         }
         catch
         {
             return response.ErrorMessage ?? response.StatusCode.ToString();
-        }
-    }
-
-    /// <summary>
-    ///     Queries events within a specified range from a brook.
-    /// </summary>
-    /// <param name="brookRange">The range of events to query.</param>
-    /// <param name="batchSize">The batch size for querying.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>An async enumerable of event storage models.</returns>
-    public async IAsyncEnumerable<EventStorageModel> QueryEventsAsync(
-        BrookRangeKey brookRange,
-        int batchSize,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default
-    )
-    {
-        PartitionKey partitionKey = new(brookRange.ToBrookCompositeKey().ToString());
-        QueryDefinition? query = new QueryDefinition(
-                "SELECT * FROM c WHERE c.type = 'event' AND c.position >= @start AND c.position <= @end ORDER BY c.position")
-            .WithParameter("@start", brookRange.Start.Value)
-            .WithParameter("@end", brookRange.End.Value);
-        using FeedIterator<EventDocument>? iterator = Container.GetItemQueryIterator<EventDocument>(
-            query,
-            requestOptions: new()
-            {
-                PartitionKey = partitionKey,
-                MaxItemCount = batchSize,
-            });
-        while (iterator.HasMoreResults)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            FeedResponse<EventDocument>? response = await RetryPolicy.ExecuteAsync(
-                async () => await iterator.ReadNextAsync(cancellationToken),
-                cancellationToken);
-            foreach (EventDocument? eventDoc in response)
-            {
-                yield return EventDocumentMapper.Map(eventDoc);
-            }
         }
     }
 }

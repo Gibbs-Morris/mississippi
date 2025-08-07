@@ -1,6 +1,4 @@
-﻿using Mississippi.EventSourcing.Abstractions;
-
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Storage;

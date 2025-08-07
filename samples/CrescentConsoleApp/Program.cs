@@ -1,8 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text.Json;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,8 +16,6 @@ using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.Writer;
 
 using Orleans.Configuration;
-using Orleans.Hosting;
-using Orleans.Runtime;
 
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
@@ -103,19 +100,27 @@ try
     string mode = Environment.GetEnvironmentVariable("CRESCENT_MODE") ?? builder.Configuration["mode"] ?? "fresh";
     RunState runState = await RunStateStore.LoadAsync(logger);
     BrookKey brookKey;
-    if (string.Equals(mode, "reuse", StringComparison.OrdinalIgnoreCase)
-        && !string.IsNullOrWhiteSpace(runState.PrimaryType)
-        && !string.IsNullOrWhiteSpace(runState.PrimaryId))
+    if (string.Equals(mode, "reuse", StringComparison.OrdinalIgnoreCase) &&
+        !string.IsNullOrWhiteSpace(runState.PrimaryType) &&
+        !string.IsNullOrWhiteSpace(runState.PrimaryId))
     {
         brookKey = new(runState.PrimaryType!, runState.PrimaryId!);
-        logger.LogInformation("Run {RunId}: Mode=reuse, Using persisted BrookKey={BrookKey} (state file: {Path})", runId, brookKey, RunStateStore.FilePath);
+        logger.LogInformation(
+            "Run {RunId}: Mode=reuse, Using persisted BrookKey={BrookKey} (state file: {Path})",
+            runId,
+            brookKey,
+            RunStateStore.FilePath);
     }
     else
     {
         brookKey = new($"test-brook-{Guid.NewGuid():N}", "sample-brook-001");
         runState.PrimaryType = brookKey.Type;
         runState.PrimaryId = brookKey.Id;
-        logger.LogInformation("Run {RunId}: Mode=fresh, Using new BrookKey={BrookKey} (state file: {Path})", runId, brookKey, RunStateStore.FilePath);
+        logger.LogInformation(
+            "Run {RunId}: Mode=fresh, Using new BrookKey={BrookKey} (state file: {Path})",
+            runId,
+            brookKey,
+            RunStateStore.FilePath);
     }
 
     // Scenario 1: Small batch append (10 small events)
@@ -196,7 +201,7 @@ try
     using IHost host2 = BuildColdStartHost();
     await host2.StartAsync();
     logger.LogInformation("=== Scenario: Cold restart readback ===");
-    await LogStreamReadAsync(logger, runId, host2.Services.GetRequiredService<IBrookGrainFactory>(), brookKey, confirmedHead: true);
+    await LogStreamReadAsync(logger, runId, host2.Services.GetRequiredService<IBrookGrainFactory>(), brookKey, true);
     // Persist final confirmed head for primary stream
     BrookPosition confirmed = await host2.Services.GetRequiredService<IBrookGrainFactory>()
         .GetBrookHeadGrain(brookKey)
@@ -212,6 +217,7 @@ catch (Exception e)
     loggerEx.LogError(e, "Run {RunId}: Unhandled exception", runId);
     throw;
 }
+
 await host.StopAsync();
 
 // -------- Local helpers (scenarios and readback) --------
@@ -219,13 +225,21 @@ static IHost BuildColdStartHost()
 {
     HostApplicationBuilder b = Host.CreateApplicationBuilder([]);
     b.Logging.ClearProviders();
-    b.Logging.AddSimpleConsole(o => { o.SingleLine = true; o.TimestampFormat = "HH:mm:ss.fff "; });
+    b.Logging.AddSimpleConsole(o =>
+    {
+        o.SingleLine = true;
+        o.TimestampFormat = "HH:mm:ss.fff ";
+    });
     b.Logging.SetMinimumLevel(LogLevel.Trace);
     b.AddEventSourcing();
     b.UseOrleans(silo =>
     {
         silo.UseLocalhostClustering()
-            .Configure<ClusterOptions>(opt => { opt.ClusterId = "dev"; opt.ServiceId = "SampleApp"; })
+            .Configure<ClusterOptions>(opt =>
+            {
+                opt.ClusterId = "dev";
+                opt.ServiceId = "SampleApp";
+            })
             .AddMemoryGrainStorage("PubSubStore");
         silo.ConfigureLogging(lb =>
         {
@@ -247,6 +261,7 @@ static IHost BuildColdStartHost()
         });
     return b.Build();
 }
+
 // Scenario harness helpers
 static async Task RunAppendScenarioAsync(
     ILogger logger,
@@ -256,7 +271,8 @@ static async Task RunAppendScenarioAsync(
     string scenarioName,
     Func<ImmutableArray<BrookEvent>> eventFactory,
     BrookPosition? expectedHead = null,
-    CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken = default
+)
 {
     IBrookWriterGrain writer = brookGrainFactory.GetBrookWriterGrain(brookKey);
     ImmutableArray<BrookEvent> events = eventFactory();
@@ -267,7 +283,6 @@ static async Task RunAppendScenarioAsync(
         scenarioName,
         events.Length,
         totalBytes);
-
     DateTimeOffset started = DateTimeOffset.UtcNow;
     try
     {
@@ -280,7 +295,7 @@ static async Task RunAppendScenarioAsync(
             newHead.Value,
             (int)elapsed.TotalMilliseconds,
             events.Length / Math.Max(0.001, elapsed.TotalSeconds),
-            (totalBytes / 1_000_000.0) / Math.Max(0.001, elapsed.TotalSeconds));
+            totalBytes / 1_000_000.0 / Math.Max(0.001, elapsed.TotalSeconds));
     }
     catch (Exception ex)
     {
@@ -302,7 +317,8 @@ static async Task LogStreamReadAsync(
     IBrookGrainFactory brookGrainFactory,
     BrookKey brookKey,
     bool confirmedHead = false,
-    CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken = default
+)
 {
     IBrookReaderGrain reader = brookGrainFactory.GetBrookReaderGrain(brookKey);
     BrookPosition latest = confirmedHead
@@ -338,6 +354,7 @@ static async Task LogStreamReadAsync(
                         mississippiEvent.Data.Length);
                 }
             }
+
             TimeSpan elapsed = DateTimeOffset.UtcNow - started;
             logger.LogInformation(
                 "Run {RunId}: Readback complete count={Count} bytes={Bytes} in {Ms} ms (throughput {RateEvN}/s, {RateMB}/s)",
@@ -346,7 +363,7 @@ static async Task LogStreamReadAsync(
                 totalBytes,
                 (int)elapsed.TotalMilliseconds,
                 readCount / Math.Max(0.001, elapsed.TotalSeconds),
-                (totalBytes / 1_000_000.0) / Math.Max(0.001, elapsed.TotalSeconds));
+                totalBytes / 1_000_000.0 / Math.Max(0.001, elapsed.TotalSeconds));
             break;
         }
         catch (EnumerationAbortedException ex) when (attempt == 0)
@@ -363,14 +380,18 @@ static async Task RunInterleavedReadWriteScenarioAsync(
     string runId,
     IBrookGrainFactory brookGrainFactory,
     BrookKey brookKey,
-    CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken = default
+)
 {
     logger.LogInformation("Run {RunId} [Interleave]: Start", runId);
     IBrookWriterGrain writer = brookGrainFactory.GetBrookWriterGrain(brookKey);
     IBrookReaderGrain reader = brookGrainFactory.GetBrookReaderGrain(brookKey);
 
     // Write a small batch
-    BrookPosition head1 = await writer.AppendEventsAsync(SampleEventFactory.CreateFixedSizeEvents(5, 1024), null, cancellationToken);
+    BrookPosition head1 = await writer.AppendEventsAsync(
+        SampleEventFactory.CreateFixedSizeEvents(5, 1024),
+        null,
+        cancellationToken);
     logger.LogInformation("Run {RunId} [Interleave]: Head after write1={Head}", runId, head1.Value);
     // Read a tail subset
     int tailCount = 0;
@@ -379,10 +400,14 @@ static async Task RunInterleavedReadWriteScenarioAsync(
     {
         tailCount++;
     }
+
     logger.LogInformation("Run {RunId} [Interleave]: Tail read count={Count}", runId, tailCount);
 
     // Write another mixed batch
-    BrookPosition head2 = await writer.AppendEventsAsync(SampleEventFactory.CreateRangeSizeEvents(20, 512, 4096), head1, cancellationToken);
+    BrookPosition head2 = await writer.AppendEventsAsync(
+        SampleEventFactory.CreateRangeSizeEvents(20, 512, 4096),
+        head1,
+        cancellationToken);
     logger.LogInformation("Run {RunId} [Interleave]: Head after write2={Head}", runId, head2.Value);
 
     // Verify continuous read from 1..head2
@@ -396,6 +421,7 @@ static async Task RunInterleavedReadWriteScenarioAsync(
             {
                 count++;
             }
+
             logger.LogInformation("Run {RunId} [Interleave]: Full range read count={Count}", runId, count);
             break;
         }
@@ -410,13 +436,13 @@ static async Task RunInterleavedReadWriteScenarioAsync(
 static async Task<List<StreamState>> RunMultiStreamScenarioAsync(
     ILogger logger,
     string runId,
-    IBrookGrainFactory brookGrainFactory)
+    IBrookGrainFactory brookGrainFactory
+)
 {
     BrookKey keyA = new($"test-brook-{Guid.NewGuid():N}", "A");
     BrookKey keyB = new($"test-brook-{Guid.NewGuid():N}", "B");
     IBrookWriterGrain wA = brookGrainFactory.GetBrookWriterGrain(keyA);
     IBrookWriterGrain wB = brookGrainFactory.GetBrookWriterGrain(keyB);
-
     await wA.AppendEventsAsync(SampleEventFactory.CreateFixedSizeEvents(50, 1024));
     await wB.AppendEventsAsync(SampleEventFactory.CreateRangeSizeEvents(50, 512, 4096));
 
@@ -431,7 +457,10 @@ static async Task<List<StreamState>> RunMultiStreamScenarioAsync(
     int ca = 0, cb = 0;
     if (hA.Value >= 1)
     {
-        await foreach (BrookEvent _ in rA.ReadEventsAsync(new(1), hA)) { ca++; }
+        await foreach (BrookEvent _ in rA.ReadEventsAsync(new(1), hA))
+        {
+            ca++;
+        }
     }
     else
     {
@@ -440,18 +469,31 @@ static async Task<List<StreamState>> RunMultiStreamScenarioAsync(
 
     if (hB.Value >= 1)
     {
-        await foreach (BrookEvent _ in rB.ReadEventsAsync(new(1), hB)) { cb++; }
+        await foreach (BrookEvent _ in rB.ReadEventsAsync(new(1), hB))
+        {
+            cb++;
+        }
     }
     else
     {
         logger.LogInformation("Run {RunId} [Multi]: Stream B empty", runId);
     }
-    logger.LogInformation("Run {RunId} [Multi]: Read counts A={CA} B={CB}", runId, ca, cb);
 
-    return new List<StreamState>
+    logger.LogInformation("Run {RunId} [Multi]: Read counts A={CA} B={CB}", runId, ca, cb);
+    return new()
     {
-        new StreamState { Type = keyA.Type, Id = keyA.Id, Head = hA.Value },
-        new StreamState { Type = keyB.Type, Id = keyB.Id, Head = hB.Value },
+        new()
+        {
+            Type = keyA.Type,
+            Id = keyA.Id,
+            Head = hA.Value,
+        },
+        new()
+        {
+            Type = keyB.Type,
+            Id = keyB.Id,
+            Head = hB.Value,
+        },
     };
 }
 
@@ -459,7 +501,8 @@ static async Task FlushCachesAsync(
     ILogger logger,
     string runId,
     IBrookGrainFactory brookGrainFactory,
-    BrookKey brookKey)
+    BrookKey brookKey
+)
 {
     logger.LogInformation("Run {RunId} [Flush]: Requesting grain deactivations for {BrookKey}", runId, brookKey);
     await brookGrainFactory.GetBrookHeadGrain(brookKey).DeactivateAsync();
@@ -471,8 +514,9 @@ static async Task FlushCachesAsync(
         long step = Math.Max(1, head.Value / 3);
         for (long start = 1; start <= head.Value; start += step)
         {
-            long end = Math.Min(head.Value, start + step - 1);
-            IBrookSliceReaderGrain slice = brookGrainFactory.GetBrookSliceReaderGrain(BrookRangeKey.FromBrookCompositeKey(brookKey, start, end - start));
+            long end = Math.Min(head.Value, (start + step) - 1);
+            IBrookSliceReaderGrain slice = brookGrainFactory.GetBrookSliceReaderGrain(
+                BrookRangeKey.FromBrookCompositeKey(brookKey, start, end - start));
             await slice.DeactivateAsync();
         }
     }

@@ -1,5 +1,6 @@
 ﻿using Orleans.Concurrency;
 
+
 namespace Mississippi.Core.Projection;
 
 /// <summary>
@@ -9,7 +10,7 @@ namespace Mississippi.Core.Projection;
 /// <typeparam name="TModel">The type of the projection model.</typeparam>
 public abstract class PersistantProjectionSnapshotGrain<TModel>
     : IPersistantProjectionSnapshotGrain<TModel>,
-        IGrainBase
+      IGrainBase
 {
     private Task<Immutable<ProjectionSnapshot<TModel>>>? inFlightTask;
 
@@ -20,14 +21,14 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
     /// <value>The grain factory instance.</value>
     public required IGrainFactory GrainFactory { get; init; }
 
+    private Immutable<ProjectionSnapshot<TModel>> CachedState { get; set; }
+
     /// <summary>
     ///     Gets or initializes the Orleans grain context for this grain instance.
     ///     Required Orleans infrastructure dependency for grain lifecycle management.
     /// </summary>
     /// <value>The grain context instance.</value>
     public required IGrainContext GrainContext { get; init; }
-
-    private Immutable<ProjectionSnapshot<TModel>> CachedState { get; set; }
 
     /// <summary>
     ///     Called when the grain is activated. Initiates background building of the projection snapshot.

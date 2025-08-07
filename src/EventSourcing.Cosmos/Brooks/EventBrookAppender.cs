@@ -210,7 +210,6 @@ internal class EventBrookAppender : IEventBrookAppender
                 Options.MaxEventsPerBatch,
                 Options.MaxRequestSizeBytes)
             .ToList();
-
         await Repository.CreatePendingHeadAsync(brookId, currentHead, finalPosition, cancellationToken);
         int processedEvents = 0;
         try
@@ -228,8 +227,9 @@ internal class EventBrookAppender : IEventBrookAppender
             for (int batchIndex = 0; batchIndex < batches.Count; batchIndex++)
             {
                 // Renew the lease periodically based on threshold or every 5 batches
-                if ((batchIndex > 0) && (((batchIndex % 5) == 0) ||
-                                          (DateTimeOffset.UtcNow - lastRenewal).TotalSeconds >= Options.LeaseRenewalThresholdSeconds))
+                if ((batchIndex > 0) &&
+                    (((batchIndex % 5) == 0) ||
+                     ((DateTimeOffset.UtcNow - lastRenewal).TotalSeconds >= Options.LeaseRenewalThresholdSeconds)))
                 {
                     await distributedLock.RenewAsync(cancellationToken);
                     lastRenewal = DateTimeOffset.UtcNow;
@@ -268,7 +268,11 @@ internal class EventBrookAppender : IEventBrookAppender
             // Rollback only what we actually appended
             long lastSuccessfulPosition = currentHead.Value; // default to head if none succeeded
             // processedEvents reflects successfully created items
-            await RollbackLargeBatchAsync(brookId, new BrookPosition(currentHead.Value), currentHead.Value + processedEvents, cancellationToken);
+            await RollbackLargeBatchAsync(
+                brookId,
+                new(currentHead.Value),
+                currentHead.Value + processedEvents,
+                cancellationToken);
             throw;
         }
     }
@@ -382,12 +386,10 @@ internal class EventBrookAppender : IEventBrookAppender
                 string.Join(", ", remainingEvents));
             throw new AggregateException("Rollback failed - brook may be in an inconsistent state", allErrors);
         }
-        else
-        {
-            Logger.LogWarning(
-                "CosmosAppender: Rollback succeeded brook={Brook} restoredHead={Head}",
-                brookId,
-                originalHead.Value);
-        }
+
+        Logger.LogWarning(
+            "CosmosAppender: Rollback succeeded brook={Brook} restoredHead={Head}",
+            brookId,
+            originalHead.Value);
     }
 }

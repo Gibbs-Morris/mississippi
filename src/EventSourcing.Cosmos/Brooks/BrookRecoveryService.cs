@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Azure;
+
+using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
@@ -76,7 +78,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
                         async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
                         cancellationToken);
                 }
-                catch (Azure.RequestFailedException)
+                catch (RequestFailedException)
                 {
                     // If we can't acquire the recovery lock, assume another process is handling recovery
                     // Wait a bit and try to read the head again

@@ -1,3 +1,5 @@
+using System.Net;
+
 using Azure.Storage.Blobs;
 
 using Microsoft.Azure.Cosmos;
@@ -54,16 +56,19 @@ public static class BrookStorageProviderRegistrations
         {
             CosmosClient cosmosClient = provider.GetRequiredService<CosmosClient>();
             BrookStorageOptions options = provider.GetRequiredService<IOptions<BrookStorageOptions>>().Value;
-            
+
             // Create database if it doesn't exist
-            Database database = cosmosClient.CreateDatabaseIfNotExistsAsync(options.DatabaseId).GetAwaiter().GetResult();
-            
+            Database database = cosmosClient.CreateDatabaseIfNotExistsAsync(options.DatabaseId)
+                .GetAwaiter()
+                .GetResult();
+
             // Check if container exists and has the correct partition key path
             try
             {
                 Container existingContainer = database.GetContainer(options.ContainerId);
-                var containerProperties = existingContainer.ReadContainerAsync().GetAwaiter().GetResult();
-                
+                ContainerResponse? containerProperties =
+                    existingContainer.ReadContainerAsync().GetAwaiter().GetResult();
+
                 // If the partition key path is not what we expect, fail fast instead of deleting user data
                 if (containerProperties.Resource.PartitionKeyPath != "/brookPartitionKey")
                 {
@@ -72,14 +77,15 @@ public static class BrookStorageProviderRegistrations
                         "but '/brookPartitionKey' is required. Refuse to delete existing container. Please provision a container with the correct partition key.");
                 }
             }
-            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
                 // Container doesn't exist, which is fine
             }
-            
+
             // Create container if it doesn't exist
-            Container container = database.CreateContainerIfNotExistsAsync(options.ContainerId, "/brookPartitionKey").GetAwaiter().GetResult();
-            
+            Container container = database.CreateContainerIfNotExistsAsync(options.ContainerId, "/brookPartitionKey")
+                .GetAwaiter()
+                .GetResult();
             return container;
         });
         return services;

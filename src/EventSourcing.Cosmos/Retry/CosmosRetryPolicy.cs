@@ -60,12 +60,11 @@ internal class CosmosRetryPolicy : IRetryPolicy
                 throw;
             }
             // Retry only on transient Cosmos statuses; allow NotFound and other non-transient errors to bubble up
-            catch (CosmosException ex) when (
-                attempt < MaxRetries &&
-                (ex.StatusCode == HttpStatusCode.ServiceUnavailable ||
-                 ex.StatusCode == HttpStatusCode.RequestTimeout ||
-                 ex.StatusCode == HttpStatusCode.InternalServerError ||
-                 ex.StatusCode == HttpStatusCode.GatewayTimeout))
+            catch (CosmosException ex) when ((attempt < MaxRetries) &&
+                                             ((ex.StatusCode == HttpStatusCode.ServiceUnavailable) ||
+                                              (ex.StatusCode == HttpStatusCode.RequestTimeout) ||
+                                              (ex.StatusCode == HttpStatusCode.InternalServerError) ||
+                                              (ex.StatusCode == HttpStatusCode.GatewayTimeout)))
             {
                 lastException = ex;
                 TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
