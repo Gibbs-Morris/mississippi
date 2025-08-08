@@ -1,0 +1,37 @@
+---
+description: Orleans explicit serialization & version tolerance
+globs: ["**/*.cs"]
+alwaysApply: false
+---
+# Orleans Serialization Best Practices
+**Source:** .github/instructions/orleans-serialization.instructions.md
+**Last synced:** 2025-08-08
+
+## Do this
+- Mark every serializable type with `[GenerateSerializer]` and stable `[Alias("Namespace.Type")]`.
+- Annotate each serializable member with unique `[Id(n)]` starting at 0 per inheritance level.
+- Use explicit nullable vs non-nullable; only broaden nullability.
+- Introduce new members with next unused Id; never change existing Ids.
+- For removals use `[NonSerialized]` or keep placeholder to preserve numbering.
+- Use surrogates for external / unmodifiable types.
+- Add version-safe evolution (only additive, widening changes).
+- Run with Orleans analyzers; fix ORLEANS0004/5/11/12 errors.
+
+## Avoid this
+- Implicit serialization or relying on `[Serializable]`.
+- Reusing or renumbering Ids; changing alias names.
+- Breaking conversions (`record` ↔ `class`, narrowing numeric types, making nullable non-nullable).
+
+## Checklist
+- [ ] `[GenerateSerializer]` present
+- [ ] `[Alias]` globally unique
+- [ ] All members have unique `[Id]`
+- [ ] No Id changes
+- [ ] New members additive only
+- [ ] Analyzer errors resolved
+
+## Versioning Examples
+Add members with new Id; keep backward compatibility for rolling deployments.
+
+## Related
+Coordinate with naming (XML docs), build rules (warn as error), Orleans POCO grain patterns.

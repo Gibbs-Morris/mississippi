@@ -1,0 +1,42 @@
+---
+description: Build rules and quality standards (zero warnings, full pipeline)
+alwaysApply: true
+---
+# Build Rules and Quality Standards
+**Source:** .github/instructions/build-rules.instructions.md
+**Last synced:** 2025-08-08
+
+## Do this
+- Enforce zero compiler, analyzer, StyleCop, and ReSharper warnings (`--warnaserror`).
+- Build Mississippi solution first; keep samples separate; run full pipeline with `go.ps1`.
+- Always add/update tests for Mississippi changes; samples need minimal illustrative tests only.
+- Maintain mutation score via Stryker for Mississippi solution.
+- Use provided PowerShell scripts for build, test, mutation, cleanup, orchestration.
+- Run cleanup scripts until no diffs; commit only clean state.
+- Restore local tools (`dotnet tool restore`) before pipeline.
+
+## Required Quality Gates
+- Clean build
+- All unit/integration tests pass
+- Mutation tests (Mississippi) meet threshold
+- ReSharper cleanup passes
+- SonarCloud quality gate passes
+
+## Workflow
+1. Build → Clean → Fix (repeat)
+2. Add/adjust tests
+3. Run unit + mutation tests
+4. Orchestrate full pipeline (`pwsh ./go.ps1`)
+
+## Scripts Map
+- build: build-mississippi-solution.ps1, build-sample-solution.ps1
+- test: unit-test-mississippi-solution.ps1, unit-test-sample-solution.ps1
+- mutation: mutation-test-mississippi-solution.ps1
+- cleanup: clean-up-*.ps1
+- final: final-build-solutions.ps1, orchestrate-solutions.ps1, go.ps1
+
+## Tools
+Install via `dotnet tool restore`: GitVersion, SLNGen, ReSharper CLI, Stryker.NET.
+
+## Enforcement
+Fail PR if any gate fails. Never suppress instead of fixing. Cross-reference other guideline files for specifics.

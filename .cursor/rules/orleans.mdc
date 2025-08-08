@@ -1,0 +1,38 @@
+---
+description: Orleans POCO grain best practices (no Grain inheritance)
+globs: ["**/*.cs"]
+alwaysApply: false
+---
+# Orleans Best Practices for Mississippi Framework
+**Source:** .github/instructions/orleans.instructions.md
+**Last synced:** 2025-08-08
+
+## Do this
+- Implement grains as POCO: `sealed class XGrain : IGrainBase, I<Interface>`; never inherit from `Grain`.
+- Include `public IGrainContext GrainContext { get; }`; inject `IGrainContext` + dependencies via ctor.
+- Use required usings: Orleans, Orleans.Runtime, Orleans.Streams, Microsoft.Extensions.Logging.
+- Access Orleans helpers through extension methods (`this.RegisterGrainTimer`, `this.GetPrimaryKeyString()`).
+- Inject persistent state with `[PersistentState] IPersistentState<T>` (instead of Grain<TState>).
+- Use DI dependency property pattern for all injected services (`private Type Name { get; }`).
+- Provide lifecycle methods `OnActivateAsync`, `OnDeactivateAsync` with cancellation tokens.
+- Use timers, reminders via extension helpers; dispose timers in deactivate.
+- Write thoroughly unit-testable grains (mock IGrainContext, IPersistentState, ILogger).
+
+## Avoid this
+- Inheriting from `Grain` / `Grain<TState>`.
+- Private readonly backing fields for DI (`_logger`) instead of properties.
+- Missing `using Orleans.Runtime;` leading to extension resolution failures.
+- Async/await omissions or blocking calls.
+
+## Migration Checklist
+- [ ] Added IGrainBase + GrainContext
+- [ ] Replaced base inheritance
+- [ ] Updated state to IPersistentState
+- [ ] Added necessary usings
+- [ ] Replaced base calls with extension methods
+
+## Testing
+Mock context, logger, state; assert state writes and expected behavior without runtime hosting.
+
+## Performance
+POCO grains parity with inheritance approach; no added overhead; composition flexible.

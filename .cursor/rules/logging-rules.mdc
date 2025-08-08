@@ -1,0 +1,46 @@
+---
+description: Enterprise logging (LoggerExtensions + LoggerMessage mandatory)
+globs: ["**/*.cs"]
+alwaysApply: false
+---
+# Enterprise Logging Best Practices
+**Source:** .github/instructions/logging-rules.instructions.md
+**Last synced:** 2025-08-08
+
+## Do this
+- Implement ALL logging via `public static class *LoggerExtensions` with cached `Action<...>` delegates from `LoggerMessage.Define`.
+- Provide entry + success + failure logs for public methods, grain lifecycle, external calls, data mutations, event sourcing ops, business rule violations, long-running or resource-heavy operations.
+- Always include correlation IDs; propagate through grains/HTTP.
+- Use structured, strongly-typed parameters; zero allocations; check log level for expensive work.
+- Provide AI-debuggable context (what + why + key identifiers + counts + timings).
+- Redact sensitive data; explicitly mark redactions.
+- Log grain activation/deactivation & inter-grain calls with correlation + duration.
+- Capture performance metrics (duration, batch sizes, RU, retries) where relevant.
+
+## Avoid this
+- Direct `ILogger.Log*` calls inline (FORBIDDEN).
+- String interpolation or boxing-heavy logging.
+- Logging sensitive secrets/PII in clear text.
+- Omitting correlation IDs for cross-service/grain flows.
+
+## Levels Guidance
+- Error: failures, rule violations, external errors.
+- Warning: recoverable issues, performance degradation, retries.
+- Information: business & lifecycle events, successful operations.
+- Debug/Trace: detailed flow, batch processing, allocations (when enabled).
+
+## Mandatory Checklist
+- [ ] LoggerExtensions pattern everywhere
+- [ ] No direct ILogger usage
+- [ ] Correlation ID present
+- [ ] Structured parameters
+- [ ] Exception objects logged in catch
+- [ ] Sensitive data redacted
+- [ ] Grain lifecycle & method logs
+- [ ] Event sourcing ops & external calls logged
+
+## Orleans & Correlation
+Use RequestContext + helper to create/propagate correlation IDs; log start/end of grain method & cross-grain calls with timing.
+
+## Compliance
+Treat deviations as build review failures; fix not suppress.

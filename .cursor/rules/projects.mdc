@@ -1,0 +1,31 @@
+---
+description: Minimal .csproj and central package management
+globs: ["**/*.csproj"]
+alwaysApply: false
+---
+# Project File Management Best Practices
+**Source:** .github/instructions/projects.instructions.md
+**Last synced:** 2025-08-08
+
+## Do this
+- Keep project files minimal; rely on `Directory.Build.props` & `Directory.Packages.props` for shared settings and versions.
+- Omit all package version attributes; central management handles them.
+- Include only project-specific properties (OutputType, GeneratePackageOnBuild, PackageId, Description, tags, DefineConstants, non-standard configurations).
+- Add only necessary PackageReference and ProjectReference entries (no versions).
+- Rely on automatic test project config for *Tests projects (no explicit test packages or props).
+
+## Avoid this
+- Duplicating props (TargetFramework, Nullable, LangVersion, TreatWarningsAsErrors, analyzers) already set globally.
+- Embedding package versions.
+- Manually adding test dependencies in test projects.
+- Overriding automatic assembly name / root namespace.
+
+## Checklist
+- [ ] No version numbers in PackageReference
+- [ ] Only project-specific properties included
+- [ ] Test projects omit test framework packages
+- [ ] No duplicated global properties
+- [ ] AssemblyName/RootNamespace not overridden
+
+## Central Management
+All versions & analyzer packages resolved via central props files; update those instead of per-project edits.

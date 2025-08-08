@@ -1,0 +1,45 @@
+---
+description: C# best practices (SOLID, access control, DI, immutability)
+globs: ["**/*.cs"]
+alwaysApply: false
+---
+# C# General Development Best Practices
+**Source:** .github/instructions/csharp.instructions.md
+**Last synced:** 2025-08-08
+
+## Do this
+- Apply SOLID > DRY > KISS; keep single responsibility.
+- Ensure all code is unit-testable; use DI seams.
+- Prefer Microsoft first-party libs; add 3rd party only with justification.
+- Use immutable records / init-only where practical.
+- Inject deps as `private Type Name { get; }` properties.
+- Default classes `sealed`; minimize public surface; justify any public/unsealed/ interface exposure.
+- Interfaces internal unless part of explicit API.
+- Use Options pattern for configuration (never raw ctor params for config).
+- Avoid `Parallel.ForEach`; use async/await + Task.WhenAll.
+- Follow Orleans POCO grain + logging extension patterns when Orleans used.
+
+## Access Control
+- Sealed classes by default; private members by default; least privilege.
+- Justify public/protected/unsealed in XML docs.
+- Grain classes implement IGrainBase and are sealed.
+
+## Service Registration
+- Hierarchical feature extension methods; public only at boundaries; internal for implementation details.
+
+## Quality & Testing
+- High analyzer compliance; fix not suppress.
+- Provide unit tests for new behavior (example pattern with mocks).
+
+## Anti-Patterns (Avoid)
+- God classes with multiple responsibilities.
+- Blocking `.Result` / `.Wait()` on tasks.
+- Shared mutable static state without protection.
+- Over-exposed types / interfaces.
+- Inheriting from Orleans `Grain` base.
+
+## Related Guidelines
+Cross-reference logging, service-registration, orleans, serialization, naming, build, projects docs.
+
+## Further Reading
+Retain referenced official docs & principles (SOLID, KISS, DRY, cloud-native, Orleans, records, 12-factor).
