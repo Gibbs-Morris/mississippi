@@ -36,6 +36,7 @@ public interface IBrookHeadGrain : IGrainWithStringKey
     /// <summary>
     ///     Requests the grain to deactivate when idle, clearing any in-memory caches.
     /// </summary>
+    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
     [Alias("DeactivateAsync")]
     Task DeactivateAsync();
 }

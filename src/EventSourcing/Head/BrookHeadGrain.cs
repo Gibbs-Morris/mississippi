@@ -92,6 +92,8 @@ internal class BrookHeadGrain
         Exception ex
     )
     {
+        
+        // Deactivate to force a clean resubscribe on next activation
         this.DeactivateOnIdle();
         return Task.CompletedTask;
     }
@@ -101,9 +103,14 @@ internal class BrookHeadGrain
     /// </summary>
     /// <returns>The most recent persisted head position.</returns>
     public Task<BrookPosition> GetLatestPositionAsync() =>
+        
         // Fast path: return cached head. Writers publish updates on success.
         Task.FromResult(TrackedHeadPosition);
 
+    /// <summary>
+    ///     Gets the latest position by issuing a strongly consistent storage read and updating the cache if newer.
+    /// </summary>
+    /// <returns>The confirmed most recent persisted head position.</returns>
     public async Task<BrookPosition> GetLatestPositionConfirmedAsync()
     {
         // Strongly consistent path: read from storage and update cache if newer.
@@ -119,6 +126,7 @@ internal class BrookHeadGrain
     /// <summary>
     ///     Deactivate the grain on idle, used by tests to flush caches and lifecycle state.
     /// </summary>
+    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
     public Task DeactivateAsync()
     {
         this.DeactivateOnIdle();

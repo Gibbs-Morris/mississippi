@@ -50,6 +50,7 @@ public interface IBrookReaderGrain : IGrainWithStringKey
     /// <summary>
     ///     Requests the reader grain to deactivate when idle, clearing any caches in its slice readers.
     /// </summary>
+    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
     [Alias("DeactivateAsync")]
     Task DeactivateAsync();
 }

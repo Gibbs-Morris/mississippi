@@ -45,6 +45,8 @@ builder.UseOrleans(silo =>
             opt.ServiceId = "SampleApp";
         })
         .AddMemoryGrainStorage("PubSubStore");
+    
+    
     // Optional: raise Orleans internal logging verbosity
     silo.ConfigureLogging(lb =>
     {
@@ -72,153 +74,144 @@ ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>(
 ILogger logger = loggerFactory.CreateLogger("CrescentConsoleApp");
 string runId = Guid.NewGuid().ToString("N");
 logger.LogInformation("Run {RunId}: Host started", runId);
+// Resolve and log core services
+logger.LogInformation("Run {RunId}: Resolving Orleans grain factory", runId);
+IBrookGrainFactory aaa = host.Services.GetRequiredService<IBrookGrainFactory>();
+
+// Log Cosmos options
 try
 {
-    // Resolve and log core services
-    logger.LogInformation("Run {RunId}: Resolving Orleans grain factory", runId);
-    IBrookGrainFactory aaa = host.Services.GetRequiredService<IBrookGrainFactory>();
-
-    // Log Cosmos options
-    try
-    {
-        IOptions<BrookStorageOptions> brookOptions = host.Services.GetRequiredService<IOptions<BrookStorageOptions>>();
-        logger.LogInformation(
-            "Run {RunId}: Cosmos options DatabaseId={DatabaseId}, ContainerId={ContainerId}, LockContainer={LockContainer}, MaxEventsPerBatch={MaxEventsPerBatch}, QueryBatchSize={QueryBatchSize}",
-            runId,
-            brookOptions.Value.DatabaseId,
-            brookOptions.Value.ContainerId,
-            brookOptions.Value.LockContainerName,
-            brookOptions.Value.MaxEventsPerBatch,
-            brookOptions.Value.QueryBatchSize);
-    }
-    catch (Exception ex)
-    {
-        logger.LogWarning(ex, "Run {RunId}: Unable to resolve BrookStorageOptions", runId);
-    }
-
-    // Load persisted run state and decide mode (fresh or reuse)
-    string mode = Environment.GetEnvironmentVariable("CRESCENT_MODE") ?? builder.Configuration["mode"] ?? "fresh";
-    RunState runState = await RunStateStore.LoadAsync(logger);
-    BrookKey brookKey;
-    if (string.Equals(mode, "reuse", StringComparison.OrdinalIgnoreCase) &&
-        !string.IsNullOrWhiteSpace(runState.PrimaryType) &&
-        !string.IsNullOrWhiteSpace(runState.PrimaryId))
-    {
-        brookKey = new(runState.PrimaryType!, runState.PrimaryId!);
-        logger.LogInformation(
-            "Run {RunId}: Mode=reuse, Using persisted BrookKey={BrookKey} (state file: {Path})",
-            runId,
-            brookKey,
-            RunStateStore.FilePath);
-    }
-    else
-    {
-        brookKey = new($"test-brook-{Guid.NewGuid():N}", "sample-brook-001");
-        runState.PrimaryType = brookKey.Type;
-        runState.PrimaryId = brookKey.Id;
-        logger.LogInformation(
-            "Run {RunId}: Mode=fresh, Using new BrookKey={BrookKey} (state file: {Path})",
-            runId,
-            brookKey,
-            RunStateStore.FilePath);
-    }
-
-    // Scenario 1: Small batch append (10 small events)
-    logger.LogInformation("=== Scenario: SmallBatch_10x1KB ===");
-    await RunAppendScenarioAsync(
-        logger,
+    IOptions<BrookStorageOptions> brookOptions = host.Services.GetRequiredService<IOptions<BrookStorageOptions>>();
+    logger.LogInformation(
+        "Run {RunId}: Cosmos options DatabaseId={DatabaseId}, ContainerId={ContainerId}, LockContainer={LockContainer}, MaxEventsPerBatch={MaxEventsPerBatch}, QueryBatchSize={QueryBatchSize}",
         runId,
-        aaa,
-        brookKey,
-        "SmallBatch_10x1KB",
-        () => SampleEventFactory.CreateFixedSizeEvents(10, 1024, "application/json"));
-
-    // Scenario 2: Bulk 100 mixed-size events
-    logger.LogInformation("=== Scenario: Bulk_100_Mixed ===");
-    await RunAppendScenarioAsync(
-        logger,
-        runId,
-        aaa,
-        brookKey,
-        "Bulk_100_Mixed",
-        () => SampleEventFactory.CreateRangeSizeEvents(100, 512, 4096));
-
-    // Scenario 3: Large single event (~200KB)
-    logger.LogInformation("=== Scenario: LargeSingle_200KB ===");
-    await RunAppendScenarioAsync(
-        logger,
-        runId,
-        aaa,
-        brookKey,
-        "LargeSingle_200KB",
-        () => SampleEventFactory.CreateFixedSizeEvents(1, 200 * 1024));
-
-    // Scenario 4: Large batch near request limit (sized to push batching logic)
-    logger.LogInformation("=== Scenario: LargeBatch_200x5KB ===");
-    await RunAppendScenarioAsync(
-        logger,
-        runId,
-        aaa,
-        brookKey,
-        "LargeBatch_200x5KB",
-        () => SampleEventFactory.CreateFixedSizeEvents(200, 5 * 1024));
-
-    // Scenario 5: Max-op constrained (exactly 100 ops across batches)
-    logger.LogInformation("=== Scenario: OpsLimit_100_Mixed ===");
-    await RunAppendScenarioAsync(
-        logger,
-        runId,
-        aaa,
-        brookKey,
-        "OpsLimit_100_Mixed",
-        () => SampleEventFactory.CreateRangeSizeEvents(100, 1024, 4096));
-
-    // Read back and log
-    logger.LogInformation("=== Readback after initial appends ===");
-    await LogStreamReadAsync(logger, runId, aaa, brookKey);
-
-    // Scenario 6: Interleaved read/write on same stream
-    logger.LogInformation("=== Scenario: Interleaved Read/Write (single stream) ===");
-    await RunInterleavedReadWriteScenarioAsync(logger, runId, aaa, brookKey);
-
-    // Scenario 7: Multi-stream interleaved workload
-    logger.LogInformation("=== Scenario: Multi-stream interleaved workload ===");
-    List<StreamState> multiStates = await RunMultiStreamScenarioAsync(logger, runId, aaa);
-    // Persist multi-stream heads
-    foreach (StreamState s in multiStates)
-    {
-        runState.UpsertStream(s.Type, s.Id, s.Head);
-    }
-
-    // Scenario 8: Explicit cache flush (deactivate grains) then read again
-    logger.LogInformation("=== Scenario: Explicit cache flush + readback ===");
-    await FlushCachesAsync(logger, runId, aaa, brookKey);
-    await LogStreamReadAsync(logger, runId, aaa, brookKey);
-
-    // Scenario 9: Cold start resume: stop host, build a new host, start again, then read
-    logger.LogInformation("Run {RunId}: Performing cold restart of host...", runId);
-    await host.StopAsync();
-    using IHost host2 = BuildColdStartHost();
-    await host2.StartAsync();
-    logger.LogInformation("=== Scenario: Cold restart readback ===");
-    await LogStreamReadAsync(logger, runId, host2.Services.GetRequiredService<IBrookGrainFactory>(), brookKey, true);
-    // Persist final confirmed head for primary stream
-    BrookPosition confirmed = await host2.Services.GetRequiredService<IBrookGrainFactory>()
-        .GetBrookHeadGrain(brookKey)
-        .GetLatestPositionConfirmedAsync();
-    runState.PrimaryHead = confirmed.Value;
-    runState.UpsertStream(brookKey.Type, brookKey.Id, confirmed.Value);
-    await RunStateStore.SaveAsync(runState, logger);
-    await host2.StopAsync();
+        brookOptions.Value.DatabaseId,
+        brookOptions.Value.ContainerId,
+        brookOptions.Value.LockContainerName,
+        brookOptions.Value.MaxEventsPerBatch,
+        brookOptions.Value.QueryBatchSize);
 }
-catch (Exception e)
+catch (InvalidOperationException ex)
 {
-    ILogger loggerEx = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("CrescentConsoleApp");
-    loggerEx.LogError(e, "Run {RunId}: Unhandled exception", runId);
-    throw;
+    logger.LogWarning(ex, "Run {RunId}: Unable to resolve BrookStorageOptions", runId);
 }
 
+// Load persisted run state and decide mode (fresh or reuse)
+string mode = Environment.GetEnvironmentVariable("CRESCENT_MODE") ?? builder.Configuration["mode"] ?? "fresh";
+RunState runState = await RunStateStore.LoadAsync(logger);
+BrookKey brookKey;
+if (string.Equals(mode, "reuse", StringComparison.OrdinalIgnoreCase) &&
+    !string.IsNullOrWhiteSpace(runState.PrimaryType) &&
+    !string.IsNullOrWhiteSpace(runState.PrimaryId))
+{
+    brookKey = new(runState.PrimaryType!, runState.PrimaryId!);
+    logger.LogInformation(
+        "Run {RunId}: Mode=reuse, Using persisted BrookKey={BrookKey} (state file: {Path})",
+        runId,
+        brookKey,
+        RunStateStore.FilePath);
+}
+else
+{
+    brookKey = new($"test-brook-{Guid.NewGuid():N}", "sample-brook-001");
+    runState.PrimaryType = brookKey.Type;
+    runState.PrimaryId = brookKey.Id;
+    logger.LogInformation(
+        "Run {RunId}: Mode=fresh, Using new BrookKey={BrookKey} (state file: {Path})",
+        runId,
+        brookKey,
+        RunStateStore.FilePath);
+}
+
+// Scenario 1: Small batch append (10 small events)
+logger.LogInformation("=== Scenario: SmallBatch_10x1KB ===");
+await RunAppendScenarioAsync(
+    logger,
+    runId,
+    aaa,
+    brookKey,
+    "SmallBatch_10x1KB",
+    () => SampleEventFactory.CreateFixedSizeEvents(10, 1024, "application/json"));
+
+// Scenario 2: Bulk 100 mixed-size events
+logger.LogInformation("=== Scenario: Bulk_100_Mixed ===");
+await RunAppendScenarioAsync(
+    logger,
+    runId,
+    aaa,
+    brookKey,
+    "Bulk_100_Mixed",
+    () => SampleEventFactory.CreateRangeSizeEvents(100, 512, 4096));
+
+// Scenario 3: Large single event (~200KB)
+logger.LogInformation("=== Scenario: LargeSingle_200KB ===");
+await RunAppendScenarioAsync(
+    logger,
+    runId,
+    aaa,
+    brookKey,
+    "LargeSingle_200KB",
+    () => SampleEventFactory.CreateFixedSizeEvents(1, 200 * 1024));
+
+// Scenario 4: Large batch near request limit (sized to push batching logic)
+logger.LogInformation("=== Scenario: LargeBatch_200x5KB ===");
+await RunAppendScenarioAsync(
+    logger,
+    runId,
+    aaa,
+    brookKey,
+    "LargeBatch_200x5KB",
+    () => SampleEventFactory.CreateFixedSizeEvents(200, 5 * 1024));
+
+// Scenario 5: Max-op constrained (exactly 100 ops across batches)
+logger.LogInformation("=== Scenario: OpsLimit_100_Mixed ===");
+await RunAppendScenarioAsync(
+    logger,
+    runId,
+    aaa,
+    brookKey,
+    "OpsLimit_100_Mixed",
+    () => SampleEventFactory.CreateRangeSizeEvents(100, 1024, 4096));
+
+// Read back and log
+logger.LogInformation("=== Readback after initial appends ===");
+await LogStreamReadAsync(logger, runId, aaa, brookKey);
+
+// Scenario 6: Interleaved read/write on same stream
+logger.LogInformation("=== Scenario: Interleaved Read/Write (single stream) ===");
+await RunInterleavedReadWriteScenarioAsync(logger, runId, aaa, brookKey);
+
+// Scenario 7: Multi-stream interleaved workload
+logger.LogInformation("=== Scenario: Multi-stream interleaved workload ===");
+List<StreamState> multiStates = await RunMultiStreamScenarioAsync(logger, runId, aaa);
+// Persist multi-stream heads
+foreach (StreamState s in multiStates)
+{
+    runState.UpsertStream(s.Type, s.Id, s.Head);
+}
+
+// Scenario 8: Explicit cache flush (deactivate grains) then read again
+logger.LogInformation("=== Scenario: Explicit cache flush + readback ===");
+await FlushCachesAsync(logger, runId, aaa, brookKey);
+await LogStreamReadAsync(logger, runId, aaa, brookKey);
+
+// Scenario 9: Cold start resume: stop host, build a new host, start again, then read
+logger.LogInformation("Run {RunId}: Performing cold restart of host...", runId);
 await host.StopAsync();
+using IHost host2 = BuildColdStartHost();
+await host2.StartAsync();
+logger.LogInformation("=== Scenario: Cold restart readback ===");
+await LogStreamReadAsync(logger, runId, host2.Services.GetRequiredService<IBrookGrainFactory>(), brookKey, true);
+// Persist final confirmed head for primary stream
+BrookPosition confirmed = await host2.Services.GetRequiredService<IBrookGrainFactory>()
+    .GetBrookHeadGrain(brookKey)
+    .GetLatestPositionConfirmedAsync();
+runState.PrimaryHead = confirmed.Value;
+runState.UpsertStream(brookKey.Type, brookKey.Id, confirmed.Value);
+await RunStateStore.SaveAsync(runState, logger);
+await host2.StopAsync();
+await host.StopAsync();
+return;
 
 // -------- Local helpers (scenarios and readback) --------
 static IHost BuildColdStartHost()
@@ -396,7 +389,7 @@ static async Task RunInterleavedReadWriteScenarioAsync(
     // Read a tail subset
     int tailCount = 0;
     long tailStart = Math.Max(1, head1.Value - Math.Min(4, head1.Value));
-    await foreach (BrookEvent _ in reader.ReadEventsAsync(new(tailStart), head1, cancellationToken))
+    await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(new(tailStart), head1, cancellationToken))
     {
         tailCount++;
     }
@@ -417,7 +410,7 @@ static async Task RunInterleavedReadWriteScenarioAsync(
         try
         {
             int count = 0;
-            await foreach (BrookEvent _ in reader.ReadEventsAsync(new(1), head2, cancellationToken))
+            await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(new(1), head2, cancellationToken))
             {
                 count++;
             }
@@ -457,7 +450,7 @@ static async Task<List<StreamState>> RunMultiStreamScenarioAsync(
     int ca = 0, cb = 0;
     if (hA.Value >= 1)
     {
-        await foreach (BrookEvent _ in rA.ReadEventsAsync(new(1), hA))
+        await foreach (BrookEvent ignoredEvent in rA.ReadEventsAsync(new(1), hA))
         {
             ca++;
         }
@@ -469,7 +462,7 @@ static async Task<List<StreamState>> RunMultiStreamScenarioAsync(
 
     if (hB.Value >= 1)
     {
-        await foreach (BrookEvent _ in rB.ReadEventsAsync(new(1), hB))
+        await foreach (BrookEvent ignoredEvent in rB.ReadEventsAsync(new(1), hB))
         {
             cb++;
         }

@@ -76,9 +76,15 @@ internal class CosmosRetryPolicy : IRetryPolicy
                 TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
                 await Task.Delay(delay, cancellationToken);
             }
-            catch (Exception ex)
+            catch (CosmosException ex)
             {
-                throw new InvalidOperationException($"Operation failed after {MaxRetries + 1} attempts", ex);
+                // Non-transient Cosmos error - wrap with context and rethrow
+                throw new InvalidOperationException($"Cosmos operation failed with status {ex.StatusCode}", ex);
+            }
+            catch (TaskCanceledException ex)
+            {
+                // Cancellation should be honored by callers; wrap to provide consistent surface
+                throw new OperationCanceledException("Cosmos operation canceled", ex, cancellationToken);
             }
         }
 

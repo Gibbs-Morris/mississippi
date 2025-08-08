@@ -113,6 +113,7 @@ internal class BrookReaderGrain
     /// <summary>
     ///     Deactivate the stateless reader grain; this will allow any slice reader activations to expire.
     /// </summary>
+    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
     public Task DeactivateAsync()
     {
         this.DeactivateOnIdle();

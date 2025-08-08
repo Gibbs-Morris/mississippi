@@ -18,8 +18,8 @@ namespace Mississippi.EventSourcing.Writer;
 ///     Handles event appending and manages the writer lifecycle for a specific brook.
 /// </summary>
 internal class BrookWriterGrain
-    : IGrainBase,
-      IBrookWriterGrain
+    : IBrookWriterGrain,
+      IGrainBase
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookWriterGrain" /> class.

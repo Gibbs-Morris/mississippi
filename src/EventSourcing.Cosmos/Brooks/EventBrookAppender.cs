@@ -28,6 +28,7 @@ internal class EventBrookAppender : IEventBrookAppender
     /// <param name="options">The configuration options for brook storage.</param>
     /// <param name="eventMapper">The mapper for converting events to storage models.</param>
     /// <param name="recoveryService">The brook recovery service for head position management.</param>
+    /// <param name="logger">The logger used to record operational diagnostics.</param>
     public EventBrookAppender(
         ICosmosRepository repository,
         IDistributedLockManager lockManager,

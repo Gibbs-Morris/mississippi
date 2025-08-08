@@ -6,7 +6,10 @@ using Mississippi.EventSourcing.Abstractions;
 
 namespace Mississippi.CrescentConsoleApp;
 
-public static class SampleEventFactory
+/// <summary>
+///     Factory methods to generate synthetic <see cref="BrookEvent" /> payloads for sample scenarios.
+/// </summary>
+internal static class SampleEventFactory
 {
     private static readonly string[] MimeTypes =
     {
@@ -15,8 +18,11 @@ public static class SampleEventFactory
 
     private static readonly string[] Categories = { "Metric", "Alert", "Heartbeat", "Audit", "Diagnostic" };
 
-    private static readonly Random Rng = new(); // single RNG instance
-
+    /// <summary>
+    ///     Creates a set of random events with variable payload sizes and metadata.
+    /// </summary>
+    /// <param name="count">The number of events to create.</param>
+    /// <returns>An immutable array containing the generated events.</returns>
     public static ImmutableArray<BrookEvent> CreateEvents(
         int count = 10
     )
@@ -27,20 +33,23 @@ public static class SampleEventFactory
             builder.Add(CreateRandomEvent());
         }
 
-        return builder.MoveToImmutable(); // O(1) finalise
+        return builder.MoveToImmutable();
     }
 
+    /// <summary>
+    ///     Creates a set of events with a fixed payload size.
+    /// </summary>
+    /// <param name="count">The number of events to create.</param>
+    /// <param name="sizeBytes">The exact payload size in bytes for each event.</param>
+    /// <param name="contentType">Optional content type; defaults to application/octet-stream.</param>
+    /// <returns>An immutable array containing the generated events.</returns>
     public static ImmutableArray<BrookEvent> CreateFixedSizeEvents(
         int count,
         int sizeBytes,
         string? contentType = null
     )
     {
-        if (sizeBytes < 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(sizeBytes));
-        }
-
+        ArgumentOutOfRangeException.ThrowIfLessThan(sizeBytes, 1);
         ImmutableArray<BrookEvent>.Builder builder = ImmutableArray.CreateBuilder<BrookEvent>(count);
         for (int i = 0; i < count; i++)
         {
@@ -50,6 +59,14 @@ public static class SampleEventFactory
         return builder.MoveToImmutable();
     }
 
+    /// <summary>
+    ///     Creates a set of events with random payload sizes within the provided range.
+    /// </summary>
+    /// <param name="count">The number of events to create.</param>
+    /// <param name="minBytes">The inclusive lower bound for payload size.</param>
+    /// <param name="maxBytes">The inclusive upper bound for payload size.</param>
+    /// <param name="contentType">Optional content type; defaults to application/octet-stream.</param>
+    /// <returns>An immutable array containing the generated events.</returns>
     public static ImmutableArray<BrookEvent> CreateRangeSizeEvents(
         int count,
         int minBytes,
@@ -57,15 +74,12 @@ public static class SampleEventFactory
         string? contentType = null
     )
     {
-        if ((minBytes < 1) || (maxBytes < minBytes))
-        {
-            throw new ArgumentOutOfRangeException(nameof(minBytes));
-        }
-
+        ArgumentOutOfRangeException.ThrowIfLessThan(minBytes, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(minBytes, maxBytes);
         ImmutableArray<BrookEvent>.Builder builder = ImmutableArray.CreateBuilder<BrookEvent>(count);
         for (int i = 0; i < count; i++)
         {
-            int size = Rng.Next(minBytes, maxBytes + 1);
+            int size = RandomNumberGenerator.GetInt32(minBytes, maxBytes + 1);
             builder.Add(CreateEventOfSize(size, contentType));
         }
 
@@ -74,7 +88,8 @@ public static class SampleEventFactory
 
     private static BrookEvent CreateRandomEvent()
     {
-        byte[] payload = new byte[Rng.Next(512, 4_096)];
+        int payloadSize = RandomNumberGenerator.GetInt32(512, 4_096);
+        byte[] payload = new byte[payloadSize];
         RandomNumberGenerator.Fill(payload);
         return new()
         {
@@ -82,7 +97,7 @@ public static class SampleEventFactory
             Data = payload.ToImmutableArray(),
             DataContentType = Pick(MimeTypes),
             Source = GenerateSourceTag(),
-            Time = DateTimeOffset.UtcNow.AddSeconds(-Rng.Next(0, 86_400)),
+            Time = DateTimeOffset.UtcNow.AddSeconds(-RandomNumberGenerator.GetInt32(0, 86_400)),
             Type = Pick(Categories),
         };
     }
@@ -111,7 +126,7 @@ public static class SampleEventFactory
         Span<char> tag = stackalloc char[5];
         for (int i = 0; i < tag.Length; i++)
         {
-            tag[i] = pool[Rng.Next(pool.Length)];
+            tag[i] = pool[RandomNumberGenerator.GetInt32(pool.Length)];
         }
 
         return $"SRC-{new string(tag)}";
@@ -120,5 +135,5 @@ public static class SampleEventFactory
     private static T Pick<T>(
         T[] array
     ) =>
-        array[Rng.Next(array.Length)];
+        array[RandomNumberGenerator.GetInt32(array.Length)];
 }

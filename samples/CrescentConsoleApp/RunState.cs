@@ -1,68 +1,36 @@
-using System.Text.Json;
-
-using Microsoft.Extensions.Logging;
-
-
 namespace Mississippi.CrescentConsoleApp;
 
-internal static class RunStateStore
-{
-    public static readonly string FilePath = Path.Combine(AppContext.BaseDirectory, "crescent.state.json");
-
-    public static async Task<RunState> LoadAsync(
-        ILogger logger
-    )
-    {
-        try
-        {
-            if (File.Exists(FilePath))
-            {
-                using FileStream fs = File.OpenRead(FilePath);
-                RunState? s = await JsonSerializer.DeserializeAsync<RunState>(fs);
-                return s ?? new RunState();
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to load run state from {Path}", FilePath);
-        }
-
-        return new();
-    }
-
-    public static async Task SaveAsync(
-        RunState state,
-        ILogger logger
-    )
-    {
-        try
-        {
-            using FileStream fs = File.Open(FilePath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            await JsonSerializer.SerializeAsync(
-                fs,
-                state,
-                new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                });
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to save run state to {Path}", FilePath);
-        }
-    }
-}
-
+/// <summary>
+///     Represents persisted identifiers and known heads used by the console scenarios to resume work.
+/// </summary>
 internal sealed class RunState
 {
+    /// <summary>
+    ///     Gets or sets the primary stream type for the main scenario.
+    /// </summary>
     public string? PrimaryType { get; set; }
 
+    /// <summary>
+    ///     Gets or sets the primary stream identifier for the main scenario.
+    /// </summary>
     public string? PrimaryId { get; set; }
 
+    /// <summary>
+    ///     Gets or sets the last confirmed head position of the primary stream, if known.
+    /// </summary>
     public long? PrimaryHead { get; set; }
 
+    /// <summary>
+    ///     Gets or sets the collection of known stream heads captured during multi-stream scenarios.
+    /// </summary>
     public List<StreamState> Streams { get; set; } = new();
 
+    /// <summary>
+    ///     Adds a new stream head entry or updates the existing one.
+    /// </summary>
+    /// <param name="type">The stream type.</param>
+    /// <param name="id">The stream identifier.</param>
+    /// <param name="head">The latest known head position.</param>
     public void UpsertStream(
         string type,
         string id,
@@ -85,13 +53,4 @@ internal sealed class RunState
             existing.Head = head;
         }
     }
-}
-
-internal sealed class StreamState
-{
-    public string Type { get; set; } = string.Empty;
-
-    public string Id { get; set; } = string.Empty;
-
-    public long Head { get; set; }
 }

@@ -69,7 +69,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
             {
                 // Lease is already held; backoff with jitter and retry
                 int backoffMs = (int)Math.Min(2000, Math.Pow(2, attempt) * 100);
-                int jitter = Random.Shared.Next(0, 100);
+                int jitter = System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, 100);
                 await Task.Delay(backoffMs + jitter, cancellationToken);
             }
         }
