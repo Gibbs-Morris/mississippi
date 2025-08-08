@@ -1,0 +1,34 @@
+---
+description: Hierarchical service registration & options pattern
+globs: ["**/*.cs"]
+alwaysApply: false
+---
+# Service Registration and Configuration Pattern
+**Source:** .github/instructions/service-registration.instructions.md
+**Last synced:** 2025-08-08
+
+## Do this
+- Use feature-aligned `public static class ServiceRegistration` with `Add{Feature}()` extension methods.
+- Parent `AddFeature()` composes child internal registrations; only expose public at logical product boundaries.
+- Implement private core registration; layer public overloads (Action<TOptions>, IConfiguration, explicit params, validation variants).
+- Apply Options pattern everywhere (IOptions / Snapshot / Monitor); no raw config ctor params.
+- Provide sensible defaults in `{Feature}Options`; validate with `IValidateOptions` or `ValidateOnStart()`.
+- Use factory pattern (register clients via lambdas) not inline heavy work; async init via HostedService or Orleans lifecycle.
+- Follow DI property pattern for all services; keep registration synchronous.
+- Name options classes `{Feature}Options`; use consistent Add* naming.
+
+## Avoid this
+- Async operations or external calls during registration.
+- Public registration for internal sub-features.
+- Hard-coded values where configuration is appropriate.
+- Direct instantiation of heavy resources without factory/deferred patterns.
+
+## Checklist
+- [ ] Hierarchical structure respected
+- [ ] Core private + public overload pattern
+- [ ] Options classes with defaults + validation
+- [ ] No async/blocking external calls in registration
+- [ ] Only boundary methods public
+
+## Integration
+Coordinate with build rules, logging, Orleans, naming, serialization guidelines for consistency.
