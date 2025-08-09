@@ -192,6 +192,11 @@ Projects ending with `Tests` **automatically receive**:
 <InternalsVisibleTo Include="$(AssemblyName).Tests" />
 <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
 <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
+<InternalsVisibleTo Include="$(AssemblyName).L0Tests" />
+<InternalsVisibleTo Include="$(AssemblyName).L1Tests" />
+<InternalsVisibleTo Include="$(AssemblyName).L2Tests" />
+<InternalsVisibleTo Include="$(AssemblyName).L3Tests" />
+<InternalsVisibleTo Include="$(AssemblyName).L4Tests" />
 <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
 ```
 

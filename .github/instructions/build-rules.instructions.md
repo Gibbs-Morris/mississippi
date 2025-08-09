@@ -152,3 +152,4 @@ This document should be read in conjunction with:
 - **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization analyzer rules and build-time validation
 - **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For StyleCop analyzer enforcement and naming violation fixes
 - **Project File Management** (`.github/instructions/projects.instructions.md`) - For centralized package management compliance and project file validation
+- **Testing Strategy and Quality Gates** (`.github/instructions/testing.instructions.md`) - For L0–L4 testing levels, coverage targets, mutation testing, and CI expectations
