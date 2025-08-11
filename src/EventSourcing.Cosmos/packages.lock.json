@@ -10,9 +10,9 @@
       },
       "Microsoft.Azure.Cosmos": {
         "type": "Direct",
-        "requested": "[3.52.0, )",
-        "resolved": "3.52.0",
-        "contentHash": "NEjNpaO19gvJrXowqHFcYPSpro5+TNjHO/JpU4VXP37by2aU2RVnmgpZsWL1GUl5wCPZ4VIOUsP1lrHpfW8ADQ==",
+        "requested": "[3.52.1, )",
+        "resolved": "3.52.1",
+        "contentHash": "O6HwtqqJrmFTozJiVpeHnPlf4Pn2B4mTUawlLZEIFstF2SEcZVAeqZ+mqFJy2mhmHj6mO+10GkRAMi8K/Yda1g==",
         "dependencies": {
           "Azure.Core": "1.44.1",
           "Microsoft.Bcl.AsyncInterfaces": "6.0.0",
