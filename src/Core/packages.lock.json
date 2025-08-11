@@ -25,9 +25,9 @@
       },
       "Microsoft.Extensions.Features": {
         "type": "Direct",
-        "requested": "[9.0.6, )",
-        "resolved": "9.0.6",
-        "contentHash": "q3VizRxWXP185iqK4bFFsADAuLNaJX6IUsc3lE8/efc5xp1Wu7iYPgJPFUj2Ur4X0d7gfeHkprtY72ThmwA05Q=="
+        "requested": "[9.0.8, )",
+        "resolved": "9.0.8",
+        "contentHash": "oyPrbpRFa0uWik3PMwpK1mbAr+inZTEkaBsnMjHyT74YN0ot6knA7OnyFLg+oM4MwW5PZIS4HHW9efy0+gj+oQ=="
       },
       "Microsoft.Orleans.Sdk": {
         "type": "Direct",
