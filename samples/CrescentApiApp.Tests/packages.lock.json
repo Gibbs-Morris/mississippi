@@ -29,9 +29,9 @@
       },
       "Microsoft.AspNetCore.TestHost": {
         "type": "Direct",
-        "requested": "[9.0.6, )",
-        "resolved": "9.0.6",
-        "contentHash": "eP1VxDS29i5VGgsW+MQapoUBWT+a/QaXSezpHEnCF4rQb7X3EZxHhGYhOhP9smjyzFXlT4cYU7xcphmKHXMj2A=="
+        "requested": "[9.0.8, )",
+        "resolved": "9.0.8",
+        "contentHash": "tJwGDWsLQA2QRz+uqmkuAgjVyf7gqZsmOPro8StP0nf7ipYP8VhmcHmBbrTHU6ynuK6mw82ztJviwlHKBvrhxw=="
       },
       "Microsoft.CodeAnalysis.NetAnalyzers": {
         "type": "Direct",
