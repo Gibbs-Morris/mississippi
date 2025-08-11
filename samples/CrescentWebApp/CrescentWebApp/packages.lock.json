@@ -10,9 +10,9 @@
       },
       "Microsoft.AspNetCore.Components.WebAssembly.Server": {
         "type": "Direct",
-        "requested": "[9.0.6, )",
-        "resolved": "9.0.6",
-        "contentHash": "e8Y0+dSBpsfdYXUgBCHrzAeFywRFa5aog7O8l/VFwSAQCJJlcOKOus/RGRVHTLBARGdHfr9guSdMtSYXjFGOJg=="
+        "requested": "[9.0.8, )",
+        "resolved": "9.0.8",
+        "contentHash": "HelrX+9Q55A0uGUFsW0t5RbZaOn8pCUGpGk115ByrJQS8TKkKsOzMwhZEcVnZbdMYAhuj0TzHYhzW11LblFi8A=="
       },
       "Microsoft.CodeAnalysis.NetAnalyzers": {
         "type": "Direct",
