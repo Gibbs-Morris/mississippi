@@ -82,13 +82,13 @@
       },
       "TngTech.ArchUnitNET.xUnit": {
         "type": "Direct",
-        "requested": "[0.11.4, )",
-        "resolved": "0.11.4",
-        "contentHash": "sZX6vWXWPfx8zY053+vJ9jVqzGN+1ikMjixYxyW4sE/egA9kRoXaKv3NEgh96/tiB28KL+uo8h63bEMwOvZjmA==",
+        "requested": "[0.12.1, )",
+        "resolved": "0.12.1",
+        "contentHash": "q3bAPG34YsXZRBlQPZBrT649CBfdgUsqAA2oAH1KLFxyKwXZX09S4cKhEdb5J2DEgwW2DCdCVqALmCfGGZ5ioQ==",
         "dependencies": {
           "System.Net.Http": "4.3.4",
           "System.Text.RegularExpressions": "4.3.1",
-          "TngTech.ArchUnitNET": "0.11.4",
+          "TngTech.ArchUnitNET": "0.12.1",
           "xunit.assert": "2.4.1"
         }
       },
@@ -1141,8 +1141,8 @@
       },
       "TngTech.ArchUnitNET": {
         "type": "Transitive",
-        "resolved": "0.11.4",
-        "contentHash": "mJmUchjIrk8XQAU30IEPrbAWm/24wDzHEgbuAu7oEwiAGkv8GWkZrtbOlI5vLKrbmyLOGpu5xLah29FXAeFChA==",
+        "resolved": "0.12.1",
+        "contentHash": "EagEpR8gcvbf1rNw+yf2bG9oYEJpYb2x2UVFoTTdxehcCwv+qaizgGx3fyFQIjZX1IbDnORf8b8CsGJgn8sV4Q==",
         "dependencies": {
           "CycleDetection": "2.0.0",
           "JetBrains.Annotations": "2020.3.0",
