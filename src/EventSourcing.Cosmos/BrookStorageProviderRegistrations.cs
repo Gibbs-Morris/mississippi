@@ -5,6 +5,7 @@ using Azure.Storage.Blobs;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Abstractions.Mapping;
@@ -51,42 +52,18 @@ public static class BrookStorageProviderRegistrations
         // Register storage provider interfaces using the helper
         services.RegisterBrookStorageProvider<BrookStorageProvider>();
 
-        // Configure Cosmos DB Container factory
+        // Ensure Cosmos DB resources are created asynchronously on host start
+        services.AddHostedService<CosmosContainerInitializer>();
+
+        // Configure Cosmos DB Container factory (synchronous, no blocking waits)
         services.AddSingleton<Container>(provider =>
         {
             CosmosClient cosmosClient = provider.GetRequiredService<CosmosClient>();
             BrookStorageOptions options = provider.GetRequiredService<IOptions<BrookStorageOptions>>().Value;
 
-            // Create database if it doesn't exist
-            Database database = cosmosClient.CreateDatabaseIfNotExistsAsync(options.DatabaseId)
-                .GetAwaiter()
-                .GetResult();
-
-            // Check if container exists and has the correct partition key path
-            try
-            {
-                Container existingContainer = database.GetContainer(options.ContainerId);
-                ContainerResponse? containerProperties =
-                    existingContainer.ReadContainerAsync().GetAwaiter().GetResult();
-
-                // If the partition key path is not what we expect, fail fast instead of deleting user data
-                if (containerProperties.Resource.PartitionKeyPath != "/brookPartitionKey")
-                {
-                    throw new InvalidOperationException(
-                        $"Existing Cosmos container '{options.ContainerId}' has partition key path '{containerProperties.Resource.PartitionKeyPath}', " +
-                        "but '/brookPartitionKey' is required. Refuse to delete existing container. Please provision a container with the correct partition key.");
-                }
-            }
-            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-            {
-                // Container doesn't exist, which is fine
-            }
-
-            // Create container if it doesn't exist
-            Container container = database.CreateContainerIfNotExistsAsync(options.ContainerId, "/brookPartitionKey")
-                .GetAwaiter()
-                .GetResult();
-            return container;
+            // Return a handle; CosmosContainerInitializer will ensure existence on startup
+            Database database = cosmosClient.GetDatabase(options.DatabaseId);
+            return database.GetContainer(options.ContainerId);
         });
         return services;
     }
@@ -173,5 +150,64 @@ public static class BrookStorageProviderRegistrations
     {
         services.Configure<BrookStorageOptions>(configuration);
         return services.AddCosmosBrookStorageProvider();
+    }
+
+    // Performs asynchronous Cosmos resource initialization without synchronous waits in DI
+    private sealed class CosmosContainerInitializer : IHostedService
+    {
+        private readonly CosmosClient cosmosClient;
+
+        private readonly IOptions<BrookStorageOptions> options;
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1144:Unused private members should be removed", Justification = "Constructed via DI reflection")]
+        public CosmosContainerInitializer(
+            CosmosClient cosmosClient,
+            IOptions<BrookStorageOptions> options
+        )
+        {
+            this.cosmosClient = cosmosClient;
+            this.options = options;
+        }
+
+        public async Task StartAsync(
+            CancellationToken cancellationToken
+        )
+        {
+            BrookStorageOptions o = options.Value;
+
+            // Ensure database exists
+            DatabaseResponse dbResponse = await cosmosClient.CreateDatabaseIfNotExistsAsync(
+                o.DatabaseId,
+                cancellationToken: cancellationToken);
+            Database database = dbResponse.Database;
+
+            // Validate existing container partition key path if present
+            try
+            {
+                Container existingContainer = database.GetContainer(o.ContainerId);
+                ContainerResponse containerProperties =
+                    await existingContainer.ReadContainerAsync(cancellationToken: cancellationToken);
+                if (containerProperties.Resource.PartitionKeyPath != "/brookPartitionKey")
+                {
+                    throw new InvalidOperationException(
+                        $"Existing Cosmos container '{o.ContainerId}' has partition key path '{containerProperties.Resource.PartitionKeyPath}', but '/brookPartitionKey' is required. Refuse to delete existing container. Please provision a container with the correct partition key.");
+                }
+            }
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                // Container doesn't exist, proceed to create
+            }
+
+            // Ensure container exists
+            await database.CreateContainerIfNotExistsAsync(
+                o.ContainerId,
+                "/brookPartitionKey",
+                cancellationToken: cancellationToken);
+        }
+
+        public Task StopAsync(
+            CancellationToken cancellationToken
+        ) =>
+            Task.CompletedTask;
     }
 }

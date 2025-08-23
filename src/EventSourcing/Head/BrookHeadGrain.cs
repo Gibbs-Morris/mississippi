@@ -92,7 +92,6 @@ internal class BrookHeadGrain
         Exception ex
     )
     {
-        
         // Deactivate to force a clean resubscribe on next activation
         this.DeactivateOnIdle();
         return Task.CompletedTask;
@@ -103,7 +102,7 @@ internal class BrookHeadGrain
     /// </summary>
     /// <returns>The most recent persisted head position.</returns>
     public Task<BrookPosition> GetLatestPositionAsync() =>
-        
+
         // Fast path: return cached head. Writers publish updates on success.
         Task.FromResult(TrackedHeadPosition);
 

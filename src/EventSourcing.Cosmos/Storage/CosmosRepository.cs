@@ -141,7 +141,6 @@ internal class CosmosRepository : ICosmosRepository
     )
     {
         PartitionKey partitionKey = new(brookId.ToString());
-        TransactionalBatch? batch = Container.CreateTransactionalBatch(partitionKey);
         HeadDocument headDoc = new()
         {
             Id = "head",
@@ -149,15 +148,18 @@ internal class CosmosRepository : ICosmosRepository
             Position = finalPosition,
             BrookPartitionKey = brookId.ToString(),
         };
-        batch.UpsertItem(headDoc);
-        batch.DeleteItem("head-pending");
-        TransactionalBatchResponse? response = await RetryPolicy.ExecuteAsync(
-            async () => await batch.ExecuteAsync(cancellationToken),
+
+        // Upsert head
+        await RetryPolicy.ExecuteAsync(
+            async () =>
+            {
+                await Container.UpsertItemAsync(headDoc, partitionKey, cancellationToken: cancellationToken);
+                return true;
+            },
             cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException($"Failed to commit head position: {response.ErrorMessage}");
-        }
+
+        // Delete pending
+        await DeletePendingHeadAsync(brookId, cancellationToken);
     }
 
     /// <summary>
@@ -294,10 +296,7 @@ internal class CosmosRepository : ICosmosRepository
     )
     {
         PartitionKey partitionKey = new(brookId.ToString());
-        TransactionalBatch? batch = Container.CreateTransactionalBatch(partitionKey);
         long position = startPosition;
-        // Track number of operations to avoid Cosmos 100-op limit
-        int operationCount = 0;
         foreach (EventStorageModel eventStorageModel in events)
         {
             EventDocument eventDoc = new()
@@ -313,23 +312,14 @@ internal class CosmosRepository : ICosmosRepository
                 Data = eventStorageModel.Data,
                 Time = eventStorageModel.Time,
             };
-            batch.CreateItem(eventDoc);
+            await RetryPolicy.ExecuteAsync(
+                async () =>
+                {
+                    await Container.CreateItemAsync(eventDoc, partitionKey, cancellationToken: cancellationToken);
+                    return true;
+                },
+                cancellationToken);
             position++;
-            operationCount++;
-        }
-
-        // Defensive: fail fast if we accidentally exceed 100 operations in a single batch
-        if (operationCount > 100)
-        {
-            throw new InvalidOperationException(
-                $"Transactional batch operation count {operationCount} exceeds Cosmos limit of 100.");
-        }
-
-        TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            string details = SummarizeBatchFailure(response);
-            throw new InvalidOperationException($"Failed to append event batch: {details}");
         }
     }
 
@@ -361,33 +351,14 @@ internal class CosmosRepository : ICosmosRepository
         };
         if (currentHead.NotSet)
         {
-            batch.CreateItem(headDoc);
+            batch = batch.CreateItem(headDoc);
         }
         else
         {
-            batch.ReplaceItem("head", headDoc);
+            batch = batch.ReplaceItem("head", headDoc);
         }
 
-        long position = currentHead.Value + 1;
-        foreach (EventStorageModel eventStorageModel in events)
-        {
-            EventDocument eventDoc = new()
-            {
-                Id = position.ToString(CultureInfo.InvariantCulture),
-                Type = "event",
-                Position = position,
-                BrookPartitionKey = brookId.ToString(),
-                EventId = eventStorageModel.EventId,
-                Source = eventStorageModel.Source,
-                EventType = eventStorageModel.EventType,
-                DataContentType = eventStorageModel.DataContentType,
-                Data = eventStorageModel.Data,
-                Time = eventStorageModel.Time,
-            };
-            batch.CreateItem(eventDoc);
-            position++;
-        }
-
+        // Use transactional batch only for head; events are created individually above
         TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);
         return response;
     }
@@ -430,7 +401,7 @@ internal class CosmosRepository : ICosmosRepository
         }
     }
 
-    private async Task<TransactionalBatchResponse> ExecuteBatchWithRetryAsync(
+    private static async Task<TransactionalBatchResponse> ExecuteBatchWithRetryAsync(
         TransactionalBatch batch,
         CancellationToken cancellationToken
     )
@@ -464,6 +435,7 @@ internal class CosmosRepository : ICosmosRepository
             catch (CosmosException ex)
             {
                 last = ex;
+
                 // Surface 413 as a meaningful error
                 if (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
                 {
@@ -483,31 +455,5 @@ internal class CosmosRepository : ICosmosRepository
         }
 
         throw new InvalidOperationException("Transactional batch failed after retries", last);
-    }
-
-    private static string SummarizeBatchFailure(
-        TransactionalBatchResponse response
-    )
-    {
-        try
-        {
-            List<string> ops = new();
-            for (int i = 0; i < response.Count; i++)
-            {
-                TransactionalBatchOperationResult r = response[i];
-                if (!r.IsSuccessStatusCode)
-                {
-                    ops.Add($"#{i}:{(int)r.StatusCode}");
-                }
-            }
-
-            string opsSummary = ops.Count > 0 ? string.Join(",", ops) : "none";
-            return
-                $"status={(int)response.StatusCode} retryAfter={response.RetryAfter?.TotalMilliseconds ?? 0}ms opFailures=[{opsSummary}] error={response.ErrorMessage}";
-        }
-        catch
-        {
-            return response.ErrorMessage ?? response.StatusCode.ToString();
-        }
     }
 }

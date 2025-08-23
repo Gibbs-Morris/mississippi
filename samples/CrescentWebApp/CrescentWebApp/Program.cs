@@ -5,8 +5,15 @@ using _Imports = Mississippi.CrescentWebApp.Client._Imports;
 
 namespace Mississippi.CrescentWebApp;
 
+/// <summary>
+///     Entry point for the Crescent server-side host which serves the Blazor WebAssembly client.
+/// </summary>
 internal static class Program
 {
+    /// <summary>
+    ///     Application entry point.
+    /// </summary>
+    /// <param name="args">Command-line arguments.</param>
     public static void Main(
         string[] args
     )

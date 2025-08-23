@@ -1,4 +1,6 @@
-﻿using Azure;
+﻿using System.Security.Cryptography;
+
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
@@ -55,6 +57,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
         }
 
         BlobLeaseClient? leaseClient = blobClient.GetBlobLeaseClient();
+
         // Bounded retries for lease conflicts
         const int maxAcquireAttempts = 5;
         Response<BlobLease>? lease = null;
@@ -69,7 +72,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
             {
                 // Lease is already held; backoff with jitter and retry
                 int backoffMs = (int)Math.Min(2000, Math.Pow(2, attempt) * 100);
-                int jitter = System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, 100);
+                int jitter = RandomNumberGenerator.GetInt32(0, 100);
                 await Task.Delay(backoffMs + jitter, cancellationToken);
             }
         }

@@ -74,6 +74,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
         try
         {
             await LeaseClient.RenewAsync(cancellationToken: cancellationToken);
+
             // Use the actual completion time to avoid drifting too close to expiration
             lastRenewalTime = DateTimeOffset.UtcNow;
         }

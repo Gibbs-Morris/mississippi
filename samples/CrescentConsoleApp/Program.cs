@@ -45,8 +45,7 @@ builder.UseOrleans(silo =>
             opt.ServiceId = "SampleApp";
         })
         .AddMemoryGrainStorage("PubSubStore");
-    
-    
+
     // Optional: raise Orleans internal logging verbosity
     silo.ConfigureLogging(lb =>
     {
@@ -74,6 +73,7 @@ ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>(
 ILogger logger = loggerFactory.CreateLogger("CrescentConsoleApp");
 string runId = Guid.NewGuid().ToString("N");
 logger.LogInformation("Run {RunId}: Host started", runId);
+
 // Resolve and log core services
 logger.LogInformation("Run {RunId}: Resolving Orleans grain factory", runId);
 IBrookGrainFactory aaa = host.Services.GetRequiredService<IBrookGrainFactory>();
@@ -363,6 +363,7 @@ static async Task LogStreamReadAsync(
         {
             attempt++;
             logger.LogWarning(ex, "Run {RunId}: Read enumeration aborted; retrying once from start", runId);
+
             // loop and retry full read once
         }
     }
@@ -386,6 +387,7 @@ static async Task RunInterleavedReadWriteScenarioAsync(
         null,
         cancellationToken);
     logger.LogInformation("Run {RunId} [Interleave]: Head after write1={Head}", runId, head1.Value);
+
     // Read a tail subset
     int tailCount = 0;
     long tailStart = Math.Max(1, head1.Value - Math.Min(4, head1.Value));
@@ -450,9 +452,23 @@ static async Task<List<StreamState>> RunMultiStreamScenarioAsync(
     int ca = 0, cb = 0;
     if (hA.Value >= 1)
     {
-        await foreach (BrookEvent ignoredEvent in rA.ReadEventsAsync(new(1), hA))
+        int attemptsA = 0;
+        while (true)
         {
-            ca++;
+            try
+            {
+                ca = 0;
+                await foreach (BrookEvent ignoredEvent in rA.ReadEventsAsync(new(1), hA))
+                {
+                    ca++;
+                }
+                break;
+            }
+            catch (EnumerationAbortedException) when (attemptsA == 0)
+            {
+                attemptsA++;
+                // retry once
+            }
         }
     }
     else
@@ -462,9 +478,23 @@ static async Task<List<StreamState>> RunMultiStreamScenarioAsync(
 
     if (hB.Value >= 1)
     {
-        await foreach (BrookEvent ignoredEvent in rB.ReadEventsAsync(new(1), hB))
+        int attemptsB = 0;
+        while (true)
         {
-            cb++;
+            try
+            {
+                cb = 0;
+                await foreach (BrookEvent ignoredEvent in rB.ReadEventsAsync(new(1), hB))
+                {
+                    cb++;
+                }
+                break;
+            }
+            catch (EnumerationAbortedException) when (attemptsB == 0)
+            {
+                attemptsB++;
+                // retry once
+            }
         }
     }
     else
@@ -500,6 +530,7 @@ static async Task FlushCachesAsync(
     logger.LogInformation("Run {RunId} [Flush]: Requesting grain deactivations for {BrookKey}", runId, brookKey);
     await brookGrainFactory.GetBrookHeadGrain(brookKey).DeactivateAsync();
     await brookGrainFactory.GetBrookReaderGrain(brookKey).DeactivateAsync();
+
     // Also trigger slice grains to deactivate: touch a few ranges and request deactivation
     BrookPosition head = await brookGrainFactory.GetBrookHeadGrain(brookKey).GetLatestPositionAsync();
     if (head.Value > 0)
