@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 using Azure.Storage.Blobs;
@@ -159,7 +160,10 @@ public static class BrookStorageProviderRegistrations
 
         private readonly IOptions<BrookStorageOptions> options;
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1144:Unused private members should be removed", Justification = "Constructed via DI reflection")]
+        [SuppressMessage(
+            "Major Code Smell",
+            "S1144:Unused private members should be removed",
+            Justification = "Constructed via DI reflection")]
         public CosmosContainerInitializer(
             CosmosClient cosmosClient,
             IOptions<BrookStorageOptions> options
