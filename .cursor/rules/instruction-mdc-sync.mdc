@@ -1,0 +1,19 @@
+// sync: source ← MD:.github/instructions/instruction-mdc-sync.instructions.md ; synced: 2025-08-24 ; commit: {short-sha}
+
+name: Instruction-MDC Sync
+summary: Keep instruction Markdown and Cursor MDC rules mirrored. Update both in the same change.
+
+rules:
+  - The Markdown under .github/instructions/ is the canonical source of truth.
+  - Any change to an instruction file must be mirrored into the corresponding .mdc rule file(s) in the same commit/PR.
+  - Any change to a .mdc rule file must be mirrored back into the corresponding instruction Markdown in the same commit/PR.
+  - Maintain semantic parity; formatting/phrasing may adapt to the medium but rules must not diverge.
+  - Add sync metadata comments in both files with date and short SHA.
+  - Keep a clear section/block mapping so reviewers can verify parity quickly.
+  - If a block is intentionally unsynced, mark it with "sync: excluded" and justify it.
+
+checklist:
+  - instruction Markdown changed → updated .mdc file(s) included
+  - .mdc file changed → updated instruction Markdown included
+  - sync metadata updated in both files (date + short SHA + counterpart reference)
+  - parity verified; no orphaned or divergent rules
