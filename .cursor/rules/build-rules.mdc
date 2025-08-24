@@ -30,7 +30,7 @@ alwaysApply: true
 
 ## Scripts Map
 - build: build-mississippi-solution.ps1, build-sample-solution.ps1
-- test: unit-test-mississippi-solution.ps1, unit-test-sample-solution.ps1
+- test: unit-test-mississippi-solution.ps1, unit-test-sample-solution.ps1, test-project-quality.ps1
 - mutation: mutation-test-mississippi-solution.ps1
 - cleanup: clean-up-*.ps1
 - final: final-build-solutions.ps1, orchestrate-solutions.ps1, go.ps1
@@ -40,3 +40,19 @@ Install via `dotnet tool restore`: GitVersion, SLNGen, ReSharper CLI, Stryker.NE
 
 ## Enforcement
 Fail PR if any gate fails. Never suppress instead of fixing. Cross-reference other guideline files for specifics.
+
+## Quick per-project quality check
+Use `scripts/test-project-quality.ps1` to validate a single test project:
+
+```powershell
+# Tests + coverage only (fast)
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation
+
+# Tests + coverage + Stryker mutation score
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject>
+
+# If source cannot be inferred from <ProjectReference>
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SourceProject <path-to-src.csproj>
+```
+
+The script prints machine-readable lines (RESULT, TEST_TOTAL, TEST_PASSED, TEST_FAILED, TEST_SKIPPED, COVERAGE, MUTATION_SCORE, MUTATION_RESULT) to help AI tools parse output.

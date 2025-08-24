@@ -44,6 +44,7 @@ The `scripts/` folder contains PowerShell automation for the build-test-quality 
 - **`unit-test-mississippi-solution.ps1`** - Executes all unit and integration tests for Mississippi
 - **`unit-test-sample-solution.ps1`** - Runs minimal tests for sample applications (examples only)
 - **`mutation-test-mississippi-solution.ps1`** - Performs mutation testing with Stryker.NET (Mississippi ONLY)
+- **`test-project-quality.ps1`** - Quickly evaluate a single test project: runs `dotnet test` with coverage and optionally Stryker mutation testing. Prints a concise, machine-readable summary (RESULT, TEST_*, COVERAGE, MUTATION_SCORE) to aid AI tools.
 
 ### Quality Scripts
 - **`clean-up-mississippi-solution.ps1`** - Applies ReSharper code formatting and inspections
@@ -83,6 +84,21 @@ pwsh ./scripts/unit-test-mississippi-solution.ps1
 # Run mutation tests for quality validation (Mississippi ONLY)
 pwsh ./scripts/mutation-test-mississippi-solution.ps1
 ```
+
+#### Per-project quick quality check (recommended during iteration)
+```powershell
+# Tests + coverage only (fast)
+pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
+
+# Tests + coverage + Stryker mutation score
+pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
+
+# If the source project cannot be inferred from <ProjectReference>
+pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SourceProject ./src/Core.Abstractions/Core.Abstractions.csproj
+```
+Notes:
+- `-TestProject` accepts a test project name (one test project per assembly) or a path to the `.csproj`/directory.
+- Exit code is non-zero if tests fail or Stryker breaks thresholds.
 
 ### 4. Final Validation
 ```powershell

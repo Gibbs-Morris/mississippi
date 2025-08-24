@@ -37,6 +37,7 @@ Once the **Mississippi** solution is healthy, run the equivalent *sample* script
 | **build-mississippi-solution.ps1** | Restore dependencies and compile `mississippi.slnx` in the chosen configuration (default `Release`). | `pwsh ./scripts/build-mississippi-solution.ps1 -Configuration Debug` |
 | **unit-test-mississippi-solution.ps1** | Restore, then execute all unit & integration tests inside the Mississippi solution. Results are placed under `./test-results`. | `pwsh ./scripts/unit-test-mississippi-solution.ps1` |
 | **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` via **SLNGen**, then run **Stryker.NET** mutation analysis to measure test robustness. | `pwsh ./scripts/mutation-test-mississippi-solution.ps1` |
+| **test-project-quality.ps1** | Run tests with coverage for a single test project and (optionally) run Stryker to compute a mutation score. Prints a concise, machine-readable summary for LLMs. | `pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests` |
 | **clean-up-mississippi-solution.ps1** | Generate a temporary `.sln`, then apply **ReSharper CleanupCode** with the repo-wide settings for formatting, ordering and inspections. Run before committing. | `pwsh ./scripts/clean-up-mississippi-solution.ps1` |
 | **build-sample-solution.ps1** | Build the sample applications contained in `samples.slnx`. | `pwsh ./scripts/build-sample-solution.ps1` |
 | **unit-test-sample-solution.ps1** | Execute the tests that accompany the samples—no mutation testing here. | `pwsh ./scripts/unit-test-sample-solution.ps1` |
@@ -55,6 +56,8 @@ Windows / PowerShell:
 ```pwsh
 pwsh ./scripts/unit-test-mississippi-solution.ps1 -Configuration Debug
 pwsh ./scripts/final-build-solutions.ps1            # Release by default
+pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation   # fast test+coverage
+pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests                  # include mutation
 ```
 
 Bash (if PowerShell 7 is installed):
@@ -84,5 +87,52 @@ These folders are git-ignored but preserved between steps; feel free to parse or
 • **Return-code contract**: every script exits **non-zero** on any error; the orchestrator stops at the first failing step. Check `$LASTEXITCODE`.
 • **Output folders documented above** are stable—agents can consume them.
 • **CI-parity script**: `orchestrate-solutions.ps1` reproduces the same steps our GitHub Actions pipeline runs; execute it locally (e.g., from Cursor or GitHub Copilot) to verify changes before opening a PR.
+
+---
+## test-project-quality.ps1
+
+Purpose: Quickly evaluate a single test project’s quality by running `dotnet test` with code coverage and (optionally) Stryker mutation testing. The script prints a compact summary that tools like Cursor or Copilot can parse.
+
+Usage:
+
+```pwsh
+# Fast: tests + coverage only
+pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
+
+# Full: tests + coverage + mutation
+pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
+
+# If inference fails or multiple <ProjectReference>s exist, provide the source project explicitly
+pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SourceProject ./src/Core.Abstractions/Core.Abstractions.csproj
+```
+
+Parameters:
+- `-TestProject <name|path>`: Required. Accepts the test project name (e.g., `Core.Abstractions.Tests`) or path to the `.csproj`/directory. Convention is one test project per source assembly.
+- `-SkipMutation`: Optional. When set, skips Stryker to speed up feedback.
+- `-Configuration <Debug|Release>`: Optional. Defaults to `Release`.
+- `-SourceProject <path>`: Optional. Overrides inferred source project when the test `.csproj` references multiple projects.
+- `-NoBuild`: Optional. Passes `--no-build` to `dotnet test`.
+
+Summary output (machine-readable):
+
+```
+=== QUALITY SUMMARY (<TestProjectName>) ===
+RESULT: PASS|FAIL
+TEST_TOTAL: <n>
+TEST_PASSED: <n>
+TEST_FAILED: <n>
+TEST_SKIPPED: <n>
+COVERAGE: <percent>%
+MUTATION_SCORE: <percent>%|N/A
+MUTATION_RESULT: PASS|FAIL
+```
+
+Artifacts:
+- TRX and Cobertura files under `./test-results/<TestProjectName>/`
+- Stryker reports under `./StrykerOutput/<timestamp>/reports/`
+
+Exit codes:
+- `0` when tests pass and (if run) mutation completes without breaking thresholds
+- `1` on any error, test failure, or Stryker failure/break
 
 Happy building! :rocket: 

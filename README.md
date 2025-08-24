@@ -63,6 +63,22 @@ The framework includes comprehensive testing:
 
 Test results and coverage reports are generated in the `test-results` directory.
 
+### Quick per-project quality check
+For a fast loop on a single test project, use the helper script:
+
+```powershell
+# Tests + coverage only (fast)
+./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
+
+# Tests + coverage + Stryker mutation score
+./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
+```
+
+Notes:
+- `-TestProject` can be the project name (convention: one test project per assembly) or a path to the `.csproj`.
+- If the source project can’t be inferred from `<ProjectReference>`, set `-SourceProject` to the target `.csproj`.
+- The script prints a concise summary (RESULT, COVERAGE, MUTATION_SCORE) that tools like Cursor or Copilot can parse easily.
+
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for full details.
 
