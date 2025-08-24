@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Cosmos.Tests.Streams;
+namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 
 /// <summary>
 ///     Test class for BrookRecoveryService functionality.
