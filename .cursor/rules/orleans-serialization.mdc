@@ -3,7 +3,6 @@ description: Orleans Serialization Best Practices
 globs: ["**/*.cs"]
 alwaysApply: false
 ---
-// sync: source 6 MD:.github/instructions/orleans-serialization.instructions.md ; synced: 2025-08-24 ; commit: be73e40
 # Orleans Serialization Best Practices
 **Source:** .github/instructions/orleans-serialization.instructions.md
 **Last synced:** 2025-08-24

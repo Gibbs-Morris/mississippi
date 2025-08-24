@@ -3,7 +3,6 @@ description: Service Registration and Configuration Pattern
 globs: ["**/*.cs"]
 alwaysApply: false
 ---
-// sync: source 6 MD:.github/instructions/service-registration.instructions.md ; synced: 2025-08-24 ; commit: be73e40
 # Service Registration and Configuration Pattern
 **Source:** .github/instructions/service-registration.instructions.md
 **Last synced:** 2025-08-24

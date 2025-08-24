@@ -2,7 +2,6 @@
 description: Instruction ↔ Cursor MDC Sync Policy
 alwaysApply: true
 ---
-// sync: source 6 MD:.github/instructions/instruction-mdc-sync.instructions.md ; synced: 2025-08-24 ; commit: be73e40
 # Instruction ↔ Cursor MDC Sync Policy
 **Source:** .github/instructions/instruction-mdc-sync.instructions.md
 **Last synced:** 2025-08-24

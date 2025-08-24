@@ -2,7 +2,6 @@
 description: Project File Management Best Practices
 alwaysApply: true
 ---
-// sync: source 6 MD:.github/instructions/projects.instructions.md ; synced: 2025-08-24 ; commit: be73e40
 # Project File Management Best Practices
 **Source:** .github/instructions/projects.instructions.md
 **Last synced:** 2025-08-24

@@ -2,7 +2,6 @@
 description: Build Rules and Quality Standards
 alwaysApply: true
 ---
-// sync: source 6 MD:.github/instructions/build-rules.instructions.md ; synced: 2025-08-24 ; commit: be73e40
 # Build Rules and Quality Standards
 **Source:** .github/instructions/build-rules.instructions.md
 **Last synced:** 2025-08-24
@@ -11,6 +10,33 @@ alwaysApply: true
 # Build Rules and Quality Standards
 
 This project maintains **zero tolerance for warnings** and requires comprehensive test coverage. All code changes must pass the full quality pipeline before being considered complete.
+
+## 🚨 CRITICAL RULE: ZERO WARNINGS POLICY 🚨
+
+**⚠️ ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes ⚠️**
+
+### The Rule
+- **NEVER disable warnings** - Fix the underlying code issues instead
+- **NEVER suppress analyzer rules** - Improve the code to satisfy the analyzer
+- **NEVER use `#pragma warning disable`** without explicit approval and exhaustive justification
+- **NEVER add `[SuppressMessage]` attributes** to hide violations
+- **ALWAYS fix compiler warnings** - They indicate real problems in your code
+- **ALWAYS fix analyzer warnings** - They indicate code quality issues
+- **ALWAYS fix StyleCop violations** - They indicate style inconsistencies
+
+### Why This Matters
+- **Warnings are treated as errors** in CI builds with `--warnaserror`
+- **Builds will fail** if any warnings are present
+- **PRs will be blocked** until all warnings are resolved
+- **Code quality degrades** when warnings are suppressed instead of fixed
+- **Technical debt accumulates** when issues are hidden rather than addressed
+
+### What To Do Instead
+1. **Read the warning message** - Understand what the analyzer is telling you
+2. **Fix the underlying issue** - Improve your code to satisfy the rule
+3. **Refactor if necessary** - Sometimes warnings indicate design problems
+4. **Ask for help** - If you're unsure how to fix a warning, ask the team
+5. **Document exceptions** - Only suppress warnings with explicit approval and justification
 
 ## Quality Standards
 

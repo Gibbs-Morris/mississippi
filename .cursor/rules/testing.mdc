@@ -2,7 +2,6 @@
 description: Testing Strategy and Quality Gates
 alwaysApply: true
 ---
-// sync: source 6 MD:.github/instructions/testing.instructions.md ; synced: 2025-08-24 ; commit: be73e40
 # Testing Strategy and Quality Gates
 **Source:** .github/instructions/testing.instructions.md
 **Last synced:** 2025-08-24

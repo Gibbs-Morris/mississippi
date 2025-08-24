@@ -2,7 +2,6 @@
 description: Test Improvement Workflow (Legacy/Non‑TDD Code)
 alwaysApply: true
 ---
-// sync: source 6 MD:.github/instructions/test-improvement.instructions.md ; synced: 2025-08-24 ; commit: be73e40
 # Test Improvement Workflow (Legacy/Non‑TDD Code)
 **Source:** .github/instructions/test-improvement.instructions.md
 **Last synced:** 2025-08-24
@@ -22,8 +21,24 @@ This guide defines a practical, repeatable loop to raise unit test coverage and 
 ## Guardrails
 
 - Do not edit anything outside of the `tests/` folder during this workflow unless explicitly approved. Assume production code is correct until tests demonstrate a defect. If you believe production changes are required, pause and request confirmation first.
-- Maintain analyzer and StyleCop cleanliness in tests; zero warnings policy applies everywhere.
-- Zero new warnings/errors: Do not introduce any new compiler, analyzer, StyleCop, or ReSharper warnings or errors during this loop. Fix any newly introduced issues immediately before proceeding.
+
+## 🚨 CRITICAL RULE: ZERO WARNINGS IN TESTS 🚨
+
+**⚠️ ATTENTION: Zero warnings policy applies to test code too! ⚠️**
+
+### The Rule for Test Code
+- **NEVER disable warnings in test files** - Test code must meet the same quality standards as production code
+- **NEVER suppress analyzer rules in tests** - Test code should be exemplary and follow all best practices
+- **NEVER use `#pragma warning disable` in tests** - If you need to suppress a warning in tests, the test design is wrong
+- **ALWAYS fix test code warnings** - Test code should demonstrate proper patterns and practices
+- **Maintain analyzer and StyleCop cleanliness in tests** - Zero warnings policy applies everywhere
+- **Zero new warnings/errors** - Do not introduce any new compiler, analyzer, StyleCop, or ReSharper warnings or errors during this loop. Fix any newly introduced issues immediately before proceeding.
+
+### Why Test Code Quality Matters
+- **Tests are documentation** - They show how to use your code correctly
+- **Tests demonstrate patterns** - They should exemplify best practices
+- **Test code is production code** - It runs in CI and affects build quality
+- **Poor test code creates technical debt** - Just like poor production code
 
 ## Targets (per Build/Testing rules)
 

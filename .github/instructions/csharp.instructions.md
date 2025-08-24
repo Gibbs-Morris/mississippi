@@ -481,7 +481,25 @@ builder.Services.Configure<DatabaseSettings>(
 
 ### .NET Analyzers Configuration
 
+## 🚨 CRITICAL RULE: NEVER DISABLE ANALYZERS 🚨
+
+**⚠️ ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes ⚠️**
+
 **CRITICAL RULE**: Never disable analyzer rules to get around violations. Always fix the underlying issue.
+
+### Why This Is Critical
+- **Analyzers detect real problems** - They identify code quality issues, security vulnerabilities, and maintainability problems
+- **Suppressing warnings hides problems** - It creates technical debt and makes code harder to maintain
+- **Builds will fail** - Analyzer violations are treated as errors with `--warnaserror`
+- **Code quality degrades** - When warnings are suppressed, code quality standards slip
+- **Team productivity suffers** - Technical debt from suppressed warnings slows down development
+
+### The Rule: Fix, Don't Suppress
+- **ALWAYS fix the underlying issue** - Improve your code to satisfy the analyzer
+- **NEVER use `#pragma warning disable`** without explicit approval and exhaustive justification
+- **NEVER add `[SuppressMessage]` attributes** to hide violations
+- **NEVER disable analyzer rules** in project files or configuration
+- **NEVER ignore analyzer warnings** - They indicate real problems that need attention
 
 #### JetBrains Rider .DotSettings Configuration
 

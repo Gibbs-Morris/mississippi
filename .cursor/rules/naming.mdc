@@ -3,7 +3,6 @@ description: Feature-Centric C# Naming & Commenting Playbook
 globs: ["**/*.cs"]
 alwaysApply: false
 ---
-// sync: source 6 MD:.github/instructions/naming.instructions.md ; synced: 2025-08-24 ; commit: be73e40
 # Feature-Centric C# Naming & Commenting Playbook
 **Source:** .github/instructions/naming.instructions.md
 **Last synced:** 2025-08-24
