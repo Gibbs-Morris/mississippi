@@ -15,7 +15,6 @@ Keep our written instructions and Cursor AI rule files in lockstep. Any change t
 
 - Edit the instruction Markdown first (canonical source).
 - Mirror the change into the corresponding `.mdc` file(s) so meaning matches.
-- Add sync metadata to both Markdown and `.mdc` files.
 - Commit Markdown and `.mdc` changes together in the same PR/commit.
 - Prefer using the sync helper script to reduce human error.
 
@@ -40,39 +39,19 @@ When you change an instruction file:
 
 1) Edit the instruction Markdown first (canonical).
 2) Mirror the change into the corresponding `.mdc` rule file(s) so the meaning matches.
-3) Record sync metadata in both places (see “Sync Metadata” below).
-4) Commit both changes together in the same PR/commit.
+3) Commit both changes together in the same PR/commit.
 
-Preferred automated flow: run the repository helper script which mirrors instruction Markdown into Cursor `.mdc` files and inserts the required sync metadata. This reduces human error and keeps sync metadata consistent:
+Preferred automated flow: run the repository helper script which mirrors instruction Markdown into Cursor `.mdc` files. This reduces human error and keeps parity consistent:
 
 ```pwsh
 pwsh ./scripts/sync-instructions-to-mdc.ps1
 ```
 
-If you cannot run the script, follow the manual steps above and add sync metadata by hand.
-
 When you change a Cursor `.mdc` rule file:
 
 1) Update the corresponding instruction Markdown to match the intended meaning.
 2) Keep wording clear for humans in the Markdown; keep it concise/operational in `.mdc`.
-3) Record sync metadata in both places.
-4) Commit both changes together in the same PR/commit.
-
-## Sync Metadata (lightweight, manual)
-
-Add a short, machine-friendly header or footer in both files whenever a sync occurs:
-
-- In the instruction Markdown (at top or bottom):
-  <!-- sync: mirrors → MDC:.cursor/rules/instruction-mdc-sync.mdc ; synced: 2025-08-24 ; commit: {short-sha} -->
-
-- In the `.mdc` file (as a top comment if supported, or a header line):
-  // sync: source ← MD:.github/instructions/instruction-mdc-sync.instructions.md ; synced: 2025-08-24 ; commit: {short-sha}
-
-Notes:
-
-- Use the current date (UTC) and the short commit SHA you’re creating.
-- If multiple `.mdc` files mirror the same instruction, list them all in the instruction file.
-- If a rule block is intentionally `.mdc`-only or Markdown-only, explicitly mark it with `sync: excluded` and a brief justification.
+3) Commit both changes together in the same PR/commit.
 
 ## Mapping and Parity
 
@@ -83,8 +62,7 @@ Notes:
 ## PR Checklist (must-pass)
 
 - [ ] Changed instruction Markdown and matching `.mdc` updated in the same commit/PR
-- [ ] Sync metadata updated in both files (date + short SHA + counterpart reference)
-- [ ] Semantics parity verified (no rules exist in one place without a justified `sync: excluded` note)
+- [ ] Semantics parity verified (no rules exist in one place without an intentional exception noted in the PR description)
 
 ## Quick Validation Tips
 

@@ -591,7 +591,7 @@ namespace Mississippi.EventSourcing.Storage
     {
         private ILogger<EventStoreConnectionFactory> Logger { get; }
         private IOptions<EventStoreOptions> Options { get; }
-        private readonly SemaphoreSlim _initializationLock = new(1, 1);
+        private readonly SemaphoreSlim initializationLock = new(1, 1);
         private IEventStoreConnection? _connection;
         private bool _isInitialized;
 
@@ -610,7 +610,7 @@ namespace Mississippi.EventSourcing.Storage
                 return _connection;
             }
 
-            await _initializationLock.WaitAsync(cancellationToken);
+            await initializationLock.WaitAsync(cancellationToken);
             try
             {
                 if (_isInitialized && _connection != null)
@@ -636,7 +636,7 @@ namespace Mississippi.EventSourcing.Storage
             }
             finally
             {
-                _initializationLock.Release();
+                initializationLock.Release();
             }
         }
 
@@ -1043,5 +1043,3 @@ This document should be read in conjunction with:
 - Orleans lifecycle management: [https://learn.microsoft.com/en-us/dotnet/orleans/implementation/grain-lifecycle](https://learn.microsoft.com/en-us/dotnet/orleans/implementation/grain-lifecycle)
 - Orleans startup tasks: [https://learn.microsoft.com/en-us/dotnet/orleans/implementation/startup-tasks](https://learn.microsoft.com/en-us/dotnet/orleans/implementation/startup-tasks)
 - Factory pattern in .NET: [https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#factory-pattern](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#factory-pattern)
-
-<!-- sync: mirrors → MDC:.cursor/rules/service-registration.mdc ; synced: 2025-08-24 ; commit: {short-sha} -->

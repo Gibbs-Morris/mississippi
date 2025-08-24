@@ -193,4 +193,3 @@ This document should be read in conjunction with:
 - **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For serializer patterns and analyzer compliance that affect tests
 - **Project File Management** (`.github/instructions/projects.instructions.md`) - For automatic test project configuration and centralized package management
 
-<!-- sync: excluded ; justification: no corresponding testing.mdc rule file; synced: 2025-08-24 ; commit: {short-sha} -->
