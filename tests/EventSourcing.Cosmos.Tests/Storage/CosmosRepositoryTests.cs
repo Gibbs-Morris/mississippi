@@ -647,6 +647,7 @@ public class CosmosRepositoryTests
         {
             IReadOnlyList<T> next = pages.Dequeue();
             Mock<FeedResponse<T>> response = new();
+
             // Defer enumerator creation to the moment the enumerator is consumed to avoid creating
             // an IDisposable during test setup which the analyzer flags (IDISP004).
             response.As<IEnumerable<T>>().Setup(r => r.GetEnumerator()).Returns(() => next.GetEnumerator());

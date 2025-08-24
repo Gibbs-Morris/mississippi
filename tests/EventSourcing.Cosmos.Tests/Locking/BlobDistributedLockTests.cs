@@ -93,6 +93,7 @@ public sealed class BlobDistributedLockTests
     {
         // Arrange
         Mock<BlobLeaseClient> leaseClient = new();
+
         // First call throws, subsequent call (if any) would succeed
         leaseClient.Setup(l => l.ReleaseAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new RequestFailedException(404, "not found"));

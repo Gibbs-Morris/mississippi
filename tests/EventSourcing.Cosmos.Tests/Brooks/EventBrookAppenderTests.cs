@@ -806,6 +806,7 @@ public class EventBrookAppenderTests
 
         // Assert
         Assert.Equal(final, result.Value);
+
         // Renew should be called at least once (on batch index 5)
         lockMock.Verify(l => l.RenewAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
         repository.VerifyAll();
