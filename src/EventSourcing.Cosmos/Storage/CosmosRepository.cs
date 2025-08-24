@@ -17,6 +17,8 @@ namespace Mississippi.EventSourcing.Cosmos.Storage;
 /// </summary>
 internal class CosmosRepository : ICosmosRepository
 {
+    private const string HeadPending = "head-pending";
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="CosmosRepository" /> class.
     /// </summary>
@@ -84,7 +86,7 @@ internal class CosmosRepository : ICosmosRepository
         try
         {
             ItemResponse<HeadDocument>? response = await Container.ReadItemAsync<HeadDocument>(
-                "head-pending",
+                HeadPending,
                 new(brookId.ToString()),
                 cancellationToken: cancellationToken);
             return HeadDocumentMapper.Map(response.Resource);
@@ -112,8 +114,8 @@ internal class CosmosRepository : ICosmosRepository
     {
         HeadDocument pendingHeadDoc = new()
         {
-            Id = "head-pending",
-            Type = "head-pending",
+            Id = HeadPending,
+            Type = HeadPending,
             Position = finalPosition,
             OriginalPosition = currentHead.Value,
             BrookPartitionKey = brookId.ToString(),
@@ -270,7 +272,7 @@ internal class CosmosRepository : ICosmosRepository
         try
         {
             await Container.DeleteItemAsync<HeadDocument>(
-                "head-pending",
+                HeadPending,
                 new(brookId.ToString()),
                 cancellationToken: cancellationToken);
         }

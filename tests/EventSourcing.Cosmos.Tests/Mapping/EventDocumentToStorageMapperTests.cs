@@ -1,3 +1,7 @@
+using Mississippi.EventSourcing.Cosmos.Mapping;
+using Mississippi.EventSourcing.Cosmos.Storage;
+
+
 namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
 
 /// <summary>
@@ -7,13 +11,27 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
 public class EventDocumentToStorageMapperTests
 {
     /// <summary>
-    ///     Placeholder test method for EventDocumentToStorageMapper functionality.
-    ///     This test should be replaced with actual test implementations.
+    ///     Verifies mapping copies fields from document to storage model.
     /// </summary>
     [Fact]
-    public void PlaceholderTest()
+    public void MapCopiesFields()
     {
-        // Placeholder test - replace with actual EventDocumentToStorageMapper test implementations
-        Assert.True(true);
+        EventDocument doc = new()
+        {
+            EventId = "e1",
+            Source = "s",
+            EventType = "t",
+            DataContentType = "ct",
+            Data = new byte[] { 1, 2 },
+            Time = DateTimeOffset.UtcNow,
+        };
+        EventDocumentToStorageMapper mapper = new();
+        EventStorageModel result = mapper.Map(doc);
+        Assert.Equal(doc.EventId, result.EventId);
+        Assert.Equal(doc.Source, result.Source);
+        Assert.Equal(doc.EventType, result.EventType);
+        Assert.Equal(doc.DataContentType, result.DataContentType);
+        Assert.Equal(doc.Data, result.Data);
+        Assert.Equal(doc.Time, result.Time);
     }
 }

@@ -1,3 +1,10 @@
+using System.Collections.Immutable;
+
+using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Cosmos.Mapping;
+using Mississippi.EventSourcing.Cosmos.Storage;
+
+
 namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
 
 /// <summary>
@@ -7,13 +14,32 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
 public class EventToStorageMapperTests
 {
     /// <summary>
-    ///     Placeholder test method for EventToStorageMapper functionality.
-    ///     This test should be replaced with actual test implementations.
+    ///     Verifies mapping populates storage model from BrookEvent.
     /// </summary>
     [Fact]
-    public void PlaceholderTest()
+    public void MapPopulatesAllFields()
     {
-        // Placeholder test - replace with actual EventToStorageMapper test implementations
-        Assert.True(true);
+        // Arrange
+        BrookEvent input = new()
+        {
+            Id = "evt-1",
+            Source = "the-source",
+            Type = "my-type",
+            DataContentType = "application/json",
+            Data = ImmutableArray.Create<byte>(1, 2, 3),
+            Time = DateTimeOffset.UtcNow,
+        };
+        EventToStorageMapper mapper = new();
+
+        // Act
+        EventStorageModel result = mapper.Map(input);
+
+        // Assert
+        Assert.Equal(input.Id, result.EventId);
+        Assert.Equal(input.Source, result.Source);
+        Assert.Equal(input.Type, result.EventType);
+        Assert.Equal(input.DataContentType, result.DataContentType);
+        Assert.Equal(input.Data.ToArray(), result.Data);
+        Assert.Equal(input.Time, result.Time);
     }
 }
