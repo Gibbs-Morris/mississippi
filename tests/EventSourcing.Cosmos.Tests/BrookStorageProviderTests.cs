@@ -62,6 +62,7 @@ public class BrookStorageProviderTests
     /// <summary>
     ///     Verifies head position reads delegate to the recovery service and return its value.
     /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
     public async Task ReadHeadPositionAsyncDelegatesToRecoveryServiceAsync()
     {
@@ -84,6 +85,7 @@ public class BrookStorageProviderTests
     /// <summary>
     ///     Verifies events are yielded directly from the reader.
     /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
     public async Task ReadEventsAsyncYieldsFromReaderAsync()
     {
@@ -135,6 +137,7 @@ public class BrookStorageProviderTests
     /// <summary>
     ///     Verifies appending with null events throws an argument exception.
     /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
     public async Task AppendEventsAsyncThrowsWhenEventsNullAsync()
     {
@@ -149,6 +152,7 @@ public class BrookStorageProviderTests
     /// <summary>
     ///     Verifies appending with empty events throws an argument exception.
     /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
     public async Task AppendEventsAsyncThrowsWhenEventsEmptyAsync()
     {
@@ -166,6 +170,7 @@ public class BrookStorageProviderTests
     /// <summary>
     ///     Verifies appending delegates to the appender and returns its result.
     /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
     public async Task AppendEventsAsyncDelegatesToAppenderAndReturnsResultAsync()
     {

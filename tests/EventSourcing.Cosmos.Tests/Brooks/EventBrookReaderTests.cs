@@ -1,9 +1,16 @@
+using System.Runtime.CompilerServices;
+
+using Microsoft.Extensions.Options;
+
 using Mississippi.Core.Abstractions.Mapping;
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Brooks;
 using Mississippi.EventSourcing.Cosmos.Retry;
 using Mississippi.EventSourcing.Cosmos.Storage;
+
+using Moq;
+
 
 namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 
@@ -25,18 +32,17 @@ public class EventBrookReaderTests
     }
 
     /// <summary>
-    ///     Verifies that the <see cref="EventBrookReader"/> constructor throws when <c>options</c> is null.
+    ///     Verifies that the <see cref="EventBrookReader" /> constructor throws when <c>options</c> is null.
     /// </summary>
     [Fact]
     public void ConstructorThrowsWhenOptionsIsNull()
     {
-        ICosmosRepository repository = new Moq.Mock<ICosmosRepository>(Moq.MockBehavior.Strict).Object;
-        IRetryPolicy retryPolicy = new Moq.Mock<IRetryPolicy>(Moq.MockBehavior.Strict).Object;
-        IMapper<EventStorageModel, BrookEvent> mapper = new Moq.Mock<IMapper<EventStorageModel, BrookEvent>>(Moq.MockBehavior.Strict).Object;
-
+        ICosmosRepository repository = new Mock<ICosmosRepository>(MockBehavior.Strict).Object;
+        IRetryPolicy retryPolicy = new Mock<IRetryPolicy>(MockBehavior.Strict).Object;
+        IMapper<EventStorageModel, BrookEvent> mapper =
+            new Mock<IMapper<EventStorageModel, BrookEvent>>(MockBehavior.Strict).Object;
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() =>
             new EventBrookReader(repository, retryPolicy, null!, mapper));
-
         Assert.Equal("options", exception.ParamName);
     }
 
@@ -48,17 +54,14 @@ public class EventBrookReaderTests
     public async Task ReadEventsAsyncMapsAndYieldsInOrderAsync()
     {
         // Arrange
-        var repositoryMock = new Moq.Mock<ICosmosRepository>(Moq.MockBehavior.Strict);
-        var retryPolicy = new Moq.Mock<IRetryPolicy>(Moq.MockBehavior.Strict).Object;
-        var mapperMock = new Moq.Mock<IMapper<EventStorageModel, BrookEvent>>(Moq.MockBehavior.Strict);
-
+        Mock<ICosmosRepository> repositoryMock = new(MockBehavior.Strict);
+        IRetryPolicy retryPolicy = new Mock<IRetryPolicy>(MockBehavior.Strict).Object;
+        Mock<IMapper<EventStorageModel, BrookEvent>> mapperMock = new(MockBehavior.Strict);
         BrookStorageOptions options = new()
         {
             QueryBatchSize = 2,
         };
-
         BrookRangeKey range = new("type", "id", 0, 3);
-
         EventStorageModel e1 = new()
         {
             EventId = "e1",
@@ -87,7 +90,9 @@ public class EventBrookReaderTests
             Time = DateTimeOffset.UtcNow,
         };
 
-        static async IAsyncEnumerable<EventStorageModel> SequenceAsync(params EventStorageModel[] items)
+        static async IAsyncEnumerable<EventStorageModel> SequenceAsync(
+            params EventStorageModel[] items
+        )
         {
             foreach (EventStorageModel item in items)
             {
@@ -96,26 +101,39 @@ public class EventBrookReaderTests
             }
         }
 
-        repositoryMock
-            .Setup(r => r.QueryEventsAsync(range, options.QueryBatchSize, Moq.It.IsAny<CancellationToken>()))
+        repositoryMock.Setup(r => r.QueryEventsAsync(range, options.QueryBatchSize, It.IsAny<CancellationToken>()))
             .Returns(SequenceAsync(e1, e2, e3));
-
-        mapperMock
-            .Setup(m => m.Map(e1))
-            .Returns(new BrookEvent { Id = e1.EventId, Source = e1.Source ?? string.Empty, Type = e1.EventType, DataContentType = e1.DataContentType ?? string.Empty, Time = e1.Time });
-        mapperMock
-            .Setup(m => m.Map(e2))
-            .Returns(new BrookEvent { Id = e2.EventId, Source = e2.Source ?? string.Empty, Type = e2.EventType, DataContentType = e2.DataContentType ?? string.Empty, Time = e2.Time });
-        mapperMock
-            .Setup(m => m.Map(e3))
-            .Returns(new BrookEvent { Id = e3.EventId, Source = e3.Source ?? string.Empty, Type = e3.EventType, DataContentType = e3.DataContentType ?? string.Empty, Time = e3.Time });
-
-        EventBrookReader reader = new(
-            repositoryMock.Object,
-            retryPolicy,
-            Microsoft.Extensions.Options.Options.Create(options),
-            mapperMock.Object);
-
+        mapperMock.Setup(m => m.Map(e1))
+            .Returns(
+                new BrookEvent
+                {
+                    Id = e1.EventId,
+                    Source = e1.Source ?? string.Empty,
+                    Type = e1.EventType,
+                    DataContentType = e1.DataContentType ?? string.Empty,
+                    Time = e1.Time,
+                });
+        mapperMock.Setup(m => m.Map(e2))
+            .Returns(
+                new BrookEvent
+                {
+                    Id = e2.EventId,
+                    Source = e2.Source ?? string.Empty,
+                    Type = e2.EventType,
+                    DataContentType = e2.DataContentType ?? string.Empty,
+                    Time = e2.Time,
+                });
+        mapperMock.Setup(m => m.Map(e3))
+            .Returns(
+                new BrookEvent
+                {
+                    Id = e3.EventId,
+                    Source = e3.Source ?? string.Empty,
+                    Type = e3.EventType,
+                    DataContentType = e3.DataContentType ?? string.Empty,
+                    Time = e3.Time,
+                });
+        EventBrookReader reader = new(repositoryMock.Object, retryPolicy, Options.Create(options), mapperMock.Object);
         List<BrookEvent> results = new();
 
         // Act
@@ -131,8 +149,9 @@ public class EventBrookReaderTests
             a => Assert.Equal("T1", a.Type),
             b => Assert.Equal("T2", b.Type),
             c => Assert.Equal("T3", c.Type));
-
-        repositoryMock.Verify(r => r.QueryEventsAsync(range, options.QueryBatchSize, Moq.It.IsAny<CancellationToken>()), Moq.Times.Once);
+        repositoryMock.Verify(
+            r => r.QueryEventsAsync(range, options.QueryBatchSize, It.IsAny<CancellationToken>()),
+            Times.Once);
         mapperMock.VerifyAll();
     }
 
@@ -144,24 +163,30 @@ public class EventBrookReaderTests
     public async Task ReadEventsAsyncRespectsCancellationAsync()
     {
         // Arrange
-        var repositoryMock = new Moq.Mock<ICosmosRepository>(Moq.MockBehavior.Strict);
-        var retryPolicy = new Moq.Mock<IRetryPolicy>(Moq.MockBehavior.Strict).Object;
-        var mapperMock = new Moq.Mock<IMapper<EventStorageModel, BrookEvent>>(Moq.MockBehavior.Strict);
-
+        Mock<ICosmosRepository> repositoryMock = new(MockBehavior.Strict);
+        IRetryPolicy retryPolicy = new Mock<IRetryPolicy>(MockBehavior.Strict).Object;
+        Mock<IMapper<EventStorageModel, BrookEvent>> mapperMock = new(MockBehavior.Strict);
         BrookStorageOptions options = new()
         {
             QueryBatchSize = 10,
         };
-
         BrookRangeKey range = new("type", "id", 0, 100);
-
-        EventStorageModel e1 = new() { EventId = "e1", EventType = "T1" };
-        EventStorageModel e2 = new() { EventId = "e2", EventType = "T2" };
+        EventStorageModel e1 = new()
+        {
+            EventId = "e1",
+            EventType = "T1",
+        };
+        EventStorageModel e2 = new()
+        {
+            EventId = "e2",
+            EventType = "T2",
+        };
 
         static async IAsyncEnumerable<EventStorageModel> SequenceUntilCancelledAsync(
             EventStorageModel first,
             EventStorageModel second,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token)
+            [EnumeratorCancellation] CancellationToken token
+        )
         {
             yield return first;
             await Task.Yield();
@@ -169,23 +194,27 @@ public class EventBrookReaderTests
             yield return second; // should not be reached if token is cancelled by the test
         }
 
-        repositoryMock
-            .Setup(r => r.QueryEventsAsync(range, options.QueryBatchSize, Moq.It.IsAny<CancellationToken>()))
-            .Returns((BrookRangeKey _, int _, CancellationToken t) => SequenceUntilCancelledAsync(e1, e2, t));
-
-        mapperMock
-            .Setup(m => m.Map(e1))
-            .Returns(new BrookEvent { Id = e1.EventId, Type = e1.EventType });
-        mapperMock
-            .Setup(m => m.Map(e2))
-            .Returns(new BrookEvent { Id = e2.EventId, Type = e2.EventType });
-
-        EventBrookReader reader = new(
-            repositoryMock.Object,
-            retryPolicy,
-            Microsoft.Extensions.Options.Options.Create(options),
-            mapperMock.Object);
-
+        repositoryMock.Setup(r => r.QueryEventsAsync(range, options.QueryBatchSize, It.IsAny<CancellationToken>()))
+            .Returns((
+                BrookRangeKey _,
+                int _,
+                CancellationToken t
+            ) => SequenceUntilCancelledAsync(e1, e2, t));
+        mapperMock.Setup(m => m.Map(e1))
+            .Returns(
+                new BrookEvent
+                {
+                    Id = e1.EventId,
+                    Type = e1.EventType,
+                });
+        mapperMock.Setup(m => m.Map(e2))
+            .Returns(
+                new BrookEvent
+                {
+                    Id = e2.EventId,
+                    Type = e2.EventType,
+                });
+        EventBrookReader reader = new(repositoryMock.Object, retryPolicy, Options.Create(options), mapperMock.Object);
         using CancellationTokenSource cts = new();
         List<BrookEvent> results = new();
 
@@ -201,14 +230,14 @@ public class EventBrookReaderTests
                 }
             }
         });
-
         Assert.Single(results);
         Assert.Equal("T1", results[0].Type);
-
-        repositoryMock.Verify(r => r.QueryEventsAsync(range, options.QueryBatchSize, Moq.It.IsAny<CancellationToken>()), Moq.Times.Once);
-        mapperMock.Verify(m => m.Map(e1), Moq.Times.Once);
+        repositoryMock.Verify(
+            r => r.QueryEventsAsync(range, options.QueryBatchSize, It.IsAny<CancellationToken>()),
+            Times.Once);
+        mapperMock.Verify(m => m.Map(e1), Times.Once);
 
         // Mapper for e2 should not be invoked due to cancellation
-        mapperMock.Verify(m => m.Map(e2), Moq.Times.Never);
+        mapperMock.Verify(m => m.Map(e2), Times.Never);
     }
 }
