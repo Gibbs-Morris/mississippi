@@ -6,6 +6,27 @@ applyTo: '**'
 
 This guide defines a practical, repeatable loop to raise unit test coverage and mutation score on projects that were not originally written with TDD. It complements the broader Testing and Build Rules documents and provides exact commands using `scripts/test-project-quality.ps1`.
 
+## At-a-Glance Improvement Loop
+
+1) Prepare tools once.
+```powershell
+pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "dotnet tool restore"
+```
+2) Establish baseline (tests + coverage only), then add tests to reach target coverage.
+```powershell
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation
+```
+3) Build-only check anytime to surface warnings/errors.
+```powershell
+dotnet build ./tests/<YourTestProject>/<YourTestProject>.csproj -c Release -warnaserror
+```
+4) Add mutation testing; improve assertions/branches until threshold is met (Mississippi only).
+```powershell
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject>
+```
+5) Iterate quickly using `-NoBuild` after the initial build, but keep separate build checks for zero‑warnings.
+
+
 ## Read This First
 
 - Read all `.github/instructions/*.instructions.md` files before making changes so your approach aligns with repository-wide standards.

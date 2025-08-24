@@ -11,6 +11,19 @@ alwaysApply: true
 
 Keep our written instructions and Cursor AI rule files in lockstep. Any change to one must be reflected in the other in the same change set.
 
+## At-a-Glance Quick-Start
+
+- Edit the instruction Markdown first (canonical source).
+- Mirror the change into the corresponding `.mdc` file(s) so meaning matches.
+- Add sync metadata to both Markdown and `.mdc` files.
+- Commit Markdown and `.mdc` changes together in the same PR/commit.
+- Prefer using the sync helper script to reduce human error.
+
+### Quick Command
+```powershell
+pwsh ./scripts/sync-instructions-to-mdc.ps1
+```
+
 ## Scope
 
 - Instruction files: all guidance under `.github/instructions/` (this repository’s source of truth)

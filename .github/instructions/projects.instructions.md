@@ -6,6 +6,23 @@ applyTo: '**'
 
 This document defines the project file standards and best practices for .NET applications using centralized package management. All `.csproj` files must follow these guidelines to ensure consistency, maintainability, and proper utilization of centralized package management.
 
+## At-a-Glance Compliance Checklist
+
+- Use centralized package management via `Directory.Packages.props`; no version numbers in `PackageReference`.
+- Keep `.csproj` minimal; do not duplicate properties from `Directory.Build.props`.
+- Choose the correct SDK (`Microsoft.NET.Sdk` / `.Web`) for the project type.
+- Include only project-specific properties (e.g., `OutputType`, `GeneratePackageOnBuild`).
+- Test project settings and test packages are automatic for projects ending with `Tests`.
+- Do not override automatic assembly/namespace naming.
+- Only add necessary `ProjectReference`/`PackageReference` entries (without versions).
+- Validate with a clean build; fix any warnings (warnings are treated as errors in CI per Build Rules).
+
+### Quick Validation Commands
+```powershell
+pwsh ./scripts/build-mississippi-solution.ps1
+pwsh ./scripts/final-build-solutions.ps1
+```
+
 ## Core Principles
 
 ### Keep Project Files Minimal

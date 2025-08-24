@@ -8,6 +8,14 @@ This document defines the Mississippi repository’s testing strategy and expect
 
 We use an L0–L4 layered testing model to keep feedback fast while ensuring end-to-end confidence.
 
+## At-a-Glance Quick-Start
+
+- Default to L0 for new unit tests; add L1 only when light infra is necessary.
+- Name projects and tests per conventions; keep tests deterministic and isolated.
+- Aim for 100% coverage on changed code, maintain ≥80% minimum overall; target 95–100% where feasible.
+- For Mississippi projects, run mutation testing and keep or raise the score.
+- Use the provided scripts to run tests and mutation checks.
+
 ## Test Levels at a Glance
 
 | Level  | Description                                                                    | Dependencies                                         | Where It Runs                                                                                 |

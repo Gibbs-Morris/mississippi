@@ -11,6 +11,27 @@ alwaysApply: true
 
 This project maintains **zero tolerance for warnings** and requires comprehensive test coverage. All code changes must pass the full quality pipeline before being considered complete.
 
+## At-a-Glance Quick-Start
+
+- Build → Clean → Fix until there are zero warnings.
+```powershell
+pwsh ./scripts/build-mississippi-solution.ps1
+pwsh ./scripts/clean-up-mississippi-solution.ps1
+```
+- Add/update tests: comprehensive for Mississippi; minimal examples for Samples.
+- Run tests (Mississippi solution).
+```powershell
+pwsh ./scripts/unit-test-mississippi-solution.ps1
+```
+- Run mutation tests (Mississippi ONLY).
+```powershell
+pwsh ./scripts/mutation-test-mississippi-solution.ps1
+```
+- Final validation for both solutions.
+```powershell
+pwsh ./go.ps1
+```
+
 ## 🚨 CRITICAL RULE: ZERO WARNINGS POLICY 🚨
 
 **⚠️ ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes ⚠️**
@@ -85,6 +106,17 @@ The `scripts/` folder contains PowerShell automation for the build-test-quality 
 ### Orchestration
 - **`orchestrate-solutions.ps1`** - Runs the complete pipeline in proper order
 - **`go.ps1`** (root) - Convenience script that calls orchestrate-solutions.ps1
+
+### Commands Index (quick)
+- **Build Mississippi**: `pwsh ./scripts/build-mississippi-solution.ps1`
+- **Build Samples**: `pwsh ./scripts/build-sample-solution.ps1`
+- **Cleanup Mississippi**: `pwsh ./scripts/clean-up-mississippi-solution.ps1`
+- **Cleanup Samples**: `pwsh ./scripts/clean-up-sample-solution.ps1`
+- **Unit tests (Mississippi)**: `pwsh ./scripts/unit-test-mississippi-solution.ps1`
+- **Unit tests (Samples)**: `pwsh ./scripts/unit-test-sample-solution.ps1`
+- **Mutation tests (Mississippi)**: `pwsh ./scripts/mutation-test-mississippi-solution.ps1`
+- **Per-project test quality**: `pwsh ./scripts/test-project-quality.ps1 -TestProject <Name> [-SkipMutation]`
+- **Final pipeline (both solutions)**: `pwsh ./go.ps1`
 
 ## Development Workflow Pattern
 
