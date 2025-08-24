@@ -319,60 +319,47 @@ internal class EventBrookAppender : IEventBrookAppender
     )
     {
         List<Exception> rollbackErrors = new();
+        List<long> remainingEvents = new();
 
-        // First pass: attempt to delete all events
-        for (long pos = originalHead.Value + 1; pos <= failedFinalPosition; pos++)
+        // Helper: attempt action with retry policy and record a friendly error on failure
+        async Task TryWithRetryAsync(
+            Func<Task> action,
+            string errorMessage
+        )
         {
             try
             {
                 await RetryPolicy.ExecuteAsync(
                     async () =>
                     {
-                        await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
+                        await action();
                         return true;
                     },
                     cancellationToken);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex) when (ex is InvalidOperationException ||
+                                       ex is TimeoutException ||
+                                       ex is HttpRequestException)
             {
-                rollbackErrors.Add(new InvalidOperationException($"Failed to delete event at position {pos}", ex));
+                rollbackErrors.Add(new InvalidOperationException(errorMessage, ex));
             }
-            catch (TimeoutException ex)
-            {
-                rollbackErrors.Add(new InvalidOperationException($"Failed to delete event at position {pos}", ex));
-            }
-            catch (HttpRequestException ex)
-            {
-                rollbackErrors.Add(new InvalidOperationException($"Failed to delete event at position {pos}", ex));
-            }
+        }
+
+        // First pass: attempt to delete all appended events
+        for (long pos = originalHead.Value + 1; pos <= failedFinalPosition; pos++)
+        {
+            long capturedPos = pos; // avoid modified closure
+            await TryWithRetryAsync(
+                () => Repository.DeleteEventAsync(brookId, capturedPos, cancellationToken),
+                $"Failed to delete event at position {capturedPos}");
         }
 
         // Delete pending head
-        try
-        {
-            await RetryPolicy.ExecuteAsync(
-                async () =>
-                {
-                    await Repository.DeletePendingHeadAsync(brookId, cancellationToken);
-                    return true;
-                },
-                cancellationToken);
-        }
-        catch (InvalidOperationException ex)
-        {
-            rollbackErrors.Add(new InvalidOperationException("Failed to delete pending head", ex));
-        }
-        catch (TimeoutException ex)
-        {
-            rollbackErrors.Add(new InvalidOperationException("Failed to delete pending head", ex));
-        }
-        catch (HttpRequestException ex)
-        {
-            rollbackErrors.Add(new InvalidOperationException("Failed to delete pending head", ex));
-        }
+        await TryWithRetryAsync(
+            () => Repository.DeletePendingHeadAsync(brookId, cancellationToken),
+            "Failed to delete pending head");
 
         // Second pass: verify all events are actually deleted
-        List<long> remainingEvents = new();
         for (long pos = originalHead.Value + 1; pos <= failedFinalPosition; pos++)
         {
             try
@@ -383,17 +370,9 @@ internal class EventBrookAppender : IEventBrookAppender
                     remainingEvents.Add(pos);
                 }
             }
-            catch (InvalidOperationException ex)
-            {
-                rollbackErrors.Add(
-                    new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));
-            }
-            catch (TimeoutException ex)
-            {
-                rollbackErrors.Add(
-                    new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));
-            }
-            catch (HttpRequestException ex)
+            catch (Exception ex) when (ex is InvalidOperationException ||
+                                       ex is TimeoutException ||
+                                       ex is HttpRequestException)
             {
                 rollbackErrors.Add(
                     new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));

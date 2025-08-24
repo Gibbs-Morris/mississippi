@@ -41,55 +41,70 @@ internal class CosmosRetryPolicy : IRetryPolicy
             {
                 return await operation();
             }
-            catch (CosmosException ex) when
-                ((ex.StatusCode == HttpStatusCode.TooManyRequests) && (attempt < MaxRetries))
-            {
-                lastException = ex;
-                TimeSpan delay = ex.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-                await Task.Delay(delay, cancellationToken);
-            }
-            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
-            {
-                throw new InvalidOperationException(
-                    "Request size exceeds maximum allowed limit. Consider reducing batch size.",
-                    ex);
-            }
-
-            // Pass through NotFound so callers which expect it (e.g., probing for a missing item) can handle it
-            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw;
-            }
-
-            // Retry only on transient Cosmos statuses; allow NotFound and other non-transient errors to bubble up
-            catch (CosmosException ex) when ((attempt < MaxRetries) &&
-                                             ((ex.StatusCode == HttpStatusCode.ServiceUnavailable) ||
-                                              (ex.StatusCode == HttpStatusCode.RequestTimeout) ||
-                                              (ex.StatusCode == HttpStatusCode.InternalServerError) ||
-                                              (ex.StatusCode == HttpStatusCode.GatewayTimeout)))
-            {
-                lastException = ex;
-                TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-                await Task.Delay(delay, cancellationToken);
-            }
-            catch (TaskCanceledException ex) when (attempt < MaxRetries)
-            {
-                lastException = ex;
-                TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-                await Task.Delay(delay, cancellationToken);
-            }
             catch (CosmosException ex)
             {
+                // Pass through known non-retriable errors immediately
+                if (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
+                {
+                    throw new InvalidOperationException(
+                        "Request size exceeds maximum allowed limit. Consider reducing batch size.",
+                        ex);
+                }
+
+                if (ex.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw;
+                }
+
+                if (IsTransientCosmosStatus(ex.StatusCode) && (attempt < MaxRetries))
+                {
+                    lastException = ex;
+                    TimeSpan delay = ComputeDelay(ex, attempt);
+                    await Task.Delay(delay, cancellationToken);
+                    continue;
+                }
+
                 // Non-transient Cosmos error - wrap with context and rethrow
                 throw new InvalidOperationException($"Cosmos operation failed with status {ex.StatusCode}", ex);
             }
             catch (TaskCanceledException ex)
             {
+                if (attempt < MaxRetries)
+                {
+                    lastException = ex;
+                    TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
+                    await Task.Delay(delay, cancellationToken);
+                    continue;
+                }
+
                 // Cancellation should be honored by callers; wrap to provide consistent surface
                 throw new OperationCanceledException("Cosmos operation canceled", ex, cancellationToken);
             }
         }
 
         throw new InvalidOperationException($"Operation failed after {MaxRetries + 1} attempts", lastException);
+    }
+
+    private static bool IsTransientCosmosStatus(
+        HttpStatusCode? statusCode
+    ) =>
+        (statusCode == HttpStatusCode.TooManyRequests) ||
+        (statusCode == HttpStatusCode.ServiceUnavailable) ||
+        (statusCode == HttpStatusCode.RequestTimeout) ||
+        (statusCode == HttpStatusCode.InternalServerError) ||
+        (statusCode == HttpStatusCode.GatewayTimeout);
+
+    private static TimeSpan ComputeDelay(
+        CosmosException ex,
+        int attempt
+    )
+    {
+        if (ex.RetryAfter.HasValue)
+        {
+            return ex.RetryAfter.Value;
+        }
+
+        // Exponential backoff base 100ms
+        return TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
     }
 }
