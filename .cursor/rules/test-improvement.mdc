@@ -1,0 +1,50 @@
+---
+description: Test improvement workflow (legacy/non-TDD) with coverage/mutation targets
+alwaysApply: true
+---
+
+# Test Improvement Workflow (Legacy/Non‑TDD Code)
+**Source:** .github/instructions/test-improvement.instructions.md
+**Last synced:** 2025-08-24
+
+## Do this
+- Read all `.github/instructions/*.instructions.md` before changes. Agents should prefer this `.mdc`.
+- Only edit under `tests/` during this loop unless explicitly approved otherwise.
+- Enforce zero new warnings/errors (compiler, analyzers, StyleCop, ReSharper) at every step.
+- Use `scripts/test-project-quality.ps1` for fast per-project quality checks.
+
+## Targets
+- Coverage: default 95% unless specified; absolute minimum 80%. Aim 100% on changed code; no regressions.
+- Mutation: default 80% unless specified (Samples exempt). Address surviving mutants.
+- If a task specifies explicit targets (e.g., 100% or 95%), follow those. Document legacy constraints that block testing and seek approval before production changes.
+
+## Commands
+Baseline (tests + coverage only):
+```powershell
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation
+```
+Mutation enabled:
+```powershell
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject>
+```
+Faster re-runs after initial build:
+```powershell
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation -NoBuild
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -NoBuild
+```
+Build-only (surface warnings/errors):
+```powershell
+dotnet build ./tests/<YourTestProject>/<YourTestProject>.csproj -c Release -warnaserror
+```
+Ambiguous source project:
+```powershell
+pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SourceProject ./src/<Project>/<Project>.csproj
+```
+
+## Outputs for agents (Cursor, GitHub Copilot)
+Machine-readable summary lines: `RESULT`, `TEST_TOTAL`, `TEST_PASSED`, `TEST_FAILED`, `TEST_SKIPPED`, `COVERAGE`, and (when mutation runs) `MUTATION_SCORE`, `MUTATION_RESULT`.
+
+## Tips
+- Prefer L0 tests (pure in-memory); use L1 only when needed. Keep tests deterministic and fast.
+- Strengthen assertions and cover error/branch paths to improve mutation scores.
+
