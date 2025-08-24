@@ -336,12 +336,12 @@ public class CosmosRepositoryTests
             },
         };
 
-    // Act
-    await sut.AppendEventBatchAsync(key, events, 10);
+        // Act
+        await sut.AppendEventBatchAsync(key, events, 10);
 
-    // Assert
-    // Expect two created items; detailed assertions below verify each created document
-    Assert.Equal(2, created.Count);
+        // Assert
+        // Expect two created items; detailed assertions below verify each created document
+        Assert.Equal(2, created.Count);
         Assert.Collection(
             created,
             d =>
