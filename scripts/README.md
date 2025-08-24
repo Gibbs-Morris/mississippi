@@ -48,6 +48,7 @@ Once the **Mississippi** solution is healthy, run the equivalent *sample* script
   2. Sample – build → test → cleanup  
   3. Final build (warnings as errors)  
   The script aborts on the first failing step (non-zero exit code). | `pwsh ./scripts/orchestrate-solutions.ps1` |
+| **sync-instructions-to-mdc.ps1** | Sync `.github/instructions/*.instructions.md` files into Cursor `.mdc` rule files and add sync metadata automatically. Preferred automated way to keep instruction Markdown and `.mdc` files in parity. | `pwsh ./scripts/sync-instructions-to-mdc.ps1` |
 
 ---
 ## Example invocations
@@ -89,6 +90,18 @@ These folders are git-ignored but preserved between steps; feel free to parse or
 • **CI-parity script**: `orchestrate-solutions.ps1` reproduces the same steps our GitHub Actions pipeline runs; execute it locally (e.g., from Cursor or GitHub Copilot) to verify changes before opening a PR.
 
 ---
+## Syncing instruction files to Cursor rules (.mdc)
+
+When you change files under `.github/instructions/` it's preferred to use the automated helper to mirror those changes into Cursor `.mdc` rule files and to populate the sync metadata header/footer.
+
+Preferred: run the script which performs the mirror and metadata update for you:
+
+```pwsh
+pwsh ./scripts/sync-instructions-to-mdc.ps1
+```
+
+If the script cannot be used (e.g., on a constrained environment), follow the manual workflow described in the `Instruction ↔ Cursor MDC Sync Policy` document and ensure you add the sync metadata in both files.
+
 ## test-project-quality.ps1
 
 Purpose: Quickly evaluate a single test project’s quality by running `dotnet test` with code coverage and (optionally) Stryker mutation testing. The script prints a compact summary that tools like Cursor or Copilot can parse.
