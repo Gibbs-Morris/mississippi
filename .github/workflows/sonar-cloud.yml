@@ -87,12 +87,14 @@ jobs:
           true
 
       - name: Sonar restore-build-report
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs'
+          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs'
 
           dotnet restore ${{ env.SOLUTION_PATH }}
           dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
           dotnet dotnet-coverage collect "dotnet test ${{ env.SOLUTION_PATH }} -p:Version=${{ steps.gitversion.outputs.SemVer }} --no-restore --verbosity normal"  -f xml -o "coverage.xml"
 
-          dotnet dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}
+          dotnet dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
