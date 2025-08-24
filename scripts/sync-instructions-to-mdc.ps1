@@ -158,11 +158,9 @@ foreach ($file in $instructionFiles) {
 
         $sourceLine = "**Source:** .github/instructions/$($file.Name)"
         $syncedLine = "**Last synced:** $LastSynced"
-        $syncComment = "// sync: source 6 MD:.github/instructions/$($file.Name) ; synced: $LastSynced ; commit: $shortSha"
 
         $body = @()
         $body += $frontMatter
-        $body += $syncComment
         # Inject metadata lines before the rest of the content
         if ($title) { $body += ("# $title") }
         $body += $sourceLine
@@ -173,7 +171,7 @@ foreach ($file in $instructionFiles) {
         # Avoid duplicate top-level H1 if contentBody already starts with it
         if ($title -and $contentBody -match '^[ \t]*#\s+') {
             # Remove the inserted title, keep contentBody's original
-            $body = @($frontMatter, $syncComment, $sourceLine, $syncedLine, '', $contentBody)
+            $body = @($frontMatter, $sourceLine, $syncedLine, '', $contentBody)
         }
 
         if ($DryRun) {
