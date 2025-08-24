@@ -1,5 +1,5 @@
 ---
-applyTo: '**/*.csproj'
+applyTo: '**'
 ---
 
 # Project File Management Best Practices

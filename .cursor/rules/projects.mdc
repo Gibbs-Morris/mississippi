@@ -1,7 +1,6 @@
 ---
 description: Minimal .csproj and central package management
-globs: ["**/*.csproj"]
-alwaysApply: false
+alwaysApply: true
 ---
 # Project File Management Best Practices
 **Source:** .github/instructions/projects.instructions.md
