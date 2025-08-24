@@ -1037,3 +1037,5 @@ This document should be read in conjunction with:
 - Orleans lifecycle management: [https://learn.microsoft.com/en-us/dotnet/orleans/implementation/grain-lifecycle](https://learn.microsoft.com/en-us/dotnet/orleans/implementation/grain-lifecycle)
 - Orleans startup tasks: [https://learn.microsoft.com/en-us/dotnet/orleans/implementation/startup-tasks](https://learn.microsoft.com/en-us/dotnet/orleans/implementation/startup-tasks)
 - Factory pattern in .NET: [https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#factory-pattern](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#factory-pattern)
+
+<!-- sync: mirrors → MDC:.cursor/rules/service-registration.mdc ; synced: 2025-08-24 ; commit: {short-sha} -->

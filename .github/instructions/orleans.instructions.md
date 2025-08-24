@@ -67,7 +67,8 @@ public sealed class TodoGrain : IGrainBase, ITodoGrain, IRemindable
 
     public async Task OnActivateAsync(CancellationToken ct)
     {
-        Logger.LogInformation("Activated {Key}", this.GetPrimaryKey());     // extension method
+        // Use LoggerExtensions + LoggerMessage pattern per logging rules
+        GrainLoggerExtensions.Activated(Logger, this.GetPrimaryKey().ToString());
 
         // 1-minute in-memory timer
         _flushTimer = this.RegisterGrainTimer(
@@ -90,7 +91,7 @@ public sealed class TodoGrain : IGrainBase, ITodoGrain, IRemindable
     public async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken ct)
     {
         _flushTimer?.Dispose();
-        Logger.LogInformation("Deactivating {Key} ({Reason})", this.GetPrimaryKey(), reason);
+        GrainLoggerExtensions.Deactivating(Logger, this.GetPrimaryKey().ToString(), reason.ToString());
         await State.WriteStateAsync();
     }
 
@@ -105,7 +106,7 @@ public sealed class TodoGrain : IGrainBase, ITodoGrain, IRemindable
 
     private Task FlushAsync(CancellationToken _)
     {
-        Logger.LogInformation("Flushed {Count} items", State.State.Items.Count);
+        GrainLoggerExtensions.Flushed(Logger, State.State.Items.Count);
         return Task.CompletedTask;
     }
 

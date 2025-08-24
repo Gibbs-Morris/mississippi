@@ -51,12 +51,12 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 
 - Coverage
   - Aim for 100% unit test coverage on new and changed code paths
-  - Absolute minimum: 90% lines/branches for Mississippi projects
+  - Absolute minimum: 80% lines/branches for Mississippi projects (SonarCloud gate); target 95–100% where technically feasible
   - No coverage regressions: touched files should not decrease in coverage
 - Mutation testing
   - Run Stryker.NET for Mississippi projects; keep or raise the mutation score
-  - Treat surviving mutants as defects in test quality and address them
-  - Avoid score regressions on changed areas; prefer targeted tests over muting/ignoring
+  - Default thresholds align with repository `stryker-config.json`: high 90, low 80, break 80; avoid score regressions on changed areas
+  - Treat surviving mutants as defects in test quality and address them; prefer targeted tests over muting/ignoring
 
 ## Level Details and Guardrails
 
@@ -134,7 +134,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 
 - Zero warnings policy applies to tests; treat analyzer violations as build blockers
 - PR gates: L0 (required) and L1 (where present) for Mississippi; Samples keep minimal, illustrative tests
-- Coverage: collected via coverlet; aim 100%, minimum 90% on Mississippi projects; no regressions on touched code
+- Coverage: collected via coverlet; aim 100%, minimum 80% on Mississippi projects (target 95–100%); no regressions on touched code
 - Mutation testing: Mississippi solution only via Stryker.NET; keep or raise mutation score when touching logic; fix surviving mutants
 
 ## Tooling and Scripts
@@ -153,14 +153,14 @@ Author
 - [ ] Tests are deterministic, isolated, and fast
 - [ ] Assertions cover behavior and edge cases; no sleeps or time flakiness
 - [ ] For UI/API journeys, added Playwright tests at L3 (or L2 API flows) where valuable
-- [ ] Coverage meets goals (target 100%, minimum 90%); no regressions on touched code
+- [ ] Coverage meets goals (target 100%, minimum 80%; aim 95–100%); no regressions on touched code
 - [ ] Mutation score maintained or improved; surviving mutants addressed or justified
 
 Reviewer
 - [ ] L0 present for core logic; L1 used judiciously
 - [ ] No external calls in L0; minimal, isolated infra in L1
 - [ ] Tests follow naming, async, and DI seam patterns
-- [ ] Coverage target met (≥90%, aiming for 100%) with no regressions on touched files
+- [ ] Coverage target met (≥80%, aiming for 95–100%) with no regressions on touched files
 - [ ] Mutation score non-regression; surviving mutants handled appropriately
 - [ ] Playwright usage is resilient and artifacts are captured on failure
 
@@ -184,3 +184,5 @@ This document should be read in conjunction with:
 - **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans-safe patterns that influence test design (no blocking, DI seams)
 - **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For serializer patterns and analyzer compliance that affect tests
 - **Project File Management** (`.github/instructions/projects.instructions.md`) - For automatic test project configuration and centralized package management
+
+<!-- sync: excluded ; justification: no corresponding testing.mdc rule file; synced: 2025-08-24 ; commit: {short-sha} -->

@@ -25,6 +25,7 @@ This document codifies our baseline engineering expectations for any C# service 
 - **Classes are `sealed` by default** — only make classes inheritable when you have a clear, documented need for polymorphism; prefer composition over inheritance
 - **Members are `private` by default** — only expose what consumers actually need; prefer `internal` over `public` when sharing within assemblies
 - **Interfaces are `internal` by default** — only make interfaces `public` when they're part of your deliberate API surface
+- **Orleans grain interfaces access** — grain interfaces are `public` when consumed by external clients; keep `internal` when used only intra-assembly
 - **Explicit access control decisions** — every `public`, `protected`, or unsealed class must have a documented justification in XML comments
 - **Principle of least privilege** — grant the minimum access level required for the intended use case; you can always widen access later, but narrowing it is a breaking change
 - **Follow Orleans POCO pattern** — all grain classes must be `sealed` and implement `IGrainBase` instead of inheriting from `Grain`
@@ -754,3 +755,4 @@ This document should be read in conjunction with:
 - Orleans best practices: [https://learn.microsoft.com/en-us/dotnet/orleans/resources/best-practices](https://learn.microsoft.com/en-us/dotnet/orleans/resources/best-practices)
 - Orleans external tasks & grains: [https://learn.microsoft.com/en-us/dotnet/orleans/grains/external-tasks-and-grains](https://learn.microsoft.com/en-us/dotnet/orleans/grains/external-tasks-and-grains)
 - Twelve-Factor App manifesto: [https://www.12factor.net/](https://www.12factor.net/)
+

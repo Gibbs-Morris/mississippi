@@ -411,12 +411,14 @@ public static class EventProcessorLoggerExtensions
 }
 
 // Usage in Orleans grain
-public class EventProcessorGrain : Grain, IEventProcessorGrain
+public sealed class EventProcessorGrain : IGrainBase, IEventProcessorGrain
 {
+    public IGrainContext GrainContext { get; }
     private ILogger<EventProcessorGrain> Logger { get; }
 
-    public EventProcessorGrain(ILogger<EventProcessorGrain> logger)
+    public EventProcessorGrain(IGrainContext grainContext, ILogger<EventProcessorGrain> logger)
     {
+        GrainContext = grainContext;
         Logger = logger;
     }
 
@@ -678,25 +680,27 @@ public static class EventSourcingGrainLoggerExtensions
 }
 
 // Orleans grain with proper logging patterns and correlation ID handling
-public class EventSourcingGrain : Grain, IEventSourcingGrain
+public sealed class EventSourcingGrain : IEventSourcingGrain, IGrainBase
 {
+    public IGrainContext GrainContext { get; }
     private ILogger<EventSourcingGrain> Logger { get; }
 
-    public EventSourcingGrain(ILogger<EventSourcingGrain> logger)
+    public EventSourcingGrain(IGrainContext grainContext, ILogger<EventSourcingGrain> logger)
     {
+        GrainContext = grainContext;
         Logger = logger;
     }
 
-    public override async Task OnActivateAsync(CancellationToken cancellationToken)
+    public async Task OnActivateAsync(CancellationToken cancellationToken)
     {
         Logger.GrainActivated(this.GetType().Name, this.GetPrimaryKeyString(), this.GetPrimaryKeyString());
-        await base.OnActivateAsync(cancellationToken);
+        await Task.CompletedTask;
     }
 
-    public override async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
+    public async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
     {
         Logger.GrainDeactivated(this.GetType().Name, this.GetPrimaryKeyString(), reason.Description);
-        await base.OnDeactivateAsync(reason, cancellationToken);
+        await Task.CompletedTask;
     }
 
     public async Task<Result> ProcessEventAsync(EventData eventData)
@@ -792,6 +796,12 @@ public static class OrleansCorrelationLoggerExtensions
             new EventId(4, nameof(GrainCallCompleted)),
             "Grain call completed. Method: {MethodName}, Target: {TargetGrain}, CorrelationId: {CorrelationId}, Duration: {Duration}ms");
 
+    private static readonly Action<ILogger, string, string, string, long, string, Exception> s_grainCallFailed =
+        LoggerMessage.Define<string, string, string, long, string>(
+            LogLevel.Error,
+            new EventId(5, nameof(GrainCallFailed)),
+            "Grain call failed. Method: {MethodName}, Target: {TargetGrain}, CorrelationId: {CorrelationId}, Duration: {Duration}ms, Error: {Error}");
+
     public static void CorrelationIdPropagated(this ILogger<OrleansCorrelationHelper> logger, string correlationId, string sourceGrain, string targetGrain) =>
         s_correlationIdPropagated(logger, correlationId, sourceGrain, targetGrain, null);
 
@@ -803,6 +813,9 @@ public static class OrleansCorrelationLoggerExtensions
 
     public static void GrainCallCompleted(this ILogger<OrleansCorrelationHelper> logger, string methodName, string targetGrain, string correlationId, long duration) =>
         s_grainCallCompleted(logger, methodName, targetGrain, correlationId, duration, null);
+
+    public static void GrainCallFailed(this ILogger<OrleansCorrelationHelper> logger, string methodName, string targetGrain, string correlationId, long duration, string error, Exception ex) =>
+        s_grainCallFailed(logger, methodName, targetGrain, correlationId, duration, error, ex);
 }
 
 // Orleans correlation ID helper class
@@ -848,8 +861,7 @@ public static class OrleansCorrelationHelper
         catch (Exception ex)
         {
             stopwatch.Stop();
-            logger.LogError(ex, "Grain call failed. Method: {MethodName}, Target: {TargetGrain}, CorrelationId: {CorrelationId}, Duration: {Duration}ms",
-                methodName, targetGrain, correlationId, stopwatch.ElapsedMilliseconds);
+            logger.GrainCallFailed(methodName, targetGrain, correlationId, stopwatch.ElapsedMilliseconds, ex.Message, ex);
             throw;
         }
     }
@@ -1026,7 +1038,7 @@ public class CorrelationIdMiddleware
 // Controller example showing how to call grains with correlation ID
 [ApiController]
 [Route("api/[controller]")]
-public class OrdersController : ControllerBase
+public sealed class OrdersController : ControllerBase
 {
     private readonly IClusterClient _clusterClient;
     private ILogger<OrdersController> Logger { get; }
@@ -1043,8 +1055,7 @@ public class OrdersController : ControllerBase
         // Correlation ID is already set in Orleans RequestContext by middleware
         var correlationId = OrleansCorrelationHelper.GetCorrelationId();
         
-        Logger.LogInformation("Creating order for customer {CustomerId} with correlation ID {CorrelationId}",
-            request.CustomerId, correlationId);
+        OrdersControllerLoggerExtensions.CreatingOrder(Logger, request.CustomerId, correlationId);
 
         try
         {
@@ -1053,22 +1064,20 @@ public class OrdersController : ControllerBase
             // The correlation ID will automatically propagate to the grain
             var result = await orderGrain.ProcessOrderAsync(request);
             
-            Logger.LogInformation("Order creation completed for customer {CustomerId}. Result: {Result}. CorrelationId: {CorrelationId}",
-                request.CustomerId, result.Status, correlationId);
+            OrdersControllerLoggerExtensions.OrderCreationCompleted(Logger, request.CustomerId, result.Status, correlationId);
             
             return Ok(result);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Order creation failed for customer {CustomerId}. CorrelationId: {CorrelationId}",
-                request.CustomerId, correlationId);
+            OrdersControllerLoggerExtensions.OrderCreationFailed(Logger, request.CustomerId, correlationId, ex);
             return StatusCode(500, "Order creation failed");
         }
     }
 }
 
 // Alternative approach: Pass correlation ID explicitly to grains
-public class ExplicitCorrelationController : ControllerBase
+public sealed class ExplicitCorrelationController : ControllerBase
 {
     private readonly IClusterClient _clusterClient;
     private ILogger<ExplicitCorrelationController> Logger { get; }
@@ -1084,8 +1093,7 @@ public class ExplicitCorrelationController : ControllerBase
     {
         var correlationId = HttpContext.Items["CorrelationId"] as string ?? Guid.NewGuid().ToString();
         
-        Logger.LogInformation("Creating order for customer {CustomerId} with correlation ID {CorrelationId}",
-            request.CustomerId, correlationId);
+        OrdersControllerLoggerExtensions.CreatingOrder(Logger, request.CustomerId, correlationId);
 
         try
         {
@@ -1100,15 +1108,13 @@ public class ExplicitCorrelationController : ControllerBase
             
             var result = await orderGrain.ProcessOrderWithCorrelationAsync(requestWithCorrelation);
             
-            Logger.LogInformation("Order creation completed for customer {CustomerId}. Result: {Result}. CorrelationId: {CorrelationId}",
-                request.CustomerId, result.Status, correlationId);
+            OrdersControllerLoggerExtensions.OrderCreationCompleted(Logger, request.CustomerId, result.Status, correlationId);
             
             return Ok(result);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Order creation failed for customer {CustomerId}. CorrelationId: {CorrelationId}",
-                request.CustomerId, correlationId);
+            OrdersControllerLoggerExtensions.OrderCreationFailed(Logger, request.CustomerId, correlationId, ex);
             return StatusCode(500, "Order creation failed");
         }
     }
