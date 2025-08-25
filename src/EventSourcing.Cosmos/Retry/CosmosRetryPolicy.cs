@@ -41,42 +41,35 @@ internal class CosmosRetryPolicy : IRetryPolicy
             {
                 return await operation();
             }
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
+            {
+                throw new InvalidOperationException(
+                    "Request size exceeds maximum allowed limit. Consider reducing batch size.",
+                    ex);
+            }
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw;
+            }
+            catch (CosmosException ex) when (IsTransientCosmosStatus(ex.StatusCode) && (attempt < MaxRetries))
+            {
+                lastException = ex;
+                TimeSpan delay = ComputeDelay(ex, attempt);
+                await Task.Delay(delay, cancellationToken);
+            }
             catch (CosmosException ex)
             {
-                // Pass through known non-retriable errors immediately
-                if (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
-                {
-                    throw new InvalidOperationException(
-                        "Request size exceeds maximum allowed limit. Consider reducing batch size.",
-                        ex);
-                }
-
-                if (ex.StatusCode == HttpStatusCode.NotFound)
-                {
-                    throw;
-                }
-
-                if (IsTransientCosmosStatus(ex.StatusCode) && (attempt < MaxRetries))
-                {
-                    lastException = ex;
-                    TimeSpan delay = ComputeDelay(ex, attempt);
-                    await Task.Delay(delay, cancellationToken);
-                    continue;
-                }
-
                 // Non-transient Cosmos error - wrap with context and rethrow
                 throw new InvalidOperationException($"Cosmos operation failed with status {ex.StatusCode}", ex);
             }
+            catch (TaskCanceledException ex) when (attempt < MaxRetries)
+            {
+                lastException = ex;
+                TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
+                await Task.Delay(delay, cancellationToken);
+            }
             catch (TaskCanceledException ex)
             {
-                if (attempt < MaxRetries)
-                {
-                    lastException = ex;
-                    TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-                    await Task.Delay(delay, cancellationToken);
-                    continue;
-                }
-
                 // Cancellation should be honored by callers; wrap to provide consistent surface
                 throw new OperationCanceledException("Cosmos operation canceled", ex, cancellationToken);
             }

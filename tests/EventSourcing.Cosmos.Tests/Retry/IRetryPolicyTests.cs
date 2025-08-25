@@ -9,7 +9,7 @@ using Mississippi.EventSourcing.Cosmos.Retry;
 namespace Mississippi.EventSourcing.Cosmos.Tests.Retry;
 
 /// <summary>
-///     Contract-level tests for <see cref="IRetryPolicy"/> behavior using the Cosmos implementation.
+///     Contract-level tests for <see cref="IRetryPolicy" /> behavior using the Cosmos implementation.
 /// </summary>
 public sealed class IRetryPolicyTests
 {
@@ -54,7 +54,8 @@ public sealed class IRetryPolicyTests
         Func<Task<int>> operation = () => Task.FromException<int>(CreateCosmosException(HttpStatusCode.BadRequest));
 
         // Act
-        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => policy.ExecuteAsync(operation));
+        InvalidOperationException ex =
+            await Assert.ThrowsAsync<InvalidOperationException>(() => policy.ExecuteAsync(operation));
 
         // Assert
         Assert.IsType<CosmosException>(ex.InnerException);
@@ -68,8 +69,10 @@ public sealed class IRetryPolicyTests
     )
     {
         Type type = typeof(CosmosException);
-        ConstructorInfo[] ctors = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        ConstructorInfo? ctor = ctors.FirstOrDefault(c => c.GetParameters().Any(p => p.ParameterType == typeof(HttpStatusCode)));
+        ConstructorInfo[] ctors =
+            type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        ConstructorInfo? ctor =
+            ctors.FirstOrDefault(c => c.GetParameters().Any(p => p.ParameterType == typeof(HttpStatusCode)));
         if (ctor is null)
         {
             throw new InvalidOperationException("No suitable CosmosException constructor found for tests.");

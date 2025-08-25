@@ -1,13 +1,3 @@
-using System.Threading;
-using Azure;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
-using Microsoft.Extensions.Options;
-using Mississippi.EventSourcing.Cosmos.Locking;
-using Moq;
-using Xunit;
-
 namespace Mississippi.EventSourcing.Cosmos.Tests.Locking;
 
 /// <summary>
@@ -19,7 +9,7 @@ public sealed class BlobDistributedLockManagerTests
     // ...existing code...
 
     /// <summary>
-    /// Acquire should create container and blob on first acquire path.
+    ///     Acquire should create container and blob on first acquire path.
     /// </summary>
     /// <returns>A completed task.</returns>
     [Fact]
@@ -32,7 +22,7 @@ public sealed class BlobDistributedLockManagerTests
     }
 
     /// <summary>
-    /// Acquire should retry on lease conflicts and eventually succeed.
+    ///     Acquire should retry on lease conflicts and eventually succeed.
     /// </summary>
     /// <returns>A completed task.</returns>
     [Fact]
@@ -45,7 +35,7 @@ public sealed class BlobDistributedLockManagerTests
     }
 
     /// <summary>
-    /// Acquire should throw when unable to acquire after retries.
+    ///     Acquire should throw when unable to acquire after retries.
     /// </summary>
     /// <returns>A completed task.</returns>
     [Fact]
@@ -67,14 +57,14 @@ public sealed class BlobDistributedLockManagerTests
     }
 
     /// <summary>
-    /// Acquire should request the lease with the requested duration value.
+    ///     Acquire should request the lease with the requested duration value.
     /// </summary>
     /// <returns>A completed task.</returns>
     [Fact]
     public async Task AcquireLockAsyncCreatesLeaseWithRequestedDurationAsync()
     {
         await Task.Yield();
-        var duration = 15;
+        int duration = 15;
         Assert.Equal(15, duration);
     }
 }
