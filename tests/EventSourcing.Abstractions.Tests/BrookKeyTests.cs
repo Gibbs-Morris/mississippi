@@ -77,6 +77,17 @@ public class BrookKeyTests
     }
 
     /// <summary>
+    ///     FromBrookKey should return the same string representation as ToString.
+    /// </summary>
+    [Fact]
+    public void FromBrookKeyReturnsStringRepresentation()
+    {
+        BrookKey k = new("A", "B");
+        string s = BrookKey.FromBrookKey(k);
+        Assert.Equal("A|B", s);
+    }
+
+    /// <summary>
     ///     FromString should throw when passed null.
     /// </summary>
     [Fact]

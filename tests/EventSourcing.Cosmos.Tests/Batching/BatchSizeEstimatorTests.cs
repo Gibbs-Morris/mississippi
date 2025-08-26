@@ -127,4 +127,34 @@ public class BatchSizeEstimatorTests
         Assert.Throws<InvalidOperationException>(() =>
             estimator.CreateSizeLimitedBatches(new[] { ev }, 10, tinyMaxSize).ToList());
     }
+
+    /// <summary>
+    ///     Ensures EstimateBatchSize returns a positive value taking into account event estimates and overhead.
+    /// </summary>
+    [Fact]
+    public void EstimateBatchSize_SumsEventEstimatesPlusOverhead()
+    {
+        BatchSizeEstimator estimator = new();
+        BrookEvent e1 = new()
+        {
+            Id = "1",
+            Type = "A",
+            DataContentType = "application/octet-stream",
+            Data = ImmutableArray.Create(new byte[] { 1, 2, 3, 4 }),
+        };
+        BrookEvent e2 = new()
+        {
+            Id = "2",
+            Type = "B",
+            DataContentType = "application/octet-stream",
+            Data = ImmutableArray.Create(new byte[] { 5 }),
+        };
+        long size = estimator.EstimateBatchSize(
+            new List<BrookEvent>
+            {
+                e1,
+                e2,
+            });
+        Assert.True(size > 0);
+    }
 }

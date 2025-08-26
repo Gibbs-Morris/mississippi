@@ -415,6 +415,58 @@ public class CosmosRepositoryTests
     }
 
     /// <summary>
+    ///     Verifies ExecuteTransactionalBatchAsync surfaces 413 (RequestEntityTooLarge) as InvalidOperationException.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteTransactionalBatchAsyncThrowsOnRequestEntityTooLargeAsync()
+    {
+        // Arrange
+        Mock<Container> container = new();
+        Mock<TransactionalBatch> batch = new();
+        batch.Setup(b => b.ReplaceItem(It.IsAny<string>(), It.IsAny<HeadDocument>(), null)).Returns(batch.Object);
+
+        // Simulate CosmosException 413 thrown from ExecuteAsync
+        CosmosException ex = CreateCosmosException(HttpStatusCode.RequestEntityTooLarge);
+        batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>())).ThrowsAsync(ex);
+        container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
+        CosmosRepository sut = CreateRepository(container.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await sut.ExecuteTransactionalBatchAsync(new("t", "i"), Array.Empty<EventStorageModel>(), new(0), 1));
+    }
+
+    /// <summary>
+    ///     Verifies ExecuteTransactionalBatchAsync returns non-success responses without retry when non-transient.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteTransactionalBatchAsyncReturnsNonTransientResponseAsync()
+    {
+        // Arrange
+        Mock<Container> container = new();
+        Mock<TransactionalBatch> batch = new();
+        batch.Setup(b => b.ReplaceItem(It.IsAny<string>(), It.IsAny<HeadDocument>(), null)).Returns(batch.Object);
+        Mock<TransactionalBatchResponse> nonTransient = new();
+        nonTransient.SetupGet(r => r.IsSuccessStatusCode).Returns(false);
+        nonTransient.SetupGet(r => r.StatusCode).Returns(HttpStatusCode.BadRequest);
+        batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(nonTransient.Object);
+        container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
+        CosmosRepository sut = CreateRepository(container.Object);
+
+        // Act
+        TransactionalBatchResponse resp = await sut.ExecuteTransactionalBatchAsync(
+            new("t", "i"),
+            Array.Empty<EventStorageModel>(),
+            new(0),
+            1);
+
+        // Assert
+        Assert.Same(nonTransient.Object, resp);
+    }
+
+    /// <summary>
     ///     Verifies QueryEventsAsync maps and yields models in-order across multiple pages.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>

@@ -1,12 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Head;
-using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.Tests.Infrastructure;
+using Mississippi.EventSourcing.Writer;
 
-using Orleans.Streams;
 using Orleans.TestingHost;
 
 
@@ -29,9 +25,10 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     public async Task GetLatestPositionConfirmedAsync_ReadsFromStorageAndUpdatesCache()
     {
         BrookKey key = new("t", "id2");
-        var writer = cluster.GrainFactory.GetGrain<Mississippi.EventSourcing.Writer.IBrookWriterGrain>(key);
-        await writer.AppendEventsAsync([
-            new(), new(), new(), new(), new()
+        IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
+        await writer.AppendEventsAsync(
+        [
+            new(), new(), new(), new(), new(),
         ]);
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
         BrookPosition confirmed = await head.GetLatestPositionConfirmedAsync();
@@ -48,5 +45,15 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
         // Force-confirm head position via storage-backed read to avoid timing flakiness
         BrookPosition confirmed = await head.GetLatestPositionConfirmedAsync();
         Assert.True(confirmed.Value >= -1);
+    }
+
+    [Fact]
+    public async Task DeactivateAsync_CompletesWithoutError()
+    {
+        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(new BrookKey("t", "id4"));
+        await head.DeactivateAsync();
+        // No exception indicates success; optionally ensure we can still call read
+        BrookPosition p = await head.GetLatestPositionAsync();
+        Assert.True(p.Value >= -1);
     }
 }

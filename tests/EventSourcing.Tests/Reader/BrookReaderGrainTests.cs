@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Head;
 using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.Tests.Infrastructure;
 using Mississippi.EventSourcing.Writer;
@@ -29,7 +30,7 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
             .ToImmutableArray();
         await writer.AppendEventsAsync(batch);
         // Ensure head cache has advanced before full reader walk
-        var head = cluster.GrainFactory.GetGrain<Mississippi.EventSourcing.Head.IBrookHeadGrain>(key);
+        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
         await head.GetLatestPositionConfirmedAsync();
         IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);
         List<BrookEvent> got = new();
@@ -54,10 +55,10 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
             },
         ]);
         // Ensure head advanced
-        var head2 = cluster.GrainFactory.GetGrain<Mississippi.EventSourcing.Head.IBrookHeadGrain>(key);
+        IBrookHeadGrain head2 = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
         await head2.GetLatestPositionConfirmedAsync();
         IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);
-        ImmutableArray<BrookEvent> batch = await reader.ReadEventsBatchAsync(0, null);
+        ImmutableArray<BrookEvent> batch = await reader.ReadEventsBatchAsync(0);
         Assert.Single(batch);
         Assert.Equal("a", batch[0].Id);
     }

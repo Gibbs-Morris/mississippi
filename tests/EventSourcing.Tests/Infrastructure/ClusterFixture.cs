@@ -1,10 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Abstractions.Storage;
 
 using Orleans.TestingHost;
-using Orleans;
 
 
 namespace Mississippi.EventSourcing.Tests.Infrastructure;
@@ -32,7 +31,7 @@ public sealed class ClusterFixture : IDisposable
 internal sealed class TestClientConfigurations : IClientBuilderConfigurator
 {
     public void Configure(
-        Microsoft.Extensions.Configuration.IConfiguration configuration,
+        IConfiguration configuration,
         IClientBuilder clientBuilder
     )
     {

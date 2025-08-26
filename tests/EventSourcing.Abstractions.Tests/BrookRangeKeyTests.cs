@@ -55,4 +55,14 @@ public sealed class BrookRangeKeyTests
         Assert.Throws<FormatException>(() => BrookRangeKey.FromString("a|b|notanumber|1"));
         Assert.Throws<FormatException>(() => BrookRangeKey.FromString("a|b|1|notanumber"));
     }
+
+    /// <summary>
+    ///     ToString should return "type|id|start|count".
+    /// </summary>
+    [Fact]
+    public void ToStringUsesSeparatorAndFields()
+    {
+        BrookRangeKey rk = new("t", "i", 5, 10);
+        Assert.Equal("t|i|5|10", rk.ToString());
+    }
 }

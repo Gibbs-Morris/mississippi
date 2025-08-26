@@ -58,6 +58,36 @@ public class BrookStorageProviderRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies that the overload accepting both connection strings and IConfiguration binds options and registers
+    ///     clients.
+    /// </summary>
+    [Fact]
+    public void AddCosmosBrookStorageProviderWithConnectionStringsAndConfigurationBindsAndRegisters()
+    {
+        ServiceCollection services = new();
+        IConfigurationRoot cfg = new ConfigurationBuilder().AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["DatabaseId"] = "cfgDb",
+                    ["LockContainerName"] = "cfgLocks",
+                })
+            .Build();
+        services.AddCosmosBrookStorageProvider(
+            "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM=;",
+            "UseDevelopmentStorage=true",
+            cfg);
+
+        // Assert by descriptor types to avoid creating real SDK clients
+        List<Type> serviceTypes = services.Select(sd => sd.ServiceType).ToList();
+        Assert.Contains(typeof(CosmosClient), serviceTypes);
+        Assert.Contains(typeof(BlobServiceClient), serviceTypes);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IOptions<BrookStorageOptions> opts = provider.GetRequiredService<IOptions<BrookStorageOptions>>();
+        Assert.Equal("cfgDb", opts.Value.DatabaseId);
+        Assert.Equal("cfgLocks", opts.Value.LockContainerName);
+    }
+
+    /// <summary>
     ///     Verifies configureOptions overload populates IOptions&lt;BrookStorageOptions&gt;.
     /// </summary>
     [Fact]
