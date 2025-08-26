@@ -50,6 +50,13 @@
         "reportgenerator"
       ],
       "rollForward": false
+    },
+    "jetbrains.dotcover.commandlinetools": {
+      "version": "2025.1.6",
+      "commands": [
+        "dotCover"
+      ],
+      "rollForward": false
     }
   }
 }
