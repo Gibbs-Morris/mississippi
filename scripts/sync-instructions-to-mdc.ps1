@@ -5,7 +5,7 @@ Regenerates Cursor .mdc rule files from the canonical instruction Markdown files
 - Deletes existing .cursor/rules/*.mdc (configurable)
 - For each .github/instructions/*.instructions.md, creates a corresponding .cursor/rules/<name>.mdc
 - Maps YAML front matter `applyTo` to MDC front-matter (globs/alwaysApply)
-- Adds Source/Last synced metadata and a sync comment including the short git SHA
+- Adds Source/Last synced metadata
 - Copies the human-readable content into MDC body (MDC supports Markdown in Cursor)
 #>
 
