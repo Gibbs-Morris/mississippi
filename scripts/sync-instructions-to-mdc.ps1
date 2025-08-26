@@ -42,6 +42,11 @@ try {
     if ($LASTEXITCODE -eq 0 -and $shaOut) { $shortSha = ($shaOut | Select-Object -First 1).Trim() }
 } catch { }
 
+# Compose synced metadata line for MDC files
+if (-not $LastSynced) { $LastSynced = (Get-Date).ToString('yyyy-MM-dd') }
+$syncedLine = ("**Last synced:** {0}" -f $LastSynced)
+if ($shortSha -and $shortSha -ne '{short-sha}') { $syncedLine = ($syncedLine + (" (commit `{0}`)" -f $shortSha)) }
+
 Write-Host "Deleting existing MDC files..." -ForegroundColor Cyan
 
 # Determine target MDC names that we will regenerate
@@ -157,14 +162,12 @@ foreach ($file in $instructionFiles) {
         $mdcPath = Join-Path $MdcDir (Get-MdcFileName -InstructionFileName $file.Name)
 
         $sourceLine = "**Source:** .github/instructions/$($file.Name)"
-        $syncedLine = "**Last synced:** $LastSynced"
 
         $body = @()
         $body += $frontMatter
         # Inject metadata lines before the rest of the content
         if ($title) { $body += ("# $title") }
         $body += $sourceLine
-        $body += $syncedLine
         $body += ''
         $body += $contentBody
 
