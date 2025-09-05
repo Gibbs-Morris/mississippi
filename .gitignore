@@ -50,6 +50,10 @@ Generated\ Files/
 TestResult.xml
 nunit-*.xml
 
+# Custom test output directories
+test-results/
+StrykerOutput/
+
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/
@@ -407,3 +411,5 @@ resharper-report.xml
 
 # Ignore generated classic solution files (.sln) created from .slnx during automation
 *.sln
+
+*.sarif
