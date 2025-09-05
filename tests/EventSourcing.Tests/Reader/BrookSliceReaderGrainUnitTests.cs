@@ -7,8 +7,14 @@ using Moq;
 
 namespace Mississippi.EventSourcing.Tests.Reader;
 
+/// <summary>
+///     Unit tests for <see cref="BrookSliceReaderGrain" />.
+/// </summary>
 public class BrookSliceReaderGrainUnitTests
 {
+    /// <summary>
+    ///     Ensures deactivation clears caches and completes without error.
+    /// </summary>
     [Fact]
     public async Task DeactivateAsync_ClearsCacheAndDeactivates()
     {

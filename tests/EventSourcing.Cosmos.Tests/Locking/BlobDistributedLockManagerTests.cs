@@ -12,8 +12,14 @@ using Moq;
 
 namespace Mississippi.EventSourcing.Cosmos.Tests.Locking;
 
+/// <summary>
+///     Tests for <see cref="BlobDistributedLockManager" /> lease acquisition paths.
+/// </summary>
 public sealed class BlobDistributedLockManagerTests
 {
+    /// <summary>
+    ///     Validates initial acquire path creates container and blob when missing.
+    /// </summary>
     [Fact(
         Skip = "Moq cannot setup extension method GetBlobLeaseClient; needs seam/wrapper. Skipping pending refactor.")]
     public async Task AcquireLockAsyncCreatesContainerAndBlobOnFirstAcquireAsync()
@@ -58,6 +64,9 @@ public sealed class BlobDistributedLockManagerTests
         Assert.NotNull(l);
     }
 
+    /// <summary>
+    ///     Validates retry behavior when lease acquire encounters a 409 conflict.
+    /// </summary>
     [Fact(
         Skip = "Moq cannot setup extension method GetBlobLeaseClient; needs seam/wrapper. Skipping pending refactor.")]
     public async Task AcquireLockAsyncRetriesOnLeaseConflictAsync()
@@ -104,6 +113,9 @@ public sealed class BlobDistributedLockManagerTests
         Assert.True(calls >= 2);
     }
 
+    /// <summary>
+    ///     Validates that acquire throws when unable to obtain a lease.
+    /// </summary>
     [Fact(
         Skip = "Moq cannot setup extension method GetBlobLeaseClient; needs seam/wrapper. Skipping pending refactor.")]
     public async Task AcquireLockAsyncThrowsWhenUnableToAcquireAsync()
@@ -136,6 +148,9 @@ public sealed class BlobDistributedLockManagerTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15)));
     }
 
+    /// <summary>
+    ///     Captures requested duration and ensures it flows into the lease acquire call.
+    /// </summary>
     [Fact(
         Skip = "Moq cannot setup extension method GetBlobLeaseClient; needs seam/wrapper. Skipping pending refactor.")]
     public async Task AcquireLockAsyncCreatesLeaseWithRequestedDurationAsync()

@@ -17,8 +17,14 @@ using Moq;
 
 namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 
+/// <summary>
+///     Tests for rollback behavior in <see cref="EventBrookAppender" />.
+/// </summary>
 public class EventBrookAppenderRollbackTests
 {
+    /// <summary>
+    ///     When an append batch fails mid-stream, rollback should attempt cleanup and aggregate issues.
+    /// </summary>
     [Fact]
     public async Task AppendLargeBatchAsync_RollsBack_OnFailure_AndAggregatesIssues()
     {
@@ -130,6 +136,10 @@ public class EventBrookAppenderRollbackTests
         await Assert.ThrowsAsync<AggregateException>(() => sut.AppendEventsAsync(key, events, null));
     }
 
+    /// <summary>
+    ///     When initial append fails with no processed events, rollback should clean up pending head without aggregate
+    ///     exception.
+    /// </summary>
     [Fact]
     public async Task AppendLargeBatchAsync_RollsBack_CleansUp_WhenDeletesSucceed()
     {

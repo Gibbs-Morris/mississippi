@@ -8,8 +8,14 @@ using Moq;
 
 namespace Mississippi.EventSourcing.Tests.Reader;
 
+/// <summary>
+///     Unit tests for <see cref="BrookReaderGrain" />.
+/// </summary>
 public class BrookReaderGrainUnitTests
 {
+    /// <summary>
+    ///     Ensures deactivation path completes without error.
+    /// </summary>
     [Fact]
     public async Task DeactivateAsync_CallsDeactivateOnIdle()
     {

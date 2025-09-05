@@ -10,8 +10,14 @@ using Moq;
 
 namespace Mississippi.EventSourcing.Tests.Head;
 
+/// <summary>
+///     Unit tests for <see cref="BrookHeadGrain" />.
+/// </summary>
 public class BrookHeadGrainUnitTests
 {
+    /// <summary>
+    ///     Ensures OnErrorAsync requests grain deactivation without throwing.
+    /// </summary>
     [Fact]
     public async Task OnErrorAsync_DeactivatesGrain()
     {

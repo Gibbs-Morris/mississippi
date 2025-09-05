@@ -13,6 +13,10 @@ namespace Mississippi.EventSourcing.Tests.Infrastructure;
 /// </summary>
 public sealed class ClusterFixture : IDisposable
 {
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ClusterFixture" /> class and deploys a single-node Orleans
+    ///     TestCluster.
+    /// </summary>
     public ClusterFixture()
     {
         TestClusterBuilder builder = new();
@@ -23,13 +27,21 @@ public sealed class ClusterFixture : IDisposable
         Cluster.Deploy();
     }
 
+    /// <summary>
+    ///     Gets the active Orleans test cluster.
+    /// </summary>
     public TestCluster Cluster { get; }
 
+    /// <inheritdoc />
     public void Dispose() => Cluster.StopAllSilos();
 }
 
+/// <summary>
+///     Client configuration for the Orleans test cluster.
+/// </summary>
 internal sealed class TestClientConfigurations : IClientBuilderConfigurator
 {
+    /// <inheritdoc />
     public void Configure(
         IConfiguration configuration,
         IClientBuilder clientBuilder
@@ -45,6 +57,9 @@ internal sealed class TestClientConfigurations : IClientBuilderConfigurator
 [CollectionDefinition(Name)]
 public sealed class ClusterCollection : ICollectionFixture<ClusterFixture>
 {
+    /// <summary>
+    ///     The xUnit collection name for tests sharing a single Orleans cluster.
+    /// </summary>
     public const string Name = nameof(ClusterCollection);
 }
 
@@ -53,6 +68,7 @@ public sealed class ClusterCollection : ICollectionFixture<ClusterFixture>
 /// </summary>
 internal sealed class TestSiloConfigurations : ISiloConfigurator
 {
+    /// <inheritdoc />
     public void Configure(
         ISiloBuilder siloBuilder
     )

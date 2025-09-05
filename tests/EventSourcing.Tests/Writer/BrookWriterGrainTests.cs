@@ -10,11 +10,17 @@ using Orleans.TestingHost;
 
 namespace Mississippi.EventSourcing.Tests.Writer;
 
+/// <summary>
+///     Integration tests for <see cref="IBrookWriterGrain" />.
+/// </summary>
 [Collection(ClusterCollection.Name)]
 public class BrookWriterGrainTests(ClusterFixture fixture)
 {
     private readonly TestCluster cluster = fixture.Cluster;
 
+    /// <summary>
+    ///     Appending events should publish a head update visible to the head grain.
+    /// </summary>
     [Fact]
     public async Task AppendEventsAsync_AppendsAndPublishesHeadUpdate()
     {
@@ -39,6 +45,9 @@ public class BrookWriterGrainTests(ClusterFixture fixture)
         Assert.Equal(2, confirmed.Value);
     }
 
+    /// <summary>
+    ///     Appending with a stale expected version should throw.
+    /// </summary>
     [Fact]
     public async Task AppendEventsAsync_RespectsExpectedVersion()
     {

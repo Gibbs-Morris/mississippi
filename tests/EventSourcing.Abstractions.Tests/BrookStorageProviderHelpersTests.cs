@@ -9,8 +9,14 @@ using Mississippi.EventSourcing.Abstractions.Storage;
 
 namespace Mississippi.EventSourcing.Abstractions.Tests;
 
+/// <summary>
+///     Tests for <see cref="BrookStorageProviderHelpers" /> registration helpers.
+/// </summary>
 public class BrookStorageProviderHelpersTests
 {
+    /// <summary>
+    ///     Verifies that registering a brook storage provider wires reader and writer services.
+    /// </summary>
     [Fact]
     public void RegisterBrookStorageProvider_RegistersReaderAndWriter()
     {
@@ -21,6 +27,9 @@ public class BrookStorageProviderHelpersTests
         Assert.NotNull(provider.GetRequiredService<IBrookStorageWriter>());
     }
 
+    /// <summary>
+    ///     Verifies that the configure action binds options for the provider.
+    /// </summary>
     [Fact]
     public void RegisterBrookStorageProvider_WithConfigureActionBindsOptions()
     {
@@ -31,6 +40,9 @@ public class BrookStorageProviderHelpersTests
         Assert.Equal("x", opts.Value);
     }
 
+    /// <summary>
+    ///     Verifies that configuration binding populates provider options.
+    /// </summary>
     [Fact]
     public void RegisterBrookStorageProvider_WithConfigurationBindsOptions()
     {

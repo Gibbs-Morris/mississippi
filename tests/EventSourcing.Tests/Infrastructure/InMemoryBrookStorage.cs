@@ -17,6 +17,7 @@ internal sealed class InMemoryBrookStorage
 
     private readonly Dictionary<string, long> heads = new();
 
+    /// <inheritdoc />
     public Task<BrookPosition> ReadHeadPositionAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
@@ -26,6 +27,7 @@ internal sealed class InMemoryBrookStorage
         return Task.FromResult(new BrookPosition(v));
     }
 
+    /// <inheritdoc />
     public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
         BrookRangeKey brookRange,
         [EnumeratorCancellation] CancellationToken cancellationToken = default
@@ -45,6 +47,7 @@ internal sealed class InMemoryBrookStorage
         await Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task<BrookPosition> AppendEventsAsync(
         BrookKey brookId,
         IReadOnlyList<BrookEvent> events,
@@ -71,6 +74,11 @@ internal sealed class InMemoryBrookStorage
         return Task.FromResult(new BrookPosition(head));
     }
 
+    /// <summary>
+    ///     Forces the head position for the specified brook in the in-memory store.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="position">The head position to set.</param>
     public void SetHead(
         BrookKey brookId,
         long position

@@ -11,11 +11,17 @@ using Orleans.TestingHost;
 
 namespace Mississippi.EventSourcing.Tests.Reader;
 
+/// <summary>
+///     Integration tests for <see cref="IBrookReaderGrain" />.
+/// </summary>
 [Collection(ClusterCollection.Name)]
 public class BrookReaderGrainTests(ClusterFixture fixture)
 {
     private readonly TestCluster cluster = fixture.Cluster;
 
+    /// <summary>
+    ///     Verifies range slicing and full enumeration via ReadEventsAsync.
+    /// </summary>
     [Fact]
     public async Task ReadEventsAsync_SlicesByOptionsAndReturnsAll()
     {
@@ -42,6 +48,9 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
         Assert.Equal(["0", "1", "2", "3", "4"], got.Select(x => x.Id).ToArray());
     }
 
+    /// <summary>
+    ///     Verifies batch read returns an immutable array with expected events.
+    /// </summary>
     [Fact]
     public async Task ReadEventsBatchAsync_ReturnsImmutableArray()
     {

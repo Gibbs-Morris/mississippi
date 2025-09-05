@@ -8,11 +8,17 @@ using Orleans.TestingHost;
 
 namespace Mississippi.EventSourcing.Tests.Head;
 
+/// <summary>
+///     Integration tests for <see cref="IBrookHeadGrain" /> behavior.
+/// </summary>
 [Collection(ClusterCollection.Name)]
 public class BrookHeadGrainTests(ClusterFixture fixture)
 {
     private readonly TestCluster cluster = fixture.Cluster;
 
+    /// <summary>
+    ///     Latest position should be cached and default to -1 before any writes.
+    /// </summary>
     [Fact]
     public async Task GetLatestPositionAsync_ReturnsCached_DefaultIsMinusOne()
     {
@@ -21,6 +27,9 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
         Assert.Equal(-1, p.Value);
     }
 
+    /// <summary>
+    ///     Confirmed read should populate cache with storage-backed value.
+    /// </summary>
     [Fact]
     public async Task GetLatestPositionConfirmedAsync_ReadsFromStorageAndUpdatesCache()
     {
@@ -37,6 +46,9 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
         Assert.Equal(5, cached.Value);
     }
 
+    /// <summary>
+    ///     OnNextAsync updates tracked head when a newer position is observed.
+    /// </summary>
     [Fact]
     public async Task OnNextAsync_UpdatesTrackedHead_WhenNewer()
     {
@@ -47,6 +59,9 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
         Assert.True(confirmed.Value >= -1);
     }
 
+    /// <summary>
+    ///     Explicit deactivation should complete without exceptions.
+    /// </summary>
     [Fact]
     public async Task DeactivateAsync_CompletesWithoutError()
     {

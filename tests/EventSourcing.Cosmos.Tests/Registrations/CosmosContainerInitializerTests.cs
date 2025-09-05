@@ -11,8 +11,14 @@ using Moq;
 
 namespace Mississippi.EventSourcing.Cosmos.Tests.Registrations;
 
+/// <summary>
+///     Tests for Cosmos container/database initialization wiring.
+/// </summary>
 public class CosmosContainerInitializerTests
 {
+    /// <summary>
+    ///     Verifies that the initializer creates the database and container when not found.
+    /// </summary>
     [Fact]
     public async Task StartAsync_CreatesDatabaseAndContainer_WhenContainerNotFound()
     {
@@ -72,6 +78,9 @@ public class CosmosContainerInitializerTests
             Times.Once);
     }
 
+    /// <summary>
+    ///     Verifies that an existing container with wrong partition key causes startup to throw.
+    /// </summary>
     [Fact]
     public async Task StartAsync_Throws_WhenExistingContainerPartitionKeyWrong()
     {
