@@ -23,7 +23,7 @@ public class BrookSliceReaderGrainTests(ClusterFixture fixture)
     ///     Verifies slice reader populates cache and respects requested range.
     /// </summary>
     [Fact]
-    public async Task ReadAsync_PopulatesCacheAndRespectsRange()
+    public async Task ReadAsyncPopulatesCacheAndRespectsRange()
     {
         BrookKey key = new("t", "slice1");
         // Seed events via writer to fill storage and head positions
@@ -54,7 +54,7 @@ public class BrookSliceReaderGrainTests(ClusterFixture fixture)
     ///     Verifies batch slice read returns expected immutable array.
     /// </summary>
     [Fact]
-    public async Task ReadBatchAsync_ReturnsImmutableArray()
+    public async Task ReadBatchAsyncReturnsImmutableArray()
     {
         BrookKey key = new("t", "slice2");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);

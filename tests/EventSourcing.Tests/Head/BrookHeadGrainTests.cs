@@ -20,7 +20,7 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     ///     Latest position should be cached and default to -1 before any writes.
     /// </summary>
     [Fact]
-    public async Task GetLatestPositionAsync_ReturnsCached_DefaultIsMinusOne()
+    public async Task GetLatestPositionAsyncReturnsCachedDefaultIsMinusOne()
     {
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(new BrookKey("t", "id"));
         BrookPosition p = await head.GetLatestPositionAsync();
@@ -31,7 +31,7 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     ///     Confirmed read should populate cache with storage-backed value.
     /// </summary>
     [Fact]
-    public async Task GetLatestPositionConfirmedAsync_ReadsFromStorageAndUpdatesCache()
+    public async Task GetLatestPositionConfirmedAsyncReadsFromStorageAndUpdatesCache()
     {
         BrookKey key = new("t", "id2");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
@@ -50,7 +50,7 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     ///     OnNextAsync updates tracked head when a newer position is observed.
     /// </summary>
     [Fact]
-    public async Task OnNextAsync_UpdatesTrackedHead_WhenNewer()
+    public async Task OnNextAsyncUpdatesTrackedHeadWhenNewer()
     {
         BrookKey key = new("t", "id3");
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
@@ -63,7 +63,7 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     ///     Explicit deactivation should complete without exceptions.
     /// </summary>
     [Fact]
-    public async Task DeactivateAsync_CompletesWithoutError()
+    public async Task DeactivateAsyncCompletesWithoutError()
     {
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(new BrookKey("t", "id4"));
         await head.DeactivateAsync();

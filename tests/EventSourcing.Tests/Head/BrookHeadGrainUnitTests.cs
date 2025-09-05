@@ -19,7 +19,7 @@ public class BrookHeadGrainUnitTests
     ///     Ensures OnErrorAsync requests grain deactivation without throwing.
     /// </summary>
     [Fact]
-    public async Task OnErrorAsync_DeactivatesGrain()
+    public async Task OnErrorAsyncDeactivatesGrain()
     {
         // Arrange
         Mock<IBrookStorageReader> storage = new();

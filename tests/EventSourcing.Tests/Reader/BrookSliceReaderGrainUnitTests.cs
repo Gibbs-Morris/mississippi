@@ -16,7 +16,7 @@ public class BrookSliceReaderGrainUnitTests
     ///     Ensures deactivation clears caches and completes without error.
     /// </summary>
     [Fact]
-    public async Task DeactivateAsync_ClearsCacheAndDeactivates()
+    public async Task DeactivateAsyncClearsCacheAndDeactivates()
     {
         // Arrange
         Mock<IBrookStorageReader> storage = new();

@@ -20,7 +20,7 @@ public class CosmosContainerInitializerTests
     ///     Verifies that the initializer creates the database and container when not found.
     /// </summary>
     [Fact]
-    public async Task StartAsync_CreatesDatabaseAndContainer_WhenContainerNotFound()
+    public async Task StartAsyncCreatesDatabaseAndContainerWhenContainerNotFound()
     {
         // Arrange
         BrookStorageOptions opts = new()
@@ -82,7 +82,7 @@ public class CosmosContainerInitializerTests
     ///     Verifies that an existing container with wrong partition key causes startup to throw.
     /// </summary>
     [Fact]
-    public async Task StartAsync_Throws_WhenExistingContainerPartitionKeyWrong()
+    public async Task StartAsyncThrowsWhenExistingContainerPartitionKeyWrong()
     {
         // Arrange
         BrookStorageOptions opts = new()

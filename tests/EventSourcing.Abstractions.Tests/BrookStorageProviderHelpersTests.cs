@@ -18,7 +18,7 @@ public class BrookStorageProviderHelpersTests
     ///     Verifies that registering a brook storage provider wires reader and writer services.
     /// </summary>
     [Fact]
-    public void RegisterBrookStorageProvider_RegistersReaderAndWriter()
+    public void RegisterBrookStorageProviderRegistersReaderAndWriter()
     {
         ServiceCollection services = new();
         services.RegisterBrookStorageProvider<FakeProvider>();
@@ -31,7 +31,7 @@ public class BrookStorageProviderHelpersTests
     ///     Verifies that the configure action binds options for the provider.
     /// </summary>
     [Fact]
-    public void RegisterBrookStorageProvider_WithConfigureActionBindsOptions()
+    public void RegisterBrookStorageProviderWithConfigureActionBindsOptions()
     {
         ServiceCollection services = new();
         services.RegisterBrookStorageProvider<FakeProvider, FakeOptions>(o => o.Value = "x");
@@ -44,7 +44,7 @@ public class BrookStorageProviderHelpersTests
     ///     Verifies that configuration binding populates provider options.
     /// </summary>
     [Fact]
-    public void RegisterBrookStorageProvider_WithConfigurationBindsOptions()
+    public void RegisterBrookStorageProviderWithConfigurationBindsOptions()
     {
         Dictionary<string, string?> map = new()
         {

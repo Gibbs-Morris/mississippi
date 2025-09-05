@@ -17,7 +17,7 @@ public class BrookReaderGrainUnitTests
     ///     Ensures deactivation path completes without error.
     /// </summary>
     [Fact]
-    public async Task DeactivateAsync_CallsDeactivateOnIdle()
+    public async Task DeactivateAsyncCallsDeactivateOnIdle()
     {
         // Arrange
         Mock<IBrookGrainFactory> factory = new();

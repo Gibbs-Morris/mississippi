@@ -26,7 +26,7 @@ public class EventBrookAppenderRollbackTests
     ///     When an append batch fails mid-stream, rollback should attempt cleanup and aggregate issues.
     /// </summary>
     [Fact]
-    public async Task AppendLargeBatchAsync_RollsBack_OnFailure_AndAggregatesIssues()
+    public async Task AppendLargeBatchAsyncRollsBackOnFailureAndAggregatesIssues()
     {
         // Arrange
         BrookKey key = new("t", "rb1");
@@ -141,7 +141,7 @@ public class EventBrookAppenderRollbackTests
     ///     exception.
     /// </summary>
     [Fact]
-    public async Task AppendLargeBatchAsync_RollsBack_CleansUp_WhenDeletesSucceed()
+    public async Task AppendLargeBatchAsyncRollsBackCleansUpWhenDeletesSucceed()
     {
         // Arrange
         BrookKey key = new("t", "rb2");

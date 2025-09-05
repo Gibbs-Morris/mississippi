@@ -22,7 +22,7 @@ public class BrookWriterGrainTests(ClusterFixture fixture)
     ///     Appending events should publish a head update visible to the head grain.
     /// </summary>
     [Fact]
-    public async Task AppendEventsAsync_AppendsAndPublishesHeadUpdate()
+    public async Task AppendEventsAsyncPublishesHeadUpdate()
     {
         BrookKey key = new("t", "w1");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
@@ -49,7 +49,7 @@ public class BrookWriterGrainTests(ClusterFixture fixture)
     ///     Appending with a stale expected version should throw.
     /// </summary>
     [Fact]
-    public async Task AppendEventsAsync_RespectsExpectedVersion()
+    public async Task AppendEventsAsyncRespectsExpectedVersion()
     {
         BrookKey key = new("t", "w2");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);

@@ -132,7 +132,7 @@ public class BatchSizeEstimatorTests
     ///     Ensures EstimateBatchSize returns a positive value taking into account event estimates and overhead.
     /// </summary>
     [Fact]
-    public void EstimateBatchSize_SumsEventEstimatesPlusOverhead()
+    public void EstimateBatchSizeSumsEventEstimatesPlusOverhead()
     {
         BatchSizeEstimator estimator = new();
         BrookEvent e1 = new()

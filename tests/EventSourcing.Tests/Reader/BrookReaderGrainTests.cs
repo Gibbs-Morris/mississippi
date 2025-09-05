@@ -23,7 +23,7 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
     ///     Verifies range slicing and full enumeration via ReadEventsAsync.
     /// </summary>
     [Fact]
-    public async Task ReadEventsAsync_SlicesByOptionsAndReturnsAll()
+    public async Task ReadEventsAsyncSlicesByOptionsAndReturnsAll()
     {
         BrookKey key = new("t", "reader1");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
@@ -52,7 +52,7 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
     ///     Verifies batch read returns an immutable array with expected events.
     /// </summary>
     [Fact]
-    public async Task ReadEventsBatchAsync_ReturnsImmutableArray()
+    public async Task ReadEventsBatchAsyncReturnsImmutableArray()
     {
         BrookKey key = new("t", "reader2");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
