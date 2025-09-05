@@ -1,0 +1,137 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+# ===== .NET build output =====
+**/bin/
+**/obj/
+**/artifacts/
+**/publish/
+**/TestResults/
+**/BenchmarkDotNet.Artifacts/
+
+# ===== IDE / tooling cruft =====
+.vs/
+.idea/
+.Rider*/
+.ReSharper*/
+*_Resharper.*
+*_ReSharper.Caches/
+.ionide/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.csproj.user
+
+# ===== Packages / dependencies =====
+packages/
+.nuget/packages/
+# LibMan (client-side libs)
+wwwroot/lib/
+
+# ===== Front-end (if present) =====
+node_modules/
+bower_components/
+dist/
+build/
+.next/
+out/
+.vite/
+.cache/
+*.tsbuildinfo
+
+# ===== Logs / temp / caches =====
+**/logs/
+**/Logs/
+*.log
+*.svclog
+*.pid
+*.cache
+**/tmp/
+**/temp/
+**/.cache/
+
+# ===== Coverage & test artifacts =====
+coverage/
+coverage-*/
+coverage.*
+*.coverage
+*.coveragexml
+*.trx
+*.testlog
+lcov.info
+.nunit/
+
+# ===== Static analysis =====
+.sonarqube/
+.scannerwork/
+
+# ===== Secrets & local config (keep these out of AI context) =====
+*.snk
+*.pfx
+*.p12
+*.p7b
+*.p7c
+*.key
+*.cer
+*.pem
+# VS publish profiles can contain credentials
+**/Properties/PublishProfiles/
+*.pubxml
+*.pubxml.user
+# Local secrets & env
+secrets.json
+**/*.secrets.json
+**/*.Secret*.json
+.env
+.env.*
+Properties/launchSettings.json
+**/serviceDependencies*.json
+
+# ===== Vendor/minified assets =====
+**/*.min.js
+**/*.min.css
+**/*.map
+
+# ===== Binary & large files =====
+**/*.dll
+**/*.exe
+**/*.pdb
+**/*.so
+**/*.dylib
+**/*.a
+**/*.nupkg
+**/*.snupkg
+**/*.zip
+**/*.7z
+**/*.rar
+**/*.gz
+**/*.tar
+**/*.xz
+**/*.jpg
+**/*.jpeg
+**/*.png
+**/*.gif
+**/*.bmp
+**/*.ico
+**/*.mp4
+**/*.mov
+**/*.avi
+**/*.mp3
+**/*.wav
+**/*.pdf
+# Local databases
+**/*.mdf
+**/*.ldf
+**/*.sqlite
+**/*.sqlite3
+**/*.sdf
+
+# ===== VCS internals =====
+.git/
+.gitmodules
+.gitattributes
+.gitignore
+
+# ===== OS junk =====
+.DS_Store
+Thumbs.db
