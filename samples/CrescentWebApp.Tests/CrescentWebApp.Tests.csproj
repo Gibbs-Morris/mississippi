@@ -2,4 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CrescentWebApp\CrescentWebApp\CrescentWebApp.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Net.Http" />
+  </ItemGroup>
 </Project>

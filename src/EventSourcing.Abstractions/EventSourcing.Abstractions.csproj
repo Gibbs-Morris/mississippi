@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="CloudNative.CloudEvents"/>
+        <PackageReference Include="CloudNative.CloudEvents" />
+        <PackageReference Include="System.Net.Http" />
     </ItemGroup>
 </Project>
