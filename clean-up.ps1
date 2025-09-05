@@ -28,12 +28,32 @@ $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $mississippiCleanup = Join-Path $repoRoot 'scripts\clean-up-mississippi-solution.ps1'
 $sampleCleanup      = Join-Path $repoRoot 'scripts\clean-up-sample-solution.ps1'
 
-if (-not $SkipMississippi) {
-    Write-Host "Running cleanup for mississippi.slnx…" -ForegroundColor Cyan
-    & $mississippiCleanup
-}
+try {
+    if (-not $SkipMississippi) {
+        Write-Host "=== STEP 1: MISSISSIPPI SOLUTION CLEANUP ===" -ForegroundColor Yellow
+        Write-Host "Running ReSharper CleanupCode on mississippi.slnx..."
+        & $mississippiCleanup
+        if ($LASTEXITCODE -ne 0) {
+            throw "Mississippi solution cleanup failed with exit code: $LASTEXITCODE"
+        }
+        Write-Host "SUCCESS: Mississippi solution cleanup completed successfully" -ForegroundColor Green
+        Write-Host ""
+    }
 
-if (-not $SkipSamples) {
-    Write-Host "Running cleanup for samples.slnx…" -ForegroundColor Cyan
-    & $sampleCleanup
-} 
+    if (-not $SkipSamples) {
+        Write-Host "=== STEP 2: SAMPLE SOLUTION CLEANUP ===" -ForegroundColor Yellow
+        Write-Host "Running ReSharper CleanupCode on samples.slnx..."
+        & $sampleCleanup
+        if ($LASTEXITCODE -ne 0) {
+            throw "Sample solution cleanup failed with exit code: $LASTEXITCODE"
+        }
+        Write-Host "SUCCESS: Sample solution cleanup completed successfully" -ForegroundColor Green
+        Write-Host ""
+    }
+
+    Write-Host "=== ALL CLEANUP OPERATIONS COMPLETED SUCCESSFULLY ===" -ForegroundColor Green
+    Write-Host "Both mississippi.slnx and samples.slnx have been cleaned with ReSharper rules"
+} catch {
+    Write-Error "=== FAILURE: Cleanup operation failed: $_"
+    exit 1
+}

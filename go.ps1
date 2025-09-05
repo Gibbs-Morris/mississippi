@@ -11,7 +11,17 @@ $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 # Build the path to the orchestrate script
 $orchestrateScript = Join-Path $repoRoot 'scripts\orchestrate-solutions.ps1'
 
-Write-Host "Running orchestrate-solutions.ps1..."
+Write-Host "=== STARTING MAIN PIPELINE ORCHESTRATION ===" -ForegroundColor Yellow
+Write-Host "Executing orchestrate-solutions.ps1 script..."
 
-# Execute the orchestrate script
-& $orchestrateScript @args
+try {
+    # Execute the orchestrate script and wait for completion
+    & $orchestrateScript @args
+    if ($LASTEXITCODE -ne 0) {
+        throw "orchestrate-solutions.ps1 failed with exit code $LASTEXITCODE"
+    }
+    Write-Host "=== SUCCESS: Main pipeline orchestration completed successfully ===" -ForegroundColor Green
+} catch {
+    Write-Error "=== FAILURE: Main pipeline orchestration failed: $_"
+    exit 1
+}
