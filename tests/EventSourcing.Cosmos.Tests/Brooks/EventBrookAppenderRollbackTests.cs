@@ -194,10 +194,11 @@ public class EventBrookAppenderRollbackTests
         repo.Setup(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        // Act
+        
+    // Act
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AppendEventsAsync(key, events, null));
 
-        // Assert: no specific verifications, just that rollback completed without AggregateException
+    // Assert: no specific verifications, just that rollback completed without AggregateException
         repo.Verify(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -26,7 +26,8 @@ public class BrookSliceReaderGrainTests(ClusterFixture fixture)
     public async Task ReadAsyncPopulatesCacheAndRespectsRange()
     {
         BrookKey key = new("t", "slice1");
-        // Seed events via writer to fill storage and head positions
+
+    // Seed events via writer to fill storage and head positions
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
         ImmutableArray<BrookEvent> batch = Enumerable.Range(0, 10)
             .Select(i => new BrookEvent
@@ -35,7 +36,8 @@ public class BrookSliceReaderGrainTests(ClusterFixture fixture)
             })
             .ToImmutableArray();
         await writer.AppendEventsAsync(batch);
-        // Ensure head cache has advanced before slice read
+
+    // Ensure head cache has advanced before slice read
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
         await head.GetLatestPositionConfirmedAsync();
         BrookRangeKey sliceKey = BrookRangeKey.FromBrookCompositeKey(key, 2, 8); // covers [2..10)

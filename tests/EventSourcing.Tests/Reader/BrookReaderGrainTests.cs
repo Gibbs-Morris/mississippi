@@ -27,7 +27,8 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
     {
         BrookKey key = new("t", "reader1");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
-        // default is 100; test pipeline uses internal reading logic anyway; seed 5 events
+
+    // default is 100; test pipeline uses internal reading logic anyway; seed 5 events
         ImmutableArray<BrookEvent> batch = Enumerable.Range(0, 5)
             .Select(i => new BrookEvent
             {
@@ -35,7 +36,8 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
             })
             .ToImmutableArray();
         await writer.AppendEventsAsync(batch);
-        // Ensure head cache has advanced before full reader walk
+
+    // Ensure head cache has advanced before full reader walk
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
         await head.GetLatestPositionConfirmedAsync();
         IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);
@@ -63,7 +65,8 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
                 Id = "a",
             },
         ]);
-        // Ensure head advanced
+
+    // Ensure head advanced
         IBrookHeadGrain head2 = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
         await head2.GetLatestPositionConfirmedAsync();
         IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);

@@ -54,6 +54,7 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     {
         BrookKey key = new("t", "id3");
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
+
         // Force-confirm head position via storage-backed read to avoid timing flakiness
         BrookPosition confirmed = await head.GetLatestPositionConfirmedAsync();
         Assert.True(confirmed.Value >= -1);
@@ -67,6 +68,7 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     {
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(new BrookKey("t", "id4"));
         await head.DeactivateAsync();
+
         // No exception indicates success; optionally ensure we can still call read
         BrookPosition p = await head.GetLatestPositionAsync();
         Assert.True(p.Value >= -1);
