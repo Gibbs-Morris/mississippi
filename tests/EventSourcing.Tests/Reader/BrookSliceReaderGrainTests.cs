@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Head;
@@ -27,17 +28,17 @@ public class BrookSliceReaderGrainTests(ClusterFixture fixture)
     {
         BrookKey key = new("t", "slice1");
 
-    // Seed events via writer to fill storage and head positions
+        // Seed events via writer to fill storage and head positions
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
         ImmutableArray<BrookEvent> batch = Enumerable.Range(0, 10)
             .Select(i => new BrookEvent
             {
-                Id = i.ToString(),
+                Id = i.ToString(CultureInfo.InvariantCulture),
             })
             .ToImmutableArray();
         await writer.AppendEventsAsync(batch);
 
-    // Ensure head cache has advanced before slice read
+        // Ensure head cache has advanced before slice read
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
         await head.GetLatestPositionConfirmedAsync();
         BrookRangeKey sliceKey = BrookRangeKey.FromBrookCompositeKey(key, 2, 8); // covers [2..10)
@@ -63,7 +64,7 @@ public class BrookSliceReaderGrainTests(ClusterFixture fixture)
         ImmutableArray<BrookEvent> batch = Enumerable.Range(0, 5)
             .Select(i => new BrookEvent
             {
-                Id = i.ToString(),
+                Id = i.ToString(CultureInfo.InvariantCulture),
             })
             .ToImmutableArray();
         await writer.AppendEventsAsync(batch);

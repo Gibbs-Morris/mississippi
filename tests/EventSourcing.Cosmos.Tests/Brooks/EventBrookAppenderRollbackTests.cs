@@ -184,6 +184,7 @@ public class EventBrookAppenderRollbackTests
         };
         repo.Setup(r => r.CreatePendingHeadAsync(key, new(0), 2, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+
         // Throw on first append to force rollback with processedEvents == 0
         repo.Setup(r => r.AppendEventBatchAsync(
                 key,
@@ -194,11 +195,10 @@ public class EventBrookAppenderRollbackTests
         repo.Setup(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        
-    // Act
+        // Act
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AppendEventsAsync(key, events, null));
 
-    // Assert: no specific verifications, just that rollback completed without AggregateException
+        // Assert: no specific verifications, just that rollback completed without AggregateException
         repo.Verify(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

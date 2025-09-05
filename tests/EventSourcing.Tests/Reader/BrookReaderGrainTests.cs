@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Head;
@@ -28,16 +29,16 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
         BrookKey key = new("t", "reader1");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
 
-    // default is 100; test pipeline uses internal reading logic anyway; seed 5 events
+        // default is 100; test pipeline uses internal reading logic anyway; seed 5 events
         ImmutableArray<BrookEvent> batch = Enumerable.Range(0, 5)
             .Select(i => new BrookEvent
             {
-                Id = i.ToString(),
+                Id = i.ToString(CultureInfo.InvariantCulture),
             })
             .ToImmutableArray();
         await writer.AppendEventsAsync(batch);
 
-    // Ensure head cache has advanced before full reader walk
+        // Ensure head cache has advanced before full reader walk
         IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
         await head.GetLatestPositionConfirmedAsync();
         IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);
