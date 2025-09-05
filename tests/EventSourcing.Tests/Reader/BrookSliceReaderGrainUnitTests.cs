@@ -15,6 +15,9 @@ public class BrookSliceReaderGrainUnitTests
     /// <summary>
     ///     Ensures deactivation clears caches and completes without error.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task DeactivateAsyncClearsCacheAndDeactivates()
     {

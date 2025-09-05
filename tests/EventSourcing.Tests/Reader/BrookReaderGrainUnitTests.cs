@@ -16,6 +16,9 @@ public class BrookReaderGrainUnitTests
     /// <summary>
     ///     Ensures deactivation path completes without error.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task DeactivateAsyncCallsDeactivateOnIdle()
     {

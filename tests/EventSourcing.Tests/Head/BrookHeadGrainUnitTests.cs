@@ -18,6 +18,9 @@ public class BrookHeadGrainUnitTests
     /// <summary>
     ///     Ensures OnErrorAsync requests grain deactivation without throwing.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task OnErrorAsyncDeactivatesGrain()
     {

@@ -19,6 +19,9 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     Latest position should be cached and default to -1 before any writes.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task GetLatestPositionAsyncReturnsCachedDefaultIsMinusOne()
     {
@@ -30,6 +33,9 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     Confirmed read should populate cache with storage-backed value.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task GetLatestPositionConfirmedAsyncReadsFromStorageAndUpdatesCache()
     {
@@ -49,6 +55,9 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     OnNextAsync updates tracked head when a newer position is observed.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task OnNextAsyncUpdatesTrackedHeadWhenNewer()
     {
@@ -63,6 +72,9 @@ public class BrookHeadGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     Explicit deactivation should complete without exceptions.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task DeactivateAsyncCompletesWithoutError()
     {

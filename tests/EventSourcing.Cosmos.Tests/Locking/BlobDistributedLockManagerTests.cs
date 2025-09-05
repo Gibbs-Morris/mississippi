@@ -20,6 +20,9 @@ public sealed class BlobDistributedLockManagerTests
     /// <summary>
     ///     Validates initial acquire path creates container and blob when missing.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact(
         Skip = "Moq cannot setup extension method GetBlobLeaseClient; needs seam/wrapper. Skipping pending refactor.")]
     public async Task AcquireLockAsyncCreatesContainerAndBlobOnFirstAcquireAsync()
@@ -67,6 +70,9 @@ public sealed class BlobDistributedLockManagerTests
     /// <summary>
     ///     Validates retry behavior when lease acquire encounters a 409 conflict.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact(
         Skip = "Moq cannot setup extension method GetBlobLeaseClient; needs seam/wrapper. Skipping pending refactor.")]
     public async Task AcquireLockAsyncRetriesOnLeaseConflictAsync()
@@ -116,6 +122,9 @@ public sealed class BlobDistributedLockManagerTests
     /// <summary>
     ///     Validates that acquire throws when unable to obtain a lease.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact(
         Skip = "Moq cannot setup extension method GetBlobLeaseClient; needs seam/wrapper. Skipping pending refactor.")]
     public async Task AcquireLockAsyncThrowsWhenUnableToAcquireAsync()
@@ -151,6 +160,9 @@ public sealed class BlobDistributedLockManagerTests
     /// <summary>
     ///     Captures requested duration and ensures it flows into the lease acquire call.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact(
         Skip = "Moq cannot setup extension method GetBlobLeaseClient; needs seam/wrapper. Skipping pending refactor.")]
     public async Task AcquireLockAsyncCreatesLeaseWithRequestedDurationAsync()

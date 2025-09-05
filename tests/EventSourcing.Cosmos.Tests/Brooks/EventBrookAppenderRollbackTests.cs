@@ -25,6 +25,9 @@ public class EventBrookAppenderRollbackTests
     /// <summary>
     ///     When an append batch fails mid-stream, rollback should attempt cleanup and aggregate issues.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task AppendLargeBatchAsyncRollsBackOnFailureAndAggregatesIssues()
     {
@@ -140,6 +143,9 @@ public class EventBrookAppenderRollbackTests
     ///     When initial append fails with no processed events, rollback should clean up pending head without aggregate
     ///     exception.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task AppendLargeBatchAsyncRollsBackCleansUpWhenDeletesSucceed()
     {

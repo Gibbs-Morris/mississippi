@@ -23,6 +23,9 @@ public class BrookSliceReaderGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     Verifies slice reader populates cache and respects requested range.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task ReadAsyncPopulatesCacheAndRespectsRange()
     {
@@ -56,6 +59,9 @@ public class BrookSliceReaderGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     Verifies batch slice read returns expected immutable array.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task ReadBatchAsyncReturnsImmutableArray()
     {

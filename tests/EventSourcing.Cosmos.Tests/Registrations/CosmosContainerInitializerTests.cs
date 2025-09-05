@@ -19,6 +19,9 @@ public class CosmosContainerInitializerTests
     /// <summary>
     ///     Verifies that the initializer creates the database and container when not found.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task StartAsyncCreatesDatabaseAndContainerWhenContainerNotFound()
     {
@@ -81,6 +84,9 @@ public class CosmosContainerInitializerTests
     /// <summary>
     ///     Verifies that an existing container with wrong partition key causes startup to throw.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task StartAsyncThrowsWhenExistingContainerPartitionKeyWrong()
     {

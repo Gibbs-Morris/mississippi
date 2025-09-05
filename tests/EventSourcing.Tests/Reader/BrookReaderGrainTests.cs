@@ -23,6 +23,9 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     Verifies range slicing and full enumeration via ReadEventsAsync.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task ReadEventsAsyncSlicesByOptionsAndReturnsAll()
     {
@@ -54,6 +57,9 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     Verifies batch read returns an immutable array with expected events.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task ReadEventsBatchAsyncReturnsImmutableArray()
     {

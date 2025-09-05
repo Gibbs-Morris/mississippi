@@ -21,6 +21,9 @@ public class BrookWriterGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     Appending events should publish a head update visible to the head grain.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task AppendEventsAsyncPublishesHeadUpdate()
     {
@@ -49,6 +52,9 @@ public class BrookWriterGrainTests(ClusterFixture fixture)
     /// <summary>
     ///     Appending with a stale expected version should throw.
     /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
     public async Task AppendEventsAsyncRespectsExpectedVersion()
     {
