@@ -47,9 +47,9 @@ public class BatchSizeEstimatorTests
         // Arrange
         BatchSizeEstimator estimator = new();
 
-    // Create a large payload just over the 10MB threshold used by the estimator
-    int largeLength = 10_000_000 + 1;
-    byte[] largeData = new byte[largeLength];
+        // Create a large payload just over the 10MB threshold used by the estimator
+        int largeLength = 10_000_000 + 1;
+        byte[] largeData = new byte[largeLength];
 
         // Touch a few bytes to avoid optimizations
         largeData[0] = 1;

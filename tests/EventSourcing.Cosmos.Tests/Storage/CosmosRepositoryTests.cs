@@ -316,22 +316,22 @@ public class CosmosRepositoryTests
                 CancellationToken ct
             ) => created.Add(d))
             .ReturnsAsync(Mock.Of<ItemResponse<EventDocument>>());
-    CosmosRepository sut = CreateRepository(container.Object);
-    BrookKey key = new("type", "id");
-    IReadOnlyList<EventStorageModel> events = new List<EventStorageModel>
+        CosmosRepository sut = CreateRepository(container.Object);
+        BrookKey key = new("type", "id");
+        IReadOnlyList<EventStorageModel> events = new List<EventStorageModel>
         {
             new()
             {
                 EventId = "e1",
                 EventType = "A",
-        Data = new byte[] { 1 },
+                Data = new byte[] { 1 },
                 Time = DateTimeOffset.UtcNow,
             },
             new()
             {
                 EventId = "e2",
                 EventType = "B",
-        Data = new byte[] { 2 },
+                Data = new byte[] { 2 },
                 Time = DateTimeOffset.UtcNow,
             },
         };
@@ -436,7 +436,10 @@ public class CosmosRepositoryTests
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             using TransactionalBatchResponse disposedResponse = await sut.ExecuteTransactionalBatchAsync(
-                new("t", "i"), Array.Empty<EventStorageModel>(), new(0), 1);
+                new("t", "i"),
+                Array.Empty<EventStorageModel>(),
+                new(0),
+                1);
         });
     }
 
@@ -459,7 +462,7 @@ public class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-    using TransactionalBatchResponse resp = await sut.ExecuteTransactionalBatchAsync(
+        using TransactionalBatchResponse resp = await sut.ExecuteTransactionalBatchAsync(
             new("t", "i"),
             Array.Empty<EventStorageModel>(),
             new(0),

@@ -82,7 +82,7 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
                 services.AddSingleton<IBrookStorageWriter>(sp => sp.GetRequiredService<InMemoryBrookStorage>());
             });
 
-    // Required for memory streams pub/sub validation
+        // Required for memory streams pub/sub validation
         siloBuilder.AddMemoryGrainStorage("PubSubStore");
     }
 }

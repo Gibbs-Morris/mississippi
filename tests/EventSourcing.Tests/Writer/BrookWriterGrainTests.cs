@@ -44,7 +44,7 @@ public class BrookWriterGrainTests(ClusterFixture fixture)
         BrookPosition newPos = await writer.AppendEventsAsync(events);
         Assert.Equal(2, newPos.Value);
 
-    // Confirm head by reading storage-backed path
+        // Confirm head by reading storage-backed path
         BrookPosition confirmed = await head.GetLatestPositionConfirmedAsync();
         Assert.Equal(2, confirmed.Value);
     }

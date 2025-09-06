@@ -73,7 +73,7 @@ public class BrookReaderGrainTests(ClusterFixture fixture)
             },
         ]);
 
-    // Ensure head advanced
+        // Ensure head advanced
         IBrookHeadGrain head2 = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
         await head2.GetLatestPositionConfirmedAsync();
         IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);
