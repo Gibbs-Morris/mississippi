@@ -2,6 +2,7 @@
     <ItemGroup>
         <PackageReference Include="System.Linq.Async"/>
         <PackageReference Include="CloudNative.CloudEvents"/>
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
     </ItemGroup>
 
     <ItemGroup>

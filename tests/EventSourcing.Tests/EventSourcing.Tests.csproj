@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
+        <PackageReference Include="Microsoft.Orleans.TestingHost" />
         <PackageReference Include="System.Linq.Async"/>
     </ItemGroup>
     <ItemGroup>

@@ -13,7 +13,7 @@ namespace Mississippi.Core.Abstractions.Tests.Mapping;
 public class EnumerableMapperTests
 {
     /// <summary>
-    ///     Tests that a collection of integers is correctly mapped to a collection of strings.
+    ///     Tests that Projection collection of integers is correctly mapped to Projection collection of strings.
     /// </summary>
     [Fact]
     public void MapsCollectionCorrectly()
@@ -64,7 +64,7 @@ public class EnumerableMapperTests
     }
 
     /// <summary>
-    ///     Tests that passing a null value to the Map function throws an ArgumentNullException.
+    ///     Tests that passing Projection null value to the Map function throws an ArgumentNullException.
     /// </summary>
     [Fact]
     public void MapNullInputThrowsArgumentNullException()
@@ -78,8 +78,8 @@ public class EnumerableMapperTests
     }
 
     /// <summary>
-    ///     Tests that a collection containing nullable integers, including null elements,
-    ///     is correctly mapped to a collection of strings.
+    ///     Tests that Projection collection containing nullable integers, including null elements,
+    ///     is correctly mapped to Projection collection of strings.
     /// </summary>
     [Fact]
     public void MapsCollectionWithNullElements()

@@ -3,8 +3,15 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 namespace Mississippi.CrescentWebApp.Client;
 
+/// <summary>
+///     Entry point for the Crescent WebAssembly client application.
+/// </summary>
 internal static class Program
 {
+    /// <summary>
+    ///     Application entry point.
+    /// </summary>
+    /// <param name="args">Command-line arguments.</param>
     private static async Task Main(
         string[] args
     )

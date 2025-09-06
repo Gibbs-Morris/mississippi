@@ -24,7 +24,6 @@
     <Project Path="tests\EventSourcing.Abstractions.Tests\EventSourcing.Abstractions.Tests.csproj" />
   </Folder>
 
-
   <Folder Name="/Workflows/">
     <File Path=".github\workflows\cleanup.yml" />
     <File Path=".github\workflows\full-build.yml" />

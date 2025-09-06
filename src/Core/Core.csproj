@@ -6,8 +6,12 @@
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer"/>
         <PackageReference Include="Microsoft.Extensions.Features"/>
         <PackageReference Include="Microsoft.Orleans.Sdk"/>
+        <PackageReference Include="Microsoft.Orleans.Streaming"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Core.Abstractions\Core.Abstractions.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Projection\Grains\"/>
     </ItemGroup>
 </Project>
