@@ -26,7 +26,7 @@ public class BatchSizeEstimatorTests
             Source = "src",
             Type = "T",
             DataContentType = "application/octet-stream",
-            Data = ImmutableArray.Create(Enumerable.Range(0, 100).Select(i => (byte)i).ToArray()),
+            Data = ImmutableArray.CreateRange(Enumerable.Range(0, 100).Select(i => (byte)i)),
             Time = DateTimeOffset.UtcNow,
         };
 
@@ -47,9 +47,9 @@ public class BatchSizeEstimatorTests
         // Arrange
         BatchSizeEstimator estimator = new();
 
-        // Create a large payload just over the 10MB threshold used by the estimator
-        int largeLength = 10_000_000 + 1;
-        byte[] largeData = new byte[largeLength];
+    // Create a large payload just over the 10MB threshold used by the estimator
+    int largeLength = 10_000_000 + 1;
+    byte[] largeData = new byte[largeLength];
 
         // Touch a few bytes to avoid optimizations
         largeData[0] = 1;
@@ -60,7 +60,7 @@ public class BatchSizeEstimatorTests
             Source = "big-src",
             Type = "BIG",
             DataContentType = "application/octet-stream",
-            Data = ImmutableArray.Create(largeData),
+            Data = ImmutableArray.CreateRange(largeData),
             Time = DateTimeOffset.UtcNow,
         };
 
@@ -140,14 +140,14 @@ public class BatchSizeEstimatorTests
             Id = "1",
             Type = "A",
             DataContentType = "application/octet-stream",
-            Data = ImmutableArray.Create(new byte[] { 1, 2, 3, 4 }),
+            Data = ImmutableArray.Create<byte>(1, 2, 3, 4),
         };
         BrookEvent e2 = new()
         {
             Id = "2",
             Type = "B",
             DataContentType = "application/octet-stream",
-            Data = ImmutableArray.Create(new byte[] { 5 }),
+            Data = ImmutableArray.Create<byte>(5),
         };
         long size = estimator.EstimateBatchSize(
             new List<BrookEvent>

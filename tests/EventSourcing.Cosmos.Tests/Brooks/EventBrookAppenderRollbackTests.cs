@@ -83,19 +83,19 @@ public class EventBrookAppenderRollbackTests
             new()
             {
                 Id = "1",
-                Data = ImmutableArray.Create(new byte[] { 1 }),
+                Data = ImmutableArray.Create<byte>(1),
                 DataContentType = "application/octet-stream",
             },
             new()
             {
                 Id = "2",
-                Data = ImmutableArray.Create(new byte[] { 2 }),
+                Data = ImmutableArray.Create<byte>(2),
                 DataContentType = "application/octet-stream",
             },
             new()
             {
                 Id = "3",
-                Data = ImmutableArray.Create(new byte[] { 3 }),
+                Data = ImmutableArray.Create<byte>(3),
                 DataContentType = "application/octet-stream",
             },
         };
