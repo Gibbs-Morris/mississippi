@@ -15,10 +15,10 @@ namespace Mississippi.EventSourcing.Tests.Reader;
 /// <summary>
 ///     Integration tests for <see cref="IBrookReaderGrain" />.
 /// </summary>
-[Collection(ClusterCollection.Name)]
-public class BrookReaderGrainTests(ClusterFixture fixture)
+[Collection(ClusterTestSuite.Name)]
+public class BrookReaderGrainTests
 {
-    private readonly TestCluster cluster = fixture.Cluster;
+    private readonly TestCluster cluster = TestClusterAccess.Cluster;
 
     /// <summary>
     ///     Verifies range slicing and full enumeration via ReadEventsAsync.

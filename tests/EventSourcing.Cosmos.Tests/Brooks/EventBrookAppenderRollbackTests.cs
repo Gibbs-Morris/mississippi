@@ -110,10 +110,10 @@ public class EventBrookAppenderRollbackTests
                 It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .Returns((
-                BrookKey _,
-                IReadOnlyList<EventStorageModel> __,
-                long ___,
-                CancellationToken ____
+                BrookKey keyArg,
+                IReadOnlyList<EventStorageModel> batch,
+                long startingPosition,
+                CancellationToken ct
             ) =>
             {
                 appendCalls++;

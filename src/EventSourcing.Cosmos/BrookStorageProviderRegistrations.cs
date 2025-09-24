@@ -43,6 +43,7 @@ public static class BrookStorageProviderRegistrations
         services.AddSingleton<IEventBrookAppender, EventBrookAppender>();
         services.AddSingleton<ICosmosRepository, CosmosRepository>();
         services.AddSingleton<IDistributedLockManager, BlobDistributedLockManager>();
+        services.AddSingleton<IBlobLeaseClientFactory, BlobLeaseClientFactory>();
         services.AddSingleton<IBatchSizeEstimator, BatchSizeEstimator>();
         services.AddSingleton<IRetryPolicy, CosmosRetryPolicy>();
         services.AddMapper<EventStorageModel, BrookEvent, EventStorageToEventMapper>();

@@ -1,5 +1,4 @@
 ﻿using Azure;
-using Azure.Storage.Blobs.Specialized;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Locking;
@@ -23,7 +22,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
     /// <param name="leaseRenewalThresholdSeconds">The threshold in seconds for lease renewal.</param>
     /// <param name="leaseDurationSeconds">The duration in seconds for the lease.</param>
     public BlobDistributedLock(
-        BlobLeaseClient leaseClient,
+        IBlobLeaseClient leaseClient,
         string lockId,
         int leaseRenewalThresholdSeconds,
         int leaseDurationSeconds
@@ -39,7 +38,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
         renewalThreshold = TimeSpan.FromSeconds(Math.Max(1, leaseDurationSeconds - leaseRenewalThresholdSeconds - 1));
     }
 
-    private BlobLeaseClient LeaseClient { get; }
+    private IBlobLeaseClient LeaseClient { get; }
 
     private int LeaseRenewalThresholdSeconds { get; }
 

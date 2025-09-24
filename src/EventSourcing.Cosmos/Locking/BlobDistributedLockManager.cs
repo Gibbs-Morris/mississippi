@@ -3,7 +3,6 @@
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
 
 using Microsoft.Extensions.Options;
 
@@ -20,19 +19,24 @@ internal class BlobDistributedLockManager : IDistributedLockManager
     /// </summary>
     /// <param name="blobServiceClient">The blob service client for accessing Azure Blob Storage.</param>
     /// <param name="options">The configuration options for brook storage.</param>
+    /// <param name="leaseClientFactory">Factory used to create blob lease clients.</param>
     /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
     public BlobDistributedLockManager(
         BlobServiceClient blobServiceClient,
-        IOptions<BrookStorageOptions> options
+        IOptions<BrookStorageOptions> options,
+        IBlobLeaseClientFactory leaseClientFactory
     )
     {
         BlobServiceClient = blobServiceClient ?? throw new ArgumentNullException(nameof(blobServiceClient));
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        LeaseClientFactory = leaseClientFactory ?? throw new ArgumentNullException(nameof(leaseClientFactory));
     }
 
     private BlobServiceClient BlobServiceClient { get; }
 
     private BrookStorageOptions Options { get; }
+
+    private IBlobLeaseClientFactory LeaseClientFactory { get; }
 
     /// <summary>
     ///     Acquires a distributed lock for the specified key and duration.
@@ -56,7 +60,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
             await blobClient.UploadAsync(new BinaryData("lock"), cancellationToken);
         }
 
-        BlobLeaseClient? leaseClient = blobClient.GetBlobLeaseClient();
+        IBlobLeaseClient leaseClient = LeaseClientFactory.Create(blobClient);
 
         // Bounded retries for lease conflicts
         const int maxAcquireAttempts = 5;
@@ -68,12 +72,15 @@ internal class BlobDistributedLockManager : IDistributedLockManager
                 lease = await leaseClient.AcquireAsync(duration, cancellationToken: cancellationToken);
                 break;
             }
-            catch (RequestFailedException ex) when ((ex.Status == 409) && (attempt < (maxAcquireAttempts - 1)))
+            catch (RequestFailedException ex) when (ex.Status == 409)
             {
-                // Lease is already held; backoff with jitter and retry
-                int backoffMs = (int)Math.Min(2000, Math.Pow(2, attempt) * 100);
-                int jitter = RandomNumberGenerator.GetInt32(0, 100);
-                await Task.Delay(backoffMs + jitter, cancellationToken);
+                // Lease is already held; backoff with jitter and retry while attempts remain
+                if (attempt < (maxAcquireAttempts - 1))
+                {
+                    int backoffMs = (int)Math.Min(2000, Math.Pow(2, attempt) * 100);
+                    int jitter = RandomNumberGenerator.GetInt32(0, 100);
+                    await Task.Delay(backoffMs + jitter, cancellationToken);
+                }
             }
         }
 

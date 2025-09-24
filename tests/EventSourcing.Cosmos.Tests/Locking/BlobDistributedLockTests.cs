@@ -2,7 +2,6 @@ using System.Reflection;
 
 using Azure;
 using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
 
 using Mississippi.EventSourcing.Cosmos.Locking;
 
@@ -24,7 +23,7 @@ public sealed class BlobDistributedLockTests
     public async Task RenewAsyncNoOpBeforeThresholdAsync()
     {
         // Arrange
-        Mock<BlobLeaseClient> leaseClient = new();
+        Mock<IBlobLeaseClient> leaseClient = new();
 
         // leaseDurationSeconds=15, thresholdSeconds=5
         await using BlobDistributedLock sut = new(leaseClient.Object, "lock-id", 5, 15);
@@ -46,7 +45,7 @@ public sealed class BlobDistributedLockTests
     public async Task RenewAsyncCallsLeaseAfterThresholdAsync()
     {
         // Arrange
-        Mock<BlobLeaseClient> leaseClient = new();
+        Mock<IBlobLeaseClient> leaseClient = new();
         leaseClient.Setup(l => l.RenewAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<Response<BlobLease>>());
         await using BlobDistributedLock sut = new(leaseClient.Object, "lock-id", 5, 15);
@@ -74,7 +73,7 @@ public sealed class BlobDistributedLockTests
     )
     {
         // Arrange
-        Mock<BlobLeaseClient> leaseClient = new();
+        Mock<IBlobLeaseClient> leaseClient = new();
         leaseClient.Setup(l => l.RenewAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new RequestFailedException(status, "conflict"));
         await using BlobDistributedLock sut = new(leaseClient.Object, "lock-id", 1, 2);
@@ -92,7 +91,7 @@ public sealed class BlobDistributedLockTests
     public async Task DisposeAsyncReleasesLeaseIgnoresFailuresAsync()
     {
         // Arrange
-        Mock<BlobLeaseClient> leaseClient = new();
+        Mock<IBlobLeaseClient> leaseClient = new();
 
         // First call throws, subsequent call (if any) would succeed
         leaseClient.Setup(l => l.ReleaseAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()))

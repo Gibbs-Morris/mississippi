@@ -15,10 +15,10 @@ namespace Mississippi.EventSourcing.Tests.Reader;
 /// <summary>
 ///     Integration tests for <see cref="IBrookSliceReaderGrain" />.
 /// </summary>
-[Collection(ClusterCollection.Name)]
-public class BrookSliceReaderGrainTests(ClusterFixture fixture)
+[Collection(ClusterTestSuite.Name)]
+public class BrookSliceReaderGrainTests
 {
-    private readonly TestCluster cluster = fixture.Cluster;
+    private readonly TestCluster cluster = TestClusterAccess.Cluster;
 
     /// <summary>
     ///     Verifies slice reader populates cache and respects requested range.

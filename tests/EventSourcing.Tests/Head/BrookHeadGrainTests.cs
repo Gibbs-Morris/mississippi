@@ -11,10 +11,10 @@ namespace Mississippi.EventSourcing.Tests.Head;
 /// <summary>
 ///     Integration tests for <see cref="IBrookHeadGrain" /> behavior.
 /// </summary>
-[Collection(ClusterCollection.Name)]
-public class BrookHeadGrainTests(ClusterFixture fixture)
+[Collection(ClusterTestSuite.Name)]
+public class BrookHeadGrainTests
 {
-    private readonly TestCluster cluster = fixture.Cluster;
+    private readonly TestCluster cluster = TestClusterAccess.Cluster;
 
     /// <summary>
     ///     Latest position should be cached and default to -1 before any writes.

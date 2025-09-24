@@ -13,10 +13,10 @@ namespace Mississippi.EventSourcing.Tests.Writer;
 /// <summary>
 ///     Integration tests for <see cref="IBrookWriterGrain" />.
 /// </summary>
-[Collection(ClusterCollection.Name)]
-public class BrookWriterGrainTests(ClusterFixture fixture)
+[Collection(ClusterTestSuite.Name)]
+public class BrookWriterGrainTests
 {
-    private readonly TestCluster cluster = fixture.Cluster;
+    private readonly TestCluster cluster = TestClusterAccess.Cluster;
 
     /// <summary>
     ///     Appending events should publish a head update visible to the head grain.
