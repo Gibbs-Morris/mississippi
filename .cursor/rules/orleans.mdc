@@ -1,4 +1,4 @@
-﻿---
+---
 description: Orleans Best Practices for Mississippi Framework
 globs: ["**/*.cs"]
 alwaysApply: false

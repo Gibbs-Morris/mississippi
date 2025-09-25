@@ -1,4 +1,4 @@
-﻿---
+---
 description: Orleans Serialization Best Practices
 globs: ["**/*.cs"]
 alwaysApply: false

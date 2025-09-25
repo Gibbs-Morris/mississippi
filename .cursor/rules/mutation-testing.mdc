@@ -1,0 +1,36 @@
+---
+description: Mutation Testing Playbook
+alwaysApply: true
+---
+# Mutation Testing Playbook
+**Source:** .github/instructions/mutation-testing.instructions.md
+
+
+# Mutation Testing Playbook
+
+Use this checklist whenever you need to run Mississippi mutation tests or close surviving mutants. Follow these steps exactly; defer architecture, C#, logging, Orleans, and testing nuances to their dedicated instruction files.
+
+## Precedence
+
+1. All repository-wide guidance in `.github/instructions/*.instructions.md` remains authoritative. Resolve conflicts by choosing the most specific file first (feature → language → build). When in doubt, follow the latest modified instruction file without editing it.
+2. If you add or modify any instruction Markdown, immediately mirror the change into the Cursor rule set by running `pwsh ./scripts/sync-instructions-to-mdc.ps1` before you finish.
+
+## Execution Loop
+
+1. **Prep tools** – Ensure `dotnet tool restore` has been run at least once on the repo.
+2. **Clean build** – Run `pwsh ./scripts/build-mississippi-solution.ps1` to surface compiler/analyzer issues before mutation work.
+3. **Baseline mutation test** – Execute `pwsh ./scripts/mutation-test-mississippi-solution.ps1`. Always commit the generated report paths for traceability.
+4. **Collect survivors** – Open the newest `StrykerOutput/**/reports/mutation-report.json`. Record each mutant (project, file, line, symbol, mutator, description) in `docs/TEMP_MUTATION_TASKS.md` with status `Todo` and note the minimal scenario required to kill it.
+5. **Targeted tests only** – Add or adjust tests in the matching `tests/` project using repository patterns (naming, logging, DI seams). Do not change production code unless a mutant is provably unkillable without it; document that case inside the task file.
+6. **Quality gates** – After adding tests, run:
+   - `pwsh ./scripts/unit-test-mississippi-solution.ps1`
+   - `pwsh ./scripts/build-mississippi-solution.ps1`
+   Fix every warning or failure before continuing.
+7. **Re-run mutation tests** – Execute step 3 again. Update task statuses to `Done` when a mutant dies, or capture justification under `Status = Deferred` if it remains.
+8. **Repeat** – Iterate steps 4–7 until no survivors remain or only documented deferrals persist. Keep the task file deterministic (sorted by project, file, line) throughout.
+
+## Completion Checklist
+
+- [ ] Zero surviving mutants or documented exceptions in `docs/TEMP_MUTATION_TASKS.md`
+- [ ] All builds, unit tests, and cleanup scripts pass with zero warnings
+- [ ] Instruction Markdown and Cursor `.mdc` rules are in sync via `sync-instructions-to-mdc.ps1`

@@ -1,4 +1,4 @@
-﻿---
+---
 description: Feature-Centric C# Naming & Commenting Playbook
 globs: ["**/*.cs"]
 alwaysApply: false

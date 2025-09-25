@@ -1,4 +1,4 @@
-﻿---
+---
 description: Enterprise Logging Best Practices
 globs: ["**/*.cs"]
 alwaysApply: false
