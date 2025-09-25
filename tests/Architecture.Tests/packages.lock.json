@@ -82,13 +82,13 @@
       },
       "TngTech.ArchUnitNET.xUnit": {
         "type": "Direct",
-        "requested": "[0.12.1, )",
-        "resolved": "0.12.1",
-        "contentHash": "q3bAPG34YsXZRBlQPZBrT649CBfdgUsqAA2oAH1KLFxyKwXZX09S4cKhEdb5J2DEgwW2DCdCVqALmCfGGZ5ioQ==",
+        "requested": "[0.12.2, )",
+        "resolved": "0.12.2",
+        "contentHash": "vqYI7GQQzGr6m8DwgYo1Tci5pCdmz/E5gXOzLhzjvPYrKd1x6qqI6nhVDr86Eo9ZdSIPb+SQVAqoP53UdFOyAQ==",
         "dependencies": {
           "System.Net.Http": "4.3.4",
           "System.Text.RegularExpressions": "4.3.1",
-          "TngTech.ArchUnitNET": "0.12.1",
+          "TngTech.ArchUnitNET": "0.12.2",
           "xunit.assert": "2.4.1"
         }
       },
@@ -143,8 +143,8 @@
       },
       "JetBrains.Annotations": {
         "type": "Transitive",
-        "resolved": "2020.3.0",
-        "contentHash": "FnX06vtxuoZnhZdR6UHt5kJ7HUC/syODfGLnhPDn1x5sXvvepNyCl4jMtPUzJfsPWh7q0Jo+AIYz5xaVbbyikA=="
+        "resolved": "2025.2.0",
+        "contentHash": "2BvMkOSW+50EbQFhWFIPWTqmcDLiyyjwkMN7lN386bhP2vN/7ts5t59qu11HtenmHFxqDzaD8J1fFoh+QTOzVA=="
       },
       "Lib.Harmony": {
         "type": "Transitive",
@@ -1141,11 +1141,11 @@
       },
       "TngTech.ArchUnitNET": {
         "type": "Transitive",
-        "resolved": "0.12.1",
-        "contentHash": "EagEpR8gcvbf1rNw+yf2bG9oYEJpYb2x2UVFoTTdxehcCwv+qaizgGx3fyFQIjZX1IbDnORf8b8CsGJgn8sV4Q==",
+        "resolved": "0.12.2",
+        "contentHash": "KGeEJqZ48UPoG/0LE2VAOc43dDkprtdWb5SHHcjjPQ3NfZj0oKq6s54UdAagtM5UI4hyhQEpT3ZeqpXZ2ajC6w==",
         "dependencies": {
           "CycleDetection": "2.0.0",
-          "JetBrains.Annotations": "2020.3.0",
+          "JetBrains.Annotations": "2025.2.0",
           "Mono.Cecil": "0.11.6",
           "Newtonsoft.Json": "13.0.3",
           "System.ValueTuple": "4.5.0"
@@ -1203,7 +1203,7 @@
       },
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
-        "requested": "[13.0.3, )",
+        "requested": "[13.0.4, )",
         "resolved": "13.0.3",
         "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
       }
