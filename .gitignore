@@ -53,6 +53,7 @@ nunit-*.xml
 # Custom test output directories
 test-results/
 StrykerOutput/
+.tests-temp/
 
 # Build Results of an ATL Project
 [Dd]ebugPS/
