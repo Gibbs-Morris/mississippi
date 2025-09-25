@@ -3,21 +3,21 @@
   "isRoot": true,
   "tools": {
     "dotnet-stryker": {
-      "version": "4.7.0",
+      "version": "4.8.1",
       "commands": [
         "dotnet-stryker"
       ],
       "rollForward": false
     },
     "dotnet-sonarscanner": {
-      "version": "10.2.0",
+      "version": "10.4.1",
       "commands": [
         "dotnet-sonarscanner"
       ],
       "rollForward": false
     },
     "gitversion.tool": {
-      "version": "6.3.0",
+      "version": "6.4.0",
       "commands": [
         "dotnet-gitversion"
       ],
@@ -31,28 +31,28 @@
       "rollForward": false
     },
     "JetBrains.ReSharper.GlobalTools": {
-      "version": "2025.1.3",
+      "version": "2025.2.0",
       "commands": [
         "jb"
       ],
       "rollForward": false
     },
     "Microsoft.VisualStudio.SlnGen.Tool": {
-      "version": "12.0.19",
+      "version": "12.0.23",
       "commands": [
         "slngen"
       ],
       "rollForward": false
     },
     "dotnet-reportgenerator-globaltool": {
-      "version": "5.4.12",
+      "version": "5.4.16",
       "commands": [
         "reportgenerator"
       ],
       "rollForward": false
     },
     "jetbrains.dotcover.commandlinetools": {
-      "version": "2025.1.6",
+      "version": "2025.2.2",
       "commands": [
         "dotCover"
       ],
