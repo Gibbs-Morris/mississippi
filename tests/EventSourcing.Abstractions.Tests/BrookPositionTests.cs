@@ -56,4 +56,16 @@ public sealed class BrookPositionTests
         Assert.Equal(20L, pFromInt64.ToLong());
         Assert.Equal(20L, pFromInt64.ToInt64());
     }
+
+    /// <summary>
+    ///     Positions with identical values should not treat either side as newer.
+    /// </summary>
+    [Fact]
+    public void IsNewerThanReturnsFalseWhenValuesEqual()
+    {
+        BrookPosition left = new(42);
+        BrookPosition right = new(42);
+        Assert.False(left.IsNewerThan(right));
+        Assert.False(right.IsNewerThan(left));
+    }
 }
