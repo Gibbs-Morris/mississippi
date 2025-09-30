@@ -137,13 +137,16 @@ public class BatchSizeEstimatorTests
             Data = CreatePayload(256, 0x1A),
             Time = DateTimeOffset.FromUnixTimeSeconds(1),
         };
-        BrookEvent[] events = [
+        BrookEvent[] events =
+        [
             Clone(template),
             Clone(template),
             Clone(template),
         ];
         long maxSize = estimator.EstimateBatchSize(events.Take(2).ToList());
-        Assert.True(estimator.EstimateBatchSize(events) > maxSize, "Three events should exceed the configured max size.");
+        Assert.True(
+            estimator.EstimateBatchSize(events) > maxSize,
+            "Three events should exceed the configured max size.");
         List<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(events, 10, maxSize).ToList();
         Assert.Equal(2, batches.Count);
         Assert.Equal(2, batches[0].Count);
@@ -284,7 +287,8 @@ public class BatchSizeEstimatorTests
             Data = CreatePayload(512, 0x33),
             Time = DateTimeOffset.UtcNow,
         };
-        BrookEvent[] events = [
+        BrookEvent[] events =
+        [
             Clone(template),
             Clone(template),
         ];
@@ -328,7 +332,7 @@ public class BatchSizeEstimatorTests
         size += (brookEvent.Source?.Length ?? 0) * 2L;
         size += (brookEvent.Type?.Length ?? 0) * 2L;
         size += (brookEvent.DataContentType?.Length ?? 0) * 2L;
-        long base64Size = brookEvent.Data.Length * 4L / 3L;
+        long base64Size = (brookEvent.Data.Length * 4L) / 3L;
         size += base64Size + 64;
         size += 200;
         return (long)(size * 1.4);
