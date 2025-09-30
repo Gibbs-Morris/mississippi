@@ -14,7 +14,7 @@ namespace Mississippi.Core.Abstractions.Tests.Mapping;
 public class AsyncEnumerableMapperTests
 {
     /// <summary>
-    ///     Tests that Projection non-empty asynchronous collection is mapped correctly.
+    ///     Tests that a non-empty asynchronous collection is mapped correctly.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
@@ -66,7 +66,7 @@ public class AsyncEnumerableMapperTests
     }
 
     /// <summary>
-    ///     Tests that passing Projection null value to the Map function throws an ArgumentNullException.
+    ///     Tests that passing a null value to the Map function throws an ArgumentNullException.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
@@ -117,7 +117,7 @@ public class AsyncEnumerableMapperTests
     }
 
     /// <summary>
-    ///     Asynchronously enumerates Projection collection of items.
+    ///     Asynchronously enumerates a collection of items.
     /// </summary>
     /// <typeparam name="T">The type of the items in the collection.</typeparam>
     /// <param name="items">The collection of items to enumerate.</param>

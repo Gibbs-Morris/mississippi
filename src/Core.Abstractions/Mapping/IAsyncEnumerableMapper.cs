@@ -1,9 +1,8 @@
 ﻿namespace Mississippi.Core.Abstractions.Mapping;
 
 /// <summary>
-///     Defines Projection generic interface for mapping asynchronous collections of objects of type
-///     <typeparamref name="TFrom" />
-///     to asynchronous collections of objects of type <typeparamref name="TTo" />.
+///     Defines a generic interface for mapping asynchronous collections of objects of type
+///     <typeparamref name="TFrom" /> to asynchronous collections of objects of type <typeparamref name="TTo" />.
 /// </summary>
 /// <typeparam name="TFrom">The type of the source objects.</typeparam>
 /// <typeparam name="TTo">The type of the target objects.</typeparam>

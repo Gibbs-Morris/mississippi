@@ -22,8 +22,7 @@ public sealed class EnumerableMapper<TFrom, TTo> : IEnumerableMapper<TFrom, TTo>
     private IMapper<TFrom, TTo> Mapper { get; }
 
     /// <summary>
-    ///     Maps Projection collection of objects of type <typeparamref name="TFrom" /> to Projection collection of objects of
-    ///     type
+    ///     Maps a collection of objects of type <typeparamref name="TFrom" /> to a collection of objects of type
     ///     <typeparamref name="TTo" />.
     /// </summary>
     /// <param name="input">The input collection to map from.</param>

@@ -1,8 +1,7 @@
 ﻿namespace Mississippi.Core.Abstractions.Mapping;
 
 /// <summary>
-///     Defines Projection generic interface for mapping collections of objects of type <typeparamref name="TFrom" /> to
-///     collections
+///     Defines a generic interface for mapping collections of objects of type <typeparamref name="TFrom" /> to collections
 ///     of objects of type <typeparamref name="TTo" />.
 /// </summary>
 /// <typeparam name="TFrom">The type of the source objects.</typeparam>

@@ -13,7 +13,7 @@ namespace Mississippi.Core.Abstractions.Tests.Mapping;
 public class MappingRegistrationsTests
 {
     /// <summary>
-    ///     Tests if Projection single mapper is correctly added to the service collection.
+    ///     Tests if a single mapper is correctly added to the service collection.
     /// </summary>
     [Fact]
     public void AddsMapperToServiceCollection()

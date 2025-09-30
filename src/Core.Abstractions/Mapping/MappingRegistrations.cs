@@ -9,7 +9,7 @@ namespace Mississippi.Core.Abstractions.Mapping;
 public static class MappingRegistrations
 {
     /// <summary>
-    ///     Adds Projection mapper to the service collection.
+    ///     Adds a mapper to the service collection.
     /// </summary>
     /// <typeparam name="TFrom">The type of the source objects.</typeparam>
     /// <typeparam name="TTo">The type of the target objects.</typeparam>
