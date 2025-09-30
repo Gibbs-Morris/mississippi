@@ -114,9 +114,10 @@ public class BatchSizeEstimatorTests
     {
         BatchSizeEstimator estimator = new();
         IReadOnlyList<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(
-            Array.Empty<BrookEvent>(),
-            maxEventsPerBatch: 10,
-            maxSizeBytes: 10_000).ToList();
+                Array.Empty<BrookEvent>(),
+                10,
+                10_000)
+            .ToList();
         Assert.Empty(batches);
     }
 
@@ -135,19 +136,11 @@ public class BatchSizeEstimatorTests
             DataContentType = "application/octet-stream",
             Data = CreatePayload(256, 0x1A),
         };
-        BrookEvent[] events =
-        {
-            Clone(template),
-            Clone(template),
-            Clone(template),
-        };
+        BrookEvent[] events = { Clone(template), Clone(template), Clone(template) };
         long singleEventSize = estimator.EstimateEventSize(events[0]);
         long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
-        long maxSize = overhead + (singleEventSize * 2) - 10; // allow two events, force third to roll over
-        List<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(
-            events,
-            maxEventsPerBatch: 10,
-            maxSizeBytes: maxSize).ToList();
+        long maxSize = (overhead + (singleEventSize * 2)) - 10; // allow two events, force third to roll over
+        List<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(events, 10, maxSize).ToList();
         Assert.Equal(2, batches.Count);
         Assert.Equal(2, batches[0].Count);
         Assert.Single(batches[1]);
