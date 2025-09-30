@@ -5,7 +5,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Abstractions.Storage;
+using Mississippi.EventSourcing.Cosmos.Batching;
+using Mississippi.EventSourcing.Cosmos.Brooks;
+using Mississippi.EventSourcing.Cosmos.Locking;
+using Mississippi.EventSourcing.Cosmos.Mapping;
+using Mississippi.EventSourcing.Cosmos.Retry;
+using Mississippi.EventSourcing.Cosmos.Storage;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Tests;
@@ -32,8 +40,45 @@ public class BrookStorageProviderRegistrationsTests
         // register SDK clients (those are only added by overloads that accept connection strings).
         // Assert by inspecting service descriptors to avoid resolving services that have
         // constructor dependencies (for example the lock manager requires a BlobServiceClient).
-        List<Type> serviceTypes = services.Select(sd => sd.ServiceType).ToList();
-        Assert.Contains(typeof(IBrookStorageProvider), serviceTypes);
+        List<ServiceDescriptor> descriptors = services.ToList();
+        List<Type> serviceTypes = descriptors.Select(sd => sd.ServiceType).ToList();
+        Type[] expectedCoreServices =
+        {
+            typeof(IBrookStorageProvider),
+            typeof(IBrookRecoveryService),
+            typeof(IEventBrookReader),
+            typeof(IEventBrookAppender),
+            typeof(ICosmosRepository),
+            typeof(IDistributedLockManager),
+            typeof(IBlobLeaseClientFactory),
+            typeof(IBatchSizeEstimator),
+            typeof(IRetryPolicy),
+            typeof(Container),
+        };
+        foreach (Type expected in expectedCoreServices)
+        {
+            Assert.Contains(expected, serviceTypes);
+        }
+
+        Assert.Contains(
+            descriptors,
+            sd => sd.ServiceType == typeof(IMapper<EventStorageModel, BrookEvent>) &&
+                  sd.ImplementationType == typeof(EventStorageToEventMapper));
+        Assert.Contains(
+            descriptors,
+            sd => sd.ServiceType == typeof(IMapper<BrookEvent, EventStorageModel>) &&
+                  sd.ImplementationType == typeof(EventToStorageMapper));
+        Assert.Contains(
+            descriptors,
+            sd => sd.ServiceType == typeof(IMapper<HeadDocument, HeadStorageModel>) &&
+                  sd.ImplementationType == typeof(HeadDocumentToStorageMapper));
+        Assert.Contains(
+            descriptors,
+            sd => sd.ServiceType == typeof(IMapper<EventDocument, EventStorageModel>) &&
+                  sd.ImplementationType == typeof(EventDocumentToStorageMapper));
+        Assert.Equal(
+            1,
+            descriptors.Count(sd => sd.ServiceType == typeof(IHostedService)));
         Assert.DoesNotContain(typeof(CosmosClient), serviceTypes);
         Assert.DoesNotContain(typeof(BlobServiceClient), serviceTypes);
     }
