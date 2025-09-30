@@ -1,7 +1,11 @@
 using System.Collections.Immutable;
+using System.Text;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Batching;
+using Mississippi.EventSourcing.Cosmos.Storage;
+
+using Newtonsoft.Json;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Tests.Batching;
@@ -103,6 +107,53 @@ public class BatchSizeEstimatorTests
     }
 
     /// <summary>
+    ///     Ensures CreateSizeLimitedBatches yields no batches when provided an empty sequence.
+    /// </summary>
+    [Fact]
+    public void CreateSizeLimitedBatchesWithNoEventsReturnsEmpty()
+    {
+        BatchSizeEstimator estimator = new();
+        IReadOnlyList<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(
+            Array.Empty<BrookEvent>(),
+            maxEventsPerBatch: 10,
+            maxSizeBytes: 10_000).ToList();
+        Assert.Empty(batches);
+    }
+
+    /// <summary>
+    ///     Ensures CreateSizeLimitedBatches flushes based on size constraints even when under the max event count.
+    /// </summary>
+    [Fact]
+    public void CreateSizeLimitedBatchesSplitsBySizeLimit()
+    {
+        BatchSizeEstimator estimator = new();
+        BrookEvent template = new()
+        {
+            Id = "size",
+            Source = "src",
+            Type = "type",
+            DataContentType = "application/octet-stream",
+            Data = CreatePayload(256, 0x1A),
+        };
+        BrookEvent[] events =
+        {
+            Clone(template),
+            Clone(template),
+            Clone(template),
+        };
+        long singleEventSize = estimator.EstimateEventSize(events[0]);
+        long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
+        long maxSize = overhead + (singleEventSize * 2) - 10; // allow two events, force third to roll over
+        List<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(
+            events,
+            maxEventsPerBatch: 10,
+            maxSizeBytes: maxSize).ToList();
+        Assert.Equal(2, batches.Count);
+        Assert.Equal(2, batches[0].Count);
+        Assert.Single(batches[1]);
+    }
+
+    /// <summary>
     ///     Ensures CreateSizeLimitedBatches throws when a single event cannot fit into the provided max size.
     /// </summary>
     [Fact]
@@ -155,6 +206,128 @@ public class BatchSizeEstimatorTests
                 e1,
                 e2,
             });
-        Assert.True(size > 0);
+        long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
+        long expected = overhead + estimator.EstimateEventSize(e1) + estimator.EstimateEventSize(e2);
+        Assert.Equal(expected, size);
+    }
+
+    /// <summary>
+    ///     Ensures payloads exactly at the large-event threshold still use the serialization path.
+    /// </summary>
+    [Fact]
+    public void EstimateEventSizeThresholdKeepsSerializationPath()
+    {
+        BatchSizeEstimator estimator = new();
+        const int threshold = 10_000_000;
+        BrookEvent ev = new()
+        {
+            Id = new('a', 8),
+            Source = new('b', 6),
+            Type = new('c', 4),
+            DataContentType = "application/custom",
+            Data = CreatePayload(threshold, 0x2A),
+            Time = DateTimeOffset.FromUnixTimeSeconds(42),
+        };
+        long actual = estimator.EstimateEventSize(ev);
+        EventDocument expectedDoc = new()
+        {
+            Id = "sample",
+            Type = "event",
+            Position = 1,
+            EventId = ev.Id,
+            Source = ev.Source,
+            EventType = ev.Type,
+            DataContentType = ev.DataContentType,
+            Data = ev.Data.ToArray(),
+            Time = ev.Time.Value,
+        };
+        string serialized = JsonConvert.SerializeObject(expectedDoc);
+        long expectedSerializationEstimate = (long)(Encoding.UTF8.GetByteCount(serialized) * 1.3);
+        long fallbackEstimate = ComputeFallbackEstimate(ev);
+        Assert.Equal(expectedSerializationEstimate, actual);
+        Assert.True(actual < fallbackEstimate, "Serialization estimate should be lower than heuristic fallback.");
+    }
+
+    /// <summary>
+    ///     Ensures the fallback estimation path matches the documented heuristic when serialization is skipped.
+    /// </summary>
+    [Fact]
+    public void EstimateEventSizeLargeEventMatchesFallbackFormula()
+    {
+        BatchSizeEstimator estimator = new();
+        const int payloadLength = 10_000_001;
+        BrookEvent ev = new()
+        {
+            Id = new('X', 5),
+            Source = new('Y', 7),
+            Type = new('Z', 3),
+            DataContentType = "text/plain",
+            Data = CreatePayload(payloadLength, 0x5A),
+            Time = DateTimeOffset.FromUnixTimeSeconds(512),
+        };
+        long actual = estimator.EstimateEventSize(ev);
+        long expected = ComputeFallbackEstimate(ev);
+        Assert.Equal(expected, actual);
+    }
+
+    /// <summary>
+    ///     Ensures size-based batching allows events whose combined size exactly matches the limit.
+    /// </summary>
+    [Fact]
+    public void CreateSizeLimitedBatchesAllowsExactSizeBoundary()
+    {
+        BatchSizeEstimator estimator = new();
+        BrookEvent template = new()
+        {
+            Id = "boundary",
+            Source = "src",
+            Type = "type",
+            Data = CreatePayload(512, 0x33),
+            Time = DateTimeOffset.UtcNow,
+        };
+        BrookEvent[] events = { Clone(template), Clone(template) };
+        long singleEventSize = estimator.EstimateEventSize(events[0]);
+        long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
+        long maxSize = overhead + (singleEventSize * events.Length);
+        List<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(events, 10, maxSize).ToList();
+        Assert.Single(batches);
+        Assert.Equal(events.Length, batches[0].Count);
+    }
+
+    private static BrookEvent Clone(
+        BrookEvent source
+    ) =>
+        new()
+        {
+            Id = source.Id,
+            Source = source.Source,
+            Type = source.Type,
+            DataContentType = source.DataContentType,
+            Data = source.Data,
+            Time = source.Time,
+        };
+
+    private static ImmutableArray<byte> CreatePayload(
+        int length,
+        byte fill
+    )
+    {
+        byte[] buffer = new byte[length];
+        Array.Fill(buffer, fill);
+        return ImmutableArray.Create(buffer);
+    }
+
+    private static long ComputeFallbackEstimate(
+        BrookEvent brookEvent
+    )
+    {
+        long size = 300;
+        size += (brookEvent.Id?.Length ?? 0) * 2L;
+        size += (brookEvent.Source?.Length ?? 0) * 2L;
+        size += (brookEvent.Type?.Length ?? 0) * 2L;
+        size += (brookEvent.DataContentType?.Length ?? 0) * 2L;
+        size += ((brookEvent.Data.Length * 4L) / 3L) + 64;
+        size += 200;
+        return (long)(size * 1.4);
     }
 }
