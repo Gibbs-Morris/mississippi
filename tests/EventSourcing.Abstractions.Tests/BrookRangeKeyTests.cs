@@ -65,4 +65,37 @@ public sealed class BrookRangeKeyTests
         BrookRangeKey rk = new("t", "i", 5, 10);
         Assert.Equal("t|i|5|10", rk.ToString());
     }
+
+    /// <summary>
+    ///     FromString should parse valid composite keys and preserve component values.
+    /// </summary>
+    [Fact]
+    public void FromStringParsesValidCompositeKey()
+    {
+        BrookRangeKey parsed = BrookRangeKey.FromString("alpha|beta|7|13");
+        Assert.Equal("alpha", parsed.Type);
+        Assert.Equal("beta", parsed.Id);
+        Assert.Equal(7, parsed.Start.Value);
+        Assert.Equal(13, parsed.Count);
+    }
+
+    /// <summary>
+    ///     FromString should throw when more than three separators are present.
+    /// </summary>
+    [Fact]
+    public void FromStringWithTooManySeparatorsThrows()
+    {
+        Assert.Throws<FormatException>(() => BrookRangeKey.FromString("a|b|1|2|extra"));
+    }
+
+    /// <summary>
+    ///     Constructor should allow composite keys that sit just below the maximum length threshold.
+    /// </summary>
+    [Fact]
+    public void ConstructorAllowsValuesBelowLengthLimit()
+    {
+        string type = new('t', 1000);
+        BrookRangeKey key = new(type, "i", 12_345, 67_890);
+        Assert.Equal(type, key.Type);
+    }
 }
