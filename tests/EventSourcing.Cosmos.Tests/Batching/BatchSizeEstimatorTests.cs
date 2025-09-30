@@ -135,11 +135,15 @@ public class BatchSizeEstimatorTests
             Type = "type",
             DataContentType = "application/octet-stream",
             Data = CreatePayload(256, 0x1A),
+            Time = DateTimeOffset.FromUnixTimeSeconds(1),
         };
-        BrookEvent[] events = { Clone(template), Clone(template), Clone(template) };
-        long singleEventSize = estimator.EstimateEventSize(events[0]);
-        long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
-        long maxSize = (overhead + (singleEventSize * 2)) - 10; // allow two events, force third to roll over
+        BrookEvent[] events = [
+            Clone(template),
+            Clone(template),
+            Clone(template),
+        ];
+        long maxSize = estimator.EstimateBatchSize(events.Take(2).ToList());
+        Assert.True(estimator.EstimateBatchSize(events) > maxSize, "Three events should exceed the configured max size.");
         List<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(events, 10, maxSize).ToList();
         Assert.Equal(2, batches.Count);
         Assert.Equal(2, batches[0].Count);
@@ -185,6 +189,7 @@ public class BatchSizeEstimatorTests
             Type = "A",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.Create<byte>(1, 2, 3, 4),
+            Time = DateTimeOffset.FromUnixTimeSeconds(11),
         };
         BrookEvent e2 = new()
         {
@@ -192,6 +197,7 @@ public class BatchSizeEstimatorTests
             Type = "B",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.Create<byte>(5),
+            Time = DateTimeOffset.FromUnixTimeSeconds(12),
         };
         long size = estimator.EstimateBatchSize(
             new List<BrookEvent>
@@ -278,7 +284,10 @@ public class BatchSizeEstimatorTests
             Data = CreatePayload(512, 0x33),
             Time = DateTimeOffset.UtcNow,
         };
-        BrookEvent[] events = { Clone(template), Clone(template) };
+        BrookEvent[] events = [
+            Clone(template),
+            Clone(template),
+        ];
         long singleEventSize = estimator.EstimateEventSize(events[0]);
         long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
         long maxSize = overhead + (singleEventSize * events.Length);
@@ -319,7 +328,8 @@ public class BatchSizeEstimatorTests
         size += (brookEvent.Source?.Length ?? 0) * 2L;
         size += (brookEvent.Type?.Length ?? 0) * 2L;
         size += (brookEvent.DataContentType?.Length ?? 0) * 2L;
-        size += ((brookEvent.Data.Length * 4L) / 3L) + 64;
+        long base64Size = brookEvent.Data.Length * 4L / 3L;
+        size += base64Size + 64;
         size += 200;
         return (long)(size * 1.4);
     }
