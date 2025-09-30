@@ -4,7 +4,7 @@ using Mississippi.EventSourcing.Abstractions.Attributes;
 namespace Mississippi.EventSourcing.Abstractions.Tests.Attributes;
 
 /// <summary>
-///     Contains unit tests that verify the behaviour of the <see cref="BrookNameAttribute" /> class.
+///     Contains unit tests that verify the behavior of the <see cref="BrookNameAttribute" /> class.
 /// </summary>
 public class BrookNameAttributeTests
 {
