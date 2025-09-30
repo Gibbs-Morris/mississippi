@@ -105,4 +105,15 @@ public class BrookKeyTests
         string longType = new('x', 1024);
         Assert.Throws<ArgumentException>(() => new BrookKey(longType, string.Empty));
     }
+
+    /// <summary>
+    ///     FromString should allow empty type components when the separator is the leading character.
+    /// </summary>
+    [Fact]
+    public void FromStringAllowsEmptyType()
+    {
+        BrookKey key = BrookKey.FromString("|identifier");
+        Assert.Equal(string.Empty, key.Type);
+        Assert.Equal("identifier", key.Id);
+    }
 }
