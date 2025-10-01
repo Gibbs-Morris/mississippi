@@ -27,6 +27,8 @@ pwsh ./scripts/build-mississippi-solution.ps1
 pwsh ./scripts/final-build-solutions.ps1
 ```
 
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+
 ## Core Principles
 
 ### Keep Project Files Minimal

@@ -15,6 +15,8 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
 1. All repository-wide guidance in `.github/instructions/*.instructions.md` remains authoritative. Resolve conflicts by choosing the most specific file first (feature → language → build). When in doubt, follow the latest modified instruction file without editing it.
 2. If you add or modify any instruction Markdown, immediately mirror the change into the Cursor rule set by running `pwsh ./scripts/sync-instructions-to-mdc.ps1` before you finish.
 
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+
 ## Execution Loop
 
 1. **Prep tools** – Ensure `dotnet tool restore` has been run at least once on the repo.

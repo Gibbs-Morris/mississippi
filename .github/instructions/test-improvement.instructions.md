@@ -6,6 +6,8 @@ applyTo: '**'
 
 This guide defines a practical, repeatable loop to raise unit test coverage and mutation score on projects that were not originally written with TDD. It complements the broader Testing and Build Rules documents and provides exact commands using `scripts/test-project-quality.ps1`.
 
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+
 ## At-a-Glance Improvement Loop
 
 1) Prepare tools once.

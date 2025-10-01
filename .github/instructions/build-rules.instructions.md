@@ -27,6 +27,8 @@ pwsh ./scripts/mutation-test-mississippi-solution.ps1
 pwsh ./go.ps1
 ```
 
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+
 ## 🚨 CRITICAL RULE: ZERO WARNINGS POLICY 🚨
 
 **⚠️ ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes ⚠️**
