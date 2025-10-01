@@ -36,13 +36,23 @@ public sealed class BrookRangeKeyTests
     }
 
     /// <summary>
-    ///     End should be Start + Count.
+    ///     End should be Start + Count - 1.
     /// </summary>
     [Fact]
-    public void EndIsStartPlusCount()
+    public void EndIsStartPlusCountMinusOne()
     {
         BrookRangeKey rk = new("a", "b", 10, 7);
-        Assert.Equal(17, rk.End.Value);
+        Assert.Equal(16, rk.End.Value);
+    }
+
+    /// <summary>
+    ///     End should be Start - 1 when the range count is zero.
+    /// </summary>
+    [Fact]
+    public void EndIsStartMinusOneWhenCountIsZero()
+    {
+        BrookRangeKey rk = new("a", "b", 10, 0);
+        Assert.Equal(9, rk.End.Value);
     }
 
     /// <summary>

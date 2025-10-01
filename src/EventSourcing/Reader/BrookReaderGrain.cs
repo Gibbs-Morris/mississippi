@@ -77,7 +77,7 @@ internal class BrookReaderGrain
         {
             // Construct slice key using the actual slice start and an inclusive end via Count=(Last-First)
             long sliceStart = l.First;
-            long sliceCount = l.Last - l.First; // BrookRangeKey.End = Start + Count, so this yields End == l.Last
+            long sliceCount = (l.Last - l.First) + 1; // Count is inclusive so Start + Count - 1 == l.Last
             IBrookSliceReaderGrain sliceGrain = BrookGrainFactory.GetBrookSliceReaderGrain(
                 BrookRangeKey.FromBrookCompositeKey(brookId, sliceStart, sliceCount));
             await foreach (BrookEvent mississippiEvent in sliceGrain.ReadAsync(l.First, l.Last, cancellationToken))

@@ -59,7 +59,10 @@ internal class BrookSliceReaderGrain
         IBrookHeadGrain head = BrookGrainFactory.GetBrookHeadGrain(brookRangeKey.ToBrookCompositeKey());
         BrookPosition lastPositionOfBrook = await head.GetLatestPositionAsync();
         BrookPosition lastPositionOfSlice = brookRangeKey.End;
-        BrookPosition lastPositionOfCache = Cache.Length + brookRangeKey.Start;
+        long lastPositionOfCacheValue = Cache.Length == 0
+            ? brookRangeKey.Start.Value - 1
+            : brookRangeKey.Start.Value + Cache.Length - 1;
+        BrookPosition lastPositionOfCache = BrookPosition.FromLong(lastPositionOfCacheValue);
         if ((lastPositionOfCache < lastPositionOfSlice) && (lastPositionOfCache < lastPositionOfBrook))
         {
             await PopulateCacheFromBrookAsync(brookRangeKey);

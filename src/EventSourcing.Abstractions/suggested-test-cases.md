@@ -104,12 +104,12 @@ Invariants:
 - Validates type/id (same as BrookKey).
 - start >= 0, count >=0.
 - String format: type|id|start|count.
-- End = Start + Count.
+- End = Start + Count - 1 (inclusive; -1 when Count == 0).
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Priority | Type |
 |----|----------|---------------------|------|----------|------|
-| BRK1 | Valid construction | new("t","i",0,5) -> End 5 | Basic | H | Unit |
+| BRK1 | Valid construction | new("t","i",0,5) -> End 4 | Basic | H | Unit |
 | BRK2 | Negative start | start -1 -> ArgOutOfRange | Bounds | H | Unit |
 | BRK3 | Negative count | count -1 -> ArgOutOfRange | Bounds | H | Unit |
 | BRK4 | Separator in type | type contains `|` -> ArgException | Validation | M | Unit |
