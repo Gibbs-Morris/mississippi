@@ -108,4 +108,88 @@ public sealed class BrookRangeKeyTests
         BrookRangeKey key = new(type, "i", 12_345, 67_890);
         Assert.Equal(type, key.Type);
     }
+
+    /// <summary>
+    ///     Constructor should reject null type parameter.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsNullType()
+    {
+        Assert.Throws<ArgumentNullException>(() => new BrookRangeKey(null!, "id", 0, 1));
+    }
+
+    /// <summary>
+    ///     Constructor should reject null id parameter.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsNullId()
+    {
+        Assert.Throws<ArgumentNullException>(() => new BrookRangeKey("type", null!, 0, 1));
+    }
+
+    /// <summary>
+    ///     Constructor should reject negative start parameter.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsNegativeStart()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new BrookRangeKey("type", "id", -1, 1));
+    }
+
+    /// <summary>
+    ///     Constructor should reject negative count parameter.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsNegativeCount()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new BrookRangeKey("type", "id", 0, -1));
+    }
+
+    /// <summary>
+    ///     Constructor should reject type containing separator character.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsTypeWithSeparator()
+    {
+        Assert.Throws<ArgumentException>(() => new BrookRangeKey("ty|pe", "id", 0, 1));
+    }
+
+    /// <summary>
+    ///     Constructor should reject id containing separator character.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsIdWithSeparator()
+    {
+        Assert.Throws<ArgumentException>(() => new BrookRangeKey("type", "i|d", 0, 1));
+    }
+
+    /// <summary>
+    ///     Constructor should accept components that exactly reach the maximum combined length threshold.
+    /// </summary>
+    [Fact]
+    public void ConstructorAllowsExactMaxLength()
+    {
+        // Create components that sum to exactly 1024 characters
+        // type.Length + id.Length + start.ToString().Length + count.ToString().Length + 3 = 1024
+        // Using start=0 (1 char), count=0 (1 char), we need type + id = 1019
+        string type = new('x', 509);
+        string id = new('y', 510);
+        BrookRangeKey key = new(type, id, 0, 0);
+        Assert.Equal(type, key.Type);
+        Assert.Equal(id, key.Id);
+    }
+
+    /// <summary>
+    ///     Constructor should reject components that exceed the maximum combined length by exactly one character.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsMaxLengthPlusOne()
+    {
+        // Create components that sum to 1025 characters
+        // type.Length + id.Length + start.ToString().Length + count.ToString().Length + 3 = 1025
+        // Using start=0 (1 char), count=0 (1 char), we need type + id = 1020
+        string type = new('x', 510);
+        string id = new('y', 510);
+        Assert.Throws<ArgumentException>(() => new BrookRangeKey(type, id, 0, 0));
+    }
 }

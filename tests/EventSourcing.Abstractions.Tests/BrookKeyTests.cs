@@ -116,4 +116,32 @@ public class BrookKeyTests
         Assert.Equal(string.Empty, key.Type);
         Assert.Equal("identifier", key.Id);
     }
+
+    /// <summary>
+    ///     Constructor should accept components that exactly reach the maximum combined length threshold.
+    /// </summary>
+    [Fact]
+    public void ConstructorAllowsExactMaxLength()
+    {
+        // Create components that sum to exactly 1024 characters (1023 + 1 separator)
+        // type.Length + id.Length + 1 = 1024
+        string type = new('x', 512);
+        string id = new('y', 511);
+        BrookKey key = new(type, id);
+        Assert.Equal(type, key.Type);
+        Assert.Equal(id, key.Id);
+    }
+
+    /// <summary>
+    ///     Constructor should reject components that exceed the maximum combined length by exactly one character.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsMaxLengthPlusOne()
+    {
+        // Create components that sum to 1025 characters (1024 + 1 separator)
+        // type.Length + id.Length + 1 = 1025
+        string type = new('x', 512);
+        string id = new('y', 512);
+        Assert.Throws<ArgumentException>(() => new BrookKey(type, id));
+    }
 }
