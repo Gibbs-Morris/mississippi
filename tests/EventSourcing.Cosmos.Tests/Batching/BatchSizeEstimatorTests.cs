@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
@@ -182,7 +181,8 @@ public class BatchSizeEstimatorTests
     }
 
     /// <summary>
-    ///     Ensures oversize events trigger an exception before any batches are yielded and the message reports the correct limit.
+    ///     Ensures oversize events trigger an exception before any batches are yielded and the message reports the correct
+    ///     limit.
     /// </summary>
     [Fact]
     public void CreateSizeLimitedBatchesThrowsBeforeYieldAndReportsAccurateLimit()
@@ -198,13 +198,11 @@ public class BatchSizeEstimatorTests
             Data = CreatePayload(1024, 0x52),
             Time = DateTimeOffset.FromUnixTimeSeconds(321),
         };
-
         long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
         long eventSize = estimator.EstimateEventSize(oversize);
         long maxSize = overhead + Math.Max(1, eventSize - 5);
-
-        using IEnumerator<IReadOnlyList<BrookEvent>> enumerator = estimator.CreateSizeLimitedBatches(new[] { oversize }, 10, maxSize).GetEnumerator();
-
+        using IEnumerator<IReadOnlyList<BrookEvent>> enumerator =
+            estimator.CreateSizeLimitedBatches(new[] { oversize }, 10, maxSize).GetEnumerator();
         InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => enumerator.MoveNext());
         string expectedLimit = (maxSize - overhead).ToString("N0", CultureInfo.CurrentCulture);
         Assert.Contains(expectedLimit, exception.Message, StringComparison.CurrentCulture);
@@ -260,10 +258,8 @@ public class BatchSizeEstimatorTests
             Data = CreatePayload(128, 0x11),
             Time = DateTimeOffset.FromUnixTimeSeconds(100),
         };
-
         long single = estimator.EstimateBatchSize(new[] { template });
         long doubleCount = estimator.EstimateBatchSize(new[] { template, Clone(template) });
-
         Assert.True(doubleCount > single, "Batch size should grow when more events are added.");
     }
 
@@ -317,7 +313,6 @@ public class BatchSizeEstimatorTests
             Time = DateTimeOffset.FromUnixTimeSeconds(200),
         };
         long baselineSize = estimator.EstimateEventSize(baseline);
-
         BrookEvent rich = baseline with
         {
             Id = new('i', 12),
@@ -325,7 +320,6 @@ public class BatchSizeEstimatorTests
             Type = new('t', 6),
             DataContentType = "application/vnd.custom",
         };
-
         EventDocument expectedDoc = new()
         {
             Id = "sample",
@@ -341,7 +335,6 @@ public class BatchSizeEstimatorTests
         string serialized = JsonConvert.SerializeObject(expectedDoc);
         long expected = (long)(Encoding.UTF8.GetByteCount(serialized) * 1.3);
         long actual = estimator.EstimateEventSize(rich);
-
         Assert.Equal(expected, actual);
         Assert.True(actual > baselineSize, "String metadata should increase the estimated size.");
     }
@@ -382,7 +375,6 @@ public class BatchSizeEstimatorTests
             Time = DateTimeOffset.FromUnixTimeSeconds(700),
         };
         long baselineEstimate = estimator.EstimateEventSize(baseline);
-
         BrookEvent decorated = baseline with
         {
             Id = new('I', 10),
@@ -390,10 +382,8 @@ public class BatchSizeEstimatorTests
             Type = new('T', 8),
             DataContentType = "text/custom",
         };
-
         long expected = ComputeFallbackEstimate(decorated);
         long actual = estimator.EstimateEventSize(decorated);
-
         Assert.Equal(expected, actual);
         Assert.True(actual > baselineEstimate, "Fallback estimate should grow when metadata strings are populated.");
     }
