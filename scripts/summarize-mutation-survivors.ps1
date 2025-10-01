@@ -240,7 +240,16 @@ foreach ($entry in $normalized) {
         })
 }
 
-$ordered = $rankWorking | Sort-Object Score -Descending, File, StartLine
+$ordered = $rankWorking | Sort-Object -Property @{
+        Expression  = 'Score'
+        Descending  = $true
+    }, @{
+        Expression  = 'File'
+        Descending  = $false
+    }, @{
+        Expression  = 'StartLine'
+        Descending  = $false
+    }
 if ($Top -gt 0) { $focusSelection = $ordered | Select-Object -First $Top } else { $focusSelection = $ordered }
 
 # Optional project filter
@@ -433,7 +442,9 @@ if ($EmitTestSkeletons) {
                 'using Xunit;',
                 '',
                 "namespace Company.$proj.Tests.Mutation", '{',
-                '    // Generated mutation test skeletons. Fill in Arrange/Act/Assert to kill survivors.',
+                '    /// <summary>',
+                '    ///     Generated mutation test skeletons. Fill in Arrange/Act/Assert to kill survivors.',
+                '    /// </summary>',
                 '    public static class GeneratedMutationTests {',
                 '    }',
                 '}'
@@ -444,10 +455,14 @@ if ($EmitTestSkeletons) {
         $content = Get-Content -Path $skeletonFile -Raw
         $methodName = 'Mutant_' + (Sanitize-Identifier -Value ("R${($f.Rank)}_${f.ClassName}_${f.StartLine}_${f.Mutator}"))
         if ($content -notmatch [Regex]::Escape($methodName)) {
-            $snippetComment = ($f.Snippet -replace '*/','*\\/')
+            $snippetComment = ($f.Snippet -replace [Regex]::Escape('*/'), '*\/')
+            $factDisplay = ('[Fact(DisplayName="{0} {1} lines {2}..{3}")]' -f $f.ClassName, $f.Mutator, $f.StartLine, $f.EndLine)
             $method = @(
                 '',
-                "        [Fact(DisplayName=\"$($f.ClassName) $($f.Mutator) lines $($f.StartLine)..$($f.EndLine)\")]",
+                '        /// <summary>',
+                "        ///     Auto-generated mutation survivor skeleton for $($f.ClassName) at $($f.StartLine)..$($f.EndLine).",
+                '        /// </summary>',
+                "        $factDisplay",
                 "        public static void $methodName()",
                 '        {',
                 "            // Mutator: $($f.Mutator)",
