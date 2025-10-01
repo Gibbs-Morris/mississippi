@@ -61,7 +61,7 @@ internal class BrookSliceReaderGrain
         BrookPosition lastPositionOfSlice = brookRangeKey.End;
         long lastPositionOfCacheValue = Cache.Length == 0
             ? brookRangeKey.Start.Value - 1
-            : brookRangeKey.Start.Value + Cache.Length - 1;
+            : (brookRangeKey.Start.Value + Cache.Length) - 1;
         BrookPosition lastPositionOfCache = BrookPosition.FromLong(lastPositionOfCacheValue);
         if ((lastPositionOfCache < lastPositionOfSlice) && (lastPositionOfCache < lastPositionOfBrook))
         {

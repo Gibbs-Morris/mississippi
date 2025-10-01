@@ -8,7 +8,8 @@ using Mississippi.Core.Abstractions.Mapping;
 namespace Mississippi.Core.Abstractions.Tests.Mapping;
 
 /// <summary>
-///     Contains unit tests that verify the <see cref="MappingRegistrations" /> extension methods register expected mappers.
+///     Contains unit tests that verify the <see cref="MappingRegistrations" /> extension methods register expected
+///     mappers.
 /// </summary>
 public class MappingRegistrationsTests
 {
@@ -27,7 +28,8 @@ public class MappingRegistrationsTests
     }
 
     /// <summary>
-    ///     Verifies that <see cref="MappingRegistrations.AddIEnumerableMapper(IServiceCollection)" /> registers the enumerable mapper implementation.
+    ///     Verifies that <see cref="MappingRegistrations.AddIEnumerableMapper(IServiceCollection)" /> registers the enumerable
+    ///     mapper implementation.
     /// </summary>
     [Fact]
     public void AddsIEnumerableMapperToServiceCollection()
@@ -42,7 +44,8 @@ public class MappingRegistrationsTests
     }
 
     /// <summary>
-    ///     Verifies that <see cref="MappingRegistrations.AddIAsyncEnumerableMapper(IServiceCollection)" /> registers the async enumerable mapper implementation.
+    ///     Verifies that <see cref="MappingRegistrations.AddIAsyncEnumerableMapper(IServiceCollection)" /> registers the async
+    ///     enumerable mapper implementation.
     /// </summary>
     [Fact]
     public void AddsIAsyncEnumerableMapperToServiceCollection()

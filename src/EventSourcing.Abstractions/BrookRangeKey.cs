@@ -78,7 +78,7 @@ public readonly record struct BrookRangeKey
     /// <summary>
     ///     Gets the inclusive ending position of the range (Start + Count - 1).
     /// </summary>
-    public BrookPosition End => Start + Count - 1;
+    public BrookPosition End => (Start + Count) - 1;
 
     /// <summary>
     ///     Gets the count component of the brook range key.

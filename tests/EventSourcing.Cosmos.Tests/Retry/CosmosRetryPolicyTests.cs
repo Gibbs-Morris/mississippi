@@ -162,14 +162,14 @@ public class CosmosRetryPolicyTests
     public async Task ExecuteAsyncHonorsCancellationTokenAsync()
     {
         // Arrange
-        CosmosRetryPolicy policy = new(3);
+        CosmosRetryPolicy policy = new();
         int calls = 0;
         using CancellationTokenSource cts = new();
         Func<Task<int>> operationAsync = () =>
         {
             calls++;
             cts.CancelAfter(TimeSpan.Zero);
-            System.Threading.SpinWait.SpinUntil(() => cts.IsCancellationRequested);
+            SpinWait.SpinUntil(() => cts.IsCancellationRequested);
             throw new TaskCanceledException();
         };
 

@@ -47,7 +47,7 @@ internal class BrookHeadGrain
 
     private StreamSequenceToken? LastToken { get; set; }
 
-    private ILogger<BrookHeadGrain> Logger { get; set; }
+    private ILogger<BrookHeadGrain> Logger { get; }
 
     private BrookPosition TrackedHeadPosition { get; set; } = -1;
 

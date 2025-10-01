@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 
+
 namespace Mississippi.EventSourcing.Head;
 
 /// <summary>
@@ -7,11 +8,10 @@ namespace Mississippi.EventSourcing.Head;
 /// </summary>
 internal static class BrookHeadGrainLoggerExtensions
 {
-    private static readonly Action<ILogger, string, Exception?> InvalidPrimaryKeyMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Error,
-            new EventId(1, nameof(InvalidPrimaryKey)),
-            "Failed to parse brook head grain primary key '{PrimaryKey}'.");
+    private static readonly Action<ILogger, string, Exception?> InvalidPrimaryKeyMessage = LoggerMessage.Define<string>(
+        LogLevel.Error,
+        new(1, nameof(InvalidPrimaryKey)),
+        "Failed to parse brook head grain primary key '{PrimaryKey}'.");
 
     /// <summary>
     ///     Logs that the grain received an invalid primary key value.
