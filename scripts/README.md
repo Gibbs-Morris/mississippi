@@ -49,6 +49,7 @@ Once the **Mississippi** solution is healthy, run the equivalent *sample* script
   3. Final build (warnings as errors)  
   The script aborts on the first failing step (non-zero exit code). | `pwsh ./scripts/orchestrate-solutions.ps1` |
 | **sync-instructions-to-mdc.ps1** | Sync `.github/instructions/*.instructions.md` files into Cursor `.mdc` rule files and add sync metadata automatically. Preferred automated way to keep instruction Markdown and `.mdc` files in parity. | `pwsh ./scripts/sync-instructions-to-mdc.ps1` |
+| **harmonize-instructions.ps1** | Comprehensive cleanup and harmonization of all GitHub Copilot instruction files. Discovers, validates, detects duplicates/conflicts, and generates audit reports. Can run in dry-run mode. | `pwsh ./scripts/harmonize-instructions.ps1 -DryRun` |
 
 ---
 ## Example invocations
@@ -101,6 +102,56 @@ pwsh ./scripts/sync-instructions-to-mdc.ps1
 ```
 
 If the script cannot be used (e.g., on a constrained environment), follow the manual workflow described in the `Instruction ↔ Cursor MDC Sync Policy` document and ensure you add the sync metadata in both files.
+
+## Harmonizing instruction files
+
+The `harmonize-instructions.ps1` script provides comprehensive analysis and cleanup of all GitHub Copilot instruction files in the repository.
+
+Purpose: Discover, validate, cross-reference, and harmonize instruction files to ensure consistency, eliminate duplicates, and detect conflicts.
+
+Usage:
+
+```pwsh
+# Dry run - audit only, no changes
+pwsh ./scripts/harmonize-instructions.ps1 -DryRun
+
+# Apply safe edits
+pwsh ./scripts/harmonize-instructions.ps1
+
+# With custom limits
+pwsh ./scripts/harmonize-instructions.ps1 -MaxEditsPerFile 100 -TimeboxMinutes 30
+```
+
+What it does:
+1. **Discovery**: Finds all instruction files (`.github/copilot-instructions.md`, `.github/instructions/**/*.instructions.md`, `agents.md`, etc.)
+2. **Parsing**: Extracts YAML frontmatter, applyTo globs, and content from each file
+3. **Validation**: Checks location, naming, frontmatter requirements, markdown hygiene (H1, headings, code blocks)
+4. **Rule Cataloging**: Extracts ~850 rules from all files for analysis
+5. **Conflict Detection**: Identifies duplicate rules across files
+6. **Safe Edits**: Applies non-breaking fixes (filename normalization, missing frontmatter)
+7. **Approval Requests**: Identifies policy changes that need human review
+8. **Reports**: Generates comprehensive audit report and machine-readable manifest
+
+Output files:
+- `.github/instructions/_audit/instructions_audit.md` - Human-readable audit report
+- `.github/instructions/_audit/manifest.json` - Machine-readable manifest
+
+The audit report includes:
+- Inventory table with file stats
+- Validation issues by file
+- Orphaned files (applyTo globs matching no files)
+- Duplicate rules across files
+- Safe edits applied
+- Approval requests (if any)
+
+Parameters:
+- `-DryRun`: Only generate reports, don't apply edits
+- `-MaxEditsPerFile`: Maximum edits per file (default: 50)
+- `-TimeboxMinutes`: Maximum time to spend (default: 20)
+
+Exit codes:
+- `0`: All checks passed
+- `1`: Issues found (validation errors or duplicates)
 
 ## test-project-quality.ps1
 
