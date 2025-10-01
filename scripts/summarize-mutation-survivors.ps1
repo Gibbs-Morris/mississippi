@@ -93,6 +93,90 @@ function Get-MutatorSuggestion
     }
 }
 
+function New-SurvivorKey
+{
+    param(
+        [string]$File,
+        [string]$Mutator,
+        [int]$StartLine,
+        [int]$EndLine,
+        [string]$Replacement,
+        [int]$StartColumn,
+        [int]$EndColumn
+    )
+
+    $fileKey = $File ?? ''
+    $mutatorKey = $Mutator ?? ''
+    $replacementKey = $Replacement ?? ''
+    return '{0}|{1}|{2}|{3}|{4}|{5}|{6}' -f $fileKey, $mutatorKey, $StartLine, $EndLine, $replacementKey, $StartColumn, $EndColumn
+}
+
+function Get-LatestMutationReportPath
+{
+    param([string]$StrykerOutput)
+
+    if (-not (Test-Path -Path $StrykerOutput -PathType Container)) { return $null }
+
+    $candidateDirs = Get-ChildItem -Path $StrykerOutput -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
+    foreach ($dir in $candidateDirs)
+    {
+        $reportPath = Join-Path $dir.FullName 'reports/mutation-report.json'
+        if (Test-Path -Path $reportPath -PathType Leaf) { return $reportPath }
+    }
+
+    return $null
+}
+
+function Get-MutationReportSurvivors
+{
+    param(
+        [Parameter(Mandatory)][string]$ReportPath,
+        [Parameter(Mandatory)][string]$RepoRoot
+    )
+
+    $content = Get-Content -Path $ReportPath -Raw -ErrorAction Stop
+    if ([string]::IsNullOrWhiteSpace($content)) { return @() }
+
+    $report = $content | ConvertFrom-Json
+    if ($null -eq $report -or $null -eq $report.files) { return @() }
+
+    $results = New-Object System.Collections.Generic.List[object]
+    foreach ($fileProp in $report.files.PSObject.Properties)
+    {
+        $fullPath = $fileProp.Name
+        $fileData = $fileProp.Value
+        if ($null -eq $fileData -or $null -eq $fileData.mutants) { continue }
+
+        foreach ($mutant in $fileData.mutants)
+        {
+            if ($mutant.status -ne 'Survived') { continue }
+
+            $startLine = [int]$mutant.location.start.line
+            $endLine = [int]$mutant.location.end.line
+            $startColumn = if ($mutant.location.start.PSObject.Properties.Name -contains 'column') { [int]$mutant.location.start.column } else { 0 }
+            $endColumn = if ($mutant.location.end.PSObject.Properties.Name -contains 'column') { [int]$mutant.location.end.column } else { 0 }
+
+            $results.Add([pscustomobject]@{
+                    File         = $fullPath
+                    RelativeFile = if ([string]::IsNullOrWhiteSpace($fullPath)) { '' } else { Get-RelativePath -BasePath $RepoRoot -TargetPath $fullPath }
+                    Mutator      = $mutant.mutatorName
+                    Replacement  = $mutant.replacement
+                    StartLine    = $startLine
+                    EndLine      = $endLine
+                    StartColumn  = $startColumn
+                    EndColumn    = $endColumn
+                    Status       = $mutant.status
+                    StatusReason = $mutant.statusReason
+                    CoveredBy    = $mutant.coveredBy
+                    KilledBy     = $mutant.killedBy
+                    ReportId     = $mutant.id
+                }) | Out-Null
+        }
+    }
+
+    return $results.ToArray()
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptRoot
 
@@ -119,7 +203,7 @@ function Resolve-TestProjectPath {
     return $null
 }
 
-function Sanitize-Identifier {
+function ConvertTo-SanitizedIdentifier {
     param([string]$Value)
     if ([string]::IsNullOrWhiteSpace($Value)) { return 'MutationCase' }
     $clean = ($Value -replace '[^A-Za-z0-9_]','_')
@@ -186,23 +270,104 @@ else
     }
 }
 
-$normalized = foreach ($item in $survivorItems)
+$mutationReportPath = Get-LatestMutationReportPath -StrykerOutput $strykerOutputDirectory
+$reportSurvivors = @()
+if ($mutationReportPath)
+{
+    try
+    {
+        $reportSurvivors = Get-MutationReportSurvivors -ReportPath $mutationReportPath -RepoRoot $repoRoot
+        Write-Host "Loaded mutation report survivors from '$mutationReportPath'." -ForegroundColor Cyan
+    }
+    catch
+    {
+        Write-Warning "Failed to parse mutation-report.json at '$mutationReportPath': $($_.Exception.Message)"
+        $reportSurvivors = @()
+    }
+}
+else
+{
+    Write-Host 'No mutation-report.json found; skipping detailed survivor extraction.' -ForegroundColor Yellow
+}
+
+$reportMap = @{}
+foreach ($reportEntry in $reportSurvivors)
+{
+    $key = New-SurvivorKey -File $reportEntry.File -Mutator $reportEntry.Mutator -StartLine $reportEntry.StartLine -EndLine $reportEntry.EndLine -Replacement $reportEntry.Replacement -StartColumn $reportEntry.StartColumn -EndColumn $reportEntry.EndColumn
+    $reportMap[$key] = $reportEntry
+}
+
+$normalizedList = New-Object System.Collections.Generic.List[object]
+$existingKeys = New-Object System.Collections.Generic.HashSet[string]
+
+foreach ($item in $survivorItems)
 {
     $filePath = $item.File
     $className = if ([string]::IsNullOrWhiteSpace($filePath)) { '' } else { [System.IO.Path]::GetFileNameWithoutExtension($filePath) }
-    [pscustomobject]@{
-        File        = $filePath
-    RelativeFile = if ([string]::IsNullOrWhiteSpace($filePath)) { '' } else { Get-RelativePath -BasePath $repoRoot -TargetPath $filePath }
-        ClassName   = $className
-        Mutator     = $item.Mutator
-        Description = $item.Description
-        Replacement = $item.Replacement
-        StartLine   = $item.StartLine
-        EndLine     = $item.EndLine
-        Symbol      = $item.Symbol
-        Tests       = $item.Tests
+    $startColumn = if ($item.PSObject.Properties.Name -contains 'StartColumn') { [int]$item.StartColumn } else { 0 }
+    $endColumn = if ($item.PSObject.Properties.Name -contains 'EndColumn') { [int]$item.EndColumn } else { 0 }
+    $key = New-SurvivorKey -File $filePath -Mutator $item.Mutator -StartLine $item.StartLine -EndLine $item.EndLine -Replacement $item.Replacement -StartColumn $startColumn -EndColumn $endColumn
+    [void]$existingKeys.Add($key)
+    $reportData = if ($reportMap.ContainsKey($key)) { $reportMap[$key] } else { $null }
+
+    $normalizedList.Add([pscustomobject]@{
+            File         = $filePath
+        RelativeFile = if ([string]::IsNullOrWhiteSpace($filePath)) { '' } else { Get-RelativePath -BasePath $repoRoot -TargetPath $filePath }
+            ClassName    = $className
+            Mutator      = $item.Mutator
+            Description  = $item.Description
+            Replacement  = $item.Replacement
+            StartLine    = $item.StartLine
+            EndLine      = $item.EndLine
+            StartColumn  = $startColumn
+            EndColumn    = $endColumn
+            Symbol       = $item.Symbol
+            Tests        = $item.Tests
+            Status       = if ($item.PSObject.Properties.Name -contains 'Status') { $item.Status } elseif ($reportData) { $reportData.Status } else { 'Unknown' }
+            StatusReason = if ($item.PSObject.Properties.Name -contains 'StatusReason') { $item.StatusReason } elseif ($reportData) { $reportData.StatusReason } else { $null }
+            CoveredBy    = if ($reportData) { $reportData.CoveredBy } else { $null }
+            KilledBy     = if ($reportData) { $reportData.KilledBy } else { $null }
+            ReportId     = if ($reportData) { $reportData.ReportId } else { $null }
+        }) | Out-Null
+}
+
+if ($reportSurvivors.Count -gt 0)
+{
+    foreach ($reportEntry in $reportSurvivors)
+    {
+        $key = New-SurvivorKey -File $reportEntry.File -Mutator $reportEntry.Mutator -StartLine $reportEntry.StartLine -EndLine $reportEntry.EndLine -Replacement $reportEntry.Replacement -StartColumn $reportEntry.StartColumn -EndColumn $reportEntry.EndColumn
+        if (-not $existingKeys.Contains($key))
+        {
+            $className = if ([string]::IsNullOrWhiteSpace($reportEntry.File)) { '' } else { [System.IO.Path]::GetFileNameWithoutExtension($reportEntry.File) }
+            $normalizedList.Add([pscustomobject]@{
+                    File         = $reportEntry.File
+                RelativeFile = $reportEntry.RelativeFile
+                    ClassName    = $className
+                    Mutator      = $reportEntry.Mutator
+                    Description  = $null
+                    Replacement  = $reportEntry.Replacement
+                    StartLine    = $reportEntry.StartLine
+                    EndLine      = $reportEntry.EndLine
+                    StartColumn  = $reportEntry.StartColumn
+                    EndColumn    = $reportEntry.EndColumn
+                    Symbol       = $null
+                    Tests        = ''
+                    Status       = $reportEntry.Status
+                    StatusReason = $reportEntry.StatusReason
+                    CoveredBy    = $reportEntry.CoveredBy
+                    KilledBy     = $reportEntry.KilledBy
+                    ReportId     = $reportEntry.ReportId
+                }) | Out-Null
+        }
     }
 }
+
+if (($normalizedList.Count -eq 0) -and ($reportSurvivors.Count -gt 0))
+{
+    Write-Warning 'latest-survivors.json was empty, but mutation-report.json contained survivors; using report data only.'
+}
+
+$normalized = $normalizedList.ToArray()
 
 # --- Scoring & Ranking (Phase 1) -----------------------------------------------------------
 
@@ -226,6 +391,8 @@ foreach ($entry in $normalized) {
             Mutator           = $entry.Mutator
             StartLine         = $entry.StartLine
             EndLine           = $entry.EndLine
+            StartColumn       = $entry.StartColumn
+            EndColumn         = $entry.EndColumn
             Symbol            = $entry.Symbol
             Tests             = $entry.Tests
             Suggestion        = $suggestion
@@ -237,6 +404,11 @@ foreach ($entry in $normalized) {
                 MissingTests= $missingTestsWeight
             }
             Snippet           = Get-Snippet -File $entry.File -StartLine $entry.StartLine -EndLine $entry.EndLine -ContextLines $ContextLines
+            Status            = $entry.Status
+            StatusReason      = $entry.StatusReason
+            CoveredBy         = $entry.CoveredBy
+            KilledBy          = $entry.KilledBy
+            ReportId          = $entry.ReportId
         })
 }
 
@@ -276,6 +448,7 @@ $enriched = [pscustomobject]@{
     }
     focusOrder    = $focusSelection
     survivors     = $normalized
+    report        = if ($mutationReportPath -and ($reportSurvivors.Count -gt 0)) { [pscustomobject]@{ path = $mutationReportPath; survivors = $reportSurvivors } } else { $null }
 }
 
 $enrichedJsonPath = Join-Path $strykerOutputDirectory 'mutation-survivors-enriched.json'
@@ -289,6 +462,16 @@ $null = New-Item -Path (Split-Path -Parent $summaryMarkdownPath) -ItemType Direc
 
 # Maintain backward compatibility: original summary file still emits basic array
 $normalized | ConvertTo-Json -Depth 4 | Set-Content -Path $summaryJsonPath -Encoding UTF8
+
+$reportJsonPath = Join-Path $strykerOutputDirectory 'mutation-survivors-report.json'
+if ($reportSurvivors.Count -gt 0)
+{
+    $reportSurvivors | ConvertTo-Json -Depth 4 | Set-Content -Path $reportJsonPath -Encoding UTF8
+}
+elseif (Test-Path -Path $reportJsonPath)
+{
+    Remove-Item -Path $reportJsonPath -ErrorAction SilentlyContinue
+}
 
 $totalCount = $normalized.Count
 $grouped = $normalized | Group-Object File | Sort-Object Count -Descending
@@ -328,14 +511,16 @@ if ($totalCount -gt 0)
     foreach ($f in $focusSelection) {
         $dispFile = if ([string]::IsNullOrWhiteSpace($f.RelativeFile)) { '(unknown)' } else { $f.RelativeFile }
         $escapedFile = ($dispFile -replace '\|','\\|')
-        [void]$markdown.AppendLine("| $($f.Rank) | $($f.Score) | $($f.Mutator) | <code>$escapedFile</code> | $($f.StartLine)..$($f.EndLine) | $($f.Suggestion) |")
+        $lineDisplay = if (($f.StartColumn -ne 0) -or ($f.EndColumn -ne 0)) { "{0}:{1}..{2}:{3}" -f $f.StartLine, $f.StartColumn, $f.EndLine, $f.EndColumn } else { "{0}..{1}" -f $f.StartLine, $f.EndLine }
+        [void]$markdown.AppendLine("| $($f.Rank) | $($f.Score) | $($f.Mutator) | <code>$escapedFile</code> | $lineDisplay | $($f.Suggestion) |")
     }
     if ($VerboseRanking) {
         [void]$markdown.AppendLine()
         [void]$markdown.AppendLine("### Scoring Breakdown (Verbose)")
         [void]$markdown.AppendLine()
         foreach ($f in $focusSelection) {
-            [void]$markdown.AppendLine("- Rank $($f.Rank) Score $($f.Score): Base=$($f.ScoreBreakdown.Base), Mutator=$($f.ScoreBreakdown.Mutator), Density=$($f.ScoreBreakdown.Density), MissingTests=$($f.ScoreBreakdown.MissingTests) — $($f.Mutator) in <code>$($f.RelativeFile)</code> ($($f.StartLine)..$($f.EndLine))")
+            $lineDisplay = if (($f.StartColumn -ne 0) -or ($f.EndColumn -ne 0)) { "{0}:{1}..{2}:{3}" -f $f.StartLine, $f.StartColumn, $f.EndLine, $f.EndColumn } else { "{0}..{1}" -f $f.StartLine, $f.EndLine }
+            [void]$markdown.AppendLine("- Rank $($f.Rank) Score $($f.Score): Base=$($f.ScoreBreakdown.Base), Mutator=$($f.ScoreBreakdown.Mutator), Density=$($f.ScoreBreakdown.Density), MissingTests=$($f.ScoreBreakdown.MissingTests) — $($f.Mutator) in <code>$($f.RelativeFile)</code> ($lineDisplay)")
         }
     }
 
@@ -362,7 +547,16 @@ if ($totalCount -gt 0)
         {
             [void]$markdown.AppendLine("  **Replacement:** ``$($entry.Replacement)``  ")
         }
-        [void]$markdown.AppendLine("  **Lines:** $($entry.StartLine)..$($entry.EndLine)  ")
+        $lineDisplay = if (($entry.StartColumn -ne 0) -or ($entry.EndColumn -ne 0)) { "{0}:{1}..{2}:{3}" -f $entry.StartLine, $entry.StartColumn, $entry.EndLine, $entry.EndColumn } else { "{0}..{1}" -f $entry.StartLine, $entry.EndLine }
+        [void]$markdown.AppendLine("  **Lines:** $lineDisplay  ")
+        if ($entry.Status)
+        {
+            [void]$markdown.AppendLine("  **Status:** $($entry.Status)  ")
+        }
+        if ($entry.StatusReason)
+        {
+            [void]$markdown.AppendLine("  **Status Reason:** $($entry.StatusReason)  ")
+        }
         if ($entry.Symbol)
         {
             [void]$markdown.AppendLine("  **Symbol:** $($entry.Symbol)  ")
@@ -370,6 +564,20 @@ if ($totalCount -gt 0)
         if ($entry.Tests)
         {
             [void]$markdown.AppendLine("  **Tests:** $($entry.Tests)  ")
+        }
+        if ($entry.CoveredBy)
+        {
+            $coveredDisplay = ($entry.CoveredBy -join ', ')
+            [void]$markdown.AppendLine("  **Covered By:** $coveredDisplay  ")
+        }
+        if ($entry.KilledBy -and $entry.KilledBy.Count -gt 0)
+        {
+            $killedDisplay = ($entry.KilledBy -join ', ')
+            [void]$markdown.AppendLine("  **Killed By:** $killedDisplay  ")
+        }
+        if ($entry.ReportId)
+        {
+            [void]$markdown.AppendLine("  **Report Id:** $($entry.ReportId)  ")
         }
         [void]$markdown.AppendLine()
     }
@@ -417,7 +625,8 @@ if ($GenerateTasks) {
     foreach ($f in $focusSelection) {
         $proj = Resolve-ProjectNameFromFile -RelativeFile $f.RelativeFile
         $dispFile = if ([string]::IsNullOrWhiteSpace($f.RelativeFile)) { '(unknown)' } else { $f.RelativeFile }
-        $lines += "| Todo | $($f.Rank) | $($f.Score) | $proj | $dispFile | $($f.StartLine)..$($f.EndLine) | $($f.Mutator) | $($f.Suggestion) |"
+        $lineDisplay = if (($f.StartColumn -ne 0) -or ($f.EndColumn -ne 0)) { "{0}:{1}..{2}:{3}" -f $f.StartLine, $f.StartColumn, $f.EndLine, $f.EndColumn } else { "{0}..{1}" -f $f.StartLine, $f.EndLine }
+        $lines += "| Todo | $($f.Rank) | $($f.Score) | $proj | $dispFile | $lineDisplay | $($f.Mutator) | $($f.Suggestion) |"
     }
     $lines += ''
     $lines += 'Legend: Update Status to Done when killed, Deferred with justification if unkillable without code change.'
@@ -453,21 +662,22 @@ if ($EmitTestSkeletons) {
         }
         # Insert methods before final closing braces (very simple append approach)
         $content = Get-Content -Path $skeletonFile -Raw
-        $methodName = 'Mutant_' + (Sanitize-Identifier -Value ("R${($f.Rank)}_${f.ClassName}_${f.StartLine}_${f.Mutator}"))
+    $methodName = 'Mutant_' + (ConvertTo-SanitizedIdentifier -Value ("R${($f.Rank)}_${f.ClassName}_${f.StartLine}_${f.Mutator}"))
         if ($content -notmatch [Regex]::Escape($methodName)) {
             $snippetComment = ($f.Snippet -replace [Regex]::Escape('*/'), '*\/')
-            $factDisplay = ('[Fact(DisplayName="{0} {1} lines {2}..{3}")]' -f $f.ClassName, $f.Mutator, $f.StartLine, $f.EndLine)
+            $lineDisplay = if (($f.StartColumn -ne 0) -or ($f.EndColumn -ne 0)) { "{0}:{1}..{2}:{3}" -f $f.StartLine, $f.StartColumn, $f.EndLine, $f.EndColumn } else { "{0}..{1}" -f $f.StartLine, $f.EndLine }
+            $factDisplay = ('[Fact(DisplayName="{0} {1} lines {2}")]' -f $f.ClassName, $f.Mutator, $lineDisplay)
             $method = @(
                 '',
                 '        /// <summary>',
-                "        ///     Auto-generated mutation survivor skeleton for $($f.ClassName) at $($f.StartLine)..$($f.EndLine).",
+                "        ///     Auto-generated mutation survivor skeleton for $($f.ClassName) at $lineDisplay.",
                 '        /// </summary>',
                 "        $factDisplay",
                 "        public static void $methodName()",
                 '        {',
                 "            // Mutator: $($f.Mutator)",
                 "            // Suggestion: $($f.Suggestion)",
-                "            // File: $($f.RelativeFile) ($($f.StartLine)..$($f.EndLine))",
+                "            // File: $($f.RelativeFile) ($lineDisplay)",
                 '            // Snippet:',
                 '            /*',
                 "            $snippetComment",
@@ -490,6 +700,10 @@ Set-Content -Path $summaryMarkdownPath -Value $markdownContent -Encoding UTF8
 Write-Host "Mutation survivor summaries written." -ForegroundColor Cyan
 Write-Host "- JSON: $summaryJsonPath" -ForegroundColor Gray
 Write-Host "- Enriched JSON: $enrichedJsonPath" -ForegroundColor Gray
+if ($reportSurvivors.Count -gt 0)
+{
+    Write-Host "- Report JSON: $reportJsonPath" -ForegroundColor Gray
+}
 Write-Host "- Markdown: $summaryMarkdownPath" -ForegroundColor Gray
 Write-Host "Total survivors: $totalCount" -ForegroundColor Cyan
 
