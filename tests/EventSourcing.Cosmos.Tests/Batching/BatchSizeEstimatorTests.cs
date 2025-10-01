@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Text;
 
 using Mississippi.EventSourcing.Abstractions;
@@ -180,6 +182,35 @@ public class BatchSizeEstimatorTests
     }
 
     /// <summary>
+    ///     Ensures oversize events trigger an exception before any batches are yielded and the message reports the correct limit.
+    /// </summary>
+    [Fact]
+    public void CreateSizeLimitedBatchesThrowsBeforeYieldAndReportsAccurateLimit()
+    {
+        // Arrange
+        BatchSizeEstimator estimator = new();
+        BrookEvent oversize = new()
+        {
+            Id = "oversize",
+            Source = "source",
+            Type = "type",
+            DataContentType = "application/octet-stream",
+            Data = CreatePayload(1024, 0x52),
+            Time = DateTimeOffset.FromUnixTimeSeconds(321),
+        };
+
+        long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
+        long eventSize = estimator.EstimateEventSize(oversize);
+        long maxSize = overhead + Math.Max(1, eventSize - 5);
+
+        using IEnumerator<IReadOnlyList<BrookEvent>> enumerator = estimator.CreateSizeLimitedBatches(new[] { oversize }, 10, maxSize).GetEnumerator();
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => enumerator.MoveNext());
+        string expectedLimit = (maxSize - overhead).ToString("N0", CultureInfo.CurrentCulture);
+        Assert.Contains(expectedLimit, exception.Message, StringComparison.CurrentCulture);
+    }
+
+    /// <summary>
     ///     Ensures EstimateBatchSize returns a positive value taking into account event estimates and overhead.
     /// </summary>
     [Fact]
@@ -211,6 +242,29 @@ public class BatchSizeEstimatorTests
         long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
         long expected = overhead + estimator.EstimateEventSize(e1) + estimator.EstimateEventSize(e2);
         Assert.Equal(expected, size);
+    }
+
+    /// <summary>
+    ///     Ensures adding events to a batch strictly increases the estimated size.
+    /// </summary>
+    [Fact]
+    public void EstimateBatchSizeIncreasesWhenEventsAreAdded()
+    {
+        BatchSizeEstimator estimator = new();
+        BrookEvent template = new()
+        {
+            Id = "inc",
+            Source = "src",
+            Type = "type",
+            DataContentType = "application/octet-stream",
+            Data = CreatePayload(128, 0x11),
+            Time = DateTimeOffset.FromUnixTimeSeconds(100),
+        };
+
+        long single = estimator.EstimateBatchSize(new[] { template });
+        long doubleCount = estimator.EstimateBatchSize(new[] { template, Clone(template) });
+
+        Assert.True(doubleCount > single, "Batch size should grow when more events are added.");
     }
 
     /// <summary>
@@ -251,6 +305,48 @@ public class BatchSizeEstimatorTests
     }
 
     /// <summary>
+    ///     Ensures small event estimation reflects the contribution of string metadata fields.
+    /// </summary>
+    [Fact]
+    public void EstimateEventSizeSmallEventIncludesStringMetadata()
+    {
+        BatchSizeEstimator estimator = new();
+        BrookEvent baseline = new()
+        {
+            Data = CreatePayload(64, 0x21),
+            Time = DateTimeOffset.FromUnixTimeSeconds(200),
+        };
+        long baselineSize = estimator.EstimateEventSize(baseline);
+
+        BrookEvent rich = baseline with
+        {
+            Id = new('i', 12),
+            Source = new('s', 8),
+            Type = new('t', 6),
+            DataContentType = "application/vnd.custom",
+        };
+
+        EventDocument expectedDoc = new()
+        {
+            Id = "sample",
+            Type = "event",
+            Position = 1,
+            EventId = rich.Id!,
+            Source = rich.Source,
+            EventType = rich.Type!,
+            DataContentType = rich.DataContentType,
+            Data = rich.Data.ToArray(),
+            Time = rich.Time!.Value,
+        };
+        string serialized = JsonConvert.SerializeObject(expectedDoc);
+        long expected = (long)(Encoding.UTF8.GetByteCount(serialized) * 1.3);
+        long actual = estimator.EstimateEventSize(rich);
+
+        Assert.Equal(expected, actual);
+        Assert.True(actual > baselineSize, "String metadata should increase the estimated size.");
+    }
+
+    /// <summary>
     ///     Ensures the fallback estimation path matches the documented heuristic when serialization is skipped.
     /// </summary>
     [Fact]
@@ -270,6 +366,36 @@ public class BatchSizeEstimatorTests
         long actual = estimator.EstimateEventSize(ev);
         long expected = ComputeFallbackEstimate(ev);
         Assert.Equal(expected, actual);
+    }
+
+    /// <summary>
+    ///     Ensures fallback estimation accounts for string metadata contributions.
+    /// </summary>
+    [Fact]
+    public void EstimateEventSizeFallbackIncludesStringMetadata()
+    {
+        BatchSizeEstimator estimator = new();
+        const int payloadLength = 10_000_100;
+        BrookEvent baseline = new()
+        {
+            Data = CreatePayload(payloadLength, 0x45),
+            Time = DateTimeOffset.FromUnixTimeSeconds(700),
+        };
+        long baselineEstimate = estimator.EstimateEventSize(baseline);
+
+        BrookEvent decorated = baseline with
+        {
+            Id = new('I', 10),
+            Source = new('S', 9),
+            Type = new('T', 8),
+            DataContentType = "text/custom",
+        };
+
+        long expected = ComputeFallbackEstimate(decorated);
+        long actual = estimator.EstimateEventSize(decorated);
+
+        Assert.Equal(expected, actual);
+        Assert.True(actual > baselineEstimate, "Fallback estimate should grow when metadata strings are populated.");
     }
 
     /// <summary>
