@@ -1,8 +1,8 @@
 # GitHub Copilot Instructions Audit Report
 
-**Generated:** 2025-10-01 02:48:04  
+**Generated:** 2025-10-01 02:49:40  
 **Repository:** /home/runner/work/mississippi/mississippi  
-**Dry Run:** False
+**Dry Run:** True
 
 ## Summary
 
@@ -13,14 +13,14 @@
 - **Rules Extracted:** 845
 - **Validation Issues:** 4
 - **Duplicate Rules:** 12
-- **Safe Edits:** 1
+- **Safe Edits:** 0
 - **Approval Requests:** 0
 
 ## Inventory
 
 | File | Type | Size | Last Modified | Frontmatter | ApplyTo | Headings | Match Count | Issues |
 |------|------|------|---------------|-------------|---------|----------|-------------|--------|
-| `.github/copilot‑instructions.md` | repoWide | 3196 | 2025-10-01 | False | - | 5 | 0 | ⚠ 2 |
+| `.github/copilot-instructions.md` | repoWide | 3196 | 2025-10-01 | False | - | 5 | 0 | ⚠ 1 |
 | `.github/instructions/build-issue-remediation.instructions.md` | pathScoped | 9761 | 2025-10-01 | True | ** | 15 | 999 | ✓ |
 | `.github/instructions/build-rules.instructions.md` | pathScoped | 10893 | 2025-10-01 | True | ** | 40 | 999 | ⚠ 1 |
 | `.github/instructions/csharp.instructions.md` | pathScoped | 32969 | 2025-10-01 | True | **/*.cs | 33 | 145 | ✓ |
@@ -37,9 +37,8 @@
 | `agents.md` | agent | 527 | 2025-10-01 | False | - | 2 | 0 | ✓ |
 
 ## Validation Issues
-### .github/copilot‑instructions.md
+### .github/copilot-instructions.md
 
-- Repo-wide file should be at .github/copilot-instructions.md (currently at .github/copilot‑instructions.md)
 - Hygiene: No H1 heading found
 
 ### .github/instructions/build-rules.instructions.md
@@ -56,7 +55,7 @@
 
 
 ## Orphans and Fixes
-- **.github/copilot‑instructions.md**: ApplyTo globs don't match any files: 
+- **.github/copilot-instructions.md**: ApplyTo globs don't match any files: 
 - **agents.md**: ApplyTo globs don't match any files: 
 
 
@@ -135,9 +134,7 @@ Files: .github/instructions/csharp.instructions.md, .github/instructions/service
 
 
 ## Safe Edits Applied
-- **Rename**: .github/copilot‑instructions.md
-  - Reason: Fix non-standard hyphen character in filename
-  - Status: Applied
+✓ No safe edits needed.
 
 
 ## Approval Requests

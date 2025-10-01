@@ -1,153 +1,153 @@
 {
-  "generated": "2025-10-01 02:48:04",
-  "dryRun": false,
-  "repo": "/home/runner/work/mississippi/mississippi",
+  "generated": "2025-10-01 02:49:40",
   "files": [
     {
-      "path": ".github/copilot‑instructions.md",
       "hasIssues": true,
-      "applyTo": [],
-      "type": "repoWide",
+      "isOrphan": true,
+      "path": ".github/copilot-instructions.md",
       "ruleCount": 17,
-      "isOrphan": true
+      "applyTo": [],
+      "type": "repoWide"
     },
     {
+      "hasIssues": false,
+      "isOrphan": false,
       "path": ".github/instructions/build-issue-remediation.instructions.md",
-      "hasIssues": false,
-      "applyTo": [
-        "**"
-      ],
-      "type": "pathScoped",
       "ruleCount": 70,
-      "isOrphan": false
+      "applyTo": [
+        "**"
+      ],
+      "type": "pathScoped"
     },
     {
+      "hasIssues": true,
+      "isOrphan": false,
       "path": ".github/instructions/build-rules.instructions.md",
-      "hasIssues": true,
-      "applyTo": [
-        "**"
-      ],
-      "type": "pathScoped",
       "ruleCount": 72,
-      "isOrphan": false
+      "applyTo": [
+        "**"
+      ],
+      "type": "pathScoped"
     },
     {
+      "hasIssues": false,
+      "isOrphan": false,
       "path": ".github/instructions/csharp.instructions.md",
-      "hasIssues": false,
-      "applyTo": [
-        "**/*.cs"
-      ],
-      "type": "pathScoped",
       "ruleCount": 69,
-      "isOrphan": false
+      "applyTo": [
+        "**/*.cs"
+      ],
+      "type": "pathScoped"
     },
     {
+      "hasIssues": false,
+      "isOrphan": false,
       "path": ".github/instructions/instruction-mdc-sync.instructions.md",
-      "hasIssues": false,
-      "applyTo": [
-        "**"
-      ],
-      "type": "pathScoped",
       "ruleCount": 17,
-      "isOrphan": false
+      "applyTo": [
+        "**"
+      ],
+      "type": "pathScoped"
     },
     {
+      "hasIssues": false,
+      "isOrphan": false,
       "path": ".github/instructions/logging-rules.instructions.md",
-      "hasIssues": false,
-      "applyTo": [
-        "**/*.cs"
-      ],
-      "type": "pathScoped",
       "ruleCount": 178,
-      "isOrphan": false
+      "applyTo": [
+        "**/*.cs"
+      ],
+      "type": "pathScoped"
     },
     {
+      "hasIssues": false,
+      "isOrphan": false,
       "path": ".github/instructions/mutation-testing.instructions.md",
-      "hasIssues": false,
-      "applyTo": [
-        "**"
-      ],
-      "type": "pathScoped",
       "ruleCount": 36,
-      "isOrphan": false
+      "applyTo": [
+        "**"
+      ],
+      "type": "pathScoped"
     },
     {
+      "hasIssues": true,
+      "isOrphan": false,
       "path": ".github/instructions/naming.instructions.md",
-      "hasIssues": true,
-      "applyTo": [
-        "**/*.cs"
-      ],
-      "type": "pathScoped",
       "ruleCount": 62,
-      "isOrphan": false
+      "applyTo": [
+        "**/*.cs"
+      ],
+      "type": "pathScoped"
     },
     {
+      "hasIssues": false,
+      "isOrphan": false,
       "path": ".github/instructions/orleans-serialization.instructions.md",
-      "hasIssues": false,
-      "applyTo": [
-        "**/*.cs"
-      ],
-      "type": "pathScoped",
       "ruleCount": 29,
-      "isOrphan": false
+      "applyTo": [
+        "**/*.cs"
+      ],
+      "type": "pathScoped"
     },
     {
+      "hasIssues": false,
+      "isOrphan": false,
       "path": ".github/instructions/orleans.instructions.md",
-      "hasIssues": false,
-      "applyTo": [
-        "**/*.cs"
-      ],
-      "type": "pathScoped",
       "ruleCount": 38,
-      "isOrphan": false
-    },
-    {
-      "path": ".github/instructions/projects.instructions.md",
-      "hasIssues": true,
-      "applyTo": [
-        "**"
-      ],
-      "type": "pathScoped",
-      "ruleCount": 50,
-      "isOrphan": false
-    },
-    {
-      "path": ".github/instructions/service-registration.instructions.md",
-      "hasIssues": false,
       "applyTo": [
         "**/*.cs"
       ],
-      "type": "pathScoped",
+      "type": "pathScoped"
+    },
+    {
+      "hasIssues": true,
+      "isOrphan": false,
+      "path": ".github/instructions/projects.instructions.md",
+      "ruleCount": 50,
+      "applyTo": [
+        "**"
+      ],
+      "type": "pathScoped"
+    },
+    {
+      "hasIssues": false,
+      "isOrphan": false,
+      "path": ".github/instructions/service-registration.instructions.md",
       "ruleCount": 48,
-      "isOrphan": false
+      "applyTo": [
+        "**/*.cs"
+      ],
+      "type": "pathScoped"
     },
     {
+      "hasIssues": false,
+      "isOrphan": false,
       "path": ".github/instructions/test-improvement.instructions.md",
-      "hasIssues": false,
-      "applyTo": [
-        "**"
-      ],
-      "type": "pathScoped",
       "ruleCount": 47,
-      "isOrphan": false
-    },
-    {
-      "path": ".github/instructions/testing.instructions.md",
-      "hasIssues": false,
       "applyTo": [
         "**"
       ],
-      "type": "pathScoped",
-      "ruleCount": 112,
-      "isOrphan": false
+      "type": "pathScoped"
     },
     {
-      "path": "agents.md",
       "hasIssues": false,
-      "applyTo": [],
-      "type": "agent",
+      "isOrphan": false,
+      "path": ".github/instructions/testing.instructions.md",
+      "ruleCount": 112,
+      "applyTo": [
+        "**"
+      ],
+      "type": "pathScoped"
+    },
+    {
+      "hasIssues": false,
+      "isOrphan": true,
+      "path": "agents.md",
       "ruleCount": 0,
-      "isOrphan": true
+      "applyTo": [],
+      "type": "agent"
     }
-  ]
+  ],
+  "dryRun": true,
+  "repo": "/home/runner/work/mississippi/mississippi"
 }
