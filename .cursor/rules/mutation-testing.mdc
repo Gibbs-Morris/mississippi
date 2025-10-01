@@ -20,19 +20,23 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
 1. **Prep tools** – Ensure `dotnet tool restore` has been run at least once on the repo.
 2. **Clean build** – Run `pwsh ./scripts/build-mississippi-solution.ps1` to surface compiler/analyzer issues before mutation work.
 3. **Baseline mutation test** – Execute `pwsh ./scripts/mutation-test-mississippi-solution.ps1`. Always commit the generated report paths for traceability.
-4. **Collect & prioritize survivors** – Open the newest `StrykerOutput/**/reports/mutation-report.json` only if deep inspection is needed. Otherwise run the summarizer:
+4. **Collect & prioritize survivors** – Open the newest `StrykerOutput/**/reports/mutation-report.json` only if deep inspection is needed. Otherwise run the summarizer (it reruns the mutation script unless you pass `-SkipMutationRun`):
     - `pwsh ./scripts/summarize-mutation-survivors.ps1` (defaults to weighted scoring, full list)
     - Outputs:
        - Basic JSON: `StrykerOutput/mutation-survivors-summary.json` (backward compatibility)
        - Enriched JSON: `StrykerOutput/mutation-survivors-enriched.json` (schemaVersion, focusOrder, aggregates, snippets)
+       - Report JSON: `StrykerOutput/mutation-survivors-report.json` (raw survivors from the latest `mutation-report.json` when available)
        - Markdown: `.tests-temp/mutation-survivors-summary.md` (includes prioritized focus table, details, mutator strategy cheat sheet)
     - Optional parameters for focused iteration:
+       - `-SkipMutationRun`: Use existing Stryker output without invoking `mutation-test-mississippi-solution.ps1` again.
+       - `-MutationScriptPath <Path>`: Point to an alternate mutation script when the default Mississippi script isn't desired.
        - `-Top <N>`: Only keep top N ranked survivors.
        - `-ContextLines <N>`: Embed N lines of code context before/after the mutant (default 3).
        - `-ScoringMode Simple|Weighted`: Simple = no heuristic weights; Weighted = mutator + density + missing-tests weighting.
        - `-Project <Name>`: Filter survivors to a single source project (by directory under `src/`).
        - `-VerboseRanking`: Append a breakdown of score components.
        - `-GenerateTasks`: Emit/update `.tests-temp/mutation-tasks.md` with a table (Status, Rank, Score, File, Mutator, Suggestion).
+       - `-TasksPath <Path>`: Override the default `.tests-temp/mutation-tasks.md` location.
        - `-EmitTestSkeletons`: Generate/append mutation test skeletons under the first matching test project `tests/<Project>.*/Mutation/GeneratedMutationTests.cs`.
           - Use `-OverwriteSkeletons` to recreate the file from scratch.
     - Example focused loop (top 5 high-impact):
