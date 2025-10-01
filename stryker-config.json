@@ -1,6 +1,5 @@
 {
   "stryker-config": {
-    "concurrency": 32,
     "mutation-level": "Complete",
     "language-version": "latest",
     "additional-timeout": 5000,
@@ -26,13 +25,12 @@
     "since": {
       "enabled": false,
       "ignore-changes-in": [],
-      "target": "main"
+      "target": "origin/main"
     },
     "baseline": {
       "enabled": false,
       "provider": "disk",
-      "azure-fileshare-url": "",
-      "fallback-version": "master"
+      "fallback-version": "origin/main"
     },
     "dashboard-url": "https://dashboard.stryker-mutator.io",
     "test-projects": [],
