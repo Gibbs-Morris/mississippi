@@ -575,7 +575,8 @@ public class CosmosRepositoryTests
         {
             await foreach (EventStorageModel m in sut.QueryEventsAsync(range, 5, cts.Token))
             {
-                _ = m; // intentionally unused
+                // Enumerate to ensure cancellation is observed while ignoring the element.
+                _ = m;
             }
         });
         Assert.Equal(5, capturedBatchSize);
