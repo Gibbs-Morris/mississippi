@@ -13,7 +13,7 @@ namespace Mississippi.Core.Abstractions.Tests.Mapping;
 public class MappingRegistrationsTests
 {
     /// <summary>
-    ///     Verifies that <see cref="MappingRegistrations.AddMapper{TFrom, TTo, TMapper}(IServiceCollection)" /> registers the mapper implementation.
+    ///     Tests if a single mapper is correctly added to the service collection.
     /// </summary>
     [Fact]
     public void AddsMapperToServiceCollection()

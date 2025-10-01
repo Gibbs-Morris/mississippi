@@ -70,16 +70,11 @@ internal class CosmosRetryPolicy : IRetryPolicy
                     throw new OperationCanceledException("Cosmos operation canceled", ex, cancellationToken);
                 }
 
-                if (attempt < MaxRetries)
-                {
-                    lastException = ex;
-                    TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
-                    continue;
-                }
-
-                // Exhausted retries for task cancellation without explicit caller cancellation
-                throw new OperationCanceledException("Cosmos operation canceled", ex, cancellationToken);
+                // Honor cancellations raised by the Cosmos client without retrying.
+                throw new OperationCanceledException(
+                    "Cosmos operation canceled before completion.",
+                    ex,
+                    cancellationToken);
             }
         }
 

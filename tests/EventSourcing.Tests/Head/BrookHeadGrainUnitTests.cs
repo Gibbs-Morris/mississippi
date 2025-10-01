@@ -6,6 +6,7 @@ using Mississippi.EventSourcing.Head;
 using Mississippi.EventSourcing.Reader;
 
 using Moq;
+using Orleans.Runtime;
 
 
 namespace Mississippi.EventSourcing.Tests.Head;
@@ -37,5 +38,40 @@ public class BrookHeadGrainUnitTests
 
         // Assert: no exception indicates deactivation path executed without error
         Assert.True(true);
+    }
+
+    /// <summary>
+    ///     Ensures activation logs and throws when the primary key cannot be parsed.
+    /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
+    [Fact]
+    public async Task OnActivateAsyncLogsAndRethrowsWhenPrimaryKeyInvalid()
+    {
+        // Arrange
+        Mock<IBrookStorageReader> storage = new();
+        Mock<IGrainContext> context = new();
+        Mock<ILogger<BrookHeadGrain>> logger = new();
+        logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
+        Mock<IStreamIdFactory> streamIdFactory = new();
+        BrookHeadGrain sut = new(storage.Object, context.Object, logger.Object, options, streamIdFactory.Object);
+
+        GrainId grainId = GrainId.Create("brook-head", "invalid-key");
+        context.SetupGet(c => c.GrainId).Returns(grainId);
+
+        // Act + Assert
+        await Assert.ThrowsAsync<FormatException>(() => sut.OnActivateAsync(CancellationToken.None));
+
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id => id.Id == 1 && id.Name == nameof(BrookHeadGrainLoggerExtensions.InvalidPrimaryKey)),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString() == "Failed to parse brook head grain primary key 'invalid-key'."),
+                It.Is<Exception>(ex => ex is FormatException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }

@@ -264,9 +264,10 @@ public class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act - should not throw
-        await sut.DeleteEventAsync(new("t", "i"), 9);
+        Exception? ex = await Record.ExceptionAsync(() => sut.DeleteEventAsync(new("t", "i"), 9));
 
         // Assert - delete was attempted exactly once and exception swallowed
+        Assert.Null(ex);
         container.Verify(
             c => c.DeleteItemAsync<EventDocument>(
                 It.IsAny<string>(),
@@ -294,9 +295,10 @@ public class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act - should not throw
-        await sut.DeletePendingHeadAsync(new("t", "i"));
+        Exception? ex = await Record.ExceptionAsync(() => sut.DeletePendingHeadAsync(new("t", "i")));
 
         // Assert - delete was attempted exactly once and exception swallowed
+        Assert.Null(ex);
         container.Verify(
             c => c.DeleteItemAsync<HeadDocument>(
                 It.IsAny<string>(),

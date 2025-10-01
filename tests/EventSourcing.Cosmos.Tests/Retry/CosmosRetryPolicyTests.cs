@@ -134,7 +134,7 @@ public class CosmosRetryPolicyTests
     }
 
     /// <summary>
-    ///     Verifies that TaskCanceledException is translated to OperationCanceledException after retries.
+    ///     Verifies that TaskCanceledException is translated to OperationCanceledException without retries.
     /// </summary>
     /// <returns>A task representing the test execution.</returns>
     [Fact]
@@ -151,7 +151,7 @@ public class CosmosRetryPolicyTests
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(() => policy.ExecuteAsync(operationAsyncCanceled));
-        Assert.Equal(2, calls);
+        Assert.Equal(1, calls);
     }
 
     /// <summary>

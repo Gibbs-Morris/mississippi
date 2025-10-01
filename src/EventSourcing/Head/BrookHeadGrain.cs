@@ -150,7 +150,17 @@ internal class BrookHeadGrain
         CancellationToken token
     )
     {
-        BrookId = BrookKey.FromString(this.GetPrimaryKeyString());
+        string primaryKey = this.GetPrimaryKeyString();
+        try
+        {
+            BrookId = BrookKey.FromString(primaryKey);
+        }
+        catch (Exception ex) when (ex is ArgumentException or FormatException)
+        {
+            Logger.InvalidPrimaryKey(primaryKey, ex);
+            throw;
+        }
+
         StreamId key = StreamIdFactory.Create(BrookId);
         Stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookHeadMovedEvent>(key);
