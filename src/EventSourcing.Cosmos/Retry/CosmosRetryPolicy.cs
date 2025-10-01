@@ -37,9 +37,10 @@ internal class CosmosRetryPolicy : IRetryPolicy
         Exception? lastException = null;
         for (int attempt = 0; attempt <= MaxRetries; attempt++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                return await operation();
+                return await operation().ConfigureAwait(false);
             }
             catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
             {
@@ -55,22 +56,29 @@ internal class CosmosRetryPolicy : IRetryPolicy
             {
                 lastException = ex;
                 TimeSpan delay = ComputeDelay(ex, attempt);
-                await Task.Delay(delay, cancellationToken);
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
             catch (CosmosException ex)
             {
                 // Non-transient Cosmos error - wrap with context and rethrow
                 throw new InvalidOperationException($"Cosmos operation failed with status {ex.StatusCode}", ex);
             }
-            catch (TaskCanceledException ex) when (attempt < MaxRetries)
-            {
-                lastException = ex;
-                TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-                await Task.Delay(delay, cancellationToken);
-            }
             catch (TaskCanceledException ex)
             {
-                // Cancellation should be honored by callers; wrap to provide consistent surface
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    throw new OperationCanceledException("Cosmos operation canceled", ex, cancellationToken);
+                }
+
+                if (attempt < MaxRetries)
+                {
+                    lastException = ex;
+                    TimeSpan delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
+                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                // Exhausted retries for task cancellation without explicit caller cancellation
                 throw new OperationCanceledException("Cosmos operation canceled", ex, cancellationToken);
             }
         }

@@ -151,6 +151,30 @@ public class CosmosRetryPolicyTests
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(() => policy.ExecuteAsync(operationAsyncCanceled));
-        Assert.True(calls >= 1);
+        Assert.Equal(2, calls);
+    }
+
+    /// <summary>
+    ///     Verifies that cancellation tokens are honored without additional retries.
+    /// </summary>
+    /// <returns>A task representing the test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncHonorsCancellationTokenAsync()
+    {
+        // Arrange
+        CosmosRetryPolicy policy = new(3);
+        int calls = 0;
+        using CancellationTokenSource cts = new();
+        Func<Task<int>> operationAsync = () =>
+        {
+            calls++;
+            cts.CancelAfter(TimeSpan.Zero);
+            System.Threading.SpinWait.SpinUntil(() => cts.IsCancellationRequested);
+            throw new TaskCanceledException();
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => policy.ExecuteAsync(operationAsync, cts.Token));
+        Assert.Equal(1, calls);
     }
 }

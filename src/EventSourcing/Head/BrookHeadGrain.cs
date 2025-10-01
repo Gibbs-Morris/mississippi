@@ -51,6 +51,8 @@ internal class BrookHeadGrain
 
     private BrookPosition TrackedHeadPosition { get; set; } = -1;
 
+    private BrookKey BrookId { get; set; }
+
     private IBrookStorageReader BrookReaderProvider { get; }
 
     private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
@@ -113,7 +115,7 @@ internal class BrookHeadGrain
     public async Task<BrookPosition> GetLatestPositionConfirmedAsync()
     {
         // Strongly consistent path: read from storage and update cache if newer.
-        BrookPosition storagePosition = await BrookReaderProvider.ReadHeadPositionAsync(this.GetPrimaryKeyString());
+        BrookPosition storagePosition = await BrookReaderProvider.ReadHeadPositionAsync(BrookId);
         if (storagePosition.IsNewerThan(TrackedHeadPosition))
         {
             TrackedHeadPosition = storagePosition;
@@ -148,7 +150,8 @@ internal class BrookHeadGrain
         CancellationToken token
     )
     {
-        StreamId key = StreamIdFactory.Create(this.GetPrimaryKeyString());
+        BrookId = BrookKey.FromString(this.GetPrimaryKeyString());
+        StreamId key = StreamIdFactory.Create(BrookId);
         Stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookHeadMovedEvent>(key);
         await Stream.SubscribeAsync(this);

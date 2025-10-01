@@ -266,8 +266,14 @@ public class CosmosRepositoryTests
         // Act - should not throw
         await sut.DeleteEventAsync(new("t", "i"), 9);
 
-        // Assert - no exception means pass
-        Assert.True(true);
+        // Assert - delete was attempted exactly once and exception swallowed
+        container.Verify(
+            c => c.DeleteItemAsync<EventDocument>(
+                It.IsAny<string>(),
+                It.IsAny<PartitionKey>(),
+                null,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -290,8 +296,14 @@ public class CosmosRepositoryTests
         // Act - should not throw
         await sut.DeletePendingHeadAsync(new("t", "i"));
 
-        // Assert - no exception means pass
-        Assert.True(true);
+        // Assert - delete was attempted exactly once and exception swallowed
+        container.Verify(
+            c => c.DeleteItemAsync<HeadDocument>(
+                It.IsAny<string>(),
+                It.IsAny<PartitionKey>(),
+                null,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     /// <summary>

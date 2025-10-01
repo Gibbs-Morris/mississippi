@@ -8,12 +8,12 @@ using Mississippi.Core.Abstractions.Mapping;
 namespace Mississippi.Core.Abstractions.Tests.Mapping;
 
 /// <summary>
-///     Contains unit tests for verifying the registration of mappers in the service collection.
+///     Contains unit tests that verify the <see cref="MappingRegistrations" /> extension methods register expected mappers.
 /// </summary>
 public class MappingRegistrationsTests
 {
     /// <summary>
-    ///     Tests if a single mapper is correctly added to the service collection.
+    ///     Verifies that <see cref="MappingRegistrations.AddMapper{TFrom, TTo, TMapper}(IServiceCollection)" /> registers the mapper implementation.
     /// </summary>
     [Fact]
     public void AddsMapperToServiceCollection()
@@ -27,7 +27,7 @@ public class MappingRegistrationsTests
     }
 
     /// <summary>
-    ///     Tests if an IEnumerable mapper is correctly added to the service collection.
+    ///     Verifies that <see cref="MappingRegistrations.AddIEnumerableMapper(IServiceCollection)" /> registers the enumerable mapper implementation.
     /// </summary>
     [Fact]
     public void AddsIEnumerableMapperToServiceCollection()
@@ -42,7 +42,7 @@ public class MappingRegistrationsTests
     }
 
     /// <summary>
-    ///     Tests if an IAsyncEnumerable mapper is correctly added to the service collection.
+    ///     Verifies that <see cref="MappingRegistrations.AddIAsyncEnumerableMapper(IServiceCollection)" /> registers the async enumerable mapper implementation.
     /// </summary>
     [Fact]
     public void AddsIAsyncEnumerableMapperToServiceCollection()
