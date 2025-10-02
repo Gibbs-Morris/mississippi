@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - feature/**
+      - topic/**
 
 env:
   SLNX_PATH: ${{ github.workspace }}/mississippi.slnx
