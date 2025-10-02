@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - feature/**
+      - topic/**
 
 env:
   DOTSETTINGS_PATH: ${{ github.workspace }}/Directory.DotSettings
