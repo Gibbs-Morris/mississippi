@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 using Mississippi.EventSourcing.Abstractions.Storage;
 
 using Orleans.TestingHost;

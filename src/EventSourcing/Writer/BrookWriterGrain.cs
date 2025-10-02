@@ -49,6 +49,13 @@ internal class BrookWriterGrain
     private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
 
     /// <summary>
+    ///     Gets the Orleans grain context for this grain instance.
+    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
+    public IGrainContext GrainContext { get; }
+
+    /// <summary>
     ///     Appends a collection of events to the brook (event stream).
     ///     Validates the expected head position and publishes head movement events after successful append.
     /// </summary>
@@ -75,11 +82,4 @@ internal class BrookWriterGrain
         await stream.OnNextAsync(new(newPosition));
         return newPosition;
     }
-
-    /// <summary>
-    ///     Gets the Orleans grain context for this grain instance.
-    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
-    /// </summary>
-    /// <value>The grain context instance.</value>
-    public IGrainContext GrainContext { get; }
 }
