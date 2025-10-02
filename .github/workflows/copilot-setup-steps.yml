@@ -1,0 +1,81 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  NUGET_XMLDOC_MODE: skip
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache GitVersion tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.gitversion
+          key: ${{ runner.os }}-gitversion
+          restore-keys: ${{ runner.os }}-gitversion
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: Check for dotnet tools manifest
+        id: check-tools-manifest
+        run: |
+          set -euo pipefail
+          if [ -f ".config/dotnet-tools.json" ]; then
+            echo "manifest_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "manifest_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Restore .NET tools
+        if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
+        run: |
+          set -euo pipefail
+          dotnet tool restore
+
+      - name: Restore Mississippi solution packages
+        run: |
+          set -euo pipefail
+          dotnet restore mississippi.slnx
+
+      - name: Restore Samples solution packages
+        run: |
+          set -euo pipefail
+          dotnet restore samples.slnx
+
+      - name: Prime GitVersion tool cache
+        if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
+        run: |
+          set -euo pipefail
+          dotnet tool run dotnet-gitversion /version
+        continue-on-error: true
