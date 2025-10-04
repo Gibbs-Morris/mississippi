@@ -67,6 +67,53 @@ public sealed class BlobDistributedLockManagerTests
     }
 
     /// <summary>
+    ///     Ensures the manager does not perform extra retries once the first acquire succeeds (kills statement-mutation removing the loop break).
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Fact]
+    public async Task AcquireLockAsyncStopsAfterFirstSuccessfulAttemptAsync()
+    {
+        // Arrange
+        BrookStorageOptions opts = new();
+        Mock<BlobServiceClient> svc = new();
+        Mock<BlobContainerClient> container = new();
+        Mock<BlobClient> blob = new();
+        Mock<IBlobLeaseClient> lease = new();
+        Mock<IBlobLeaseClientFactory> factory = new();
+        svc.Setup(s => s.GetBlobContainerClient(It.IsAny<string>())).Returns(container.Object);
+        container.Setup(c => c.CreateIfNotExistsAsync(
+                It.IsAny<PublicAccessType>(),
+                It.IsAny<IDictionary<string, string>?>(),
+                It.IsAny<BlobContainerEncryptionScopeOptions?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<Response<BlobContainerInfo>>());
+        container.Setup(c => c.GetBlobClient(It.IsAny<string>())).Returns(blob.Object);
+        blob.Setup(b => b.ExistsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
+        factory.Setup(f => f.Create(It.IsAny<BlobClient>(), It.IsAny<string?>())).Returns(lease.Object);
+        lease.Setup(l => l.AcquireAsync(
+                It.IsAny<TimeSpan>(),
+                It.IsAny<RequestConditions?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                Response.FromValue(
+                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-first"),
+                    Mock.Of<Response>()))
+            .Verifiable();
+        BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
+
+        // Act
+        await using IDistributedLock handle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
+
+        // Assert
+        Assert.NotNull(handle);
+        lease.Verify(
+            l => l.AcquireAsync(It.IsAny<TimeSpan>(), It.IsAny<RequestConditions?>(), It.IsAny<CancellationToken>()),
+            Times.Once,
+            "A successful first acquire should break out of the retry loop (mutant removing break would cause >1 calls).");
+    }
+
+    /// <summary>
     ///     Validates retry behavior when lease acquire encounters a 409 conflict.
     /// </summary>
     /// <returns>
