@@ -9,16 +9,21 @@ This guide helps agents eliminate .NET build issues (errors, analyzer/StyleCop w
 ## At-a-Glance Quick-Start
 
 - Build → Clean → Fix until there are zero warnings.
+
 ```powershell
 pwsh ./scripts/build-mississippi-solution.ps1
 pwsh ./scripts/clean-up-mississippi-solution.ps1
 ```
+
 - Run tests (Mississippi solution) and mutation tests where required.
+
 ```powershell
 pwsh ./scripts/unit-test-mississippi-solution.ps1
 pwsh ./scripts/mutation-test-mississippi-solution.ps1
 ```
+
 - Final validation for both solutions.
+
 ```powershell
 pwsh ./go.ps1
 ```
@@ -58,28 +63,39 @@ When asked to “fix build issues” (warnings, analyzer findings, StyleCop, cle
 ## Commands to Use (Repository Standard)
 
 - Build Mississippi (strict build in Release):
+
 ```powershell
 pwsh ./scripts/build-mississippi-solution.ps1
 ```
+
 - Build Samples:
+
 ```powershell
 pwsh ./scripts/build-sample-solution.ps1
 ```
+
 - Code cleanup and inspections (Mississippi):
+
 ```powershell
 pwsh ./scripts/clean-up-mississippi-solution.ps1
 ```
+
 - Unit tests (Mississippi) and mutation tests:
+
 ```powershell
 pwsh ./scripts/unit-test-mississippi-solution.ps1
 pwsh ./scripts/mutation-test-mississippi-solution.ps1
 ```
+
 - Per‑project quick quality loop during iteration:
+
 ```powershell
 pwsh ./scripts/test-project-quality.ps1 -TestProject <Name> -SkipMutation
 pwsh ./scripts/test-project-quality.ps1 -TestProject <Name>
 ```
+
 - Final pipeline (both solutions):
+
 ```powershell
 pwsh ./go.ps1
 ```
@@ -91,6 +107,7 @@ dotnet build <solution-or-project> --configuration Release --no-incremental -war
 dotnet test <solution-or-project> --configuration Release --no-build -nologo
 dotnet format analyzers --verify-no-changes
 ```
+
 Note: If `dotnet format` reports autofixable warnings, prefer making the minimum equivalent manual edits instead of running bulk formatting.
 
 ## Workflow
@@ -157,6 +174,7 @@ Note: If `dotnet format` reports autofixable warnings, prefer making the minimum
 ## Output Format for Each Batch
 
 Provide in this order:
+
 1) Commands run
    - Repository scripts (preferred):
      - `pwsh ./scripts/build-mississippi-solution.ps1`
@@ -165,6 +183,7 @@ Provide in this order:
    - Raw `dotnet` commands only if used for diagnosis.
 2) Before → after warning counts by code (e.g., `CS8618: 14 → 3`, `CA2000: 7 → 0`).
 3) Changes as unified diffs per file:
+
 ```
 --- path/to/File.cs
 +++ path/to/File.cs
@@ -175,6 +194,7 @@ Provide in this order:
 - new line
 
 ```
+
 4) Justification for each change in one sentence.
 5) Next targets: the next warning code(s) and files to address.
 6) Deferred issues (if any): list `<CODE> @ <path>:<brief reason>, attempts=5`.
@@ -191,5 +211,3 @@ Provide in this order:
 - Test Improvement Workflow (`.github/instructions/test-improvement.instructions.md`)
 - Project File Management (`.github/instructions/projects.instructions.md`)
 - Instruction ↔ Cursor MDC Sync Policy (`.github/instructions/instruction-mdc-sync.instructions.md`)
-
-

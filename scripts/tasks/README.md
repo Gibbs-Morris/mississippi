@@ -30,4 +30,3 @@ PowerShell tests live in `../scripts-tests`:
 - `verify-scratchpad-task-scripts.ps1` performs an end-to-end smoke test (create → claim → complete/defer) against a temporary scratchpad and cleans up afterwards.
 
 Run tests with PowerShell 7+ and ensure the Pester module is available: `pwsh ./scripts-tests/run-scratchpad-task-tests.ps1`.
-

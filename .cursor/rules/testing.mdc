@@ -73,6 +73,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 ## Level Details and Guardrails
 
 ### L0 — Pure unit tests
+
 - Scope: business logic, pure functions, orchestration seams; no I/O, no timers sleeping, no network
 - Dependencies: in-memory only; replace collaborators with test doubles/mocks
 - Speed: sub-50ms typical per test; designed for PR and local tight loops
@@ -83,6 +84,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - Prefer records/immutability friendly patterns from C# guidelines
 
 ### L1 — Unit/component with light infra
+
 - Scope: still “unit-level” but may touch minimal infra: local file system, in-proc databases, mock HTTP handlers
 - Dependencies: ephemeral and isolated per test; use temp directories and in-memory or containerized dev DBs spun up per run
 - Runs: included in CI for early signal; keep fast and parallel-safe
@@ -92,6 +94,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - Keep external processes optional so the suite remains reliable on dev and CI agents
 
 ### L2 — Functional against test deployments
+
 - Scope: validate feature slices against deployed test environments; mock or stub heavy/expensive dependencies
 - Dependencies: test deployment URL(s), seeded test data, controlled mocks for third-party systems
 - Runs: scheduled or on-demand pipelines (not required for every PR)
@@ -101,6 +104,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - Clear diagnostics and assertions that align with logging rules
 
 ### L3 — End-to-end in prod-like
+
 - Scope: real user flows, cross-service and UI journeys using Playwright; full stack with real storage and messaging
 - Dependencies: prod-like environment with realistic configuration
 - Runs: per release or as “test in prod” prior to broad exposure
@@ -110,6 +114,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - Capture traces/screenshots/video on failure for triage
 
 ### L4 — Restricted checks in production
+
 - Scope: synthetic monitoring and gated smoke tests that run safely in production (read-only or harmless writes)
 - Dependencies: live endpoints and observability hooks
 - Runs: immediately post-deploy and/or continuously on a cadence
@@ -154,6 +159,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 > **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
 Use the PowerShell scripts documented in Build Rules to run tests and mutation checks:
+
 - `scripts/unit-test-mississippi-solution.ps1`
 - `scripts/unit-test-sample-solution.ps1`
 - `scripts/mutation-test-mississippi-solution.ps1`
@@ -162,6 +168,7 @@ Use the PowerShell scripts documented in Build Rules to run tests and mutation c
 ## Author and Reviewer Checklists
 
 Author
+
 - [ ] Added/updated L0 tests for all new or changed logic
 - [ ] Considered L1 tests when infra seams are involved
 - [ ] Tests are deterministic, isolated, and fast
@@ -172,6 +179,7 @@ Author
 - [ ] If notable gaps remain (coverage or mutation), create `.scratchpad/tasks/pending` items with priority and scope for parallel agent pickup (see Agent Scratchpad)
 
 Reviewer
+
 - [ ] L0 present for core logic; L1 used judiciously
 - [ ] No external calls in L0; minimal, isolated infra in L1
 - [ ] Tests follow naming, async, and DI seam patterns

@@ -14,6 +14,7 @@ They are written for **PowerShell 7+ (`pwsh`)** and rely on the .NET SDK and sev
   – Stryker.NET
 
 ---
+
 ## Recommended development loop
 
 1. **Add a failing test** in the relevant *tests/* project (start with Mississippi).
@@ -30,6 +31,7 @@ Once the **Mississippi** solution is healthy, run the equivalent *sample* script
 > ℹ️  The catch-all `orchestrate-solutions.ps1` script wires the steps together in the correct order—useful for CI or a final local check.
 
 ---
+
 ## Script catalogue
 
 | Script | Purpose | Typical call |
@@ -44,6 +46,7 @@ Once the **Mississippi** solution is healthy, run the equivalent *sample* script
 | **clean-up-sample-solution.ps1** | ReSharper-based formatting pass on the sample code. | `pwsh ./scripts/clean-up-sample-solution.ps1` |
 | **final-build-solutions.ps1** | Performs a strict build of *both* solutions with `--warnaserror`, ensuring zero compiler warnings before merge. | `pwsh ./scripts/final-build-solutions.ps1` |
 | **orchestrate-solutions.ps1** | High-level pipeline that invokes the scripts above in this order:  
+
   1. Mississippi – build → test → mutate → cleanup  
   2. Sample – build → test → cleanup  
   3. Final build (warnings as errors)  
@@ -51,6 +54,7 @@ Once the **Mississippi** solution is healthy, run the equivalent *sample* script
 | **sync-instructions-to-mdc.ps1** | Sync `.github/instructions/*.instructions.md` files into Cursor `.mdc` rule files and add sync metadata automatically. Preferred automated way to keep instruction Markdown and `.mdc` files in parity. | `pwsh ./scripts/sync-instructions-to-mdc.ps1` |
 
 ---
+
 ### Scratchpad task helpers
 
 | Script | Purpose | Typical call |
@@ -67,9 +71,11 @@ Supporting test harness lives under `scripts-tests/`:
 | --- | --- |
 | **scripts-tests/run-scratchpad-task-tests.ps1** | Runs the Pester suite covering the scratchpad task helpers. |
 | **scripts-tests/verify-scratchpad-task-scripts.ps1** | End-to-end smoke flow that exercises create → claim → complete/defer using a temporary scratchpad and cleans up. |
+
 ## Example invocations
 
 Windows / PowerShell:
+
 ```pwsh
 pwsh ./scripts/unit-test-mississippi-solution.ps1 -Configuration Debug
 pwsh ./scripts/final-build-solutions.ps1            # Release by default
@@ -78,6 +84,7 @@ pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests    
 ```
 
 Bash (if PowerShell 7 is installed):
+
 ```bash
 pwsh ./scripts/orchestrate-solutions.ps1 | tee orchestration.log
 ```
@@ -92,6 +99,7 @@ pwsh ./scripts/orchestrate-solutions.ps1 | tee orchestration.log
 These folders are git-ignored but preserved between steps; feel free to parse or archive them in CI.
 
 ---
+
 ## Guidelines for AI agents
 
 • **Prefer the smallest scoped script** needed for the task—don't run the full orchestrator if you only added a quick unit test.  
@@ -106,6 +114,7 @@ These folders are git-ignored but preserved between steps; feel free to parse or
 • **CI-parity script**: `orchestrate-solutions.ps1` reproduces the same steps our GitHub Actions pipeline runs; execute it locally (e.g., from Cursor or GitHub Copilot) to verify changes before opening a PR.
 
 ---
+
 ## Syncing instruction files to Cursor rules (.mdc)
 
 When you change files under `.github/instructions/` it's preferred to use the automated helper to mirror those changes into Cursor `.mdc` rule files and to populate the sync metadata header/footer.
@@ -136,6 +145,7 @@ pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -So
 ```
 
 Parameters:
+
 - `-TestProject <name|path>`: Required. Accepts the test project name (e.g., `Core.Abstractions.Tests`) or path to the `.csproj`/directory. Convention is one test project per source assembly.
 - `-SkipMutation`: Optional. When set, skips Stryker to speed up feedback.
 - `-Configuration <Debug|Release>`: Optional. Defaults to `Release`.
@@ -157,12 +167,13 @@ MUTATION_RESULT: PASS|FAIL
 ```
 
 Artifacts:
+
 - TRX and Cobertura files under `./test-results/<TestProjectName>/`
 - Stryker reports under `./StrykerOutput/<timestamp>/reports/`
 
 Exit codes:
+
 - `0` when tests pass and (if run) mutation completes without breaking thresholds
 - `1` on any error, test failure, or Stryker failure/break
 
-Happy building! :rocket: 
-
+Happy building! :rocket:

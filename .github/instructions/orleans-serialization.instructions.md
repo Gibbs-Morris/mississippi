@@ -9,6 +9,7 @@ This document defines the Orleans serialization standards and best practices for
 ## Core Principles
 
 ### Explicit Serialization Strategy
+
 - **Always use explicit serialization** with `[GenerateSerializer]` and `[Id]` attributes
 - **Never rely on implicit serialization** - Orleans requires explicit marking for version tolerance
 - **Use `[Alias]` attributes** for type and method stability across renames and refactoring
@@ -16,6 +17,7 @@ This document defines the Orleans serialization standards and best practices for
 - **Follow progressive versioning** - maintain backward compatibility when evolving types
 
 ### Build-Time Code Generation
+
 - **Enable Orleans source generation** by referencing appropriate NuGet packages
 - **Use MSBuild package** `Microsoft.Orleans.CodeGenerator.MSBuild` for build-time generation
 - **Let Orleans auto-detect** serializable types in grain interfaces and state classes
@@ -24,6 +26,7 @@ This document defines the Orleans serialization standards and best practices for
 ## Quick-Start Checklist
 
 ### Required Package References
+
 ```xml
 <!-- Core Orleans packages with serialization support -->
 <PackageReference Include="Microsoft.Orleans.Sdk" />
@@ -31,6 +34,7 @@ This document defines the Orleans serialization standards and best practices for
 ```
 
 ### Basic Attribute Usage
+
 ```csharp
 [GenerateSerializer]
 [Alias("MyCompany.MyProduct.MyType")]
@@ -123,6 +127,7 @@ public class Customer
 ## Special Cases and Advanced Patterns
 
 ### Record Types
+
 ```csharp
 [GenerateSerializer]
 [Alias("MyApp.OrderEvent")]
@@ -137,6 +142,7 @@ public record OrderCreated(
 ```
 
 ### Inheritance Hierarchies
+
 ```csharp
 [GenerateSerializer]
 [Alias("MyApp.Publication")]
@@ -157,6 +163,7 @@ public class Book : Publication
 ```
 
 ### Surrogate Patterns for External Types
+
 ```csharp
 // For types you cannot modify
 [GenerateSerializer]

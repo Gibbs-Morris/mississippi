@@ -288,6 +288,13 @@ function Defer-ScratchpadTask {
 - Fairness: workers should sort pending tasks by `priority`, then FIFO by timestamp in filename
 - Back-pressure: if `claimed/` grows large, pause new claims until `done/` advances
 - Hygiene: prune `runs/` older than a week unless actively referenced
+- Automation: use the CLI wrappers under `scripts/tasks/` to keep JSON consistent and file moves atomic:
+  - `new-scratchpad-task.ps1` creates pending tasks with normalized schema and unique IDs.
+  - `list-scratchpad-tasks.ps1` surfaces pending/claimed/done work with filters for status, priority, tags, or ID and can optionally output the raw payload.
+  - `claim-scratchpad-task.ps1` moves a pending task to `claimed/`, stamps `claimedBy`/`claimedAt`, and enforces the five-attempt limit from Build Issue Remediation.
+  - `complete-scratchpad-task.ps1` records a result summary, timestamps completion, and moves the file to `done/`.
+  - `defer-scratchpad-task.ps1` captures the deferral reason/next steps and moves the file to `deferred/`.
+  - For orchestration or custom automation, review `scripts/tasks/README.md` plus the Pester suite in `scripts-tests/`.
 
 ## Concurrency and Atomicity
 

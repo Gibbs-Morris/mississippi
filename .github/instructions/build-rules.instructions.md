@@ -9,20 +9,27 @@ This project maintains **zero tolerance for warnings** and requires comprehensiv
 ## At-a-Glance Quick-Start
 
 - Build → Clean → Fix until there are zero warnings.
+
 ```powershell
 pwsh ./scripts/build-mississippi-solution.ps1
 pwsh ./scripts/clean-up-mississippi-solution.ps1
 ```
+
 - Add/update tests: comprehensive for Mississippi; minimal examples for Samples.
 - Run tests (Mississippi solution).
+
 ```powershell
 pwsh ./scripts/unit-test-mississippi-solution.ps1
 ```
+
 - Run mutation tests (Mississippi ONLY).
+
 ```powershell
 pwsh ./scripts/mutation-test-mississippi-solution.ps1
 ```
+
 - Final validation for both solutions.
+
 ```powershell
 pwsh ./go.ps1
 ```
@@ -34,6 +41,7 @@ pwsh ./go.ps1
 **⚠️ ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes ⚠️**
 
 ### The Rule
+
 - **NEVER disable warnings** - Fix the underlying code issues instead
 - **NEVER suppress analyzer rules** - Improve the code to satisfy the analyzer
 - **NEVER use `#pragma warning disable`** without explicit approval and exhaustive justification
@@ -43,6 +51,7 @@ pwsh ./go.ps1
 - **ALWAYS fix StyleCop violations** - They indicate style inconsistencies
 
 ### Why This Matters
+
 - **Warnings are treated as errors** in CI builds with `--warnaserror`
 - **Builds will fail** if any warnings are present
 - **PRs will be blocked** until all warnings are resolved
@@ -50,6 +59,7 @@ pwsh ./go.ps1
 - **Technical debt accumulates** when issues are hidden rather than addressed
 
 ### What To Do Instead
+
 1. **Read the warning message** - Understand what the analyzer is telling you
 2. **Fix the underlying issue** - Improve your code to satisfy the rule
 3. **Refactor if necessary** - Sometimes warnings indicate design problems
@@ -59,12 +69,14 @@ pwsh ./go.ps1
 ## Quality Standards
 
 ### Zero Warnings Policy
+
 - **All compiler warnings must be resolved** - warnings are treated as errors in CI
 - **No ReSharper code inspections warnings** - cleanup scripts must pass cleanly
 - **No StyleCop violations** - code style must be consistent across the project
 - Use `--warnaserror` flag in builds to enforce this standard
 
 ### Required Quality Gates
+
 1. **Successful Build** - Code must compile without errors or warnings
 2. **Unit Tests** - All tests must pass with 100% success rate
 3. **Mutation Testing** - Must maintain high mutation score (Mississippi solution only)
@@ -78,6 +90,7 @@ This repository contains **two distinct solutions**:
 2. **Samples Solution** (`samples.slnx`) - Includes all Mississippi projects PLUS sample applications
 
 ### Testing Strategy by Solution
+
 - **Mississippi Solution**: Requires comprehensive unit tests, integration tests, and mutation testing
 - **Samples Solution**: Only needs minimal unit tests as examples - **NO mutation testing required**
 
@@ -86,25 +99,30 @@ This repository contains **two distinct solutions**:
 The `scripts/` folder contains PowerShell automation for the build-test-quality pipeline:
 
 ### Core Build Scripts
+
 - **`build-mississippi-solution.ps1`** - Compiles the main Mississippi solution in Release mode
 - **`build-sample-solution.ps1`** - Builds sample applications demonstrating library usage
 - **`final-build-solutions.ps1`** - Strict build with `--warnaserror` for both solutions
 
 ### Testing Scripts
+
 - **`unit-test-mississippi-solution.ps1`** - Executes all unit and integration tests for Mississippi
 - **`unit-test-sample-solution.ps1`** - Runs minimal tests for sample applications (examples only)
 - **`mutation-test-mississippi-solution.ps1`** - Performs mutation testing with Stryker.NET (Mississippi ONLY)
 - **`test-project-quality.ps1`** - Quickly evaluate a single test project: runs `dotnet test` with coverage and optionally Stryker mutation testing. Prints a concise, machine-readable summary (RESULT, TEST_*, COVERAGE, MUTATION_SCORE) to aid AI tools.
 
 ### Quality Scripts
+
 - **`clean-up-mississippi-solution.ps1`** - Applies ReSharper code formatting and inspections
 - **`clean-up-sample-solution.ps1`** - Cleans up sample code formatting
 
 ### Orchestration
+
 - **`orchestrate-solutions.ps1`** - Runs the complete pipeline in proper order
 - **`go.ps1`** (root) - Convenience script that calls orchestrate-solutions.ps1
 
 ### Commands Index (quick)
+
 - **Build Mississippi**: `pwsh ./scripts/build-mississippi-solution.ps1`
 - **Build Samples**: `pwsh ./scripts/build-sample-solution.ps1`
 - **Cleanup Mississippi**: `pwsh ./scripts/clean-up-mississippi-solution.ps1`
@@ -120,6 +138,7 @@ The `scripts/` folder contains PowerShell automation for the build-test-quality 
 When making ANY code changes, follow this strict pattern:
 
 ### 1. Build → Clean → Fix → Repeat
+
 ```powershell
 # Build to check for errors/warnings
 pwsh ./scripts/build-mississippi-solution.ps1
@@ -132,12 +151,14 @@ pwsh ./scripts/clean-up-mississippi-solution.ps1
 ```
 
 ### 2. Add Unit Tests
+
 - **ALWAYS add unit tests** for new functionality in Mississippi solution
 - **Update existing tests** when modifying behavior
 - **Sample projects** only need minimal unit tests to demonstrate testing patterns
 - Aim for comprehensive test coverage of new code paths in Mississippi projects
 
 ### 3. Run Tests
+
 ```powershell
 # Run unit tests to ensure functionality
 pwsh ./scripts/unit-test-mississippi-solution.ps1
@@ -147,6 +168,7 @@ pwsh ./scripts/mutation-test-mississippi-solution.ps1
 ```
 
 #### Per-project quick quality check (recommended during iteration)
+
 ```powershell
 # Tests + coverage only (fast)
 pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
@@ -157,11 +179,14 @@ pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
 # If the source project cannot be inferred from <ProjectReference>
 pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SourceProject ./src/Core.Abstractions/Core.Abstractions.csproj
 ```
+
 Notes:
+
 - `-TestProject` accepts a test project name (one test project per assembly) or a path to the `.csproj`/directory.
 - Exit code is non-zero if tests fail or Stryker breaks thresholds.
 
 ### 4. Final Validation
+
 ```powershell
 # Run the complete pipeline for both solutions
 pwsh ./go.ps1
@@ -172,6 +197,7 @@ pwsh ./go.ps1
 The CI system runs multiple parallel workflows that enforce these quality standards:
 
 ### GitHub Actions Workflows
+
 - **`full-build.yml`** - Builds both solutions with `--warnaserror`
 - **`unit-tests.yml`** - Executes all unit tests
 - **`stryker.yml`** - Runs mutation testing
@@ -179,7 +205,9 @@ The CI system runs multiple parallel workflows that enforce these quality standa
 - **`sonar-cloud.yml`** - Performs static code analysis
 
 ### CI Failure Causes
+
 The CI will **fail** if any of these conditions occur:
+
 - Compiler warnings or errors
 - Unit test failures
 - Mutation score below threshold
@@ -187,6 +215,7 @@ The CI will **fail** if any of these conditions occur:
 - SonarCloud quality gate failures
 
 ### Success Criteria
+
 The CI considers code **ready for merge** when:
 ✅ Clean build with zero warnings
 ✅ All unit tests pass

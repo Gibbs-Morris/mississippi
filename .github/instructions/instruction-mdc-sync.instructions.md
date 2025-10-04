@@ -14,6 +14,7 @@ Keep our written instructions and Cursor AI rule files in lockstep. Any change t
 - Prefer using the sync helper script to reduce human error.
 
 ### Quick Command
+
 ```powershell
 pwsh ./scripts/sync-instructions-to-mdc.ps1
 ```
@@ -70,5 +71,3 @@ When you change a Cursor `.mdc` rule file:
 - Prefer small, focused commits to make parity obvious in review.
 
 - Quick check: you can run the sync helper to validate parity before opening a PR.
-
-

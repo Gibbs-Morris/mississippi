@@ -18,6 +18,7 @@ Keep our written instructions and Cursor AI rule files in lockstep. Any change t
 - Prefer using the sync helper script to reduce human error.
 
 ### Quick Command
+
 ```powershell
 pwsh ./scripts/sync-instructions-to-mdc.ps1
 ```
