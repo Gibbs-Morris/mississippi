@@ -353,6 +353,8 @@ The build system will fail if:
 - Required project-specific properties are missing
 - Package references use incorrect format
 
+When drift is detected (e.g., version attributes in `PackageReference`, duplicated props from `Directory.Build.props`), create small, discrete tasks in `.scratchpad/tasks/pending` (one per project or file) so agents can normalize in parallel. See `.github/instructions/agent-scratchpad.instructions.md`.
+
 ## Migration Guidelines
 
 ### Converting Existing Projects

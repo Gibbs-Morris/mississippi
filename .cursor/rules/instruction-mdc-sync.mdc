@@ -65,6 +65,8 @@ When you change a Cursor `.mdc` rule file:
 - [ ] Changed instruction Markdown and matching `.mdc` updated in the same commit/PR
 - [ ] Semantics parity verified (no rules exist in one place without an intentional exception noted in the PR description)
 
+- If parity cannot be completed immediately, create a focused task in `.scratchpad/tasks/pending` with the specific Markdown ↔ `.mdc` sections to sync and a short due date. See `.github/instructions/agent-scratchpad.instructions.md`.
+
 ## Quick Validation Tips
 
 - Diff review: compare the changed sections side-by-side (Markdown ↔ `.mdc`) to confirm parity.

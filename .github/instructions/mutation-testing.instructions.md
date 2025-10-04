@@ -24,7 +24,7 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
        - Basic JSON: `StrykerOutput/mutation-survivors-summary.json` (backward compatibility)
        - Enriched JSON: `StrykerOutput/mutation-survivors-enriched.json` (schemaVersion, focusOrder, aggregates, snippets)
        - Report JSON: `StrykerOutput/mutation-survivors-report.json` (raw survivors from the latest `mutation-report.json` when available)
-       - Markdown: `.tests-temp/mutation-survivors-summary.md` (includes prioritized focus table, details, mutator strategy cheat sheet)
+       - Markdown: `.scratchpad/testing/mutation-survivors-summary.md` (includes prioritized focus table, details, mutator strategy cheat sheet)
     - Optional parameters for focused iteration:
        - `-SkipMutationRun`: Use existing Stryker output without invoking `mutation-test-mississippi-solution.ps1` again.
        - `-MutationScriptPath <Path>`: Point to an alternate mutation script when the default Mississippi script isn't desired.
@@ -33,15 +33,16 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
        - `-ScoringMode Simple|Weighted`: Simple = no heuristic weights; Weighted = mutator + density + missing-tests weighting.
        - `-Project <Name>`: Filter survivors to a single source project (by directory under `src/`).
        - `-VerboseRanking`: Append a breakdown of score components.
-       - `-GenerateTasks`: Emit/update `.tests-temp/mutation-tasks.md` with a table (Status, Rank, Score, File, Mutator, Suggestion).
-       - `-TasksPath <Path>`: Override the default `.tests-temp/mutation-tasks.md` location.
+       - `-GenerateTasks`: Emit/update `.scratchpad/testing/mutation-tasks.md` with a table (Status, Rank, Score, File, Mutator, Suggestion).
+       - `-TasksPath <Path>`: Override the default `.scratchpad/testing/mutation-tasks.md` location.
        - `-EmitTestSkeletons`: Generate/append mutation test skeletons under the first matching test project `tests/<Project>.*/Mutation/GeneratedMutationTests.cs`.
           - Use `-OverwriteSkeletons` to recreate the file from scratch.
     - Example focused loop (top 5 high-impact):
-       ```powershell
-       pwsh ./scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -Top 5 -ContextLines 4 -GenerateTasks -EmitTestSkeletons
-       ```
+      ```powershell
+      pwsh ./scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -Top 5 -ContextLines 4 -GenerateTasks -EmitTestSkeletons
+      ```
     - Each survivor row includes a suggestion (how to kill) and snippet so AI agents can author tests without re-reading the entire file.
+    - Optionally mirror prioritized survivors into `.scratchpad/tasks/pending` (one JSON per survivor or per file) for agent handoff (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; do not reference it from source or tests.
 5. **Targeted tests only** – Add or adjust tests in the matching `tests/` project using repository patterns (naming, logging, DI seams). Do not change production code unless a mutant is provably unkillable without it; document that case inside the task file.
 6. **Quality gates** – After adding tests, run:
    - `pwsh ./scripts/unit-test-mississippi-solution.ps1`
@@ -52,7 +53,7 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
 
 ## Completion Checklist
 
-- [ ] Zero surviving mutants or documented exceptions in `.tests-temp/mutation-tasks.md`
+- [ ] Zero surviving mutants or documented exceptions in `.scratchpad/testing/mutation-tasks.md`
 - [ ] All builds, unit tests, and cleanup scripts pass with zero warnings
 - [ ] Instruction Markdown and Cursor `.mdc` rules are in sync via `sync-instructions-to-mdc.ps1`
 
@@ -63,7 +64,7 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
    ```powershell
    pwsh ./scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -Top 10 -GenerateTasks -EmitTestSkeletons
    ```
-3. Open `.tests-temp/mutation-tasks.md`; take the first `Todo` (Rank 1 highest score).
+3. Open `.scratchpad/testing/mutation-tasks.md`; take the first `Todo` (Rank 1 highest score).
 4. Fill in or extend the generated skeleton in `GeneratedMutationTests.cs` (or create a dedicated test if more appropriate).
 5. Run fast quality loop for the impacted test project:
    ```powershell
@@ -89,7 +90,7 @@ Use the summarizer's suggestion column as an immediate next action hint; refine 
 
 ## Task File Notes
 
-- `.tests-temp/mutation-tasks.md` is ephemeral; regenerate anytime with `-GenerateTasks`.
+- `.scratchpad/testing/mutation-tasks.md` is ephemeral; regenerate anytime with `-GenerateTasks`.
 - Update `Status` manually to `Done` or `Deferred` (include justification for deferrals—design constraints, unreachable path, or verified false positive).
 - Keep ordering stable (do not manually reorder ranked entries unless you re-run with different filters).
 
@@ -112,4 +113,4 @@ Defer only when ALL apply:
 - Behavior is already thoroughly asserted from a business perspective AND
 - Refactor risk/time outweighs value for current iteration.
 
-Record deferral rationale inline in `.tests-temp/mutation-tasks.md` (add brief reason after the row or in a trailing comment block).
+Record deferral rationale inline in `.scratchpad/testing/mutation-tasks.md` (add brief reason after the row or in a trailing comment block).

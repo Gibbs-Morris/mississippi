@@ -43,6 +43,7 @@ Assume that usage examples, environment variables, and public API surfaces docum
 
 ### Copilot Chat / Search behaviour
 
-* When suggesting code or docs, respect every rule above: architectural, dependency, and testing.  
-* When choosing symbols to show, prioritise public APIs surfaced in README.md; avoid private helpers unless explicitly requested.  
-* Respond concisely, but when referencing repository code, include file paths and line numbers for clarity.
+* When suggesting code or docs, respect every rule above: architectural, dependency, and testing.  
+* When choosing symbols to show, prioritise public APIs surfaced in README.md; avoid private helpers unless explicitly requested.  
+* Respond concisely, but when referencing repository code, include file paths and line numbers for clarity.
+* When a request spans many small, independent fixes, stage work via `.scratchpad/tasks` and claim tasks using atomic moves as defined in `.github/instructions/agent-scratchpad.instructions.md`. Do not reference `.scratchpad/` from source or tests; it is ephemeral and ignored by Git.

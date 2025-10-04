@@ -40,6 +40,8 @@ pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject>
 
 - Do not edit anything outside of the `tests/` folder during this workflow unless explicitly approved. Assume production code is correct until tests demonstrate a defect. If you believe production changes are required, pause and request confirmation first.
 
+- For gaps that require parallel attention (coverage hot spots, mutation survivors), create small, discrete tasks in `.scratchpad/tasks/pending` so agents can claim and close them deterministically (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; never reference it from source or tests.
+
 ## 🚨 CRITICAL RULE: ZERO WARNINGS IN TESTS 🚨
 
 **⚠️ ATTENTION: Zero warnings policy applies to test code too! ⚠️**

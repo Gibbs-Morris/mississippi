@@ -1187,6 +1187,7 @@ When reviewing code that includes logging, ensure:
 - [ ] Writes AI-debuggable log messages with sufficient context
 - [ ] Includes business context and decision points in log messages
 - [ ] Uses clear, descriptive language that AI agents can understand
+- [ ] If direct `ILogger.Log*` calls are found, open a `.scratchpad/tasks` item to convert to LoggerExtensions with LoggerMessage (see Agent Scratchpad)
 
 ## Examples and Templates
 

@@ -181,7 +181,7 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptRoot
 
 if (-not $TasksPath) {
-    $TasksPath = Join-Path $repoRoot '.tests-temp/mutation-tasks.md'
+    $TasksPath = Join-Path $repoRoot '.scratchpad/testing/mutation-tasks.md'
 }
 $testsRoot = Join-Path $repoRoot 'tests'
 
@@ -455,7 +455,7 @@ $enrichedJsonPath = Join-Path $strykerOutputDirectory 'mutation-survivors-enrich
 $enriched | ConvertTo-Json -Depth 6 | Set-Content -Path $enrichedJsonPath -Encoding UTF8
 
 $summaryJsonPath = Join-Path $strykerOutputDirectory 'mutation-survivors-summary.json'
-$summaryMarkdownPath = Join-Path $repoRoot '.tests-temp/mutation-survivors-summary.md'
+$summaryMarkdownPath = Join-Path $repoRoot '.scratchpad/testing/mutation-survivors-summary.md'
 
 $null = New-Item -Path (Split-Path -Parent $summaryJsonPath) -ItemType Directory -Force
 $null = New-Item -Path (Split-Path -Parent $summaryMarkdownPath) -ItemType Directory -Force

@@ -57,6 +57,8 @@ When asked to “fix build issues” (warnings, analyzer findings, StyleCop, cle
 - On reaching five attempts without a clean verify, stop working that issue, leave the file in a compiling, consistent state, and defer it.
 - Record every deferred issue (with code, file, brief reason) and move on to the next highest‑impact fix.
 
+- When deferring, create/update a scratchpad task under `.scratchpad/tasks` with `status=deferred`, a concise `reason`, and `nextSteps` so other agents can pick it up (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; do not reference it from source or tests.
+
 ## Commands to Use (Repository Standard)
 
 - Build Mississippi (strict build in Release):

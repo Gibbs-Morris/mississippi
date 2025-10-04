@@ -55,6 +55,10 @@ test-results/
 StrykerOutput/
 .tests-temp/
 
+# Local agent scratchpad (ephemeral, do not commit)
+.scratchpad/
+!.scratchpad/.gitignore
+
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/

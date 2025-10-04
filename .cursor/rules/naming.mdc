@@ -298,6 +298,8 @@ All naming conventions are enforced through StyleCop analyzers. The following ru
 - **SA1618**: Generic type parameters should be documented
 - **SA1619**: Generic type parameters should be documented partial class
 
+When addressing many SA13xx/SA16xx findings at once, prefer creating small, discrete tasks in `.scratchpad/tasks/pending` (one per file or logical unit) so agents can fix them in parallel with deterministic ownership. See `.github/instructions/agent-scratchpad.instructions.md`.
+
 ## 9. Alignment with Other Instruction Files
 
 This naming convention document aligns with and reinforces patterns established in other instruction files:

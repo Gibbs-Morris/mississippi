@@ -154,6 +154,7 @@ When converting from `Grain` inheritance to POCO pattern:
 - [ ] Replace direct method calls with `this.` qualified extension methods
 - [ ] If using `Grain<TState>`, inject `IPersistentState<TState>` instead
 - [ ] Update any inheritance hierarchy to use your own base classes
+- [ ] For each grain still inheriting from `Grain`, create a `.scratchpad/tasks/pending` item to track migration to POCO (`IGrainBase`) if not addressed immediately (see Agent Scratchpad)
 
 ### 5. Dependency Injection and Property Pattern
 

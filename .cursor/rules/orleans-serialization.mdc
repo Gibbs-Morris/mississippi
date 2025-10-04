@@ -234,6 +234,7 @@ When reviewing Orleans serialization changes, verify:
 - [ ] Build succeeds without ORLEANS analyzer warnings
 - [ ] Version compatibility maintained for rolling deployments
 - [ ] XML documentation follows project naming conventions
+- [ ] For any analyzer violations or missing attributes discovered, open focused `.scratchpad/tasks/pending` items per type to schedule remediation if not fixed immediately (see Agent Scratchpad)
 
 ## Enforcement
 
