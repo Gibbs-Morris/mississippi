@@ -252,12 +252,7 @@ When commands differ by OS, provide both PowerShell and Bash examples.
 ```markdown
 **PowerShell:**
 ```powershell
-pwsh ./scripts/orchestrate-solutions.ps1
-```
-
-**Bash:**
-```bash
-pwsh ./scripts/orchestrate-solutions.ps1
+pwsh ./scripts/build.ps1
 ```
 ```
 
