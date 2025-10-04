@@ -8,8 +8,8 @@ Assume that usage examples, environment variables, and public API surfaces docum
 
 ### Build & tidy
 
-*To build, restore dependencies, and run all tests, call **`./build.ps1`** from the repo root.  
-* To format / tidy code you generate or modify, finish with **`./cleanup.ps1`**.  
+*To build, restore dependencies, and run all tests, call **`pwsh ./go.ps1`** from the repo root.  
+* To format / tidy code you generate or modify, finish with **`pwsh ./clean-up.ps1`**.  
   – This script applies only the repository’s agreed housekeeping steps; do **not** assume extra formatters unless they’re explicitly referenced here.
 
 ---
