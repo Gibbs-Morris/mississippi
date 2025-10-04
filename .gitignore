@@ -50,7 +50,7 @@ Generated\ Files/
 TestResult.xml
 nunit-*.xml
 
-# Custom test output directories
+# Custom test output directories (legacy paths retained for safety)
 test-results/
 StrykerOutput/
 .tests-temp/

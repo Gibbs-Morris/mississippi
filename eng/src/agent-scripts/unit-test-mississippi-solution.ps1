@@ -31,9 +31,13 @@ try {
     Write-Host "[3/3] Executing unit tests for mississippi.slnx..." -ForegroundColor Cyan
     Write-Host "Configuration: $Configuration"
     Write-Host "Test flags: --no-restore"
-    Write-Host "Results directory: ./test-results"
+    $resultsDirectory = Join-Path ".scratchpad" "coverage-test-results"
+    if (-not (Test-Path -LiteralPath $resultsDirectory)) {
+        New-Item -ItemType Directory -Path $resultsDirectory | Out-Null
+    }
+    Write-Host "Results directory: $resultsDirectory"
     Write-Host "Logger: TRX format (test_results.trx)"
-    dotnet test "mississippi.slnx" --configuration $Configuration --no-restore --results-directory "./test-results" --logger "trx;LogFileName=test_results.trx"
+    dotnet test "mississippi.slnx" --configuration $Configuration --no-restore --results-directory $resultsDirectory --logger "trx;LogFileName=test_results.trx"
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to run unit tests for mississippi.slnx"
     }
@@ -41,7 +45,8 @@ try {
 
     Write-Host ""
     Write-Host "=== MISSISSIPPI SOLUTION UNIT TESTING COMPLETED ===" -ForegroundColor Green
-    Write-Host "All tests passed | Results saved to: ./test-results/test_results.trx"
+    $resultsFile = Join-Path $resultsDirectory "test_results.trx"
+    Write-Host "All tests passed | Results saved to: $resultsFile"
 } catch {
     Write-Error "=== MISSISSIPPI SOLUTION UNIT TESTING FAILED ===: $_"
     exit 1

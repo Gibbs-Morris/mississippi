@@ -20,11 +20,11 @@ This document defines the project file standards and best practices for .NET app
 ### Quick Validation Commands
 
 ```powershell
-pwsh ./scripts/build-mississippi-solution.ps1
-pwsh ./scripts/final-build-solutions.ps1
+pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/final-build-solutions.ps1
 ```
 
-> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
 ## Core Principles
 

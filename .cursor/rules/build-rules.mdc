@@ -15,21 +15,21 @@ This project maintains **zero tolerance for warnings** and requires comprehensiv
 - Build → Clean → Fix until there are zero warnings.
 
 ```powershell
-pwsh ./scripts/build-mississippi-solution.ps1
-pwsh ./scripts/clean-up-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
 ```
 
 - Add/update tests: comprehensive for Mississippi; minimal examples for Samples.
 - Run tests (Mississippi solution).
 
 ```powershell
-pwsh ./scripts/unit-test-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 ```
 
 - Run mutation tests (Mississippi ONLY).
 
 ```powershell
-pwsh ./scripts/mutation-test-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
 
 - Final validation for both solutions.
@@ -38,7 +38,7 @@ pwsh ./scripts/mutation-test-mississippi-solution.ps1
 pwsh ./go.ps1
 ```
 
-> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
 ## 🚨 CRITICAL RULE: ZERO WARNINGS POLICY 🚨
 
@@ -100,7 +100,7 @@ This repository contains **two distinct solutions**:
 
 ## Scripts Overview
 
-The `scripts/` folder contains PowerShell automation for the build-test-quality pipeline:
+The `eng/src/agent-scripts/` directory contains PowerShell automation for the build-test-quality pipeline:
 
 ### Core Build Scripts
 
@@ -127,14 +127,14 @@ The `scripts/` folder contains PowerShell automation for the build-test-quality 
 
 ### Commands Index (quick)
 
-- **Build Mississippi**: `pwsh ./scripts/build-mississippi-solution.ps1`
-- **Build Samples**: `pwsh ./scripts/build-sample-solution.ps1`
-- **Cleanup Mississippi**: `pwsh ./scripts/clean-up-mississippi-solution.ps1`
-- **Cleanup Samples**: `pwsh ./scripts/clean-up-sample-solution.ps1`
-- **Unit tests (Mississippi)**: `pwsh ./scripts/unit-test-mississippi-solution.ps1`
-- **Unit tests (Samples)**: `pwsh ./scripts/unit-test-sample-solution.ps1`
-- **Mutation tests (Mississippi)**: `pwsh ./scripts/mutation-test-mississippi-solution.ps1`
-- **Per-project test quality**: `pwsh ./scripts/test-project-quality.ps1 -TestProject <Name> [-SkipMutation]`
+- **Build Mississippi**: `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`
+- **Build Samples**: `pwsh ./eng/src/agent-scripts/build-sample-solution.ps1`
+- **Cleanup Mississippi**: `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
+- **Cleanup Samples**: `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1`
+- **Unit tests (Mississippi)**: `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
+- **Unit tests (Samples)**: `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1`
+- **Mutation tests (Mississippi)**: `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`
+- **Per-project test quality**: `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name> [-SkipMutation]`
 - **Final pipeline (both solutions)**: `pwsh ./go.ps1`
 
 ## Development Workflow Pattern
@@ -145,10 +145,10 @@ When making ANY code changes, follow this strict pattern:
 
 ```powershell
 # Build to check for errors/warnings
-pwsh ./scripts/build-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
 
 # Run cleanup to fix formatting and detect issues
-pwsh ./scripts/clean-up-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
 
 # Fix any errors or warnings reported
 # Repeat until clean
@@ -165,23 +165,23 @@ pwsh ./scripts/clean-up-mississippi-solution.ps1
 
 ```powershell
 # Run unit tests to ensure functionality
-pwsh ./scripts/unit-test-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 
 # Run mutation tests for quality validation (Mississippi ONLY)
-pwsh ./scripts/mutation-test-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
 
 #### Per-project quick quality check (recommended during iteration)
 
 ```powershell
 # Tests + coverage only (fast)
-pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
 
 # Tests + coverage + Stryker mutation score
-pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
 
 # If the source project cannot be inferred from <ProjectReference>
-pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SourceProject ./src/Core.Abstractions/Core.Abstractions.csproj
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SourceProject ./src/Core.Abstractions/Core.Abstractions.csproj
 ```
 
 Notes:

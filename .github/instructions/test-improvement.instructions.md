@@ -4,9 +4,9 @@ applyTo: '**'
 
 # Test Improvement Workflow (Legacy/Non‑TDD Code)
 
-This guide defines a practical, repeatable loop to raise unit test coverage and mutation score on projects that were not originally written with TDD. It complements the broader Testing and Build Rules documents and provides exact commands using `scripts/test-project-quality.ps1`.
+This guide defines a practical, repeatable loop to raise unit test coverage and mutation score on projects that were not originally written with TDD. It complements the broader Testing and Build Rules documents and provides exact commands using `eng/src/agent-scripts/test-project-quality.ps1`.
 
-> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
 ## At-a-Glance Improvement Loop
 
@@ -19,7 +19,7 @@ pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "dotnet tool restore"
 2) Establish baseline (tests + coverage only), then add tests to reach target coverage.
 
 ```powershell
-pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation
 ```
 
 3) Build-only check anytime to surface warnings/errors.
@@ -31,7 +31,7 @@ dotnet build ./tests/<YourTestProject>/<YourTestProject>.csproj -c Release -warn
 4) Add mutation testing; improve assertions/branches until threshold is met (Mississippi only).
 
 ```powershell
-pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject>
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject>
 ```
 
 5) Iterate quickly using `-NoBuild` after the initial build, but keep separate build checks for zero‑warnings.
@@ -75,7 +75,7 @@ pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject>
 - Mutation score: default target 80% unless otherwise specified (Samples are exempt from mutation testing; see Testing rules).
 - Flexibility: If a task sets explicit targets (e.g., 100% or 95%), follow those. Some legacy code may be difficult to unit‑test without refactoring; document constraints and request approval before proposing production changes.
 
-## Script Overview: `scripts/test-project-quality.ps1`
+## Script Overview: `eng/src/agent-scripts/test-project-quality.ps1`
 
 Parameters:
 
@@ -92,8 +92,8 @@ Outputs (machine‑readable): `RESULT`, `TEST_TOTAL`, `TEST_PASSED`, `TEST_FAILE
 
 Artifacts:
 
-- Test results and coverage: `test-results/<TestProject>/` (includes `test_results.trx` and `coverage.cobertura.xml`).
-- Mutation reports: latest under `StrykerOutput/**/` (JSON/Markdown/HTML).
+- Test results and coverage: `.scratchpad/coverage-test-results/<TestProject>/` (includes `test_results.trx` and `coverage.cobertura.xml`).
+- Mutation reports: latest under `.scratchpad/mutation-test-results/**/` (JSON/Markdown/HTML).
 
 ## Step‑by‑Step Improvement Loop
 
@@ -106,10 +106,10 @@ pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "dotnet tool restore"
 2) Quick baseline (tests + coverage only)
 
 ```powershell
-pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation
 ```
 
-- If coverage is below your target (default 95%), identify gaps using `test-results/<YourTestProject>/coverage.cobertura.xml` in your IDE or a coverage viewer. Prioritize:
+- If coverage is below your target (default 95%), identify gaps using `.scratchpad/coverage-test-results/<YourTestProject>/coverage.cobertura.xml` in your IDE or a coverage viewer. Prioritize:
   - Core business logic (L0 tests), edge cases, error paths, branches, and boundary conditions.
   - Recently changed files to prevent regressions.
 - Add tests under `tests/<YourTestProject>/` only. Re‑run the same command until coverage meets your target (default `≥ 95%`) and all tests pass.
@@ -125,10 +125,10 @@ dotnet build ./tests/<YourTestProject>/<YourTestProject>.csproj -c Release -warn
 3) Add mutation testing (quality of assertions and branches)
 
 ```powershell
-pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject>
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject>
 ```
 
-- If `MUTATION_SCORE < 80%`, open the latest Stryker report in `StrykerOutput/**/` and focus on surviving mutants. Typical fixes:
+- If `MUTATION_SCORE < 80%`, open the latest Stryker report in `.scratchpad/mutation-test-results/**/` and focus on surviving mutants. Typical fixes:
   - Strengthen assertions (not just happy path; verify behavior, state, and interactions).
   - Add missing branch and exception-path coverage.
   - Use representative inputs (boundary values, null/empty, min/max).
@@ -140,8 +140,8 @@ pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject>
 - After the initial build, you can append `-NoBuild` to speed up iterations:
 
 ```powershell
-pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation -NoBuild
-pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -NoBuild
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation -NoBuild
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject> -NoBuild
 ```
 
 - When using `-NoBuild`, run a separate build to enforce the zero‑new‑warnings policy:
@@ -155,7 +155,7 @@ dotnet build ./tests/<YourTestProject>/<YourTestProject>.csproj -c Release -warn
 - If the script cannot infer the source project (multiple `<ProjectReference>` entries or none under `/src/`), provide it explicitly:
 
 ```powershell
-pwsh ./scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SourceProject ./src/<Project>/<Project>.csproj
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SourceProject ./src/<Project>/<Project>.csproj
 ```
 
 ## When Tests Imply Production Changes

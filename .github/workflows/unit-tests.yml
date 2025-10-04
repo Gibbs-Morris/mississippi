@@ -65,8 +65,9 @@ jobs:
 
       - name: Build and test dotnet projects
         run: |
+          mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
           dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/test-results -- RunConfiguration.ReporterSwitch=allure
+          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results -- RunConfiguration.ReporterSwitch=allure
 
       - name: Install Allure
         run: |
@@ -77,7 +78,7 @@ jobs:
 
       - name: Generate Allure Report
         run: |
-          allure generate ${{ github.workspace }}/test-results -o ${{ github.workspace }}/allure-report
+          allure generate ${{ github.workspace }}/.scratchpad/coverage-test-results -o ${{ github.workspace }}/allure-report
 
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
