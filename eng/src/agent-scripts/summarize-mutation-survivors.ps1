@@ -16,6 +16,22 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+function Resolve-RepoRoot {
+    param([Parameter(Mandatory)][string]$StartPath)
+
+    $current = (Resolve-Path -LiteralPath $StartPath).Path
+    while ($true) {
+        if (Test-Path -LiteralPath (Join-Path $current '.git')) { return $current }
+        $parent = Split-Path -Parent $current
+        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
+            break
+        }
+        $current = $parent
+    }
+
+    throw "Unable to locate repository root from $StartPath"
+}
+
 function Get-RelativePath
 {
     param(
@@ -178,7 +194,7 @@ function Get-MutationReportSurvivors
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Split-Path -Parent $scriptRoot
+$repoRoot = Resolve-RepoRoot -StartPath $scriptRoot
 
 if (-not $TasksPath) {
     $TasksPath = Join-Path $repoRoot '.scratchpad/testing/mutation-tasks.md'

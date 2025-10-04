@@ -20,13 +20,13 @@ This folder contains PowerShell utilities that automate the standard `.scratchpa
 - `Read-ScratchpadTask`, `Write-ScratchpadTask`, and `Find-ScratchpadTaskById` for safe JSON IO and lookups.
 - `ConvertTo-ScratchpadTaskRecord` for projecting the stored JSON into a friendly object shape.
 
-The CLI scripts above import this module automatically; if you want to compose your own tooling, you can import it manually with `Import-Module ./scripts/tasks/ScratchpadTasks.psm1`.
+The CLI scripts above import this module automatically; if you want to compose your own tooling, you can import it manually with `Import-Module ./eng/src/agent-scripts/tasks/ScratchpadTasks.psm1`.
 
 ## Testing
 
-PowerShell tests live in `../scripts-tests`:
+PowerShell tests live in `../../tests/agent-scripts`:
 
 - `run-scratchpad-task-tests.ps1` runs the Pester suite (`scratchpad-task-scripts.Tests.ps1`).
 - `verify-scratchpad-task-scripts.ps1` performs an end-to-end smoke test (create → claim → complete/defer) against a temporary scratchpad and cleans up afterwards.
 
-Run tests with PowerShell 7+ and ensure the Pester module is available: `pwsh ./scripts-tests/run-scratchpad-task-tests.ps1`.
+Run tests with PowerShell 7+ and ensure the Pester module is available: `pwsh ./eng/tests/agent-scripts/run-scratchpad-task-tests.ps1`.

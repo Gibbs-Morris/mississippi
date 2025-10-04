@@ -9,17 +9,17 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
 ## Precedence
 
 1. All repository-wide guidance in `.github/instructions/*.instructions.md` remains authoritative. Resolve conflicts by choosing the most specific file first (feature → language → build). When in doubt, follow the latest modified instruction file without editing it.
-2. If you add or modify any instruction Markdown, immediately mirror the change into the Cursor rule set by running `pwsh ./scripts/sync-instructions-to-mdc.ps1` before you finish.
+2. If you add or modify any instruction Markdown, immediately mirror the change into the Cursor rule set by running `pwsh ./eng/src/agent-scripts/sync-instructions-to-mdc.ps1` before you finish.
 
-> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
 ## Execution Loop
 
 1. **Prep tools** – Ensure `dotnet tool restore` has been run at least once on the repo.
-2. **Clean build** – Run `pwsh ./scripts/build-mississippi-solution.ps1` to surface compiler/analyzer issues before mutation work.
-3. **Baseline mutation test** – Execute `pwsh ./scripts/mutation-test-mississippi-solution.ps1`. Always commit the generated report paths for traceability.
+2. **Clean build** – Run `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` to surface compiler/analyzer issues before mutation work.
+3. **Baseline mutation test** – Execute `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`. Always commit the generated report paths for traceability.
 4. **Collect & prioritize survivors** – Open the newest `.scratchpad/mutation-test-results/**/reports/mutation-report.json` only if deep inspection is needed. Otherwise run the summarizer (it reruns the mutation script unless you pass `-SkipMutationRun`):
-    - `pwsh ./scripts/summarize-mutation-survivors.ps1` (defaults to weighted scoring, full list)
+   - `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1` (defaults to weighted scoring, full list)
     - Outputs:
    - Basic JSON: `.scratchpad/mutation-test-results/mutation-survivors-summary.json` (backward compatibility)
    - Enriched JSON: `.scratchpad/mutation-test-results/mutation-survivors-enriched.json` (schemaVersion, focusOrder, aggregates, snippets)
@@ -39,16 +39,16 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
           - Use `-OverwriteSkeletons` to recreate the file from scratch.
     - Example focused loop (top 5 high-impact):
 
-      ```powershell
-      pwsh ./scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -Top 5 -ContextLines 4 -GenerateTasks -EmitTestSkeletons
+   ```powershell
+   pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -Top 5 -ContextLines 4 -GenerateTasks -EmitTestSkeletons
       ```
 
     - Each survivor row includes a suggestion (how to kill) and snippet so AI agents can author tests without re-reading the entire file.
     - Optionally mirror prioritized survivors into `.scratchpad/tasks/pending` (one JSON per survivor or per file) for agent handoff (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; do not reference it from source or tests.
 5. **Targeted tests only** – Add or adjust tests in the matching `tests/` project using repository patterns (naming, logging, DI seams). Do not change production code unless a mutant is provably unkillable without it; document that case inside the task file.
 6. **Quality gates** – After adding tests, run:
-   - `pwsh ./scripts/unit-test-mississippi-solution.ps1`
-   - `pwsh ./scripts/build-mississippi-solution.ps1`
+   - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
+   - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`
    Fix every warning or failure before continuing.
 7. **Re-run mutation tests** – Execute step 3 again. Update task statuses to `Done` when a mutant dies, or capture justification under `Status = Deferred` if it remains.
 8. **Repeat** – Iterate steps 4–7 until no survivors remain or only documented deferrals persist. Keep the task file deterministic (sorted by project, file, line) throughout.
@@ -65,7 +65,7 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
 2. Generate ranked survivors (top N for fast focus):
 
    ```powershell
-   pwsh ./scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -Top 10 -GenerateTasks -EmitTestSkeletons
+   pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -Top 10 -GenerateTasks -EmitTestSkeletons
    ```
 
 3. Open `.scratchpad/testing/mutation-tasks.md`; take the first `Todo` (Rank 1 highest score).
@@ -73,7 +73,7 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
 5. Run fast quality loop for the impacted test project:
 
    ```powershell
-   pwsh ./scripts/test-project-quality.ps1 -TestProject <Project>.Tests -SkipMutation
+   pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Project>.Tests -SkipMutation
    ```
 
 6. If test passes and kills survivor, re-run summarizer (with `-SkipMutationRun` if you have not rerun Stryker yet) or re-run full mutation test to validate.

@@ -73,16 +73,14 @@ The framework includes comprehensive testing:
 
 Test results and coverage reports are generated in the `.scratchpad/coverage-test-results` directory.
 
-### Quick per-project quality check
-
 For a fast loop on a single test project, use the helper script:
 
 ```powershell
 # Tests + coverage only (fast)
-./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
+./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
 
 # Tests + coverage + Stryker mutation score
-./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
+./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
 ```
 
 Notes:

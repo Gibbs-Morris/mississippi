@@ -2,8 +2,24 @@
 
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = Split-Path -Parent $PSScriptRoot
-$scriptsRoot = Join-Path $repoRoot 'scripts/tasks'
+function Resolve-RepoRoot {
+    param([Parameter(Mandatory)][string]$StartPath)
+
+    $current = (Resolve-Path -LiteralPath $StartPath).Path
+    while ($true) {
+        if (Test-Path -LiteralPath (Join-Path $current '.git')) { return $current }
+        $parent = Split-Path -Parent $current
+        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
+            break
+        }
+        $current = $parent
+    }
+
+    throw "Unable to locate repository root from $StartPath"
+}
+
+$repoRoot = Resolve-RepoRoot -StartPath $PSScriptRoot
+$scriptsRoot = Join-Path $repoRoot 'eng/src/agent-scripts/tasks'
 $newScript = Join-Path $scriptsRoot 'new-scratchpad-task.ps1'
 $listScript = Join-Path $scriptsRoot 'list-scratchpad-tasks.ps1'
 $claimScript = Join-Path $scriptsRoot 'claim-scratchpad-task.ps1'

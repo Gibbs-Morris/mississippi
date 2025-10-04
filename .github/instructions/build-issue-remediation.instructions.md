@@ -11,15 +11,15 @@ This guide helps agents eliminate .NET build issues (errors, analyzer/StyleCop w
 - Build → Clean → Fix until there are zero warnings.
 
 ```powershell
-pwsh ./scripts/build-mississippi-solution.ps1
-pwsh ./scripts/clean-up-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
 ```
 
 - Run tests (Mississippi solution) and mutation tests where required.
 
 ```powershell
-pwsh ./scripts/unit-test-mississippi-solution.ps1
-pwsh ./scripts/mutation-test-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
 
 - Final validation for both solutions.
@@ -38,7 +38,7 @@ When asked to “fix build issues” (warnings, analyzer findings, StyleCop, cle
 
 - Compiler errors and warnings
 - Analyzer and StyleCop violations
-- ReSharper cleanup violations detected by `./scripts/clean-up-mississippi-solution.ps1`
+- ReSharper cleanup violations detected by `./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
 - Test/build breaks surfaced by the repository scripts
 
 ## Guardrails
@@ -65,33 +65,33 @@ When asked to “fix build issues” (warnings, analyzer findings, StyleCop, cle
 - Build Mississippi (strict build in Release):
 
 ```powershell
-pwsh ./scripts/build-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
 ```
 
 - Build Samples:
 
 ```powershell
-pwsh ./scripts/build-sample-solution.ps1
+pwsh ./eng/src/agent-scripts/build-sample-solution.ps1
 ```
 
 - Code cleanup and inspections (Mississippi):
 
 ```powershell
-pwsh ./scripts/clean-up-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
 ```
 
 - Unit tests (Mississippi) and mutation tests:
 
 ```powershell
-pwsh ./scripts/unit-test-mississippi-solution.ps1
-pwsh ./scripts/mutation-test-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
 
 - Per‑project quick quality loop during iteration:
 
 ```powershell
-pwsh ./scripts/test-project-quality.ps1 -TestProject <Name> -SkipMutation
-pwsh ./scripts/test-project-quality.ps1 -TestProject <Name>
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name> -SkipMutation
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name>
 ```
 
 - Final pipeline (both solutions):
@@ -177,9 +177,9 @@ Provide in this order:
 
 1) Commands run
    - Repository scripts (preferred):
-     - `pwsh ./scripts/build-mississippi-solution.ps1`
-     - `pwsh ./scripts/clean-up-mississippi-solution.ps1`
-     - `pwsh ./scripts/unit-test-mississippi-solution.ps1`
+   - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`
+   - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
+   - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
    - Raw `dotnet` commands only if used for diagnosis.
 2) Before → after warning counts by code (e.g., `CS8618: 14 → 3`, `CA2000: 7 → 0`).
 3) Changes as unified diffs per file:
