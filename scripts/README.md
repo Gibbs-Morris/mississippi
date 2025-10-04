@@ -51,6 +51,22 @@ Once the **Mississippi** solution is healthy, run the equivalent *sample* script
 | **sync-instructions-to-mdc.ps1** | Sync `.github/instructions/*.instructions.md` files into Cursor `.mdc` rule files and add sync metadata automatically. Preferred automated way to keep instruction Markdown and `.mdc` files in parity. | `pwsh ./scripts/sync-instructions-to-mdc.ps1` |
 
 ---
+### Scratchpad task helpers
+
+| Script | Purpose | Typical call |
+| --- | --- | --- |
+| **tasks/new-scratchpad-task.ps1** | Create a JSON task file in `.scratchpad/tasks/pending` with normalized metadata. | `pwsh ./scripts/tasks/new-scratchpad-task.ps1 -Title "Fix analyzer" -Priority P1` |
+| **tasks/list-scratchpad-tasks.ps1** | Inspect scratchpad tasks across statuses with optional filters. | `pwsh ./scripts/tasks/list-scratchpad-tasks.ps1 -Status pending -Tag build` |
+| **tasks/claim-scratchpad-task.ps1** | Atomically move a pending task into `claimed/` and stamp ownership/attempt counters. | `pwsh ./scripts/tasks/claim-scratchpad-task.ps1 -Id <task-id> -Agent my-handle` |
+| **tasks/complete-scratchpad-task.ps1** | Mark a claimed task as done with a completion summary and move to `done/`. | `pwsh ./scripts/tasks/complete-scratchpad-task.ps1 -Id <task-id> -Result "Analyzer warnings resolved"` |
+| **tasks/defer-scratchpad-task.ps1** | Defer a pending or claimed task, recording reason and follow-up notes. | `pwsh ./scripts/tasks/defer-scratchpad-task.ps1 -Id <task-id> -Reason "Waiting on upstream"` |
+
+Supporting test harness lives under `scripts-tests/`:
+
+| Script | Purpose |
+| --- | --- |
+| **scripts-tests/run-scratchpad-task-tests.ps1** | Runs the Pester suite covering the scratchpad task helpers. |
+| **scripts-tests/verify-scratchpad-task-scripts.ps1** | End-to-end smoke flow that exercises create → claim → complete/defer using a temporary scratchpad and cleans up. |
 ## Example invocations
 
 Windows / PowerShell:
@@ -149,3 +165,4 @@ Exit codes:
 - `1` on any error, test failure, or Stryker failure/break
 
 Happy building! :rocket: 
+
