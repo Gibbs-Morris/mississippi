@@ -4,7 +4,7 @@ applyTo: '**'
 
 # Instruction Authoring Guide
 
-This guide teaches contributors how to write and maintain instruction files (`*.instructions.md`) in the Mississippi repository. Follow these standards to ensure consistency, discoverability, and alignment with existing documentation patterns.
+This guide teaches contributors how to write and maintain instruction files (`*.instructions.md`) in this repository. Follow these standards to ensure consistency, discoverability, and alignment with existing documentation patterns.
 
 ## Purpose
 
@@ -24,8 +24,8 @@ Instruction files are the canonical source of truth for development practices, p
 
 **Out of scope:**
 - Specific technical content for individual instruction files (covered in those files)
-- General Markdown authoring (see `markdown.instructions.md`)
-- Repository-wide contribution guidelines (see `README.md`)
+- General Markdown authoring (covered in separate markdown guidelines if present)
+- Repository-wide contribution guidelines (see `README.md` or `CONTRIBUTING.md`)
 
 ## When to Create or Update an Instruction File
 
@@ -54,10 +54,10 @@ Use lowercase kebab-case with the `.instructions.md` suffix.
 **Examples:**
 - `build-rules.instructions.md`
 - `testing.instructions.md`
-- `logging-rules.instructions.md`
-- `orleans-serialization.instructions.md`
+- `coding-standards.instructions.md`
+- `api-design.instructions.md`
 
-**Why:** Lowercase kebab-case is shell-friendly, sorts predictably, and aligns with GitHub conventions. The `.instructions.md` suffix enables tooling to discover and process these files automatically (e.g., `scripts/sync-instructions-to-mdc.ps1`).
+**Why:** Lowercase kebab-case is shell-friendly, sorts predictably, and aligns with GitHub conventions. The `.instructions.md` suffix enables tooling to discover and process these files automatically.
 
 ### Rule 2: Location
 
@@ -70,7 +70,7 @@ Place all instruction files in `.github/instructions/`.
 Each instruction file should cover one cohesive topic. Split large topics into focused files rather than creating monolithic documents.
 
 **Examples of good scope:**
-- `build-rules.instructions.md` — build pipeline and quality gates
+- `build.instructions.md` — build pipeline and quality gates
 - `testing.instructions.md` — test strategy and conventions
 - `authoring.instructions.md` — instruction file authoring (this file)
 
@@ -310,28 +310,34 @@ When examples create side effects (files, processes, state), note how to clean u
 
 ## Running Scripts and Commands
 
-This repository uses PowerShell scripts in `scripts/` for build, test, and quality automation. All scripts require PowerShell 7+ (`pwsh`).
+Document the key automation scripts in your repository here. Common patterns include scripts for build, test, lint, and quality checks.
 
 ### Prerequisites
 
-Before running any scripts:
+List any prerequisites for running repository scripts. For example:
 
-```powershell
+```bash
+# Install project dependencies
+npm install
+# or
 dotnet tool restore
+# or
+pip install -r requirements.txt
 ```
 
-**Why:** Scripts depend on tools like GitVersion, SLNGen, ReSharper CLI, and Stryker.NET defined in `.config/dotnet-tools.json`.
+**Why:** Clear prerequisites help contributors run scripts successfully without trial and error.
 
 ### Key Scripts for Instruction Authors
 
+Create a table documenting scripts that are frequently referenced in instruction files:
+
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| `sync-instructions-to-mdc.ps1` | Regenerate Cursor `.mdc` rule files from instruction Markdown | `pwsh ./scripts/sync-instructions-to-mdc.ps1` |
-| `build-mississippi-solution.ps1` | Build the core Mississippi library | `pwsh ./scripts/build-mississippi-solution.ps1` |
-| `unit-test-mississippi-solution.ps1` | Run unit tests for Mississippi | `pwsh ./scripts/unit-test-mississippi-solution.ps1` |
-| `orchestrate-solutions.ps1` | Full pipeline: build → test → mutate → cleanup | `pwsh ./scripts/orchestrate-solutions.ps1` |
+| `build.sh` | Build the project | `./scripts/build.sh` |
+| `test.sh` | Run all tests | `./scripts/test.sh` |
+| `lint.sh` | Run linters and code quality checks | `./scripts/lint.sh` |
 
-**Why:** These scripts are frequently referenced in instruction files. Document them here so authors can verify commands before including them.
+**Why:** Documenting scripts here provides a quick reference for instruction authors and ensures consistency across instruction files.
 
 ### Verifying Script Commands
 
@@ -346,23 +352,25 @@ Before referencing a script in an instruction file:
 
 ### Running Local Checks
 
-This repository enforces Markdown quality via Super-Linter in CI. To run checks locally:
+Document how to run local quality checks before committing. Examples:
 
-**Check all Markdown files:**
+**Check Markdown files:**
 ```bash
-# Super-Linter runs in CI via .github/workflows/markdown-lint.yml
-# For local checks, use markdownlint-cli2:
+# If using markdownlint:
 npx markdownlint-cli2 "**/*.md"
+
+# If using another linter:
+./scripts/lint-markdown.sh
 ```
 
 **Expected success:**
 - Exit code `0`
-- No output (or only informational messages)
+- No errors or warnings reported
 
 **On failure:**
 - Fix reported violations in your files
 - Re-run until clean
-- Do not suppress rules globally
+- Avoid suppressing rules globally
 
 **Why:** Consistent linting prevents style drift. Local checks give fast feedback before pushing.
 
@@ -372,7 +380,7 @@ npx markdownlint-cli2 "**/*.md"
 
 Each topic should have exactly one authoritative instruction file. Other files may link to it but should not duplicate its content.
 
-**Example:** `logging-rules.instructions.md` is authoritative for logging patterns. `csharp.instructions.md` references it rather than re-explaining logging.
+**Example:** If you have `logging.instructions.md` for logging patterns, other instruction files should reference it rather than re-explaining logging.
 
 **Why:** Single source of truth prevents inconsistencies and simplifies maintenance. When the authoritative file updates, all links remain valid.
 
@@ -382,7 +390,7 @@ Link to other instruction files using relative paths.
 
 **Example:**
 ```markdown
-See [Logging Rules](./logging-rules.instructions.md) for high-performance logging patterns.
+See [Logging Guidelines](./logging.instructions.md) for logging best practices.
 ```
 
 **Why:** Relative links work in all contexts (local, web, forks) and don't break if the repository URL changes.
@@ -393,7 +401,7 @@ When referencing a specific section, use anchor links.
 
 **Example:**
 ```markdown
-Follow the [Testing L0 guidelines](./testing.instructions.md#l0--pure-unit-tests) for unit tests.
+Follow the [unit testing guidelines](./testing.instructions.md#unit-tests) for writing unit tests.
 ```
 
 **Why:** Direct links save readers time and ensure they land on the relevant content.
@@ -453,9 +461,9 @@ Cosmos DB connection: AccountEndpoint=https://[REDACTED].documents.azure.com;...
 
 ## Versioning and Change Control
 
-### Rule 1: CODEOWNERS Review
+### Rule 1: Review Requirements
 
-All changes to instruction files require review by `@BenjaminLGibbs` (per `.github/CODEOWNERS`).
+All changes to instruction files should require review per your repository's review policy (e.g., `.github/CODEOWNERS` or branch protection rules).
 
 **Why:** Instruction files are high-impact. Review ensures changes are accurate, consistent, and aligned with repository goals.
 
@@ -481,8 +489,8 @@ Include "Last verified: YYYY-MM-DD" in the footer of each instruction file. Upda
 ```markdown
 ---
 
-**Last verified:** 2025-10-04
-**Default branch:** main
+**Last verified:** YYYY-MM-DD
+**Default branch:** [your-default-branch]
 ```
 
 **Why:** Dates help readers assess staleness. Files last verified years ago likely need review.
@@ -498,37 +506,37 @@ When linking to external documentation, use permanent URLs (avoid version-specif
 
 ## Examples from This Repository
 
-### Example 1: Build Rules
+As you create instruction files in your repository, document good examples here to help future contributors understand effective patterns.
 
-[build-rules.instructions.md](./build-rules.instructions.md) demonstrates:
-- Clear "At-a-Glance Quick-Start" with commands
-- Strong "Critical Rule" sections with emoji emphasis
-- Code examples showing PowerShell commands from `scripts/`
-- Cross-references to related files (`testing.instructions.md`, `csharp.instructions.md`)
+### Good Pattern: Build Instructions
 
-### Example 2: Testing Strategy
+A well-structured build instruction file should include:
+- Clear "At-a-Glance Quick-Start" with the most common commands
+- Step-by-step procedures for different build scenarios
+- Code examples showing actual commands from your repository
+- Cross-references to related instruction files
 
-[testing.instructions.md](./testing.instructions.md) demonstrates:
-- Layered content (L0-L4 test levels with a table)
-- Detailed subsections for each test level
-- Cross-references to external Microsoft Learn articles
-- Related Guidelines section at the end
+### Good Pattern: Testing Instructions
 
-### Example 3: Markdown Authoring
+A comprehensive testing instruction file should include:
+- Layered content (different test types or levels)
+- Detailed subsections for each test category
+- References to external resources when helpful
+- Related Guidelines section linking to other instruction files
 
-[markdown.instructions.md](./markdown.instructions.md) demonstrates:
-- Mandatory rule enumeration (MD001-MD059)
-- Prescriptive guidance with no ambiguity
-- Quality enforcement section with commands
-- Note block for repository-specific configuration
+### Good Pattern: Tool-Specific Instructions
 
-### Example 4: Instruction-MDC Sync
+Tool or framework-specific instruction files should:
+- Provide prescriptive guidance with clear rules
+- Include quality enforcement sections with validation commands
+- Use note blocks to highlight repository-specific configuration
 
-[instruction-mdc-sync.instructions.md](./instruction-mdc-sync.instructions.md) demonstrates:
-- Concise scope definition
-- Clear workflow steps
-- Script reference with exact command
-- PR checklist for reviewers
+### Pattern to Avoid: Overly Generic Instructions
+
+Avoid instruction files that:
+- Duplicate content from official documentation without adding value
+- Mix multiple unrelated topics in a single file
+- Lack concrete, repository-specific examples
 
 ## Maintenance Checklist
 
@@ -548,10 +556,10 @@ Use this checklist when creating or updating an instruction file:
 - [ ] "Why" lines included for significant rules
 - [ ] Examples from this repository (not fictional)
 - [ ] Related Guidelines section cross-references other instruction files
-- [ ] Footer includes "Last verified: YYYY-MM-DD" and "Default branch: main"
+- [ ] Footer includes "Last verified: YYYY-MM-DD" and default branch name
 - [ ] No secrets or credentials in examples
 - [ ] PR description includes "Docs impact" section
-- [ ] Ran `pwsh ./scripts/sync-instructions-to-mdc.ps1` after changes (if applicable)
+- [ ] Ran any applicable sync or generation scripts after changes
 
 ## Known Discrepancies
 
@@ -565,27 +573,19 @@ This section documents conflicts or inconsistencies discovered across instructio
 
 ## Glossary
 
-**Mississippi Framework:** The core .NET library in `mississippi.slnx` that provides event sourcing, Orleans integration, and related infrastructure.
+Define repository-specific terms here as your instruction file collection grows. Common entries might include:
 
-**Samples Solution:** The `samples.slnx` file that includes Mississippi projects plus sample applications demonstrating usage patterns.
+**Instruction file:** A Markdown file in `.github/instructions/` ending with `.instructions.md` that defines development practices, patterns, and workflows.
 
-**Instruction file:** A Markdown file in `.github/instructions/` ending with `.instructions.md` that defines development practices.
+**Drift check:** A reminder note (typically in Quick-Start sections) to verify that script behavior matches documentation, acknowledging that scripts may evolve.
 
-**Cursor `.mdc` file:** A machine-readable rule file in `.cursor/rules/` generated from instruction Markdown for Cursor AI assistant.
+**At-a-Glance Quick-Start:** The opening section of an instruction file that provides immediate value with the most common commands or actions.
 
-**L0-L4 tests:** Layered testing model where L0 = pure unit tests, L1 = unit tests with light infrastructure, L2 = functional tests, L3 = end-to-end tests, L4 = production tests. See `testing.instructions.md`.
+**Why lines:** Brief explanations following significant rules that explain the rationale, helping readers understand the reasoning behind practices.
 
-**Zero warnings policy:** Repository standard that treats all compiler, analyzer, and StyleCop warnings as build errors. See `build-rules.instructions.md`.
-
-**Stryker.NET:** Mutation testing tool that validates test quality by introducing defects and verifying tests catch them.
-
-**ReSharper CLI:** Code formatting and inspection tool (`jb cleanupcode`) used in cleanup scripts.
-
-**Orleans:** Microsoft's distributed actor framework used throughout Mississippi. See `orleans.instructions.md`.
-
-**Drift check:** Reminder note in Quick-Start sections to verify script behavior before trusting documentation.
+Add additional terms specific to your repository, technology stack, and development practices as needed.
 
 ---
 
-**Last verified:** 2025-10-04
+**Last verified:** 2025-01-04
 **Default branch:** main
