@@ -234,7 +234,7 @@ Use only commands, scripts, and tools that exist in this repository. Never use p
 
 **Good:**
 ```powershell
-pwsh ./scripts/build-mississippi-solution.ps1
+pwsh ./scripts/build-solution.ps1
 ```
 
 **Bad:**
