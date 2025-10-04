@@ -58,6 +58,7 @@ The supporting Pester harness lives in `eng/tests/agent-scripts/`:
 | --- | --- |
 | **run-scratchpad-task-tests.ps1** | Runs the Pester suite that covers the scratchpad helpers. |
 | **verify-scratchpad-task-scripts.ps1** | End-to-end flow that creates → claims → completes/defers tasks using a temporary scratchpad. |
+| (orchestrator) `../orchestrate-powershell-tests.ps1` | Runs all PowerShell test suites (Pester and script e2e) and exits non-zero on failure. |
 
 ---
 
@@ -70,6 +71,7 @@ pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 -Configuration D
 pwsh ./eng/src/agent-scripts/final-build-solutions.ps1            # Release by default
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation   # fast test+coverage
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests                  # include mutation
+pwsh ./eng/tests/orchestrate-powershell-tests.ps1                 # run all PowerShell test suites
 ```
 
 Bash (with PowerShell 7 installed):
