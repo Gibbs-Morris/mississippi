@@ -31,7 +31,7 @@
       "rollForward": false
     },
     "JetBrains.ReSharper.GlobalTools": {
-      "version": "2025.2.0",
+      "version": "2025.2.2.1",
       "commands": [
         "jb"
       ],
@@ -52,7 +52,7 @@
       "rollForward": false
     },
     "jetbrains.dotcover.commandlinetools": {
-      "version": "2025.2.2",
+      "version": "2025.2.2.1",
       "commands": [
         "dotCover"
       ],
