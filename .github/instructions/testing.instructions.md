@@ -152,14 +152,14 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 
 ## Tooling and Scripts
 
-> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
 Use the PowerShell scripts documented in Build Rules to run tests and mutation checks:
 
-- `scripts/unit-test-mississippi-solution.ps1`
-- `scripts/unit-test-sample-solution.ps1`
-- `scripts/mutation-test-mississippi-solution.ps1`
-- `scripts/orchestrate-solutions.ps1` (also via `./go.ps1`)
+- `eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
+- `eng/src/agent-scripts/unit-test-sample-solution.ps1`
+- `eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`
+- `eng/src/agent-scripts/orchestrate-solutions.ps1` (also via `./go.ps1`)
 
 ## Author and Reviewer Checklists
 

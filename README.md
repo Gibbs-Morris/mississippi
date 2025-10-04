@@ -41,16 +41,16 @@ To build the project from source:
 git clone https://github.com/Gibbs-Morris/mississippi.git
 cd mississippi
 
-# Run the build script
-./build.ps1
+# Run the full pipeline (build → test → mutation → cleanup)
+pwsh ./go.ps1
 ```
 
-Build script options:
+Common script entry points:
 
-- `-SkipBuild` - Skip the build step, useful when you just want to run tests
-- `-SkipTests` - Skip running tests, useful when you just want to build the code
-- `-SkipStryker` - Skip Stryker mutation testing (which can be time-consuming)
-- `-Configuration <Debug|Release>` - Build configuration (default is Release)
+- `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 [-Configuration Debug|Release]` – build the Mississippi solution.
+- `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run unit/integration tests with coverage for Mississippi projects.
+- `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` – execute Stryker.NET mutation testing.
+- `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` – apply the repository’s ReSharper cleanup and analyzer inspections.
 
 ## Samples
 
@@ -64,23 +64,23 @@ The repository includes sample applications demonstrating the framework:
 The framework includes comprehensive testing:
 
 ```powershell
-# Run tests with code coverage
-./build.ps1 -SkipStryker
+# Run unit tests with code coverage
+pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 
-# Run tests including mutation testing (Stryker)
-./build.ps1
+# Run mutation testing (Stryker)
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
 
-Test results and coverage reports are generated in the `.scratchpad/coverage-test-results` directory.
+Test results and coverage reports are generated in the `.scratchpad/coverage-test-results` directory, and mutation runs write reports under `.scratchpad/mutation-test-results`.
 
 For a fast loop on a single test project, use the helper script:
 
 ```powershell
 # Tests + coverage only (fast)
-./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
 
 # Tests + coverage + Stryker mutation score
-./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
 ```
 
 Notes:
