@@ -256,8 +256,9 @@ public sealed partial class OrderFilter : ComponentBase
   regression.
 - Write unit tests for reducers, selectors, and effects to keep Redux-style state predictable.
 - Create contract tests that validate DTO and error shapes stay versioned and backwards compatible.
-- Record mutation survivors tied to component logic in `.scratchpad/testing/mutation-tasks.md` and
-  close them before shipping.
+- Ensure mutation survivors tied to component logic are cleared by rerunning
+  `summarize-mutation-survivors.ps1`, which regenerates the scratchpad tasks automatically;
+  close the regenerated tasks before shipping.
 
 ## Review Checklist
 

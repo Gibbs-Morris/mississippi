@@ -20,7 +20,7 @@
 6. `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` to confirm a clean Release build.
 7. Repeat until the feature is complete, then mirror the steps on the Samples solution when relevant (no mutation testing there).
 
-> ℹ️  `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1` stitches the full CI-equivalent pipeline together—handy before pushing or in automation.
+> ℹ️  `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1` stitches the full CI-equivalent pipeline together—including the coverage and mutation summarizers that refresh `.scratchpad/tasks`—handy before pushing or in automation.
 
 ---
 
@@ -36,8 +36,10 @@
 | **build-sample-solution.ps1** | Build `samples.slnx`. | `pwsh ./eng/src/agent-scripts/build-sample-solution.ps1` |
 | **unit-test-sample-solution.ps1** | Execute sample solution tests (no mutation testing). | `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1` |
 | **clean-up-sample-solution.ps1** | Run ReSharper cleanup over the sample projects. | `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1` |
+| **summarize-coverage-gaps.ps1** | Merge Cobertura coverage reports and emit `.scratchpad/tasks` entries for low-coverage files. | `pwsh ./eng/src/agent-scripts/summarize-coverage-gaps.ps1 -EmitTasks` |
+| **summarize-mutation-survivors.ps1** | Parse the latest Stryker run (or rerun it) and sync survivor tasks into `.scratchpad/tasks`. | `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -GenerateTasks` |
 | **final-build-solutions.ps1** | Build both solutions with `--warnaserror` as the final zero-warning gate. | `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1` |
-| **orchestrate-solutions.ps1** | Run the full Mississippi + Samples pipeline (build → test → mutate → cleanup → final build). | `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1` |
+| **orchestrate-solutions.ps1** | Run the full Mississippi + Samples pipeline (build → test → mutate → summarize → cleanup → final build) and keep `.scratchpad/tasks` refreshed. | `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1` |
 | **sync-instructions-to-mdc.ps1** | Mirror `.github/instructions/*.instructions.md` into `.cursor/rules/*.mdc` with sync metadata. | `pwsh ./eng/src/agent-scripts/sync-instructions-to-mdc.ps1` |
 
 ### Scratchpad task helpers

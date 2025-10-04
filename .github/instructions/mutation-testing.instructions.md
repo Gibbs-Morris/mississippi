@@ -25,6 +25,7 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
    - Enriched JSON: `.scratchpad/mutation-test-results/mutation-survivors-enriched.json` (schemaVersion, focusOrder, aggregates, snippets)
    - Report JSON: `.scratchpad/mutation-test-results/mutation-survivors-report.json` (raw survivors from the latest `mutation-report.json` when available)
        - Markdown: `.scratchpad/testing/mutation-survivors-summary.md` (includes prioritized focus table, details, mutator strategy cheat sheet)
+   - **Scratchpad Tasks (auto)**: `.scratchpad/tasks/pending/*.json` — every run deterministically syncs surviving mutants into per-mutation task files. Existing tasks are matched via `mutationKey`, so reruns won’t create duplicates. Delete a task (or clear the folder) and rerun the summarizer to regenerate it.
     - Optional parameters for focused iteration:
        - `-SkipMutationRun`: Use existing Stryker output without invoking `mutation-test-mississippi-solution.ps1` again.
        - `-MutationScriptPath <Path>`: Point to an alternate mutation script when the default Mississippi script isn't desired.
@@ -44,7 +45,7 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
       ```
 
     - Each survivor row includes a suggestion (how to kill) and snippet so AI agents can author tests without re-reading the entire file.
-    - Optionally mirror prioritized survivors into `.scratchpad/tasks/pending` (one JSON per survivor or per file) for agent handoff (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; do not reference it from source or tests.
+   - The summarizer automatically mirrors prioritized survivors into `.scratchpad/tasks/pending` (one JSON per survivor) for agent handoff (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; do not reference it from source or tests.
 5. **Targeted tests only** – Add or adjust tests in the matching `tests/` project using repository patterns (naming, logging, DI seams). Do not change production code unless a mutant is provably unkillable without it; document that case inside the task file.
 6. **Quality gates** – After adding tests, run:
    - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`

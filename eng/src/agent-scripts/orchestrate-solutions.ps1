@@ -15,13 +15,24 @@ function Invoke-Step {
     param(
         [string]$ScriptName,
         [string]$Description,
-        [int]$StepNumber
+        [int]$StepNumber,
+        [hashtable]$ScriptParameters
     )
     Write-Host "=== STEP ${StepNumber}: ${Description} ===" -ForegroundColor Yellow
-    Write-Host "Executing script: $ScriptName"
+    $commandDisplay = if ($ScriptParameters -and $ScriptParameters.Count -gt 0) {
+        $paramDisplay = $ScriptParameters.GetEnumerator() | ForEach-Object { "-$($_.Key)=$($_.Value)" }
+        "$ScriptName $($paramDisplay -join ' ')"
+    } else {
+        $ScriptName
+    }
+    Write-Host "Executing script: $commandDisplay"
     
     try {
-        & "$PSScriptRoot/$ScriptName"
+        if ($ScriptParameters) {
+            & "$PSScriptRoot/$ScriptName" @ScriptParameters
+        } else {
+            & "$PSScriptRoot/$ScriptName"
+        }
         if ($LASTEXITCODE -ne 0) {
             throw "Step ${StepNumber} (${ScriptName}) failed with exit code $LASTEXITCODE"
         }
@@ -42,20 +53,22 @@ try {
     Write-Host "=== MISSISSIPPI SOLUTION PIPELINE ===" -ForegroundColor Cyan
     
     # Mississippi pipeline
-    Invoke-Step "build-mississippi-solution.ps1" "Build Mississippi Solution" 1
-    Invoke-Step "unit-test-mississippi-solution.ps1" "Run Mississippi Unit Tests" 2
-    Invoke-Step "mutation-test-mississippi-solution.ps1" "Run Mississippi Mutation Tests" 3
-    Invoke-Step "clean-up-mississippi-solution.ps1" "Cleanup Mississippi Code Style" 4
+    Invoke-Step -ScriptName "build-mississippi-solution.ps1" -Description "Build Mississippi Solution" -StepNumber 1
+    Invoke-Step -ScriptName "unit-test-mississippi-solution.ps1" -Description "Run Mississippi Unit Tests" -StepNumber 2
+    Invoke-Step -ScriptName "summarize-coverage-gaps.ps1" -Description "Summarize Coverage Gaps" -StepNumber 3 -ScriptParameters @{ EmitTasks = $true }
+    Invoke-Step -ScriptName "mutation-test-mississippi-solution.ps1" -Description "Run Mississippi Mutation Tests" -StepNumber 4
+    Invoke-Step -ScriptName "summarize-mutation-survivors.ps1" -Description "Summarize Mutation Survivors" -StepNumber 5 -ScriptParameters @{ GenerateTasks = $true; SkipMutationRun = $true }
+    Invoke-Step -ScriptName "clean-up-mississippi-solution.ps1" -Description "Cleanup Mississippi Code Style" -StepNumber 6
 
     Write-Host "=== SAMPLE SOLUTION PIPELINE ===" -ForegroundColor Cyan
     
     # Sample pipeline
-    Invoke-Step "build-sample-solution.ps1" "Build Sample Solution" 5
-    Invoke-Step "unit-test-sample-solution.ps1" "Run Sample Unit Tests" 6
-    Invoke-Step "clean-up-sample-solution.ps1" "Cleanup Sample Code Style" 7
+    Invoke-Step -ScriptName "build-sample-solution.ps1" -Description "Build Sample Solution" -StepNumber 7
+    Invoke-Step -ScriptName "unit-test-sample-solution.ps1" -Description "Run Sample Unit Tests" -StepNumber 8
+    Invoke-Step -ScriptName "clean-up-sample-solution.ps1" -Description "Cleanup Sample Code Style" -StepNumber 9
 
     # Final build of both solutions with warnings treated as errors
-    Invoke-Step "final-build-solutions.ps1" "Final Build with Warnings as Errors" 8
+    Invoke-Step -ScriptName "final-build-solutions.ps1" -Description "Final Build with Warnings as Errors" -StepNumber 10
     
     Write-Host "=== PIPELINE COMPLETED SUCCESSFULLY ===" -ForegroundColor Green
     Write-Host "All 8 steps completed without errors. Solutions are ready for deployment."

@@ -183,8 +183,8 @@ Recommended extra fields
 - Build issue backlog slicing
   - Producer runs the build scripts, groups warnings by code and file, and emits one task per fixable instance or small cohort (per Build Issue Remediation). Workers claim and fix in parallel.
 
-- Test improvement and mutation survivors
-  - Producer imports the survivors list and emits targeted tasks (e.g., one task per file or per survivor). Workers add tests and mark tasks `done` when the mutant dies. Testing artifacts that previously lived under `.tests-temp/` now live under `.scratchpad/testing/`.
+- Test improvement, coverage gaps, and mutation survivors
+  - Coverage tasks are generated automatically by rerunning `summarize-coverage-gaps.ps1`, which syncs `.scratchpad/tasks/pending` with the latest Cobertura results. Mutation survivor tasks continue to be generated automatically by `summarize-mutation-survivors.ps1`. Reserve manual JSON creation for edge cases not handled by these scripts.
 
 - Logging conformance
   - Producer scans for direct `ILogger.Log*` calls and creates tasks to convert to LoggerExtensions patterns per logging rules.

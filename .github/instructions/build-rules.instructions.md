@@ -115,10 +115,12 @@ The `eng/src/agent-scripts/` directory contains PowerShell automation for the bu
 
 - **`clean-up-mississippi-solution.ps1`** - Applies ReSharper code formatting and inspections
 - **`clean-up-sample-solution.ps1`** - Cleans up sample code formatting
+- **`summarize-coverage-gaps.ps1`** - Aggregates the latest Cobertura reports and syncs coverage gap tasks into `.scratchpad/tasks`
+- **`summarize-mutation-survivors.ps1`** - Reads the most recent Stryker output (or reruns it when asked) and mirrors mutation survivors into `.scratchpad/tasks`
 
 ### Orchestration
 
-- **`orchestrate-solutions.ps1`** - Runs the complete pipeline in proper order
+- **`orchestrate-solutions.ps1`** - Runs the complete pipeline in proper order, including both summarizer scripts so coverage and mutation tasks stay current
 - **`go.ps1`** (root) - Convenience script that calls orchestrate-solutions.ps1
 
 ### Commands Index (quick)

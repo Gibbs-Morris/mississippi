@@ -163,31 +163,41 @@ function Get-MutationReportSurvivors
         $fileData = $fileProp.Value
         if ($null -eq $fileData -or $null -eq $fileData.mutants) { continue }
 
-        foreach ($mutant in $fileData.mutants)
-        {
-            if ($mutant.status -ne 'Survived') { continue }
+    foreach ($mutant in $fileData.mutants)
+    {
+        $mutantProps = $mutant.PSObject.Properties.Name
+        $status = if ($mutantProps -contains 'status') { [string]$mutant.status } else { $null }
+        if ($status -ne 'Survived') { continue }
 
-            $startLine = [int]$mutant.location.start.line
-            $endLine = [int]$mutant.location.end.line
-            $startColumn = if ($mutant.location.start.PSObject.Properties.Name -contains 'column') { [int]$mutant.location.start.column } else { 0 }
-            $endColumn = if ($mutant.location.end.PSObject.Properties.Name -contains 'column') { [int]$mutant.location.end.column } else { 0 }
+        $location = if ($mutantProps -contains 'location') { $mutant.location } else { $null }
+        $startLine = if ($location -and $location.start -and ($location.start.PSObject.Properties.Name -contains 'line')) { [int]$location.start.line } else { 0 }
+        $endLine = if ($location -and $location.end -and ($location.end.PSObject.Properties.Name -contains 'line')) { [int]$location.end.line } else { $startLine }
+        $startColumn = if ($location -and $location.start -and ($location.start.PSObject.Properties.Name -contains 'column')) { [int]$location.start.column } else { 0 }
+        $endColumn = if ($location -and $location.end -and ($location.end.PSObject.Properties.Name -contains 'column')) { [int]$location.end.column } else { 0 }
 
-            $results.Add([pscustomobject]@{
-                    File         = $fullPath
-                    RelativeFile = if ([string]::IsNullOrWhiteSpace($fullPath)) { '' } else { Get-RelativePath -BasePath $RepoRoot -TargetPath $fullPath }
-                    Mutator      = $mutant.mutatorName
-                    Replacement  = $mutant.replacement
-                    StartLine    = $startLine
-                    EndLine      = $endLine
-                    StartColumn  = $startColumn
-                    EndColumn    = $endColumn
-                    Status       = $mutant.status
-                    StatusReason = $mutant.statusReason
-                    CoveredBy    = $mutant.coveredBy
-                    KilledBy     = $mutant.killedBy
-                    ReportId     = $mutant.id
-                }) | Out-Null
-        }
+        $mutatorName = if ($mutantProps -contains 'mutatorName') { [string]$mutant.mutatorName } elseif ($mutantProps -contains 'mutator') { [string]$mutant.mutator } else { $null }
+        $replacement = if ($mutantProps -contains 'replacement') { [string]$mutant.replacement } else { $null }
+        $statusReason = if ($mutantProps -contains 'statusReason') { $mutant.statusReason } else { $null }
+        $coveredBy = if ($mutantProps -contains 'coveredBy') { $mutant.coveredBy } else { $null }
+        $killedBy = if ($mutantProps -contains 'killedBy') { $mutant.killedBy } else { $null }
+        $reportId = if ($mutantProps -contains 'id') { $mutant.id } else { $null }
+
+        $results.Add([pscustomobject]@{
+            File         = $fullPath
+            RelativeFile = if ([string]::IsNullOrWhiteSpace($fullPath)) { '' } else { Get-RelativePath -BasePath $RepoRoot -TargetPath $fullPath }
+            Mutator      = $mutatorName
+            Replacement  = $replacement
+            StartLine    = $startLine
+            EndLine      = $endLine
+            StartColumn  = $startColumn
+            EndColumn    = $endColumn
+            Status       = $status
+            StatusReason = $statusReason
+            CoveredBy    = $coveredBy
+            KilledBy     = $killedBy
+            ReportId     = $reportId
+        }) | Out-Null
+    }
     }
 
     return $results.ToArray()
@@ -195,6 +205,13 @@ function Get-MutationReportSurvivors
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-RepoRoot -StartPath $scriptRoot
+
+$taskModulePath = Join-Path $scriptRoot 'TaskAutomation.psm1'
+if (-not (Test-Path -LiteralPath $taskModulePath -PathType Leaf)) {
+    throw "Shared task automation module not found at '$taskModulePath'."
+}
+
+Import-Module -Name $taskModulePath -Force
 
 if (-not $TasksPath) {
     $TasksPath = Join-Path $repoRoot '.scratchpad/testing/mutation-tasks.md'
@@ -219,6 +236,72 @@ function Resolve-TestProjectPath {
     return $null
 }
 
+function ConvertTo-MutationTaskItem {
+    param(
+        [Parameter(Mandatory)][psobject]$Survivor
+    )
+
+    $mutationKey = New-SurvivorKey -File $Survivor.File -Mutator $Survivor.Mutator -StartLine $Survivor.StartLine -EndLine $Survivor.EndLine -Replacement $Survivor.Replacement -StartColumn $Survivor.StartColumn -EndColumn $Survivor.EndColumn
+    $projectName = Resolve-ProjectNameFromFile -RelativeFile $Survivor.RelativeFile
+    $lineDisplay = if (($Survivor.StartColumn -ne 0) -or ($Survivor.EndColumn -ne 0)) {
+        '{0}:{1}..{2}:{3}' -f $Survivor.StartLine, $Survivor.StartColumn, $Survivor.EndLine, $Survivor.EndColumn
+    }
+    else {
+        '{0}..{1}' -f $Survivor.StartLine, $Survivor.EndLine
+    }
+
+    $titleBase = if ([string]::IsNullOrWhiteSpace($Survivor.RelativeFile)) {
+        'Kill surviving mutant'
+    }
+    else {
+        "Kill $($Survivor.Mutator) mutant in $($Survivor.RelativeFile)"
+    }
+
+    $title = '{0} ({1})' -f $titleBase, $lineDisplay
+
+    $tags = @('auto', 'mutation', 'mutation-survivor')
+    if ($Survivor.Mutator) { $tags += "mutator:$($Survivor.Mutator)" }
+    if ($projectName) { $tags += "project:$projectName" }
+
+    $relatedFiles = @()
+    if (-not [string]::IsNullOrWhiteSpace($Survivor.RelativeFile)) {
+        $relatedFiles += $Survivor.RelativeFile
+    }
+
+    $mutationDetails = [ordered]@{
+        score       = $Survivor.Score
+        rank        = $Survivor.Rank
+        mutator     = $Survivor.Mutator
+        file        = $Survivor.RelativeFile
+        startLine   = $Survivor.StartLine
+        endLine     = $Survivor.EndLine
+        startColumn = $Survivor.StartColumn
+        endColumn   = $Survivor.EndColumn
+        suggestion  = $Survivor.Suggestion
+        reportId    = $Survivor.ReportId
+    }
+
+    $notes = if ([string]::IsNullOrWhiteSpace($Survivor.Suggestion)) {
+        'Review surviving mutant and strengthen assertions.'
+    }
+    else {
+        "Suggestion: $($Survivor.Suggestion)"
+    }
+
+    $slugComponents = @()
+    if ($projectName) { $slugComponents += $projectName }
+    if ($Survivor.Mutator) { $slugComponents += $Survivor.Mutator }
+    if ($Survivor.RelativeFile) { $slugComponents += $Survivor.RelativeFile }
+    $slugComponents += "line-$($Survivor.StartLine)"
+
+    $additional = [ordered]@{
+        mutationKey = $mutationKey
+        mutation    = $mutationDetails
+    }
+
+    return New-TaskItem -Category 'mutation' -UniqueKey $mutationKey -KeyPropertyNames @('autoTaskKey','mutationKey') -Title $title -Priority 'P2' -Notes $notes -Tags $tags -RelatedFiles $relatedFiles -References @('.github/instructions/mutation-testing.instructions.md') -EffortPoints 2 -AdditionalProperties $additional -SlugComponents $slugComponents
+}
+
 function ConvertTo-SanitizedIdentifier {
     param([string]$Value)
     if ([string]::IsNullOrWhiteSpace($Value)) { return 'MutationCase' }
@@ -226,6 +309,7 @@ function ConvertTo-SanitizedIdentifier {
     if ($clean -match '^[0-9]') { $clean = '_' + $clean }
     return $clean
 }
+
 
 if ([string]::IsNullOrWhiteSpace($MutationScriptPath))
 {
@@ -406,6 +490,7 @@ foreach ($entry in $normalized) {
             RelativeFile      = $entry.RelativeFile
             ClassName         = $entry.ClassName
             Mutator           = $entry.Mutator
+        Replacement       = $entry.Replacement
             StartLine         = $entry.StartLine
             EndLine           = $entry.EndLine
             StartColumn       = $entry.StartColumn
@@ -649,6 +734,36 @@ if ($GenerateTasks) {
     $lines += 'Legend: Update Status to Done when killed, Deferred with justification if unkillable without code change.'
     Set-Content -Path $TasksPath -Value ($lines -join [Environment]::NewLine) -Encoding UTF8
     Write-Host "Tasks file generated: $TasksPath" -ForegroundColor Cyan
+}
+
+if ($focusSelection -and $focusSelection.Count -gt 0) {
+    $taskItems = @()
+    foreach ($survivor in $focusSelection) {
+        $taskItems += ConvertTo-MutationTaskItem -Survivor $survivor
+    }
+
+    if ($taskItems.Count -gt 0) {
+        $syncResults = Sync-AutoTasks -Tasks $taskItems -RepoRoot $repoRoot
+        foreach ($result in $syncResults) {
+            switch ($result.Status) {
+                'Created' {
+                    Write-Host "Created scratchpad task: $($result.FilePath)" -ForegroundColor Cyan
+                }
+                'Skipped' {
+                    Write-Host "Scratchpad task already exists for key '$($result.Task.UniqueKey)'; skipping." -ForegroundColor DarkGray
+                }
+                Default {
+                    Write-Host "Task $($result.Task.UniqueKey) status $($result.Status)" -ForegroundColor DarkGray
+                }
+            }
+        }
+    }
+    else {
+        Write-Host 'No mutation survivors to create scratchpad tasks for.' -ForegroundColor DarkGray
+    }
+}
+else {
+    Write-Host 'No mutation survivors to create scratchpad tasks for.' -ForegroundColor DarkGray
 }
 
 # --- Test skeleton generation (Phase 2) ----------------------------------------------------

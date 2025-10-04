@@ -172,7 +172,7 @@ Author
 - [ ] For UI/API journeys, added Playwright tests at L3 (or L2 API flows) where valuable
 - [ ] Coverage meets goals (target 100%, minimum 80%; aim 95–100%); no regressions on touched code
 - [ ] Mutation score maintained or improved; surviving mutants addressed or justified
-- [ ] If notable gaps remain (coverage or mutation), create `.scratchpad/tasks/pending` items with priority and scope for parallel agent pickup (see Agent Scratchpad)
+- [ ] If notable gaps remain (e.g., coverage), rerun `summarize-coverage-gaps.ps1` to sync pending tasks automatically (see Agent Scratchpad). Mutation survivors already generate per-mutant tasks via `summarize-mutation-survivors.ps1`; verify they exist by rerunning the script instead of creating them manually.
 
 Reviewer
 
@@ -181,7 +181,7 @@ Reviewer
 - [ ] Tests follow naming, async, and DI seam patterns
 - [ ] Coverage target met (≥80%, aiming for 95–100%) with no regressions on touched files
 - [ ] Mutation score non-regression; surviving mutants handled appropriately
-- [ ] For remaining gaps, confirm a scratchpad task exists for follow-up where appropriate
+- [ ] For remaining gaps, confirm a scratchpad task exists for follow-up where appropriate (coverage and mutation gaps should already be mirrored automatically by their summarizer scripts)
 - [ ] Playwright usage is resilient and artifacts are captured on failure
 
 ## Non-Goals and Clarifications

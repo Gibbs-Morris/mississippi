@@ -51,7 +51,7 @@ pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProj
 
 - Do not edit anything outside of the `tests/` folder during this workflow unless explicitly approved. Assume production code is correct until tests demonstrate a defect. If you believe production changes are required, pause and request confirmation first.
 
-- For gaps that require parallel attention (coverage hot spots, mutation survivors), create small, discrete tasks in `.scratchpad/tasks/pending` so agents can claim and close them deterministically (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; never reference it from source or tests.
+- For coverage hot spots or other follow-ups that require parallel attention, rerun `summarize-coverage-gaps.ps1` to sync tasks into `.scratchpad/tasks/pending` automatically. Mutation survivors are mirrored the same way by `summarize-mutation-survivors.ps1`. Only create manual scratchpad tasks for gaps not covered by these scripts (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; never reference it from source or tests.
 
 ## 🚨 CRITICAL RULE: ZERO WARNINGS IN TESTS 🚨
 
