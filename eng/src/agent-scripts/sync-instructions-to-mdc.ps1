@@ -21,23 +21,12 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Resolve-RepoRoot {
-    param([Parameter(Mandatory)][string]$StartPath)
+$modulePath = Join-Path $PSScriptRoot 'RepositoryAutomation.psm1'
+Import-Module -Name $modulePath -Force
 
-    $current = (Resolve-Path -LiteralPath $StartPath).Path
-    while ($true) {
-        if (Test-Path -LiteralPath (Join-Path $current '.git')) { return $current }
-        $parent = Split-Path -Parent $current
-        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
-            break
-        }
-        $current = $parent
-    }
 
-    throw "Unable to locate repository root from $StartPath"
-}
 
-$repoRoot = Resolve-RepoRoot -StartPath $PSScriptRoot
+$repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 
 # Resolve directories
 if (-not $InstructionsDir) { $InstructionsDir = (Join-Path $repoRoot '.github/instructions') }
@@ -207,3 +196,5 @@ foreach ($file in $instructionFiles) {
 $expected = $instructionFiles.Count
 Write-Host ""; Write-Host ("Summary: created={0}, errors={1}, instructions={2}" -f $created, $errors, $expected) -ForegroundColor Yellow
 if ($errors -gt 0) { exit 1 } else { exit 0 }
+
+

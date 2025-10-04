@@ -2,14 +2,14 @@
 
 <#
 .SYNOPSIS
-    Performs a fast, strict build of both solutions by invoking scripts\final-build-solutions.ps1.
+    Performs a fast, strict build of both solutions by invoking eng\\src\\agent-scripts\\final-build-solutions.ps1.
 #>
 
 # Determine the script directory (repo root)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Build the path to the final-build script
-$finalBuildScript = Join-Path $scriptDir 'scripts\final-build-solutions.ps1'
+$finalBuildScript = Join-Path $scriptDir 'eng\\src\\agent-scripts\\final-build-solutions.ps1'
 
 Write-Host "=== QUICK BUILD MODE ===" -ForegroundColor Yellow
 Write-Host "Fast build with warnings as errors (bypasses tests and cleanup)"
@@ -28,3 +28,4 @@ try {
     Write-Error "=== QUICK BUILD FAILED ===: $_"
     exit 1
 }
+

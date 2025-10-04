@@ -2,23 +2,13 @@
 
 $ErrorActionPreference = 'Stop'
 
-function Resolve-RepoRoot {
-    param([Parameter(Mandatory)][string]$StartPath)
+$automationModulePath = Join-Path $PSScriptRoot '..\..\src\agent-scripts\RepositoryAutomation.psm1'
+$automationModulePath = [System.IO.Path]::GetFullPath($automationModulePath)
+Import-Module -Name $automationModulePath -Force
 
-    $current = (Resolve-Path -LiteralPath $StartPath).Path
-    while ($true) {
-        if (Test-Path -LiteralPath (Join-Path $current '.git')) { return $current }
-        $parent = Split-Path -Parent $current
-        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
-            break
-        }
-        $current = $parent
-    }
 
-    throw "Unable to locate repository root from $StartPath"
-}
 
-$repoRoot = Resolve-RepoRoot -StartPath $PSScriptRoot
+$repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $scriptsRoot = Join-Path $repoRoot 'eng/src/agent-scripts/tasks'
 $newScript = Join-Path $scriptsRoot 'new-scratchpad-task.ps1'
 $listScript = Join-Path $scriptsRoot 'list-scratchpad-tasks.ps1'
@@ -152,6 +142,7 @@ Describe 'Scratchpad task scripts' {
         $json.reason | Should Be 'Needs API schema'
     }
 }
+
 
 
 

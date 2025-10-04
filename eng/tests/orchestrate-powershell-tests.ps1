@@ -86,6 +86,19 @@ Write-Host '=== PowerShell Test Summary ===' -ForegroundColor White
 $table = $results | Select-Object Name, Type, Status, Failed
 $table | Format-Table -AutoSize | Out-String | Write-Host
 
+Write-Host ''
+if ($failureCount -gt 0) {
+    Write-Host 'RESULT: FAIL' -ForegroundColor Red
+    $failedSuites = $results | Where-Object { $_.Status -eq 'Failed' } | Select-Object -ExpandProperty Name
+    if ($failedSuites -and $failedSuites.Count -gt 0) {
+        Write-Host ("Failed suites: {0}" -f ($failedSuites -join ', ')) -ForegroundColor Red
+    }
+}
+else {
+    Write-Host 'RESULT: SUCCESS' -ForegroundColor Green
+    Write-Host 'All PowerShell test suites passed.' -ForegroundColor Green
+}
+
 if ($PassThru) { return $results }
 
 if ($failureCount -gt 0) { exit 1 } else { exit 0 }

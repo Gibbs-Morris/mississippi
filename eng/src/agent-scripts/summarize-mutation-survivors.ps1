@@ -16,21 +16,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-function Resolve-RepoRoot {
-    param([Parameter(Mandatory)][string]$StartPath)
+$modulePath = Join-Path $PSScriptRoot 'RepositoryAutomation.psm1'
+Import-Module -Name $modulePath -Force
 
-    $current = (Resolve-Path -LiteralPath $StartPath).Path
-    while ($true) {
-        if (Test-Path -LiteralPath (Join-Path $current '.git')) { return $current }
-        $parent = Split-Path -Parent $current
-        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
-            break
-        }
-        $current = $parent
-    }
 
-    throw "Unable to locate repository root from $StartPath"
-}
 
 function Get-RelativePath
 {
@@ -204,7 +193,7 @@ function Get-MutationReportSurvivors
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Resolve-RepoRoot -StartPath $scriptRoot
+$repoRoot = Get-RepositoryRoot -StartPath $scriptRoot
 
 $taskModulePath = Join-Path $scriptRoot 'TaskAutomation.psm1'
 if (-not (Test-Path -LiteralPath $taskModulePath -PathType Leaf)) {
@@ -840,3 +829,5 @@ Write-Host "- Markdown: $summaryMarkdownPath" -ForegroundColor Gray
 Write-Host "Total survivors: $totalCount" -ForegroundColor Cyan
 
 return 0
+
+

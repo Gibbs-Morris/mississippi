@@ -1,24 +1,11 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Resolve-RepoRoot {
-    param([Parameter(Mandatory)][string]$StartPath)
-
-    $current = (Resolve-Path -LiteralPath $StartPath).Path
-    while ($true) {
-        if (Test-Path -LiteralPath (Join-Path $current '.git')) { return $current }
-        $parent = Split-Path -Parent $current
-        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
-            break
-        }
-        $current = $parent
-    }
-
-    throw "Unable to locate repository root from $StartPath"
-}
+$automationModulePath = Join-Path (Split-Path -Parent $PSScriptRoot) 'RepositoryAutomation.psm1'
+Import-Module -Name $automationModulePath -Force
 
 $script:ScriptsRoot = Split-Path -Parent $PSScriptRoot
-$script:RepoRoot = Resolve-RepoRoot -StartPath $script:ScriptsRoot
+$script:RepoRoot = Get-RepositoryRoot -StartPath $script:ScriptsRoot
 
 function Resolve-ScratchpadRoot {
     param([string]$ScratchpadRoot)
@@ -172,6 +159,7 @@ function ConvertTo-ScratchpadTaskRecord {
 }
 
 Export-ModuleMember -Function Resolve-ScratchpadRoot, Get-ScratchpadPaths, Initialize-ScratchpadLayout, New-ScratchpadTaskFileName, Read-ScratchpadTask, Write-ScratchpadTask, Find-ScratchpadTaskById, ConvertTo-ScratchpadTaskRecord, Get-ScratchpadTaskStatusFromPath
+
 
 
 

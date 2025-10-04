@@ -2,23 +2,13 @@
 
 $ErrorActionPreference = 'Stop'
 
-function Resolve-RepoRoot {
-    param([Parameter(Mandatory)][string]$StartPath)
+$automationModulePath = Join-Path $PSScriptRoot '..\..\src\agent-scripts\RepositoryAutomation.psm1'
+$automationModulePath = [System.IO.Path]::GetFullPath($automationModulePath)
+Import-Module -Name $automationModulePath -Force
 
-    $current = (Resolve-Path -LiteralPath $StartPath).Path
-    while ($true) {
-        if (Test-Path -LiteralPath (Join-Path $current '.git')) { return $current }
-        $parent = Split-Path -Parent $current
-        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
-            break
-        }
-        $current = $parent
-    }
 
-    throw "Unable to locate repository root from $StartPath"
-}
 
-$repoRoot = Resolve-RepoRoot -StartPath $PSScriptRoot
+$repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $modulePath = Join-Path $repoRoot 'eng/src/agent-scripts/TaskAutomation.psm1'
 if (-not (Test-Path -LiteralPath $modulePath -PathType Leaf)) {
     throw "TaskAutomation module not found at '$modulePath'"
@@ -98,3 +88,4 @@ Describe 'TaskAutomation module' {
     { Sync-AutoTasks -Tasks @() -RepoRoot (Join-Path $TestDrive 'repo-empty') } | Should Not Throw
     }
 }
+
