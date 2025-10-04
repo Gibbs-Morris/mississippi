@@ -99,7 +99,7 @@ This document defines [brief purpose statement]. All [audience] must follow thes
 - [Second most common command or action]
 - [Third most common command or action]
 
-> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+> **Drift check:** Before running any script referenced here, open the script in your repository's script directory (e.g., `scripts/`, `eng/src/agent-scripts/`, `tools/`, etc.) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
 ## Core Principles
 
@@ -234,12 +234,12 @@ Use only commands, scripts, and tools that exist in this repository. Never use p
 
 **Good:**
 ```powershell
-pwsh ./scripts/build-solution.ps1
+pwsh ./eng/src/agent-scripts/build-solution.ps1
 ```
 
 **Bad:**
 ```powershell
-pwsh ./scripts/build-all.ps1  # (if this script doesn't exist)
+pwsh ./eng/src/agent-scripts/build-all.ps1  # (if this script doesn't exist)
 ```
 
 **Why:** Readers copy-paste examples directly. Fictional examples break trust and waste time when they fail.
@@ -252,7 +252,7 @@ When commands differ by OS, provide both PowerShell and Bash examples.
 ```markdown
 **PowerShell:**
 ```powershell
-pwsh ./scripts/build.ps1
+pwsh ./eng/src/agent-scripts/build.ps1
 ```
 ```
 
@@ -264,7 +264,7 @@ For commands with significant output, show what success looks like.
 
 **Example:**
 ```powershell
-pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
 ```
 
 **Expected output:**
@@ -324,13 +324,13 @@ pip install -r requirements.txt
 
 ### Key Scripts for Instruction Authors
 
-Create a table documenting scripts that are frequently referenced in instruction files:
+Create a table documenting scripts that are frequently referenced in instruction files. Adjust paths to match your repository structure (e.g., `scripts/`, `eng/src/agent-scripts/`, `tools/`, etc.):
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| `build.sh` | Build the project | `./scripts/build.sh` |
-| `test.sh` | Run all tests | `./scripts/test.sh` |
-| `lint.sh` | Run linters and code quality checks | `./scripts/lint.sh` |
+| `build.sh` | Build the project | `./eng/src/agent-scripts/build.sh` |
+| `test.sh` | Run all tests | `./eng/src/agent-scripts/test.sh` |
+| `lint.sh` | Run linters and code quality checks | `./eng/src/agent-scripts/lint.sh` |
 
 **Why:** Documenting scripts here provides a quick reference for instruction authors and ensures consistency across instruction files.
 
@@ -354,8 +354,8 @@ Document how to run local quality checks before committing. Examples:
 # If using markdownlint:
 npx markdownlint-cli2 "**/*.md"
 
-# If using another linter:
-./scripts/lint-markdown.sh
+# If using another linter (adjust path to your repository structure):
+./eng/src/agent-scripts/lint-markdown.sh
 ```
 
 **Expected success:**
@@ -579,6 +579,20 @@ Define repository-specific terms here as your instruction file collection grows.
 **Why lines:** Brief explanations following significant rules that explain the rationale, helping readers understand the reasoning behind practices.
 
 Add additional terms specific to your repository, technology stack, and development practices as needed.
+
+---
+
+## Note for AI Agents
+
+This instruction file is intentionally generic to support multiple repositories. When using this guide:
+
+- **Consult your repository's actual structure** for authoritative file and folder locations
+- **Follow existing patterns** in other instruction files already present in your repository
+- **Adapt paths and examples** to match your repository's conventions (e.g., `scripts/`, `eng/src/agent-scripts/`, `tools/`, etc.)
+- **Reference actual commands** from your repository's automation scripts, build systems, and tooling
+- **Align with other instruction files** to maintain consistency within the repository
+
+The guidance in this file provides a foundation, but the specific implementation details should always match the repository where it's being used.
 
 ---
 
