@@ -65,8 +65,10 @@ public class BrookStorageProviderHelpersTests
         public Task<BrookPosition> ReadHeadPositionAsync(
             BrookKey brookId,
             CancellationToken cancellationToken = default
-        ) =>
-            Task.FromResult(new BrookPosition(0));
+        )
+        {
+            return Task.FromResult(new BrookPosition(0));
+        }
 
         public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
             BrookRangeKey brookRange,
@@ -82,8 +84,10 @@ public class BrookStorageProviderHelpersTests
             IReadOnlyList<BrookEvent> events,
             BrookPosition? expectedVersion = null,
             CancellationToken cancellationToken = default
-        ) =>
-            Task.FromResult(new BrookPosition(events.Count));
+        )
+        {
+            return Task.FromResult(new BrookPosition(events.Count));
+        }
     }
 
     private sealed class FakeOptions

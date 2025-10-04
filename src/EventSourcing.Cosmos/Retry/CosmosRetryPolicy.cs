@@ -16,8 +16,10 @@ internal class CosmosRetryPolicy : IRetryPolicy
     /// <param name="maxRetries">The maximum number of retry attempts.</param>
     public CosmosRetryPolicy(
         int maxRetries = 3
-    ) =>
+    )
+    {
         MaxRetries = maxRetries;
+    }
 
     private int MaxRetries { get; }
 
@@ -83,12 +85,14 @@ internal class CosmosRetryPolicy : IRetryPolicy
 
     private static bool IsTransientCosmosStatus(
         HttpStatusCode? statusCode
-    ) =>
-        (statusCode == HttpStatusCode.TooManyRequests) ||
-        (statusCode == HttpStatusCode.ServiceUnavailable) ||
-        (statusCode == HttpStatusCode.RequestTimeout) ||
-        (statusCode == HttpStatusCode.InternalServerError) ||
-        (statusCode == HttpStatusCode.GatewayTimeout);
+    )
+    {
+        return (statusCode == HttpStatusCode.TooManyRequests) ||
+               (statusCode == HttpStatusCode.ServiceUnavailable) ||
+               (statusCode == HttpStatusCode.RequestTimeout) ||
+               (statusCode == HttpStatusCode.InternalServerError) ||
+               (statusCode == HttpStatusCode.GatewayTimeout);
+    }
 
     private static TimeSpan ComputeDelay(
         CosmosException ex,

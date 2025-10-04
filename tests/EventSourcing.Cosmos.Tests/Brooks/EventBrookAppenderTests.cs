@@ -823,8 +823,10 @@ public class EventBrookAppenderTests
     {
         public HugeReadOnlyList(
             int countOverride
-        ) =>
+        )
+        {
             Count = countOverride;
+        }
 
         public BrookEvent this[
             int index
@@ -833,8 +835,14 @@ public class EventBrookAppenderTests
 
         public int Count { get; }
 
-        public IEnumerator<BrookEvent> GetEnumerator() => throw new NotSupportedException();
+        public IEnumerator<BrookEvent> GetEnumerator()
+        {
+            throw new NotSupportedException();
+        }
 
-        IEnumerator IEnumerable.GetEnumerator() => throw new NotSupportedException();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            throw new NotSupportedException();
+        }
     }
 }

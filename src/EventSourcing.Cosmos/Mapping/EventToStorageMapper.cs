@@ -17,8 +17,9 @@ internal class EventToStorageMapper : IMapper<BrookEvent, EventStorageModel>
     /// <returns>The mapped event storage model.</returns>
     public EventStorageModel Map(
         BrookEvent input
-    ) =>
-        new()
+    )
+    {
+        return new()
         {
             EventId = input.Id ?? string.Empty,
             Source = input.Source,
@@ -27,4 +28,5 @@ internal class EventToStorageMapper : IMapper<BrookEvent, EventStorageModel>
             Data = input.Data.ToArray(),
             Time = input.Time ?? DateTimeOffset.UtcNow,
         };
+    }
 }

@@ -58,8 +58,10 @@ internal class BrookStorageProvider : IBrookStorageProvider
     public async Task<BrookPosition> ReadHeadPositionAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
-    ) =>
-        await RecoveryService.GetOrRecoverHeadPositionAsync(brookId, cancellationToken);
+    )
+    {
+        return await RecoveryService.GetOrRecoverHeadPositionAsync(brookId, cancellationToken);
+    }
 
     /// <summary>
     ///     Reads events from the specified brook range asynchronously.

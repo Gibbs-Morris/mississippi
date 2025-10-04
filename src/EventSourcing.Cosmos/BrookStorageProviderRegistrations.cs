@@ -212,7 +212,9 @@ public static class BrookStorageProviderRegistrations
 
         public Task StopAsync(
             CancellationToken cancellationToken
-        ) =>
-            Task.CompletedTask;
+        )
+        {
+            return Task.CompletedTask;
+        }
     }
 }

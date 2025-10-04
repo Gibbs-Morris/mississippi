@@ -1,2 +1,63 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Top-most EditorConfig file
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Solution files use CRLF to match Visual Studio
+[*.sln]
+end_of_line = crlf
+
+# XML-based project files
+[*.{csproj,props,targets,config}]
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# PowerShell scripts
+[*.ps1]
+indent_size = 4
+
+# Shell scripts
+[*.sh]
+indent_size = 2
+
+# C# files
 [*.cs]
 dotnet_analyzer_diagnostic.severity = warning
+indent_size = 4
+
+# C# formatting rules
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# Code style rules
+csharp_prefer_braces = true:warning
+csharp_using_directive_placement = outside_namespace:warning
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_prefer_method_group_conversion = true:suggestion
+csharp_style_expression_bodied_methods = false:none
+csharp_style_expression_bodied_constructors = false:none
+csharp_style_expression_bodied_operators = false:none
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_indexers = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion

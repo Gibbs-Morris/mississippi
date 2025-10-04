@@ -1,0 +1,35 @@
+# Git attributes for consistent line endings across Windows and Linux
+# This ensures ReSharper cleanup produces identical results regardless of platform
+
+# Default behavior: auto-detect text files and normalize to LF in repository
+*           text=auto
+
+# Explicitly declare text files with LF in repository
+*.cs        text eol=lf
+*.csproj    text eol=lf
+*.slnx      text eol=lf
+*.props     text eol=lf
+*.targets   text eol=lf
+*.config    text eol=lf
+*.json      text eol=lf
+*.xml       text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.md        text eol=lf
+*.txt       text eol=lf
+*.sh        text eol=lf
+*.ps1       text eol=lf
+
+# Solution files: CRLF to match Visual Studio expectations
+*.sln       text eol=crlf
+
+# Binary files
+*.dll       binary
+*.exe       binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.nupkg     binary
+*.snk       binary

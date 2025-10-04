@@ -257,7 +257,9 @@ public class BrookRecoveryServiceTests
         public async Task<T> ExecuteAsync<T>(
             Func<Task<T>> operation,
             CancellationToken cancellationToken = default
-        ) =>
-            await operation().ConfigureAwait(false);
+        )
+        {
+            return await operation().ConfigureAwait(false);
+        }
     }
 }

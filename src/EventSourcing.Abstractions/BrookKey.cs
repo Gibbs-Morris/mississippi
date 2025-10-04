@@ -56,8 +56,10 @@ public readonly record struct BrookKey
     /// <returns>A string representation of the brook key in the format "type|id".</returns>
     public static implicit operator string(
         BrookKey key
-    ) =>
-        $"{key.Type}{Separator}{key.Id}";
+    )
+    {
+        return $"{key.Type}{Separator}{key.Id}";
+    }
 
     /// <summary>
     ///     Implicitly converts a string to a <see cref="BrookKey" />.
@@ -68,8 +70,10 @@ public readonly record struct BrookKey
     /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
     public static implicit operator BrookKey(
         string value
-    ) =>
-        FromString(value);
+    )
+    {
+        return FromString(value);
+    }
 
     /// <summary>
     ///     Converts a brook key to its string representation.
@@ -78,8 +82,10 @@ public readonly record struct BrookKey
     /// <returns>A string representation of the brook key in the format "type|id".</returns>
     public static string FromBrookKey(
         BrookKey key
-    ) =>
-        key;
+    )
+    {
+        return key;
+    }
 
     /// <summary>
     ///     Creates a brook key from its string representation.
@@ -108,7 +114,10 @@ public readonly record struct BrookKey
     ///     Returns the string representation of this brook key.
     /// </summary>
     /// <returns>A string representation of the brook key in the format "type|id".</returns>
-    public override string ToString() => this;
+    public override string ToString()
+    {
+        return this;
+    }
 
     private static void ValidateComponent(
         string value,

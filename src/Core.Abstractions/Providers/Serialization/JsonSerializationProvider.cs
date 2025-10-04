@@ -22,8 +22,10 @@ public class JsonSerializationProvider : ISerializationProvider
     /// <exception cref="InvalidOperationException">Thrown when deserialization results in null.</exception>
     public T Read<T>(
         ReadOnlyMemory<byte> payload
-    ) =>
-        JsonSerializer.Deserialize<T>(payload.Span) ?? throw new InvalidOperationException();
+    )
+    {
+        return JsonSerializer.Deserialize<T>(payload.Span) ?? throw new InvalidOperationException();
+    }
 
     /// <summary>
     ///     Asynchronously deserializes an object from a stream.
@@ -50,8 +52,10 @@ public class JsonSerializationProvider : ISerializationProvider
     /// <returns>A byte array containing the serialized data.</returns>
     public ReadOnlyMemory<byte> Write<T>(
         T value
-    ) =>
-        JsonSerializer.SerializeToUtf8Bytes(value);
+    )
+    {
+        return JsonSerializer.SerializeToUtf8Bytes(value);
+    }
 
     /// <summary>
     ///     Asynchronously serializes an object to a stream.

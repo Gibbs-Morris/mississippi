@@ -16,8 +16,9 @@ internal class EventDocumentToStorageMapper : IMapper<EventDocument, EventStorag
     /// <returns>The mapped event storage model.</returns>
     public EventStorageModel Map(
         EventDocument input
-    ) =>
-        new()
+    )
+    {
+        return new()
         {
             EventId = input.EventId,
             Source = input.Source,
@@ -26,4 +27,5 @@ internal class EventDocumentToStorageMapper : IMapper<EventDocument, EventStorag
             Data = input.Data,
             Time = input.Time,
         };
+    }
 }

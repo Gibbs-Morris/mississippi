@@ -29,5 +29,8 @@ internal sealed class ClusterFixture : IDisposable
     public TestCluster Cluster { get; }
 
     /// <inheritdoc />
-    public void Dispose() => Cluster.StopAllSilos();
+    public void Dispose()
+    {
+        Cluster.StopAllSilos();
+    }
 }

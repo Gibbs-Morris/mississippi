@@ -72,7 +72,9 @@ public class MappingRegistrationsTests
         /// <returns>The string representation of the integer.</returns>
         public string Map(
             int source
-        ) =>
-            source.ToString(CultureInfo.InvariantCulture);
+        )
+        {
+            return source.ToString(CultureInfo.InvariantCulture);
+        }
     }
 }

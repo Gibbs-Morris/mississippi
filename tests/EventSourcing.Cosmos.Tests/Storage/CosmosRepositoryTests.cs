@@ -689,8 +689,10 @@ public class CosmosRepositoryTests
         public Task<T> ExecuteAsync<T>(
             Func<Task<T>> operation,
             CancellationToken cancellationToken = default
-        ) =>
-            operation();
+        )
+        {
+            return operation();
+        }
     }
 
     /// <summary>
@@ -705,8 +707,10 @@ public class CosmosRepositoryTests
 
         public FakeFeedIterator(
             IEnumerable<List<T>> pages
-        ) =>
+        )
+        {
             this.pages = new(pages);
+        }
 
         public override bool HasMoreResults => pages.Count > 0;
 

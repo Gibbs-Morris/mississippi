@@ -93,8 +93,10 @@ public readonly record struct BrookRangeKey
     /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
     public static implicit operator string(
         BrookRangeKey key
-    ) =>
-        $"{key.Type}{Separator}{key.Id}{Separator}{key.Start.Value}{Separator}{key.Count}";
+    )
+    {
+        return $"{key.Type}{Separator}{key.Id}{Separator}{key.Start.Value}{Separator}{key.Count}";
+    }
 
     /// <summary>
     ///     Implicitly converts a string to a <see cref="BrookRangeKey" />.
@@ -105,8 +107,10 @@ public readonly record struct BrookRangeKey
     /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
     public static implicit operator BrookRangeKey(
         string value
-    ) =>
-        FromString(value);
+    )
+    {
+        return FromString(value);
+    }
 
     /// <summary>
     ///     Converts a brook range key to its string representation.
@@ -115,8 +119,10 @@ public readonly record struct BrookRangeKey
     /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
     public static string FromBrookRangeKey(
         BrookRangeKey key
-    ) =>
-        key;
+    )
+    {
+        return key;
+    }
 
     /// <summary>
     ///     Creates a brook range key from a brook key and range parameters.
@@ -129,20 +135,28 @@ public readonly record struct BrookRangeKey
         BrookKey key,
         long start,
         long count
-    ) =>
-        new(key.Type, key.Id, start, count);
+    )
+    {
+        return new(key.Type, key.Id, start, count);
+    }
 
     /// <summary>
     ///     Converts this brook range key to a brook key containing only the type and id components.
     /// </summary>
     /// <returns>A brook key with the type and id from this range key.</returns>
-    public BrookKey ToBrookCompositeKey() => new(Type, Id);
+    public BrookKey ToBrookCompositeKey()
+    {
+        return new(Type, Id);
+    }
 
     /// <summary>
     ///     Returns the string representation of this brook range key.
     /// </summary>
     /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
-    public override string ToString() => this;
+    public override string ToString()
+    {
+        return this;
+    }
 
     /// <summary>
     ///     Creates a brook range key from its string representation.

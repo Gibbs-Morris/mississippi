@@ -418,8 +418,9 @@ public class BatchSizeEstimatorTests
 
     private static BrookEvent Clone(
         BrookEvent source
-    ) =>
-        new()
+    )
+    {
+        return new()
         {
             Id = source.Id,
             Source = source.Source,
@@ -428,6 +429,7 @@ public class BatchSizeEstimatorTests
             Data = source.Data,
             Time = source.Time,
         };
+    }
 
     private static ImmutableArray<byte> CreatePayload(
         int length,

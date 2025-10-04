@@ -82,6 +82,8 @@ internal sealed class InMemoryBrookStorage
     public void SetHead(
         BrookKey brookId,
         long position
-    ) =>
+    )
+    {
         heads[(string)brookId] = position;
+    }
 }

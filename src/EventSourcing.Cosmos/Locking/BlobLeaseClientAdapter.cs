@@ -19,8 +19,10 @@ internal sealed class BlobLeaseClientAdapter : IBlobLeaseClient
     /// <param name="inner">The underlying <see cref="BlobLeaseClient" /> instance to delegate to.</param>
     public BlobLeaseClientAdapter(
         BlobLeaseClient inner
-    ) =>
+    )
+    {
         this.inner = inner;
+    }
 
     /// <inheritdoc />
     public string LeaseId => inner.LeaseId;
@@ -30,20 +32,26 @@ internal sealed class BlobLeaseClientAdapter : IBlobLeaseClient
         TimeSpan duration,
         RequestConditions? conditions = null,
         CancellationToken cancellationToken = default
-    ) =>
-        inner.AcquireAsync(duration, conditions, cancellationToken);
+    )
+    {
+        return inner.AcquireAsync(duration, conditions, cancellationToken);
+    }
 
     /// <inheritdoc />
     public Task<Response<BlobLease>> RenewAsync(
         RequestConditions? conditions = null,
         CancellationToken cancellationToken = default
-    ) =>
-        inner.RenewAsync(conditions, cancellationToken);
+    )
+    {
+        return inner.RenewAsync(conditions, cancellationToken);
+    }
 
     /// <inheritdoc />
     public Task<Response<ReleasedObjectInfo>> ReleaseAsync(
         RequestConditions? conditions = null,
         CancellationToken cancellationToken = default
-    ) =>
-        inner.ReleaseAsync(conditions, cancellationToken);
+    )
+    {
+        return inner.ReleaseAsync(conditions, cancellationToken);
+    }
 }

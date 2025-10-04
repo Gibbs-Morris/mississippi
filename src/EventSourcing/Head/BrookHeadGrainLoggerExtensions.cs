@@ -23,6 +23,8 @@ internal static class BrookHeadGrainLoggerExtensions
         this ILogger<BrookHeadGrain> logger,
         string primaryKey,
         Exception? exception
-    ) =>
+    )
+    {
         InvalidPrimaryKeyMessage(logger, primaryKey, exception);
+    }
 }

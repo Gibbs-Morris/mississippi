@@ -17,10 +17,12 @@ internal class HeadDocumentToStorageMapper : IMapper<HeadDocument, HeadStorageMo
     /// <returns>The mapped head storage model.</returns>
     public HeadStorageModel Map(
         HeadDocument input
-    ) =>
-        new()
+    )
+    {
+        return new()
         {
             Position = new(input.Position),
             OriginalPosition = input.OriginalPosition.HasValue ? new BrookPosition(input.OriginalPosition.Value) : null,
         };
+    }
 }

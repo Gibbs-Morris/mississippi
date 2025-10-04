@@ -17,6 +17,8 @@ public class StreamIdFactory : IStreamIdFactory
     /// <returns>An Orleans <see cref="StreamId" /> for the brook head update stream.</returns>
     public StreamId Create(
         BrookKey brookKey
-    ) =>
-        StreamId.Create(EventSourcingOrleansStreamNames.HeadUpdateStreamName, brookKey);
+    )
+    {
+        return StreamId.Create(EventSourcingOrleansStreamNames.HeadUpdateStreamName, brookKey);
+    }
 }

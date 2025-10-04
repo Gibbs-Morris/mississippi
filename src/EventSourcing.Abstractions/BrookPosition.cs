@@ -29,7 +29,10 @@ public readonly record struct BrookPosition
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookPosition" /> struct with the default value (-1).
     /// </summary>
-    public BrookPosition() => Value = -1;
+    public BrookPosition()
+    {
+        Value = -1;
+    }
 
     /// <summary>
     ///     Gets the raw position value. A value of -1 indicates not set.
@@ -52,8 +55,10 @@ public readonly record struct BrookPosition
     /// <returns>The new <see cref="BrookPosition" /> instance.</returns>
     public static implicit operator BrookPosition(
         long value
-    ) =>
-        new(value);
+    )
+    {
+        return new(value);
+    }
 
     /// <summary>
     ///     Converts the <see cref="BrookPosition" /> to a <see cref="long" />.
@@ -62,8 +67,10 @@ public readonly record struct BrookPosition
     /// <returns>The raw <see cref="long" /> value.</returns>
     public static implicit operator long(
         BrookPosition position
-    ) =>
-        position.Value;
+    )
+    {
+        return position.Value;
+    }
 
     /// <summary>
     ///     Creates a <see cref="BrookPosition" /> from a <see cref="long" /> value.
@@ -72,8 +79,10 @@ public readonly record struct BrookPosition
     /// <returns>A new <see cref="BrookPosition" /> instance.</returns>
     public static BrookPosition FromLong(
         long value
-    ) =>
-        new(value);
+    )
+    {
+        return new(value);
+    }
 
     /// <summary>
     ///     Creates a <see cref="BrookPosition" /> from an <see cref="long" /> value.
@@ -83,21 +92,29 @@ public readonly record struct BrookPosition
     /// <returns>A new <see cref="BrookPosition" /> instance.</returns>
     public static BrookPosition FromInt64(
         long value
-    ) =>
-        new(value);
+    )
+    {
+        return new(value);
+    }
 
     /// <summary>
     ///     Converts this <see cref="BrookPosition" /> to a <see cref="long" />.
     /// </summary>
     /// <returns>The raw <see cref="long" /> value.</returns>
-    public long ToLong() => Value;
+    public long ToLong()
+    {
+        return Value;
+    }
 
     /// <summary>
     ///     Converts this <see cref="BrookPosition" /> to an <see cref="long" />.
     ///     Alternative method name for CA2225 compliance.
     /// </summary>
     /// <returns>The raw <see cref="long" /> value.</returns>
-    public long ToInt64() => Value;
+    public long ToInt64()
+    {
+        return Value;
+    }
 
     /// <summary>
     ///     Determines whether this brook position is newer than another.
@@ -108,6 +125,8 @@ public readonly record struct BrookPosition
     /// </returns>
     public bool IsNewerThan(
         BrookPosition other
-    ) =>
-        Value > other.Value;
+    )
+    {
+        return Value > other.Value;
+    }
 }

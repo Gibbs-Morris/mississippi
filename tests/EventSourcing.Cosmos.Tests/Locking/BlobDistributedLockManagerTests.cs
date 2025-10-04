@@ -67,7 +67,8 @@ public sealed class BlobDistributedLockManagerTests
     }
 
     /// <summary>
-    ///     Ensures the manager does not perform extra retries once the first acquire succeeds (kills statement-mutation removing the loop break).
+    ///     Ensures the manager does not perform extra retries once the first acquire succeeds (kills statement-mutation
+    ///     removing the loop break).
     /// </summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Fact]
