@@ -61,7 +61,7 @@ pwsh ./eng/cleanup.ps1
 pwsh ./eng/cleanup.ps1 -Check
 ```
 
-This ensures code style consistency across Windows and Linux platforms. See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+This ensures code style consistency across Windows and Linux platforms.
 
 ## Testing
 The framework includes comprehensive testing:

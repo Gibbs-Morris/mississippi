@@ -162,7 +162,6 @@ The CI workflow now:
 - Single cleanup command works identically everywhere
 - Clear error messages when formatting is needed
 - No more "cleanup ping-pong" with CI
-- Documented workflow in CONTRIBUTING.md
 
 ### For CI/CD
 - Deterministic, reproducible formatting checks
@@ -190,7 +189,6 @@ The CI workflow now:
 - `.gitattributes` - Line ending enforcement
 - `.editorconfig` - Editor formatting rules
 - `.github/workflows/cleanup.yml` - CI cleanup check
-- `CONTRIBUTING.md` - Developer guidelines
 - `README.md` - Quick reference
 
 ## Future Improvements
