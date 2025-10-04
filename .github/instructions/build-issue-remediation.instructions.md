@@ -12,7 +12,7 @@ This guide helps agents eliminate .NET build issues (errors, analyzer/StyleCop w
 
 ```powershell
 pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
-pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
+pwsh ./clean-up.ps1
 ```
 
 - Run tests (Mississippi solution) and mutation tests where required.
@@ -38,7 +38,7 @@ When asked to “fix build issues” (warnings, analyzer findings, StyleCop, cle
 
 - Compiler errors and warnings
 - Analyzer and StyleCop violations
-- ReSharper cleanup violations detected by `./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
+- ReSharper cleanup violations detected by `./clean-up.ps1`
 - Test/build breaks surfaced by the repository scripts
 
 ## Guardrails
@@ -74,10 +74,10 @@ pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/build-sample-solution.ps1
 ```
 
-- Code cleanup and inspections (Mississippi):
+- Code cleanup and inspections (both solutions):
 
 ```powershell
-pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
+pwsh ./clean-up.ps1
 ```
 
 - Unit tests (Mississippi) and mutation tests:
@@ -178,7 +178,7 @@ Provide in this order:
 1) Commands run
    - Repository scripts (preferred):
    - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`
-   - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
+   - `pwsh ./clean-up.ps1`
    - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
    - Raw `dotnet` commands only if used for diagnosis.
 2) Before → after warning counts by code (e.g., `CS8618: 14 → 3`, `CA2000: 7 → 0`).

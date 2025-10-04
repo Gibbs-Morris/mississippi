@@ -12,7 +12,7 @@ This project maintains **zero tolerance for warnings** and requires comprehensiv
 
 ```powershell
 pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
-pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
+pwsh ./clean-up.ps1
 ```
 
 - Add/update tests: comprehensive for Mississippi; minimal examples for Samples.
@@ -113,8 +113,9 @@ The `eng/src/agent-scripts/` directory contains PowerShell automation for the bu
 
 ### Quality Scripts
 
-- **`clean-up-mississippi-solution.ps1`** - Applies ReSharper code formatting and inspections
-- **`clean-up-sample-solution.ps1`** - Cleans up sample code formatting
+- **`clean-up-mississippi-solution.ps1`** - (Legacy wrapper) Delegates to root `clean-up.ps1` for Mississippi solution only
+- **`clean-up-sample-solution.ps1`** - (Legacy wrapper) Delegates to root `clean-up.ps1` for Samples solution only
+- **Root `clean-up.ps1`** - Unified cleanup script with `-Solutions` and `-Check` parameters for deterministic formatting across platforms
 - **`summarize-coverage-gaps.ps1`** - Aggregates the latest Cobertura reports and syncs coverage gap tasks into `.scratchpad/tasks`
 - **`summarize-mutation-survivors.ps1`** - Reads the most recent Stryker output (or reruns it when asked) and mirrors mutation survivors into `.scratchpad/tasks`
 
@@ -127,8 +128,9 @@ The `eng/src/agent-scripts/` directory contains PowerShell automation for the bu
 
 - **Build Mississippi**: `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`
 - **Build Samples**: `pwsh ./eng/src/agent-scripts/build-sample-solution.ps1`
-- **Cleanup Mississippi**: `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
-- **Cleanup Samples**: `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1`
+- **Cleanup (unified, preferred)**: `pwsh ./clean-up.ps1` or `pwsh ./clean-up.ps1 -Check`
+- **Cleanup Mississippi (legacy)**: `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
+- **Cleanup Samples (legacy)**: `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1`
 - **Unit tests (Mississippi)**: `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
 - **Unit tests (Samples)**: `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1`
 - **Mutation tests (Mississippi)**: `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`
@@ -146,7 +148,7 @@ When making ANY code changes, follow this strict pattern:
 pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
 
 # Run cleanup to fix formatting and detect issues
-pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
+pwsh ./clean-up.ps1
 
 # Fix any errors or warnings reported
 # Repeat until clean
