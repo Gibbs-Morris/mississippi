@@ -226,8 +226,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     public static void HostStarted(
         this ILogger logger,
         string runId
-    ) =>
+    )
+    {
         HostStartedMessage(logger, runId, null);
+    }
 
     /// <summary>
     ///     Log that the Orleans grain factory is being resolved for the run.
@@ -237,8 +239,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     public static void ResolvingGrainFactory(
         this ILogger logger,
         string runId
-    ) =>
+    )
+    {
         ResolvingGrainFactoryMessage(logger, runId, null);
+    }
 
     /// <summary>
     ///     Log the Cosmos DB configuration options used by the sample.
@@ -258,7 +262,8 @@ internal static class CrescentConsoleAppLoggerExtensions
         string lockContainer,
         int maxEventsPerBatch,
         int queryBatchSize
-    ) =>
+    )
+    {
         CosmosOptionsMessage(
             logger,
             runId,
@@ -268,6 +273,7 @@ internal static class CrescentConsoleAppLoggerExtensions
             maxEventsPerBatch,
             queryBatchSize,
             null);
+    }
 
     /// <summary>
     ///     Log that BrookStorageOptions could not be resolved for the run.
@@ -279,8 +285,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         Exception ex
-    ) =>
+    )
+    {
         UnableToResolveBrookStorageOptionsMessage(logger, runId, ex);
+    }
 
     /// <summary>
     ///     Log that the sample is running in reuse mode with a persisted <see cref="BrookKey" />.
@@ -294,8 +302,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         string runId,
         BrookKey brookKey,
         string path
-    ) =>
+    )
+    {
         ModeReuseUsingPersistedBrookKeyMessage(logger, runId, brookKey, path, null);
+    }
 
     /// <summary>
     ///     Log that the sample is running in fresh mode using a newly created <see cref="BrookKey" />.
@@ -309,8 +319,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         string runId,
         BrookKey brookKey,
         string path
-    ) =>
+    )
+    {
         ModeFreshUsingNewBrookKeyMessage(logger, runId, brookKey, path, null);
+    }
 
     /// <summary>
     ///     Log the banner for the SmallBatch_10x1KB scenario.
@@ -318,8 +330,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ScenarioSmallBatch10x1KB(
         this ILogger logger
-    ) =>
+    )
+    {
         ScenarioSmallBatch10x1KBMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log the banner for the Bulk_100_Mixed scenario.
@@ -327,8 +341,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ScenarioBulk100Mixed(
         this ILogger logger
-    ) =>
+    )
+    {
         ScenarioBulk100MixedMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log the banner for the LargeSingle_200KB scenario.
@@ -336,8 +352,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ScenarioLargeSingle200KB(
         this ILogger logger
-    ) =>
+    )
+    {
         ScenarioLargeSingle200KBMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log the banner for the LargeBatch_200x5KB scenario.
@@ -345,8 +363,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ScenarioLargeBatch200x5KB(
         this ILogger logger
-    ) =>
+    )
+    {
         ScenarioLargeBatch200x5KBMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log the banner for the OpsLimit_100_Mixed scenario.
@@ -354,8 +374,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ScenarioOpsLimit100Mixed(
         this ILogger logger
-    ) =>
+    )
+    {
         ScenarioOpsLimit100MixedMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log the banner for the readback that follows initial appends.
@@ -363,8 +385,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ReadbackAfterInitialAppends(
         this ILogger logger
-    ) =>
+    )
+    {
         ReadbackAfterInitialAppendsMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log the banner for the interleaved read/write scenario.
@@ -372,8 +396,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ScenarioInterleaved(
         this ILogger logger
-    ) =>
+    )
+    {
         ScenarioInterleavedMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log the banner for the multi-stream interleaved workload scenario.
@@ -381,8 +407,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ScenarioMultiStream(
         this ILogger logger
-    ) =>
+    )
+    {
         ScenarioMultiStreamMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log the banner for the explicit cache flush and readback scenario.
@@ -390,8 +418,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ExplicitCacheFlushReadback(
         this ILogger logger
-    ) =>
+    )
+    {
         ExplicitCacheFlushReadbackMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log that the sample is performing a cold restart of the host.
@@ -401,8 +431,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     public static void PerformingColdRestartOfHost(
         this ILogger logger,
         string runId
-    ) =>
+    )
+    {
         PerformingColdRestartOfHostMessage(logger, runId, null);
+    }
 
     /// <summary>
     ///     Log the banner for the cold restart readback scenario.
@@ -410,8 +442,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     public static void ScenarioColdRestartReadback(
         this ILogger logger
-    ) =>
+    )
+    {
         ScenarioColdRestartReadbackMessage(logger, null);
+    }
 
     /// <summary>
     ///     Log information about the number of events being appended.
@@ -427,8 +461,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         string scenario,
         int count,
         long bytes
-    ) =>
+    )
+    {
         AppendingCountsMessage(logger, runId, scenario, count, bytes, null);
+    }
 
     /// <summary>
     ///     Log metrics for a completed append operation.
@@ -448,8 +484,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         int ms,
         double rateEvN,
         double rateMB
-    ) =>
+    )
+    {
         AppendCompleteMessage(logger, runId, scenario, head, ms, rateEvN, rateMB, null);
+    }
 
     /// <summary>
     ///     Log a failed append operation along with failure metrics.
@@ -469,8 +507,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         int count,
         long bytes,
         Exception ex
-    ) =>
+    )
+    {
         AppendFailedMessage(logger, runId, scenario, ms, count, bytes, ex);
+    }
 
     /// <summary>
     ///     Log the current readback head position for the run.
@@ -482,8 +522,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         long head
-    ) =>
+    )
+    {
         ReadbackHeadMessage(logger, runId, head, null);
+    }
 
     /// <summary>
     ///     Log that there are no events to read for the run.
@@ -493,8 +535,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     public static void NoEventsToRead(
         this ILogger logger,
         string runId
-    ) =>
+    )
+    {
         NoEventsToReadMessage(logger, runId, null);
+    }
 
     /// <summary>
     ///     Log details about a single event read during enumeration.
@@ -512,8 +556,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         string id,
         string type,
         int bytes
-    ) =>
+    )
+    {
         ReadIdxEventMessage(logger, runId, idx, id, type, bytes, null);
+    }
 
     /// <summary>
     ///     Log metrics when a readback operation completes.
@@ -533,8 +579,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         int ms,
         double rateEvN,
         double rateMB
-    ) =>
+    )
+    {
         ReadbackCompleteMessage(logger, runId, count, bytes, ms, rateEvN, rateMB, null);
+    }
 
     /// <summary>
     ///     Log that a read enumeration was aborted and will be retried from the start.
@@ -546,8 +594,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         Exception ex
-    ) =>
+    )
+    {
         ReadEnumerationAbortedRetryMessage(logger, runId, ex);
+    }
 
     /// <summary>
     ///     Log the start of the interleaved scenario for the run.
@@ -557,8 +607,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     public static void InterleaveStart(
         this ILogger logger,
         string runId
-    ) =>
+    )
+    {
         InterleaveStartMessage(logger, runId, null);
+    }
 
     /// <summary>
     ///     Log the head position after the first write in the interleaved scenario.
@@ -570,8 +622,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         long head
-    ) =>
+    )
+    {
         HeadAfterWrite1Message(logger, runId, head, null);
+    }
 
     /// <summary>
     ///     Log the count of entries read from the tail in the interleaved scenario.
@@ -583,8 +637,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         int count
-    ) =>
+    )
+    {
         TailReadCountMessage(logger, runId, count, null);
+    }
 
     /// <summary>
     ///     Log the head position after the second write in the interleaved scenario.
@@ -596,8 +652,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         long head
-    ) =>
+    )
+    {
         HeadAfterWrite2Message(logger, runId, head, null);
+    }
 
     /// <summary>
     ///     Log the full-range read count observed in the interleaved scenario.
@@ -609,8 +667,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         int count
-    ) =>
+    )
+    {
         FullRangeReadCountMessage(logger, runId, count, null);
+    }
 
     /// <summary>
     ///     Log that the interleaved enumeration was aborted and will be retried once.
@@ -622,8 +682,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         Exception ex
-    ) =>
+    )
+    {
         InterleaveEnumerationAbortedRetryMessage(logger, runId, ex);
+    }
 
     /// <summary>
     ///     Log the head positions for streams A and B in multi-stream scenarios.
@@ -637,8 +699,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         string runId,
         long headA,
         long headB
-    ) =>
+    )
+    {
         HeadsABMessage(logger, runId, headA, headB, null);
+    }
 
     /// <summary>
     ///     Log that stream A is empty for the given run.
@@ -648,8 +712,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     public static void StreamAEmpty(
         this ILogger logger,
         string runId
-    ) =>
+    )
+    {
         StreamAEmptyMessage(logger, runId, null);
+    }
 
     /// <summary>
     ///     Log that stream B is empty for the given run.
@@ -659,8 +725,10 @@ internal static class CrescentConsoleAppLoggerExtensions
     public static void StreamBEmpty(
         this ILogger logger,
         string runId
-    ) =>
+    )
+    {
         StreamBEmptyMessage(logger, runId, null);
+    }
 
     /// <summary>
     ///     Log the read counts for streams A and B in the multi-stream scenario.
@@ -674,8 +742,10 @@ internal static class CrescentConsoleAppLoggerExtensions
         string runId,
         int countA,
         int countB
-    ) =>
+    )
+    {
         ReadCountsABMessage(logger, runId, countA, countB, null);
+    }
 
     /// <summary>
     ///     Log that the host is requesting grain deactivations for the specified brook key.
@@ -687,6 +757,8 @@ internal static class CrescentConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         BrookKey brookKey
-    ) =>
+    )
+    {
         RequestingDeactivationsMessage(logger, runId, brookKey, null);
+    }
 }

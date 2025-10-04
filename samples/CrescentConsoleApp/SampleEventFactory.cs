@@ -134,6 +134,8 @@ internal static class SampleEventFactory
 
     private static T Pick<T>(
         T[] array
-    ) =>
-        array[RandomNumberGenerator.GetInt32(array.Length)];
+    )
+    {
+        return array[RandomNumberGenerator.GetInt32(array.Length)];
+    }
 }

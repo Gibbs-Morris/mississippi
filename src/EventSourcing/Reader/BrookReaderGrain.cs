@@ -44,13 +44,6 @@ internal class BrookReaderGrain
     private IOptions<BrookReaderOptions> Options { get; }
 
     /// <summary>
-    ///     Gets the Orleans grain context for this grain instance.
-    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
-    /// </summary>
-    /// <value>The grain context instance.</value>
-    public IGrainContext GrainContext { get; }
-
-    /// <summary>
     ///     Reads events from the brook as an asynchronous stream within the specified position range.
     ///     Delegates to slice reader grains for efficient memory management of large event streams.
     /// </summary>
@@ -126,6 +119,13 @@ internal class BrookReaderGrain
         this.DeactivateOnIdle();
         return Task.CompletedTask;
     }
+
+    /// <summary>
+    ///     Gets the Orleans grain context for this grain instance.
+    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
+    public IGrainContext GrainContext { get; }
 
     private static List<(long BucketId, long First, long Last)> GetSliceReads(
         long start,

@@ -8,5 +8,8 @@ internal sealed class SampleGrain
       ISampleGrain
 {
     /// <inheritdoc />
-    public Task<string> HelloWorldAsync() => Task.FromResult("Hello, world!");
+    public Task<string> HelloWorldAsync()
+    {
+        return Task.FromResult("Hello, world!");
+    }
 }
