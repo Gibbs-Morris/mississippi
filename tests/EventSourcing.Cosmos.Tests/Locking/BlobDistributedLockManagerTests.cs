@@ -254,4 +254,71 @@ public sealed class BlobDistributedLockManagerTests
         // Assert
         Assert.Equal(TimeSpan.FromSeconds(13), captured);
     }
+
+    /// <summary>
+    ///     Verifies that the retry logic includes exponential backoff delay (kills statement-mutation removing Task.Delay at line 82).
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Fact]
+    public async Task AcquireLockAsyncDelaysWithExponentialBackoffDuringRetriesAsync()
+    {
+        // Arrange
+        BrookStorageOptions opts = new();
+        Mock<BlobServiceClient> svc = new();
+        Mock<BlobContainerClient> container = new();
+        Mock<BlobClient> blob = new();
+        Mock<IBlobLeaseClient> lease = new();
+        Mock<IBlobLeaseClientFactory> factory = new();
+        svc.Setup(s => s.GetBlobContainerClient(It.IsAny<string>())).Returns(container.Object);
+        container.Setup(c => c.CreateIfNotExistsAsync(
+                It.IsAny<PublicAccessType>(),
+                It.IsAny<IDictionary<string, string>?>(),
+                It.IsAny<BlobContainerEncryptionScopeOptions?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<Response<BlobContainerInfo>>());
+        container.Setup(c => c.GetBlobClient(It.IsAny<string>())).Returns(blob.Object);
+        blob.Setup(b => b.ExistsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
+        factory.Setup(f => f.Create(It.IsAny<BlobClient>(), It.IsAny<string?>())).Returns(lease.Object);
+
+        int attemptCount = 0;
+        lease.Setup(l => l.AcquireAsync(
+                It.IsAny<TimeSpan>(),
+                It.IsAny<RequestConditions?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() =>
+            {
+                attemptCount++;
+
+                // Fail first 2 attempts, succeed on 3rd
+                if (attemptCount < 3)
+                {
+                    throw new RequestFailedException(409, "conflict");
+                }
+
+                return Response.FromValue(
+                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-delayed"),
+                    Mock.Of<Response>());
+            });
+
+        BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
+
+        // Act
+        System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        await using IDistributedLock handle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
+        stopwatch.Stop();
+
+        // Assert
+        Assert.NotNull(handle);
+        Assert.Equal(3, attemptCount);
+
+        // Verify that elapsed time includes backoff delays
+        // First retry: backoff = 100ms (2^0 * 100), jitter 0-100ms, total minimum 100ms
+        // Second retry: backoff = 200ms (2^1 * 100), jitter 0-100ms, total minimum 200ms
+        // Total minimum delay = 100ms + 200ms = 300ms (without jitter)
+        // Add some tolerance for test execution time but ensure significant delay occurred
+        string expectedMessage = $"Expected at least 250ms for exponential backoff delays, but only {stopwatch.ElapsedMilliseconds}ms elapsed. " +
+            "This suggests the Task.Delay statement may have been removed (statement mutation survivor).";
+        Assert.True(stopwatch.ElapsedMilliseconds >= 250, expectedMessage);
+    }
 }
