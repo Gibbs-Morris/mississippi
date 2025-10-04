@@ -192,8 +192,14 @@ try {
     $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
     Write-Host "Resolved test project: $testProjectName -> $testProjectPath" -ForegroundColor Green
 
-    $resultsDir = Join-Path -Path (Join-Path (Get-Location) "test-results") -ChildPath $testProjectName
+    $scratchpadRoot = Join-Path (Get-Location) ".scratchpad"
+    $resultsRoot = Join-Path $scratchpadRoot "coverage-test-results"
+    if (-not (Test-Path -LiteralPath $resultsRoot)) { New-Item -ItemType Directory -Path $resultsRoot | Out-Null }
+    $resultsDir = Join-Path -Path $resultsRoot -ChildPath $testProjectName
     if (-not (Test-Path -LiteralPath $resultsDir)) { New-Item -ItemType Directory -Path $resultsDir | Out-Null }
+
+    $mutationRoot = Join-Path $scratchpadRoot "mutation-test-results"
+    if (-not (Test-Path -LiteralPath $mutationRoot)) { New-Item -ItemType Directory -Path $mutationRoot | Out-Null }
 
     Write-Host "[3/7] Running dotnet test with coverage..." -ForegroundColor Cyan
     $noBuildFlag = if ($NoBuild) { "--no-build" } else { "" }
@@ -228,15 +234,17 @@ try {
         Write-Host "[7/7] Running Stryker mutation testing..." -ForegroundColor Cyan
         $strykerStart = Get-Date
         $sourceProjectFileName = [IO.Path]::GetFileName($sourceProjectPath)
-        dotnet stryker --solution "$sln" --test-project "$testProjectPath" --project "$sourceProjectFileName"
+    $mutationOutput = Join-Path $mutationRoot (Get-Date -Format 'yyyy-MM-dd.HH-mm-ss')
+    if (-not (Test-Path -LiteralPath $mutationOutput)) { New-Item -ItemType Directory -Path $mutationOutput | Out-Null }
+    dotnet stryker --solution "$sln" --test-project "$testProjectPath" --project "$sourceProjectFileName" --output "$mutationOutput"
         if ($LASTEXITCODE -ne 0) { $mutationFailed = $true }
 
         # Find latest mutation report
-        $mutationJson = Get-ChildItem -Path (Join-Path (Get-Location) "StrykerOutput") -Recurse -Filter mutation-report.json -ErrorAction SilentlyContinue |
+        $mutationJson = Get-ChildItem -Path $mutationRoot -Recurse -Filter mutation-report.json -ErrorAction SilentlyContinue |
             Where-Object { $_.LastWriteTime -ge $strykerStart } |
             Sort-Object LastWriteTime -Descending | Select-Object -First 1
 
-        $mutationMd = Get-ChildItem -Path (Join-Path (Get-Location) "StrykerOutput") -Recurse -Filter mutation-report.md -ErrorAction SilentlyContinue |
+        $mutationMd = Get-ChildItem -Path $mutationRoot -Recurse -Filter mutation-report.md -ErrorAction SilentlyContinue |
             Where-Object { $_.LastWriteTime -ge $strykerStart } |
             Sort-Object LastWriteTime -Descending | Select-Object -First 1
 
@@ -256,9 +264,9 @@ try {
         } else {
             Write-Host "RESULT: UNKNOWN"
         }
-        if ($coveragePercent -ne $null) { Write-Host ("COVERAGE: {0}%" -f $coveragePercent) } else { Write-Host "COVERAGE: N/A" }
+    if ($null -ne $coveragePercent) { Write-Host ("COVERAGE: {0}%" -f $coveragePercent) } else { Write-Host "COVERAGE: N/A" }
         if (-not $SkipMutation) {
-            if ($mutationScore -ne $null) { Write-Host ("MUTATION_SCORE: {0}%" -f $mutationScore) } else { Write-Host "MUTATION_SCORE: N/A" }
+            if ($null -ne $mutationScore) { Write-Host ("MUTATION_SCORE: {0}%" -f $mutationScore) } else { Write-Host "MUTATION_SCORE: N/A" }
             Write-Host ("MUTATION_RESULT: {0}" -f ($(if ($mutationFailed) { "FAIL" } else { "PASS" })))
         }
     } else {
@@ -274,7 +282,7 @@ try {
         } else {
             Write-Host "RESULT: UNKNOWN"
         }
-        if ($coveragePercent -ne $null) { Write-Host ("COVERAGE: {0}%" -f $coveragePercent) } else { Write-Host "COVERAGE: N/A" }
+    if ($null -ne $coveragePercent) { Write-Host ("COVERAGE: {0}%" -f $coveragePercent) } else { Write-Host "COVERAGE: N/A" }
     }
 
     if ($testFailed -or ($mutationFailed -and -not $SkipMutation)) { exit 1 } else { exit 0 }

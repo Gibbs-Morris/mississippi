@@ -71,7 +71,7 @@ The framework includes comprehensive testing:
 ./build.ps1
 ```
 
-Test results and coverage reports are generated in the `test-results` directory.
+Test results and coverage reports are generated in the `.scratchpad/coverage-test-results` directory.
 
 ### Quick per-project quality check
 

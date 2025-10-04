@@ -78,11 +78,16 @@ jobs:
           dotnet build "${SLN_PATH}" --configuration "${CONFIGURATION}" --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
       - name: Run Stryker
-        run: dotnet stryker --solution "${SLN_PATH}"
+        run: |
+          MUTATION_ROOT="${{ github.workspace }}/.scratchpad/mutation-test-results"
+          TIMESTAMP=$(date -u +"%Y-%m-%d.%H-%M-%S")
+          OUTPUT_DIR="$MUTATION_ROOT/$TIMESTAMP"
+          mkdir -p "$OUTPUT_DIR"
+          dotnet stryker --solution "${SLN_PATH}" --output "$OUTPUT_DIR"
 
       - name: Upload HTML Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
-          path: ${{ github.workspace }}/StrykerOutput/**/**/*.html
+          path: ${{ github.workspace }}/.scratchpad/mutation-test-results/**/**/*.html

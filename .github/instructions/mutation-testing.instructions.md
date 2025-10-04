@@ -18,12 +18,12 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
 1. **Prep tools** – Ensure `dotnet tool restore` has been run at least once on the repo.
 2. **Clean build** – Run `pwsh ./scripts/build-mississippi-solution.ps1` to surface compiler/analyzer issues before mutation work.
 3. **Baseline mutation test** – Execute `pwsh ./scripts/mutation-test-mississippi-solution.ps1`. Always commit the generated report paths for traceability.
-4. **Collect & prioritize survivors** – Open the newest `StrykerOutput/**/reports/mutation-report.json` only if deep inspection is needed. Otherwise run the summarizer (it reruns the mutation script unless you pass `-SkipMutationRun`):
+4. **Collect & prioritize survivors** – Open the newest `.scratchpad/mutation-test-results/**/reports/mutation-report.json` only if deep inspection is needed. Otherwise run the summarizer (it reruns the mutation script unless you pass `-SkipMutationRun`):
     - `pwsh ./scripts/summarize-mutation-survivors.ps1` (defaults to weighted scoring, full list)
     - Outputs:
-       - Basic JSON: `StrykerOutput/mutation-survivors-summary.json` (backward compatibility)
-       - Enriched JSON: `StrykerOutput/mutation-survivors-enriched.json` (schemaVersion, focusOrder, aggregates, snippets)
-       - Report JSON: `StrykerOutput/mutation-survivors-report.json` (raw survivors from the latest `mutation-report.json` when available)
+   - Basic JSON: `.scratchpad/mutation-test-results/mutation-survivors-summary.json` (backward compatibility)
+   - Enriched JSON: `.scratchpad/mutation-test-results/mutation-survivors-enriched.json` (schemaVersion, focusOrder, aggregates, snippets)
+   - Report JSON: `.scratchpad/mutation-test-results/mutation-survivors-report.json` (raw survivors from the latest `mutation-report.json` when available)
        - Markdown: `.scratchpad/testing/mutation-survivors-summary.md` (includes prioritized focus table, details, mutator strategy cheat sheet)
     - Optional parameters for focused iteration:
        - `-SkipMutationRun`: Use existing Stryker output without invoking `mutation-test-mississippi-solution.ps1` again.

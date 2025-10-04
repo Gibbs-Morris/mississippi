@@ -37,7 +37,7 @@ Once the **Mississippi** solution is healthy, run the equivalent *sample* script
 | Script | Purpose | Typical call |
 |-------|---------|--------------|
 | **build-mississippi-solution.ps1** | Restore dependencies and compile `mississippi.slnx` in the chosen configuration (default `Release`). | `pwsh ./scripts/build-mississippi-solution.ps1 -Configuration Debug` |
-| **unit-test-mississippi-solution.ps1** | Restore, then execute all unit & integration tests inside the Mississippi solution. Results are placed under `./test-results`. | `pwsh ./scripts/unit-test-mississippi-solution.ps1` |
+| **unit-test-mississippi-solution.ps1** | Restore, then execute all unit & integration tests inside the Mississippi solution. Results are placed under `.scratchpad/coverage-test-results`. | `pwsh ./scripts/unit-test-mississippi-solution.ps1` |
 | **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` via **SLNGen**, then run **Stryker.NET** mutation analysis to measure test robustness. | `pwsh ./scripts/mutation-test-mississippi-solution.ps1` |
 | **test-project-quality.ps1** | Run tests with coverage for a single test project and (optionally) run Stryker to compute a mutation score. Prints a concise, machine-readable summary for LLMs. | `pwsh ./scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests` |
 | **clean-up-mississippi-solution.ps1** | Generate a temporary `.sln`, then apply **ReSharper CleanupCode** with the repo-wide settings for formatting, ordering and inspections. Run before committing. | `pwsh ./scripts/clean-up-mississippi-solution.ps1` |
@@ -93,8 +93,8 @@ pwsh ./scripts/orchestrate-solutions.ps1 | tee orchestration.log
 
 | Artifact | Path |
 |----------|------|
-| Test results (TRX) | `./test-results` |
-| Mutation reports   | `./StrykerOutput/<timestamp>` |
+| Test results (TRX) | `.scratchpad/coverage-test-results` |
+| Mutation reports   | `.scratchpad/mutation-test-results/<timestamp>` |
 
 These folders are git-ignored but preserved between steps; feel free to parse or archive them in CI.
 
@@ -168,8 +168,8 @@ MUTATION_RESULT: PASS|FAIL
 
 Artifacts:
 
-- TRX and Cobertura files under `./test-results/<TestProjectName>/`
-- Stryker reports under `./StrykerOutput/<timestamp>/reports/`
+- TRX and Cobertura files under `.scratchpad/coverage-test-results/<TestProjectName>/`
+- Stryker reports under `.scratchpad/mutation-test-results/<timestamp>/reports/`
 
 Exit codes:
 
