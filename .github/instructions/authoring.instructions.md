@@ -148,7 +148,7 @@ This document should be read in conjunction with:
 
 ---
 
-**Last verified:** YYYY-MM-DD  
+**Last verified:** YYYY-MM-DD
 **Default branch:** main
 ```
 
@@ -174,7 +174,7 @@ This document should be read in conjunction with:
 
 Use short, declarative sentences in active voice. Target 15-20 words per sentence.
 
-**Good:** "Run the script to validate your changes."  
+**Good:** "Run the script to validate your changes."
 **Bad:** "Your changes should be validated by running the script."
 
 **Why:** Short sentences reduce cognitive load. Active voice clarifies who does what, which is critical for task-oriented documentation.
@@ -207,7 +207,7 @@ Use H2 for major sections, H3 for subsections, H4 for sub-subsections. Do not sk
 
 Use relative links for internal references. Always test that links resolve.
 
-**Good:** `[Testing Strategy](./testing.instructions.md)`  
+**Good:** `[Testing Strategy](./testing.instructions.md)`
 **Bad:** `[Testing Strategy](https://github.com/Gibbs-Morris/mississippi/blob/main/.github/instructions/testing.instructions.md)`
 
 **Why:** Relative links work in forks, branches, and local clones. They're portable and don't break when the repository is renamed or moved.
@@ -481,7 +481,7 @@ Include "Last verified: YYYY-MM-DD" in the footer of each instruction file. Upda
 ```markdown
 ---
 
-**Last verified:** 2025-10-04  
+**Last verified:** 2025-10-04
 **Default branch:** main
 ```
 
@@ -491,7 +491,7 @@ Include "Last verified: YYYY-MM-DD" in the footer of each instruction file. Upda
 
 When linking to external documentation, use permanent URLs (avoid version-specific links unless necessary).
 
-**Good:** `https://learn.microsoft.com/dotnet/core/`  
+**Good:** `https://learn.microsoft.com/dotnet/core/`
 **Bad:** `https://docs.microsoft.com/en-us/dotnet/core/` (old domain)
 
 **Why:** Permanent URLs reduce broken links over time.
@@ -587,5 +587,5 @@ This section documents conflicts or inconsistencies discovered across instructio
 
 ---
 
-**Last verified:** 2025-10-04  
+**Last verified:** 2025-10-04
 **Default branch:** main
