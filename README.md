@@ -19,6 +19,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 - **SonarAnalyzer** - Static code analysis with SonarCloud gates
 - **StyleCop** - Code style enforcement
 - **GitVersion** - Semantic versioning
+- **ReSharper CLI** - Code cleanup and formatting enforcement
 
 ## Getting Started
 
@@ -88,6 +89,38 @@ Notes:
 - `-TestProject` can be the project name (convention: one test project per assembly) or a path to the `.csproj`.
 - If the source project can’t be inferred from `<ProjectReference>`, set `-SourceProject` to the target `.csproj`.
 - The script prints a concise summary (RESULT, COVERAGE, MUTATION_SCORE) that tools like Cursor or Copilot can parse easily.
+
+
+## Formatting / Cleanup
+
+The repository enforces consistent code formatting using ReSharper CleanupCode with the "Built-in: Full Cleanup" profile. The cleanup process is deterministic across Windows and Linux platforms.
+
+### Running Cleanup Locally
+
+```powershell
+# Apply cleanup to all solutions
+pwsh ./clean-up.ps1
+
+# Check if cleanup would make changes (useful before committing)
+pwsh ./clean-up.ps1 -Check
+
+# Clean up only the Mississippi solution
+pwsh ./clean-up.ps1 -Solutions @("mississippi.slnx")
+```
+
+### CI Enforcement
+
+The `ReSharper Cleanup Check` workflow runs on every pull request and push to main branches. It:
+
+1. Runs cleanup on both solutions
+2. Fails if any files are modified (indicating formatting issues)
+3. Verifies idempotency by running cleanup twice
+
+**Before pushing code**, run `pwsh ./clean-up.ps1 -Check` to ensure your changes pass the CI check. If the check fails locally, run `pwsh ./clean-up.ps1` to apply the necessary formatting.
+
+### Line Endings
+
+The repository uses LF line endings for all files except `.sln` files (which use CRLF for Visual Studio compatibility). This is enforced through `.gitattributes` and `.editorconfig`. Git is configured to normalize line endings automatically.
 
 ## License
 

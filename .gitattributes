@@ -1,0 +1,51 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Source code
+*.cs text eol=lf
+*.csx text eol=lf
+*.razor text eol=lf
+*.cshtml text eol=lf
+
+# Scripts
+*.ps1 text eol=lf
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Configuration files
+*.json text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.config text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.ruleset text eol=lf
+.editorconfig text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
+
+# Solution and project files - Visual Studio expects CRLF
+*.sln text eol=crlf
+*.slnx text eol=lf
+*.csproj text eol=lf
+*.vbproj text eol=lf
+*.fsproj text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+
+# Binary files
+*.dll binary
+*.exe binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.7z binary
+*.gz binary
+*.snk binary
+*.pfx binary

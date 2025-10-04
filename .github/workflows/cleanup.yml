@@ -11,20 +11,24 @@ on:
       - feature/**
       - topic/**
 
-env:
-  DOTSETTINGS_PATH: ${{ github.workspace }}/Directory.DotSettings
-
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        solution: [ mississippi.slnx, samples.slnx ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Configure Git line endings
+        run: |
+          set -euo pipefail
+          echo "Configuring Git to enforce LF line endings..."
+          git config core.autocrlf false
+          git config core.eol lf
+          echo "Git configuration:"
+          git config --get core.autocrlf
+          git config --get core.eol
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -46,63 +50,55 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
 
-      - name: Check for dotnet tools manifest
-        id: check-tools-manifest
-        run: |
-          set -euo pipefail
-          if [ -f ".config/dotnet-tools.json" ]; then
-            echo "manifest_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "manifest_exists=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Restore .NET Tools
-        if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
         run: |
           set -euo pipefail
-          echo "Restoring dotnet tools..."
+          echo "Restoring dotnet tools from .config/dotnet-tools.json..."
           dotnet tool restore
         continue-on-error: false
-        
-      - name: Install ReSharper Global Tools
-        if: steps.check-tools-manifest.outputs.manifest_exists != 'true'
-        run: |
-          set -euo pipefail
-          echo "Installing JetBrains.ReSharper.GlobalTools..."
-          dotnet tool install -g JetBrains.ReSharper.GlobalTools
-        continue-on-error: false
 
-      - name: Generate legacy solution file
+      - name: Run ReSharper Cleanup (First Pass)
         run: |
           set -euo pipefail
-          SLNX_PATH="${{ github.workspace }}/${{ matrix.solution }}"
-          SLN_PATH="${SLNX_PATH%.slnx}.sln"
-          echo "Generating $SLN_PATH from $SLNX_PATH ..."
-          dotnet tool run slngen "$SLNX_PATH" --solutionfile "$SLN_PATH" --launch false
-          ls -al "$SLN_PATH"
-
-      - name: Run ReSharper Cleanup Code
-        run: |
-          set -euo pipefail
-          SLNX_PATH="${{ github.workspace }}/${{ matrix.solution }}"
-          SLN_PATH="${SLNX_PATH%.slnx}.sln"
-          echo "Running ReSharper Cleanup Code on $SLN_PATH ..."
-          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$SLN_PATH"
-          echo "Cleanup completed."
-          echo "SLN_PATH=$SLN_PATH" >> $GITHUB_ENV
+          echo "Running unified cleanup script for all solutions..."
+          pwsh ./clean-up.ps1 -Solutions @("mississippi.slnx","samples.slnx")
 
       - name: Check for Uncommitted Changes
         run: |
           set -euo pipefail
           echo "Checking for modifications after cleanup..."
-          CHANGES=$(git status --porcelain)
+          CHANGES=$(git status --porcelain=v1 -uno)
           if [ -n "$CHANGES" ]; then
             echo "ERROR: ReSharper cleanup modified files. The following changes are required:"
+            echo ""
             git diff --color=always
             echo ""
-            echo "To resolve this locally run:"
-            echo "dotnet tool run jb cleanupcode --profile=\"Built-in: Full Cleanup\" --settings=\"${DOTSETTINGS_PATH}\" \"$SLN_PATH\""
+            echo "To resolve this locally, run:"
+            echo "  pwsh ./clean-up.ps1"
+            echo ""
+            echo "Or to check before pushing:"
+            echo "  pwsh ./clean-up.ps1 -Check"
             exit 1
           else
             echo "No modifications detected. Cleanup check passed."
+          fi
+
+      - name: Run ReSharper Cleanup (Second Pass - Idempotency Check)
+        run: |
+          set -euo pipefail
+          echo "Running cleanup again to verify idempotency..."
+          pwsh ./clean-up.ps1 -Solutions @("mississippi.slnx","samples.slnx")
+
+      - name: Verify Idempotency
+        run: |
+          set -euo pipefail
+          echo "Verifying no changes after second cleanup pass..."
+          CHANGES=$(git status --porcelain=v1 -uno)
+          if [ -n "$CHANGES" ]; then
+            echo "ERROR: Cleanup is not idempotent! Second pass produced changes:"
+            echo ""
+            git diff --color=always
+            exit 1
+          else
+            echo "SUCCESS: Cleanup is idempotent. No changes on second pass."
           fi

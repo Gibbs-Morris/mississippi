@@ -32,10 +32,10 @@
 | **unit-test-mississippi-solution.ps1** | Run all unit & integration tests for the Mississippi solution, emitting results under `.scratchpad/coverage-test-results`. | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` |
 | **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` with SLNGen and execute Stryker.NET to measure mutation score. | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` |
 | **test-project-quality.ps1** | Run `dotnet test` (with coverage) for a single project and optionally Stryker; prints a machine-readable summary. | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests` |
-| **clean-up-mississippi-solution.ps1** | Produce a temporary `.sln` and run ReSharper CleanupCode using repository settings. | `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` |
+| **clean-up-mississippi-solution.ps1** | (Legacy wrapper) Delegates to `../../clean-up.ps1` for Mississippi only. Prefer using the root script directly. | `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` |
 | **build-sample-solution.ps1** | Build `samples.slnx`. | `pwsh ./eng/src/agent-scripts/build-sample-solution.ps1` |
 | **unit-test-sample-solution.ps1** | Execute sample solution tests (no mutation testing). | `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1` |
-| **clean-up-sample-solution.ps1** | Run ReSharper cleanup over the sample projects. | `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1` |
+| **clean-up-sample-solution.ps1** | (Legacy wrapper) Delegates to `../../clean-up.ps1` for Samples only. Prefer using the root script directly. | `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1` |
 | **summarize-coverage-gaps.ps1** | Merge Cobertura coverage reports and emit `.scratchpad/tasks` entries for low-coverage files. | `pwsh ./eng/src/agent-scripts/summarize-coverage-gaps.ps1 -EmitTasks` |
 | **summarize-mutation-survivors.ps1** | Parse the latest Stryker run (or rerun it) and sync survivor tasks into `.scratchpad/tasks`. | `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -GenerateTasks` |
 | **final-build-solutions.ps1** | Build both solutions with `--warnaserror` as the final zero-warning gate. | `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1` |
@@ -70,6 +70,10 @@ pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 -Configuration D
 pwsh ./eng/src/agent-scripts/final-build-solutions.ps1            # Release by default
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation   # fast test+coverage
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests                  # include mutation
+
+# Unified cleanup (preferred over individual solution scripts)
+pwsh ./clean-up.ps1                                                 # clean both solutions
+pwsh ./clean-up.ps1 -Check                                         # verify no changes needed
 ```
 
 Bash (with PowerShell 7 installed):

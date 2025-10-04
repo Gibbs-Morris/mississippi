@@ -1,2 +1,37 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Solution files - Visual Studio expects CRLF
+[*.sln]
+end_of_line = crlf
+
+# C# files
 [*.cs]
 dotnet_analyzer_diagnostic.severity = warning
+
+# XML-based project files
+[*.{csproj,vbproj,fsproj,props,targets}]
+indent_size = 2
+
+# JSON and YAML files
+[*.{json,yml,yaml}]
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# PowerShell scripts
+[*.ps1]
+indent_size = 4
