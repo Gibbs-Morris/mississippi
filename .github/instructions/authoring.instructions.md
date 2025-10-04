@@ -208,7 +208,7 @@ Use H2 for major sections, H3 for subsections, H4 for sub-subsections. Do not sk
 Use relative links for internal references. Always test that links resolve.
 
 **Good:** `[Testing Strategy](./testing.instructions.md)`
-**Bad:** `[Testing Strategy](https://github.com/Gibbs-Morris/mississippi/blob/main/.github/instructions/testing.instructions.md)`
+**Bad:** `[Testing Strategy](https://github.com/your-org/your-repo/blob/main/.github/instructions/testing.instructions.md)`
 
 **Why:** Relative links work in forks, branches, and local clones. They're portable and don't break when the repository is renamed or moved.
 
