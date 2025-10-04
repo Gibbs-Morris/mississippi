@@ -9,6 +9,7 @@ This document defines the service registration standards and configuration patte
 ## Core Principles
 
 ### Hierarchical Feature-Based Registration
+
 - **Feature-aligned organization** — service registration follows the feature namespace structure
 - **ServiceRegistration class per feature** — create `public static class ServiceRegistration` in each feature folder with `Add{FeatureName}()` methods
 - **Parent-child registration pattern** — parent features call child feature registrations to build composable service collections
@@ -16,6 +17,7 @@ This document defines the service registration standards and configuration patte
 - **Internal for implementation details** — sub-features and implementation components should have `internal` registration methods
 
 ### Configuration and Options Pattern
+
 - **Always use Options pattern for configuration** — NEVER use direct configuration parameters in constructors; always use `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>`
 - **Make everything configurable** — follow cloud-native principles by externalizing all configuration; prefer configuration over hard-coded values
 - **Support multiple configuration overloads** — provide overloads for `Action<TOptions>`, `IConfiguration`, and explicit parameters to support different consumption patterns
@@ -26,12 +28,14 @@ This document defines the service registration standards and configuration patte
 - **Connection string patterns** — accept connection strings as parameters and register clients using factory patterns, not direct instantiation in DI
 
 ### Integration Requirements
+
 - **Follow dependency injection property pattern** — all registered services must use `private Type Name { get; }` pattern when injected
 - **Consistent naming pattern** — use `Add{FeatureName}()` naming convention following PascalCase rules from naming guidelines
 - **XML documentation requirements** — follow naming conventions for all public registration methods with parameter and return value documentation
 - **Access control compliance** — follow sealed classes and minimal access principles from C# guidelines
 
 ### Orleans and Hosting Service Integration
+
 - **Service registration must be synchronous** — NEVER perform async operations (database calls, external service calls) during service registration
 - **Use IHostedService for async initialization** — defer async setup operations to hosted services that run after DI container is built
 - **Use Orleans lifecycle participants** — for Orleans-specific initialization that needs to happen at specific lifecycle stages
@@ -41,6 +45,7 @@ This document defines the service registration standards and configuration patte
 ## Service Registration Implementation Pattern
 
 ### Required File Structure
+
 ```
 Mississippi.EventSourcing/
 ├── ServiceRegistration.cs              // Calls child registrations

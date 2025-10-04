@@ -16,6 +16,22 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+function Resolve-RepoRoot {
+    param([Parameter(Mandatory)][string]$StartPath)
+
+    $current = (Resolve-Path -LiteralPath $StartPath).Path
+    while ($true) {
+        if (Test-Path -LiteralPath (Join-Path $current '.git')) { return $current }
+        $parent = Split-Path -Parent $current
+        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
+            break
+        }
+        $current = $parent
+    }
+
+    throw "Unable to locate repository root from $StartPath"
+}
+
 function Get-RelativePath
 {
     param(
@@ -113,11 +129,11 @@ function New-SurvivorKey
 
 function Get-LatestMutationReportPath
 {
-    param([string]$StrykerOutput)
+    param([string]$MutationOutputPath)
 
-    if (-not (Test-Path -Path $StrykerOutput -PathType Container)) { return $null }
+    if (-not (Test-Path -Path $MutationOutputPath -PathType Container)) { return $null }
 
-    $candidateDirs = Get-ChildItem -Path $StrykerOutput -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
+    $candidateDirs = Get-ChildItem -Path $MutationOutputPath -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
     foreach ($dir in $candidateDirs)
     {
         $reportPath = Join-Path $dir.FullName 'reports/mutation-report.json'
@@ -178,7 +194,7 @@ function Get-MutationReportSurvivors
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Split-Path -Parent $scriptRoot
+$repoRoot = Resolve-RepoRoot -StartPath $scriptRoot
 
 if (-not $TasksPath) {
     $TasksPath = Join-Path $repoRoot '.scratchpad/testing/mutation-tasks.md'
@@ -238,8 +254,9 @@ else
     Write-Host "SkipMutationRun specified; using existing Stryker output." -ForegroundColor Yellow
 }
 
-$strykerOutputDirectory = Join-Path $repoRoot 'StrykerOutput'
-$latestSurvivorsPath = Join-Path $strykerOutputDirectory 'latest-survivors.json'
+$mutationOutputDirectory = Join-Path $repoRoot '.scratchpad/mutation-test-results'
+if (-not (Test-Path -LiteralPath $mutationOutputDirectory)) { New-Item -ItemType Directory -Path $mutationOutputDirectory | Out-Null }
+$latestSurvivorsPath = Join-Path $mutationOutputDirectory 'latest-survivors.json'
 if (-not (Test-Path -Path $latestSurvivorsPath -PathType Leaf))
 {
     Write-Warning "No latest-survivors.json file found at '$latestSurvivorsPath'. Writing empty summaries."
@@ -270,7 +287,7 @@ else
     }
 }
 
-$mutationReportPath = Get-LatestMutationReportPath -StrykerOutput $strykerOutputDirectory
+$mutationReportPath = Get-LatestMutationReportPath -MutationOutputPath $mutationOutputDirectory
 $reportSurvivors = @()
 if ($mutationReportPath)
 {
@@ -451,10 +468,10 @@ $enriched = [pscustomobject]@{
     report        = if ($mutationReportPath -and ($reportSurvivors.Count -gt 0)) { [pscustomobject]@{ path = $mutationReportPath; survivors = $reportSurvivors } } else { $null }
 }
 
-$enrichedJsonPath = Join-Path $strykerOutputDirectory 'mutation-survivors-enriched.json'
+$enrichedJsonPath = Join-Path $mutationOutputDirectory 'mutation-survivors-enriched.json'
 $enriched | ConvertTo-Json -Depth 6 | Set-Content -Path $enrichedJsonPath -Encoding UTF8
 
-$summaryJsonPath = Join-Path $strykerOutputDirectory 'mutation-survivors-summary.json'
+$summaryJsonPath = Join-Path $mutationOutputDirectory 'mutation-survivors-summary.json'
 $summaryMarkdownPath = Join-Path $repoRoot '.scratchpad/testing/mutation-survivors-summary.md'
 
 $null = New-Item -Path (Split-Path -Parent $summaryJsonPath) -ItemType Directory -Force
@@ -463,7 +480,7 @@ $null = New-Item -Path (Split-Path -Parent $summaryMarkdownPath) -ItemType Direc
 # Maintain backward compatibility: original summary file still emits basic array
 $normalized | ConvertTo-Json -Depth 4 | Set-Content -Path $summaryJsonPath -Encoding UTF8
 
-$reportJsonPath = Join-Path $strykerOutputDirectory 'mutation-survivors-report.json'
+$reportJsonPath = Join-Path $mutationOutputDirectory 'mutation-survivors-report.json'
 if ($reportSurvivors.Count -gt 0)
 {
     $reportSurvivors | ConvertTo-Json -Depth 4 | Set-Content -Path $reportJsonPath -Encoding UTF8

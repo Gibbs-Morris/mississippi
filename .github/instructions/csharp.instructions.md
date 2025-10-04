@@ -459,8 +459,6 @@ namespace SampleApplication
 }
 ```
 
-
-
 ### Cloud-Native Configuration
 
 ```csharp
@@ -488,6 +486,7 @@ builder.Services.Configure<DatabaseSettings>(
 **CRITICAL RULE**: Never disable analyzer rules to get around violations. Always fix the underlying issue.
 
 ### Why This Is Critical
+
 - **Analyzers detect real problems** - They identify code quality issues, security vulnerabilities, and maintainability problems
 - **Suppressing warnings hides problems** - It creates technical debt and makes code harder to maintain
 - **Builds will fail** - Analyzer violations are treated as errors with `--warnaserror`
@@ -495,6 +494,7 @@ builder.Services.Configure<DatabaseSettings>(
 - **Team productivity suffers** - Technical debt from suppressed warnings slows down development
 
 ### The Rule: Fix, Don't Suppress
+
 - **ALWAYS fix the underlying issue** - Improve your code to satisfy the analyzer
 - **NEVER use `#pragma warning disable`** without explicit approval and exhaustive justification
 - **NEVER add `[SuppressMessage]` attributes** to hide violations
@@ -544,6 +544,7 @@ public void SpecialCase()
 #### Required Documentation for Suppressions
 
 Any suppression must include:
+
 - **Why**: Detailed explanation of why the code cannot be fixed
 - **What was tried**: List of all attempted solutions
 - **Who approved**: Name of reviewer who confirmed necessity
@@ -724,10 +725,6 @@ namespace Mississippi.EventSourcing.Grains
 }
 ```
 
-
-
-
-
 ## Enforcement
 
 These practices should be enforced through:
@@ -773,4 +770,3 @@ This document should be read in conjunction with:
 - Orleans best practices: [https://learn.microsoft.com/en-us/dotnet/orleans/resources/best-practices](https://learn.microsoft.com/en-us/dotnet/orleans/resources/best-practices)
 - Orleans external tasks & grains: [https://learn.microsoft.com/en-us/dotnet/orleans/grains/external-tasks-and-grains](https://learn.microsoft.com/en-us/dotnet/orleans/grains/external-tasks-and-grains)
 - Twelve-Factor App manifesto: [https://www.12factor.net/](https://www.12factor.net/)
-

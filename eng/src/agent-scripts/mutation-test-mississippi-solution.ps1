@@ -38,7 +38,15 @@ try {
     Write-Host "Stryker will inject mutations into source code and verify tests detect them"
     Write-Host "This process validates the effectiveness of the test suite"
     Write-Host "Target solution: $SLN_PATH"
-    dotnet stryker --solution "$SLN_PATH"
+    $mutationRoot = Join-Path ".scratchpad" "mutation-test-results"
+    if (-not (Test-Path -LiteralPath $mutationRoot)) {
+        New-Item -ItemType Directory -Path $mutationRoot | Out-Null
+    }
+    $mutationOutput = Join-Path $mutationRoot (Get-Date -Format 'yyyy-MM-dd.HH-mm-ss')
+    if (-not (Test-Path -LiteralPath $mutationOutput)) {
+        New-Item -ItemType Directory -Path $mutationOutput | Out-Null
+    }
+    dotnet stryker --solution "$SLN_PATH" --output "$mutationOutput"
     if ($LASTEXITCODE -ne 0) {
         throw "Stryker mutation tests failed"
     }

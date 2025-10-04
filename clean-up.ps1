@@ -4,9 +4,9 @@
 .SYNOPSIS
     Runs code-style cleanup (ReSharper CleanupCode) for both solutions in the repository.
 .DESCRIPTION
-    This is a convenience wrapper that sequentially invokes:
-      • scripts/clean-up-mississippi-solution.ps1
-      • scripts/clean-up-sample-solution.ps1
+        This is a convenience wrapper that sequentially invokes:
+            • eng/src/agent-scripts/clean-up-mississippi-solution.ps1
+            • eng/src/agent-scripts/clean-up-sample-solution.ps1
     It ensures both the core and sample solutions are formatted with the same rules.
 #>
 
@@ -25,8 +25,8 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Paths to the per-solution cleanup scripts
-$mississippiCleanup = Join-Path $repoRoot 'scripts\clean-up-mississippi-solution.ps1'
-$sampleCleanup      = Join-Path $repoRoot 'scripts\clean-up-sample-solution.ps1'
+$mississippiCleanup = Join-Path $repoRoot 'eng\src\agent-scripts\clean-up-mississippi-solution.ps1'
+$sampleCleanup      = Join-Path $repoRoot 'eng\src\agent-scripts\clean-up-sample-solution.ps1'
 
 try {
     if (-not $SkipMississippi) {

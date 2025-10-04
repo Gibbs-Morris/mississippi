@@ -21,9 +21,23 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# Resolve repo-root relative to this script (scripts/..)
-$defaultRepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
-$repoRoot = $defaultRepoRoot
+function Resolve-RepoRoot {
+    param([Parameter(Mandatory)][string]$StartPath)
+
+    $current = (Resolve-Path -LiteralPath $StartPath).Path
+    while ($true) {
+        if (Test-Path -LiteralPath (Join-Path $current '.git')) { return $current }
+        $parent = Split-Path -Parent $current
+        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
+            break
+        }
+        $current = $parent
+    }
+
+    throw "Unable to locate repository root from $StartPath"
+}
+
+$repoRoot = Resolve-RepoRoot -StartPath $PSScriptRoot
 
 # Resolve directories
 if (-not $InstructionsDir) { $InstructionsDir = (Join-Path $repoRoot '.github/instructions') }

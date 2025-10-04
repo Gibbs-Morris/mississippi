@@ -16,7 +16,7 @@ The `.scratchpad/` folder is a local, untracked workspace where agents can coord
 - Schema: small JSON objects with `schemaVersion`, stable keys, ISO-8601 timestamps
 - Never commit: no code, secrets, or durable records belong here
 
-> Drift check: If you change instruction Markdown, mirror changes to Cursor rule files via `pwsh ./scripts/sync-instructions-to-mdc.ps1` (see Instruction ↔ Cursor MDC Sync Policy). Scripts remain the source of truth for automation; this file conveys the repository policy and expected usage.
+> Drift check: If you change instruction Markdown, mirror changes to Cursor rule files via `pwsh ./eng/src/agent-scripts/sync-instructions-to-mdc.ps1` (see Instruction ↔ Cursor MDC Sync Policy). Scripts remain the source of truth for automation; this file conveys the repository policy and expected usage.
 
 ## Scope
 
@@ -284,6 +284,13 @@ function Defer-ScratchpadTask {
 - Fairness: workers should sort pending tasks by `priority`, then FIFO by timestamp in filename
 - Back-pressure: if `claimed/` grows large, pause new claims until `done/` advances
 - Hygiene: prune `runs/` older than a week unless actively referenced
+- Automation: use the CLI wrappers under `eng/src/agent-scripts/tasks/` to keep JSON consistent and file moves atomic:
+  - `new-scratchpad-task.ps1` creates pending tasks with normalized schema and unique IDs.
+  - `list-scratchpad-tasks.ps1` surfaces pending/claimed/done work with filters for status, priority, tags, or ID and can optionally output the raw payload.
+  - `claim-scratchpad-task.ps1` moves a pending task to `claimed/`, stamps `claimedBy`/`claimedAt`, and enforces the five-attempt limit from Build Issue Remediation.
+  - `complete-scratchpad-task.ps1` records a result summary, timestamps completion, and moves the file to `done/`.
+  - `defer-scratchpad-task.ps1` captures the deferral reason/next steps and moves the file to `deferred/`.
+  - For orchestration or custom automation, review `eng/src/agent-scripts/tasks/README.md` plus the Pester suite in `eng/tests/agent-scripts/`.
 
 ## Concurrency and Atomicity
 
@@ -310,7 +317,7 @@ function Defer-ScratchpadTask {
 
 - [x] Root `.gitignore` ignores `.scratchpad/` and re-includes `.scratchpad/.gitignore`
 - [x] `.scratchpad/.gitignore` ignores all transient files in that folder
-- [ ] If you change this instruction, mirror to Cursor `.mdc` via `scripts/sync-instructions-to-mdc.ps1`
+- [ ] If you change this instruction, mirror to Cursor `.mdc` via `eng/src/agent-scripts/sync-instructions-to-mdc.ps1`
 - [ ] No source code, tests, or CI workflows should depend on `.scratchpad/`
 
 ## Rationale

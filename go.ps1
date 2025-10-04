@@ -9,7 +9,7 @@
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Build the path to the orchestrate script
-$orchestrateScript = Join-Path $repoRoot 'scripts\orchestrate-solutions.ps1'
+$orchestrateScript = Join-Path $repoRoot 'eng\src\agent-scripts\orchestrate-solutions.ps1'
 
 Write-Host "=== STARTING MAIN PIPELINE ORCHESTRATION ===" -ForegroundColor Yellow
 Write-Host "Executing orchestrate-solutions.ps1 script..."

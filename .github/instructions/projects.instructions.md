@@ -18,16 +18,18 @@ This document defines the project file standards and best practices for .NET app
 - Validate with a clean build; fix any warnings (warnings are treated as errors in CI per Build Rules).
 
 ### Quick Validation Commands
+
 ```powershell
-pwsh ./scripts/build-mississippi-solution.ps1
-pwsh ./scripts/final-build-solutions.ps1
+pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/final-build-solutions.ps1
 ```
 
-> **Drift check:** Before running any PowerShell script referenced here, open the script in `scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
 ## Core Principles
 
 ### Keep Project Files Minimal
+
 - **Project files should be as minimal as possible** - avoid duplicating information already defined in `Directory.Build.props`
 - **Use centralized package management** - all package versions are controlled through `Directory.Packages.props`
 - **Leverage Directory.Build.props** - common properties, settings, and configurations are inherited automatically
@@ -35,6 +37,7 @@ pwsh ./scripts/final-build-solutions.ps1
 - **Focus on project-specific concerns only** - only include settings that are unique to the specific project
 
 ### Central Package Management Strategy
+
 - **Directory.Packages.props** controls all package versions across the solution
 - **PackageReference elements** in project files should not include version numbers
 - **Use `<PackageReference Include="PackageName" />` format** without version attributes
@@ -44,6 +47,7 @@ pwsh ./scripts/final-build-solutions.ps1
 ## Required Project File Structure
 
 ### Minimal Project File Template
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -70,6 +74,7 @@ pwsh ./scripts/final-build-solutions.ps1
 ### What NOT to Include
 
 ❌ **Avoid these common anti-patterns:**
+
 ```xml
 <!-- DON'T: Version numbers in PackageReference (managed centrally) -->
 <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
@@ -110,6 +115,7 @@ pwsh ./scripts/final-build-solutions.ps1
 ### What TO Include
 
 ✅ **Only include project-specific settings:**
+
 ```xml
 <!-- Project type (only if different from default library) -->
 <OutputType>Exe</OutputType>
@@ -130,14 +136,17 @@ pwsh ./scripts/final-build-solutions.ps1
 ## Assembly and Namespace Naming Convention
 
 The build system automatically generates assembly names and root namespaces following this pattern:
-- **AssemblyName**: `Company.$(MSBuildProjectName)` 
+
+- **AssemblyName**: `Company.$(MSBuildProjectName)`
 - **RootNamespace**: `Company.$(MSBuildProjectName.Replace(" ", "_"))`
 
 **Examples:**
+
 - Project: `EventSourcing.csproj` → Assembly: `Company.EventSourcing` → Namespace: `Company.EventSourcing`
 - Project: `Event Sourcing.csproj` → Assembly: `Company.Event Sourcing` → Namespace: `Company.Event_Sourcing`
 
 **⚠️ Do NOT override these automatic naming patterns** unless there's a specific business requirement. The automatic pattern ensures consistency across the entire solution.
+
 ```
 
 ## What's Automatically Configured
@@ -176,7 +185,9 @@ The following properties are **automatically configured** for ALL projects and s
 ```
 
 #### Automatic Code Analysis & Quality Tools
+
 All projects automatically include these analyzers:
+
 - **Microsoft.VisualStudio.Threading.Analyzers** - Threading best practices
 - **SonarAnalyzer.CSharp** - Code quality and security
 - **IDisposableAnalyzers** - Proper disposal patterns
@@ -185,15 +196,18 @@ All projects automatically include these analyzers:
 - **Microsoft.SourceLink.GitHub** - Source linking for debugging
 
 #### Test Projects Get Extra Configuration
+
 Projects ending with `Tests` **automatically receive**:
 
 **Test-Specific Properties:**
+
 ```xml
 <IsPackable>false</IsPackable>
 <IsTestProject>true</IsTestProject>
 ```
 
 **Test Framework Packages (automatically included):**
+
 - **Microsoft.NET.Test.Sdk** - Test SDK
 - **xunit** - Test framework
 - **xunit.runner.visualstudio** - Visual Studio test runner
@@ -202,11 +216,13 @@ Projects ending with `Tests` **automatically receive**:
 - **Allure.Xunit** - Test reporting
 
 **Automatic Using Statements:**
+
 ```xml
 <Using Include="Xunit" />
 ```
 
 **Automatic InternalsVisibleTo:**
+
 ```xml
 <InternalsVisibleTo Include="$(AssemblyName).Tests" />
 <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
@@ -220,6 +236,7 @@ Projects ending with `Tests` **automatically receive**:
 ```
 
 ### Directory.Packages.props - Centralized Package Management
+
 - **`ManagePackageVersionsCentrally` is enabled** - all versions controlled centrally
 - **66+ packages pre-configured** with specific versions
 - **Automatic version resolution** prevents conflicts
@@ -229,6 +246,7 @@ Projects ending with `Tests` **automatically receive**:
 ### What This Means for Your Project Files
 
 ❌ **NEVER include these in your `.csproj` files** (automatically handled):
+
 ```xml
 <!-- Build settings (all automatic) -->
 <TargetFramework>net9.0</TargetFramework>
@@ -250,6 +268,7 @@ Projects ending with `Tests` **automatically receive**:
 ```
 
 ✅ **Only include project-specific settings:**
+
 ```xml
 <!-- Different output type -->
 <OutputType>Exe</OutputType>
@@ -265,6 +284,7 @@ Projects ending with `Tests` **automatically receive**:
 ## Common Project Types
 
 ### Library Project (Default)
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
@@ -274,6 +294,7 @@ Projects ending with `Tests` **automatically receive**:
 ```
 
 ### Console Application
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -287,6 +308,7 @@ Projects ending with `Tests` **automatically receive**:
 ```
 
 ### Web Application
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
@@ -296,6 +318,7 @@ Projects ending with `Tests` **automatically receive**:
 ```
 
 ### Test Project (Automatic Configuration)
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- 
@@ -316,6 +339,7 @@ Projects ending with `Tests` **automatically receive**:
 ```
 
 ### NuGet Package Project
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -336,6 +360,7 @@ Projects ending with `Tests` **automatically receive**:
 ## Validation Rules
 
 ### Required Checks
+
 1. **No version numbers** in PackageReference elements
 2. **No duplicate properties** already defined in Directory.Build.props
 3. **Minimal content** - only project-specific configurations
@@ -343,7 +368,9 @@ Projects ending with `Tests` **automatically receive**:
 5. **Consistent formatting** - proper indentation and element ordering
 
 ### Build Validation
+
 The build system will fail if:
+
 - Version numbers are found in PackageReference elements
 - Properties conflict with Directory.Build.props settings
 - Required project-specific properties are missing
@@ -354,6 +381,7 @@ When drift is detected (e.g., version attributes in `PackageReference`, duplicat
 ## Migration Guidelines
 
 ### Converting Existing Projects
+
 1. **Remove all version numbers** from PackageReference elements
 2. **Remove properties** already defined in Directory.Build.props
 3. **Keep only project-specific** OutputType, GeneratePackageOnBuild, etc.
@@ -361,6 +389,7 @@ When drift is detected (e.g., version attributes in `PackageReference`, duplicat
 5. **Run quality scripts** to ensure compliance
 
 ### Adding New Projects
+
 1. **Start with minimal template** for the project type
 2. **Add PackageReference** elements without versions
 3. **Include only necessary** project-specific properties

@@ -59,7 +59,7 @@ This document establishes comprehensive naming conventions and XML documentation
 | C-5  | Voice: **imperative, active, present tense** ("Calculates the pro-rata refund."). Avoid "This method…".                                                                                                          |
 | C-6  | Prefer **domain vocabulary** over technical jargon.                                                                                                                                                              |
 | C-7  | **Validation pass**: parameter names match, no empty tags, no TODOs/TBDs, no contradictions with code.                                                                                                           |
-| C-8  | Formatting: `/// ` (triple slash + single space) at the start of each line; block preceded by one blank line except at file top.                                                                                 |
+| C-8  | Formatting: `///` (triple slash + single space) at the start of each line; block preceded by one blank line except at file top.                                                                                 |
 | C-9  | **Internal/private** members require docs only when behaviour is non-trivial or exposed via `InternalsVisibleTo`; suppress StyleCop otherwise.                                                                   |
 | C-10 | `<example>` snippets **must compile** in isolation when wrapped in minimal scaffolding.                                                                                                                          |
 
@@ -255,43 +255,45 @@ TDescriptive
 All naming conventions are enforced through StyleCop analyzers. The following rules are particularly relevant:
 
 ### Naming Rules (SA13xx)
-- **SA1300**: Element should begin with uppercase letter
-- **SA1301**: Element should begin with lowercase letter
-- **SA1302**: Interface names should begin with I
-- **SA1303**: Const field names should begin with uppercase letter
-- **SA1304**: Non-private readonly fields should begin with uppercase letter
-- **SA1305**: Field names should not use Hungarian notation
-- **SA1306**: Field names should begin with lowercase letter
-- **SA1307**: Accessible fields should begin with uppercase letter
-- **SA1308**: Variable names should not be prefixed
-- **SA1309**: Field names should not begin with underscore
-- **SA1310**: Field names should not contain underscore
-- **SA1311**: Static readonly fields should begin with uppercase letter
-- **SA1312**: Variable names should begin with lowercase letter
-- **SA1313**: Parameter names should begin with lowercase letter
-- **SA1314**: Type parameter names should begin with T
+
+* **SA1300**: Element should begin with uppercase letter
+* **SA1301**: Element should begin with lowercase letter
+* **SA1302**: Interface names should begin with I
+* **SA1303**: Const field names should begin with uppercase letter
+* **SA1304**: Non-private readonly fields should begin with uppercase letter
+* **SA1305**: Field names should not use Hungarian notation
+* **SA1306**: Field names should begin with lowercase letter
+* **SA1307**: Accessible fields should begin with uppercase letter
+* **SA1308**: Variable names should not be prefixed
+* **SA1309**: Field names should not begin with underscore
+* **SA1310**: Field names should not contain underscore
+* **SA1311**: Static readonly fields should begin with uppercase letter
+* **SA1312**: Variable names should begin with lowercase letter
+* **SA1313**: Parameter names should begin with lowercase letter
+* **SA1314**: Type parameter names should begin with T
 
 ### Documentation Rules (SA16xx)
-- **SA1600**: Elements should be documented
-- **SA1601**: Partial elements should be documented
-- **SA1602**: Enumeration items should be documented
-- **SA1603**: Documentation should contain meaningful text
-- **SA1604**: Element documentation should have summary
-- **SA1605**: Partial element documentation should have summary
-- **SA1606**: Element documentation should have summary text
-- **SA1607**: Partial element documentation should have summary text
-- **SA1608**: Element documentation should not have default summary
-- **SA1609**: Property documentation should have value
-- **SA1610**: Property documentation should have value text
-- **SA1611**: Element parameters should be documented
-- **SA1612**: Element parameter documentation should match element parameters
-- **SA1613**: Element parameter documentation should declare parameter name
-- **SA1614**: Element parameter documentation should have text
-- **SA1615**: Element return value should be documented
-- **SA1616**: Element return value documentation should have text
-- **SA1617**: Void return value should not be documented
-- **SA1618**: Generic type parameters should be documented
-- **SA1619**: Generic type parameters should be documented partial class
+
+* **SA1600**: Elements should be documented
+* **SA1601**: Partial elements should be documented
+* **SA1602**: Enumeration items should be documented
+* **SA1603**: Documentation should contain meaningful text
+* **SA1604**: Element documentation should have summary
+* **SA1605**: Partial element documentation should have summary
+* **SA1606**: Element documentation should have summary text
+* **SA1607**: Partial element documentation should have summary text
+* **SA1608**: Element documentation should not have default summary
+* **SA1609**: Property documentation should have value
+* **SA1610**: Property documentation should have value text
+* **SA1611**: Element parameters should be documented
+* **SA1612**: Element parameter documentation should match element parameters
+* **SA1613**: Element parameter documentation should declare parameter name
+* **SA1614**: Element parameter documentation should have text
+* **SA1615**: Element return value should be documented
+* **SA1616**: Element return value documentation should have text
+* **SA1617**: Void return value should not be documented
+* **SA1618**: Generic type parameters should be documented
+* **SA1619**: Generic type parameters should be documented partial class
 
 When addressing many SA13xx/SA16xx findings at once, prefer creating small, discrete tasks in `.scratchpad/tasks/pending` (one per file or logical unit) so agents can fix them in parallel with deterministic ownership. See `.github/instructions/agent-scratchpad.instructions.md`.
 
@@ -300,24 +302,28 @@ When addressing many SA13xx/SA16xx findings at once, prefer creating small, disc
 This naming convention document aligns with and reinforces patterns established in other instruction files:
 
 ### C# General Best Practices Alignment
-- **Dependency injection properties**: Follow the `private Type Name { get; }` pattern specified in csharp.instructions.md
-- **Immutable objects**: Support the preference for records and init-only properties
-- **SOLID principles**: Naming should reflect single responsibility and clear interfaces
+
+* **Dependency injection properties**: Follow the `private Type Name { get; }` pattern specified in csharp.instructions.md
+* **Immutable objects**: Support the preference for records and init-only properties
+* **SOLID principles**: Naming should reflect single responsibility and clear interfaces
 
 ### Logging Rules Alignment
-- **Logger property naming**: Use `private ILogger<T> Logger { get; }` pattern consistently
-- **High-performance logging**: Naming conventions support LoggerMessage pattern usage
-- **Structured logging**: Property names should support structured logging requirements
+
+* **Logger property naming**: Use `private ILogger<T> Logger { get; }` pattern consistently
+* **High-performance logging**: Naming conventions support LoggerMessage pattern usage
+* **Structured logging**: Property names should support structured logging requirements
 
 ### Orleans Best Practices Alignment
-- **POCO grain pattern**: Naming conventions work with `IGrainBase` implementation
-- **Extension method usage**: Support for Orleans extension methods like `this.GetPrimaryKey()`
-- **Grain naming**: Grain classes should end with "Grain" suffix (e.g., `TodoGrain`)
+
+* **POCO grain pattern**: Naming conventions work with `IGrainBase` implementation
+* **Extension method usage**: Support for Orleans extension methods like `this.GetPrimaryKey()`
+* **Grain naming**: Grain classes should end with "Grain" suffix (e.g., `TodoGrain`)
 
 ### Build Rules Alignment
-- **Zero warnings policy**: All naming violations must be fixed, not suppressed
-- **StyleCop enforcement**: SA13xx and SA16xx rules are treated as build errors
-- **Quality standards**: Naming supports comprehensive test coverage and mutation testing
+
+* **Zero warnings policy**: All naming violations must be fixed, not suppressed
+* **StyleCop enforcement**: SA13xx and SA16xx rules are treated as build errors
+* **Quality standards**: Naming supports comprehensive test coverage and mutation testing
 
 ## 10. Reference Summary
 
@@ -329,12 +335,12 @@ This naming convention document aligns with and reinforces patterns established 
 
 This document should be read in conjunction with:
 
-- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection patterns, and immutable object preferences
-- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For ServiceRegistration class naming patterns, Options class naming conventions, and XML documentation requirements for registration methods
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For Logger property naming, LoggerExtensions class naming patterns, and structured logging support
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For POCO grain patterns and Orleans-specific naming
-- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attribute usage and type naming in serializable classes
-- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy
-- **Project File Management** (`.github/instructions/projects.instructions.md`) - For assembly naming conventions and project ID naming patterns
+* **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection patterns, and immutable object preferences
+* **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For ServiceRegistration class naming patterns, Options class naming conventions, and XML documentation requirements for registration methods
+* **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For Logger property naming, LoggerExtensions class naming patterns, and structured logging support
+* **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For POCO grain patterns and Orleans-specific naming
+* **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attribute usage and type naming in serializable classes
+* **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy
+* **Project File Management** (`.github/instructions/projects.instructions.md`) - For assembly naming conventions and project ID naming patterns
 
 *End of naming.instructions.md*
