@@ -50,6 +50,19 @@ The repository includes sample applications demonstrating the framework:
 - **CrescentApiApp** - An ASP.NET Core API application showing web service integration
 - **CrescentConsoleApp** - A console application demonstrating non-web usage
 
+## Code Formatting
+Before committing changes, run the code cleanup script to ensure consistent formatting:
+
+```powershell
+# Apply ReSharper cleanup to both solutions
+pwsh ./eng/cleanup.ps1
+
+# Verify code is properly formatted (fails if cleanup would modify files)
+pwsh ./eng/cleanup.ps1 -Check
+```
+
+This ensures code style consistency across Windows and Linux platforms. See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
 ## Testing
 The framework includes comprehensive testing:
 
