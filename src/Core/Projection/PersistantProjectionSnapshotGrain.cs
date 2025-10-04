@@ -31,21 +31,6 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
     public required IGrainContext GrainContext { get; init; }
 
     /// <summary>
-    ///     Called when the grain is activated. Initiates background building of the projection snapshot.
-    ///     This method is automatically invoked by Orleans when the grain becomes active.
-    /// </summary>
-    /// <param name="token">Cancellation token for the activation operation.</param>
-    /// <returns>A task representing the asynchronous activation operation.</returns>
-    public async Task OnActivateAsync(
-        CancellationToken token
-    )
-    {
-        IProjectionSnapshotGeneratorGrain<TModel>? generator =
-            GrainFactory.GetGrain<IProjectionSnapshotGeneratorGrain<TModel>>(this.GetPrimaryKeyString());
-        await generator.BackgroundBuildAsync();
-    }
-
-    /// <summary>
     ///     Gets the projection snapshot, either from cache or by building a new one.
     ///     Implements caching and in-flight request deduplication to avoid rebuilding the same snapshot multiple times.
     /// </summary>
@@ -77,5 +62,20 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
     {
         CachedState = default;
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Called when the grain is activated. Initiates background building of the projection snapshot.
+    ///     This method is automatically invoked by Orleans when the grain becomes active.
+    /// </summary>
+    /// <param name="token">Cancellation token for the activation operation.</param>
+    /// <returns>A task representing the asynchronous activation operation.</returns>
+    public async Task OnActivateAsync(
+        CancellationToken token
+    )
+    {
+        IProjectionSnapshotGeneratorGrain<TModel>? generator =
+            GrainFactory.GetGrain<IProjectionSnapshotGeneratorGrain<TModel>>(this.GetPrimaryKeyString());
+        await generator.BackgroundBuildAsync();
     }
 }
