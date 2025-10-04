@@ -1,6 +1,11 @@
 ---
-applyTo: '**/*.instructions.md'
+description: Instruction Authoring Guide
+globs: ["**/*.instructions.md"]
+alwaysApply: false
 ---
+# Instruction Authoring Guide
+**Source:** .github/instructions/authoring.instructions.md
+
 
 # Instruction Authoring Guide
 
