@@ -21,13 +21,6 @@ internal class BrookWriterGrain
     : IBrookWriterGrain,
       IGrainBase
 {
-    
-    
-    
-    
-    
-    
-    
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookWriterGrain" /> class.
     ///     Sets up the grain with required dependencies for brook writing operations.
@@ -83,10 +76,6 @@ internal class BrookWriterGrain
         return newPosition;
     }
 
-    
-    
-    
-    
     /// <summary>
     ///     Gets the Orleans grain context for this grain instance.
     ///     Provides access to Orleans infrastructure services and grain lifecycle management.

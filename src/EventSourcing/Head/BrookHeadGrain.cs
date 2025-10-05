@@ -19,9 +19,6 @@ internal class BrookHeadGrain
       IAsyncObserver<BrookHeadMovedEvent>,
       IGrainBase
 {
-    
-    
-    
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookHeadGrain" /> class.
     ///     Sets up the grain with required dependencies for brook head position tracking.
@@ -58,7 +55,6 @@ internal class BrookHeadGrain
 
     private IBrookStorageReader BrookReaderProvider { get; }
 
-    
     private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
 
     private IStreamIdFactory StreamIdFactory { get; }
@@ -88,9 +84,6 @@ internal class BrookHeadGrain
 
         return Task.CompletedTask;
     }
-    
-    
-    
 
     /// <summary>
     ///     Handles errors on the subscribed stream and deactivates the grain.
