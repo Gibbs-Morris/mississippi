@@ -101,6 +101,7 @@ Contributions to the Mississippi Framework are welcome. Please follow standard G
 2. Create a feature branch
 3. Make your changes
 4. Submit a pull request
+
 ### Build automation
 
 The PowerShell entry points (`build-*.ps1`, `unit-test-*.ps1`, `clean-up-*.ps1`, `mutation-test-mississippi-solution.ps1`, `orchestrate-solutions.ps1`, etc.) are wrappers over a shared module at `eng/src/agent-scripts/RepositoryAutomation.psm1`. The module exposes reusable advanced functions so the same steps can run from CI jobs, local shells, and Pester tests without duplicating logic. See `eng/src/agent-scripts/README.md` for the catalogue of functions and authoring guidance.

@@ -15,6 +15,7 @@ Instruction files are the canonical source of truth for development practices, p
 **Audience:** Contributors who create, update, or maintain `*.instructions.md` files in `.github/instructions/`.
 
 **In scope:**
+
 - Naming and placement conventions
 - Structure and formatting standards
 - Content organization patterns
@@ -23,6 +24,7 @@ Instruction files are the canonical source of truth for development practices, p
 - Change control and review requirements
 
 **Out of scope:**
+
 - Specific technical content for individual instruction files (covered in those files)
 - General Markdown authoring (covered in separate markdown guidelines if present)
 - Repository-wide contribution guidelines (see `README.md` or `CONTRIBUTING.md`)
@@ -30,12 +32,14 @@ Instruction files are the canonical source of truth for development practices, p
 ## When to Create or Update an Instruction File
 
 **Create a new instruction file when:**
+
 - Introducing a new technology, framework, or pattern used across multiple components
 - Establishing team conventions that require consistent application
 - Documenting mandatory practices that must be enforced by code review or tooling
 - Providing guidance that AI agents need to follow deterministically
 
 **Update an existing instruction file when:**
+
 - Correcting factual errors or outdated information
 - Adding clarifying examples or troubleshooting steps
 - Aligning with repository changes (new scripts, updated tools, workflow modifications)
@@ -52,6 +56,7 @@ Use lowercase kebab-case with the `.instructions.md` suffix.
 **Pattern:** `<topic>.instructions.md`
 
 **Examples:**
+
 - `build-rules.instructions.md`
 - `testing.instructions.md`
 - `coding-standards.instructions.md`
@@ -70,11 +75,13 @@ Place all instruction files in `.github/instructions/`.
 Each instruction file should cover one cohesive topic. Split large topics into focused files rather than creating monolithic documents.
 
 **Examples of good scope:**
+
 - `build.instructions.md` — build pipeline and quality gates
 - `testing.instructions.md` — test strategy and conventions
 - `authoring.instructions.md` — instruction file authoring (this file)
 
 **Examples of poor scope:**
+
 - `everything.instructions.md` — avoid catch-all files
 - `build-and-test-and-deploy.instructions.md` — too broad
 
@@ -184,6 +191,7 @@ Use short, declarative sentences in active voice. Target 15-20 words per sentenc
 In procedural sections, limit each numbered step to one action. Use substeps for related actions.
 
 **Good:**
+
 ```markdown
 1. Open the file.
 2. Edit the configuration.
@@ -191,6 +199,7 @@ In procedural sections, limit each numbered step to one action. Use substeps for
 ```
 
 **Bad:**
+
 ```markdown
 1. Open the file, edit the configuration, then save and close it.
 ```
@@ -233,11 +242,13 @@ After significant rules or recommendations, add a brief "Why" line explaining th
 Use only commands, scripts, and tools that exist in this repository. Never use placeholder names or fictional examples.
 
 **Good:**
+
 ```powershell
 pwsh ./eng/src/agent-scripts/build-solution.ps1
 ```
 
 **Bad:**
+
 ```powershell
 pwsh ./eng/src/agent-scripts/build-all.ps1  # (if this script doesn't exist)
 ```
@@ -249,11 +260,13 @@ pwsh ./eng/src/agent-scripts/build-all.ps1  # (if this script doesn't exist)
 When commands differ by OS, provide both PowerShell and Bash examples.
 
 **Example:**
+
 ```markdown
 **PowerShell:**
 ```powershell
 pwsh ./eng/src/agent-scripts/build.ps1
 ```
+
 ```
 
 **Why:** Readers use different development environments. Explicit OS sections prevent confusion about which syntax to use.
@@ -268,6 +281,7 @@ pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstract
 ```
 
 **Expected output:**
+
 ```
 === QUALITY SUMMARY (Core.Abstractions.Tests) ===
 RESULT: PASS
@@ -284,6 +298,7 @@ COVERAGE: 95%
 Document expected exit codes for scripts, especially in CI contexts.
 
 **Example:**
+
 ```markdown
 Exit codes:
 - `0`: All tests passed
@@ -297,6 +312,7 @@ Exit codes:
 When examples create side effects (files, processes, state), note how to clean up.
 
 **Example:**
+
 ```markdown
 > **Cleanup:** This script creates files in `./test-results`. Remove them with `rm -rf ./test-results` or let `.gitignore` exclude them.
 ```
@@ -350,6 +366,7 @@ Before referencing a script in an instruction file:
 Document how to run local quality checks before committing. Examples:
 
 **Check Markdown files:**
+
 ```bash
 # If using markdownlint:
 npx markdownlint-cli2 "**/*.md"
@@ -359,10 +376,12 @@ npx markdownlint-cli2 "**/*.md"
 ```
 
 **Expected success:**
+
 - Exit code `0`
 - No errors or warnings reported
 
 **On failure:**
+
 - Fix reported violations in your files
 - Re-run until clean
 - Avoid suppressing rules globally
@@ -384,6 +403,7 @@ Each topic should have exactly one authoritative instruction file. Other files m
 Link to other instruction files using relative paths.
 
 **Example:**
+
 ```markdown
 See [Logging Guidelines](./logging.instructions.md) for logging best practices.
 ```
@@ -395,6 +415,7 @@ See [Logging Guidelines](./logging.instructions.md) for logging best practices.
 When referencing a specific section, use anchor links.
 
 **Example:**
+
 ```markdown
 Follow the [unit testing guidelines](./testing.instructions.md#unit-tests) for writing unit tests.
 ```
@@ -406,6 +427,7 @@ Follow the [unit testing guidelines](./testing.instructions.md#unit-tests) for w
 Before committing, verify all internal links resolve.
 
 **Validation command:**
+
 ```bash
 # Check that referenced files exist
 ls -la .github/instructions/testing.instructions.md
@@ -426,6 +448,7 @@ Instruction files must never contain secrets, API keys, passwords, or tokens.
 When examples require credentials, show how to use environment variables.
 
 **Example:**
+
 ```powershell
 $connectionString = $env:COSMOS_CONNECTION_STRING
 ```
@@ -437,6 +460,7 @@ $connectionString = $env:COSMOS_CONNECTION_STRING
 If the repository uses a secret store (e.g., Azure Key Vault, GitHub Secrets), reference it explicitly.
 
 **Example:**
+
 ```markdown
 Connection strings are stored in Azure Key Vault and accessed via managed identity in production.
 ```
@@ -448,6 +472,7 @@ Connection strings are stored in Azure Key Vault and accessed via managed identi
 When showing example outputs that might contain sensitive data, use redaction patterns.
 
 **Example:**
+
 ```
 Cosmos DB connection: AccountEndpoint=https://[REDACTED].documents.azure.com;...
 ```
@@ -467,6 +492,7 @@ All changes to instruction files should require review per your repository's rev
 When modifying instruction files, include a "Docs impact" section in the PR description.
 
 **Example:**
+
 ```markdown
 ## Docs impact
 
@@ -481,6 +507,7 @@ Cross-references in `build-rules.instructions.md` remain accurate.
 Include "Last verified: YYYY-MM-DD" in the footer of each instruction file. Update this date when you verify all content is current.
 
 **Example:**
+
 ```markdown
 ---
 
@@ -506,6 +533,7 @@ As you create instruction files in your repository, document good examples here 
 ### Good Pattern: Build Instructions
 
 A well-structured build instruction file should include:
+
 - Clear "At-a-Glance Quick-Start" with the most common commands
 - Step-by-step procedures for different build scenarios
 - Code examples showing actual commands from your repository
@@ -514,6 +542,7 @@ A well-structured build instruction file should include:
 ### Good Pattern: Testing Instructions
 
 A comprehensive testing instruction file should include:
+
 - Layered content (different test types or levels)
 - Detailed subsections for each test category
 - References to external resources when helpful
@@ -522,6 +551,7 @@ A comprehensive testing instruction file should include:
 ### Good Pattern: Tool-Specific Instructions
 
 Tool or framework-specific instruction files should:
+
 - Provide prescriptive guidance with clear rules
 - Include quality enforcement sections with validation commands
 - Use note blocks to highlight repository-specific configuration
@@ -529,6 +559,7 @@ Tool or framework-specific instruction files should:
 ### Pattern to Avoid: Overly Generic Instructions
 
 Avoid instruction files that:
+
 - Duplicate content from official documentation without adding value
 - Mix multiple unrelated topics in a single file
 - Lack concrete, repository-specific examples
