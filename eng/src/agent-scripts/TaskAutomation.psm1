@@ -101,7 +101,8 @@ function New-TaskItem {
 function Sync-AutoTasks {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][psobject[]]$Tasks,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()]
+        [psobject[]]$Tasks,
         [Parameter(Mandatory)][string]$RepoRoot,
         [switch]$WhatIf
     )

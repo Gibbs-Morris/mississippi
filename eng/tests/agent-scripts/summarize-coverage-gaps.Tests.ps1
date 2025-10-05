@@ -9,7 +9,7 @@ Import-Module -Name $automationModulePath -Force
 
 
 $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
-$scriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/summarize-coverage-gaps.ps1'
+$script:scriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/summarize-coverage-gaps.ps1'
 if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
     throw "summarize-coverage-gaps.ps1 not found at '$scriptPath'"
 }
@@ -49,24 +49,24 @@ Describe 'summarize-coverage-gaps.ps1' {
         & $scriptPath -CoverageReportPath $reportPath -Threshold 75 -EmitTasks -RepoRoot $testRepo | Out-Null
 
         $pendingDir = Join-Path $testRepo '.scratchpad/tasks/pending'
-        Test-Path -LiteralPath $pendingDir | Should Be $true
+        Test-Path -LiteralPath $pendingDir | Should -Be $true
   $taskFiles = @(Get-ChildItem -LiteralPath $pendingDir -Filter '*.json')
-  $taskFiles.Count | Should Be 1
+  $taskFiles.Count | Should -Be 1
 
         $taskJson = Get-Content -LiteralPath $taskFiles[0].FullName -Raw | ConvertFrom-Json
-  $taskJson.category | Should Be 'coverage'
-  ($taskJson.autoTaskKey -replace '\\','/') | Should Be 'coverage|src/Core/Sample.cs'
-        $taskJson.coverage.coveragePercent | Should Be 50
-        $taskJson.coverage.threshold | Should Be 75
-        $taskJson.notes | Should Match 'Uncovered lines: 10, 12'
+  $taskJson.category | Should -Be 'coverage'
+  ($taskJson.autoTaskKey -replace '\\','/') | Should -Be 'coverage|src/Core/Sample.cs'
+        $taskJson.coverage.coveragePercent | Should -Be 50
+        $taskJson.coverage.threshold | Should -Be 75
+        $taskJson.notes | Should -Match 'Uncovered lines: 10, 12'
 
         $summaryPath = Join-Path $testRepo '.scratchpad/coverage-test-results/coverage-gaps-summary.json'
-        Test-Path -LiteralPath $summaryPath | Should Be $true
+        Test-Path -LiteralPath $summaryPath | Should -Be $true
         $summary = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json
-        $summary.threshold | Should Be 75
+        $summary.threshold | Should -Be 75
   $summaryItems = @($summary.items)
-  $summaryItems.Count | Should Be 1
-  ($summaryItems[0].relativePath -replace '\\','/') | Should Be 'src/Core/Sample.cs'
+  $summaryItems.Count | Should -Be 1
+  ($summaryItems[0].relativePath -replace '\\','/') | Should -Be 'src/Core/Sample.cs'
     }
 
     It 'supports WhatIf without creating tasks' {
@@ -97,7 +97,7 @@ Describe 'summarize-coverage-gaps.ps1' {
         & $scriptPath -CoverageReportPath $reportPath -Threshold 80 -EmitTasks -RepoRoot $testRepo -WhatIf | Out-Null
 
         $pendingDir = Join-Path $testRepo '.scratchpad/tasks/pending'
-        Test-Path -LiteralPath $pendingDir | Should Be $false
+        Test-Path -LiteralPath $pendingDir | Should -Be $false
     }
 }
 
