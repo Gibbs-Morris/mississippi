@@ -15,12 +15,14 @@ pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
 ```
 
+
 - Run tests (Mississippi solution) and mutation tests where required.
 
 ```powershell
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
+
 > Mutation tests are intentionally long-running. Wait for `mutation-test-mississippi-solution.ps1` to finish, even if it takes a full 30 minutes.
 
 - Final validation for both solutions.
@@ -28,6 +30,7 @@ pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```powershell
 pwsh ./go.ps1
 ```
+
 
 > **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
