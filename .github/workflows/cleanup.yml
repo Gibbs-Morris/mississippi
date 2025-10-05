@@ -103,7 +103,7 @@ jobs:
             git diff --color=always
             Write-Host ""
             Write-Host "To resolve this locally run:"
-            Write-Host "dotnet tool run jb cleanupcode --profile=`"Built-in: Full Cleanup`" --settings=`"${{ env.DOTSETTINGS_PATH }}`" `"$env:SLN_PATH`""
+            Write-Host 'dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$env:SLN_PATH"'
             exit 1
           } else {
             Write-Host "No modifications detected. Cleanup check passed."
