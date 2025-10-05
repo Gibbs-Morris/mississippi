@@ -15,6 +15,11 @@ jobs:
   markdownlint:
     name: "Markdown Lint"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      statuses: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
