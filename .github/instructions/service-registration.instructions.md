@@ -46,7 +46,7 @@ This document defines the service registration standards and configuration patte
 
 ### Required File Structure
 
-```
+```text
 Mississippi.EventSourcing/
 ├── ServiceRegistration.cs              // Calls child registrations
 ├── Streams/

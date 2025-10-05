@@ -145,8 +145,14 @@ The build system automatically generates assembly names and root namespaces foll
 - Project: `EventSourcing.csproj` → Assembly: `Company.EventSourcing` → Namespace: `Company.EventSourcing`
 - Project: `Event Sourcing.csproj` → Assembly: `Company.Event Sourcing` → Namespace: `Company.Event_Sourcing`
 
-**⚠️ Do NOT override these automatic naming patterns** unless there's a specific business requirement. The automatic pattern ensures consistency across the entire solution.
+**⚠️ Do NOT override these automatic naming patterns** unless there's a
+specific business requirement. The automatic pattern ensures consistency across
+the entire solution.
 
+```xml
+<!-- Example: These names are automatically generated -->
+<AssemblyName>Company.EventSourcing</AssemblyName>
+<RootNamespace>Company.EventSourcing</RootNamespace>
 ```
 
 ## What's Automatically Configured

@@ -184,7 +184,7 @@ Provide in this order:
 2) Before → after warning counts by code (e.g., `CS8618: 14 → 3`, `CA2000: 7 → 0`).
 3) Changes as unified diffs per file:
 
-```
+```diff
 --- path/to/File.cs
 +++ path/to/File.cs
 @@

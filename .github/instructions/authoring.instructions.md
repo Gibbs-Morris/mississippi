@@ -267,6 +267,8 @@ When commands differ by OS, provide both PowerShell and Bash examples.
 pwsh ./eng/src/agent-scripts/build.ps1
 ```
 
+```bash
+pwsh ./eng/src/agent-scripts/build.ps1
 ```
 
 **Why:** Readers use different development environments. Explicit OS sections prevent confusion about which syntax to use.
@@ -282,7 +284,7 @@ pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstract
 
 **Expected output:**
 
-```
+```text
 === QUALITY SUMMARY (Core.Abstractions.Tests) ===
 RESULT: PASS
 TEST_TOTAL: 42
@@ -473,7 +475,7 @@ When showing example outputs that might contain sensitive data, use redaction pa
 
 **Example:**
 
-```
+```text
 Cosmos DB connection: AccountEndpoint=https://[REDACTED].documents.azure.com;...
 ```
 
