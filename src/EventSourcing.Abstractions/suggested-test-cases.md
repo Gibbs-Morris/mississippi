@@ -56,10 +56,10 @@ Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Priority | Type |
 |----|----------|---------------------|------|----------|------|
-| BK1 | Valid construction | new("a","b") -> ToString == `a|b` | Happy | H | Unit |
+| BK1 | Valid construction | new("a","b") -> ToString == `a&#124;b` | Happy | H | Unit |
 | BK2 | Null type | type null -> ctor throws ArgNull | Null | H | Unit |
 | BK3 | Null id | id null -> ctor throws ArgNull | Null | H | Unit |
-| BK4 | Embedded separator | type contains `|` -> ctor ArgException | Validation | H | Unit |
+| BK4 | Embedded separator | type contains `&#124;` -> ctor ArgException | Validation | H | Unit |
 | BK5 | Over max length | very long components -> ArgException | Bound | M | Unit |
 | BK6 | FromString valid | FromString(a&#124;b) -> components correct | Parse | H | Unit |
 | BK7 | FromString missing sep | "ab" -> FormatException | Parse | H | Unit |
@@ -112,9 +112,9 @@ Test Cases:
 | BRK1 | Valid construction | new("t","i",0,5) -> End 4 | Basic | H | Unit |
 | BRK2 | Negative start | start -1 -> ArgOutOfRange | Bounds | H | Unit |
 | BRK3 | Negative count | count -1 -> ArgOutOfRange | Bounds | H | Unit |
-| BRK4 | Separator in type | type contains `|` -> ArgException | Validation | M | Unit |
+| BRK4 | Separator in type | type contains `&#124;` -> ArgException | Validation | M | Unit |
 | BRK5 | Oversize composite | overly long -> ArgException | Length | L | Unit |
-| BRK6 | FromString valid | FromString(`t|i|0|10`) -> fields parsed | Parse | H | Unit |
+| BRK6 | FromString valid | FromString(`t&#124;i&#124;0&#124;10`) -> fields parsed | Parse | H | Unit |
 | BRK7 | FromString bad parts | missing separators -> FormatException | Parse | H | Unit |
 | BRK8 | FromString bad start | non-numeric -> FormatException | Parse | M | Unit |
 | BRK9 | Round-trip symmetry | key -> string -> key equal | Idempotence | M | Unit |

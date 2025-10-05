@@ -195,9 +195,9 @@ Provide in this order:
 
 ```
 
-4) Justification for each change in one sentence.
-5) Next targets: the next warning code(s) and files to address.
-6) Deferred issues (if any): list `<CODE> @ <path>:<brief reason>, attempts=5`.
+1. Justification for each change in one sentence.
+2. Next targets: the next warning code(s) and files to address.
+3. Deferred issues (if any): list `<CODE> @ <path>:<brief reason>, attempts=5`.
 
 ## Commit Guidance
 

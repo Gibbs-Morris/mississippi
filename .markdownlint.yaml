@@ -1,6 +1,6 @@
 # Markdown lint configuration
-# This file is auto-discovered by markdownlint tools
-# Super-linter uses .github/linters/.markdown-lint.yml
+# This configuration is auto-discovered by markdownlint tools for local development
+# See: https://github.com/DavidAnson/markdownlint
 
 # Default state for all rules
 default: true
@@ -8,18 +8,3 @@ default: true
 # MD013: Line length - disabled as technical documentation often requires longer lines
 # for code examples, URLs, command lines, and tables
 MD013: false
-
-# MD005: List indentation - disabled as nested lists may have varying indentation styles
-MD005: false
-
-# MD029: Ordered list prefixes - disabled to allow flexible numbering styles
-MD029: false
-
-# MD033: Inline HTML - disabled as sometimes necessary for technical content
-MD033: false
-
-# MD036: Emphasis as heading - disabled for intentional use of emphasis
-MD036: false
-
-# MD056: Table column count - disabled to avoid false positives in complex tables
-MD056: false

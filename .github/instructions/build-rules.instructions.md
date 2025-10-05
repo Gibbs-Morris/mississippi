@@ -38,7 +38,7 @@ pwsh ./go.ps1
 
 ## 🚨 CRITICAL RULE: ZERO WARNINGS POLICY 🚨
 
-**⚠️ ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes ⚠️**
+### ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes
 
 ### The Rule
 

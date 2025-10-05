@@ -173,7 +173,7 @@ All command-line scripts in this folder are thin shims over the shared PowerShel
 | `Invoke-SlnGeneration`, `Invoke-ReSharperCleanup`, `Invoke-StrykerMutationTest` | Encapsulate SLNGen, ReSharper CleanupCode, and Stryker.NET flows. |
 | `Invoke-MississippiSolution*`, `Invoke-SampleSolution*`, `Invoke-FinalSolutionsBuild`, `Invoke-SolutionsPipeline` | Canonical entry points that the `.ps1` shims expose on the command line. |
 
-**How to extend automation**
+### How to extend automation
 
 1. Add the new behaviour as an advanced function inside `RepositoryAutomation.psm1` and export it.
 2. Create a thin `#!/usr/bin/env pwsh` wrapper only when a standalone CLI entry point is needed—the wrapper should import the module, call the function, and surface friendly errors.

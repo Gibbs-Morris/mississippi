@@ -17,19 +17,14 @@ maintain Markdown so that it passes the canonical set of `markdownlint` rules wi
 
 ## Configuration
 
-The repository uses markdownlint configuration files to disable certain stylistic rules that don't affect content quality:
+The repository uses markdownlint configuration files:
 
 - **Local development**: `.markdownlint.yaml` (auto-discovered by markdownlint tools)
 - **CI/Super-Linter**: `.github/linters/.markdown-lint.yml` (used by GitHub Super-Linter)
 
-Both files disable the same rules:
+Both files disable only:
 
-- **MD013** (line length) - Technical documentation often requires longer lines
-- **MD005** (list indentation) - Nested lists may have varying styles
-- **MD029** (ordered list prefixes) - Flexible numbering styles allowed
-- **MD033** (inline HTML) - Sometimes necessary for technical content
-- **MD036** (emphasis as heading) - Intentional emphasis allowed
-- **MD056** (table column count) - Avoids false positives in complex tables
+- **MD013** (line length) - Technical documentation often requires longer lines for code examples, URLs, command lines, and tables
 
 All other markdownlint rules remain active and must be followed.
 
@@ -102,7 +97,7 @@ The following rules are enforced exactly as documented by `markdownlint`. Every 
 - **MD059 – Write descriptive link text; avoid generic phrases like “click here”.**
 
 > **Note:** The repository configuration files (`.markdownlint.yaml` and `.github/linters/.markdown-lint.yml`)
-> disable certain stylistic rules. Follow the active rules as configured in these files.
+> disable MD013 (line length) only. All other markdownlint rules are active and enforced.
 
 ## Quality Enforcement
 
