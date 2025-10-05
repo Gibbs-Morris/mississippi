@@ -57,11 +57,20 @@ internal static class MultiStreamScenario
 
                     break;
                 }
-                catch (EnumerationAbortedException) when (attemptsA == 0)
+                catch (EnumerationAbortedException ex)
                 {
-                    attemptsA++;
+                    if (attemptsA == 0)
+                    {
+                        attemptsA++;
+                        logger.ReadEnumerationAbortedRetry(runId, ex);
 
-                    // retry once
+                        // retry once
+                    }
+                    else
+                    {
+                        // second failure: swallow to avoid crashing the scenario
+                        break;
+                    }
                 }
             }
         }
@@ -85,11 +94,20 @@ internal static class MultiStreamScenario
 
                     break;
                 }
-                catch (EnumerationAbortedException) when (attemptsB == 0)
+                catch (EnumerationAbortedException ex)
                 {
-                    attemptsB++;
+                    if (attemptsB == 0)
+                    {
+                        attemptsB++;
+                        logger.ReadEnumerationAbortedRetry(runId, ex);
 
-                    // retry once
+                        // retry once
+                    }
+                    else
+                    {
+                        // second failure: swallow to avoid crashing the scenario
+                        break;
+                    }
                 }
             }
         }
