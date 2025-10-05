@@ -10,6 +10,7 @@ maintain Markdown so that it passes the canonical set of `markdownlint` rules wi
 ## Non-Negotiable Fundamentals
 
 - Treat `markdownlint` warnings as build blockers; fix the source rather than disabling or suppressing a rule.
+- Never disable, suppress, or reconfigure `markdownlint` rules (including via `markdownlint-disable` comments, config overrides, or ignore lists) unless the current user task explicitly instructs you to do so for that single case.
 - Follow GitHub Flavored Markdown (GFM) semantics and ensure rendered output matches intent on GitHub.
 - Keep authored content accessible: use descriptive link text, semantic headings, and alt text on images.
 - Prefer plain Markdown over inline HTML. If HTML is unavoidable, ensure it does not violate any active rule.
@@ -90,5 +91,5 @@ The following rules are enforced exactly as documented by `markdownlint`. Every 
 - Run `npx markdownlint-cli2 --fix "**/*.md"` only when you have reviewed the proposed edits; manual fixes
   are preferred so the author remains in control of content.
 - Submit Markdown changes only after linting passes with zero errors and warnings.
-- Do not add blanket suppressions, global `markdownlint-disable` directives, or inline overrides unless
-  explicitly approved and accompanied by a documented rationale.
+- Do not add blanket suppressions, global `markdownlint-disable` directives, or inline overrides unless the
+  current user task explicitly directs that specific exception and you document the instruction in context.
