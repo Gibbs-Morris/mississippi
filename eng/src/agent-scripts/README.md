@@ -160,6 +160,7 @@ MUTATION_RESULT: PASS|FAIL
 Exit code is `0` on success (including mutation thresholds) and `1` otherwise.
 
 Happy building! 🚀
+
 ### RepositoryAutomation module
 
 All command-line scripts in this folder are thin shims over the shared PowerShell module `RepositoryAutomation.psm1`. The module exposes advanced functions for build/test/cleanup orchestration so automation can be reused from other scripts, Pester tests, and CI workflows without spawning nested shells.
@@ -172,7 +173,8 @@ All command-line scripts in this folder are thin shims over the shared PowerShel
 | `Invoke-SlnGeneration`, `Invoke-ReSharperCleanup`, `Invoke-StrykerMutationTest` | Encapsulate SLNGen, ReSharper CleanupCode, and Stryker.NET flows. |
 | `Invoke-MississippiSolution*`, `Invoke-SampleSolution*`, `Invoke-FinalSolutionsBuild`, `Invoke-SolutionsPipeline` | Canonical entry points that the `.ps1` shims expose on the command line. |
 
-**How to extend automation**
+### How to extend automation
+
 1. Add the new behaviour as an advanced function inside `RepositoryAutomation.psm1` and export it.
 2. Create a thin `#!/usr/bin/env pwsh` wrapper only when a standalone CLI entry point is needed—the wrapper should import the module, call the function, and surface friendly errors.
 3. Cover the logic with Pester (see `eng/tests/agent-scripts/RepositoryAutomation.Tests.ps1` for examples) and wire the suite into `eng/tests/orchestrate-powershell-tests.ps1` so CI runs it.
