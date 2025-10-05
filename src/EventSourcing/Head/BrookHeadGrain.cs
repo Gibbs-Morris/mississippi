@@ -60,13 +60,6 @@ internal class BrookHeadGrain
     private IStreamIdFactory StreamIdFactory { get; }
 
     /// <summary>
-    ///     Gets the Orleans grain context for this grain instance.
-    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
-    /// </summary>
-    /// <value>The grain context instance.</value>
-    public IGrainContext GrainContext { get; }
-
-    /// <summary>
     ///     Handles a head moved event and updates the grain's position if the event is newer.
     /// </summary>
     /// <param name="item">The event containing the new brook head position.</param>
@@ -140,6 +133,13 @@ internal class BrookHeadGrain
         this.DeactivateOnIdle();
         return Task.CompletedTask;
     }
+
+    /// <summary>
+    ///     Gets the Orleans grain context for this grain instance.
+    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
+    public IGrainContext GrainContext { get; }
 
     /// <summary>
     ///     Subscribes the grain as an observer to the head update stream on activation.
