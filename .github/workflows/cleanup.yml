@@ -16,9 +16,11 @@ env:
 
 jobs:
   cleanup:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [ ubuntu-latest, windows-latest ]
         solution: [ mississippi.slnx, samples.slnx ]
     steps:
       - name: Checkout repository
@@ -48,61 +50,61 @@ jobs:
 
       - name: Check for dotnet tools manifest
         id: check-tools-manifest
+        shell: pwsh
         run: |
-          set -euo pipefail
-          if [ -f ".config/dotnet-tools.json" ]; then
-            echo "manifest_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "manifest_exists=false" >> $GITHUB_OUTPUT
-          fi
+          if (Test-Path ".config/dotnet-tools.json") {
+            echo "manifest_exists=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "manifest_exists=false" >> $env:GITHUB_OUTPUT
+          }
 
       - name: Restore .NET Tools
         if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
+        shell: pwsh
         run: |
-          set -euo pipefail
-          echo "Restoring dotnet tools..."
+          Write-Host "Restoring dotnet tools..."
           dotnet tool restore
         continue-on-error: false
-        
+
       - name: Install ReSharper Global Tools
         if: steps.check-tools-manifest.outputs.manifest_exists != 'true'
+        shell: pwsh
         run: |
-          set -euo pipefail
-          echo "Installing JetBrains.ReSharper.GlobalTools..."
+          Write-Host "Installing JetBrains.ReSharper.GlobalTools..."
           dotnet tool install -g JetBrains.ReSharper.GlobalTools
         continue-on-error: false
 
       - name: Generate legacy solution file
+        shell: pwsh
         run: |
-          set -euo pipefail
-          SLNX_PATH="${{ github.workspace }}/${{ matrix.solution }}"
-          SLN_PATH="${SLNX_PATH%.slnx}.sln"
-          echo "Generating $SLN_PATH from $SLNX_PATH ..."
-          dotnet tool run slngen "$SLNX_PATH" --solutionfile "$SLN_PATH" --launch false
-          ls -al "$SLN_PATH"
+          $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
+          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
+          Write-Host "Generating $slnPath from $slnxPath ..."
+          dotnet tool run slngen "$slnxPath" --solutionfile "$slnPath" --launch false
+          Get-Item "$slnPath" | Format-List
 
       - name: Run ReSharper Cleanup Code
+        shell: pwsh
         run: |
-          set -euo pipefail
-          SLNX_PATH="${{ github.workspace }}/${{ matrix.solution }}"
-          SLN_PATH="${SLNX_PATH%.slnx}.sln"
-          echo "Running ReSharper Cleanup Code on $SLN_PATH ..."
-          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$SLN_PATH"
-          echo "Cleanup completed."
-          echo "SLN_PATH=$SLN_PATH" >> $GITHUB_ENV
+          $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
+          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
+          Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
+          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$slnPath"
+          Write-Host "Cleanup completed."
+          echo "SLN_PATH=$slnPath" >> $env:GITHUB_ENV
 
       - name: Check for Uncommitted Changes
+        shell: pwsh
         run: |
-          set -euo pipefail
-          echo "Checking for modifications after cleanup..."
-          CHANGES=$(git status --porcelain)
-          if [ -n "$CHANGES" ]; then
-            echo "ERROR: ReSharper cleanup modified files. The following changes are required:"
+          Write-Host "Checking for modifications after cleanup..."
+          $changes = git status --porcelain
+          if ($changes) {
+            Write-Host "ERROR: ReSharper cleanup modified files. The following changes are required:"
             git diff --color=always
-            echo ""
-            echo "To resolve this locally run:"
-            echo "dotnet tool run jb cleanupcode --profile=\"Built-in: Full Cleanup\" --settings=\"${DOTSETTINGS_PATH}\" \"$SLN_PATH\""
+            Write-Host ""
+            Write-Host "To resolve this locally run:"
+            Write-Host "dotnet tool run jb cleanupcode --profile=`"Built-in: Full Cleanup`" --settings=`"${{ env.DOTSETTINGS_PATH }}`" `"$env:SLN_PATH`""
             exit 1
-          else
-            echo "No modifications detected. Cleanup check passed."
-          fi
+          } else {
+            Write-Host "No modifications detected. Cleanup check passed."
+          }
