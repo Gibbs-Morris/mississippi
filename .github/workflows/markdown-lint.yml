@@ -33,7 +33,6 @@ jobs:
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_MARKDOWN: true
           VALIDATE_MARKDOWN_PRETTIER: false
-          FILTER_REGEX_INCLUDE: '(.*/)?[^/]+\\.md$'
 
       - name: Markdown lint passed
         if: success()
