@@ -21,6 +21,9 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
     /// <value>The grain factory instance.</value>
     public required IGrainFactory GrainFactory { get; init; }
 
+    
+    
+    
     private Immutable<ProjectionSnapshot<TModel>> CachedState { get; set; }
 
     /// <summary>
@@ -57,6 +60,12 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
             return CachedState;
         }
 
+        
+        
+        
+        
+        
+        
         if (inFlightTask is null)
         {
             IProjectionSnapshotGeneratorGrain<TModel>? builder =
@@ -68,6 +77,12 @@ public abstract class PersistantProjectionSnapshotGrain<TModel>
         return CachedState;
     }
 
+    
+    
+    
+    
+    
+    
     /// <summary>
     ///     Invalidates the cached snapshot, forcing the next GetAsync call to rebuild the projection.
     ///     This method clears the cached state but does not rebuild the projection immediately.
