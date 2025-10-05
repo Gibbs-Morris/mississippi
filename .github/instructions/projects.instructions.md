@@ -158,9 +158,12 @@ the entire solution.
 ## What's Automatically Configured
 
 ### Directory.Build.props - Automatic Settings
-The following properties are **automatically configured** for ALL projects and should **NEVER** be included in individual `.csproj` files:
+
+The following properties are **automatically configured** for ALL projects and
+should **NEVER** be included in individual `.csproj` files:
 
 #### Universal Settings Applied to All Projects
+
 ```xml
 <!-- Build Configuration -->
 <TargetFramework>net9.0</TargetFramework>

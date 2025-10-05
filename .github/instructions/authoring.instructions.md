@@ -278,6 +278,7 @@ pwsh ./eng/src/agent-scripts/build.ps1
 For commands with significant output, show what success looks like.
 
 **Example:**
+
 ```powershell
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
 ```
