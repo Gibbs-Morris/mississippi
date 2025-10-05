@@ -1,12 +1,11 @@
 ---
 description: PowerShell Scripting Best Practices
+globs: ["**/*.ps*"]
 alwaysApply: false
 ---
 # PowerShell Scripting Best Practices
 **Source:** .github/instructions/powershell.instructions.md
 
-applyTo: '**/*.ps*'
----
 
 # PowerShell Scripting Best Practices
 

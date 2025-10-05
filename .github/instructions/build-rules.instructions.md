@@ -27,6 +27,7 @@ pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 ```powershell
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
+> Mutation tests are intentionally long-running. Wait for this script to finish, even if it takes the full 30 minutes.
 
 - Final validation for both solutions.
 
@@ -108,7 +109,7 @@ The `eng/src/agent-scripts/` directory contains PowerShell automation for the bu
 
 - **`unit-test-mississippi-solution.ps1`** - Executes all unit and integration tests for Mississippi
 - **`unit-test-sample-solution.ps1`** - Runs minimal tests for sample applications (examples only)
-- **`mutation-test-mississippi-solution.ps1`** - Performs mutation testing with Stryker.NET (Mississippi ONLY)
+- **`mutation-test-mississippi-solution.ps1`** - Performs mutation testing with Stryker.NET (Mississippi ONLY). Expect this script to run for up to 30 minutes and allow it to finish; do not cancel early.
 - **`test-project-quality.ps1`** - Quickly evaluate a single test project: runs `dotnet test` with coverage and optionally Stryker mutation testing. Prints a concise, machine-readable summary (RESULT, TEST_*, COVERAGE, MUTATION_SCORE) to aid AI tools.
 
 ### Quality Scripts
@@ -131,7 +132,7 @@ The `eng/src/agent-scripts/` directory contains PowerShell automation for the bu
 - **Cleanup Samples**: `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1`
 - **Unit tests (Mississippi)**: `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
 - **Unit tests (Samples)**: `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1`
-- **Mutation tests (Mississippi)**: `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`
+- **Mutation tests (Mississippi)**: `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` (plan for up to 30 minutes and wait for completion)
 - **Per-project test quality**: `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name> [-SkipMutation]`
 - **Final pipeline (both solutions)**: `pwsh ./go.ps1`
 
@@ -168,6 +169,7 @@ pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 # Run mutation tests for quality validation (Mississippi ONLY)
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
+> Mutation tests are intentionally long-running. Plan for up to 30 minutes and do not cancel the script; wait for completion.
 
 #### Per-project quick quality check (recommended during iteration)
 

@@ -287,7 +287,7 @@ public async Task Add_ShouldAddItemToState()
 
 1. **Missing using Orleans.Runtime**: Build errors for extension methods
 2. **Forgot this. qualification**: Extension methods must be called with `this.`
-3. **Old Grain<TState> patterns**: Use `IPersistentState<T>` instead
+3. **Old Grain with TState patterns**: Use `IPersistentState<T>` instead
 4. **Constructor injection**: All dependencies must be injected, including `IGrainContext`
 5. **Using private readonly fields**: Use `private Type Name { get; }` properties instead
 

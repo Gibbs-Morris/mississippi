@@ -17,7 +17,7 @@ Use this checklist whenever you need to run Mississippi mutation tests or close 
 
 1. **Prep tools** – Ensure `dotnet tool restore` has been run at least once on the repo.
 2. **Clean build** – Run `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` to surface compiler/analyzer issues before mutation work.
-3. **Baseline mutation test** – Execute `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`. Always commit the generated report paths for traceability.
+3. **Baseline mutation test** – Execute `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`. Always commit the generated report paths for traceability. Expect this script to run for up to 30 minutes; stay on the run until it completes and do not cancel early.
 4. **Collect & prioritize survivors** – Open the newest `.scratchpad/mutation-test-results/**/reports/mutation-report.json` only if deep inspection is needed. Otherwise run the summarizer (it reruns the mutation script unless you pass `-SkipMutationRun`):
    - `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1` (defaults to weighted scoring, full list)
    - Outputs:

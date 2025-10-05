@@ -21,6 +21,7 @@ pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
+> Mutation tests are intentionally long-running. Wait for `mutation-test-mississippi-solution.ps1` to finish, even if it takes a full 30 minutes.
 
 - Final validation for both solutions.
 
@@ -86,6 +87,7 @@ pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
+> Mutation tests are intentionally long-running. Plan for up to 30 minutes and wait for the script to finish.
 
 - Per‑project quick quality loop during iteration:
 

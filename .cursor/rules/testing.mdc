@@ -152,7 +152,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 - Zero warnings policy applies to tests; treat analyzer violations as build blockers
 - PR gates: L0 (required) and L1 (where present) for Mississippi; Samples keep minimal, illustrative tests
 - Coverage: collected via coverlet; aim 100%, minimum 80% on Mississippi projects (target 95–100%); no regressions on touched code
-- Mutation testing: Mississippi solution only via Stryker.NET; keep or raise mutation score when touching logic; fix surviving mutants
+- Mutation testing: Mississippi solution only via Stryker.NET; keep or raise mutation score when touching logic; fix surviving mutants. Expect Stryker runs to take up to 30 minutes and allow them to finish.
 
 ## Tooling and Scripts
 
@@ -162,7 +162,7 @@ Use the PowerShell scripts documented in Build Rules to run tests and mutation c
 
 - `eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
 - `eng/src/agent-scripts/unit-test-sample-solution.ps1`
-- `eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`
+- `eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` (plan for up to 30 minutes and wait for the run to finish; do not cancel early)
 - `eng/src/agent-scripts/orchestrate-solutions.ps1` (also via `./go.ps1`)
 
 ## Author and Reviewer Checklists

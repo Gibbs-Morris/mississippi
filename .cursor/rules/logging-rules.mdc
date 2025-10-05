@@ -1506,12 +1506,12 @@ This logging standard ensures consistent, observable, and maintainable logging a
 
 ### Behavioral Requirements (WHEN to log)
 
-5. **MANDATORY: Public Service Methods** - ALL public service methods must have entry/exit logging
-6. **MANDATORY: Exception Handling** - ALL catch blocks must log exceptions with context
-7. **MANDATORY: Data Mutations** - ALL create/update/delete operations must be logged
-8. **MANDATORY: External Service Calls** - ALL external service interactions must be logged
-9. **MANDATORY: Orleans Grain Operations** - ALL grain methods and lifecycle events must be logged
-10. **MANDATORY: Business Rule Violations** - ALL business rule failures must be logged with context
+1. **MANDATORY: Public Service Methods** - ALL public service methods must have entry/exit logging
+2. **MANDATORY: Exception Handling** - ALL catch blocks must log exceptions with context
+3. **MANDATORY: Data Mutations** - ALL create/update/delete operations must be logged
+4. **MANDATORY: External Service Calls** - ALL external service interactions must be logged
+5. **MANDATORY: Orleans Grain Operations** - ALL grain methods and lifecycle events must be logged
+6. **MANDATORY: Business Rule Violations** - ALL business rule failures must be logged with context
 
 ### Agent Implementation Rule
 

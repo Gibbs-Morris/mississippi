@@ -486,7 +486,7 @@ builder.Services.Configure<DatabaseSettings>(
 
 ## 🚨 CRITICAL RULE: NEVER DISABLE ANALYZERS 🚨
 
-**⚠️ ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes ⚠️**
+### ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes
 
 **CRITICAL RULE**: Never disable analyzer rules to get around violations. Always fix the underlying issue.
 

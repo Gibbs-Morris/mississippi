@@ -37,7 +37,7 @@ The `.scratchpad/` folder is a local, untracked workspace where agents can coord
 
 ## Directory Layout
 
-```
+```text
 .scratchpad/
   tasks/
     pending/           # New tasks ready to be claimed (one JSON file per task)

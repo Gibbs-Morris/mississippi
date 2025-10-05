@@ -20,25 +20,25 @@ This guide defines a practical, repeatable loop to raise unit test coverage and 
 pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "dotnet tool restore"
 ```
 
-2) Establish baseline (tests + coverage only), then add tests to reach target coverage.
+1. Establish baseline (tests + coverage only), then add tests to reach target coverage.
 
 ```powershell
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation
 ```
 
-3) Build-only check anytime to surface warnings/errors.
+1. Build-only check anytime to surface warnings/errors.
 
 ```powershell
 dotnet build ./tests/<YourTestProject>/<YourTestProject>.csproj -c Release -warnaserror
 ```
 
-4) Add mutation testing; improve assertions/branches until threshold is met (Mississippi only).
+1. Add mutation testing; improve assertions/branches until threshold is met (Mississippi only).
 
 ```powershell
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject>
 ```
 
-5) Iterate quickly using `-NoBuild` after the initial build, but keep separate build checks for zero‑warnings.
+1. Iterate quickly using `-NoBuild` after the initial build, but keep separate build checks for zero‑warnings.
 
 ## Read This First
 
@@ -55,7 +55,7 @@ pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProj
 
 ## 🚨 CRITICAL RULE: ZERO WARNINGS IN TESTS 🚨
 
-**⚠️ ATTENTION: Zero warnings policy applies to test code too! ⚠️**
+### ATTENTION: Zero warnings policy applies to test code too
 
 ### The Rule for Test Code
 
@@ -107,7 +107,7 @@ Artifacts:
 pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "dotnet tool restore"
 ```
 
-2) Quick baseline (tests + coverage only)
+1. Quick baseline (tests + coverage only)
 
 ```powershell
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject> -SkipMutation
@@ -126,7 +126,7 @@ dotnet build ./tests/<YourTestProject>/<YourTestProject>.csproj -c Release -warn
 
 - Run this at any point to quickly catch new compiler/analyzer warnings or errors. Note: `dotnet test` already builds unless you use `-NoBuild`.
 
-3) Add mutation testing (quality of assertions and branches)
+1. Add mutation testing (quality of assertions and branches)
 
 ```powershell
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProject>
@@ -139,7 +139,7 @@ pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProj
   - Replace overly broad mocks with fakes or refine setups to exercise real logic.
 - Add tests under `tests/` only and re‑run until `MUTATION_SCORE ≥ 80%`.
 
-4) Tight loop for speed
+1. Tight loop for speed
 
 - After the initial build, you can append `-NoBuild` to speed up iterations:
 
@@ -154,7 +154,7 @@ pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProj
 dotnet build ./tests/<YourTestProject>/<YourTestProject>.csproj -c Release -warnaserror
 ```
 
-5) Ambiguity resolution
+1. Ambiguity resolution
 
 - If the script cannot infer the source project (multiple `<ProjectReference>` entries or none under `/src/`), provide it explicitly:
 
