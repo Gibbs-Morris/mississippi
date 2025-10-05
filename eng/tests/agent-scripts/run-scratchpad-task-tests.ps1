@@ -16,6 +16,16 @@ catch {
 }
 
 $pesterModule = Get-Module Pester
+if (-not $pesterModule -or $pesterModule.Version.Major -lt 5) {
+    try {
+        Import-Module Pester -MinimumVersion 5.0.0 -Force -ErrorAction Stop | Out-Null
+    }
+    catch {
+        throw 'Pester v5+ is required to run these tests. Install with: Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0'
+    }
+    $pesterModule = Get-Module Pester
+}
+
 $pesterMajor = if ($pesterModule) { $pesterModule.Version.Major } else { 0 }
 
 $testPath = Join-Path $PSScriptRoot 'scratchpad-task-scripts.Tests.ps1'

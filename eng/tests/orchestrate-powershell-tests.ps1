@@ -24,16 +24,24 @@ $testRunners = @(
     @{ Name = 'verify-scratchpad-task-scripts.ps1';    Type = 'Script' }
 )
 
-# Ensure Pester is available when any Pester runners are present
+# Ensure Pester v5+ is available when any Pester runners are present
 $needsPester = $testRunners | Where-Object { $_.Type -eq 'Pester' }
 if ($needsPester.Count -gt 0) {
     try {
-        Import-Module Pester -ErrorAction Stop | Out-Null
+        Import-Module Pester -MinimumVersion 5.0.0 -Force -ErrorAction Stop | Out-Null
     }
     catch {
-        Write-Host 'Pester module is required. Install it with:' -ForegroundColor Red
-        Write-Host '  Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0' -ForegroundColor Yellow
-        throw
+        Write-Host 'Pester v5+ is required to run PowerShell tests.' -ForegroundColor Red
+        if ($env:CI) {
+            Write-Host 'Install Pester v5 in your CI image or a pre-step. Example:' -ForegroundColor Yellow
+            Write-Host '  pwsh -Command "Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0"' -ForegroundColor Yellow
+            exit 1
+        }
+        else {
+            Write-Host 'Install Pester locally:' -ForegroundColor Yellow
+            Write-Host '  Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0' -ForegroundColor Yellow
+            throw
+        }
     }
 }
 
@@ -89,10 +97,10 @@ $table | Format-Table -AutoSize | Out-String | Write-Host
 Write-Host ''
 if ($failureCount -gt 0) {
     Write-Host 'RESULT: FAIL' -ForegroundColor Red
-    $failedSuites = $results | Where-Object { $_.Status -eq 'Failed' } | Select-Object -ExpandProperty Name
-    if ($failedSuites -and $failedSuites.Count -gt 0) {
-        Write-Host ("Failed suites: {0}" -f ($failedSuites -join ', ')) -ForegroundColor Red
-    }
+$failedSuites = @($results | Where-Object { $_.Status -eq 'Failed' } | Select-Object -ExpandProperty Name)
+if ($failedSuites -and $failedSuites.Count -gt 0) {
+    Write-Host ("Failed suites: {0}" -f ($failedSuites -join ', ')) -ForegroundColor Red
+}
 }
 else {
     Write-Host 'RESULT: SUCCESS' -ForegroundColor Green
