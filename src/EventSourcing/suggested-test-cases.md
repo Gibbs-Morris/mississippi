@@ -61,11 +61,11 @@ Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
 |----|----------|-------|------|-----|------|
-| GF1 | Resolves writer grain | mock grainFactory -> expect GetGrain<IBrookWriterGrain>(key) called | DI proxy | M | Unit |
+| GF1 | Resolves writer grain | mock grainFactory -> expect GetGrain with IBrookWriterGrain(key) called | DI proxy | M | Unit |
 | GF2 | Resolves reader grain | similar to GF1 | | M | Unit |
 | GF3 | Resolves slice reader grain | range key | | M | Unit |
 | GF4 | Resolves head grain | key | | M | Unit |
-| GF5 | Null dependencies throw | pass null logger | ArgNullException | Validation | L | Unit |
+| GF5 | Null dependencies throw | pass null logger | ArgNullException Validation | L | Unit |
 
 ---
 

@@ -343,4 +343,6 @@ This document should be read in conjunction with:
 * **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy
 * **Project File Management** (`.github/instructions/projects.instructions.md`) - For assembly naming conventions and project ID naming patterns
 
-*End of naming.instructions.md*
+---
+
+End of naming.instructions.md

@@ -21,7 +21,7 @@ Use this structure for each project `suggested-test-cases.md` document.
 
 ## File Section Format
 
-```
+```markdown
 ### File: <relative path>
 <short purpose>
 
