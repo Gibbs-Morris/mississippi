@@ -89,3 +89,7 @@ jobs:
           set -euo pipefail
           dotnet tool run dotnet-gitversion /version
         continue-on-error: true
+
+      - name: Run build and Stryker via go.ps1
+        shell: pwsh
+        run: ./go.ps1 -Configuration Release        
