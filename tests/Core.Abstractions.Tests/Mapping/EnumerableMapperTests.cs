@@ -74,7 +74,28 @@ public class EnumerableMapperTests
         EnumerableMapper<int, string> enumerableMapper = new(mockMapper.Object);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => enumerableMapper.Map(null!));
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => enumerableMapper.Map(null!));
+        Assert.Equal("input", exception.ParamName);
+    }
+
+    /// <summary>
+    ///     Tests that passing a null value to the Map function throws an ArgumentNullException
+    ///     even when the result is enumerated.
+    /// </summary>
+    [Fact]
+    public void MapNullInputThrowsArgumentNullExceptionWhenEnumerated()
+    {
+        // Arrange
+        Mock<IMapper<int, string>> mockMapper = new();
+        EnumerableMapper<int, string> enumerableMapper = new(mockMapper.Object);
+
+        // Act & Assert
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() =>
+        {
+            IEnumerable<string> result = enumerableMapper.Map(null!);
+            _ = result.ToList(); // Force enumeration
+        });
+        Assert.Equal("input", exception.ParamName);
     }
 
     /// <summary>
