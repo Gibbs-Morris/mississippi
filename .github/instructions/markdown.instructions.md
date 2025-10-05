@@ -19,7 +19,7 @@ maintain Markdown so that it passes the canonical set of `markdownlint` rules wi
 
 The repository uses markdownlint configuration files:
 
-- **Local development**: `.markdownlint.yaml` (auto-discovered by markdownlint tools)
+- **Local development**: `.markdownlint-cli2.jsonc` (auto-discovered by markdownlint-cli2)
 - **CI/Super-Linter**: `.github/linters/.markdown-lint.yml` (used by GitHub Super-Linter)
 
 Both files disable only:
