@@ -1,0 +1,181 @@
+name: Auto Cleanup (Create PR)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Target branch to run cleanup on (defaults to current branch)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  DOTSETTINGS_PATH: ${{ github.workspace }}/Directory.DotSettings
+
+jobs:
+  auto-cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.target_branch || github.ref }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache nugets
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore .NET Tools
+        shell: pwsh
+        run: |
+          Write-Host "Restoring dotnet tools..."
+          dotnet tool restore
+
+      - name: Run Cleanup on Mississippi Solution
+        shell: pwsh
+        run: |
+          $slnxPath = Join-Path "${{ github.workspace }}" "mississippi.slnx"
+          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
+          
+          Write-Host "Generating $slnPath from $slnxPath ..."
+          dotnet tool run slngen "$slnxPath" --solutionfile "$slnPath" --launch false
+          
+          Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
+          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$slnPath"
+          Write-Host "Mississippi solution cleanup completed."
+
+      - name: Run Cleanup on Sample Solution
+        shell: pwsh
+        run: |
+          $slnxPath = Join-Path "${{ github.workspace }}" "samples.slnx"
+          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
+          
+          Write-Host "Generating $slnPath from $slnxPath ..."
+          dotnet tool run slngen "$slnxPath" --solutionfile "$slnPath" --launch false
+          
+          Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
+          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$slnPath"
+          Write-Host "Sample solution cleanup completed."
+
+      - name: Check for Changes
+        id: check_changes
+        shell: pwsh
+        run: |
+          $changes = git status --porcelain
+          if ($changes) {
+            Write-Host "Changes detected after cleanup:"
+            git status --short
+            echo "has_changes=true" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "No changes detected - code is already clean."
+            echo "has_changes=false" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Get Current Branch Name
+        id: get_branch
+        if: steps.check_changes.outputs.has_changes == 'true'
+        shell: pwsh
+        run: |
+          $targetBranch = "${{ github.event.inputs.target_branch }}"
+          if ([string]::IsNullOrEmpty($targetBranch)) {
+            $targetBranch = git rev-parse --abbrev-ref HEAD
+          }
+          Write-Host "Target branch: $targetBranch"
+          echo "target_branch=$targetBranch" >> $env:GITHUB_OUTPUT
+          
+          $cleanupBranch = "cleanup/$targetBranch-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+          Write-Host "Cleanup branch: $cleanupBranch"
+          echo "cleanup_branch=$cleanupBranch" >> $env:GITHUB_OUTPUT
+
+      - name: Configure Git
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create Cleanup Branch and Commit Changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        shell: pwsh
+        run: |
+          $cleanupBranch = "${{ steps.get_branch.outputs.cleanup_branch }}"
+          
+          Write-Host "Creating cleanup branch: $cleanupBranch"
+          git checkout -b "$cleanupBranch"
+          
+          Write-Host "Staging all changes..."
+          git add .
+          
+          Write-Host "Committing changes..."
+          git commit -m "chore: apply ReSharper code cleanup
+
+Automated cleanup performed by auto-cleanup workflow.
+This commit applies ReSharper 'Built-in: Full Cleanup' profile
+to both mississippi.slnx and samples.slnx solutions.
+
+Changes include:
+- Code formatting standardization
+- Using directives ordering
+- Member reordering per coding standards
+- Code style consistency improvements"
+          
+          Write-Host "Pushing cleanup branch..."
+          git push origin "$cleanupBranch"
+
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.get_branch.outputs.cleanup_branch }}
+          base: ${{ steps.get_branch.outputs.target_branch }}
+          title: "chore: ReSharper code cleanup for ${{ steps.get_branch.outputs.target_branch }}"
+          body: |
+            ## Automated Code Cleanup
+            
+            This PR applies ReSharper code cleanup to ensure all code follows the repository's formatting standards.
+            
+            ### Changes Applied
+            - ✅ ReSharper "Built-in: Full Cleanup" profile
+            - ✅ Mississippi solution (`mississippi.slnx`)
+            - ✅ Sample solution (`samples.slnx`)
+            
+            ### What's Included
+            - Code formatting standardization
+            - Using directives ordering
+            - Member reordering per coding standards
+            - Code style consistency improvements
+            
+            ### Review Guidelines
+            - All changes are formatting/style only
+            - No logic changes should be present
+            - Verify the cleanup check passes after merge
+            
+            ---
+            🤖 *This PR was created automatically by the [auto-cleanup workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*
+          labels: |
+            chore
+            automated
+            code-cleanup
+
+      - name: Summary
+        shell: pwsh
+        run: |
+          if ("${{ steps.check_changes.outputs.has_changes }}" -eq "true") {
+            Write-Host "✅ Cleanup completed successfully!" -ForegroundColor Green
+            Write-Host "📝 Pull request created: ${{ steps.get_branch.outputs.cleanup_branch }} → ${{ steps.get_branch.outputs.target_branch }}"
+          } else {
+            Write-Host "✅ No cleanup needed - code is already clean!" -ForegroundColor Green
+          }
