@@ -2,7 +2,8 @@
 
 [CmdletBinding()]
 param(
-    [string]$Configuration = 'Release'
+    [string]$Configuration = 'Release',
+    [switch]$SkipCleanup
 )
 
 Set-StrictMode -Version Latest
@@ -14,7 +15,7 @@ Import-Module -Name $modulePath -Force
 $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 
 try {
-    Invoke-SolutionsPipeline -Configuration $Configuration -RepoRoot $repoRoot
+    Invoke-SolutionsPipeline -Configuration $Configuration -RepoRoot $repoRoot -SkipCleanup:$SkipCleanup
 }
 catch {
     Write-Error "=== PIPELINE FAILED ===: $($_.Exception.Message)"

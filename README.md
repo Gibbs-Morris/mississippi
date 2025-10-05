@@ -105,3 +105,23 @@ Contributions to the Mississippi Framework are welcome. Please follow standard G
 ### Build automation
 
 The PowerShell entry points (`build-*.ps1`, `unit-test-*.ps1`, `clean-up-*.ps1`, `mutation-test-mississippi-solution.ps1`, `orchestrate-solutions.ps1`, etc.) are wrappers over a shared module at `eng/src/agent-scripts/RepositoryAutomation.psm1`. The module exposes reusable advanced functions so the same steps can run from CI jobs, local shells, and Pester tests without duplicating logic. See `eng/src/agent-scripts/README.md` for the catalogue of functions and authoring guidance.
+
+## CI / Local pipeline options
+
+The repository provides a top-level helper `go.ps1` which forwards to `orchestrate-solutions.ps1`. A new option `-SkipCleanup` is available to run the full build, tests and mutation testing pipeline while skipping the repository cleanup steps (ReSharper/StyleCop automated cleanup). This is useful for CI runs or local checks when you want to avoid formatting/cleanup changes but still validate build and test quality.
+
+Usage examples:
+
+```powershell
+# Run full pipeline locally including cleanup (default)
+pwsh ./go.ps1 -Configuration Release
+
+# Run full pipeline but skip cleanup (useful for CI or when you don't want the cleanup step to run)
+pwsh ./go.ps1 -Configuration Release -SkipCleanup
+```
+
+Notes:
+
+- `-SkipCleanup` is a switch forwarded from `go.ps1` to `orchestrate-solutions.ps1` and then to `Invoke-SolutionsPipeline` in the shared module.
+
+- CI workflows can call `./go.ps1 -SkipCleanup` to run build, tests and mutation testing without running the cleanup step.

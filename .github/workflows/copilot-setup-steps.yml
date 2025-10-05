@@ -90,6 +90,7 @@ jobs:
           dotnet tool run dotnet-gitversion /version
         continue-on-error: true
 
-      - name: Run build and Stryker via go.ps1
+      - name: Run build, tests and mutation testing (skip cleanup)
         shell: pwsh
-        run: ./go.ps1 -Configuration Release        
+        run: |
+          ./go.ps1 -Configuration Release -SkipCleanup

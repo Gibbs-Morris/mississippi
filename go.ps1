@@ -5,6 +5,12 @@
     Runs the orchestrate-solutions.ps1 script for the repository.
 #>
 
+# Accept optional parameters forwarded from callers
+param(
+    [switch]$SkipCleanup,
+    [string]$Configuration = 'Release'
+)
+
 # Determine the repository root directory (this script resides there)
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
@@ -16,7 +22,12 @@ Write-Host "Executing orchestrate-solutions.ps1 script..."
 
 try {
     # Execute the orchestrate script and wait for completion
-    & $orchestrateScript @args
+    if ($SkipCleanup) {
+        & $orchestrateScript -Configuration $Configuration -SkipCleanup
+    }
+    else {
+        & $orchestrateScript -Configuration $Configuration
+    }
     if ($LASTEXITCODE -ne 0) {
         throw "orchestrate-solutions.ps1 failed with exit code $LASTEXITCODE"
     }
