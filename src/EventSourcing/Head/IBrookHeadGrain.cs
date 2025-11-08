@@ -17,6 +17,13 @@ namespace Mississippi.EventSourcing.Head;
 public interface IBrookHeadGrain : IGrainWithStringKey
 {
     /// <summary>
+    ///     Requests the grain to deactivate when idle, clearing any in-memory caches.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
+    [Alias("DeactivateAsync")]
+    Task DeactivateAsync();
+
+    /// <summary>
     ///     Retrieves the most recent version number of the associated brook.
     /// </summary>
     /// <returns>The highest persisted version of the brook.</returns>
@@ -32,11 +39,4 @@ public interface IBrookHeadGrain : IGrainWithStringKey
     [ReadOnly]
     [Alias("GetLatestPositionConfirmedAsync")]
     Task<BrookPosition> GetLatestPositionConfirmedAsync();
-
-    /// <summary>
-    ///     Requests the grain to deactivate when idle, clearing any in-memory caches.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
-    [Alias("DeactivateAsync")]
-    Task DeactivateAsync();
 }
