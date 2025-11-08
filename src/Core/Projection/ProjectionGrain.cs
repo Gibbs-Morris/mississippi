@@ -14,9 +14,9 @@ public abstract class ProjectionGrain<TModel>
       IProjectionGrain<TModel>
     where TModel : new()
 {
-    private long HeadPosition { get; set; } = -1;
-
     private Immutable<ProjectionSnapshot<TModel>> CachedSnapshot { get; set; }
+
+    private long HeadPosition { get; set; } = -1;
 
     /// <summary>
     ///     Gets the current projection snapshot, handling caching and delegation to persistent storage.
