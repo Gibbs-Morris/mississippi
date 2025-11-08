@@ -146,7 +146,6 @@
       &lt;Entry.SortBy&gt;
         &lt;Readonly /&gt;
         &lt;Name /&gt;
-        &lt;Type /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Fields"&gt;
@@ -161,7 +160,6 @@
       &lt;Entry.SortBy&gt;
         &lt;Readonly /&gt;
         &lt;Name /&gt;
-        &lt;Type /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Constructors"&gt;
@@ -171,7 +169,6 @@
       &lt;Entry.SortBy&gt;
         &lt;Static /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Lifecycle Methods"&gt;
@@ -192,7 +189,6 @@
         &lt;Static /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
         &lt;Name /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="All other members"&gt;
@@ -200,7 +196,6 @@
         &lt;Static /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
         &lt;Name /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Test Methods" Priority="100"&gt;
@@ -215,7 +210,6 @@
       &lt;/Entry.Match&gt;
       &lt;Entry.SortBy&gt;
         &lt;Name /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
   &lt;/TypePattern&gt;
@@ -249,7 +243,6 @@
       &lt;Entry.SortBy&gt;
         &lt;Readonly /&gt;
         &lt;Name /&gt;
-        &lt;Type /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Fields"&gt;
@@ -264,7 +257,6 @@
       &lt;Entry.SortBy&gt;
         &lt;Readonly /&gt;
         &lt;Name /&gt;
-        &lt;Type /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Setup/Teardown Methods"&gt;
@@ -285,7 +277,6 @@
         &lt;Static /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
         &lt;Name /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="All other members"&gt;
@@ -293,7 +284,6 @@
         &lt;Static /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
         &lt;Name /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Test Methods" Priority="100"&gt;
@@ -309,7 +299,6 @@
       &lt;/Entry.Match&gt;
       &lt;Entry.SortBy&gt;
         &lt;Name /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
   &lt;/TypePattern&gt;
@@ -323,8 +312,6 @@
       &lt;/Entry.Match&gt;
       &lt;Entry.SortBy&gt;
         &lt;Name /&gt;
-        &lt;ImplementsInterface /&gt;
-        &lt;Type /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Public Enums" Priority="100"&gt;
@@ -336,8 +323,6 @@
       &lt;/Entry.Match&gt;
       &lt;Entry.SortBy&gt;
         &lt;Name /&gt;
-        &lt;ImplementsInterface /&gt;
-        &lt;Type /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Delegates"&gt;
@@ -378,7 +363,6 @@
         &lt;Readonly /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
         &lt;Name /&gt;
-        &lt;Type /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Instance Fields"&gt;
@@ -394,7 +378,6 @@
         &lt;Readonly /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
         &lt;Name /&gt;
-        &lt;Type /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Constructors"&gt;
@@ -404,7 +387,6 @@
       &lt;Entry.SortBy&gt;
         &lt;Static /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Finalizers"&gt;
@@ -436,21 +418,6 @@
         &lt;Static /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
         &lt;Name /&gt;
-        &lt;Parameters /&gt;
-        &lt;Type /&gt;
-      &lt;/Entry.SortBy&gt;
-    &lt;/Entry&gt;
-    &lt;Entry DisplayName="Interface Implementations" Priority="100"&gt;
-      &lt;Entry.Match&gt;
-        &lt;And&gt;
-          &lt;Kind Is="Member" /&gt;
-          &lt;ImplementsInterface /&gt;
-        &lt;/And&gt;
-      &lt;/Entry.Match&gt;
-      &lt;Entry.SortBy&gt;
-        &lt;ImplementsInterface /&gt;
-        &lt;Name /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Methods"&gt;
@@ -461,7 +428,6 @@
         &lt;Static /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
         &lt;Name /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
     &lt;Entry DisplayName="Nested Types"&gt;
@@ -478,7 +444,6 @@
         &lt;Static /&gt;
         &lt;Access Order="Public ProtectedInternal Protected Internal Private" /&gt;
         &lt;Name /&gt;
-        &lt;Parameters /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
   &lt;/TypePattern&gt;
