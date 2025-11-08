@@ -14,6 +14,39 @@ namespace Mississippi.EventSourcing.Abstractions.Tests;
 /// </summary>
 public class BrookStorageProviderHelpersTests
 {
+    private sealed class FakeOptions
+    {
+        public string? Value { get; set; }
+    }
+
+    private sealed class FakeProvider : IBrookStorageProvider
+    {
+        public string Format => "fake";
+
+        public Task<BrookPosition> AppendEventsAsync(
+            BrookKey brookId,
+            IReadOnlyList<BrookEvent> events,
+            BrookPosition? expectedVersion = null,
+            CancellationToken cancellationToken = default
+        ) =>
+            Task.FromResult(new BrookPosition(events.Count));
+
+        public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
+            BrookRangeKey brookRange,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default
+        )
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+
+        public Task<BrookPosition> ReadHeadPositionAsync(
+            BrookKey brookId,
+            CancellationToken cancellationToken = default
+        ) =>
+            Task.FromResult(new BrookPosition(0));
+    }
+
     /// <summary>
     ///     Verifies that registering a brook storage provider wires reader and writer services.
     /// </summary>
@@ -25,19 +58,6 @@ public class BrookStorageProviderHelpersTests
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.NotNull(provider.GetRequiredService<IBrookStorageReader>());
         Assert.NotNull(provider.GetRequiredService<IBrookStorageWriter>());
-    }
-
-    /// <summary>
-    ///     Verifies that the configure action binds options for the provider.
-    /// </summary>
-    [Fact]
-    public void RegisterBrookStorageProviderWithConfigureActionBindsOptions()
-    {
-        ServiceCollection services = new();
-        services.RegisterBrookStorageProvider<FakeProvider, FakeOptions>(o => o.Value = "x");
-        using ServiceProvider provider = services.BuildServiceProvider();
-        FakeOptions opts = provider.GetRequiredService<IOptions<FakeOptions>>().Value;
-        Assert.Equal("x", opts.Value);
     }
 
     /// <summary>
@@ -58,36 +78,16 @@ public class BrookStorageProviderHelpersTests
         Assert.Equal("y", opts.Value);
     }
 
-    private sealed class FakeProvider : IBrookStorageProvider
+    /// <summary>
+    ///     Verifies that the configure action binds options for the provider.
+    /// </summary>
+    [Fact]
+    public void RegisterBrookStorageProviderWithConfigureActionBindsOptions()
     {
-        public string Format => "fake";
-
-        public Task<BrookPosition> ReadHeadPositionAsync(
-            BrookKey brookId,
-            CancellationToken cancellationToken = default
-        ) =>
-            Task.FromResult(new BrookPosition(0));
-
-        public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
-            BrookRangeKey brookRange,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default
-        )
-        {
-            await Task.CompletedTask;
-            yield break;
-        }
-
-        public Task<BrookPosition> AppendEventsAsync(
-            BrookKey brookId,
-            IReadOnlyList<BrookEvent> events,
-            BrookPosition? expectedVersion = null,
-            CancellationToken cancellationToken = default
-        ) =>
-            Task.FromResult(new BrookPosition(events.Count));
-    }
-
-    private sealed class FakeOptions
-    {
-        public string? Value { get; set; }
+        ServiceCollection services = new();
+        services.RegisterBrookStorageProvider<FakeProvider, FakeOptions>(o => o.Value = "x");
+        using ServiceProvider provider = services.BuildServiceProvider();
+        FakeOptions opts = provider.GetRequiredService<IOptions<FakeOptions>>().Value;
+        Assert.Equal("x", opts.Value);
     }
 }
