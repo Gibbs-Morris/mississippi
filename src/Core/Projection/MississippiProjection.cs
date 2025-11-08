@@ -12,6 +12,12 @@ namespace Mississippi.Core.Projection;
 public sealed record MississippiProjection
 {
     /// <summary>
+    ///     Gets the timestamp indicating when the event occurred.
+    /// </summary>
+    [Id(3)]
+    public DateTimeOffset? CreationTime { get; init; }
+
+    /// <summary>
     ///     Gets the raw event payload.
     /// </summary>
     /// <remarks>
@@ -29,6 +35,14 @@ public sealed record MississippiProjection
     public string DataContentType { get; init; } = string.Empty;
 
     /// <summary>
+    ///     Gets or initializes a hash value for the projection event.
+    ///     Used for data integrity verification and caching purposes.
+    /// </summary>
+    /// <value>A string representing the hash of the projection event.</value>
+    [Id(6)]
+    public string Hash { get; init; } = string.Empty;
+
+    /// <summary>
     ///     Gets the unique identifier for the event instance.
     /// </summary>
     [Id(2)]
@@ -41,22 +55,8 @@ public sealed record MississippiProjection
     public string Source { get; init; } = string.Empty;
 
     /// <summary>
-    ///     Gets the timestamp indicating when the event occurred.
-    /// </summary>
-    [Id(3)]
-    public DateTimeOffset? CreationTime { get; init; }
-
-    /// <summary>
     ///     Gets the semantic type of the event.
     /// </summary>
     [Id(0)]
     public string Type { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets or initializes a hash value for the projection event.
-    ///     Used for data integrity verification and caching purposes.
-    /// </summary>
-    /// <value>A string representing the hash of the projection event.</value>
-    [Id(6)]
-    public string Hash { get; init; } = string.Empty;
 }
