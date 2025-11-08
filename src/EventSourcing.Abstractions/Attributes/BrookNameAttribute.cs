@@ -38,6 +38,11 @@ public sealed partial class BrookNameAttribute : Attribute
     public string AppName { get; }
 
     /// <summary>
+    ///     Gets the fully qualified brook name in the format {AppName}.{ModuleName}.{Name}.
+    /// </summary>
+    public string BrookName => $"{AppName}.{ModuleName}.{Name}";
+
+    /// <summary>
     ///     Gets the module name component of the brook name.
     /// </summary>
     public string ModuleName { get; }
@@ -47,10 +52,8 @@ public sealed partial class BrookNameAttribute : Attribute
     /// </summary>
     public string Name { get; }
 
-    /// <summary>
-    ///     Gets the fully qualified brook name in the format {AppName}.{ModuleName}.{Name}.
-    /// </summary>
-    public string BrookName => $"{AppName}.{ModuleName}.{Name}";
+    [GeneratedRegex("^[A-Z0-9]+$", RegexOptions.Compiled)]
+    private static partial Regex MyValidationRegex();
 
     private static void ValidateParameter(
         string value,
@@ -68,7 +71,4 @@ public sealed partial class BrookNameAttribute : Attribute
             throw new ArgumentException("Value must contain only uppercase alphanumeric characters", paramName);
         }
     }
-
-    [GeneratedRegex("^[A-Z0-9]+$", RegexOptions.Compiled)]
-    private static partial Regex MyValidationRegex();
 }
