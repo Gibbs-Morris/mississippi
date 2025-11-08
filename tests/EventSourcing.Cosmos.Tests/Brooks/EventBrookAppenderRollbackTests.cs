@@ -23,6 +23,75 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 public class EventBrookAppenderRollbackTests
 {
     /// <summary>
+    ///     When initial append fails with no processed events, rollback should clean up pending head without aggregate
+    ///     exception.
+    /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
+    [Fact]
+    public async Task AppendLargeBatchAsyncRollsBackCleansUpWhenDeletesSucceed()
+    {
+        // Arrange
+        BrookKey key = new("t", "rb2");
+        BrookStorageOptions opts = new()
+        {
+            MaxEventsPerBatch = 1,
+            MaxRequestSizeBytes = 1_000_000,
+        };
+        Mock<ICosmosRepository> repo = new();
+        Mock<IDistributedLockManager> lockMgr = new();
+        Mock<IDistributedLock> lockInstance = new();
+        lockMgr.Setup(m => m.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(lockInstance.Object);
+        IBatchSizeEstimator sizeEstimator = new BatchSizeEstimator();
+        Mock<IRetryPolicy> retry = new();
+        retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<Task<bool>>, CancellationToken>(async (
+                op,
+                _
+            ) => await op());
+        Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
+        mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
+        Mock<IBrookRecoveryService> recovery = new();
+        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(key, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(0));
+        Mock<ILogger<EventBrookAppender>> logger = new();
+        EventBrookAppender sut = new(
+            repo.Object,
+            lockMgr.Object,
+            sizeEstimator,
+            retry.Object,
+            Options.Create(opts),
+            mapper.Object,
+            recovery.Object,
+            logger.Object);
+        List<BrookEvent> events = new()
+        {
+            new(),
+            new(),
+        };
+        repo.Setup(r => r.CreatePendingHeadAsync(key, new(0), 2, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // Throw on first append to force rollback with processedEvents == 0
+        repo.Setup(r => r.AppendEventBatchAsync(
+                key,
+                It.IsAny<IReadOnlyList<EventStorageModel>>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("fail early"));
+        repo.Setup(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        // Act
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AppendEventsAsync(key, events, null));
+
+        // Assert: no specific verifications, just that rollback completed without AggregateException
+        repo.Verify(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
     ///     When an append batch fails mid-stream, rollback should attempt cleanup and aggregate issues.
     /// </summary>
     /// <returns>
@@ -137,74 +206,5 @@ public class EventBrookAppenderRollbackTests
 
         // Act & Assert
         await Assert.ThrowsAsync<AggregateException>(() => sut.AppendEventsAsync(key, events, null));
-    }
-
-    /// <summary>
-    ///     When initial append fails with no processed events, rollback should clean up pending head without aggregate
-    ///     exception.
-    /// </summary>
-    /// <returns>
-    ///     A task that represents the asynchronous test operation.
-    /// </returns>
-    [Fact]
-    public async Task AppendLargeBatchAsyncRollsBackCleansUpWhenDeletesSucceed()
-    {
-        // Arrange
-        BrookKey key = new("t", "rb2");
-        BrookStorageOptions opts = new()
-        {
-            MaxEventsPerBatch = 1,
-            MaxRequestSizeBytes = 1_000_000,
-        };
-        Mock<ICosmosRepository> repo = new();
-        Mock<IDistributedLockManager> lockMgr = new();
-        Mock<IDistributedLock> lockInstance = new();
-        lockMgr.Setup(m => m.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(lockInstance.Object);
-        IBatchSizeEstimator sizeEstimator = new BatchSizeEstimator();
-        Mock<IRetryPolicy> retry = new();
-        retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns<Func<Task<bool>>, CancellationToken>(async (
-                op,
-                _
-            ) => await op());
-        Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
-        mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
-        Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(key, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BrookPosition(0));
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
-            repo.Object,
-            lockMgr.Object,
-            sizeEstimator,
-            retry.Object,
-            Options.Create(opts),
-            mapper.Object,
-            recovery.Object,
-            logger.Object);
-        List<BrookEvent> events = new()
-        {
-            new(),
-            new(),
-        };
-        repo.Setup(r => r.CreatePendingHeadAsync(key, new(0), 2, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // Throw on first append to force rollback with processedEvents == 0
-        repo.Setup(r => r.AppendEventBatchAsync(
-                key,
-                It.IsAny<IReadOnlyList<EventStorageModel>>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("fail early"));
-        repo.Setup(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
-
-        // Act
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AppendEventsAsync(key, events, null));
-
-        // Assert: no specific verifications, just that rollback completed without AggregateException
-        repo.Verify(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>()), Times.Once);
     }
 }
