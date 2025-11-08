@@ -6,6 +6,15 @@ namespace Mississippi.EventSourcing.Abstractions.Tests;
 public sealed class BrookPositionTests
 {
     /// <summary>
+    ///     Construction with a value less than -1 should throw.
+    /// </summary>
+    [Fact]
+    public void ConstructorLessThanMinusOneThrows()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new BrookPosition(-2));
+    }
+
+    /// <summary>
     ///     Default constructed position should be NotSet with value -1 and comparisons should respect ordering.
     /// </summary>
     [Fact]
@@ -18,27 +27,6 @@ public sealed class BrookPositionTests
         BrookPosition older = new(5);
         Assert.True(newer.IsNewerThan(older));
         Assert.False(older.IsNewerThan(newer));
-    }
-
-    /// <summary>
-    ///     Construction with a value less than -1 should throw.
-    /// </summary>
-    [Fact]
-    public void ConstructorLessThanMinusOneThrows()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new BrookPosition(-2));
-    }
-
-    /// <summary>
-    ///     Implicit conversions to and from long should preserve value.
-    /// </summary>
-    [Fact]
-    public void ImplicitConversionsPreserveValue()
-    {
-        BrookPosition implicitFrom = 7;
-        Assert.Equal(7, implicitFrom.Value);
-        long asLong = implicitFrom;
-        Assert.Equal(7L, asLong);
     }
 
     /// <summary>
@@ -55,6 +43,18 @@ public sealed class BrookPositionTests
         Assert.Equal(15L, asLong);
         Assert.Equal(20L, pFromInt64.ToLong());
         Assert.Equal(20L, pFromInt64.ToInt64());
+    }
+
+    /// <summary>
+    ///     Implicit conversions to and from long should preserve value.
+    /// </summary>
+    [Fact]
+    public void ImplicitConversionsPreserveValue()
+    {
+        BrookPosition implicitFrom = 7;
+        Assert.Equal(7, implicitFrom.Value);
+        long asLong = implicitFrom;
+        Assert.Equal(7L, asLong);
     }
 
     /// <summary>
