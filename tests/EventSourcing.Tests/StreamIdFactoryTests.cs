@@ -22,6 +22,19 @@ public class StreamIdFactoryTests
     }
 
     /// <summary>
+    ///     Verifies the factory matches a direct StreamId.Create call using the configured stream name.
+    /// </summary>
+    [Fact]
+    public void CreateMatchesDirectStreamIdCreateCall()
+    {
+        StreamIdFactory factory = new();
+        BrookKey key = new("typeX", "idX");
+        StreamId expected = StreamId.Create(EventSourcingOrleansStreamNames.HeadUpdateStreamName, key);
+        StreamId actual = factory.Create(key);
+        Assert.Equal(expected, actual);
+    }
+
+    /// <summary>
     ///     Verifies that different BrookKeys produce different StreamIds.
     /// </summary>
     [Fact]
@@ -33,18 +46,5 @@ public class StreamIdFactoryTests
         StreamId sa = factory.Create(a);
         StreamId sb = factory.Create(b);
         Assert.NotEqual(sa, sb);
-    }
-
-    /// <summary>
-    ///     Verifies the factory matches a direct StreamId.Create call using the configured stream name.
-    /// </summary>
-    [Fact]
-    public void CreateMatchesDirectStreamIdCreateCall()
-    {
-        StreamIdFactory factory = new();
-        BrookKey key = new("typeX", "idX");
-        StreamId expected = StreamId.Create(EventSourcingOrleansStreamNames.HeadUpdateStreamName, key);
-        StreamId actual = factory.Create(key);
-        Assert.Equal(expected, actual);
     }
 }
