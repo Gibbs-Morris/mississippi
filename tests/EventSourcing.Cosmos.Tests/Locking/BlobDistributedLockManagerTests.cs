@@ -67,12 +67,13 @@ public sealed class BlobDistributedLockManagerTests
     }
 
     /// <summary>
-    ///     Ensures the manager does not perform extra retries once the first acquire succeeds (kills statement-mutation
-    ///     removing the loop break).
+    ///     Captures requested duration and ensures it flows into the lease acquire call.
     /// </summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
     [Fact]
-    public async Task AcquireLockAsyncStopsAfterFirstSuccessfulAttemptAsync()
+    public async Task AcquireLockAsyncCreatesLeaseWithRequestedDurationAsync()
     {
         // Arrange
         BrookStorageOptions opts = new();
@@ -92,26 +93,27 @@ public sealed class BlobDistributedLockManagerTests
         blob.Setup(b => b.ExistsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
         factory.Setup(f => f.Create(It.IsAny<BlobClient>(), It.IsAny<string?>())).Returns(lease.Object);
+        TimeSpan captured = TimeSpan.Zero;
         lease.Setup(l => l.AcquireAsync(
                 It.IsAny<TimeSpan>(),
                 It.IsAny<RequestConditions?>(),
                 It.IsAny<CancellationToken>()))
+            .Callback((
+                TimeSpan d,
+                RequestConditions? conditions,
+                CancellationToken ct
+            ) => captured = d)
             .ReturnsAsync(
                 Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-first"),
-                    Mock.Of<Response>()))
-            .Verifiable();
+                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-3"),
+                    Mock.Of<Response>()));
         BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
 
         // Act
-        await using IDistributedLock handle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
+        await using IDistributedLock lockHandle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(13));
 
         // Assert
-        Assert.NotNull(handle);
-        lease.Verify(
-            l => l.AcquireAsync(It.IsAny<TimeSpan>(), It.IsAny<RequestConditions?>(), It.IsAny<CancellationToken>()),
-            Times.Once,
-            "A successful first acquire should break out of the retry loop (mutant removing break would cause >1 calls).");
+        Assert.Equal(TimeSpan.FromSeconds(13), captured);
     }
 
     /// <summary>
@@ -169,6 +171,54 @@ public sealed class BlobDistributedLockManagerTests
     }
 
     /// <summary>
+    ///     Ensures the manager does not perform extra retries once the first acquire succeeds (kills statement-mutation
+    ///     removing the loop break).
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Fact]
+    public async Task AcquireLockAsyncStopsAfterFirstSuccessfulAttemptAsync()
+    {
+        // Arrange
+        BrookStorageOptions opts = new();
+        Mock<BlobServiceClient> svc = new();
+        Mock<BlobContainerClient> container = new();
+        Mock<BlobClient> blob = new();
+        Mock<IBlobLeaseClient> lease = new();
+        Mock<IBlobLeaseClientFactory> factory = new();
+        svc.Setup(s => s.GetBlobContainerClient(It.IsAny<string>())).Returns(container.Object);
+        container.Setup(c => c.CreateIfNotExistsAsync(
+                It.IsAny<PublicAccessType>(),
+                It.IsAny<IDictionary<string, string>?>(),
+                It.IsAny<BlobContainerEncryptionScopeOptions?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<Response<BlobContainerInfo>>());
+        container.Setup(c => c.GetBlobClient(It.IsAny<string>())).Returns(blob.Object);
+        blob.Setup(b => b.ExistsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
+        factory.Setup(f => f.Create(It.IsAny<BlobClient>(), It.IsAny<string?>())).Returns(lease.Object);
+        lease.Setup(l => l.AcquireAsync(
+                It.IsAny<TimeSpan>(),
+                It.IsAny<RequestConditions?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                Response.FromValue(
+                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-first"),
+                    Mock.Of<Response>()))
+            .Verifiable();
+        BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
+
+        // Act
+        await using IDistributedLock handle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
+
+        // Assert
+        Assert.NotNull(handle);
+        lease.Verify(
+            l => l.AcquireAsync(It.IsAny<TimeSpan>(), It.IsAny<RequestConditions?>(), It.IsAny<CancellationToken>()),
+            Times.Once,
+            "A successful first acquire should break out of the retry loop (mutant removing break would cause >1 calls).");
+    }
+
+    /// <summary>
     ///     Validates that acquire throws when unable to obtain a lease.
     /// </summary>
     /// <returns>
@@ -204,55 +254,5 @@ public sealed class BlobDistributedLockManagerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15)));
-    }
-
-    /// <summary>
-    ///     Captures requested duration and ensures it flows into the lease acquire call.
-    /// </summary>
-    /// <returns>
-    ///     A task that represents the asynchronous test operation.
-    /// </returns>
-    [Fact]
-    public async Task AcquireLockAsyncCreatesLeaseWithRequestedDurationAsync()
-    {
-        // Arrange
-        BrookStorageOptions opts = new();
-        Mock<BlobServiceClient> svc = new();
-        Mock<BlobContainerClient> container = new();
-        Mock<BlobClient> blob = new();
-        Mock<IBlobLeaseClient> lease = new();
-        Mock<IBlobLeaseClientFactory> factory = new();
-        svc.Setup(s => s.GetBlobContainerClient(It.IsAny<string>())).Returns(container.Object);
-        container.Setup(c => c.CreateIfNotExistsAsync(
-                It.IsAny<PublicAccessType>(),
-                It.IsAny<IDictionary<string, string>?>(),
-                It.IsAny<BlobContainerEncryptionScopeOptions?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Mock.Of<Response<BlobContainerInfo>>());
-        container.Setup(c => c.GetBlobClient(It.IsAny<string>())).Returns(blob.Object);
-        blob.Setup(b => b.ExistsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
-        factory.Setup(f => f.Create(It.IsAny<BlobClient>(), It.IsAny<string?>())).Returns(lease.Object);
-        TimeSpan captured = TimeSpan.Zero;
-        lease.Setup(l => l.AcquireAsync(
-                It.IsAny<TimeSpan>(),
-                It.IsAny<RequestConditions?>(),
-                It.IsAny<CancellationToken>()))
-            .Callback((
-                TimeSpan d,
-                RequestConditions? conditions,
-                CancellationToken ct
-            ) => captured = d)
-            .ReturnsAsync(
-                Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-3"),
-                    Mock.Of<Response>()));
-        BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
-
-        // Act
-        await using IDistributedLock lockHandle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(13));
-
-        // Assert
-        Assert.Equal(TimeSpan.FromSeconds(13), captured);
     }
 }
