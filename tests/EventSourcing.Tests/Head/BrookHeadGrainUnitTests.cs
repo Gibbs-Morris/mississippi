@@ -16,30 +16,6 @@ namespace Mississippi.EventSourcing.Tests.Head;
 public class BrookHeadGrainUnitTests
 {
     /// <summary>
-    ///     Ensures OnErrorAsync requests grain deactivation without throwing.
-    /// </summary>
-    /// <returns>
-    ///     A task that represents the asynchronous test operation.
-    /// </returns>
-    [Fact]
-    public async Task OnErrorAsyncDeactivatesGrain()
-    {
-        // Arrange
-        Mock<IBrookStorageReader> storage = new();
-        Mock<IGrainContext> context = new();
-        Mock<ILogger<BrookHeadGrain>> logger = new();
-        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
-        Mock<IStreamIdFactory> streamIdFactory = new();
-        BrookHeadGrain sut = new(storage.Object, context.Object, logger.Object, options, streamIdFactory.Object);
-
-        // Act
-        await sut.OnErrorAsync(new InvalidOperationException("boom"));
-
-        // Assert: no exception indicates deactivation path executed without error
-        Assert.True(true);
-    }
-
-    /// <summary>
     ///     Ensures activation logs and throws when the primary key cannot be parsed.
     /// </summary>
     /// <returns>
@@ -73,5 +49,29 @@ public class BrookHeadGrainUnitTests
                 It.Is<Exception>(ex => ex is FormatException),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+    }
+
+    /// <summary>
+    ///     Ensures OnErrorAsync requests grain deactivation without throwing.
+    /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
+    [Fact]
+    public async Task OnErrorAsyncDeactivatesGrain()
+    {
+        // Arrange
+        Mock<IBrookStorageReader> storage = new();
+        Mock<IGrainContext> context = new();
+        Mock<ILogger<BrookHeadGrain>> logger = new();
+        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
+        Mock<IStreamIdFactory> streamIdFactory = new();
+        BrookHeadGrain sut = new(storage.Object, context.Object, logger.Object, options, streamIdFactory.Object);
+
+        // Act
+        await sut.OnErrorAsync(new InvalidOperationException("boom"));
+
+        // Assert: no exception indicates deactivation path executed without error
+        Assert.True(true);
     }
 }
