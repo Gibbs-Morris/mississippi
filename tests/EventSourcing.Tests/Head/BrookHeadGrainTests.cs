@@ -17,6 +17,23 @@ public class BrookHeadGrainTests
     private readonly TestCluster cluster = TestClusterAccess.Cluster;
 
     /// <summary>
+    ///     Explicit deactivation should complete without exceptions.
+    /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
+    [Fact]
+    public async Task DeactivateAsyncCompletesWithoutError()
+    {
+        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(new BrookKey("t", "id4"));
+        await head.DeactivateAsync();
+
+        // No exception indicates success; optionally ensure we can still call read
+        BrookPosition p = await head.GetLatestPositionAsync();
+        Assert.True(p.Value >= -1);
+    }
+
+    /// <summary>
     ///     Latest position should be cached and default to -1 before any writes.
     /// </summary>
     /// <returns>
@@ -67,22 +84,5 @@ public class BrookHeadGrainTests
         // Force-confirm head position via storage-backed read to avoid timing flakiness
         BrookPosition confirmed = await head.GetLatestPositionConfirmedAsync();
         Assert.True(confirmed.Value >= -1);
-    }
-
-    /// <summary>
-    ///     Explicit deactivation should complete without exceptions.
-    /// </summary>
-    /// <returns>
-    ///     A task that represents the asynchronous test operation.
-    /// </returns>
-    [Fact]
-    public async Task DeactivateAsyncCompletesWithoutError()
-    {
-        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(new BrookKey("t", "id4"));
-        await head.DeactivateAsync();
-
-        // No exception indicates success; optionally ensure we can still call read
-        BrookPosition p = await head.GetLatestPositionAsync();
-        Assert.True(p.Value >= -1);
     }
 }
