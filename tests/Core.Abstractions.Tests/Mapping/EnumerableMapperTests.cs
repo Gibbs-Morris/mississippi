@@ -13,6 +13,20 @@ namespace Mississippi.Core.Abstractions.Tests.Mapping;
 public class EnumerableMapperTests
 {
     /// <summary>
+    ///     Tests that passing a null value to the Map function throws an ArgumentNullException.
+    /// </summary>
+    [Fact]
+    public void MapNullInputThrowsArgumentNullException()
+    {
+        // Arrange
+        Mock<IMapper<int, string>> mockMapper = new();
+        EnumerableMapper<int, string> enumerableMapper = new(mockMapper.Object);
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => enumerableMapper.Map(null!));
+    }
+
+    /// <summary>
     ///     Tests that a collection of integers is correctly mapped to a collection of strings.
     /// </summary>
     [Fact]
@@ -41,40 +55,6 @@ public class EnumerableMapperTests
                 "3",
             },
             result);
-    }
-
-    /// <summary>
-    ///     Tests that an empty collection is correctly mapped to an empty collection.
-    /// </summary>
-    [Fact]
-    public void MapsEmptyCollection()
-    {
-        // Arrange
-        Mock<IMapper<int, string>> mockMapper = new();
-        EnumerableMapper<int, string> enumerableMapper = new(mockMapper.Object);
-
-        // ReSharper disable once CollectionNeverUpdated.Local
-        List<int> input = [];
-
-        // Act
-        IEnumerable<string> result = enumerableMapper.Map(input);
-
-        // Assert
-        Assert.Empty(result);
-    }
-
-    /// <summary>
-    ///     Tests that passing a null value to the Map function throws an ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void MapNullInputThrowsArgumentNullException()
-    {
-        // Arrange
-        Mock<IMapper<int, string>> mockMapper = new();
-        EnumerableMapper<int, string> enumerableMapper = new(mockMapper.Object);
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => enumerableMapper.Map(null!));
     }
 
     /// <summary>
@@ -108,5 +88,25 @@ public class EnumerableMapperTests
                 "3",
             },
             result);
+    }
+
+    /// <summary>
+    ///     Tests that an empty collection is correctly mapped to an empty collection.
+    /// </summary>
+    [Fact]
+    public void MapsEmptyCollection()
+    {
+        // Arrange
+        Mock<IMapper<int, string>> mockMapper = new();
+        EnumerableMapper<int, string> enumerableMapper = new(mockMapper.Object);
+
+        // ReSharper disable once CollectionNeverUpdated.Local
+        List<int> input = [];
+
+        // Act
+        IEnumerable<string> result = enumerableMapper.Map(input);
+
+        // Assert
+        Assert.Empty(result);
     }
 }
