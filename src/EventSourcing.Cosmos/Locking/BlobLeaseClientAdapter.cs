@@ -34,16 +34,16 @@ internal sealed class BlobLeaseClientAdapter : IBlobLeaseClient
         inner.AcquireAsync(duration, conditions, cancellationToken);
 
     /// <inheritdoc />
-    public Task<Response<BlobLease>> RenewAsync(
-        RequestConditions? conditions = null,
-        CancellationToken cancellationToken = default
-    ) =>
-        inner.RenewAsync(conditions, cancellationToken);
-
-    /// <inheritdoc />
     public Task<Response<ReleasedObjectInfo>> ReleaseAsync(
         RequestConditions? conditions = null,
         CancellationToken cancellationToken = default
     ) =>
         inner.ReleaseAsync(conditions, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Response<BlobLease>> RenewAsync(
+        RequestConditions? conditions = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        inner.RenewAsync(conditions, cancellationToken);
 }
