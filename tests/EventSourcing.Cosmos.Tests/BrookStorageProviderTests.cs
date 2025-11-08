@@ -14,25 +14,100 @@ namespace Mississippi.EventSourcing.Cosmos.Tests;
 public class BrookStorageProviderTests
 {
     /// <summary>
-    ///     Verifies constructor throws when the recovery service is null.
+    ///     Helper that converts a sequence to an async-enumerable.
     /// </summary>
-    [Fact]
-    public void ConstructorThrowsWhenRecoveryServiceIsNull()
+    /// <param name="items">The items to enumerate.</param>
+    /// <returns>An async sequence of items.</returns>
+    private static async IAsyncEnumerable<BrookEvent> AsAsyncEnumerableAsync(
+        IEnumerable<BrookEvent> items
+    )
     {
-        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        Assert.Throws<ArgumentNullException>(() => new BrookStorageProvider(null!, reader.Object, appender.Object));
+        foreach (BrookEvent item in items)
+        {
+            yield return item;
+            await Task.Yield();
+        }
     }
 
     /// <summary>
-    ///     Verifies constructor throws when the event reader is null.
+    ///     Verifies appending delegates to the appender and returns its result.
     /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public void ConstructorThrowsWhenEventReaderIsNull()
+    public async Task AppendEventsAsyncDelegatesToAppenderAndReturnsResultAsync()
     {
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
+        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
         Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        Assert.Throws<ArgumentNullException>(() => new BrookStorageProvider(recovery.Object, null!, appender.Object));
+        BrookKey brookId = new("type", "id");
+        BrookPosition expected = new(7);
+        BrookEvent[] events = new[]
+        {
+            new BrookEvent
+            {
+                Id = "e1",
+                Source = "s",
+                Type = "t",
+                Data = ImmutableArray<byte>.Empty,
+            },
+        };
+        BrookPosition? expectedVersion = new BrookPosition(6);
+        appender.Setup(a => a.AppendEventsAsync(
+                brookId,
+                It.Is<IReadOnlyList<BrookEvent>>(l => l.Count == 1),
+                expectedVersion,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        BrookPosition result = await provider.AppendEventsAsync(
+            brookId,
+            events,
+            expectedVersion,
+            CancellationToken.None);
+        Assert.Equal(expected, result);
+        appender.Verify(
+            a => a.AppendEventsAsync(
+                brookId,
+                It.Is<IReadOnlyList<BrookEvent>>(l => l.Count == 1),
+                expectedVersion,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        recovery.VerifyNoOtherCalls();
+        reader.VerifyNoOtherCalls();
+        appender.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    ///     Verifies appending with empty events throws an argument exception.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task AppendEventsAsyncThrowsWhenEventsEmptyAsync()
+    {
+        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
+        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
+        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        await Assert.ThrowsAsync<ArgumentException>(async () => await provider.AppendEventsAsync(
+            new("t", "i"),
+            Array.Empty<BrookEvent>(),
+            null,
+            CancellationToken.None));
+    }
+
+    /// <summary>
+    ///     Verifies appending with null events throws an argument exception.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task AppendEventsAsyncThrowsWhenEventsNullAsync()
+    {
+        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
+        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
+        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await provider.AppendEventsAsync(new("t", "i"), null!, null, CancellationToken.None));
     }
 
     /// <summary>
@@ -47,6 +122,28 @@ public class BrookStorageProviderTests
     }
 
     /// <summary>
+    ///     Verifies constructor throws when the event reader is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenEventReaderIsNull()
+    {
+        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
+        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
+        Assert.Throws<ArgumentNullException>(() => new BrookStorageProvider(recovery.Object, null!, appender.Object));
+    }
+
+    /// <summary>
+    ///     Verifies constructor throws when the recovery service is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenRecoveryServiceIsNull()
+    {
+        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
+        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
+        Assert.Throws<ArgumentNullException>(() => new BrookStorageProvider(null!, reader.Object, appender.Object));
+    }
+
+    /// <summary>
     ///     Verifies the storage provider reports the expected format string.
     /// </summary>
     [Fact]
@@ -57,29 +154,6 @@ public class BrookStorageProviderTests
         Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
         BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
         Assert.Equal("cosmos-db", provider.Format);
-    }
-
-    /// <summary>
-    ///     Verifies head position reads delegate to the recovery service and return its value.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task ReadHeadPositionAsyncDelegatesToRecoveryServiceAsync()
-    {
-        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        BrookKey brookId = new("type", "id");
-        BrookPosition expected = new(42);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expected);
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
-        BrookPosition result = await provider.ReadHeadPositionAsync(brookId, CancellationToken.None);
-        Assert.Equal(expected, result);
-        recovery.Verify(r => r.GetOrRecoverHeadPositionAsync(brookId, It.IsAny<CancellationToken>()), Times.Once);
-        recovery.VerifyNoOtherCalls();
-        reader.VerifyNoOtherCalls();
-        appender.VerifyNoOtherCalls();
     }
 
     /// <summary>
@@ -135,99 +209,25 @@ public class BrookStorageProviderTests
     }
 
     /// <summary>
-    ///     Verifies appending with null events throws an argument exception.
+    ///     Verifies head position reads delegate to the recovery service and return its value.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task AppendEventsAsyncThrowsWhenEventsNullAsync()
-    {
-        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
-        await Assert.ThrowsAsync<ArgumentException>(async () =>
-            await provider.AppendEventsAsync(new("t", "i"), null!, null, CancellationToken.None));
-    }
-
-    /// <summary>
-    ///     Verifies appending with empty events throws an argument exception.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task AppendEventsAsyncThrowsWhenEventsEmptyAsync()
-    {
-        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
-        await Assert.ThrowsAsync<ArgumentException>(async () => await provider.AppendEventsAsync(
-            new("t", "i"),
-            Array.Empty<BrookEvent>(),
-            null,
-            CancellationToken.None));
-    }
-
-    /// <summary>
-    ///     Verifies appending delegates to the appender and returns its result.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task AppendEventsAsyncDelegatesToAppenderAndReturnsResultAsync()
+    public async Task ReadHeadPositionAsyncDelegatesToRecoveryServiceAsync()
     {
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
         Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
         BrookKey brookId = new("type", "id");
-        BrookPosition expected = new(7);
-        BrookEvent[] events = new[]
-        {
-            new BrookEvent
-            {
-                Id = "e1",
-                Source = "s",
-                Type = "t",
-                Data = ImmutableArray<byte>.Empty,
-            },
-        };
-        BrookPosition? expectedVersion = new BrookPosition(6);
-        appender.Setup(a => a.AppendEventsAsync(
-                brookId,
-                It.Is<IReadOnlyList<BrookEvent>>(l => l.Count == 1),
-                expectedVersion,
-                It.IsAny<CancellationToken>()))
+        BrookPosition expected = new(42);
+        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
         BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
-        BrookPosition result = await provider.AppendEventsAsync(
-            brookId,
-            events,
-            expectedVersion,
-            CancellationToken.None);
+        BrookPosition result = await provider.ReadHeadPositionAsync(brookId, CancellationToken.None);
         Assert.Equal(expected, result);
-        appender.Verify(
-            a => a.AppendEventsAsync(
-                brookId,
-                It.Is<IReadOnlyList<BrookEvent>>(l => l.Count == 1),
-                expectedVersion,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        recovery.Verify(r => r.GetOrRecoverHeadPositionAsync(brookId, It.IsAny<CancellationToken>()), Times.Once);
         recovery.VerifyNoOtherCalls();
         reader.VerifyNoOtherCalls();
         appender.VerifyNoOtherCalls();
-    }
-
-    /// <summary>
-    ///     Helper that converts a sequence to an async-enumerable.
-    /// </summary>
-    /// <param name="items">The items to enumerate.</param>
-    /// <returns>An async sequence of items.</returns>
-    private static async IAsyncEnumerable<BrookEvent> AsAsyncEnumerableAsync(
-        IEnumerable<BrookEvent> items
-    )
-    {
-        foreach (BrookEvent item in items)
-        {
-            yield return item;
-            await Task.Yield();
-        }
     }
 }
