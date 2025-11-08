@@ -16,6 +16,13 @@ namespace Mississippi.EventSourcing.Reader;
 public interface IBrookReaderGrain : IGrainWithStringKey
 {
     /// <summary>
+    ///     Requests the reader grain to deactivate when idle, clearing any caches in its slice readers.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
+    [Alias("DeactivateAsync")]
+    Task DeactivateAsync();
+
+    /// <summary>
     ///     Reads events from the brook as an asynchronous stream.
     ///     Allows for efficient streaming of large numbers of events without loading them all into memory.
     /// </summary>
@@ -46,11 +53,4 @@ public interface IBrookReaderGrain : IGrainWithStringKey
         BrookPosition? readTo = null,
         CancellationToken cancellationToken = default
     );
-
-    /// <summary>
-    ///     Requests the reader grain to deactivate when idle, clearing any caches in its slice readers.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
-    [Alias("DeactivateAsync")]
-    Task DeactivateAsync();
 }
