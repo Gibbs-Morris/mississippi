@@ -6,9 +6,9 @@ namespace Mississippi.CrescentConsoleApp;
 internal sealed class RunState
 {
     /// <summary>
-    ///     Gets or sets the primary stream type for the main scenario.
+    ///     Gets or sets the last confirmed head position of the primary stream, if known.
     /// </summary>
-    public string? PrimaryType { get; set; }
+    public long? PrimaryHead { get; set; }
 
     /// <summary>
     ///     Gets or sets the primary stream identifier for the main scenario.
@@ -16,9 +16,9 @@ internal sealed class RunState
     public string? PrimaryId { get; set; }
 
     /// <summary>
-    ///     Gets or sets the last confirmed head position of the primary stream, if known.
+    ///     Gets or sets the primary stream type for the main scenario.
     /// </summary>
-    public long? PrimaryHead { get; set; }
+    public string? PrimaryType { get; set; }
 
     /// <summary>
     ///     Gets or sets the collection of known stream heads captured during multi-stream scenarios.
