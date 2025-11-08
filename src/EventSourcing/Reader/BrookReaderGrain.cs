@@ -39,9 +39,52 @@ internal class BrookReaderGrain
         GrainContext = grainContext;
     }
 
+    /// <summary>
+    ///     Gets the Orleans grain context for this grain instance.
+    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
+    public IGrainContext GrainContext { get; }
+
     private IBrookGrainFactory BrookGrainFactory { get; }
 
     private IOptions<BrookReaderOptions> Options { get; }
+
+    private static List<(long BucketId, long First, long Last)> GetSliceReads(
+        long start,
+        long end,
+        long sliceSize
+    )
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sliceSize);
+        if (start > end)
+        {
+            throw new ArgumentException("start must be ≤ end");
+        }
+
+        long first = (long)Math.Floor((double)start / sliceSize) * sliceSize;
+        long last = (long)Math.Floor((double)end / sliceSize) * sliceSize;
+        List<(long BucketId, long First, long Last)> result = new();
+        for (long b = first; b <= last; b += sliceSize)
+        {
+            long bucketId = b / sliceSize;
+            long bucketFirst = Math.Max(b, start);
+            long bucketLast = Math.Min((b + sliceSize) - 1, end);
+            result.Add((bucketId, bucketFirst, bucketLast));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    ///     Deactivate the stateless reader grain; this will allow any slice reader activations to expire.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
+    public Task DeactivateAsync()
+    {
+        this.DeactivateOnIdle();
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     ///     Reads events from the brook as an asynchronous stream within the specified position range.
@@ -108,48 +151,5 @@ internal class BrookReaderGrain
         }
 
         return [..events];
-    }
-
-    /// <summary>
-    ///     Deactivate the stateless reader grain; this will allow any slice reader activations to expire.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
-    public Task DeactivateAsync()
-    {
-        this.DeactivateOnIdle();
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    ///     Gets the Orleans grain context for this grain instance.
-    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
-    /// </summary>
-    /// <value>The grain context instance.</value>
-    public IGrainContext GrainContext { get; }
-
-    private static List<(long BucketId, long First, long Last)> GetSliceReads(
-        long start,
-        long end,
-        long sliceSize
-    )
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sliceSize);
-        if (start > end)
-        {
-            throw new ArgumentException("start must be ≤ end");
-        }
-
-        long first = (long)Math.Floor((double)start / sliceSize) * sliceSize;
-        long last = (long)Math.Floor((double)end / sliceSize) * sliceSize;
-        List<(long BucketId, long First, long Last)> result = new();
-        for (long b = first; b <= last; b += sliceSize)
-        {
-            long bucketId = b / sliceSize;
-            long bucketFirst = Math.Max(b, start);
-            long bucketLast = Math.Min((b + sliceSize) - 1, end);
-            result.Add((bucketId, bucketFirst, bucketLast));
-        }
-
-        return result;
     }
 }
