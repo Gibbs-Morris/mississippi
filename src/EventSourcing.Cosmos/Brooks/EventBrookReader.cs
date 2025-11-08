@@ -36,13 +36,13 @@ internal class EventBrookReader : IEventBrookReader
         EventMapper = eventMapper;
     }
 
-    private ICosmosRepository Repository { get; }
-
-    private IRetryPolicy RetryPolicy { get; }
+    private IMapper<EventStorageModel, BrookEvent> EventMapper { get; }
 
     private BrookStorageOptions Options { get; }
 
-    private IMapper<EventStorageModel, BrookEvent> EventMapper { get; }
+    private ICosmosRepository Repository { get; }
+
+    private IRetryPolicy RetryPolicy { get; }
 
     /// <summary>
     ///     Reads events from the specified brook range asynchronously.
