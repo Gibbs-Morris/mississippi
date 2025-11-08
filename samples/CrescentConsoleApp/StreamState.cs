@@ -6,9 +6,9 @@ namespace Mississippi.CrescentConsoleApp;
 internal sealed class StreamState
 {
     /// <summary>
-    ///     Gets or sets the stream type.
+    ///     Gets or sets the last known head position for this stream.
     /// </summary>
-    public string Type { get; set; } = string.Empty;
+    public long Head { get; set; }
 
     /// <summary>
     ///     Gets or sets the stream identifier.
@@ -16,7 +16,7 @@ internal sealed class StreamState
     public string Id { get; set; } = string.Empty;
 
     /// <summary>
-    ///     Gets or sets the last known head position for this stream.
+    ///     Gets or sets the stream type.
     /// </summary>
-    public long Head { get; set; }
+    public string Type { get; set; } = string.Empty;
 }
