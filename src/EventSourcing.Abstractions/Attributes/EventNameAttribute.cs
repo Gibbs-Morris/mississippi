@@ -45,6 +45,11 @@ public sealed partial class EventNameAttribute : Attribute
     public string AppName { get; }
 
     /// <summary>
+    ///     Gets the fully qualified event name in the format {AppName}.{ModuleName}.{Name}V{Version}.
+    /// </summary>
+    public string EventName => $"{AppName}.{ModuleName}.{Name}V{Version}";
+
+    /// <summary>
     ///     Gets the module name component of the event name.
     /// </summary>
     public string ModuleName { get; }
@@ -59,10 +64,8 @@ public sealed partial class EventNameAttribute : Attribute
     /// </summary>
     public int Version { get; }
 
-    /// <summary>
-    ///     Gets the fully qualified event name in the format {AppName}.{ModuleName}.{Name}V{Version}.
-    /// </summary>
-    public string EventName => $"{AppName}.{ModuleName}.{Name}V{Version}";
+    [GeneratedRegex("^[A-Z0-9]+$", RegexOptions.Compiled)]
+    private static partial Regex MyValidationRegex();
 
     private static void ValidateParameter(
         string value,
@@ -90,7 +93,4 @@ public sealed partial class EventNameAttribute : Attribute
             throw new ArgumentException("Version must be a positive integer", nameof(version));
         }
     }
-
-    [GeneratedRegex("^[A-Z0-9]+$", RegexOptions.Compiled)]
-    private static partial Regex MyValidationRegex();
 }
