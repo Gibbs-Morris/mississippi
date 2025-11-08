@@ -24,6 +24,251 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 public class EventBrookAppenderTests
 {
     /// <summary>
+    ///     A minimal fake read-only list that reports a custom Count without allocating elements.
+    /// </summary>
+    private sealed class HugeReadOnlyList : IReadOnlyList<BrookEvent>
+    {
+        public HugeReadOnlyList(
+            int countOverride
+        ) =>
+            Count = countOverride;
+
+        public int Count { get; }
+
+        public BrookEvent this[
+            int index
+        ] =>
+            throw new NotSupportedException();
+
+        public IEnumerator<BrookEvent> GetEnumerator() => throw new NotSupportedException();
+
+        IEnumerator IEnumerable.GetEnumerator() => throw new NotSupportedException();
+    }
+
+    /// <summary>
+    ///     Verifies <see cref="EventBrookAppender.AppendEventsAsync" /> creates a pending head before appending events
+    ///     and commits the head afterwards.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task AppendEventsAsyncCreatesPendingHeadBeforeAppendAsync()
+    {
+        // Arrange
+        BrookKey brook = new("type", "id");
+        BrookPosition head = new(0);
+        BrookEvent[] events = new[]
+        {
+            new BrookEvent
+            {
+                Id = "e1",
+            },
+        };
+        Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
+        MockSequence seq = new();
+        long final = head.Value + events.Length;
+        repository.InSequence(seq)
+            .Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        repository.InSequence(seq)
+            .Setup(r => r.AppendEventBatchAsync(
+                brook,
+                It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 1),
+                1,
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        repository.InSequence(seq)
+            .Setup(r => r.CommitHeadPositionAsync(brook, final, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        Mock<IDistributedLock> lockMock = new(MockBehavior.Strict);
+        lockMock.Setup(l => l.RenewAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        lockMock.Setup(l => l.DisposeAsync()).Returns(default(ValueTask));
+        Mock<IDistributedLockManager> lockManager = new(MockBehavior.Strict);
+        lockManager
+            .Setup(m => m.AcquireLockAsync(brook.ToString(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(lockMock.Object));
+        Mock<IBatchSizeEstimator> sizeEstimator = new(MockBehavior.Strict);
+        sizeEstimator.Setup(s => s.EstimateBatchSize(events)).Returns(10);
+        Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
+        retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
+            .Returns((
+                Func<Task<bool>> op,
+                CancellationToken _
+            ) => op());
+        Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
+        mapper.Setup(m => m.Map(events[0]))
+            .Returns(
+                new EventStorageModel
+                {
+                    EventId = "e1",
+                });
+        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
+        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>())).ReturnsAsync(head);
+        Mock<ILogger<EventBrookAppender>> logger = new();
+        EventBrookAppender sut = new(
+            repository.Object,
+            lockManager.Object,
+            sizeEstimator.Object,
+            retryPolicy.Object,
+            Options.Create(
+                new BrookStorageOptions
+                {
+                    MaxEventsPerBatch = 10,
+                    MaxRequestSizeBytes = 1_000_000,
+                }),
+            mapper.Object,
+            recovery.Object,
+            logger.Object);
+
+        // Act
+        BrookPosition result = await sut.AppendEventsAsync(brook, events, null);
+
+        // Assert (sequence ensures CreatePendingHeadAsync happened before AppendEventBatchAsync)
+        Assert.Equal(1, result.Value);
+        repository.VerifyAll();
+    }
+
+    /// <summary>
+    ///     Verifies rollback on failure during large-batch append deletes created events and pending head.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task AppendEventsAsyncRollsBackOnFailureAsync()
+    {
+        // Arrange
+        BrookKey brook = new("type", "id");
+        BrookPosition head = new(100);
+        BrookEvent[] allEvents = new[]
+        {
+            new BrookEvent
+            {
+                Id = "e1",
+            },
+            new BrookEvent
+            {
+                Id = "e2",
+            },
+            new BrookEvent
+            {
+                Id = "e3",
+            },
+            new BrookEvent
+            {
+                Id = "e4",
+            },
+        };
+        Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
+        Mock<IDistributedLock> lockMock = new(MockBehavior.Strict);
+        lockMock.Setup(l => l.DisposeAsync()).Returns(default(ValueTask));
+        Mock<IDistributedLockManager> lockManager = new(MockBehavior.Strict);
+        lockManager
+            .Setup(m => m.AcquireLockAsync(brook.ToString(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(lockMock.Object));
+        Mock<IBatchSizeEstimator> sizeEstimator = new(MockBehavior.Strict);
+        sizeEstimator.Setup(s => s.EstimateBatchSize(It.IsAny<IReadOnlyList<BrookEvent>>())).Returns(1_000);
+
+        // two batches of two events
+        BrookEvent[] b1 = new[] { allEvents[0], allEvents[1] };
+        BrookEvent[] b2 = new[] { allEvents[2], allEvents[3] };
+        sizeEstimator.Setup(s => s.CreateSizeLimitedBatches(allEvents, 2, It.IsAny<long>())).Returns(new[] { b1, b2 });
+        Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
+        retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
+            .Returns((
+                Func<Task<bool>> op,
+                CancellationToken _
+            ) => op());
+        retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
+            .Returns((
+                Func<Task<bool>> op,
+                CancellationToken _
+            ) => op());
+        Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
+        mapper.Setup(m => m.Map(allEvents[0]))
+            .Returns(
+                new EventStorageModel
+                {
+                    EventId = "e1",
+                });
+        mapper.Setup(m => m.Map(allEvents[1]))
+            .Returns(
+                new EventStorageModel
+                {
+                    EventId = "e2",
+                });
+        mapper.Setup(m => m.Map(allEvents[2]))
+            .Returns(
+                new EventStorageModel
+                {
+                    EventId = "e3",
+                });
+        mapper.Setup(m => m.Map(allEvents[3]))
+            .Returns(
+                new EventStorageModel
+                {
+                    EventId = "e4",
+                });
+        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
+        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(head));
+        long final = head.Value + allEvents.Length;
+        repository.Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // First batch succeeds
+        repository.Setup(r => r.AppendEventBatchAsync(
+                brook,
+                It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
+                head.Value + 1,
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // Second batch fails -> triggers rollback
+        repository.Setup(r => r.AppendEventBatchAsync(
+                brook,
+                It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
+                head.Value + 3,
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.FromException(new InvalidOperationException("batch failure")));
+
+        // Rollback expectations for positions 101 and 102
+        repository.Setup(r => r.DeleteEventAsync(brook, 101, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        repository.Setup(r => r.DeleteEventAsync(brook, 102, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        repository.Setup(r => r.DeletePendingHeadAsync(brook, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        repository.Setup(r => r.EventExistsAsync(brook, 101, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(false));
+        repository.Setup(r => r.EventExistsAsync(brook, 102, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(false));
+        Mock<ILogger<EventBrookAppender>> logger = new();
+        EventBrookAppender sut = new(
+            repository.Object,
+            lockManager.Object,
+            sizeEstimator.Object,
+            retryPolicy.Object,
+            Options.Create(
+                new BrookStorageOptions
+                {
+                    MaxEventsPerBatch = 2,
+                    MaxRequestSizeBytes = 1_000_000,
+                }),
+            mapper.Object,
+            recovery.Object,
+            logger.Object);
+
+        // Act + Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await sut.AppendEventsAsync(brook, allEvents, null));
+        repository.VerifyAll();
+        sizeEstimator.VerifyAll();
+        mapper.VerifyAll();
+        recovery.VerifyAll();
+        lockManager.VerifyAll();
+        lockMock.VerifyAll();
+        retryPolicy.VerifyAll();
+    }
+
+    /// <summary>
     ///     Verifies <see cref="EventBrookAppender.AppendEventsAsync" /> throws when events is null or empty.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
@@ -64,6 +309,88 @@ public class EventBrookAppenderTests
         await Assert.ThrowsAsync<ArgumentException>(async () => await sut.AppendEventsAsync(brook, null!, null));
         await Assert.ThrowsAsync<ArgumentException>(async () =>
             await sut.AppendEventsAsync(brook, Array.Empty<BrookEvent>(), null));
+    }
+
+    /// <summary>
+    ///     Verifies overflow in position calculation is detected and throws.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task AppendEventsAsyncThrowsOnPositionOverflowAsync()
+    {
+        // Arrange
+        BrookKey brook = new("type", "id");
+        BrookPosition head = new(long.MaxValue - 5);
+        BrookEvent[] events = new[]
+        {
+            new BrookEvent
+            {
+                Id = "e1",
+            },
+            new BrookEvent
+            {
+                Id = "e2",
+            },
+            new BrookEvent
+            {
+                Id = "e3",
+            },
+            new BrookEvent
+            {
+                Id = "e4",
+            },
+            new BrookEvent
+            {
+                Id = "e5",
+            },
+            new BrookEvent
+            {
+                Id = "e6",
+            },
+            new BrookEvent
+            {
+                Id = "e7",
+            },
+            new BrookEvent
+            {
+                Id = "e8",
+            },
+            new BrookEvent
+            {
+                Id = "e9",
+            },
+            new BrookEvent
+            {
+                Id = "e10",
+            },
+        };
+        Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
+        Mock<IDistributedLock> lockMock = new(MockBehavior.Strict);
+        lockMock.Setup(l => l.DisposeAsync()).Returns(default(ValueTask));
+        Mock<IDistributedLockManager> lockManager = new(MockBehavior.Strict);
+        lockManager
+            .Setup(m => m.AcquireLockAsync(brook.ToString(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(lockMock.Object));
+        Mock<IBatchSizeEstimator> sizeEstimator = new(MockBehavior.Strict);
+        Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
+        Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
+        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
+        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(head));
+        Mock<ILogger<EventBrookAppender>> logger = new();
+        EventBrookAppender sut = new(
+            repository.Object,
+            lockManager.Object,
+            sizeEstimator.Object,
+            retryPolicy.Object,
+            Options.Create(new BrookStorageOptions()),
+            mapper.Object,
+            recovery.Object,
+            logger.Object);
+
+        // Act + Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await sut.AppendEventsAsync(brook, events, null));
     }
 
     /// <summary>
@@ -141,113 +468,6 @@ public class EventBrookAppenderTests
         // Act + Assert
         await Assert.ThrowsAsync<OptimisticConcurrencyException>(async () =>
             await sut.AppendEventsAsync(brook, events, new BrookPosition(3)));
-    }
-
-    /// <summary>
-    ///     Verifies the single-batch path is used under thresholds and commits the head.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task AppendEventsAsyncUsesSingleBatchPathAsync()
-    {
-        // Arrange
-        BrookKey brook = new("type", "id");
-        BrookPosition head = new(2);
-        BrookEvent[] events = new[]
-        {
-            new BrookEvent
-            {
-                Id = "e1",
-                Type = "T1",
-            },
-            new BrookEvent
-            {
-                Id = "e2",
-                Type = "T2",
-            },
-            new BrookEvent
-            {
-                Id = "e3",
-                Type = "T3",
-            },
-        };
-        Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
-        Mock<IDistributedLock> lockMock = new(MockBehavior.Strict);
-        lockMock.Setup(l => l.RenewAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        lockMock.Setup(l => l.DisposeAsync()).Returns(default(ValueTask));
-        Mock<IDistributedLockManager> lockManager = new(MockBehavior.Strict);
-        lockManager
-            .Setup(m => m.AcquireLockAsync(brook.ToString(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(lockMock.Object));
-        Mock<IBatchSizeEstimator> sizeEstimator = new(MockBehavior.Strict);
-        sizeEstimator.Setup(s => s.EstimateBatchSize(events)).Returns(100);
-        Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
-        retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
-        Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
-        mapper.Setup(m => m.Map(It.Is<BrookEvent>(e => e.Id == "e1")))
-            .Returns(
-                new EventStorageModel
-                {
-                    EventId = "e1",
-                });
-        mapper.Setup(m => m.Map(It.Is<BrookEvent>(e => e.Id == "e2")))
-            .Returns(
-                new EventStorageModel
-                {
-                    EventId = "e2",
-                });
-        mapper.Setup(m => m.Map(It.Is<BrookEvent>(e => e.Id == "e3")))
-            .Returns(
-                new EventStorageModel
-                {
-                    EventId = "e3",
-                });
-        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(head));
-        long final = head.Value + events.Length;
-        repository.Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.Setup(r => r.AppendEventBatchAsync(
-                brook,
-                It.Is<IReadOnlyList<EventStorageModel>>(lst => lst.Count == 3),
-                head.Value + 1,
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.Setup(r => r.CommitHeadPositionAsync(brook, final, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
-            repository.Object,
-            lockManager.Object,
-            sizeEstimator.Object,
-            retryPolicy.Object,
-            Options.Create(
-                new BrookStorageOptions
-                {
-                    MaxEventsPerBatch = 100,
-                    MaxRequestSizeBytes = 1_000_000,
-                }),
-            mapper.Object,
-            recovery.Object,
-            logger.Object);
-
-        // Act
-        BrookPosition result = await sut.AppendEventsAsync(brook, events, null);
-
-        // Assert
-        Assert.Equal(final, result.Value);
-        repository.VerifyAll();
-        sizeEstimator.VerifyAll();
-        retryPolicy.VerifyAll();
-        mapper.VerifyAll();
-        recovery.VerifyAll();
-        lockManager.VerifyAll();
-        lockMock.VerifyAll();
     }
 
     /// <summary>
@@ -402,262 +622,34 @@ public class EventBrookAppenderTests
     }
 
     /// <summary>
-    ///     Verifies rollback on failure during large-batch append deletes created events and pending head.
+    ///     Verifies the single-batch path is used under thresholds and commits the head.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task AppendEventsAsyncRollsBackOnFailureAsync()
+    public async Task AppendEventsAsyncUsesSingleBatchPathAsync()
     {
         // Arrange
         BrookKey brook = new("type", "id");
-        BrookPosition head = new(100);
-        BrookEvent[] allEvents = new[]
-        {
-            new BrookEvent
-            {
-                Id = "e1",
-            },
-            new BrookEvent
-            {
-                Id = "e2",
-            },
-            new BrookEvent
-            {
-                Id = "e3",
-            },
-            new BrookEvent
-            {
-                Id = "e4",
-            },
-        };
-        Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
-        Mock<IDistributedLock> lockMock = new(MockBehavior.Strict);
-        lockMock.Setup(l => l.DisposeAsync()).Returns(default(ValueTask));
-        Mock<IDistributedLockManager> lockManager = new(MockBehavior.Strict);
-        lockManager
-            .Setup(m => m.AcquireLockAsync(brook.ToString(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(lockMock.Object));
-        Mock<IBatchSizeEstimator> sizeEstimator = new(MockBehavior.Strict);
-        sizeEstimator.Setup(s => s.EstimateBatchSize(It.IsAny<IReadOnlyList<BrookEvent>>())).Returns(1_000);
-
-        // two batches of two events
-        BrookEvent[] b1 = new[] { allEvents[0], allEvents[1] };
-        BrookEvent[] b2 = new[] { allEvents[2], allEvents[3] };
-        sizeEstimator.Setup(s => s.CreateSizeLimitedBatches(allEvents, 2, It.IsAny<long>())).Returns(new[] { b1, b2 });
-        Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
-        retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
-        retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
-        Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
-        mapper.Setup(m => m.Map(allEvents[0]))
-            .Returns(
-                new EventStorageModel
-                {
-                    EventId = "e1",
-                });
-        mapper.Setup(m => m.Map(allEvents[1]))
-            .Returns(
-                new EventStorageModel
-                {
-                    EventId = "e2",
-                });
-        mapper.Setup(m => m.Map(allEvents[2]))
-            .Returns(
-                new EventStorageModel
-                {
-                    EventId = "e3",
-                });
-        mapper.Setup(m => m.Map(allEvents[3]))
-            .Returns(
-                new EventStorageModel
-                {
-                    EventId = "e4",
-                });
-        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(head));
-        long final = head.Value + allEvents.Length;
-        repository.Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // First batch succeeds
-        repository.Setup(r => r.AppendEventBatchAsync(
-                brook,
-                It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
-                head.Value + 1,
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // Second batch fails -> triggers rollback
-        repository.Setup(r => r.AppendEventBatchAsync(
-                brook,
-                It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
-                head.Value + 3,
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.FromException(new InvalidOperationException("batch failure")));
-
-        // Rollback expectations for positions 101 and 102
-        repository.Setup(r => r.DeleteEventAsync(brook, 101, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.Setup(r => r.DeleteEventAsync(brook, 102, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.Setup(r => r.DeletePendingHeadAsync(brook, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.Setup(r => r.EventExistsAsync(brook, 101, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(false));
-        repository.Setup(r => r.EventExistsAsync(brook, 102, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(false));
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
-            repository.Object,
-            lockManager.Object,
-            sizeEstimator.Object,
-            retryPolicy.Object,
-            Options.Create(
-                new BrookStorageOptions
-                {
-                    MaxEventsPerBatch = 2,
-                    MaxRequestSizeBytes = 1_000_000,
-                }),
-            mapper.Object,
-            recovery.Object,
-            logger.Object);
-
-        // Act + Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await sut.AppendEventsAsync(brook, allEvents, null));
-        repository.VerifyAll();
-        sizeEstimator.VerifyAll();
-        mapper.VerifyAll();
-        recovery.VerifyAll();
-        lockManager.VerifyAll();
-        lockMock.VerifyAll();
-        retryPolicy.VerifyAll();
-    }
-
-    /// <summary>
-    ///     Verifies overflow in position calculation is detected and throws.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task AppendEventsAsyncThrowsOnPositionOverflowAsync()
-    {
-        // Arrange
-        BrookKey brook = new("type", "id");
-        BrookPosition head = new(long.MaxValue - 5);
+        BrookPosition head = new(2);
         BrookEvent[] events = new[]
         {
             new BrookEvent
             {
                 Id = "e1",
+                Type = "T1",
             },
             new BrookEvent
             {
                 Id = "e2",
+                Type = "T2",
             },
             new BrookEvent
             {
                 Id = "e3",
-            },
-            new BrookEvent
-            {
-                Id = "e4",
-            },
-            new BrookEvent
-            {
-                Id = "e5",
-            },
-            new BrookEvent
-            {
-                Id = "e6",
-            },
-            new BrookEvent
-            {
-                Id = "e7",
-            },
-            new BrookEvent
-            {
-                Id = "e8",
-            },
-            new BrookEvent
-            {
-                Id = "e9",
-            },
-            new BrookEvent
-            {
-                Id = "e10",
+                Type = "T3",
             },
         };
         Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
-        Mock<IDistributedLock> lockMock = new(MockBehavior.Strict);
-        lockMock.Setup(l => l.DisposeAsync()).Returns(default(ValueTask));
-        Mock<IDistributedLockManager> lockManager = new(MockBehavior.Strict);
-        lockManager
-            .Setup(m => m.AcquireLockAsync(brook.ToString(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(lockMock.Object));
-        Mock<IBatchSizeEstimator> sizeEstimator = new(MockBehavior.Strict);
-        Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
-        Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
-        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(head));
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
-            repository.Object,
-            lockManager.Object,
-            sizeEstimator.Object,
-            retryPolicy.Object,
-            Options.Create(new BrookStorageOptions()),
-            mapper.Object,
-            recovery.Object,
-            logger.Object);
-
-        // Act + Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await sut.AppendEventsAsync(brook, events, null));
-    }
-
-    /// <summary>
-    ///     Verifies <see cref="EventBrookAppender.AppendEventsAsync" /> creates a pending head before appending events
-    ///     and commits the head afterwards.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task AppendEventsAsyncCreatesPendingHeadBeforeAppendAsync()
-    {
-        // Arrange
-        BrookKey brook = new("type", "id");
-        BrookPosition head = new(0);
-        BrookEvent[] events = new[]
-        {
-            new BrookEvent
-            {
-                Id = "e1",
-            },
-        };
-        Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
-        MockSequence seq = new();
-        long final = head.Value + events.Length;
-        repository.InSequence(seq)
-            .Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.InSequence(seq)
-            .Setup(r => r.AppendEventBatchAsync(
-                brook,
-                It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 1),
-                1,
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.InSequence(seq)
-            .Setup(r => r.CommitHeadPositionAsync(brook, final, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
         Mock<IDistributedLock> lockMock = new(MockBehavior.Strict);
         lockMock.Setup(l => l.RenewAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         lockMock.Setup(l => l.DisposeAsync()).Returns(default(ValueTask));
@@ -666,7 +658,7 @@ public class EventBrookAppenderTests
             .Setup(m => m.AcquireLockAsync(brook.ToString(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(lockMock.Object));
         Mock<IBatchSizeEstimator> sizeEstimator = new(MockBehavior.Strict);
-        sizeEstimator.Setup(s => s.EstimateBatchSize(events)).Returns(10);
+        sizeEstimator.Setup(s => s.EstimateBatchSize(events)).Returns(100);
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
             .Returns((
@@ -674,14 +666,38 @@ public class EventBrookAppenderTests
                 CancellationToken _
             ) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
-        mapper.Setup(m => m.Map(events[0]))
+        mapper.Setup(m => m.Map(It.Is<BrookEvent>(e => e.Id == "e1")))
             .Returns(
                 new EventStorageModel
                 {
                     EventId = "e1",
                 });
+        mapper.Setup(m => m.Map(It.Is<BrookEvent>(e => e.Id == "e2")))
+            .Returns(
+                new EventStorageModel
+                {
+                    EventId = "e2",
+                });
+        mapper.Setup(m => m.Map(It.Is<BrookEvent>(e => e.Id == "e3")))
+            .Returns(
+                new EventStorageModel
+                {
+                    EventId = "e3",
+                });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>())).ReturnsAsync(head);
+        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(head));
+        long final = head.Value + events.Length;
+        repository.Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        repository.Setup(r => r.AppendEventBatchAsync(
+                brook,
+                It.Is<IReadOnlyList<EventStorageModel>>(lst => lst.Count == 3),
+                head.Value + 1,
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        repository.Setup(r => r.CommitHeadPositionAsync(brook, final, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         Mock<ILogger<EventBrookAppender>> logger = new();
         EventBrookAppender sut = new(
             repository.Object,
@@ -691,7 +707,7 @@ public class EventBrookAppenderTests
             Options.Create(
                 new BrookStorageOptions
                 {
-                    MaxEventsPerBatch = 10,
+                    MaxEventsPerBatch = 100,
                     MaxRequestSizeBytes = 1_000_000,
                 }),
             mapper.Object,
@@ -701,9 +717,15 @@ public class EventBrookAppenderTests
         // Act
         BrookPosition result = await sut.AppendEventsAsync(brook, events, null);
 
-        // Assert (sequence ensures CreatePendingHeadAsync happened before AppendEventBatchAsync)
-        Assert.Equal(1, result.Value);
+        // Assert
+        Assert.Equal(final, result.Value);
         repository.VerifyAll();
+        sizeEstimator.VerifyAll();
+        retryPolicy.VerifyAll();
+        mapper.VerifyAll();
+        recovery.VerifyAll();
+        lockManager.VerifyAll();
+        lockMock.VerifyAll();
     }
 
     /// <summary>
@@ -814,27 +836,5 @@ public class EventBrookAppenderTests
         mapper.VerifyAll();
         recovery.VerifyAll();
         lockManager.VerifyAll();
-    }
-
-    /// <summary>
-    ///     A minimal fake read-only list that reports a custom Count without allocating elements.
-    /// </summary>
-    private sealed class HugeReadOnlyList : IReadOnlyList<BrookEvent>
-    {
-        public HugeReadOnlyList(
-            int countOverride
-        ) =>
-            Count = countOverride;
-
-        public BrookEvent this[
-            int index
-        ] =>
-            throw new NotSupportedException();
-
-        public int Count { get; }
-
-        public IEnumerator<BrookEvent> GetEnumerator() => throw new NotSupportedException();
-
-        IEnumerator IEnumerable.GetEnumerator() => throw new NotSupportedException();
     }
 }
