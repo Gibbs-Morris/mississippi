@@ -13,10 +13,10 @@ namespace Mississippi.EventSourcing.Factory;
 /// </summary>
 internal class BrookGrainFactory : IBrookGrainFactory
 {
-    private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingWriterGrain =
+    private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingHeadGrain =
         LoggerMessage.Define<string, BrookKey>(
             LogLevel.Debug,
-            new(1, nameof(GetBrookWriterGrain)),
+            new(4, nameof(GetBrookHeadGrain)),
             "Resolving {GrainType} for Brook {BrookKey}");
 
     private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingReaderGrain =
@@ -31,10 +31,10 @@ internal class BrookGrainFactory : IBrookGrainFactory
             new(3, nameof(GetBrookSliceReaderGrain)),
             "Resolving {GrainType} for Brook {BrookRangeKey}");
 
-    private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingHeadGrain =
+    private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingWriterGrain =
         LoggerMessage.Define<string, BrookKey>(
             LogLevel.Debug,
-            new(4, nameof(GetBrookHeadGrain)),
+            new(1, nameof(GetBrookWriterGrain)),
             "Resolving {GrainType} for Brook {BrookKey}");
 
     /// <summary>
@@ -57,16 +57,16 @@ internal class BrookGrainFactory : IBrookGrainFactory
     private ILogger<BrookGrainFactory> Logger { get; }
 
     /// <summary>
-    ///     Retrieves an <see cref="IBrookWriterGrain" /> for the specified brook composite key.
+    ///     Retrieves an <see cref="IBrookHeadGrain" /> for the specified Brook composite key.
     /// </summary>
-    /// <param name="brookKey">The key identifying the brook.</param>
-    /// <returns>An <see cref="IBrookWriterGrain" /> instance for the brook.</returns>
-    public IBrookWriterGrain GetBrookWriterGrain(
+    /// <param name="brookKey">The key identifying the Brook.</param>
+    /// <returns>An <see cref="IBrookHeadGrain" /> instance for the Brook head.</returns>
+    public IBrookHeadGrain GetBrookHeadGrain(
         BrookKey brookKey
     )
     {
-        LogResolvingWriterGrain(Logger, nameof(IBrookWriterGrain), brookKey, null);
-        return GrainFactory.GetGrain<IBrookWriterGrain>(brookKey);
+        LogResolvingHeadGrain(Logger, nameof(IBrookHeadGrain), brookKey, null);
+        return GrainFactory.GetGrain<IBrookHeadGrain>(brookKey);
     }
 
     /// <summary>
@@ -96,15 +96,15 @@ internal class BrookGrainFactory : IBrookGrainFactory
     }
 
     /// <summary>
-    ///     Retrieves an <see cref="IBrookHeadGrain" /> for the specified Brook composite key.
+    ///     Retrieves an <see cref="IBrookWriterGrain" /> for the specified brook composite key.
     /// </summary>
-    /// <param name="brookKey">The key identifying the Brook.</param>
-    /// <returns>An <see cref="IBrookHeadGrain" /> instance for the Brook head.</returns>
-    public IBrookHeadGrain GetBrookHeadGrain(
+    /// <param name="brookKey">The key identifying the brook.</param>
+    /// <returns>An <see cref="IBrookWriterGrain" /> instance for the brook.</returns>
+    public IBrookWriterGrain GetBrookWriterGrain(
         BrookKey brookKey
     )
     {
-        LogResolvingHeadGrain(Logger, nameof(IBrookHeadGrain), brookKey, null);
-        return GrainFactory.GetGrain<IBrookHeadGrain>(brookKey);
+        LogResolvingWriterGrain(Logger, nameof(IBrookWriterGrain), brookKey, null);
+        return GrainFactory.GetGrain<IBrookWriterGrain>(brookKey);
     }
 }
