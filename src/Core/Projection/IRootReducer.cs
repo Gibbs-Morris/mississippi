@@ -8,6 +8,13 @@
 public interface IRootReducer<T>
 {
     /// <summary>
+    ///     Gets a hash value representing the current version of the reducer logic.
+    ///     This hash is used to determine if the projection needs to be rebuilt when reducer logic changes.
+    /// </summary>
+    /// <returns>A string hash representing the reducer version.</returns>
+    string GetReducerHash();
+
+    /// <summary>
     ///     Reduces an event into the current projection state, producing a new state.
     ///     This method is called for each event to update the projection.
     /// </summary>
@@ -18,11 +25,4 @@ public interface IRootReducer<T>
         T state,
         object eventData
     );
-
-    /// <summary>
-    ///     Gets a hash value representing the current version of the reducer logic.
-    ///     This hash is used to determine if the projection needs to be rebuilt when reducer logic changes.
-    /// </summary>
-    /// <returns>A string hash representing the reducer version.</returns>
-    string GetReducerHash();
 }
