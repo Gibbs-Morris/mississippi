@@ -75,6 +75,81 @@ public class CosmosRetryPolicyTests
     }
 
     /// <summary>
+    ///     Verifies that cancellation tokens are honored without additional retries.
+    /// </summary>
+    /// <returns>A task representing the test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncHonorsCancellationTokenAsync()
+    {
+        // Arrange
+        CosmosRetryPolicy policy = new();
+        int calls = 0;
+        using CancellationTokenSource cts = new();
+        Func<Task<int>> operationAsync = () =>
+        {
+            calls++;
+            cts.CancelAfter(TimeSpan.Zero);
+            SpinWait.SpinUntil(() => cts.IsCancellationRequested);
+            throw new TaskCanceledException();
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => policy.ExecuteAsync(operationAsync, cts.Token));
+        Assert.Equal(1, calls);
+    }
+
+    /// <summary>
+    ///     Verifies that NotFound (404) passes through as a CosmosException.
+    /// </summary>
+    /// <returns>A task representing the test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncNotFoundPassesThroughAsync()
+    {
+        // Arrange
+        CosmosRetryPolicy policy = new(1);
+        Func<Task<int>> operationAsyncNotFound = () => throw CreateCosmosException(HttpStatusCode.NotFound);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<CosmosException>(() => policy.ExecuteAsync(operationAsyncNotFound));
+    }
+
+    /// <summary>
+    ///     Verifies that RequestEntityTooLarge results in an InvalidOperationException being thrown.
+    /// </summary>
+    /// <returns>A task representing the test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncRequestEntityTooLargeThrowsInvalidOperationExceptionAsync()
+    {
+        // Arrange
+        CosmosRetryPolicy policy = new(1);
+        Func<Task<int>> operationAsync = () => throw CreateCosmosException(HttpStatusCode.RequestEntityTooLarge);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => policy.ExecuteAsync(operationAsync));
+    }
+
+    /// <summary>
+    ///     Verifies that TaskCanceledException is translated to OperationCanceledException without retries.
+    /// </summary>
+    /// <returns>A task representing the test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncTaskCanceledEventuallyThrowsOperationCanceledExceptionAsync()
+    {
+        // Arrange
+        int calls = 0;
+        CosmosRetryPolicy policy = new(1);
+        Func<Task<int>> operationAsyncCanceled = () =>
+        {
+            calls++;
+            return Task.FromException<int>(new TaskCanceledException());
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => policy.ExecuteAsync(operationAsyncCanceled));
+        Assert.Equal(1, calls);
+    }
+
+    /// <summary>
     ///     Verifies that TooManyRequests (429) is retried until the operation succeeds.
     /// </summary>
     /// <returns>A task representing the test execution.</returns>
@@ -101,80 +176,5 @@ public class CosmosRetryPolicyTests
         // Assert
         Assert.Equal(123, result);
         Assert.Equal(3, calls);
-    }
-
-    /// <summary>
-    ///     Verifies that RequestEntityTooLarge results in an InvalidOperationException being thrown.
-    /// </summary>
-    /// <returns>A task representing the test execution.</returns>
-    [Fact]
-    public async Task ExecuteAsyncRequestEntityTooLargeThrowsInvalidOperationExceptionAsync()
-    {
-        // Arrange
-        CosmosRetryPolicy policy = new(1);
-        Func<Task<int>> operationAsync = () => throw CreateCosmosException(HttpStatusCode.RequestEntityTooLarge);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => policy.ExecuteAsync(operationAsync));
-    }
-
-    /// <summary>
-    ///     Verifies that NotFound (404) passes through as a CosmosException.
-    /// </summary>
-    /// <returns>A task representing the test execution.</returns>
-    [Fact]
-    public async Task ExecuteAsyncNotFoundPassesThroughAsync()
-    {
-        // Arrange
-        CosmosRetryPolicy policy = new(1);
-        Func<Task<int>> operationAsyncNotFound = () => throw CreateCosmosException(HttpStatusCode.NotFound);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<CosmosException>(() => policy.ExecuteAsync(operationAsyncNotFound));
-    }
-
-    /// <summary>
-    ///     Verifies that TaskCanceledException is translated to OperationCanceledException without retries.
-    /// </summary>
-    /// <returns>A task representing the test execution.</returns>
-    [Fact]
-    public async Task ExecuteAsyncTaskCanceledEventuallyThrowsOperationCanceledExceptionAsync()
-    {
-        // Arrange
-        int calls = 0;
-        CosmosRetryPolicy policy = new(1);
-        Func<Task<int>> operationAsyncCanceled = () =>
-        {
-            calls++;
-            return Task.FromException<int>(new TaskCanceledException());
-        };
-
-        // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => policy.ExecuteAsync(operationAsyncCanceled));
-        Assert.Equal(1, calls);
-    }
-
-    /// <summary>
-    ///     Verifies that cancellation tokens are honored without additional retries.
-    /// </summary>
-    /// <returns>A task representing the test execution.</returns>
-    [Fact]
-    public async Task ExecuteAsyncHonorsCancellationTokenAsync()
-    {
-        // Arrange
-        CosmosRetryPolicy policy = new();
-        int calls = 0;
-        using CancellationTokenSource cts = new();
-        Func<Task<int>> operationAsync = () =>
-        {
-            calls++;
-            cts.CancelAfter(TimeSpan.Zero);
-            SpinWait.SpinUntil(() => cts.IsCancellationRequested);
-            throw new TaskCanceledException();
-        };
-
-        // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => policy.ExecuteAsync(operationAsync, cts.Token));
-        Assert.Equal(1, calls);
     }
 }
