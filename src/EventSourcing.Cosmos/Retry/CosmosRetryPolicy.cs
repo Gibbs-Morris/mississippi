@@ -21,6 +21,29 @@ internal class CosmosRetryPolicy : IRetryPolicy
 
     private int MaxRetries { get; }
 
+    private static TimeSpan ComputeDelay(
+        CosmosException ex,
+        int attempt
+    )
+    {
+        if (ex.RetryAfter.HasValue)
+        {
+            return ex.RetryAfter.Value;
+        }
+
+        // Exponential backoff base 100ms
+        return TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
+    }
+
+    private static bool IsTransientCosmosStatus(
+        HttpStatusCode? statusCode
+    ) =>
+        (statusCode == HttpStatusCode.TooManyRequests) ||
+        (statusCode == HttpStatusCode.ServiceUnavailable) ||
+        (statusCode == HttpStatusCode.RequestTimeout) ||
+        (statusCode == HttpStatusCode.InternalServerError) ||
+        (statusCode == HttpStatusCode.GatewayTimeout);
+
     /// <summary>
     ///     Executes an operation with retry logic for transient failures.
     /// </summary>
@@ -79,28 +102,5 @@ internal class CosmosRetryPolicy : IRetryPolicy
         }
 
         throw new InvalidOperationException($"Operation failed after {MaxRetries + 1} attempts", lastException);
-    }
-
-    private static bool IsTransientCosmosStatus(
-        HttpStatusCode? statusCode
-    ) =>
-        (statusCode == HttpStatusCode.TooManyRequests) ||
-        (statusCode == HttpStatusCode.ServiceUnavailable) ||
-        (statusCode == HttpStatusCode.RequestTimeout) ||
-        (statusCode == HttpStatusCode.InternalServerError) ||
-        (statusCode == HttpStatusCode.GatewayTimeout);
-
-    private static TimeSpan ComputeDelay(
-        CosmosException ex,
-        int attempt
-    )
-    {
-        if (ex.RetryAfter.HasValue)
-        {
-            return ex.RetryAfter.Value;
-        }
-
-        // Exponential backoff base 100ms
-        return TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
     }
 }
