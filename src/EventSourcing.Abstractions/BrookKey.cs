@@ -7,9 +7,9 @@ namespace Mississippi.EventSourcing.Abstractions;
 [Alias("Mississippi.EventSourcing.Abstractions.BrookKey")]
 public readonly record struct BrookKey
 {
-    private const char Separator = '|';
-
     private const int MaxLength = 1024;
+
+    private const char Separator = '|';
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookKey" /> struct.
@@ -38,38 +38,16 @@ public readonly record struct BrookKey
     }
 
     /// <summary>
-    ///     Gets the type component of the brook key.
-    /// </summary>
-    [Id(0)]
-    public string Type { get; }
-
-    /// <summary>
     ///     Gets the id component of the brook key.
     /// </summary>
     [Id(1)]
     public string Id { get; }
 
     /// <summary>
-    ///     Implicitly converts a <see cref="BrookKey" /> to its string representation.
+    ///     Gets the type component of the brook key.
     /// </summary>
-    /// <param name="key">The brook key to convert.</param>
-    /// <returns>A string representation of the brook key in the format "type|id".</returns>
-    public static implicit operator string(
-        BrookKey key
-    ) =>
-        $"{key.Type}{Separator}{key.Id}";
-
-    /// <summary>
-    ///     Implicitly converts a string to a <see cref="BrookKey" />.
-    /// </summary>
-    /// <param name="value">The string value to convert.</param>
-    /// <returns>A brook key parsed from the string.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
-    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
-    public static implicit operator BrookKey(
-        string value
-    ) =>
-        FromString(value);
+    [Id(0)]
+    public string Type { get; }
 
     /// <summary>
     ///     Converts a brook key to its string representation.
@@ -105,10 +83,26 @@ public readonly record struct BrookKey
     }
 
     /// <summary>
-    ///     Returns the string representation of this brook key.
+    ///     Implicitly converts a <see cref="BrookKey" /> to its string representation.
     /// </summary>
+    /// <param name="key">The brook key to convert.</param>
     /// <returns>A string representation of the brook key in the format "type|id".</returns>
-    public override string ToString() => this;
+    public static implicit operator string(
+        BrookKey key
+    ) =>
+        $"{key.Type}{Separator}{key.Id}";
+
+    /// <summary>
+    ///     Implicitly converts a string to a <see cref="BrookKey" />.
+    /// </summary>
+    /// <param name="value">The string value to convert.</param>
+    /// <returns>A brook key parsed from the string.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
+    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
+    public static implicit operator BrookKey(
+        string value
+    ) =>
+        FromString(value);
 
     private static void ValidateComponent(
         string value,
@@ -125,4 +119,10 @@ public readonly record struct BrookKey
             throw new ArgumentException($"Value cannot contain the separator character '{Separator}'.", paramName);
         }
     }
+
+    /// <summary>
+    ///     Returns the string representation of this brook key.
+    /// </summary>
+    /// <returns>A string representation of the brook key in the format "type|id".</returns>
+    public override string ToString() => this;
 }
