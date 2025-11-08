@@ -10,9 +10,9 @@ namespace Mississippi.EventSourcing.Abstractions;
 [Alias("Mississippi.EventSourcing.Abstractions.BrookRangeKey")]
 public readonly record struct BrookRangeKey
 {
-    private const char Separator = '|';
-
     private const int MaxLength = 1024;
+
+    private const char Separator = '|';
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookRangeKey" /> struct.
@@ -58,10 +58,15 @@ public readonly record struct BrookRangeKey
     }
 
     /// <summary>
-    ///     Gets the type component of the brook range key.
+    ///     Gets the count component of the brook range key.
     /// </summary>
-    [Id(0)]
-    public string Type { get; }
+    [Id(3)]
+    public long Count { get; }
+
+    /// <summary>
+    ///     Gets the inclusive ending position of the range (Start + Count - 1).
+    /// </summary>
+    public BrookPosition End => (Start + Count) - 1;
 
     /// <summary>
     ///     Gets the id component of the brook range key.
@@ -76,47 +81,10 @@ public readonly record struct BrookRangeKey
     public BrookPosition Start { get; }
 
     /// <summary>
-    ///     Gets the inclusive ending position of the range (Start + Count - 1).
+    ///     Gets the type component of the brook range key.
     /// </summary>
-    public BrookPosition End => (Start + Count) - 1;
-
-    /// <summary>
-    ///     Gets the count component of the brook range key.
-    /// </summary>
-    [Id(3)]
-    public long Count { get; }
-
-    /// <summary>
-    ///     Implicitly converts a <see cref="BrookRangeKey" /> to its string representation.
-    /// </summary>
-    /// <param name="key">The brook range key to convert.</param>
-    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
-    public static implicit operator string(
-        BrookRangeKey key
-    ) =>
-        $"{key.Type}{Separator}{key.Id}{Separator}{key.Start.Value}{Separator}{key.Count}";
-
-    /// <summary>
-    ///     Implicitly converts a string to a <see cref="BrookRangeKey" />.
-    /// </summary>
-    /// <param name="value">The string value to convert.</param>
-    /// <returns>A brook range key parsed from the string.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
-    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
-    public static implicit operator BrookRangeKey(
-        string value
-    ) =>
-        FromString(value);
-
-    /// <summary>
-    ///     Converts a brook range key to its string representation.
-    /// </summary>
-    /// <param name="key">The brook range key to convert.</param>
-    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
-    public static string FromBrookRangeKey(
-        BrookRangeKey key
-    ) =>
-        key;
+    [Id(0)]
+    public string Type { get; }
 
     /// <summary>
     ///     Creates a brook range key from a brook key and range parameters.
@@ -133,16 +101,14 @@ public readonly record struct BrookRangeKey
         new(key.Type, key.Id, start, count);
 
     /// <summary>
-    ///     Converts this brook range key to a brook key containing only the type and id components.
+    ///     Converts a brook range key to its string representation.
     /// </summary>
-    /// <returns>A brook key with the type and id from this range key.</returns>
-    public BrookKey ToBrookCompositeKey() => new(Type, Id);
-
-    /// <summary>
-    ///     Returns the string representation of this brook range key.
-    /// </summary>
+    /// <param name="key">The brook range key to convert.</param>
     /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
-    public override string ToString() => this;
+    public static string FromBrookRangeKey(
+        BrookRangeKey key
+    ) =>
+        key;
 
     /// <summary>
     ///     Creates a brook range key from its string representation.
@@ -191,6 +157,28 @@ public readonly record struct BrookRangeKey
         return new(type, id, start, count);
     }
 
+    /// <summary>
+    ///     Implicitly converts a <see cref="BrookRangeKey" /> to its string representation.
+    /// </summary>
+    /// <param name="key">The brook range key to convert.</param>
+    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
+    public static implicit operator string(
+        BrookRangeKey key
+    ) =>
+        $"{key.Type}{Separator}{key.Id}{Separator}{key.Start.Value}{Separator}{key.Count}";
+
+    /// <summary>
+    ///     Implicitly converts a string to a <see cref="BrookRangeKey" />.
+    /// </summary>
+    /// <param name="value">The string value to convert.</param>
+    /// <returns>A brook range key parsed from the string.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
+    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
+    public static implicit operator BrookRangeKey(
+        string value
+    ) =>
+        FromString(value);
+
     private static void ValidateComponent(
         string value,
         string paramName
@@ -217,4 +205,16 @@ public readonly record struct BrookRangeKey
             throw new ArgumentOutOfRangeException(paramName, value, "Value must be non-negative.");
         }
     }
+
+    /// <summary>
+    ///     Converts this brook range key to a brook key containing only the type and id components.
+    /// </summary>
+    /// <returns>A brook key with the type and id from this range key.</returns>
+    public BrookKey ToBrookCompositeKey() => new(Type, Id);
+
+    /// <summary>
+    ///     Returns the string representation of this brook range key.
+    /// </summary>
+    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
+    public override string ToString() => this;
 }
