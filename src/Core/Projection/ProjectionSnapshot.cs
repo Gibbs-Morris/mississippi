@@ -10,20 +10,20 @@
 public sealed record ProjectionSnapshot<TModel>
 {
     /// <summary>
+    ///     Gets the path identifier for the aggregate root that this projection is based on.
+    ///     Links the projection back to its source aggregate for traceability.
+    /// </summary>
+    /// <value>The aggregate root path as a string.</value>
+    [Id(2)]
+    public required string AggegrateRootPath { get; init; }
+
+    /// <summary>
     ///     Gets the actual projection model data.
     ///     This contains the computed state of the projection at the snapshot version.
     /// </summary>
     /// <value>The projection model data.</value>
     [Id(3)]
     public required TModel Data { get; init; }
-
-    /// <summary>
-    ///     Gets the version number of this projection snapshot.
-    ///     Corresponds to the event sequence number up to which this projection was computed.
-    /// </summary>
-    /// <value>The version number as a long value.</value>
-    [Id(0)]
-    public long Version { get; init; }
 
     /// <summary>
     ///     Gets the path identifier for this projection type.
@@ -34,10 +34,10 @@ public sealed record ProjectionSnapshot<TModel>
     public required string ProjectionPath { get; init; }
 
     /// <summary>
-    ///     Gets the path identifier for the aggregate root that this projection is based on.
-    ///     Links the projection back to its source aggregate for traceability.
+    ///     Gets the version number of this projection snapshot.
+    ///     Corresponds to the event sequence number up to which this projection was computed.
     /// </summary>
-    /// <value>The aggregate root path as a string.</value>
-    [Id(2)]
-    public required string AggegrateRootPath { get; init; }
+    /// <value>The version number as a long value.</value>
+    [Id(0)]
+    public long Version { get; init; }
 }
