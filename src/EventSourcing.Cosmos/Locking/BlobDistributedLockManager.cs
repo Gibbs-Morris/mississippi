@@ -34,9 +34,9 @@ internal class BlobDistributedLockManager : IDistributedLockManager
 
     private BlobServiceClient BlobServiceClient { get; }
 
-    private BrookStorageOptions Options { get; }
-
     private IBlobLeaseClientFactory LeaseClientFactory { get; }
+
+    private BrookStorageOptions Options { get; }
 
     /// <summary>
     ///     Acquires a distributed lock for the specified key and duration.
