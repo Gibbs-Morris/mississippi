@@ -14,6 +14,44 @@ namespace Mississippi.Core.Abstractions.Tests.Mapping;
 public class AsyncEnumerableMapperTests
 {
     /// <summary>
+    ///     Asynchronously enumerates a collection of items.
+    /// </summary>
+    /// <typeparam name="T">The type of the items in the collection.</typeparam>
+    /// <param name="items">The collection of items to enumerate.</param>
+    /// <returns>An asynchronous enumerable of the items.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4456:Parameter validation in yielding methods should be wrapped",
+        Justification = "Required for IAsyncEnumerable.")]
+    private static async IAsyncEnumerable<T> GetAsyncEnumerableAsync<T>(
+        IEnumerable<T> items
+    )
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        foreach (T item in items)
+        {
+            yield return item;
+            await Task.Yield();
+        }
+    }
+
+    /// <summary>
+    ///     Tests that passing a null value to the Map function throws an ArgumentNullException.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task MapNullInputThrowsArgumentNullExceptionAsync()
+    {
+        // Arrange
+        Mock<IMapper<int, string>> mockMapper = new();
+        AsyncEnumerableMapper<int, string> asyncEnumerableMapper = new(mockMapper.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await asyncEnumerableMapper.Map(null!).ToListAsync());
+    }
+
+    /// <summary>
     ///     Tests that a non-empty asynchronous collection is mapped correctly.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -44,41 +82,6 @@ public class AsyncEnumerableMapperTests
                 "3",
             },
             result);
-    }
-
-    /// <summary>
-    ///     Tests that an empty asynchronous collection is mapped to an empty collection.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task MapsEmptyAsyncCollectionAsync()
-    {
-        // Arrange
-        Mock<IMapper<int, string>> mockMapper = new();
-        AsyncEnumerableMapper<int, string> asyncEnumerableMapper = new(mockMapper.Object);
-        IAsyncEnumerable<int> input = GetAsyncEnumerableAsync(new List<int>());
-
-        // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
-
-        // Assert
-        Assert.Empty(result);
-    }
-
-    /// <summary>
-    ///     Tests that passing a null value to the Map function throws an ArgumentNullException.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task MapNullInputThrowsArgumentNullExceptionAsync()
-    {
-        // Arrange
-        Mock<IMapper<int, string>> mockMapper = new();
-        AsyncEnumerableMapper<int, string> asyncEnumerableMapper = new(mockMapper.Object);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            await asyncEnumerableMapper.Map(null!).ToListAsync());
     }
 
     /// <summary>
@@ -117,24 +120,21 @@ public class AsyncEnumerableMapperTests
     }
 
     /// <summary>
-    ///     Asynchronously enumerates a collection of items.
+    ///     Tests that an empty asynchronous collection is mapped to an empty collection.
     /// </summary>
-    /// <typeparam name="T">The type of the items in the collection.</typeparam>
-    /// <param name="items">The collection of items to enumerate.</param>
-    /// <returns>An asynchronous enumerable of the items.</returns>
-    [SuppressMessage(
-        "Major Code Smell",
-        "S4456:Parameter validation in yielding methods should be wrapped",
-        Justification = "Required for IAsyncEnumerable.")]
-    private static async IAsyncEnumerable<T> GetAsyncEnumerableAsync<T>(
-        IEnumerable<T> items
-    )
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task MapsEmptyAsyncCollectionAsync()
     {
-        ArgumentNullException.ThrowIfNull(items);
-        foreach (T item in items)
-        {
-            yield return item;
-            await Task.Yield();
-        }
+        // Arrange
+        Mock<IMapper<int, string>> mockMapper = new();
+        AsyncEnumerableMapper<int, string> asyncEnumerableMapper = new(mockMapper.Object);
+        IAsyncEnumerable<int> input = GetAsyncEnumerableAsync(new List<int>());
+
+        // Act
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+
+        // Assert
+        Assert.Empty(result);
     }
 }
