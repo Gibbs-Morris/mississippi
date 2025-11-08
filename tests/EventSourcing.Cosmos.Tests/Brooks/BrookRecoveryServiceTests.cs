@@ -19,6 +19,22 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 /// </summary>
 public class BrookRecoveryServiceTests
 {
+    private sealed class TestRetryPolicy : IRetryPolicy
+    {
+        /// <summary>
+        ///     Executes the provided operation and returns its result.
+        /// </summary>
+        /// <typeparam name="T">The operation result type.</typeparam>
+        /// <param name="operation">The async operation to execute.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A task that completes with the operation result.</returns>
+        public async Task<T> ExecuteAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken = default
+        ) =>
+            await operation().ConfigureAwait(false);
+    }
+
     /// <summary>
     ///     Verifies constructor validates null options.
     /// </summary>
@@ -31,36 +47,6 @@ public class BrookRecoveryServiceTests
         ArgumentNullException ex =
             Assert.Throws<ArgumentNullException>(() => new BrookRecoveryService(repo, retry, lockMgr, null!));
         Assert.Equal("options", ex.ParamName);
-    }
-
-    /// <summary>
-    ///     Returns -1 when no head and no pending head.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
-    [Fact]
-    public async Task GetOrRecoverHeadPositionAsyncReturnsMinusOneWhenNoHeadAsync()
-    {
-        Mock<ICosmosRepository> repo = new(MockBehavior.Strict);
-        Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
-
-        // No head, no pending head
-        repo.Setup(r => r.GetHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((HeadStorageModel?)null);
-        repo.Setup(r => r.GetPendingHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((HeadStorageModel?)null);
-        BrookRecoveryService service = new(
-            repo.Object,
-            new TestRetryPolicy(),
-            lockMgr.Object,
-            Options.Create(new BrookStorageOptions()));
-        BrookPosition result = await service.GetOrRecoverHeadPositionAsync(new("t", "i"));
-        Assert.Equal(-1, result.Value);
-        repo.Verify(
-            r => r.GetHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
-            Times.AtLeastOnce);
-        repo.Verify(
-            r => r.GetPendingHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
-            Times.Once);
     }
 
     /// <summary>
@@ -116,6 +102,36 @@ public class BrookRecoveryServiceTests
     }
 
     /// <summary>
+    ///     Returns -1 when no head and no pending head.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
+    [Fact]
+    public async Task GetOrRecoverHeadPositionAsyncReturnsMinusOneWhenNoHeadAsync()
+    {
+        Mock<ICosmosRepository> repo = new(MockBehavior.Strict);
+        Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
+
+        // No head, no pending head
+        repo.Setup(r => r.GetHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((HeadStorageModel?)null);
+        repo.Setup(r => r.GetPendingHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((HeadStorageModel?)null);
+        BrookRecoveryService service = new(
+            repo.Object,
+            new TestRetryPolicy(),
+            lockMgr.Object,
+            Options.Create(new BrookStorageOptions()));
+        BrookPosition result = await service.GetOrRecoverHeadPositionAsync(new("t", "i"));
+        Assert.Equal(-1, result.Value);
+        repo.Verify(
+            r => r.GetHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce);
+        repo.Verify(
+            r => r.GetPendingHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
     ///     Rolls back when events referenced by pending head are missing.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
@@ -168,6 +184,41 @@ public class BrookRecoveryServiceTests
     }
 
     /// <summary>
+    ///     Throws when head remains null after waiting.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
+    [Fact]
+    public async Task GetOrRecoverHeadPositionAsyncThrowsWhenHeadStillNullAfterWaitAsync()
+    {
+        Mock<ICosmosRepository> repo = new(MockBehavior.Strict);
+        Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
+        BrookKey brookId = new("t", "i4");
+        repo.SetupSequence(r => r.GetHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((HeadStorageModel?)null)
+            .ReturnsAsync((HeadStorageModel?)null);
+        repo.Setup(r => r.GetPendingHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                new HeadStorageModel
+                {
+                    OriginalPosition = new BrookPosition(0),
+                    Position = new(1),
+                });
+        lockMgr.Setup(m => m.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new RequestFailedException("conflict"));
+        BrookRecoveryService service = new(
+            repo.Object,
+            new TestRetryPolicy(),
+            lockMgr.Object,
+            Options.Create(
+                new BrookStorageOptions
+                {
+                    LeaseDurationSeconds = 1,
+                }));
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await service.GetOrRecoverHeadPositionAsync(brookId));
+    }
+
+    /// <summary>
     ///     Waits and reads head when recovery lock cannot be acquired.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
@@ -208,56 +259,5 @@ public class BrookRecoveryServiceTests
                 }));
         BrookPosition result = await service.GetOrRecoverHeadPositionAsync(brookId);
         Assert.Equal(7, result.Value);
-    }
-
-    /// <summary>
-    ///     Throws when head remains null after waiting.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
-    [Fact]
-    public async Task GetOrRecoverHeadPositionAsyncThrowsWhenHeadStillNullAfterWaitAsync()
-    {
-        Mock<ICosmosRepository> repo = new(MockBehavior.Strict);
-        Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
-        BrookKey brookId = new("t", "i4");
-        repo.SetupSequence(r => r.GetHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((HeadStorageModel?)null)
-            .ReturnsAsync((HeadStorageModel?)null);
-        repo.Setup(r => r.GetPendingHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(
-                new HeadStorageModel
-                {
-                    OriginalPosition = new BrookPosition(0),
-                    Position = new(1),
-                });
-        lockMgr.Setup(m => m.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new RequestFailedException("conflict"));
-        BrookRecoveryService service = new(
-            repo.Object,
-            new TestRetryPolicy(),
-            lockMgr.Object,
-            Options.Create(
-                new BrookStorageOptions
-                {
-                    LeaseDurationSeconds = 1,
-                }));
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await service.GetOrRecoverHeadPositionAsync(brookId));
-    }
-
-    private sealed class TestRetryPolicy : IRetryPolicy
-    {
-        /// <summary>
-        ///     Executes the provided operation and returns its result.
-        /// </summary>
-        /// <typeparam name="T">The operation result type.</typeparam>
-        /// <param name="operation">The async operation to execute.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A task that completes with the operation result.</returns>
-        public async Task<T> ExecuteAsync<T>(
-            Func<Task<T>> operation,
-            CancellationToken cancellationToken = default
-        ) =>
-            await operation().ConfigureAwait(false);
     }
 }
