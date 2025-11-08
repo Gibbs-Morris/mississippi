@@ -1,6 +1,7 @@
 # Agents
 
-Read every GitHub instruction document before making changes in this repository.
+Agents MUST read every GitHub instruction document before making changes in this repository.  
+Why: Ensures all work follows the repository’s authoritative policies and conventions.
 
 Required reading order:
 
@@ -15,4 +16,5 @@ Get-ChildItem -Path .github -Recurse -Filter "*.instructions.md" |
     ForEach-Object { Get-Content -Path $_.FullName -Raw }
 ```
 
-Make sure you follow every rule and guideline in those documents when planning or writing code.
+Agents MUST follow every rule and guideline in those documents when planning or writing code.  
+Why: Keeps contributions consistent, reviewable, and compliant with quality gates.

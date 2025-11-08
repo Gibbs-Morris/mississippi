@@ -21,7 +21,7 @@ The `.scratchpad/` folder is a local, untracked workspace where agents can coord
 ## Scope
 
 - For local, agent-to-agent coordination (same machine or workspace)
-- Not consumed by the build, tests, or CI; should not influence production artifacts
+- Not consumed by the build, tests, or CI; SHOULD NOT influence production artifacts
 - Safe to clear at any time without impacting the repository
 
 ## Guardrails
@@ -109,7 +109,7 @@ Follow these rules so multiple agents behave predictably and converge on the sam
 - Invariants
   - One file = one task; ownership is the folder path, not a field alone
   - Claim by atomic move only; never edit a file still under `pending/`
-  - Only the owner updates a claimed task file; others must not modify it
+  - Only the owner updates a claimed task file; others MUST NOT modify it
   - Timestamps are UTC ISO-8601; do not use local time
   - Append new fields instead of changing meanings; bump `schemaVersion` only on breaking change
 
@@ -281,7 +281,7 @@ function Defer-ScratchpadTask {
 ## Operational Tips
 
 - Chunking: if a producer generates N tasks, keep each small and independent; prefer ≤ 100 tasks per wave
-- Fairness: workers should sort pending tasks by `priority`, then FIFO by timestamp in filename
+- Fairness: workers SHOULD sort pending tasks by `priority`, then FIFO by timestamp in filename
 - Back-pressure: if `claimed/` grows large, pause new claims until `done/` advances
 - Hygiene: prune `runs/` older than a week unless actively referenced
 - Automation: use the CLI wrappers under `eng/src/agent-scripts/tasks/` to keep JSON consistent and file moves atomic:
@@ -318,7 +318,7 @@ function Defer-ScratchpadTask {
 - [x] Root `.gitignore` ignores `.scratchpad/` and re-includes `.scratchpad/.gitignore`
 - [x] `.scratchpad/.gitignore` ignores all transient files in that folder
 - [ ] If you change this instruction, mirror to Cursor `.mdc` via `eng/src/agent-scripts/sync-instructions-to-mdc.ps1`
-- [ ] No source code, tests, or CI workflows should depend on `.scratchpad/`
+- [ ] No source code, tests, or CI workflows SHOULD depend on `.scratchpad/`
 
 ## Rationale
 
@@ -326,9 +326,3 @@ function Defer-ScratchpadTask {
 - JSON with stable keys remains tooling-friendly and easy to diff
 - Ephemeral location prevents accidental coupling between code and agent state
 
-## Related Guidelines
-
-- Build Rules and Quality Standards (`.github/instructions/build-rules.instructions.md`)
-- Build Issue Remediation Protocol (`.github/instructions/build-issue-remediation.instructions.md`)
-- Testing Strategy and Quality Gates (`.github/instructions/testing.instructions.md`)
-- Instruction ↔ Cursor MDC Sync Policy (`.github/instructions/instruction-mdc-sync.instructions.md`)

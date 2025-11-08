@@ -40,7 +40,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - `<Product>.<Feature>.L2Tests`
   - `<Product>.<Feature>.L3Tests`
   - `<Product>.<Feature>.L4Tests`
-  - Legacy naming: generic `<…>.Tests`, `<…>.UnitTests`, and `<…>.IntegrationTests` are supported for compatibility but should be migrated to L0–L4 naming over time
+  - Legacy naming: generic `<…>.Tests`, `<…>.UnitTests`, and `<…>.IntegrationTests` are supported for compatibility but SHOULD be migrated to L0–L4 naming over time
   - Prefer per-level projects for clarity and analyzer consistency; migrate legacy projects when touched
 - Any project ending with `Tests` is treated as a test project and pulls common test packages (xUnit, runner, coverlet, Allure, Moq)
 - InternalsVisibleTo is already configured for `.Tests`, `.UnitTests`, `.IntegrationTests`, and `.L0Tests` … `.L4Tests` so tests can exercise internal members safely
@@ -60,7 +60,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 - Coverage
   - Aim for 100% unit test coverage on new and changed code paths
   - Absolute minimum: 80% lines/branches for Mississippi projects (SonarCloud gate); target 95–100% where technically feasible
-  - No coverage regressions: touched files should not decrease in coverage
+  - No coverage regressions: touched files SHOULD NOT decrease in coverage
 - Mutation testing
   - Run Stryker.NET for Mississippi projects; keep or raise the mutation score
   - Default thresholds align with repository `stryker-config.json`: high 90, low 80, break 80; avoid score regressions on changed areas
@@ -194,13 +194,3 @@ Reviewer
 
 This guidance aligns with Build Rules and Quality Standards and with repository-wide analyzers and conventions. Use it with the C#, Logging, Orleans, and Project instructions to keep tests reliable and fast.
 
-## Related Guidelines
-
-This document should be read in conjunction with:
-
-- **Build Rules and Quality Standards** (`.github/instructions/build-rules.instructions.md`) - For zero-warnings policy, CI gates, and mutation testing enforcement
-- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For testability patterns, DI seams, and immutability
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For LoggerExtensions usage and structured logging in tests and testable code
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans-safe patterns that influence test design (no blocking, DI seams)
-- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For serializer patterns and analyzer compliance that affect tests
-- **Project File Management** (`.github/instructions/projects.instructions.md`) - For automatic test project configuration and centralized package management

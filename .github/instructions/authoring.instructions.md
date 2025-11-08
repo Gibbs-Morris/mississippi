@@ -4,7 +4,7 @@ applyTo: '**/*.instructions.md'
 
 # Instruction Authoring Guide
 
-This guide teaches contributors how to write and maintain instruction files (`*.instructions.md`) in this repository. Follow these standards to ensure consistency, discoverability, and alignment with existing documentation patterns.
+This guide teaches contributors how to write and maintain instruction files (`*.instructions.md`) in this repository. Instruction authors MUST follow these standards to ensure consistency, discoverability, and alignment with existing documentation patterns.
 
 ## Purpose
 
@@ -35,7 +35,7 @@ Instruction files are the canonical source of truth for development practices, p
 
 - Introducing a new technology, framework, or pattern used across multiple components
 - Establishing team conventions that require consistent application
-- Documenting mandatory practices that must be enforced by code review or tooling
+- Documenting mandatory practices that are enforced by code review or tooling
 - Providing guidance that AI agents need to follow deterministically
 
 **Update an existing instruction file when:**
@@ -51,7 +51,7 @@ Instruction files are the canonical source of truth for development practices, p
 
 ### Rule 1: File Name Pattern
 
-Use lowercase kebab-case with the `.instructions.md` suffix.
+Instruction authors MUST use lowercase kebab-case with the `.instructions.md` suffix.
 
 **Pattern:** `<topic>.instructions.md`
 
@@ -66,13 +66,13 @@ Use lowercase kebab-case with the `.instructions.md` suffix.
 
 ### Rule 2: Location
 
-Place all instruction files in `.github/instructions/`.
+Instruction authors MUST place all instruction files in `.github/instructions/`.
 
 **Why:** Centralized location makes discovery trivial. The `.github/` prefix follows GitHub conventions for repository metadata, and `instructions/` clearly distinguishes these from workflows, templates, or issue forms.
 
 ### Rule 3: One Topic Per File
 
-Each instruction file should cover one cohesive topic. Split large topics into focused files rather than creating monolithic documents.
+Instruction authors SHOULD cover one cohesive topic per instruction file. Authors SHOULD split large topics into focused files rather than creating monolithic documents.
 
 **Examples of good scope:**
 
@@ -89,7 +89,7 @@ Each instruction file should cover one cohesive topic. Split large topics into f
 
 ## Standard Section Template
 
-Use this template when creating a new instruction file. Adapt sections to your topic, but maintain this structure for consistency.
+Use this template when creating a new instruction file. Instruction authors SHOULD adapt sections to the topic. Instruction authors MUST maintain this structure for consistency unless a justified exception is documented.
 
 ```markdown
 ---
@@ -98,7 +98,7 @@ applyTo: '**'
 
 # [Topic] Best Practices
 
-This document defines [brief purpose statement]. All [audience] must follow these guidelines to ensure [goals].
+This document defines [brief purpose statement]. All [audience] MUST follow these guidelines to ensure [goals].
 
 ## At-a-Glance Quick-Start
 
@@ -142,12 +142,6 @@ This document defines [brief purpose statement]. All [audience] must follow thes
 
 [Common mistakes with ❌ bad examples and ✅ good alternatives]
 
-## Related Guidelines
-
-This document should be read in conjunction with:
-
-- **[Related Topic]** (`.github/instructions/[filename].instructions.md`) - For [cross-reference description]
-
 ## References
 
 - [External link 1]: [URL]
@@ -155,8 +149,6 @@ This document should be read in conjunction with:
 
 ---
 
-**Last verified:** YYYY-MM-DD
-**Default branch:** main
 ```
 
 ### Section Purposes
@@ -171,7 +163,7 @@ This document should be read in conjunction with:
 - **Anti-Patterns:** Help prevent common mistakes
 - **Related Guidelines:** Explicit cross-references to avoid duplication
 - **References:** External links for deeper learning
-- **Footer:** Verification date and branch for staleness detection
+ 
 
 **Why:** This template provides cognitive scaffolding. Readers know where to find quick answers (Quick-Start), deep understanding (Core Principles and Primary sections), and practical application (Examples). The structure is consistent across all instruction files.
 
@@ -179,7 +171,7 @@ This document should be read in conjunction with:
 
 ### Rule 1: Short Sentences and Active Voice
 
-Use short, declarative sentences in active voice. Target 15-20 words per sentence.
+Instruction authors SHOULD use short, declarative sentences in active voice. Instruction authors SHOULD target 15–20 words per sentence.
 
 **Good:** "Run the script to validate your changes."
 **Bad:** "Your changes should be validated by running the script."
@@ -188,7 +180,7 @@ Use short, declarative sentences in active voice. Target 15-20 words per sentenc
 
 ### Rule 2: One Action Per Step
 
-In procedural sections, limit each numbered step to one action. Use substeps for related actions.
+In procedural sections, instruction authors MUST limit each numbered step to one action. Instruction authors MAY use substeps for related actions.
 
 **Good:**
 
@@ -208,13 +200,13 @@ In procedural sections, limit each numbered step to one action. Use substeps for
 
 ### Rule 3: Consistent Heading Levels
 
-Use H2 for major sections, H3 for subsections, H4 for sub-subsections. Do not skip levels.
+Instruction authors SHOULD use H2 for major sections, H3 for subsections, and H4 for sub‑subsections. Instruction authors MUST NOT skip levels.
 
 **Why:** Consistent hierarchy enables tools to generate accurate tables of contents and helps readers navigate.
 
 ### Rule 4: Relative Links
 
-Use relative links for internal references. Always test that links resolve.
+Instruction authors MUST use relative links for internal references. Instruction authors MUST verify that links resolve.
 
 **Good:** `[Testing Strategy](./testing.instructions.md)`
 **Bad:** `[Testing Strategy](https://github.com/your-org/your-repo/blob/main/.github/instructions/testing.instructions.md)`
@@ -223,7 +215,7 @@ Use relative links for internal references. Always test that links resolve.
 
 ### Rule 5: US English Spelling
 
-Use US English spelling conventions throughout.
+Instruction authors MUST use US English spelling conventions throughout.
 
 **Examples:** "analyzer" (not "analyser"), "color" (not "colour"), "organize" (not "organise")
 
@@ -231,7 +223,7 @@ Use US English spelling conventions throughout.
 
 ### Rule 6: Include "Why" Lines
 
-After significant rules or recommendations, add a brief "Why" line explaining the rationale.
+After significant rules or recommendations, instruction authors MUST add a brief "Why" line explaining the rationale.
 
 **Why:** Explanations build understanding and buy-in. They also help reviewers evaluate whether rules still apply when circumstances change.
 
@@ -239,7 +231,7 @@ After significant rules or recommendations, add a brief "Why" line explaining th
 
 ### Rule 1: Real Commands Only
 
-Use only commands, scripts, and tools that exist in this repository. Never use placeholder names or fictional examples.
+Instruction authors MUST use only commands, scripts, and tools that exist in this repository. Instruction authors MUST NOT use placeholder names or fictional examples.
 
 **Good:**
 
@@ -257,7 +249,7 @@ pwsh ./eng/src/agent-scripts/build-all.ps1  # (if this script doesn't exist)
 
 ### Rule 2: OS-Specific Blocks
 
-When commands differ by OS, provide both PowerShell and Bash examples.
+When commands differ by OS, instruction authors SHOULD provide both PowerShell and Bash examples.
 
 **Example:**
 
@@ -275,7 +267,7 @@ pwsh ./eng/src/agent-scripts/build.ps1
 
 ### Rule 3: Expected Outputs
 
-For commands with significant output, show what success looks like.
+For commands with significant output, instruction authors SHOULD show what success looks like.
 
 **Example:**
 
@@ -298,7 +290,7 @@ COVERAGE: 95%
 
 ### Rule 4: Exit Codes
 
-Document expected exit codes for scripts, especially in CI contexts.
+Instruction authors SHOULD document expected exit codes for scripts, especially in CI contexts.
 
 **Example:**
 
@@ -312,7 +304,7 @@ Exit codes:
 
 ### Rule 5: Cleanup Notes
 
-When examples create side effects (files, processes, state), note how to clean up.
+When examples create side effects (files, processes, or state), instruction authors SHOULD note how to clean up.
 
 **Example:**
 
@@ -324,11 +316,11 @@ When examples create side effects (files, processes, state), note how to clean u
 
 ## Running Scripts and Commands
 
-Document the key automation scripts in your repository here. Common patterns include scripts for build, test, lint, and quality checks.
+Instruction authors SHOULD document the key automation scripts in the repository here. Common patterns include scripts for build, test, lint, and quality checks.
 
 ### Prerequisites
 
-List any prerequisites for running repository scripts. For example:
+Instruction authors SHOULD list any prerequisites for running repository scripts. For example:
 
 ```bash
 # Install project dependencies
@@ -343,7 +335,7 @@ pip install -r requirements.txt
 
 ### Key Scripts for Instruction Authors
 
-Create a table documenting scripts that are frequently referenced in instruction files. Adjust paths to match your repository structure (e.g., `scripts/`, `eng/src/agent-scripts/`, `tools/`, etc.):
+Instruction authors SHOULD create a table documenting scripts that are frequently referenced in instruction files. Adjust paths to match your repository structure (e.g., `scripts/`, `eng/src/agent-scripts/`, `tools/`, etc.):
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
@@ -355,18 +347,18 @@ Create a table documenting scripts that are frequently referenced in instruction
 
 ### Verifying Script Commands
 
-Before referencing a script in an instruction file:
+Before referencing a script in an instruction file, instruction authors MUST:
 
-1. Open the script to confirm its parameters and behavior
-2. Run the script in a test environment
-3. Document the exact command and expected output
-4. Include the "Drift check" note in your Quick-Start section
+1. Open the script to confirm its parameters and behavior.
+2. Run the script in a test environment.
+3. Document the exact command and expected output.
+4. Include the "Drift check" note in the Quick‑Start section.
 
 **Why:** Scripts evolve. The drift check note reminds readers to verify behavior rather than blindly trust documentation.
 
 ### Running Local Checks
 
-Document how to run local quality checks before committing. Examples:
+Instruction authors SHOULD document how to run local quality checks before committing. Examples:
 
 **Check Markdown files:**
 
@@ -395,15 +387,15 @@ npx markdownlint-cli2 "**/*.md"
 
 ### Rule 1: One Authoritative Source
 
-Each topic should have exactly one authoritative instruction file. Other files may link to it but should not duplicate its content.
+Each topic SHOULD have exactly one authoritative instruction file. Other files MAY link to it but SHOULD NOT duplicate its content.
 
-**Example:** If you have `logging.instructions.md` for logging patterns, other instruction files should reference it rather than re-explaining logging.
+**Example:** If you have `logging.instructions.md` for logging patterns, other instruction files SHOULD reference it rather than re‑explaining logging.
 
 **Why:** Single source of truth prevents inconsistencies and simplifies maintenance. When the authoritative file updates, all links remain valid.
 
 ### Rule 2: Use Relative Links
 
-Link to other instruction files using relative paths.
+Instruction authors MUST link to other instruction files using relative paths.
 
 **Example:**
 
@@ -415,7 +407,7 @@ See [Logging Guidelines](./logging.instructions.md) for logging best practices.
 
 ### Rule 3: Link with Anchors for Specific Sections
 
-When referencing a specific section, use anchor links.
+When referencing a specific section, instruction authors SHOULD use anchor links.
 
 **Example:**
 
@@ -427,7 +419,7 @@ Follow the [unit testing guidelines](./testing.instructions.md#unit-tests) for w
 
 ### Rule 4: Validate Links
 
-Before committing, verify all internal links resolve.
+Before committing, instruction authors MUST verify all internal links resolve.
 
 **Validation command:**
 
@@ -442,13 +434,13 @@ ls -la .github/instructions/testing.instructions.md
 
 ### Rule 1: Never Commit Secrets
 
-Instruction files must never contain secrets, API keys, passwords, or tokens.
+Instruction files MUST NOT contain secrets, API keys, passwords, or tokens.
 
 **Why:** Public repositories expose committed secrets permanently. Even private repositories risk exposure through accidental sharing or future open-sourcing.
 
 ### Rule 2: Use Environment Variables
 
-When examples require credentials, show how to use environment variables.
+When examples require credentials, instruction authors SHOULD show how to use environment variables.
 
 **Example:**
 
@@ -460,7 +452,7 @@ $connectionString = $env:COSMOS_CONNECTION_STRING
 
 ### Rule 3: Document Secret Stores
 
-If the repository uses a secret store (e.g., Azure Key Vault, GitHub Secrets), reference it explicitly.
+If the repository uses a secret store (e.g., Azure Key Vault, GitHub Secrets), instruction authors SHOULD reference it explicitly.
 
 **Example:**
 
@@ -472,7 +464,7 @@ Connection strings are stored in Azure Key Vault and accessed via managed identi
 
 ### Rule 4: Redaction Patterns
 
-When showing example outputs that might contain sensitive data, use redaction patterns.
+When showing example outputs that might contain sensitive data, instruction authors SHOULD use redaction patterns.
 
 **Example:**
 
@@ -480,19 +472,19 @@ When showing example outputs that might contain sensitive data, use redaction pa
 Cosmos DB connection: AccountEndpoint=https://[REDACTED].documents.azure.com;...
 ```
 
-**Why:** Examples should look realistic without exposing actual credentials.
+**Why:** Examples look realistic without exposing actual credentials.
 
 ## Versioning and Change Control
 
 ### Rule 1: Review Requirements
 
-All changes to instruction files should require review per your repository's review policy (e.g., `.github/CODEOWNERS` or branch protection rules).
+All changes to instruction files MUST require review per your repository's review policy (e.g., `.github/CODEOWNERS` or branch protection rules).
 
 **Why:** Instruction files are high-impact. Review ensures changes are accurate, consistent, and aligned with repository goals.
 
-### Rule 2: PR Descriptions Must Include "Docs Impact"
+### Rule 2: PR Descriptions MUST Include "Docs Impact"
 
-When modifying instruction files, include a "Docs impact" section in the PR description.
+When modifying instruction files, instruction authors MUST include a "Docs impact" section in the PR description.
 
 **Example:**
 
@@ -505,24 +497,9 @@ Cross-references in `build-rules.instructions.md` remain accurate.
 
 **Why:** Explicit documentation impact helps reviewers assess downstream effects and ensures related files stay synchronized.
 
-### Rule 3: Version Verification Date
+### Rule 3: Link to External Resources by Permanent URL
 
-Include "Last verified: YYYY-MM-DD" in the footer of each instruction file. Update this date when you verify all content is current.
-
-**Example:**
-
-```markdown
----
-
-**Last verified:** YYYY-MM-DD
-**Default branch:** [your-default-branch]
-```
-
-**Why:** Dates help readers assess staleness. Files last verified years ago likely need review.
-
-### Rule 4: Link to External Resources by Permanent URL
-
-When linking to external documentation, use permanent URLs (avoid version-specific links unless necessary).
+When linking to external documentation, instruction authors SHOULD use permanent URLs (avoid version-specific links unless necessary).
 
 **Good:** `https://learn.microsoft.com/dotnet/core/`
 **Bad:** `https://docs.microsoft.com/en-us/dotnet/core/` (old domain)
@@ -535,7 +512,7 @@ As you create instruction files in your repository, document good examples here 
 
 ### Good Pattern: Build Instructions
 
-A well-structured build instruction file should include:
+A well‑structured build instruction file SHOULD include:
 
 - Clear "At-a-Glance Quick-Start" with the most common commands
 - Step-by-step procedures for different build scenarios
@@ -544,7 +521,7 @@ A well-structured build instruction file should include:
 
 ### Good Pattern: Testing Instructions
 
-A comprehensive testing instruction file should include:
+A comprehensive testing instruction file SHOULD include:
 
 - Layered content (different test types or levels)
 - Detailed subsections for each test category
@@ -553,7 +530,7 @@ A comprehensive testing instruction file should include:
 
 ### Good Pattern: Tool-Specific Instructions
 
-Tool or framework-specific instruction files should:
+Tool or framework‑specific instruction files SHOULD:
 
 - Provide prescriptive guidance with clear rules
 - Include quality enforcement sections with validation commands
@@ -620,15 +597,10 @@ Add additional terms specific to your repository, technology stack, and developm
 
 This instruction file is intentionally generic to support multiple repositories. When using this guide:
 
-- **Consult your repository's actual structure** for authoritative file and folder locations
-- **Follow existing patterns** in other instruction files already present in your repository
-- **Adapt paths and examples** to match your repository's conventions (e.g., `scripts/`, `eng/src/agent-scripts/`, `tools/`, etc.)
-- **Reference actual commands** from your repository's automation scripts, build systems, and tooling
-- **Align with other instruction files** to maintain consistency within the repository
+- Agents SHOULD consult the repository's actual structure for authoritative file and folder locations.
+- Agents SHOULD follow existing patterns in other instruction files already present in the repository.
+- Agents SHOULD adapt paths and examples to match the repository's conventions (e.g., `scripts/`, `eng/src/agent-scripts/`, `tools/`, etc.).
+- Agents SHOULD reference actual commands from the repository's automation scripts, build systems, and tooling.
+- Agents SHOULD align with other instruction files to maintain consistency within the repository.
 
-The guidance in this file provides a foundation, but the specific implementation details should always match the repository where it's being used.
-
----
-
-**Last verified:** 2025-01-04
-**Default branch:** main
+The guidance in this file provides a foundation, but the specific implementation details MUST match the repository where it's being used.

@@ -208,10 +208,3 @@ Provide in this order:
 - Single, focused commits per warning cohort.
 - Commit message format: `fix: resolve <CODE> warnings in <Area> (<n> files)` with a short body listing notable decisions.
 
-## Related Guidelines
-
-- Build Rules and Quality Standards (`.github/instructions/build-rules.instructions.md`)
-- Testing Strategy and Quality Gates (`.github/instructions/testing.instructions.md`)
-- Test Improvement Workflow (`.github/instructions/test-improvement.instructions.md`)
-- Project File Management (`.github/instructions/projects.instructions.md`)
-- Instruction ↔ Cursor MDC Sync Policy (`.github/instructions/instruction-mdc-sync.instructions.md`)

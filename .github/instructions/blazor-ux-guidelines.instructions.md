@@ -235,7 +235,7 @@ public sealed partial class OrderFilter : ComponentBase
 
 - Meet WCAG 2.2 AA standards by default. Bake semantics, focus order, and keyboard paths into base
   components to avoid regressions down the stack.
-- All interactive atoms must be keyboard accessible and expose ARIA attributes when semantics
+- All interactive atoms MUST be keyboard accessible and expose ARIA attributes when semantics
   require it.
 - Surface consistent error messaging patterns in molecules and organisms to ensure screen-reader parity.
 - Use `@typeparam` to keep components strongly typed for resource keys when localizing content.

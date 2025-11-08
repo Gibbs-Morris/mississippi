@@ -125,22 +125,8 @@ Write-Host ("COVERAGE: {0}%" -f $coverage)
 - ❌ Mixing data and presentation output. ✅ Separate machine-readable data from human-facing status lines.
 - ❌ Adding third-party PowerShell modules ad hoc. ✅ Propose them first; prefer built-in cmdlets and existing helper modules.
 
-## Related Guidelines
-
-This document should be read alongside:
-
-- **Build Rules and Quality Standards** (`./build-rules.instructions.md`) — automation scripts must uphold the zero-warning policy and pipeline gates.
-- **Testing Strategy and Quality Gates** (`./testing.instructions.md`) — replicate test rigor when scripts orchestrate .NET builds or tests.
-- **Instruction Authoring Guide** (`./authoring.instructions.md`) — follow the standard template and sync policy when updating this file.
-- **Mutation Testing Playbook** (`./mutation-testing.instructions.md`) — align script output with mutation-test expectations when orchestrating Stryker runs.
-
 ## References
 
 - [Approved PowerShell verbs](https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-verbs)
 - [Set-StrictMode documentation](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/set-strictmode)
 - [Writing cross-platform PowerShell](https://learn.microsoft.com/powershell/scripting/learn/experimental-features?view=powershell-7.4)
-
----
-
-**Last verified:** 2025-10-05
-**Default branch:** main
