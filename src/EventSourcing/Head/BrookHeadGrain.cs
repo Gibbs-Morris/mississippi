@@ -43,58 +43,35 @@ internal class BrookHeadGrain
         StreamIdFactory = streamIdFactory;
     }
 
-    private IAsyncStream<BrookHeadMovedEvent>? Stream { get; set; }
-
-    private StreamSequenceToken? LastToken { get; set; }
-
-    private ILogger<BrookHeadGrain> Logger { get; }
-
-    private BrookPosition TrackedHeadPosition { get; set; } = -1;
+    /// <summary>
+    ///     Gets the Orleans grain context for this grain instance.
+    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
+    /// </summary>
+    /// <value>The grain context instance.</value>
+    public IGrainContext GrainContext { get; }
 
     private BrookKey BrookId { get; set; }
 
     private IBrookStorageReader BrookReaderProvider { get; }
 
-    private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
+    private StreamSequenceToken? LastToken { get; set; }
+
+    private ILogger<BrookHeadGrain> Logger { get; }
+
+    private IAsyncStream<BrookHeadMovedEvent>? Stream { get; set; }
 
     private IStreamIdFactory StreamIdFactory { get; }
 
-    /// <summary>
-    ///     Handles a head moved event and updates the grain's position if the event is newer.
-    /// </summary>
-    /// <param name="item">The event containing the new brook head position.</param>
-    /// <param name="token">Optional sequence token for ordering updates.</param>
-    /// <returns>A completed task representing the asynchronous event handling operation.</returns>
-    public Task OnNextAsync(
-        BrookHeadMovedEvent item,
-        StreamSequenceToken? token = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        if ((LastToken != null) && LastToken.Newer(token))
-        {
-            return Task.CompletedTask;
-        }
+    private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
 
-        LastToken = token;
-        if (item.NewPosition.IsNewerThan(TrackedHeadPosition))
-        {
-            TrackedHeadPosition = item.NewPosition;
-        }
-
-        return Task.CompletedTask;
-    }
+    private BrookPosition TrackedHeadPosition { get; set; } = -1;
 
     /// <summary>
-    ///     Handles errors on the subscribed stream and deactivates the grain.
+    ///     Deactivate the grain on idle, used by tests to flush caches and lifecycle state.
     /// </summary>
-    /// <param name="ex">The exception encountered on the stream.</param>
-    /// <returns>A completed task representing the asynchronous error handling operation.</returns>
-    public Task OnErrorAsync(
-        Exception ex
-    )
+    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
+    public Task DeactivateAsync()
     {
-        // Deactivate to force a clean resubscribe on next activation
         this.DeactivateOnIdle();
         return Task.CompletedTask;
     }
@@ -125,23 +102,6 @@ internal class BrookHeadGrain
     }
 
     /// <summary>
-    ///     Deactivate the grain on idle, used by tests to flush caches and lifecycle state.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
-    public Task DeactivateAsync()
-    {
-        this.DeactivateOnIdle();
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    ///     Gets the Orleans grain context for this grain instance.
-    ///     Provides access to Orleans infrastructure services and grain lifecycle management.
-    /// </summary>
-    /// <value>The grain context instance.</value>
-    public IGrainContext GrainContext { get; }
-
-    /// <summary>
     ///     Subscribes the grain as an observer to the head update stream on activation.
     /// </summary>
     /// <param name="token">Cancellation token for activation.</param>
@@ -165,5 +125,45 @@ internal class BrookHeadGrain
         Stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookHeadMovedEvent>(key);
         await Stream.SubscribeAsync(this);
+    }
+
+    /// <summary>
+    ///     Handles errors on the subscribed stream and deactivates the grain.
+    /// </summary>
+    /// <param name="ex">The exception encountered on the stream.</param>
+    /// <returns>A completed task representing the asynchronous error handling operation.</returns>
+    public Task OnErrorAsync(
+        Exception ex
+    )
+    {
+        // Deactivate to force a clean resubscribe on next activation
+        this.DeactivateOnIdle();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Handles a head moved event and updates the grain's position if the event is newer.
+    /// </summary>
+    /// <param name="item">The event containing the new brook head position.</param>
+    /// <param name="token">Optional sequence token for ordering updates.</param>
+    /// <returns>A completed task representing the asynchronous event handling operation.</returns>
+    public Task OnNextAsync(
+        BrookHeadMovedEvent item,
+        StreamSequenceToken? token = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if ((LastToken != null) && LastToken.Newer(token))
+        {
+            return Task.CompletedTask;
+        }
+
+        LastToken = token;
+        if (item.NewPosition.IsNewerThan(TrackedHeadPosition))
+        {
+            TrackedHeadPosition = item.NewPosition;
+        }
+
+        return Task.CompletedTask;
     }
 }
