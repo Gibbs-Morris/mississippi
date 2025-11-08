@@ -38,16 +38,41 @@ internal sealed class BlobDistributedLock : IDistributedLock
         renewalThreshold = TimeSpan.FromSeconds(Math.Max(1, leaseDurationSeconds - leaseRenewalThresholdSeconds - 1));
     }
 
-    private IBlobLeaseClient LeaseClient { get; }
-
-    private int LeaseRenewalThresholdSeconds { get; }
-
-    private int LeaseDurationSeconds { get; }
-
     /// <summary>
     ///     Gets the unique identifier for the lock.
     /// </summary>
     public string LockId { get; }
+
+    private IBlobLeaseClient LeaseClient { get; }
+
+    private int LeaseDurationSeconds { get; }
+
+    private int LeaseRenewalThresholdSeconds { get; }
+
+    /// <summary>
+    ///     Asynchronously disposes the distributed lock and releases the lease.
+    /// </summary>
+    /// <returns>A task representing the asynchronous disposal operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        if (!disposed)
+        {
+            try
+            {
+                await LeaseClient.ReleaseAsync();
+            }
+            catch (RequestFailedException)
+            {
+                // Ignore request failures during disposal (e.g., blob not found, lease already released)
+            }
+            catch (InvalidOperationException)
+            {
+                // Ignore invalid operation exceptions during disposal (e.g., lease already released)
+            }
+
+            disposed = true;
+        }
+    }
 
     /// <summary>
     ///     Renews the distributed lock lease.
@@ -89,31 +114,6 @@ internal sealed class BlobDistributedLock : IDistributedLock
             throw new InvalidOperationException(
                 "Failed to renew brook lock. Operation aborted to prevent data corruption.",
                 ex);
-        }
-    }
-
-    /// <summary>
-    ///     Asynchronously disposes the distributed lock and releases the lease.
-    /// </summary>
-    /// <returns>A task representing the asynchronous disposal operation.</returns>
-    public async ValueTask DisposeAsync()
-    {
-        if (!disposed)
-        {
-            try
-            {
-                await LeaseClient.ReleaseAsync();
-            }
-            catch (RequestFailedException)
-            {
-                // Ignore request failures during disposal (e.g., blob not found, lease already released)
-            }
-            catch (InvalidOperationException)
-            {
-                // Ignore invalid operation exceptions during disposal (e.g., lease already released)
-            }
-
-            disposed = true;
         }
     }
 }
