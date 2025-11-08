@@ -14,33 +14,20 @@ namespace Mississippi.Core.Abstractions.Tests.Mapping;
 public class MappingRegistrationsTests
 {
     /// <summary>
-    ///     Tests if a single mapper is correctly added to the service collection.
+    ///     A mock implementation of the <see cref="IMapper{TFrom, TTo}" /> interface
+    ///     for testing purposes.
     /// </summary>
-    [Fact]
-    public void AddsMapperToServiceCollection()
+    private class MockMapper : IMapper<int, string>
     {
-        ServiceCollection services = new();
-        services.AddMapper<int, string, MockMapper>();
-        using ServiceProvider serviceProvider = services.BuildServiceProvider();
-        IMapper<int, string>? mapper = serviceProvider.GetService<IMapper<int, string>>();
-        Assert.NotNull(mapper);
-        Assert.IsType<MockMapper>(mapper);
-    }
-
-    /// <summary>
-    ///     Verifies that <see cref="MappingRegistrations.AddIEnumerableMapper(IServiceCollection)" /> registers the enumerable
-    ///     mapper implementation.
-    /// </summary>
-    [Fact]
-    public void AddsIEnumerableMapperToServiceCollection()
-    {
-        ServiceCollection services = new();
-        services.AddMapper<int, string, MockMapper>();
-        services.AddIEnumerableMapper();
-        using ServiceProvider serviceProvider = services.BuildServiceProvider();
-        IEnumerableMapper<int, string>? mapper = serviceProvider.GetService<IEnumerableMapper<int, string>>();
-        Assert.NotNull(mapper);
-        Assert.IsType<EnumerableMapper<int, string>>(mapper);
+        /// <summary>
+        ///     Maps an integer to its string representation.
+        /// </summary>
+        /// <param name="source">The integer to map.</param>
+        /// <returns>The string representation of the integer.</returns>
+        public string Map(
+            int source
+        ) =>
+            source.ToString(CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -60,19 +47,32 @@ public class MappingRegistrationsTests
     }
 
     /// <summary>
-    ///     A mock implementation of the <see cref="IMapper{TFrom, TTo}" /> interface
-    ///     for testing purposes.
+    ///     Verifies that <see cref="MappingRegistrations.AddIEnumerableMapper(IServiceCollection)" /> registers the enumerable
+    ///     mapper implementation.
     /// </summary>
-    private class MockMapper : IMapper<int, string>
+    [Fact]
+    public void AddsIEnumerableMapperToServiceCollection()
     {
-        /// <summary>
-        ///     Maps an integer to its string representation.
-        /// </summary>
-        /// <param name="source">The integer to map.</param>
-        /// <returns>The string representation of the integer.</returns>
-        public string Map(
-            int source
-        ) =>
-            source.ToString(CultureInfo.InvariantCulture);
+        ServiceCollection services = new();
+        services.AddMapper<int, string, MockMapper>();
+        services.AddIEnumerableMapper();
+        using ServiceProvider serviceProvider = services.BuildServiceProvider();
+        IEnumerableMapper<int, string>? mapper = serviceProvider.GetService<IEnumerableMapper<int, string>>();
+        Assert.NotNull(mapper);
+        Assert.IsType<EnumerableMapper<int, string>>(mapper);
+    }
+
+    /// <summary>
+    ///     Tests if a single mapper is correctly added to the service collection.
+    /// </summary>
+    [Fact]
+    public void AddsMapperToServiceCollection()
+    {
+        ServiceCollection services = new();
+        services.AddMapper<int, string, MockMapper>();
+        using ServiceProvider serviceProvider = services.BuildServiceProvider();
+        IMapper<int, string>? mapper = serviceProvider.GetService<IMapper<int, string>>();
+        Assert.NotNull(mapper);
+        Assert.IsType<MockMapper>(mapper);
     }
 }
