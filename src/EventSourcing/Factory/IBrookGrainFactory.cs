@@ -12,11 +12,11 @@ namespace Mississippi.EventSourcing.Factory;
 public interface IBrookGrainFactory
 {
     /// <summary>
-    ///     Retrieves an <see cref="IBrookWriterGrain" /> for the specified Brook composite key.
+    ///     Retrieves an <see cref="IBrookHeadGrain" /> for the specified Brook composite key.
     /// </summary>
     /// <param name="brookKey">The key identifying the Brook.</param>
-    /// <returns>An <see cref="IBrookWriterGrain" /> instance for the Brook.</returns>
-    IBrookWriterGrain GetBrookWriterGrain(
+    /// <returns>An <see cref="IBrookHeadGrain" /> instance for the Brook head.</returns>
+    IBrookHeadGrain GetBrookHeadGrain(
         BrookKey brookKey
     );
 
@@ -39,11 +39,11 @@ public interface IBrookGrainFactory
     );
 
     /// <summary>
-    ///     Retrieves an <see cref="IBrookHeadGrain" /> for the specified Brook composite key.
+    ///     Retrieves an <see cref="IBrookWriterGrain" /> for the specified Brook composite key.
     /// </summary>
     /// <param name="brookKey">The key identifying the Brook.</param>
-    /// <returns>An <see cref="IBrookHeadGrain" /> instance for the Brook head.</returns>
-    IBrookHeadGrain GetBrookHeadGrain(
+    /// <returns>An <see cref="IBrookWriterGrain" /> instance for the Brook.</returns>
+    IBrookWriterGrain GetBrookWriterGrain(
         BrookKey brookKey
     );
 }
