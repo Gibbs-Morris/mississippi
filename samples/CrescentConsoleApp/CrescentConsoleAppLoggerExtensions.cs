@@ -10,7 +10,6 @@ namespace Mississippi.CrescentConsoleApp;
 /// </summary>
 internal static class CrescentConsoleAppLoggerExtensions
 {
-    // Top-level lifecycle and setup
     private static readonly Action<ILogger, string, Exception?> HostStartedMessage = LoggerMessage.Define<string>(
         LogLevel.Information,
         new(1, nameof(HostStarted)),
@@ -46,7 +45,6 @@ internal static class CrescentConsoleAppLoggerExtensions
             new(6, nameof(ModeFreshUsingNewBrookKey)),
             "Run {RunId}: Mode=fresh, Using new BrookKey={BrookKey} (state file: {Path})");
 
-    // Scenario banners
     private static readonly Action<ILogger, Exception?> ScenarioSmallBatch10x1KBMessage = LoggerMessage.Define(
         LogLevel.Information,
         new(10, nameof(ScenarioSmallBatch10x1KB)),
@@ -103,7 +101,6 @@ internal static class CrescentConsoleAppLoggerExtensions
         new(20, nameof(ScenarioColdRestartReadback)),
         "=== Scenario: Cold restart readback ===");
 
-    // Append scenario
     private static readonly Action<ILogger, string, string, int, long, Exception?> AppendingCountsMessage =
         LoggerMessage.Define<string, string, int, long>(
             LogLevel.Information,
@@ -122,7 +119,6 @@ internal static class CrescentConsoleAppLoggerExtensions
             new(32, nameof(AppendFailed)),
             "Run {RunId} [{Scenario}]: Append failed after {Ms} ms (attempted count={Count}, bytes={Bytes})");
 
-    // Readback
     private static readonly Action<ILogger, string, long, Exception?> ReadbackHeadMessage =
         LoggerMessage.Define<string, long>(
             LogLevel.Information,
@@ -152,7 +148,6 @@ internal static class CrescentConsoleAppLoggerExtensions
             new(44, nameof(ReadEnumerationAbortedRetry)),
             "Run {RunId}: Read enumeration aborted; retrying once from start");
 
-    // Interleaved scenario
     private static readonly Action<ILogger, string, Exception?> InterleaveStartMessage = LoggerMessage.Define<string>(
         LogLevel.Information,
         new(50, nameof(InterleaveStart)),
@@ -188,7 +183,6 @@ internal static class CrescentConsoleAppLoggerExtensions
             new(55, nameof(InterleaveEnumerationAbortedRetry)),
             "Run {RunId} [Interleave]: Enumeration aborted; retrying once");
 
-    // Multi-stream scenario
     private static readonly Action<ILogger, string, long, long, Exception?> HeadsABMessage =
         LoggerMessage.Define<string, long, long>(
             LogLevel.Information,
@@ -211,6 +205,10 @@ internal static class CrescentConsoleAppLoggerExtensions
             new(63, nameof(ReadCountsAB)),
             "Run {RunId} [Multi]: Read counts A={CA} B={CB}");
 
+    // Append scenario
+
+    // Readback
+
     // Flush caches
     private static readonly Action<ILogger, string, BrookKey, Exception?> RequestingDeactivationsMessage =
         LoggerMessage.Define<string, BrookKey>(
@@ -218,217 +216,13 @@ internal static class CrescentConsoleAppLoggerExtensions
             new(70, nameof(RequestingDeactivations)),
             "Run {RunId} [Flush]: Requesting grain deactivations for {BrookKey}");
 
-    /// <summary>
-    ///     Log that the host has started for the provided run identifier.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    public static void HostStarted(
-        this ILogger logger,
-        string runId
-    ) =>
-        HostStartedMessage(logger, runId, null);
+    // Multi-stream scenario
 
-    /// <summary>
-    ///     Log that the Orleans grain factory is being resolved for the run.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    public static void ResolvingGrainFactory(
-        this ILogger logger,
-        string runId
-    ) =>
-        ResolvingGrainFactoryMessage(logger, runId, null);
+    // Top-level lifecycle and setup
 
-    /// <summary>
-    ///     Log the Cosmos DB configuration options used by the sample.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="databaseId">The configured Cosmos database id.</param>
-    /// <param name="containerId">The configured Cosmos container id.</param>
-    /// <param name="lockContainer">The container used for locks.</param>
-    /// <param name="maxEventsPerBatch">Maximum events per batch for append operations.</param>
-    /// <param name="queryBatchSize">Batch size used when querying events.</param>
-    public static void CosmosOptions(
-        this ILogger logger,
-        string runId,
-        string databaseId,
-        string containerId,
-        string lockContainer,
-        int maxEventsPerBatch,
-        int queryBatchSize
-    ) =>
-        CosmosOptionsMessage(
-            logger,
-            runId,
-            databaseId,
-            containerId,
-            lockContainer,
-            maxEventsPerBatch,
-            queryBatchSize,
-            null);
+    // Interleaved scenario
 
-    /// <summary>
-    ///     Log that BrookStorageOptions could not be resolved for the run.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="ex">The exception that prevented resolution.</param>
-    public static void UnableToResolveBrookStorageOptions(
-        this ILogger logger,
-        string runId,
-        Exception ex
-    ) =>
-        UnableToResolveBrookStorageOptionsMessage(logger, runId, ex);
-
-    /// <summary>
-    ///     Log that the sample is running in reuse mode with a persisted <see cref="BrookKey" />.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="brookKey">The persisted brook key being reused.</param>
-    /// <param name="path">The file path to the persisted state file.</param>
-    public static void ModeReuseUsingPersistedBrookKey(
-        this ILogger logger,
-        string runId,
-        BrookKey brookKey,
-        string path
-    ) =>
-        ModeReuseUsingPersistedBrookKeyMessage(logger, runId, brookKey, path, null);
-
-    /// <summary>
-    ///     Log that the sample is running in fresh mode using a newly created <see cref="BrookKey" />.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="brookKey">The newly generated brook key.</param>
-    /// <param name="path">The file path to the persisted state file.</param>
-    public static void ModeFreshUsingNewBrookKey(
-        this ILogger logger,
-        string runId,
-        BrookKey brookKey,
-        string path
-    ) =>
-        ModeFreshUsingNewBrookKeyMessage(logger, runId, brookKey, path, null);
-
-    /// <summary>
-    ///     Log the banner for the SmallBatch_10x1KB scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ScenarioSmallBatch10x1KB(
-        this ILogger logger
-    ) =>
-        ScenarioSmallBatch10x1KBMessage(logger, null);
-
-    /// <summary>
-    ///     Log the banner for the Bulk_100_Mixed scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ScenarioBulk100Mixed(
-        this ILogger logger
-    ) =>
-        ScenarioBulk100MixedMessage(logger, null);
-
-    /// <summary>
-    ///     Log the banner for the LargeSingle_200KB scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ScenarioLargeSingle200KB(
-        this ILogger logger
-    ) =>
-        ScenarioLargeSingle200KBMessage(logger, null);
-
-    /// <summary>
-    ///     Log the banner for the LargeBatch_200x5KB scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ScenarioLargeBatch200x5KB(
-        this ILogger logger
-    ) =>
-        ScenarioLargeBatch200x5KBMessage(logger, null);
-
-    /// <summary>
-    ///     Log the banner for the OpsLimit_100_Mixed scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ScenarioOpsLimit100Mixed(
-        this ILogger logger
-    ) =>
-        ScenarioOpsLimit100MixedMessage(logger, null);
-
-    /// <summary>
-    ///     Log the banner for the readback that follows initial appends.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ReadbackAfterInitialAppends(
-        this ILogger logger
-    ) =>
-        ReadbackAfterInitialAppendsMessage(logger, null);
-
-    /// <summary>
-    ///     Log the banner for the interleaved read/write scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ScenarioInterleaved(
-        this ILogger logger
-    ) =>
-        ScenarioInterleavedMessage(logger, null);
-
-    /// <summary>
-    ///     Log the banner for the multi-stream interleaved workload scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ScenarioMultiStream(
-        this ILogger logger
-    ) =>
-        ScenarioMultiStreamMessage(logger, null);
-
-    /// <summary>
-    ///     Log the banner for the explicit cache flush and readback scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ExplicitCacheFlushReadback(
-        this ILogger logger
-    ) =>
-        ExplicitCacheFlushReadbackMessage(logger, null);
-
-    /// <summary>
-    ///     Log that the sample is performing a cold restart of the host.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    public static void PerformingColdRestartOfHost(
-        this ILogger logger,
-        string runId
-    ) =>
-        PerformingColdRestartOfHostMessage(logger, runId, null);
-
-    /// <summary>
-    ///     Log the banner for the cold restart readback scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ScenarioColdRestartReadback(
-        this ILogger logger
-    ) =>
-        ScenarioColdRestartReadbackMessage(logger, null);
-
-    /// <summary>
-    ///     Log information about the number of events being appended.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="scenario">The scenario name for the append operation.</param>
-    /// <param name="count">The number of events being appended.</param>
-    /// <param name="bytes">The total number of bytes being appended.</param>
-    public static void AppendingCounts(
-        this ILogger logger,
-        string runId,
-        string scenario,
-        int count,
-        long bytes
-    ) =>
-        AppendingCountsMessage(logger, runId, scenario, count, bytes, null);
+    // Scenario banners
 
     /// <summary>
     ///     Log metrics for a completed append operation.
@@ -473,17 +267,178 @@ internal static class CrescentConsoleAppLoggerExtensions
         AppendFailedMessage(logger, runId, scenario, ms, count, bytes, ex);
 
     /// <summary>
-    ///     Log the current readback head position for the run.
+    ///     Log information about the number of events being appended.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
     /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="head">The head position observed during readback.</param>
-    public static void ReadbackHead(
+    /// <param name="scenario">The scenario name for the append operation.</param>
+    /// <param name="count">The number of events being appended.</param>
+    /// <param name="bytes">The total number of bytes being appended.</param>
+    public static void AppendingCounts(
+        this ILogger logger,
+        string runId,
+        string scenario,
+        int count,
+        long bytes
+    ) =>
+        AppendingCountsMessage(logger, runId, scenario, count, bytes, null);
+
+    /// <summary>
+    ///     Log the Cosmos DB configuration options used by the sample.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="databaseId">The configured Cosmos database id.</param>
+    /// <param name="containerId">The configured Cosmos container id.</param>
+    /// <param name="lockContainer">The container used for locks.</param>
+    /// <param name="maxEventsPerBatch">Maximum events per batch for append operations.</param>
+    /// <param name="queryBatchSize">Batch size used when querying events.</param>
+    public static void CosmosOptions(
+        this ILogger logger,
+        string runId,
+        string databaseId,
+        string containerId,
+        string lockContainer,
+        int maxEventsPerBatch,
+        int queryBatchSize
+    ) =>
+        CosmosOptionsMessage(
+            logger,
+            runId,
+            databaseId,
+            containerId,
+            lockContainer,
+            maxEventsPerBatch,
+            queryBatchSize,
+            null);
+
+    /// <summary>
+    ///     Log the banner for the explicit cache flush and readback scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    public static void ExplicitCacheFlushReadback(
+        this ILogger logger
+    ) =>
+        ExplicitCacheFlushReadbackMessage(logger, null);
+
+    /// <summary>
+    ///     Log the full-range read count observed in the interleaved scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="count">The full-range read count.</param>
+    public static void FullRangeReadCount(
+        this ILogger logger,
+        string runId,
+        int count
+    ) =>
+        FullRangeReadCountMessage(logger, runId, count, null);
+
+    /// <summary>
+    ///     Log the head position after the first write in the interleaved scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="head">The head position after the write.</param>
+    public static void HeadAfterWrite1(
         this ILogger logger,
         string runId,
         long head
     ) =>
-        ReadbackHeadMessage(logger, runId, head, null);
+        HeadAfterWrite1Message(logger, runId, head, null);
+
+    /// <summary>
+    ///     Log the head position after the second write in the interleaved scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="head">The head position after the write.</param>
+    public static void HeadAfterWrite2(
+        this ILogger logger,
+        string runId,
+        long head
+    ) =>
+        HeadAfterWrite2Message(logger, runId, head, null);
+
+    /// <summary>
+    ///     Log the head positions for streams A and B in multi-stream scenarios.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="headA">The head position for stream A.</param>
+    /// <param name="headB">The head position for stream B.</param>
+    public static void HeadsAB(
+        this ILogger logger,
+        string runId,
+        long headA,
+        long headB
+    ) =>
+        HeadsABMessage(logger, runId, headA, headB, null);
+
+    /// <summary>
+    ///     Log that the host has started for the provided run identifier.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    public static void HostStarted(
+        this ILogger logger,
+        string runId
+    ) =>
+        HostStartedMessage(logger, runId, null);
+
+    /// <summary>
+    ///     Log that the interleaved enumeration was aborted and will be retried once.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="ex">The exception that caused the abort.</param>
+    public static void InterleaveEnumerationAbortedRetry(
+        this ILogger logger,
+        string runId,
+        Exception ex
+    ) =>
+        InterleaveEnumerationAbortedRetryMessage(logger, runId, ex);
+
+    /// <summary>
+    ///     Log the start of the interleaved scenario for the run.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    public static void InterleaveStart(
+        this ILogger logger,
+        string runId
+    ) =>
+        InterleaveStartMessage(logger, runId, null);
+
+    /// <summary>
+    ///     Log that the sample is running in fresh mode using a newly created <see cref="BrookKey" />.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="brookKey">The newly generated brook key.</param>
+    /// <param name="path">The file path to the persisted state file.</param>
+    public static void ModeFreshUsingNewBrookKey(
+        this ILogger logger,
+        string runId,
+        BrookKey brookKey,
+        string path
+    ) =>
+        ModeFreshUsingNewBrookKeyMessage(logger, runId, brookKey, path, null);
+
+    /// <summary>
+    ///     Log that the sample is running in reuse mode with a persisted <see cref="BrookKey" />.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="brookKey">The persisted brook key being reused.</param>
+    /// <param name="path">The file path to the persisted state file.</param>
+    public static void ModeReuseUsingPersistedBrookKey(
+        this ILogger logger,
+        string runId,
+        BrookKey brookKey,
+        string path
+    ) =>
+        ModeReuseUsingPersistedBrookKeyMessage(logger, runId, brookKey, path, null);
 
     /// <summary>
     ///     Log that there are no events to read for the run.
@@ -495,6 +450,45 @@ internal static class CrescentConsoleAppLoggerExtensions
         string runId
     ) =>
         NoEventsToReadMessage(logger, runId, null);
+
+    /// <summary>
+    ///     Log that the sample is performing a cold restart of the host.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    public static void PerformingColdRestartOfHost(
+        this ILogger logger,
+        string runId
+    ) =>
+        PerformingColdRestartOfHostMessage(logger, runId, null);
+
+    /// <summary>
+    ///     Log the read counts for streams A and B in the multi-stream scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="countA">Read count for stream A.</param>
+    /// <param name="countB">Read count for stream B.</param>
+    public static void ReadCountsAB(
+        this ILogger logger,
+        string runId,
+        int countA,
+        int countB
+    ) =>
+        ReadCountsABMessage(logger, runId, countA, countB, null);
+
+    /// <summary>
+    ///     Log that a read enumeration was aborted and will be retried from the start.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="ex">The exception that caused the abort.</param>
+    public static void ReadEnumerationAbortedRetry(
+        this ILogger logger,
+        string runId,
+        Exception ex
+    ) =>
+        ReadEnumerationAbortedRetryMessage(logger, runId, ex);
 
     /// <summary>
     ///     Log details about a single event read during enumeration.
@@ -514,6 +508,15 @@ internal static class CrescentConsoleAppLoggerExtensions
         int bytes
     ) =>
         ReadIdxEventMessage(logger, runId, idx, id, type, bytes, null);
+
+    /// <summary>
+    ///     Log the banner for the readback that follows initial appends.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    public static void ReadbackAfterInitialAppends(
+        this ILogger logger
+    ) =>
+        ReadbackAfterInitialAppendsMessage(logger, null);
 
     /// <summary>
     ///     Log metrics when a readback operation completes.
@@ -537,108 +540,113 @@ internal static class CrescentConsoleAppLoggerExtensions
         ReadbackCompleteMessage(logger, runId, count, bytes, ms, rateEvN, rateMB, null);
 
     /// <summary>
-    ///     Log that a read enumeration was aborted and will be retried from the start.
+    ///     Log the current readback head position for the run.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
     /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="ex">The exception that caused the abort.</param>
-    public static void ReadEnumerationAbortedRetry(
+    /// <param name="head">The head position observed during readback.</param>
+    public static void ReadbackHead(
         this ILogger logger,
         string runId,
-        Exception ex
+        long head
     ) =>
-        ReadEnumerationAbortedRetryMessage(logger, runId, ex);
+        ReadbackHeadMessage(logger, runId, head, null);
 
     /// <summary>
-    ///     Log the start of the interleaved scenario for the run.
+    ///     Log that the host is requesting grain deactivations for the specified brook key.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
     /// <param name="runId">The run identifier associated with this execution.</param>
-    public static void InterleaveStart(
+    /// <param name="brookKey">The brook key for which deactivations are requested.</param>
+    public static void RequestingDeactivations(
+        this ILogger logger,
+        string runId,
+        BrookKey brookKey
+    ) =>
+        RequestingDeactivationsMessage(logger, runId, brookKey, null);
+
+    /// <summary>
+    ///     Log that the Orleans grain factory is being resolved for the run.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    public static void ResolvingGrainFactory(
         this ILogger logger,
         string runId
     ) =>
-        InterleaveStartMessage(logger, runId, null);
+        ResolvingGrainFactoryMessage(logger, runId, null);
 
     /// <summary>
-    ///     Log the head position after the first write in the interleaved scenario.
+    ///     Log the banner for the Bulk_100_Mixed scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="head">The head position after the write.</param>
-    public static void HeadAfterWrite1(
-        this ILogger logger,
-        string runId,
-        long head
+    public static void ScenarioBulk100Mixed(
+        this ILogger logger
     ) =>
-        HeadAfterWrite1Message(logger, runId, head, null);
+        ScenarioBulk100MixedMessage(logger, null);
 
     /// <summary>
-    ///     Log the count of entries read from the tail in the interleaved scenario.
+    ///     Log the banner for the cold restart readback scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="count">The tail read count.</param>
-    public static void TailReadCount(
-        this ILogger logger,
-        string runId,
-        int count
+    public static void ScenarioColdRestartReadback(
+        this ILogger logger
     ) =>
-        TailReadCountMessage(logger, runId, count, null);
+        ScenarioColdRestartReadbackMessage(logger, null);
 
     /// <summary>
-    ///     Log the head position after the second write in the interleaved scenario.
+    ///     Log the banner for the interleaved read/write scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="head">The head position after the write.</param>
-    public static void HeadAfterWrite2(
-        this ILogger logger,
-        string runId,
-        long head
+    public static void ScenarioInterleaved(
+        this ILogger logger
     ) =>
-        HeadAfterWrite2Message(logger, runId, head, null);
+        ScenarioInterleavedMessage(logger, null);
 
     /// <summary>
-    ///     Log the full-range read count observed in the interleaved scenario.
+    ///     Log the banner for the LargeBatch_200x5KB scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="count">The full-range read count.</param>
-    public static void FullRangeReadCount(
-        this ILogger logger,
-        string runId,
-        int count
+    public static void ScenarioLargeBatch200x5KB(
+        this ILogger logger
     ) =>
-        FullRangeReadCountMessage(logger, runId, count, null);
+        ScenarioLargeBatch200x5KBMessage(logger, null);
 
     /// <summary>
-    ///     Log that the interleaved enumeration was aborted and will be retried once.
+    ///     Log the banner for the LargeSingle_200KB scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="ex">The exception that caused the abort.</param>
-    public static void InterleaveEnumerationAbortedRetry(
-        this ILogger logger,
-        string runId,
-        Exception ex
+    public static void ScenarioLargeSingle200KB(
+        this ILogger logger
     ) =>
-        InterleaveEnumerationAbortedRetryMessage(logger, runId, ex);
+        ScenarioLargeSingle200KBMessage(logger, null);
 
     /// <summary>
-    ///     Log the head positions for streams A and B in multi-stream scenarios.
+    ///     Log the banner for the multi-stream interleaved workload scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="headA">The head position for stream A.</param>
-    /// <param name="headB">The head position for stream B.</param>
-    public static void HeadsAB(
-        this ILogger logger,
-        string runId,
-        long headA,
-        long headB
+    public static void ScenarioMultiStream(
+        this ILogger logger
     ) =>
-        HeadsABMessage(logger, runId, headA, headB, null);
+        ScenarioMultiStreamMessage(logger, null);
+
+    /// <summary>
+    ///     Log the banner for the OpsLimit_100_Mixed scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    public static void ScenarioOpsLimit100Mixed(
+        this ILogger logger
+    ) =>
+        ScenarioOpsLimit100MixedMessage(logger, null);
+
+    /// <summary>
+    ///     Log the banner for the SmallBatch_10x1KB scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    public static void ScenarioSmallBatch10x1KB(
+        this ILogger logger
+    ) =>
+        ScenarioSmallBatch10x1KBMessage(logger, null);
 
     /// <summary>
     ///     Log that stream A is empty for the given run.
@@ -663,30 +671,28 @@ internal static class CrescentConsoleAppLoggerExtensions
         StreamBEmptyMessage(logger, runId, null);
 
     /// <summary>
-    ///     Log the read counts for streams A and B in the multi-stream scenario.
+    ///     Log the count of entries read from the tail in the interleaved scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
     /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="countA">Read count for stream A.</param>
-    /// <param name="countB">Read count for stream B.</param>
-    public static void ReadCountsAB(
+    /// <param name="count">The tail read count.</param>
+    public static void TailReadCount(
         this ILogger logger,
         string runId,
-        int countA,
-        int countB
+        int count
     ) =>
-        ReadCountsABMessage(logger, runId, countA, countB, null);
+        TailReadCountMessage(logger, runId, count, null);
 
     /// <summary>
-    ///     Log that the host is requesting grain deactivations for the specified brook key.
+    ///     Log that BrookStorageOptions could not be resolved for the run.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
     /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="brookKey">The brook key for which deactivations are requested.</param>
-    public static void RequestingDeactivations(
+    /// <param name="ex">The exception that prevented resolution.</param>
+    public static void UnableToResolveBrookStorageOptions(
         this ILogger logger,
         string runId,
-        BrookKey brookKey
+        Exception ex
     ) =>
-        RequestingDeactivationsMessage(logger, runId, brookKey, null);
+        UnableToResolveBrookStorageOptionsMessage(logger, runId, ex);
 }
