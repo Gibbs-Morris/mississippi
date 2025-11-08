@@ -36,13 +36,13 @@ internal class BrookRecoveryService : IBrookRecoveryService
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    private ICosmosRepository Repository { get; }
-
-    private IRetryPolicy RetryPolicy { get; }
-
     private IDistributedLockManager LockManager { get; }
 
     private BrookStorageOptions Options { get; }
+
+    private ICosmosRepository Repository { get; }
+
+    private IRetryPolicy RetryPolicy { get; }
 
     /// <summary>
     ///     Gets the current head position for a brook, or recovers it if necessary.
@@ -101,29 +101,6 @@ internal class BrookRecoveryService : IBrookRecoveryService
         return headDocument?.Position ?? new BrookPosition(-1);
     }
 
-    private async Task RecoverFromOrphanedOperationAsync(
-        BrookKey brookId,
-        HeadStorageModel pendingHead,
-        CancellationToken cancellationToken
-    )
-    {
-        long originalPosition = pendingHead.OriginalPosition?.Value ?? -1;
-        long targetPosition = pendingHead.Position.Value;
-        bool allEventsExist = await CheckAllEventsExistAsync(
-            brookId,
-            originalPosition,
-            targetPosition,
-            cancellationToken);
-        if (allEventsExist)
-        {
-            await Repository.CommitHeadPositionAsync(brookId, targetPosition, cancellationToken);
-        }
-        else
-        {
-            await RollbackOrphanedOperationAsync(brookId, originalPosition, targetPosition, cancellationToken);
-        }
-    }
-
     private async Task<bool> CheckAllEventsExistAsync(
         BrookKey brookId,
         long originalPosition,
@@ -151,6 +128,29 @@ internal class BrookRecoveryService : IBrookRecoveryService
         }
 
         return true;
+    }
+
+    private async Task RecoverFromOrphanedOperationAsync(
+        BrookKey brookId,
+        HeadStorageModel pendingHead,
+        CancellationToken cancellationToken
+    )
+    {
+        long originalPosition = pendingHead.OriginalPosition?.Value ?? -1;
+        long targetPosition = pendingHead.Position.Value;
+        bool allEventsExist = await CheckAllEventsExistAsync(
+            brookId,
+            originalPosition,
+            targetPosition,
+            cancellationToken);
+        if (allEventsExist)
+        {
+            await Repository.CommitHeadPositionAsync(brookId, targetPosition, cancellationToken);
+        }
+        else
+        {
+            await RollbackOrphanedOperationAsync(brookId, originalPosition, targetPosition, cancellationToken);
+        }
     }
 
     private async Task RollbackOrphanedOperationAsync(
