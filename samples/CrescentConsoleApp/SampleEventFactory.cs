@@ -11,12 +11,12 @@ namespace Mississippi.CrescentConsoleApp;
 /// </summary>
 internal static class SampleEventFactory
 {
+    private static readonly string[] Categories = { "Metric", "Alert", "Heartbeat", "Audit", "Diagnostic" };
+
     private static readonly string[] MimeTypes =
     {
         "application/json", "text/plain", "application/xml", "application/octet-stream",
     };
-
-    private static readonly string[] Categories = { "Metric", "Alert", "Heartbeat", "Audit", "Diagnostic" };
 
     /// <summary>
     ///     Creates a set of random events with variable payload sizes and metadata.
@@ -86,22 +86,6 @@ internal static class SampleEventFactory
         return builder.MoveToImmutable();
     }
 
-    private static BrookEvent CreateRandomEvent()
-    {
-        int payloadSize = RandomNumberGenerator.GetInt32(512, 4_096);
-        byte[] payload = new byte[payloadSize];
-        RandomNumberGenerator.Fill(payload);
-        return new()
-        {
-            Id = Guid.NewGuid().ToString(),
-            Data = payload.ToImmutableArray(),
-            DataContentType = Pick(MimeTypes),
-            Source = GenerateSourceTag(),
-            Time = DateTimeOffset.UtcNow.AddSeconds(-RandomNumberGenerator.GetInt32(0, 86_400)),
-            Type = Pick(Categories),
-        };
-    }
-
     private static BrookEvent CreateEventOfSize(
         int sizeBytes,
         string? contentType
@@ -116,6 +100,22 @@ internal static class SampleEventFactory
             DataContentType = contentType ?? "application/octet-stream",
             Source = GenerateSourceTag(),
             Time = DateTimeOffset.UtcNow,
+            Type = Pick(Categories),
+        };
+    }
+
+    private static BrookEvent CreateRandomEvent()
+    {
+        int payloadSize = RandomNumberGenerator.GetInt32(512, 4_096);
+        byte[] payload = new byte[payloadSize];
+        RandomNumberGenerator.Fill(payload);
+        return new()
+        {
+            Id = Guid.NewGuid().ToString(),
+            Data = payload.ToImmutableArray(),
+            DataContentType = Pick(MimeTypes),
+            Source = GenerateSourceTag(),
+            Time = DateTimeOffset.UtcNow.AddSeconds(-RandomNumberGenerator.GetInt32(0, 86_400)),
             Type = Pick(Categories),
         };
     }
