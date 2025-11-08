@@ -13,56 +13,6 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Retry;
 /// </summary>
 public sealed class IRetryPolicyTests
 {
-    /// <summary>
-    ///     Verifies that transient Cosmos errors are retried and the successful result is returned.
-    /// </summary>
-    /// <returns>An asynchronous test operation.</returns>
-    [Fact]
-    public async Task ExecuteAsyncRetriesTransientAndReturnsResultAsync()
-    {
-        // Arrange
-        int calls = 0;
-        CosmosRetryPolicy policy = new();
-        Func<Task<int>> operation = () =>
-        {
-            calls++;
-            if (calls < 3)
-            {
-                throw CreateCosmosException(HttpStatusCode.TooManyRequests, TimeSpan.FromMilliseconds(1));
-            }
-
-            return Task.FromResult(42);
-        };
-
-        // Act
-        int result = await policy.ExecuteAsync(operation);
-
-        // Assert
-        Assert.Equal(42, result);
-        Assert.Equal(3, calls);
-    }
-
-    /// <summary>
-    ///     Verifies that non-transient Cosmos errors are wrapped in InvalidOperationException.
-    /// </summary>
-    /// <returns>An asynchronous test operation.</returns>
-    [Fact]
-    public async Task ExecuteAsyncWrapsNonTransientCosmosErrorsAsync()
-    {
-        // Arrange
-        CosmosRetryPolicy policy = new(1);
-        Func<Task<int>> operation = () => Task.FromException<int>(CreateCosmosException(HttpStatusCode.BadRequest));
-
-        // Act
-        InvalidOperationException ex =
-            await Assert.ThrowsAsync<InvalidOperationException>(() => policy.ExecuteAsync(operation));
-
-        // Assert
-        Assert.IsType<CosmosException>(ex.InnerException);
-        CosmosException inner = (CosmosException)ex.InnerException!;
-        Assert.Equal(HttpStatusCode.BadRequest, inner.StatusCode);
-    }
-
     private static CosmosException CreateCosmosException(
         HttpStatusCode statusCode,
         TimeSpan? retryAfter = null
@@ -120,5 +70,55 @@ public sealed class IRetryPolicyTests
         }
 
         return instance;
+    }
+
+    /// <summary>
+    ///     Verifies that transient Cosmos errors are retried and the successful result is returned.
+    /// </summary>
+    /// <returns>An asynchronous test operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncRetriesTransientAndReturnsResultAsync()
+    {
+        // Arrange
+        int calls = 0;
+        CosmosRetryPolicy policy = new();
+        Func<Task<int>> operation = () =>
+        {
+            calls++;
+            if (calls < 3)
+            {
+                throw CreateCosmosException(HttpStatusCode.TooManyRequests, TimeSpan.FromMilliseconds(1));
+            }
+
+            return Task.FromResult(42);
+        };
+
+        // Act
+        int result = await policy.ExecuteAsync(operation);
+
+        // Assert
+        Assert.Equal(42, result);
+        Assert.Equal(3, calls);
+    }
+
+    /// <summary>
+    ///     Verifies that non-transient Cosmos errors are wrapped in InvalidOperationException.
+    /// </summary>
+    /// <returns>An asynchronous test operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncWrapsNonTransientCosmosErrorsAsync()
+    {
+        // Arrange
+        CosmosRetryPolicy policy = new(1);
+        Func<Task<int>> operation = () => Task.FromException<int>(CreateCosmosException(HttpStatusCode.BadRequest));
+
+        // Act
+        InvalidOperationException ex =
+            await Assert.ThrowsAsync<InvalidOperationException>(() => policy.ExecuteAsync(operation));
+
+        // Assert
+        Assert.IsType<CosmosException>(ex.InnerException);
+        CosmosException inner = (CosmosException)ex.InnerException!;
+        Assert.Equal(HttpStatusCode.BadRequest, inner.StatusCode);
     }
 }
