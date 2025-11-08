@@ -18,36 +18,6 @@ internal sealed class InMemoryBrookStorage
     private readonly Dictionary<string, long> heads = new();
 
     /// <inheritdoc />
-    public Task<BrookPosition> ReadHeadPositionAsync(
-        BrookKey brookId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        _ = heads.TryGetValue(brookId, out long v);
-        return Task.FromResult(new BrookPosition(v));
-    }
-
-    /// <inheritdoc />
-    public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
-        BrookRangeKey brookRange,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default
-    )
-    {
-        string key = brookRange.ToBrookCompositeKey();
-        if (eventsByKey.TryGetValue(key, out List<BrookEvent>? list))
-        {
-            long start = brookRange.Start;
-            long end = brookRange.End;
-            for (int i = (int)start; (i < list.Count) && (i <= end); i++)
-            {
-                yield return list[i];
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
     public Task<BrookPosition> AppendEventsAsync(
         BrookKey brookId,
         IReadOnlyList<BrookEvent> events,
@@ -72,6 +42,36 @@ internal sealed class InMemoryBrookStorage
         head += events.Count;
         heads[key] = head;
         return Task.FromResult(new BrookPosition(head));
+    }
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
+        BrookRangeKey brookRange,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    )
+    {
+        string key = brookRange.ToBrookCompositeKey();
+        if (eventsByKey.TryGetValue(key, out List<BrookEvent>? list))
+        {
+            long start = brookRange.Start;
+            long end = brookRange.End;
+            for (int i = (int)start; (i < list.Count) && (i <= end); i++)
+            {
+                yield return list[i];
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<BrookPosition> ReadHeadPositionAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        _ = heads.TryGetValue(brookId, out long v);
+        return Task.FromResult(new BrookPosition(v));
     }
 
     /// <summary>
