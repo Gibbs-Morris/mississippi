@@ -23,11 +23,17 @@ internal class EventBrookAppender : IEventBrookAppender
             new(1001, nameof(AppendEventsAsync)),
             "CosmosAppender: brook={Brook} count={Count} estSize={Size}B head={Head} -> final={Final}");
 
-    private static readonly Action<ILogger, BrookKey, int, long, long, long, Exception?> LogSingleBatchStart =
-        LoggerMessage.Define<BrookKey, int, long, long, long>(
+    private static readonly Action<ILogger, int, int, BrookKey, int, long, long, Exception?> LogBatchProgress =
+        LoggerMessage.Define<int, int, BrookKey, int, long, long>(
             LogLevel.Information,
-            new(1002, nameof(AppendSingleBatchAsync)),
-            "CosmosAppender: SingleBatch brook={Brook} count={Count} estSize={Size}B startPos={Start} final={Final}");
+            new(1005, nameof(AppendLargeBatchAsync)),
+            "CosmosAppender: Batch {BatchIdx}/{BatchCount} brook={Brook} count={Count} estSize={Size}B startPos={Start}");
+
+    private static readonly Action<ILogger, BrookKey, long, int, Exception?> LogLargeBatchCommitted =
+        LoggerMessage.Define<BrookKey, long, int>(
+            LogLevel.Information,
+            new(1007, nameof(AppendLargeBatchAsync)),
+            "CosmosAppender: LargeBatch committed brook={Brook} newHead={Head} batches={Batches}");
 
     private static readonly Action<ILogger, BrookKey, int, int, Exception?> LogLargeBatchSummaryPart1 =
         LoggerMessage.Define<BrookKey, int, int>(
@@ -41,24 +47,6 @@ internal class EventBrookAppender : IEventBrookAppender
             new(1004, nameof(AppendLargeBatchAsync)),
             "CosmosAppender: LargeBatch head={Head} final={Final} maxPerBatch={MaxEv} maxReq={MaxReq}");
 
-    private static readonly Action<ILogger, int, int, BrookKey, int, long, long, Exception?> LogBatchProgress =
-        LoggerMessage.Define<int, int, BrookKey, int, long, long>(
-            LogLevel.Information,
-            new(1005, nameof(AppendLargeBatchAsync)),
-            "CosmosAppender: Batch {BatchIdx}/{BatchCount} brook={Brook} count={Count} estSize={Size}B startPos={Start}");
-
-    private static readonly Action<ILogger, BrookKey, long, int, double, Exception?> LogSingleBatchCommitted =
-        LoggerMessage.Define<BrookKey, long, int, double>(
-            LogLevel.Information,
-            new(1006, nameof(AppendSingleBatchAsync)),
-            "CosmosAppender: SingleBatch committed brook={Brook} newHead={Head} status={Status} charge={Charge}");
-
-    private static readonly Action<ILogger, BrookKey, long, int, Exception?> LogLargeBatchCommitted =
-        LoggerMessage.Define<BrookKey, long, int>(
-            LogLevel.Information,
-            new(1007, nameof(AppendLargeBatchAsync)),
-            "CosmosAppender: LargeBatch committed brook={Brook} newHead={Head} batches={Batches}");
-
     private static readonly Action<ILogger, BrookKey, long, long, string, Exception?> LogRollbackFailed =
         LoggerMessage.Define<BrookKey, long, long, string>(
             LogLevel.Error,
@@ -70,6 +58,18 @@ internal class EventBrookAppender : IEventBrookAppender
             LogLevel.Warning,
             new(1009, nameof(RollbackLargeBatchAsync)),
             "CosmosAppender: Rollback succeeded brook={Brook} restoredHead={Head}");
+
+    private static readonly Action<ILogger, BrookKey, long, int, double, Exception?> LogSingleBatchCommitted =
+        LoggerMessage.Define<BrookKey, long, int, double>(
+            LogLevel.Information,
+            new(1006, nameof(AppendSingleBatchAsync)),
+            "CosmosAppender: SingleBatch committed brook={Brook} newHead={Head} status={Status} charge={Charge}");
+
+    private static readonly Action<ILogger, BrookKey, int, long, long, long, Exception?> LogSingleBatchStart =
+        LoggerMessage.Define<BrookKey, int, long, long, long>(
+            LogLevel.Information,
+            new(1002, nameof(AppendSingleBatchAsync)),
+            "CosmosAppender: SingleBatch brook={Brook} count={Count} estSize={Size}B startPos={Start} final={Final}");
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="EventBrookAppender" /> class.
@@ -103,21 +103,21 @@ internal class EventBrookAppender : IEventBrookAppender
         Logger = logger;
     }
 
-    private ICosmosRepository Repository { get; }
+    private IMapper<BrookEvent, EventStorageModel> EventMapper { get; }
 
     private IDistributedLockManager LockManager { get; }
 
-    private IBatchSizeEstimator SizeEstimator { get; }
-
-    private IRetryPolicy RetryPolicy { get; }
+    private ILogger<EventBrookAppender> Logger { get; }
 
     private BrookStorageOptions Options { get; }
 
-    private IMapper<BrookEvent, EventStorageModel> EventMapper { get; }
-
     private IBrookRecoveryService RecoveryService { get; }
 
-    private ILogger<EventBrookAppender> Logger { get; }
+    private ICosmosRepository Repository { get; }
+
+    private IRetryPolicy RetryPolicy { get; }
+
+    private IBatchSizeEstimator SizeEstimator { get; }
 
     /// <summary>
     ///     Appends a collection of events to the specified brook.
@@ -202,38 +202,6 @@ internal class EventBrookAppender : IEventBrookAppender
             cancellationToken);
     }
 
-    private async Task<BrookPosition> AppendSingleBatchAsync(
-        BrookKey brookId,
-        IReadOnlyList<BrookEvent> events,
-        BrookPosition currentHead,
-        long finalPosition,
-        IDistributedLock distributedLock,
-        CancellationToken cancellationToken
-    )
-    {
-        await distributedLock.RenewAsync(cancellationToken);
-        long estBatchSize = SizeEstimator.EstimateBatchSize(events);
-        LogSingleBatchStart(Logger, brookId, events.Count, estBatchSize, currentHead.Value + 1, finalPosition, null);
-        List<EventStorageModel> storageEvents = events.Select(EventMapper.Map).ToList();
-
-        // Fallback to non-transactional flow (pending head -> append -> commit) to ensure reliability with emulator
-        await Repository.CreatePendingHeadAsync(brookId, currentHead, finalPosition, cancellationToken);
-        await RetryPolicy.ExecuteAsync(
-            async () =>
-            {
-                await Repository.AppendEventBatchAsync(
-                    brookId,
-                    storageEvents,
-                    currentHead.Value + 1,
-                    cancellationToken);
-                return true;
-            },
-            cancellationToken);
-        await Repository.CommitHeadPositionAsync(brookId, finalPosition, cancellationToken);
-        LogSingleBatchCommitted(Logger, brookId, finalPosition, 200, 0, null);
-        return new(finalPosition);
-    }
-
     private async Task<BrookPosition> AppendLargeBatchAsync(
         BrookKey brookId,
         IReadOnlyList<BrookEvent> events,
@@ -309,6 +277,38 @@ internal class EventBrookAppender : IEventBrookAppender
                 cancellationToken);
             throw;
         }
+    }
+
+    private async Task<BrookPosition> AppendSingleBatchAsync(
+        BrookKey brookId,
+        IReadOnlyList<BrookEvent> events,
+        BrookPosition currentHead,
+        long finalPosition,
+        IDistributedLock distributedLock,
+        CancellationToken cancellationToken
+    )
+    {
+        await distributedLock.RenewAsync(cancellationToken);
+        long estBatchSize = SizeEstimator.EstimateBatchSize(events);
+        LogSingleBatchStart(Logger, brookId, events.Count, estBatchSize, currentHead.Value + 1, finalPosition, null);
+        List<EventStorageModel> storageEvents = events.Select(EventMapper.Map).ToList();
+
+        // Fallback to non-transactional flow (pending head -> append -> commit) to ensure reliability with emulator
+        await Repository.CreatePendingHeadAsync(brookId, currentHead, finalPosition, cancellationToken);
+        await RetryPolicy.ExecuteAsync(
+            async () =>
+            {
+                await Repository.AppendEventBatchAsync(
+                    brookId,
+                    storageEvents,
+                    currentHead.Value + 1,
+                    cancellationToken);
+                return true;
+            },
+            cancellationToken);
+        await Repository.CommitHeadPositionAsync(brookId, finalPosition, cancellationToken);
+        LogSingleBatchCommitted(Logger, brookId, finalPosition, 200, 0, null);
+        return new(finalPosition);
     }
 
     private async Task RollbackLargeBatchAsync(
