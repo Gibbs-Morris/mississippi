@@ -16,6 +16,65 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Registrations;
 /// </summary>
 public class CosmosContainerInitializerTests
 {
+    private static CosmosException CreateCosmosException(
+        HttpStatusCode statusCode,
+        TimeSpan? retryAfter = null
+    )
+    {
+        Type type = typeof(CosmosException);
+        ConstructorInfo[] ctors =
+            type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        ConstructorInfo? ctor =
+            ctors.FirstOrDefault(c => c.GetParameters().Any(p => p.ParameterType == typeof(HttpStatusCode)));
+        if (ctor is null)
+        {
+            throw new InvalidOperationException("No suitable CosmosException constructor found for tests.");
+        }
+
+        ParameterInfo[] parameters = ctor.GetParameters();
+        object?[] args = new object?[parameters.Length];
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            ParameterInfo p = parameters[i];
+            if (p.ParameterType == typeof(string))
+            {
+                args[i] = string.Empty;
+            }
+            else if (p.ParameterType == typeof(HttpStatusCode))
+            {
+                args[i] = statusCode;
+            }
+            else if (p.ParameterType == typeof(int))
+            {
+                args[i] = 0;
+            }
+            else if (p.ParameterType == typeof(long))
+            {
+                args[i] = 0L;
+            }
+            else if (p.ParameterType == typeof(TimeSpan))
+            {
+                args[i] = retryAfter ?? TimeSpan.Zero;
+            }
+            else if (p.ParameterType.IsValueType)
+            {
+                args[i] = Activator.CreateInstance(p.ParameterType);
+            }
+            else
+            {
+                args[i] = null;
+            }
+        }
+
+        CosmosException? instance = (CosmosException?)ctor.Invoke(args);
+        if (instance is null)
+        {
+            throw new InvalidOperationException("Failed to construct CosmosException");
+        }
+
+        return instance;
+    }
+
     /// <summary>
     ///     Verifies that the initializer creates the database and container when not found.
     /// </summary>
@@ -127,64 +186,5 @@ public class CosmosContainerInitializerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => hosted.StartAsync(CancellationToken.None));
-    }
-
-    private static CosmosException CreateCosmosException(
-        HttpStatusCode statusCode,
-        TimeSpan? retryAfter = null
-    )
-    {
-        Type type = typeof(CosmosException);
-        ConstructorInfo[] ctors =
-            type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        ConstructorInfo? ctor =
-            ctors.FirstOrDefault(c => c.GetParameters().Any(p => p.ParameterType == typeof(HttpStatusCode)));
-        if (ctor is null)
-        {
-            throw new InvalidOperationException("No suitable CosmosException constructor found for tests.");
-        }
-
-        ParameterInfo[] parameters = ctor.GetParameters();
-        object?[] args = new object?[parameters.Length];
-        for (int i = 0; i < parameters.Length; i++)
-        {
-            ParameterInfo p = parameters[i];
-            if (p.ParameterType == typeof(string))
-            {
-                args[i] = string.Empty;
-            }
-            else if (p.ParameterType == typeof(HttpStatusCode))
-            {
-                args[i] = statusCode;
-            }
-            else if (p.ParameterType == typeof(int))
-            {
-                args[i] = 0;
-            }
-            else if (p.ParameterType == typeof(long))
-            {
-                args[i] = 0L;
-            }
-            else if (p.ParameterType == typeof(TimeSpan))
-            {
-                args[i] = retryAfter ?? TimeSpan.Zero;
-            }
-            else if (p.ParameterType.IsValueType)
-            {
-                args[i] = Activator.CreateInstance(p.ParameterType);
-            }
-            else
-            {
-                args[i] = null;
-            }
-        }
-
-        CosmosException? instance = (CosmosException?)ctor.Invoke(args);
-        if (instance is null)
-        {
-            throw new InvalidOperationException("Failed to construct CosmosException");
-        }
-
-        return instance;
     }
 }
