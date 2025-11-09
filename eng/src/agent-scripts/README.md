@@ -91,6 +91,42 @@ These folders are git-ignored but persist across runs for inspection or archivin
 
 ---
 
+## Code cleanup: Local vs CI
+
+The repository has both local cleanup scripts and CI workflows to maintain code formatting:
+
+### Local cleanup
+
+**Root-level convenience script** (recommended):
+```pwsh
+pwsh ./clean-up.ps1
+```
+This deterministic script uses the `RepositoryAutomation.psm1` module and works from any location.
+
+**Individual solution cleanup**:
+```pwsh
+pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
+pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1
+```
+
+### CI workflows
+
+| Workflow | Type | When it runs | What it does |
+| --- | --- | --- | --- |
+| **cleanup.yml** | Validation | Automatic (PR checks) | Runs cleanup and **fails** if changes detected. Ensures code is properly formatted before merge. |
+| **auto-cleanup.yml** | Automation | Manual dispatch | Runs cleanup and **creates a PR** with changes. Use this to fix cleanup issues automatically. |
+
+**Using auto-cleanup workflow:**
+1. Go to Actions → "Auto Cleanup (Create PR)"
+2. Click "Run workflow"
+3. Optionally specify target branch (defaults to current)
+4. Workflow creates a PR with cleanup changes if any exist
+
+**Determinism fix:**
+The cleanup now includes a `GlobalUsings.cs` file in `EventSourcing.Tests` to prevent ReSharper from incorrectly removing the `Microsoft.Extensions.DependencyInjection` using statement. This ensures consistent results between local runs and CI.
+
+---
+
 ## Guidelines for AI agents
 
 - Prefer the narrowest script for the job; avoid the orchestrator unless you need the full pipeline.
