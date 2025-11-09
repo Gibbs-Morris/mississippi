@@ -64,7 +64,6 @@ The keywords **MUST**, **SHOULD**, **MAY**, **MUST NOT**, and **SHOULD NOT** are
 ### Versioning and Change Control
 - Changes to instruction files **MUST** undergo review per repository policy (e.g., CODEOWNERS, branch protection).
 - Pull requests that modify instruction files **MUST** include a “Docs impact” section describing effects and cross-file implications.
-- A footer **MUST** record `Last verified: YYYY-MM-DD` and the default branch name.
 
 ---
 
