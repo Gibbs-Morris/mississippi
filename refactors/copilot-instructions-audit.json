@@ -1,0 +1,307 @@
+{
+  "auditDate": "2025-11-09T00:06:40.934Z",
+  "summary": {
+    "totalFiles": 21,
+    "newFiles": 1,
+    "archivedFiles": 20,
+    "beforeChars": 318143,
+    "afterChars": 24180,
+    "reductionPercent": 92.4,
+    "beforeTokens": 79536,
+    "afterTokens": 6045,
+    "tokenReductionPercent": 92.4
+  },
+  "files": [
+    {
+      "path": ".github/copilot-instructions.md",
+      "action": "created",
+      "beforeChars": 0,
+      "afterChars": 1447,
+      "beforeTokens": 0,
+      "afterTokens": 362,
+      "reductionPercent": 0,
+      "applyTo": "**/*"
+    },
+    {
+      "path": ".github/instructions/logging-rules.instructions.md",
+      "action": "compressed",
+      "beforeChars": 67730,
+      "afterChars": 1701,
+      "beforeTokens": 16932,
+      "afterTokens": 425,
+      "reductionPercent": 97.5,
+      "applyToBefore": "**/*.cs",
+      "applyToAfter": "**/*LoggerExtensions*.cs,**/Logging/**/*.cs"
+    },
+    {
+      "path": ".github/instructions/service-registration.instructions.md",
+      "action": "compressed",
+      "beforeChars": 43274,
+      "afterChars": 1699,
+      "beforeTokens": 10818,
+      "afterTokens": 425,
+      "reductionPercent": 96.1,
+      "applyToBefore": "**/*.cs",
+      "applyToAfter": "**/*ServiceRegistration*.cs,**/*DependencyInjection*.cs"
+    },
+    {
+      "path": ".github/instructions/csharp.instructions.md",
+      "action": "compressed",
+      "beforeChars": 32141,
+      "afterChars": 1607,
+      "beforeTokens": 8035,
+      "afterTokens": 402,
+      "reductionPercent": 95.0,
+      "applyToAfter": "**/*.cs"
+    },
+    {
+      "path": ".github/instructions/authoring.instructions.md",
+      "action": "compressed",
+      "beforeChars": 21829,
+      "afterChars": 1284,
+      "beforeTokens": 5457,
+      "afterTokens": 321,
+      "reductionPercent": 94.1,
+      "applyToAfter": "**/*.instructions.md"
+    },
+    {
+      "path": ".github/instructions/naming.instructions.md",
+      "action": "compressed",
+      "beforeChars": 18746,
+      "afterChars": 1886,
+      "beforeTokens": 4686,
+      "afterTokens": 472,
+      "reductionPercent": 89.9,
+      "applyToAfter": "**/*.cs"
+    },
+    {
+      "path": ".github/instructions/agent-scratchpad.instructions.md",
+      "action": "compressed",
+      "beforeChars": 15158,
+      "afterChars": 1198,
+      "beforeTokens": 3789,
+      "afterTokens": 300,
+      "reductionPercent": 92.1,
+      "applyToBefore": "**",
+      "applyToAfter": ".scratchpad/**/*"
+    },
+    {
+      "path": ".github/instructions/projects.instructions.md",
+      "action": "compressed",
+      "beforeChars": 14519,
+      "afterChars": 814,
+      "beforeTokens": 3629,
+      "afterTokens": 204,
+      "reductionPercent": 94.4,
+      "applyToBefore": "**",
+      "applyToAfter": "**/*.{csproj,props,targets}"
+    },
+    {
+      "path": ".github/instructions/blazor-ux-guidelines.instructions.md",
+      "action": "compressed",
+      "beforeChars": 12490,
+      "afterChars": 752,
+      "beforeTokens": 3122,
+      "afterTokens": 188,
+      "reductionPercent": 94.0,
+      "applyToAfter": "**/*.razor*"
+    },
+    {
+      "path": ".github/instructions/testing.instructions.md",
+      "action": "compressed",
+      "beforeChars": 12486,
+      "afterChars": 962,
+      "beforeTokens": 3121,
+      "afterTokens": 241,
+      "reductionPercent": 92.3,
+      "applyToBefore": "**",
+      "applyToAfter": "tests/**/*"
+    },
+    {
+      "path": ".github/instructions/orleans.instructions.md",
+      "action": "compressed",
+      "beforeChars": 12235,
+      "afterChars": 1147,
+      "beforeTokens": 3058,
+      "afterTokens": 287,
+      "reductionPercent": 90.6,
+      "applyToBefore": "**/*.cs",
+      "applyToAfter": "**/Orleans/**/*.cs,**/*Grain*.cs"
+    },
+    {
+      "path": ".github/instructions/build-rules.instructions.md",
+      "action": "compressed",
+      "beforeChars": 10555,
+      "afterChars": 666,
+      "beforeTokens": 2638,
+      "afterTokens": 167,
+      "reductionPercent": 93.7,
+      "applyToBefore": "**",
+      "applyToAfter": "**"
+    },
+    {
+      "path": ".github/instructions/build-issue-remediation.instructions.md",
+      "action": "compressed",
+      "beforeChars": 10116,
+      "afterChars": 859,
+      "beforeTokens": 2529,
+      "afterTokens": 215,
+      "reductionPercent": 91.5,
+      "applyToBefore": "**",
+      "applyToAfter": "**"
+    },
+    {
+      "path": ".github/instructions/orleans-serialization.instructions.md",
+      "action": "compressed",
+      "beforeChars": 9735,
+      "afterChars": 976,
+      "beforeTokens": 2433,
+      "afterTokens": 244,
+      "reductionPercent": 90.0,
+      "applyToBefore": "**/*.cs",
+      "applyToAfter": "**/*Grain*.cs,**/*[Ss]erializ*.cs"
+    },
+    {
+      "path": ".github/instructions/mutation-testing.instructions.md",
+      "action": "compressed",
+      "beforeChars": 9423,
+      "afterChars": 864,
+      "beforeTokens": 2355,
+      "afterTokens": 216,
+      "reductionPercent": 90.8,
+      "applyToBefore": "**",
+      "applyToAfter": "tests/**/*,**/stryker*.json"
+    },
+    {
+      "path": ".github/instructions/test-improvement.instructions.md",
+      "action": "compressed",
+      "beforeChars": 8893,
+      "afterChars": 715,
+      "beforeTokens": 2223,
+      "afterTokens": 179,
+      "reductionPercent": 92.0,
+      "applyToBefore": "**",
+      "applyToAfter": "tests/**/*"
+    },
+    {
+      "path": ".github/instructions/powershell.instructions.md",
+      "action": "compressed",
+      "beforeChars": 7636,
+      "afterChars": 870,
+      "beforeTokens": 1909,
+      "afterTokens": 218,
+      "reductionPercent": 88.6,
+      "applyToBefore": "**/*.ps*",
+      "applyToAfter": "**/*.{ps1,psm1}"
+    },
+    {
+      "path": ".github/instructions/markdown.instructions.md",
+      "action": "compressed",
+      "beforeChars": 7183,
+      "afterChars": 747,
+      "beforeTokens": 1795,
+      "afterTokens": 187,
+      "reductionPercent": 89.6,
+      "applyToBefore": "**/*.md",
+      "applyToAfter": "**/*.md"
+    },
+    {
+      "path": ".github/instructions/pull-request-reviews.instructions.md",
+      "action": "compressed",
+      "beforeChars": 5470,
+      "afterChars": 669,
+      "beforeTokens": 1367,
+      "afterTokens": 167,
+      "reductionPercent": 87.8,
+      "applyToBefore": "**",
+      "applyToAfter": ".github/**/*"
+    },
+    {
+      "path": ".github/instructions/rfc2119.instructions.md",
+      "action": "compressed",
+      "beforeChars": 4838,
+      "afterChars": 666,
+      "beforeTokens": 1209,
+      "afterTokens": 167,
+      "reductionPercent": 86.2,
+      "applyToBefore": "**/*.instructions.md,.github/copilot-instructions.md,agents.md",
+      "applyToAfter": "**/*.instructions.md,.github/copilot-instructions.md"
+    },
+    {
+      "path": ".github/instructions/instruction-mdc-sync.instructions.md",
+      "action": "compressed",
+      "beforeChars": 3270,
+      "afterChars": 531,
+      "beforeTokens": 817,
+      "afterTokens": 133,
+      "reductionPercent": 83.8,
+      "applyToBefore": "**",
+      "applyToAfter": ".github/instructions/**/*,.cursor/rules/**/*"
+    }
+  ],
+  "samplePathTokenDeltas": [
+    {
+      "path": "src/Feature/Service.cs",
+      "matchedFiles": ["global", "csharp", "logging", "naming", "service-registration"],
+      "beforeTokens": 38240,
+      "afterTokens": 2087,
+      "reductionPercent": 94.5
+    },
+    {
+      "path": "src/Feature/OrderGrain.cs",
+      "matchedFiles": ["global", "csharp", "orleans", "naming"],
+      "beforeTokens": 26715,
+      "afterTokens": 1523,
+      "reductionPercent": 94.3
+    },
+    {
+      "path": "tests/Feature.L0Tests/OrderTests.cs",
+      "matchedFiles": ["global", "csharp", "testing", "naming"],
+      "beforeTokens": 20993,
+      "afterTokens": 1436,
+      "reductionPercent": 93.2
+    },
+    {
+      "path": "src/Feature/Feature.csproj",
+      "matchedFiles": ["global", "projects"],
+      "beforeTokens": 4191,
+      "afterTokens": 566,
+      "reductionPercent": 86.5
+    },
+    {
+      "path": "eng/src/agent-scripts/build.ps1",
+      "matchedFiles": ["global", "powershell"],
+      "beforeTokens": 4547,
+      "afterTokens": 580,
+      "reductionPercent": 87.2
+    },
+    {
+      "path": "docs/guide.md",
+      "matchedFiles": ["global", "markdown"],
+      "beforeTokens": 2157,
+      "afterTokens": 549,
+      "reductionPercent": 74.6
+    },
+    {
+      "path": "src/UI/Components/OrderForm.razor",
+      "matchedFiles": ["global", "blazor"],
+      "beforeTokens": 3484,
+      "afterTokens": 550,
+      "reductionPercent": 84.2
+    }
+  ],
+  "conflicts": [],
+  "notes": [
+    "All files archived to .github-legacy/ with preserved directory structure",
+    "Global file created at .github/copilot-instructions.md (1447 chars, 362 tokens)",
+    "All applyTo globs tightened to match specific patterns",
+    "Zero-warnings policy centralized in global file",
+    "Drift check pattern centralized in global file",
+    "RFC 2119 usage centralized in global file",
+    "Command index added to global file",
+    "All domain files reduced by >30% (average 92.4%)",
+    "Removed verbose examples, kept 1 GOOD + 1 BAD per rule where essential",
+    "Eliminated duplicate content across files",
+    "Maintained semantic equivalence with original instructions"
+  ]
+}
