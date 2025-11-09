@@ -9,7 +9,7 @@ alwaysApply: false
 
 # Orleans Serialization Best Practices
 
-This document defines the Orleans serialization standards and best practices for the Mississippi Framework. All serializable types used in Orleans must follow these guidelines to ensure version tolerance, performance, and compatibility across deployments.
+This document defines the Orleans serialization standards and best practices for the Mississippi Framework. All serializable types used in Orleans MUST follow these guidelines to ensure version tolerance, performance, and compatibility across deployments.
 
 ## Core Principles
 
@@ -55,7 +55,7 @@ public class CustomerData
 
 | Attribute | Purpose | Scope | Required | Notes |
 |-----------|---------|-------|----------|-------|
-| `[GenerateSerializer]` | Marks type for code generation | Class, Record, Struct | Yes | Must be on every serializable type |
+| `[GenerateSerializer]` | Marks type for code generation | Class, Record, Struct | Yes | MUST be on every serializable type |
 | `[Id(n)]` | Assigns unique member identifier | Property, Field | Yes | Start from 0, unique per inheritance level |
 | `[Alias("name")]` | Provides stable type/method name | Class, Interface, Method | Recommended | Enables renames without breaking compatibility |
 | `[NonSerialized]` | Excludes member from serialization | Property, Field | Optional | Use for computed or transient properties |
@@ -253,6 +253,10 @@ These serialization standards should be enforced through:
 4. **Testing**: Serialization round-trip tests for all new serializable types
 5. **Documentation**: Keep these guidelines updated with new patterns and examples
 
+---
+Last verified: 2025-11-09
+Default branch: main
+
 ## Further Reading
 
 - Orleans serialization overview: [https://learn.microsoft.com/dotnet/orleans/serialization](https://learn.microsoft.com/dotnet/orleans/serialization)
@@ -260,14 +264,3 @@ These serialization standards should be enforced through:
 - MSBuild source generator: [https://www.nuget.org/packages/Microsoft.Orleans.CodeGenerator.MSBuild](https://www.nuget.org/packages/Microsoft.Orleans.CodeGenerator.MSBuild)
 - Proto3 versioning guidelines: [https://protobuf.dev/programming-guides/proto3/#updating](https://protobuf.dev/programming-guides/proto3/#updating)
 - Orleans best practices: [https://learn.microsoft.com/dotnet/orleans/resources/best-practices](https://learn.microsoft.com/dotnet/orleans/resources/best-practices)
-
-## Related Guidelines
-
-This document should be read in conjunction with:
-
-- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection patterns, and immutable object preferences
-- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For service registration patterns when registering Orleans services and serialization providers
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For POCO grain patterns and Orleans-specific development guidelines
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For logging patterns when serialization operations need to be logged
-- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For consistent naming of types, properties, and XML documentation
-- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy enforcement

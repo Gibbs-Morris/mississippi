@@ -25,6 +25,7 @@ pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
+
 > Mutation tests are intentionally long-running. Wait for `mutation-test-mississippi-solution.ps1` to finish, even if it takes a full 30 minutes.
 
 - Final validation for both solutions.
@@ -91,6 +92,7 @@ pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
+
 > Mutation tests are intentionally long-running. Plan for up to 30 minutes and wait for the script to finish.
 
 - Per‑project quick quality loop during iteration:
@@ -209,11 +211,3 @@ Provide in this order:
 
 - Single, focused commits per warning cohort.
 - Commit message format: `fix: resolve <CODE> warnings in <Area> (<n> files)` with a short body listing notable decisions.
-
-## Related Guidelines
-
-- Build Rules and Quality Standards (`.github/instructions/build-rules.instructions.md`)
-- Testing Strategy and Quality Gates (`.github/instructions/testing.instructions.md`)
-- Test Improvement Workflow (`.github/instructions/test-improvement.instructions.md`)
-- Project File Management (`.github/instructions/projects.instructions.md`)
-- Instruction ↔ Cursor MDC Sync Policy (`.github/instructions/instruction-mdc-sync.instructions.md`)

@@ -9,7 +9,7 @@ alwaysApply: false
 
 # Enterprise Logging Best Practices
 
-This document defines the logging standards and best practices for the Mississippi Framework and all related applications. All logging must follow these guidelines to ensure consistency, observability, and maintainability across the enterprise.
+This document defines the logging standards and best practices for the Mississippi Framework and all related applications. All logging MUST follow these guidelines to ensure consistency, observability, and maintainability across the enterprise.
 
 ## Core Logging Principles
 
@@ -18,10 +18,10 @@ This document defines the logging standards and best practices for the Mississip
 #### LoggerExtensions Classes - REQUIRED PATTERN
 
 - **ALL logging MUST use the LoggerExtensions pattern** - Create a `public static class [ComponentName]LoggerExtensions` for each component
-- **NO direct ILogger calls allowed** - All logging must go through static extension methods defined in LoggerExtensions classes
+- **NO direct ILogger calls allowed** - All logging MUST go through static extension methods defined in LoggerExtensions classes
 - **Consistent naming convention** - Class name MUST end with `LoggerExtensions` (e.g., `EventProcessingLoggerExtensions`, `OrderProcessingLoggerExtensions`)
-- **Static Action delegates required** - All LoggerMessage patterns must be implemented as private static readonly Action delegates
-- **Extension method pattern** - Each log operation must be exposed as a public static extension method
+- **Static Action delegates required** - All LoggerMessage patterns MUST be implemented as private static readonly Action delegates
+- **Extension method pattern** - Each log operation MUST be exposed as a public static extension method
 
 #### Performance Requirements
 
@@ -48,7 +48,7 @@ This section defines **exactly when logging MUST be added** to ensure determinis
 
 #### 1. Method Entry/Exit for Public APIs (MANDATORY)
 
-- **All public service methods** must log entry and successful completion
+- **All public service methods** MUST log entry and successful completion
 - **Include method parameters** that provide business context (avoid PII)
 - **Log execution time** for performance monitoring
 
@@ -60,7 +60,7 @@ This section defines **exactly when logging MUST be added** to ensure determinis
 
 #### 3. Data Mutations (MANDATORY)
 
-- **All data create/update/delete operations** must be logged
+- **All data create/update/delete operations** MUST be logged
 - **Include entity type and identifier** for audit trails
 - **Log both start and completion** of data operations
 
@@ -72,7 +72,7 @@ This section defines **exactly when logging MUST be added** to ensure determinis
 
 #### 5. Orleans Grain Lifecycle (MANDATORY)
 
-- **Grain activation and deactivation** must be logged
+- **Grain activation and deactivation** MUST be logged
 - **All public grain method calls** with timing
 - **Inter-grain communication** with target grain information
 
@@ -1518,17 +1518,6 @@ This logging standard ensures consistent, observable, and maintainable logging a
 When an AI agent encounters any of the mandatory scenarios above (#5-10), it MUST add appropriate logging following the LoggerExtensions pattern (#1-4). This ensures deterministic behavior and complete observability.
 
 Failure to follow these patterns will result in code review rejection and build failures.
-
-## Related Guidelines
-
-This document should be read in conjunction with:
-
-- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection property patterns, and access control principles
-- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For IHostedService logging patterns, Orleans lifecycle participant logging, and configuration validation logging
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans grain logging patterns, POCO grain requirements, and grain lifecycle logging
-- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans-specific logging during serialization operations
-- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards, zero warnings policy, and build pipeline requirements that enforce logging standards
-- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For LoggerExtensions class naming patterns, XML documentation requirements, and structured logging property naming
 
 ## References
 

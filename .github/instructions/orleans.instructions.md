@@ -362,7 +362,7 @@ This rule should be enforced through:
 - [Orleans Migration Guide](https://learn.microsoft.com/en-us/dotnet/orleans/migration-guide)
 - [Orleans Timers and Reminders](https://learn.microsoft.com/en-us/dotnet/orleans/grains/timers-and-reminders)
 - [Orleans POCO Grains](https://learn.microsoft.com/en-us/dotnet/orleans/grains/poco-grains)
- 
+
 ---
 Last verified: 2025-11-09
 Default branch: main

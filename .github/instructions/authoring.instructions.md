@@ -11,6 +11,7 @@ Governing thought: Every `*.instructions.md` file follows the Minto Pyramid. Put
 The keywords **MUST**, **SHOULD**, **MAY**, **MUST NOT**, and **SHOULD NOT** are as defined in RFC 2119.
 
 ### Structure and Minto Pyramid
+
 - Files **MUST** follow the Minto Pyramid: start with the governing thought (answer), then key reasons, then evidence and examples.
 - Each file **MUST** include a single consolidated **Rules** section near the top that contains all RFC 2119 statements for that file.
 - Examples and long-form evidence **MUST** appear later in the document under dedicated sections (e.g., “Examples,” “References,” “Anti-Patterns”).
@@ -24,11 +25,13 @@ The keywords **MUST**, **SHOULD**, **MAY**, **MUST NOT**, and **SHOULD NOT** are
 - Every bullet in this Rules section **MUST** include at least one RFC 2119 keyword (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) to ensure clarity.
 
 ### Naming and Placement
+
 - File names **MUST** be lowercase kebab-case with the `.instructions.md` suffix. Pattern: `<topic>.instructions.md`.
 - Files **MUST** live in `.github/instructions/`.
 - One cohesive topic per file **SHOULD** be maintained. Authors **SHOULD** split broad topics into focused files.
 
 ### Headings and Style
+
 - Authors **SHOULD** write short, active sentences. Target 15–20 words per sentence.
 - Numbered procedures **MUST** contain one action per step. Closely related sub-actions **MAY** use substeps.
 - Heading levels **SHOULD** be consistent: H2 for major sections, H3 for subsections, H4 for sub-subsections; authors **MUST NOT** skip levels.
@@ -38,12 +41,14 @@ The keywords **MUST**, **SHOULD**, **MAY**, **MUST NOT**, and **SHOULD NOT** are
   **Why:** Minimizes token usage, reduces parsing cost, and improves AI response accuracy.
 
 ### Linking and Cross-References
+
 - Internal references **MUST** use relative links and **MUST** be validated to resolve before commit.
 - When linking to a specific target within a document, anchors **SHOULD** be used.
 - Each topic **SHOULD** have one authoritative instruction file; related files **SHOULD** link to it rather than duplicate content.
 - External documentation links **SHOULD** use permanent, stable URLs. Version-specific links **MAY** be used only when required.
 
 ### Scripts, Commands, and Outputs
+
 - Command examples **MUST** reference real scripts and tools that exist in the repository. No placeholders.
 - When commands differ by OS, authors **SHOULD** provide both PowerShell and Bash blocks.
 - For commands with significant output, authors **SHOULD** show an expected success snippet.
@@ -52,16 +57,19 @@ The keywords **MUST**, **SHOULD**, **MAY**, **MUST NOT**, and **SHOULD NOT** are
 - Before referencing a script, authors **MUST** open and review the script, **MUST** run it in a test environment, and **MUST** document the exact command and expected outcome. The **Drift check** note **MUST** be included.
 
 ### Prerequisites and Local Checks
+
 - Prerequisites required to run repository scripts **SHOULD** be listed.
 - Guidance for local linting and quality checks **SHOULD** be provided. Global rule suppression **SHOULD NOT** be encouraged.
 
 ### Security and Secrets
+
 - Secrets, API keys, passwords, and tokens **MUST NOT** be committed or shown in examples.
 - Examples that require credentials **SHOULD** use environment variables.
 - If a secret store is used (e.g., Azure Key Vault, GitHub Secrets), the location and access pattern **SHOULD** be documented.
 - Potentially sensitive example outputs **SHOULD** be redacted.
 
 ### Versioning and Change Control
+
 - Changes to instruction files **MUST** undergo review per repository policy (e.g., CODEOWNERS, branch protection).
 - Pull requests that modify instruction files **MUST** include a “Docs impact” section describing effects and cross-file implications.
 
@@ -155,4 +163,3 @@ Governing thought: [One-sentence answer that sets the intent and outcomes.]
 
 - [External doc]: https://learn.microsoft.com/dotnet/core/
 ```
-

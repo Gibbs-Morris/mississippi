@@ -347,5 +347,6 @@ This document should be read in conjunction with:
 
 End of naming.instructions.md
 ---
+
 Last verified: 2025-11-09
 Default branch: main
