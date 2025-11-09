@@ -181,4 +181,38 @@ public class CosmosRetryPolicyTests
         Assert.Equal(123, result);
         Assert.Equal(3, calls);
     }
+
+    /// <summary>
+    ///     Verifies that when all retry attempts are exhausted with a transient error,
+    ///     an InvalidOperationException is thrown with the correct message and inner exception.
+    /// </summary>
+    /// <returns>A task representing the test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncTransientErrorExhaustsRetriesThrowsCorrectExceptionAsync()
+    {
+        // Arrange
+        int calls = 0;
+        int maxRetries = 3;
+        CosmosRetryPolicy policy = new(maxRetries);
+        CosmosException cosmosException = CreateCosmosException(HttpStatusCode.TooManyRequests, TimeSpan.FromMilliseconds(1));
+        Func<Task<int>> operationAsync = () =>
+        {
+            calls++;
+            throw cosmosException;
+        };
+
+        // Act & Assert
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => policy.ExecuteAsync(operationAsync));
+
+        // Verify the exception message indicates exhausted retries
+        Assert.Contains("Operation failed after", ex.Message, StringComparison.Ordinal);
+        Assert.Contains($"{maxRetries + 1} attempts", ex.Message, StringComparison.Ordinal);
+
+        // Verify the inner exception is the original CosmosException, not wrapped in another InvalidOperationException
+        Assert.IsType<CosmosException>(ex.InnerException);
+        Assert.Equal(cosmosException, ex.InnerException);
+
+        // Verify it attempted the correct number of times (maxRetries + 1)
+        Assert.Equal(maxRetries + 1, calls);
+    }
 }
