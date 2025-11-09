@@ -5,8 +5,8 @@ applyTo: '**/*.razor*'
 # Blazor UX Design System Guidelines
 
 These guidelines define how we design, compose, and test Blazor UI components by combining atomic design,
-BEM naming, state management discipline, accessibility, and WebAssembly readiness. Use this document
-whenever you author or review Razor components, regardless of whether the design system is fully matured
+BEM naming, state management discipline, accessibility, and WebAssembly readiness. Agents MUST use this document
+whenever they author or review Razor components, regardless of whether the design system is fully matured
 or still emerging.
 
 ## Intent
@@ -50,52 +50,52 @@ or still emerging.
 
 ## Source Layout and Naming Rules
 
-1. **Directory structure mirrors atomic layers.** Keep components under a single root (for example,
-   `src/Feature/Client/Components`). Introduce folders for `Atoms`, `Molecules`, `Organisms`, and so on.
-2. **One component per directory.** Every component lives in a folder with its Razor file, backing partial
-   class, styles, and tests:
+1. **Directory structure MUST mirror atomic layers.** Keep components under a single root (for example,
+  `src/Feature/Client/Components`). Introduce folders for `Atoms`, `Molecules`, `Organisms`, and so on.
+2. **Exactly one component per directory.** Every component MUST live in a folder with its Razor file, backing partial
+  class, styles, and tests:
    - `Button/Button.razor`
    - `Button/Button.razor.cs`
    - `Button/Button.razor.css`
    - `Button/Button.tests.md` (optional spec or visual notes)
 3. **Name atoms with nouns, molecules with noun phrases, organisms with domain terms.** For example,
-   `PrimaryButton`, `LabeledInput`, `OrderSummaryRow`.
-4. **Partial class backing files follow the same namespace model as C# instructions.** Keep them `partial`
-   and `sealed` unless composition requires extension.
+  `PrimaryButton`, `LabeledInput`, `OrderSummaryRow`. This naming guidance MUST be followed for consistency.
+4. **Partial class backing files MUST follow the same namespace model as C# instructions.** Keep them `partial`
+  and `sealed` unless composition requires extension.
 
 ## Component Responsibility Rules
 
-- **View-only components stay presentational.** Razor components expose `[Parameter]` inputs and
-  `EventCallback` outputs, own only ephemeral UI state, and never host business rules.
+- **View-only components MUST stay presentational.** Razor components expose `[Parameter]` inputs and
+  `EventCallback` outputs, own only ephemeral UI state, and NEVER host business rules.
 - **Always split markup and logic.** Use `.razor` for markup, `.razor.cs` partial classes for logic.
-  This keeps diffs focused, supports unit tests, and aligns with repository C# standards.
+  This pattern MUST be followed to keep diffs focused, support unit tests, and align with repository C# standards.
 - **Pages act as containers.** Routed pages orchestrate application services and store interactions.
-  Child components never call APIs or manage side effects directly.
-- **Domain logic lives outside the UI.** Business rules belong in domain or application services to keep
+  Child components MUST NOT call APIs or manage side effects directly.
+- **Domain logic MUST live outside the UI.** Business rules belong in domain or application services to keep
   a single source of truth across channels.
 
 ## State Management and Effects
 
 - **Adopt Redux-style state.** Use a single store with actions, reducers, selectors, and effects (Fluxor or
-  equivalent) for predictable updates and simplified unit testing.
-- **Keep effects thin and testable.** Effects call interfaces that encapsulate IO and business requests.
+  equivalent) for predictable updates and simplified unit testing. A fragmented state approach SHOULD NOT be used.
+- **Keep effects thin and testable.** Effects MUST call interfaces that encapsulate IO and business requests.
   Inject these services through DI so tests can mock behavior without touching UI components.
-- **Selectors feed components.** Components bind to memoized selectors instead of raw store state to avoid
+- **Selectors MUST feed components.** Components bind to memoized selectors instead of raw store state to avoid
   unnecessary re-renders and simplify reasoning.
 
 ## API Contracts and Cross-Channel Consistency
 
 - **Design API-first contracts.** Version DTOs and error shapes explicitly so any frontend can integrate
-  without UI-specific behavior.
+  without UI-specific behavior. Agents SHOULD document versioning decisions.
 - **Treat UI as a pure view over state.** Assume alternate frontends will reuse the same contracts; components
-  should render state and raise intent without mutating domain rules.
+  MUST render state and raise intent without mutating domain rules.
 - **Remain swap-friendly.** Keep contracts and state transitions channel-agnostic so replacing Blazor with
-  another frontend preserves behavior.
+  another frontend preserves behavior. Tight coupling SHOULD NOT be introduced.
 
 ## WebAssembly Readiness
 
 - **Keep components WASM-friendly.** Use async APIs, `HttpClient`, and `IJSRuntime` abstractions that run in
-  both WebAssembly and server-hosted scenarios. Avoid server-only dependencies.
+  both WebAssembly and server-hosted scenarios. Server-only dependencies MUST NOT be introduced into shared components.
 - **Design for trimming and AOT.** Minimize reflection-heavy patterns and ensure DI registrations support
   trimming to keep payloads small.
 
@@ -103,9 +103,9 @@ or still emerging.
 
 ### Atoms
 
-- Expose only the parameters consumers truly need. All `[Parameter]` members are PascalCase and,
+- Expose only the parameters consumers truly need. All `[Parameter]` members MUST be PascalCase and,
   when required, annotated with `[EditorRequired]`.
-- Forward any unrecognized attributes via `AdditionalAttributes`. This keeps atoms flexible when
+- Atoms SHOULD forward any unrecognized attributes via `AdditionalAttributes`. This keeps atoms flexible when
   design tokens evolve.
 - Handle events through `EventCallback` to support async pipelines.
 - Keep the component visually neutral; theme variants belong in CSS classes or parameters.
@@ -132,8 +132,8 @@ or still emerging.
 ### Molecules
 
 - Compose atoms using child content or `RenderFragment` slots instead of hard-coding atoms
-  internally.
-- Push validation logic into dedicated services or `EditContext` helpers; molecules should only
+  internally. Hard-coded atoms SHOULD be refactored.
+- Push validation logic into dedicated services or `EditContext` helpers; molecules SHOULD only
   orchestrate the visual relationship.
 - Use cascading parameters sparingly; prefer explicit parameters to keep molecules portable.
 
@@ -164,11 +164,11 @@ or still emerging.
 
 ### Organisms
 
-- Encapsulate feature logic; organisms know about domain models but not data access.
+- Encapsulate feature logic; organisms know about domain models but not data access. Direct data access MUST NOT occur.
 - Emit meaningful events via strongly typed callbacks (`EventCallback<OrderFilter>`). Avoid
-  exposing raw UI state when a value object conveys intent better.
+  exposing raw UI state when a value object conveys intent better; leaking raw state SHOULD be treated as a refactoring task.
 - Inject services via `[Inject]` **only** in the partial class; keep the Razor markup focused on
-  structure.
+  structure. Injection inside markup MUST NOT be done.
 - Prefer `RenderFragment` slots for optional regions (for example, action bars) to avoid branching
   on null parameters.
 
@@ -197,8 +197,8 @@ public sealed partial class OrderFilter : ComponentBase
 ### Templates
 
 - Treat templates as layout scaffolds. Accept `RenderFragment` slots for header, body, footer, and
-  sidebars.
-- Do not fetch data. Templates are agnostic to view models; they only coordinate placement.
+  sidebars. Templates MUST NOT fetch data.
+- Templates are agnostic to view models; they only coordinate placement.
 - Ensure templates can host mocked fragments so designers can preview compositions without real
   data.
 
@@ -206,27 +206,27 @@ public sealed partial class OrderFilter : ComponentBase
 
 - Pages translate routing and data access into component state. They may call services, dispatch
   actions, or orchestrate application-level concerns.
-- Use `@implements IAsyncDisposable` when pages create long-lived resources.
-- Keep page markup thin by delegating to organisms. Pages should rarely introduce new layout
+- Pages SHOULD use `@implements IAsyncDisposable` when they create long-lived resources.
+- Keep page markup thin by delegating to organisms. Pages SHOULD rarely introduce new layout
   elements that templates could host.
 
 ## Handling Design Debt and Emerging Systems
 
 - **Start with atoms.** When a pattern repeats twice, extract an atom first before creating molecules.
 - **Version components through parameters, not duplication.** Introduce nullable parameters or
-  new `RenderFragment` slots; keep the default behavior backward compatible.
-- **Document open questions in component XML comments and optional `README.md` files inside the
-  component folder.** This supports iterative design where the system is still forming.
+  new `RenderFragment` slots; keep the default behavior backward compatible. Component duplication SHOULD be avoided.
+- **Document open questions** in component XML comments and optional `README.md` files inside the
+  component folder. This supports iterative design where the system is still forming.
 - **Create TODO-focused scratchpad tasks** when a component needs refactoring into lower layers;
   keep the live component functioning while the design system matures.
 
 ## Styling, Naming, and Theming
 
 - Co-locate styles in `Component.razor.css`. Use CSS variables for tokens (`var(--color-primary)`),
-  enabling consumers to swap themes without editing components.
+  enabling consumers to swap themes without editing components. Global overrides SHOULD NOT be required.
 - Follow BEM selectors (`Block__Element--Modifier`) even with CSS isolation to keep recomposition safe and
-  predictable.
-- Never rely on global styles for atoms. If a shared utility class is necessary, document the
+  predictable. Deviations MUST be justified in component docs.
+- Atoms MUST NOT rely on global styles. If a shared utility class is necessary, document the
   dependency in the component README.
 - Scope animations and transitions carefully to avoid impacting parent layouts. Prefer
   `prefers-reduced-motion` media queries for accessibility.
@@ -241,12 +241,12 @@ public sealed partial class OrderFilter : ComponentBase
 - Use `@typeparam` to keep components strongly typed for resource keys when localizing content.
 - Provide sensible defaults for labels and placeholders but allow callers to override them via
   parameters or `RenderFragment` content.
-- Add automated a11y linting or audits in CI for high-traffic components when available.
+- Add automated a11y linting or audits in CI for high-traffic components when available. Missing audits SHOULD be tracked.
 
 ## Testing Expectations
 
 - Add L0 tests for component logic in the corresponding test project (for example,
-  `MyFeature.Components.Tests`). Focus on state transitions and event callbacks.
+  `MyFeature.Components.Tests`). Focus MUST include state transitions and event callbacks.
 - Use snapshot or rendering tests (via bUnit) at the molecule and organism levels to prevent
   regression.
 - Write unit tests for reducers, selectors, and effects to keep Redux-style state predictable.
@@ -259,12 +259,16 @@ public sealed partial class OrderFilter : ComponentBase
 
 - [ ] Component lives in the correct atomic folder and follows naming conventions.
 - [ ] Markup and logic are split (`.razor` + `.razor.cs`); components stay view-only while pages handle
-      orchestration.
+  orchestration.
 - [ ] Parameters are explicit, documented, and use value objects when meaningful.
 - [ ] Rendering logic delegates to lower layers instead of duplicating markup.
 - [ ] Styles use CSS isolation with BEM selectors; tokens and theming are locally defined.
 - [ ] Accessibility hooks (roles, labels, keyboard support, focus order) meet WCAG 2.2 expectations.
 - [ ] State updates flow through the shared store; effects depend on DI abstractions.
 - [ ] Tests cover interactions, reducers/effects, and contract compatibility; mutation score is stable or
-      improving.
+  improving.
 - [ ] Outstanding design debts or follow-ups are captured as scratchpad tasks when applicable.
+
+---
+Last verified: 2025-11-09
+Default branch: main

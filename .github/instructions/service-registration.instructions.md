@@ -4,7 +4,7 @@ applyTo: '**/*.cs'
 
 # Service Registration and Configuration Pattern
 
-This document defines the service registration standards and configuration patterns for dependency injection in the Mississippi Framework. All service registration classes must follow these guidelines to ensure consistency, maintainability, and proper configuration handling across features.
+This document defines the service registration standards and configuration patterns for dependency injection in the Mississippi Framework. All service registration classes MUST follow these guidelines to ensure consistency, maintainability, and proper configuration handling across features.
 
 ## Core Principles
 
@@ -1005,6 +1005,10 @@ These service registration standards should be enforced through:
 7. **Service Registration Reviews**: Verify all registration methods are synchronous and follow the private core + public overloads pattern with proper configuration support
 8. **Async Pattern Reviews**: Ensure all async initialization uses IHostedService, Orleans lifecycle participants, or factory patterns - never inline in registration methods
 9. **Orleans Integration Reviews**: Verify Orleans-specific async work uses lifecycle participants and proper service lifecycle stages
+
+---
+Last verified: 2025-11-09
+Default branch: main
 
 ## Further Reading
 

@@ -4,7 +4,7 @@ applyTo: '**'
 
 # Project File Management Best Practices
 
-This document defines the project file standards and best practices for .NET applications using centralized package management. All `.csproj` files must follow these guidelines to ensure consistency, maintainability, and proper utilization of centralized package management.
+This document defines the project file standards and best practices for .NET applications using centralized package management. All `.csproj` files MUST follow these guidelines to ensure consistency, maintainability, and proper utilization of centralized package management.
 
 ## At-a-Glance Compliance Checklist
 
@@ -15,7 +15,7 @@ This document defines the project file standards and best practices for .NET app
 - Test project settings and test packages are automatic for projects ending with `Tests`.
 - Do not override automatic assembly/namespace naming.
 - Only add necessary `ProjectReference`/`PackageReference` entries (without versions).
-- Validate with a clean build; fix any warnings (warnings are treated as errors in CI per Build Rules).
+- Validate with a clean build; fix any warnings (warnings are treated as errors in CI per Build Rules). All warnings MUST be resolved.
 
 ### Quick Validation Commands
 
@@ -30,13 +30,16 @@ pwsh ./eng/src/agent-scripts/final-build-solutions.ps1
 
 ### Keep Project Files Minimal
 
-- **Project files should be as minimal as possible** - avoid duplicating information already defined in `Directory.Build.props`
-- **Use centralized package management** - all package versions are controlled through `Directory.Packages.props`
+-- **Project files MUST be as minimal as possible** - avoid duplicating information already defined in `Directory.Build.props`
+-- **Use centralized package management** - all package versions are controlled through `Directory.Packages.props`. You MUST NOT specify versions in individual project files.
 - **Leverage Directory.Build.props** - common properties, settings, and configurations are inherited automatically
-- **No version numbers in project files** - package versions are managed centrally to prevent version conflicts
+-- **No version numbers in project files** - package versions are managed centrally to prevent version conflicts. Any version attribute MUST be removed.
 - **Focus on project-specific concerns only** - only include settings that are unique to the specific project
 
 ### Central Package Management Strategy
+---
+Last verified: 2025-11-09
+Default branch: main
 
 - **Directory.Packages.props** controls all package versions across the solution
 - **PackageReference elements** in project files should not include version numbers

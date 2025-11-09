@@ -4,7 +4,7 @@ applyTo: '**/*.cs'
 
 # Orleans Serialization Best Practices
 
-This document defines the Orleans serialization standards and best practices for the Mississippi Framework. All serializable types used in Orleans must follow these guidelines to ensure version tolerance, performance, and compatibility across deployments.
+This document defines the Orleans serialization standards and best practices for the Mississippi Framework. All serializable types used in Orleans MUST follow these guidelines to ensure version tolerance, performance, and compatibility across deployments.
 
 ## Core Principles
 
@@ -50,7 +50,7 @@ public class CustomerData
 
 | Attribute | Purpose | Scope | Required | Notes |
 |-----------|---------|-------|----------|-------|
-| `[GenerateSerializer]` | Marks type for code generation | Class, Record, Struct | Yes | Must be on every serializable type |
+| `[GenerateSerializer]` | Marks type for code generation | Class, Record, Struct | Yes | MUST be on every serializable type |
 | `[Id(n)]` | Assigns unique member identifier | Property, Field | Yes | Start from 0, unique per inheritance level |
 | `[Alias("name")]` | Provides stable type/method name | Class, Interface, Method | Recommended | Enables renames without breaking compatibility |
 | `[NonSerialized]` | Excludes member from serialization | Property, Field | Optional | Use for computed or transient properties |
@@ -247,6 +247,10 @@ These serialization standards should be enforced through:
 3. **Static Analysis**: ORLEANS0004, ORLEANS0005, ORLEANS0011, ORLEANS0012 treated as build errors
 4. **Testing**: Serialization round-trip tests for all new serializable types
 5. **Documentation**: Keep these guidelines updated with new patterns and examples
+
+---
+Last verified: 2025-11-09
+Default branch: main
 
 ## Further Reading
 

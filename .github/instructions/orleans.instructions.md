@@ -4,13 +4,13 @@ applyTo: '**/*.cs'
 
 # Orleans Best Practices for Mississippi Framework
 
-This document defines the Orleans development standards and best practices for the Mississippi Framework. All Orleans grains and related code must follow these guidelines to ensure consistency, maintainability, and alignment with modern Orleans patterns.
+This document defines the Orleans development standards and best practices for the Mississippi Framework. All Orleans grains and related code MUST follow these guidelines to ensure consistency, maintainability, and alignment with modern Orleans patterns.
 
 ## Core Principles
 
 ### 1. NEVER Inherit from Grain ❌
 
-**CRITICAL RULE**: Never inherit from the `Grain` base class. Always use the POCO (Plain Old CLR Object) grain pattern with `IGrainBase`.
+**CRITICAL RULE**: Never inherit from the `Grain` base class. Agents MUST always use the POCO (Plain Old CLR Object) grain pattern with `IGrainBase`.
 
 #### Why This Rule Exists
 
@@ -362,3 +362,7 @@ This rule should be enforced through:
 - [Orleans Migration Guide](https://learn.microsoft.com/en-us/dotnet/orleans/migration-guide)
 - [Orleans Timers and Reminders](https://learn.microsoft.com/en-us/dotnet/orleans/grains/timers-and-reminders)
 - [Orleans POCO Grains](https://learn.microsoft.com/en-us/dotnet/orleans/grains/poco-grains)
+ 
+---
+Last verified: 2025-11-09
+Default branch: main

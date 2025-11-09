@@ -4,7 +4,7 @@ applyTo: '**/*.cs'
 
 # Feature-Centric C# Naming & Commenting Playbook
 
-This document establishes comprehensive naming conventions and XML documentation standards for the Mississippi Framework and all related applications. All C# code must follow these guidelines to ensure consistency, maintainability, and alignment with .NET Framework design principles.
+This document establishes comprehensive naming conventions and XML documentation standards for the Mississippi Framework and all related applications. All C# code MUST follow these guidelines to ensure consistency, maintainability, and alignment with .NET Framework design principles.
 
 ## 0. Core Objectives
 
@@ -346,3 +346,6 @@ This document should be read in conjunction with:
 ---
 
 End of naming.instructions.md
+---
+Last verified: 2025-11-09
+Default branch: main

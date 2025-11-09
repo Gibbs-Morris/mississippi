@@ -4,7 +4,7 @@ applyTo: '**/*.md'
 
 # Markdown Authoring and Lint Compliance
 
-This instruction is mandatory for every Markdown file in the repository. All agents must author, review, and
+This instruction is mandatory for every Markdown file in the repository. All agents MUST author, review, and
 maintain Markdown so that it passes the canonical set of `markdownlint` rules without exceptions.
 
 ## Non-Negotiable Fundamentals
@@ -26,7 +26,7 @@ Both files disable only:
 
 - **MD013** (line length) - Technical documentation often requires longer lines for code examples, URLs, command lines, and tables
 
-All other markdownlint rules remain active and must be followed.
+All other markdownlint rules remain active and MUST be followed.
 
 ## Authoring Checklist
 
@@ -39,7 +39,7 @@ All other markdownlint rules remain active and must be followed.
 
 ## markdownlint Rules (Mandatory)
 
-The following rules are enforced exactly as documented by `markdownlint`. Every Markdown file **must** comply.
+The following rules are enforced exactly as documented by `markdownlint`. Every Markdown file **MUST** comply.
 
 - **MD001 – Heading levels should only increment by one level at a time.**
 - **MD002 – First heading should be the top-level heading.**
@@ -106,3 +106,8 @@ The following rules are enforced exactly as documented by `markdownlint`. Every 
 - Submit Markdown changes only after linting passes with zero errors and warnings.
 - Do not add blanket suppressions, global `markdownlint-disable` directives, or inline overrides unless the
   current user task explicitly directs that specific exception and you document the instruction in context.
+
+---
+
+Last verified: 2025-11-09
+Default branch: main
