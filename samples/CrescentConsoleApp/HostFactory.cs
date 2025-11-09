@@ -5,6 +5,7 @@ using Mississippi.EventSourcing;
 using Mississippi.EventSourcing.Cosmos;
 
 using Orleans.Configuration;
+using Orleans.Hosting;
 
 
 namespace Mississippi.CrescentConsoleApp;
