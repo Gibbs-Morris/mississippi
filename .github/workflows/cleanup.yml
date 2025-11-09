@@ -89,7 +89,7 @@ jobs:
           $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
           $slnPath = $slnxPath -replace '\.slnx$', '.sln'
           Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
-          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$slnPath"
+          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$slnPath" --LogLevel=TRACE
           Write-Host "Cleanup completed."
           echo "SLN_PATH=$slnPath" >> $env:GITHUB_ENV
 
