@@ -20,7 +20,7 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.AddEventSourcing()
             .ConfigureServices(services =>
             {
-                services.AddEventSourcing();
+                services.AddEventSourcingByService();
                 services.AddSingleton<InMemoryBrookStorage>();
                 services.AddSingleton<IBrookStorageReader>(sp => sp.GetRequiredService<InMemoryBrookStorage>());
                 services.AddSingleton<IBrookStorageWriter>(sp => sp.GetRequiredService<InMemoryBrookStorage>());

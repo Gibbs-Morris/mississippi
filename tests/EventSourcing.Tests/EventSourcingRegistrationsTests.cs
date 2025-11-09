@@ -14,13 +14,13 @@ namespace Mississippi.EventSourcing.Tests;
 public class EventSourcingRegistrationsTests
 {
     /// <summary>
-    ///     Verifies that calling <c>AddEventSourcing</c> registers the expected singletons and options.
+    ///     Verifies that calling <c>AddEventSourcingByService</c> registers the expected singletons and options.
     /// </summary>
     [Fact]
     public void AddEventSourcingRegistersExpectedServicesAndOptions()
     {
         ServiceCollection services = new();
-        services.AddEventSourcing();
+        services.AddEventSourcingByService();
 
         // Check that IBrookGrainFactory and IStreamIdFactory are registered as singletons
         ServiceDescriptor? grainFactory = services.FirstOrDefault(d => d.ServiceType == typeof(IBrookGrainFactory));

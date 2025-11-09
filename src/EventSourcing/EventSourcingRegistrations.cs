@@ -18,7 +18,7 @@ public static class EventSourcingRegistrations
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
     /// <returns>The modified service collection for chaining.</returns>
-    public static IServiceCollection AddEventSourcing(
+    public static IServiceCollection AddEventSourcingByService(
         this IServiceCollection services
     )
     {
@@ -63,7 +63,7 @@ public static class EventSourcingRegistrations
         ArgumentNullException.ThrowIfNull(builder);
 
         // Add services to DI container
-        builder.Services.AddEventSourcing();
+        builder.Services.AddEventSourcingByService();
 
         // Configure Orleans silo
         builder.UseOrleans(silo => silo.AddEventSourcing());
