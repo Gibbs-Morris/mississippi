@@ -325,4 +325,3 @@ function Defer-ScratchpadTask {
 - File-per-task folders enable atomic claims without central coordination
 - JSON with stable keys remains tooling-friendly and easy to diff
 - Ephemeral location prevents accidental coupling between code and agent state
-

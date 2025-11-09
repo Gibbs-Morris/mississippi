@@ -406,4 +406,3 @@ When drift is detected (e.g., version attributes in `PackageReference`, duplicat
 5. **Validate against** Directory.Build.props inheritance
 
 This approach ensures that the solution remains maintainable, prevents version conflicts, and follows modern .NET project management best practices while keeping individual project files clean and focused.
-

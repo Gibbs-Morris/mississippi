@@ -207,4 +207,3 @@ Provide in this order:
 
 - Single, focused commits per warning cohort.
 - Commit message format: `fix: resolve <CODE> warnings in <Area> (<n> files)` with a short body listing notable decisions.
-

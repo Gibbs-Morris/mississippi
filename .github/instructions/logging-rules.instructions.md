@@ -1514,7 +1514,6 @@ When an AI agent encounters any of the mandatory scenarios above (#5-10), it MUS
 
 Failure to follow these patterns will result in code review rejection and build failures.
 
-
 ## References
 
 - [High-performance logging in .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/high-performance-logging) - Microsoft documentation on LoggerMessage and performance optimization

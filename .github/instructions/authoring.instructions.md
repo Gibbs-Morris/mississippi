@@ -163,7 +163,6 @@ This document defines [brief purpose statement]. All [audience] MUST follow thes
 - **Anti-Patterns:** Help prevent common mistakes
 - **Related Guidelines:** Explicit cross-references to avoid duplication
 - **References:** External links for deeper learning
- 
 
 **Why:** This template provides cognitive scaffolding. Readers know where to find quick answers (Quick-Start), deep understanding (Core Principles and Primary sections), and practical application (Examples). The structure is consistent across all instruction files.
 

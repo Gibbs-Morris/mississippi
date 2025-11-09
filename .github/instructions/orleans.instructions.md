@@ -357,7 +357,6 @@ This rule should be enforced through:
 3. **Documentation**: Keep this file updated with examples
 4. **Refactoring**: Gradually migrate existing violations
 
-
 ## References
 
 - [Orleans Migration Guide](https://learn.microsoft.com/en-us/dotnet/orleans/migration-guide)

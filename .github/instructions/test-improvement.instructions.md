@@ -171,4 +171,3 @@ If, after solid tests, behavior appears incorrect or untestable due to design co
 - Prefer L0 tests (pure in‑memory) for speed and determinism; only use light infra (L1) when necessary.
 - Use `Theory` with data sets for input spaces; exercise both success and failure paths.
 - Keep tests isolated, deterministic, and fast; avoid wall‑clock sleeps, random, and external state.
-

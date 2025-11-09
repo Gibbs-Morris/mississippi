@@ -191,6 +191,4 @@ Reviewer
 - Samples are examples: they demonstrate testing patterns but aren’t subject to mutation testing
 
 ---
-
 This guidance aligns with Build Rules and Quality Standards and with repository-wide analyzers and conventions. Use it with the C#, Logging, Orleans, and Project instructions to keep tests reliable and fast.
-

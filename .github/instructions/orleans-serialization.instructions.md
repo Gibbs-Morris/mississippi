@@ -255,4 +255,3 @@ These serialization standards should be enforced through:
 - MSBuild source generator: [https://www.nuget.org/packages/Microsoft.Orleans.CodeGenerator.MSBuild](https://www.nuget.org/packages/Microsoft.Orleans.CodeGenerator.MSBuild)
 - Proto3 versioning guidelines: [https://protobuf.dev/programming-guides/proto3/#updating](https://protobuf.dev/programming-guides/proto3/#updating)
 - Orleans best practices: [https://learn.microsoft.com/dotnet/orleans/resources/best-practices](https://learn.microsoft.com/dotnet/orleans/resources/best-practices)
-

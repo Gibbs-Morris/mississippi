@@ -252,4 +252,3 @@ This process should be repeated iteratively until all quality gates pass cleanly
   - Stryker.NET
 
 Run `dotnet tool restore` from the repository root to install all required tools.
-
