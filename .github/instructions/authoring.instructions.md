@@ -18,6 +18,10 @@ The keywords **MUST**, **SHOULD**, **MAY**, **MUST NOT**, and **SHOULD NOT** are
 - Each file **MUST** include an H1 title that names the topic precisely.
 - Each file **SHOULD** include an “At-a-Glance Quick-Start” for common commands.
 - Each file **MUST** include a brief **Drift check** note near the top reminding readers that scripts remain authoritative.
+- New instruction files **MUST** start from the [Standard Section Template](#standard-section-template-minto-aligned) in this document.
+- When refactoring an existing instruction file, authors **MUST** migrate it to the [Standard Section Template](#standard-section-template-minto-aligned), preserving content while aligning structure.
+- All edits to instruction files **MUST** keep the file aligned to the template (RFC 2119 rules centralized in the Rules section, Drift check near the top, section order intact).
+- Every bullet in this Rules section **MUST** include at least one RFC 2119 keyword (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) to ensure clarity.
 
 ### Naming and Placement
 - File names **MUST** be lowercase kebab-case with the `.instructions.md` suffix. Pattern: `<topic>.instructions.md`.
@@ -88,7 +92,7 @@ This guide defines how to author and maintain `*.instructions.md` so they are co
 
 ## Standard Section Template (Minto-Aligned)
 
-> Copy this template when creating a new `*.instructions.md`. Keep RFC 2119 statements only in the **Rules** section.
+> Copy this template when creating a new `*.instructions.md`. Also use this template when refactoring an existing instruction file by migrating its content to match this structure. Align all future edits to keep the file conformant. Keep RFC 2119 statements only in the **Rules** section.
 
 ```markdown
 ---
@@ -101,8 +105,8 @@ Governing thought: [One-sentence answer that sets the intent and outcomes.]
 
 ## Rules (RFC 2119)
 
-- [Put every MUST/SHOULD/MAY statement here, grouped by theme.]
-- [No other RFC 2119 statements outside this section.]
+- All normative rule bullets in this section **MUST** use at least one RFC 2119 keyword (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) and be grouped by theme.
+- RFC 2119 keywords **SHOULD NOT** appear outside this Rules section except when quoting standards or in clearly explanatory, non‑normative prose; avoid introducing new normative statements elsewhere.
 
 ## Scope and Audience
 
@@ -145,12 +149,8 @@ Governing thought: [One-sentence answer that sets the intent and outcomes.]
 
 - ❌ [Bad practice] → ✅ [Better alternative]
 
-## References
+## External References
 
-- [Internal relative link](./another.instructions.md#section)
 - [External doc]: https://learn.microsoft.com/dotnet/core/
+```
 
-## Maintenance
-
-- Last verified: YYYY-MM-DD  
-- Default branch: main
