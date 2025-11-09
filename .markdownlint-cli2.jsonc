@@ -3,6 +3,9 @@
 // See: https://github.com/DavidAnson/markdownlint-cli2
 
 {
+  "globsIgnore": [
+    ".scratchpad/**"
+  ],
   "config": {
     "default": true,
     "MD013": false
