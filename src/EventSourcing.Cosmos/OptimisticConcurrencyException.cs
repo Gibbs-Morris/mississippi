@@ -1,4 +1,7 @@
-﻿namespace Mississippi.EventSourcing.Cosmos;
+﻿using System;
+
+
+namespace Mississippi.EventSourcing.Cosmos;
 
 /// <summary>
 ///     Exception thrown when an optimistic concurrency conflict occurs during event storage operations.

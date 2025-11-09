@@ -1,4 +1,7 @@
-﻿namespace Mississippi.Core.Projection;
+﻿using Orleans;
+
+
+namespace Mississippi.Core.Projection;
 
 /// <summary>
 ///     Represents a snapshot of a projection at a specific point in time.

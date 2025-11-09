@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Mapping;
 using Mississippi.EventSourcing.Cosmos.Storage;

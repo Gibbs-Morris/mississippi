@@ -1,4 +1,7 @@
-﻿namespace Mississippi.Core.Abstractions.Providers.Serialization;
+﻿using System;
+
+
+namespace Mississippi.Core.Abstractions.Providers.Serialization;
 
 /// <summary>
 ///     Provides synchronous serialization functionality for writing objects to byte arrays.

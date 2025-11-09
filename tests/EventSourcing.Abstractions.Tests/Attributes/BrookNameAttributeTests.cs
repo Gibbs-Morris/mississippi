@@ -1,3 +1,5 @@
+using System;
+
 using Mississippi.EventSourcing.Abstractions.Attributes;
 
 

@@ -1,4 +1,7 @@
-﻿namespace Mississippi.Core.Abstractions.Mapping;
+﻿using System.Collections.Generic;
+
+
+namespace Mississippi.Core.Abstractions.Mapping;
 
 /// <summary>
 ///     Defines a generic interface for mapping asynchronous collections of objects of type

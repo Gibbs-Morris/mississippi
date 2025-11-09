@@ -1,4 +1,7 @@
-﻿namespace Mississippi.Core.Abstractions.Mapping;
+﻿using System.Collections.Generic;
+
+
+namespace Mississippi.Core.Abstractions.Mapping;
 
 /// <summary>
 ///     Defines a generic interface for mapping collections of objects of type <typeparamref name="TFrom" /> to collections

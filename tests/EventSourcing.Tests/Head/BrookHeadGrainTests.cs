@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Head;
 using Mississippi.EventSourcing.Tests.Infrastructure;

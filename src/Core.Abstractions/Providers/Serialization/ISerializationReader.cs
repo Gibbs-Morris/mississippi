@@ -1,4 +1,7 @@
-﻿namespace Mississippi.Core.Abstractions.Providers.Serialization;
+﻿using System;
+
+
+namespace Mississippi.Core.Abstractions.Providers.Serialization;
 
 /// <summary>
 ///     Provides synchronous deserialization functionality for reading objects from byte payloads.

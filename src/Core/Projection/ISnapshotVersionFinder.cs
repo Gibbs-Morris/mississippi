@@ -1,4 +1,7 @@
-﻿namespace Mississippi.Core.Projection;
+﻿using System;
+
+
+namespace Mississippi.Core.Projection;
 
 /// <summary>
 ///     Interface for finding appropriate snapshot versions based on position and step values.

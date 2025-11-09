@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+
+using Newtonsoft.Json;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Storage;

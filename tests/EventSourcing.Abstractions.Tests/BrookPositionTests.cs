@@ -1,3 +1,6 @@
+using System;
+
+
 namespace Mississippi.EventSourcing.Abstractions.Tests;
 
 /// <summary>

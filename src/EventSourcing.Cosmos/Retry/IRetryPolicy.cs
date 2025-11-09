@@ -1,4 +1,9 @@
-﻿namespace Mississippi.EventSourcing.Cosmos.Retry;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+
+namespace Mississippi.EventSourcing.Cosmos.Retry;
 
 /// <summary>
 ///     Provides retry functionality for operations that may fail due to transient errors.

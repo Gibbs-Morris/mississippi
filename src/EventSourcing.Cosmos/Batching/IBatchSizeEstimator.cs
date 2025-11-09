@@ -1,4 +1,6 @@
-﻿using Mississippi.EventSourcing.Abstractions;
+﻿using System.Collections.Generic;
+
+using Mississippi.EventSourcing.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Batching;

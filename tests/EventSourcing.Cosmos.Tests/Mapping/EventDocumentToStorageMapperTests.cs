@@ -1,3 +1,5 @@
+using System;
+
 using Mississippi.EventSourcing.Cosmos.Mapping;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
