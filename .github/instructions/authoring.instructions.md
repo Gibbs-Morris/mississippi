@@ -34,6 +34,8 @@ The keywords **MUST**, **SHOULD**, **MAY**, **MUST NOT**, and **SHOULD NOT** are
 - Heading levels **SHOULD** be consistent: H2 for major sections, H3 for subsections, H4 for sub-subsections; authors **MUST NOT** skip levels.
 - US English spelling **MUST** be used throughout (e.g., “color,” “analyzer,” “organize”).
 - After significant rules or recommendations, authors **MUST** include a brief “Why” line that states the rationale.
+- Instruction prose **MUST** be concise and token‑efficient for LLM consumption; authors **SHOULD** remove redundancy and prefer precise, shorter synonyms without losing clarity.  
+  **Why:** Minimizes token usage, reduces parsing cost, and improves AI response accuracy.
 
 ### Linking and Cross-References
 - Internal references **MUST** use relative links and **MUST** be validated to resolve before commit.
@@ -68,7 +70,7 @@ The keywords **MUST**, **SHOULD**, **MAY**, **MUST NOT**, and **SHOULD NOT** are
 
 ## Purpose
 
-This guide defines how to author and maintain `*.instructions.md` so they are consistent, machine-consumable, and useful to humans and AI agents. It specifies structure, placement, linking, validation, and change control.
+This guide defines how to author and maintain `*.instructions.md` so they are consistent, machine-consumable, and useful to humans and AI agents. It specifies structure, placement, linking, validation, and change control. It also mandates concise, token‑efficient wording to optimize LLM processing cost.
 
 **Why:** A single predictable format increases discoverability and reduces drift across teams and tools.
 
@@ -107,6 +109,7 @@ Governing thought: [One-sentence answer that sets the intent and outcomes.]
 
 - All normative rule bullets in this section **MUST** use at least one RFC 2119 keyword (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) and be grouped by theme.
 - RFC 2119 keywords **SHOULD NOT** appear outside this Rules section except when quoting standards or in clearly explanatory, non‑normative prose; avoid introducing new normative statements elsewhere.
+- Instruction text **SHOULD** be concise and token‑efficient (eliminate redundant words while preserving meaning) to reduce LLM token costs.
 
 ## Scope and Audience
 
