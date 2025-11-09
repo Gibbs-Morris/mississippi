@@ -342,11 +342,3 @@ This document should be read in conjunction with:
 * **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attribute usage and type naming in serializable classes
 * **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy
 * **Project File Management** (`.github/instructions/projects.instructions.md`) - For assembly naming conventions and project ID naming patterns
-
----
-
-End of naming.instructions.md
----
-
-Last verified: 2025-11-09
-Default branch: main
