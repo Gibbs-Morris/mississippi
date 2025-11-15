@@ -1,0 +1,136 @@
+name: "Copilot Setup Steps"
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'global.json'
+      - 'Directory.*.props'
+      - '.config/dotnet-tools.json'
+      - '*.slnx'
+      - '.github/workflows/copilot-setup-steps.yml'
+  pull_request:
+    paths:
+      - 'global.json'
+      - 'Directory.*.props'
+      - '.config/dotnet-tools.json'
+      - '*.slnx'
+      - '.github/workflows/copilot-setup-steps.yml'
+
+permissions:
+  contents: read
+  actions: write
+
+env:
+  CONFIGURATION: Release
+
+jobs:
+  copilot-setup-steps:
+    name: "Copilot Setup Steps"
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        id: setup-dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      
+      - name: Extract SDK version from global.json
+        id: sdk-version
+        run: |
+          SDK_VERSION=$(jq -r '.sdk.version' global.json)
+          echo "SDK_VERSION=$SDK_VERSION" >> $GITHUB_ENV
+          echo "version=$SDK_VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      
+      - name: Install Node.js tools
+        run: |
+          npm install -g markdownlint-cli
+
+      - name: Cache GitVersion tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.gitversion
+          key: ${{ runner.os }}-gitversion-${{ hashFiles('GitVersion.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-gitversion-
+
+      - name: Cache .NET packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', 'Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Cache .NET tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.dotnet/tools
+          key: ${{ runner.os }}-dotnet-tools-${{ hashFiles('.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-tools-
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3.2.1
+        with:
+          versionSpec: "6.0.5"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v3.2.1
+        with:
+          useConfigFile: true
+
+      - name: Restore local dotnet tools
+        run: dotnet tool restore
+
+      - name: Restore packages for main solution
+        run: dotnet restore mississippi.slnx
+
+      - name: Restore packages for samples solution
+        run: dotnet restore samples.slnx
+
+      - name: Validate setup with lightweight build
+        run: |
+          dotnet build mississippi.slnx --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity minimal -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet build samples.slnx --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity minimal -p:Version=${{ steps.gitversion.outputs.SemVer }}
+
+      - name: Run lightweight test validation
+        run: |
+          dotnet test mississippi.slnx --configuration ${{ env.CONFIGURATION }} --no-build --logger "trx;LogFileName=copilot_validation_results.trx" --results-directory ./test-results --verbosity minimal
+        continue-on-error: true
+
+      - name: Upload test results for Copilot reference
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: copilot-test-results-${{ github.run_number }}
+          path: ./test-results/
+          retention-days: 7
+
+      - name: Summary
+        run: |
+          echo "## 🎯 Copilot Setup Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ .NET SDK ${{ env.SDK_VERSION }} configured" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Node.js 24.x and markdownlint-cli installed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Local tools restored from .config/dotnet-tools.json" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Packages restored for mississippi.slnx and samples.slnx" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build validation completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Test results uploaded for Copilot reference" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Version:** ${{ steps.gitversion.outputs.SemVer }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The workspace is now fully prepared for GitHub Copilot Workspace/Agents." >> $GITHUB_STEP_SUMMARY
