@@ -18,7 +18,7 @@ public sealed record ProjectionSnapshot<TModel>
     /// </summary>
     /// <value>The aggregate root path as a string.</value>
     [Id(2)]
-    public required string AggegrateRootPath { get; init; }
+    public required string AggregateRootPath { get; init; }
 
     /// <summary>
     ///     Gets the actual projection model data.
