@@ -1,4 +1,4 @@
-﻿---
+---
 description: Orleans Best Practices for Mississippi Framework
 globs: ["**/*.cs"]
 alwaysApply: false
@@ -9,13 +9,13 @@ alwaysApply: false
 
 # Orleans Best Practices for Mississippi Framework
 
-This document defines the Orleans development standards and best practices for the Mississippi Framework. All Orleans grains and related code must follow these guidelines to ensure consistency, maintainability, and alignment with modern Orleans patterns.
+This document defines the Orleans development standards and best practices for the Mississippi Framework. All Orleans grains and related code MUST follow these guidelines to ensure consistency, maintainability, and alignment with modern Orleans patterns.
 
 ## Core Principles
 
 ### 1. NEVER Inherit from Grain ❌
 
-**CRITICAL RULE**: Never inherit from the `Grain` base class. Always use the POCO (Plain Old CLR Object) grain pattern with `IGrainBase`.
+**CRITICAL RULE**: Never inherit from the `Grain` base class. Agents MUST always use the POCO (Plain Old CLR Object) grain pattern with `IGrainBase`.
 
 #### Why This Rule Exists
 
@@ -159,6 +159,7 @@ When converting from `Grain` inheritance to POCO pattern:
 - [ ] Replace direct method calls with `this.` qualified extension methods
 - [ ] If using `Grain<TState>`, inject `IPersistentState<TState>` instead
 - [ ] Update any inheritance hierarchy to use your own base classes
+- [ ] For each grain still inheriting from `Grain`, create a `.scratchpad/tasks/pending` item to track migration to POCO (`IGrainBase`) if not addressed immediately (see Agent Scratchpad)
 
 ### 5. Dependency Injection and Property Pattern
 
@@ -286,7 +287,7 @@ public async Task Add_ShouldAddItemToState()
 
 1. **Missing using Orleans.Runtime**: Build errors for extension methods
 2. **Forgot this. qualification**: Extension methods must be called with `this.`
-3. **Old Grain<TState> patterns**: Use `IPersistentState<T>` instead
+3. **Old Grain with TState patterns**: Use `IPersistentState<T>` instead
 4. **Constructor injection**: All dependencies must be injected, including `IGrainContext`
 5. **Using private readonly fields**: Use `private Type Name { get; }` properties instead
 
@@ -361,19 +362,12 @@ This rule should be enforced through:
 3. **Documentation**: Keep this file updated with examples
 4. **Refactoring**: Gradually migrate existing violations
 
-## Related Guidelines
-
-This document should be read in conjunction with:
-
-- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, access control principles, and sealed class requirements for Orleans grains
-- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For Orleans service registration patterns, Orleans lifecycle participants, and IHostedService patterns for Orleans applications
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For Orleans grain logging patterns, LoggerExtensions classes, and mandatory logging for grain operations
-- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attributes and version tolerance patterns used with POCO grains
-- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For Orleans grain naming patterns, interface naming, and XML documentation requirements
-- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy enforcement for Orleans analyzers
-
 ## References
 
 - [Orleans Migration Guide](https://learn.microsoft.com/en-us/dotnet/orleans/migration-guide)
 - [Orleans Timers and Reminders](https://learn.microsoft.com/en-us/dotnet/orleans/grains/timers-and-reminders)
 - [Orleans POCO Grains](https://learn.microsoft.com/en-us/dotnet/orleans/grains/poco-grains)
+
+---
+Last verified: 2025-11-09
+Default branch: main

@@ -1,0 +1,187 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+using Azure;
+
+using Microsoft.Extensions.Options;
+
+using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Cosmos.Abstractions;
+using Mississippi.EventSourcing.Cosmos.Locking;
+using Mississippi.EventSourcing.Cosmos.Retry;
+using Mississippi.EventSourcing.Cosmos.Storage;
+
+
+namespace Mississippi.EventSourcing.Cosmos.Brooks;
+
+/// <summary>
+///     Service for recovering and managing brook head positions in Cosmos DB.
+/// </summary>
+internal class BrookRecoveryService : IBrookRecoveryService
+{
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="BrookRecoveryService" /> class.
+    /// </summary>
+    /// <param name="repository">The Cosmos repository for low-level operations.</param>
+    /// <param name="retryPolicy">The retry policy for handling transient failures.</param>
+    /// <param name="lockManager">The distributed lock manager for concurrency control.</param>
+    /// <param name="options">The configuration options for brook storage.</param>
+    public BrookRecoveryService(
+        ICosmosRepository repository,
+        IRetryPolicy retryPolicy,
+        IDistributedLockManager lockManager,
+        IOptions<BrookStorageOptions> options
+    )
+    {
+        Repository = repository;
+        RetryPolicy = retryPolicy;
+        LockManager = lockManager;
+        Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+    }
+
+    private IDistributedLockManager LockManager { get; }
+
+    private BrookStorageOptions Options { get; }
+
+    private ICosmosRepository Repository { get; }
+
+    private IRetryPolicy RetryPolicy { get; }
+
+    /// <summary>
+    ///     Gets the current head position for a brook, or recovers it if necessary.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The current or recovered head position of the brook.</returns>
+    public async Task<BrookPosition> GetOrRecoverHeadPositionAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        HeadStorageModel? headDocument = await RetryPolicy.ExecuteAsync(
+            async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+            cancellationToken);
+        if (headDocument == null)
+        {
+            HeadStorageModel? pendingHead = await RetryPolicy.ExecuteAsync(
+                async () => await Repository.GetPendingHeadDocumentAsync(brookId, cancellationToken),
+                cancellationToken);
+            if (pendingHead != null)
+            {
+                // Use a shorter timeout for recovery lock to prevent deadlocks
+                TimeSpan recoveryTimeout = TimeSpan.FromSeconds(Math.Min(Options.LeaseDurationSeconds, 30));
+                try
+                {
+                    await using IDistributedLock recoveryLock = await LockManager.AcquireLockAsync(
+                        $"recovery-{brookId}", // Use different lock key for recovery
+                        recoveryTimeout,
+                        cancellationToken);
+                    await RecoverFromOrphanedOperationAsync(brookId, pendingHead, cancellationToken);
+                    headDocument = await RetryPolicy.ExecuteAsync(
+                        async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+                        cancellationToken);
+                }
+                catch (RequestFailedException)
+                {
+                    // If we can't acquire the recovery lock, assume another process is handling recovery
+                    // Wait a bit and try to read the head again
+                    await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+                    headDocument = await RetryPolicy.ExecuteAsync(
+                        async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+                        cancellationToken);
+
+                    // If head is still null after waiting, we have a problem
+                    if (headDocument == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Unable to recover head position for brook {brookId}. " +
+                            "Another recovery operation may be in progress or has failed.");
+                    }
+                }
+            }
+        }
+
+        return headDocument?.Position ?? new BrookPosition(-1);
+    }
+
+    private async Task<bool> CheckAllEventsExistAsync(
+        BrookKey brookId,
+        long originalPosition,
+        long targetPosition,
+        CancellationToken cancellationToken
+    )
+    {
+        if ((targetPosition - originalPosition) > 10)
+        {
+            ISet<long> existingPositions = await Repository.GetExistingEventPositionsAsync(
+                brookId,
+                originalPosition + 1,
+                targetPosition,
+                cancellationToken);
+            long expectedCount = targetPosition - originalPosition;
+            return existingPositions.Count == expectedCount;
+        }
+
+        for (long pos = originalPosition + 1; pos <= targetPosition; pos++)
+        {
+            if (!await Repository.EventExistsAsync(brookId, pos, cancellationToken))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private async Task RecoverFromOrphanedOperationAsync(
+        BrookKey brookId,
+        HeadStorageModel pendingHead,
+        CancellationToken cancellationToken
+    )
+    {
+        long originalPosition = pendingHead.OriginalPosition?.Value ?? -1;
+        long targetPosition = pendingHead.Position.Value;
+        bool allEventsExist = await CheckAllEventsExistAsync(
+            brookId,
+            originalPosition,
+            targetPosition,
+            cancellationToken);
+        if (allEventsExist)
+        {
+            await Repository.CommitHeadPositionAsync(brookId, targetPosition, cancellationToken);
+        }
+        else
+        {
+            await RollbackOrphanedOperationAsync(brookId, originalPosition, targetPosition, cancellationToken);
+        }
+    }
+
+    private async Task RollbackOrphanedOperationAsync(
+        BrookKey brookId,
+        long originalPosition,
+        long targetPosition,
+        CancellationToken cancellationToken
+    )
+    {
+        for (long pos = originalPosition + 1; pos <= targetPosition; pos++)
+        {
+            await RetryPolicy.ExecuteAsync(
+                async () =>
+                {
+                    await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
+                    return true;
+                },
+                cancellationToken);
+        }
+
+        await RetryPolicy.ExecuteAsync(
+            async () =>
+            {
+                await Repository.DeletePendingHeadAsync(brookId, cancellationToken);
+                return true;
+            },
+            cancellationToken);
+    }
+}

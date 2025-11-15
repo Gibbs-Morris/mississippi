@@ -1,4 +1,4 @@
-﻿---
+---
 description: Testing Strategy and Quality Gates
 alwaysApply: true
 ---
@@ -44,7 +44,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - `<Product>.<Feature>.L2Tests`
   - `<Product>.<Feature>.L3Tests`
   - `<Product>.<Feature>.L4Tests`
-  - Legacy naming: generic `<…>.Tests`, `<…>.UnitTests`, and `<…>.IntegrationTests` are supported for compatibility but should be migrated to L0–L4 naming over time
+  - Legacy naming: generic `<…>.Tests`, `<…>.UnitTests`, and `<…>.IntegrationTests` are supported for compatibility but SHOULD be migrated to L0–L4 naming over time
   - Prefer per-level projects for clarity and analyzer consistency; migrate legacy projects when touched
 - Any project ending with `Tests` is treated as a test project and pulls common test packages (xUnit, runner, coverlet, Allure, Moq)
 - InternalsVisibleTo is already configured for `.Tests`, `.UnitTests`, `.IntegrationTests`, and `.L0Tests` … `.L4Tests` so tests can exercise internal members safely
@@ -64,7 +64,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 - Coverage
   - Aim for 100% unit test coverage on new and changed code paths
   - Absolute minimum: 80% lines/branches for Mississippi projects (SonarCloud gate); target 95–100% where technically feasible
-  - No coverage regressions: touched files should not decrease in coverage
+  - No coverage regressions: touched files SHOULD NOT decrease in coverage
 - Mutation testing
   - Run Stryker.NET for Mississippi projects; keep or raise the mutation score
   - Default thresholds align with repository `stryker-config.json`: high 90, low 80, break 80; avoid score regressions on changed areas
@@ -73,6 +73,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 ## Level Details and Guardrails
 
 ### L0 — Pure unit tests
+
 - Scope: business logic, pure functions, orchestration seams; no I/O, no timers sleeping, no network
 - Dependencies: in-memory only; replace collaborators with test doubles/mocks
 - Speed: sub-50ms typical per test; designed for PR and local tight loops
@@ -83,6 +84,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - Prefer records/immutability friendly patterns from C# guidelines
 
 ### L1 — Unit/component with light infra
+
 - Scope: still “unit-level” but may touch minimal infra: local file system, in-proc databases, mock HTTP handlers
 - Dependencies: ephemeral and isolated per test; use temp directories and in-memory or containerized dev DBs spun up per run
 - Runs: included in CI for early signal; keep fast and parallel-safe
@@ -92,6 +94,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - Keep external processes optional so the suite remains reliable on dev and CI agents
 
 ### L2 — Functional against test deployments
+
 - Scope: validate feature slices against deployed test environments; mock or stub heavy/expensive dependencies
 - Dependencies: test deployment URL(s), seeded test data, controlled mocks for third-party systems
 - Runs: scheduled or on-demand pipelines (not required for every PR)
@@ -101,6 +104,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - Clear diagnostics and assertions that align with logging rules
 
 ### L3 — End-to-end in prod-like
+
 - Scope: real user flows, cross-service and UI journeys using Playwright; full stack with real storage and messaging
 - Dependencies: prod-like environment with realistic configuration
 - Runs: per release or as “test in prod” prior to broad exposure
@@ -110,6 +114,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - Capture traces/screenshots/video on failure for triage
 
 ### L4 — Restricted checks in production
+
 - Scope: synthetic monitoring and gated smoke tests that run safely in production (read-only or harmless writes)
 - Dependencies: live endpoints and observability hooks
 - Runs: immediately post-deploy and/or continuously on a cadence
@@ -147,19 +152,23 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 - Zero warnings policy applies to tests; treat analyzer violations as build blockers
 - PR gates: L0 (required) and L1 (where present) for Mississippi; Samples keep minimal, illustrative tests
 - Coverage: collected via coverlet; aim 100%, minimum 80% on Mississippi projects (target 95–100%); no regressions on touched code
-- Mutation testing: Mississippi solution only via Stryker.NET; keep or raise mutation score when touching logic; fix surviving mutants
+- Mutation testing: Mississippi solution only via Stryker.NET; keep or raise mutation score when touching logic; fix surviving mutants. Expect Stryker runs to take up to 30 minutes and allow them to finish.
 
 ## Tooling and Scripts
 
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
+
 Use the PowerShell scripts documented in Build Rules to run tests and mutation checks:
-- `scripts/unit-test-mississippi-solution.ps1`
-- `scripts/unit-test-sample-solution.ps1`
-- `scripts/mutation-test-mississippi-solution.ps1`
-- `scripts/orchestrate-solutions.ps1` (also via `./go.ps1`)
+
+- `eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
+- `eng/src/agent-scripts/unit-test-sample-solution.ps1`
+- `eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` (plan for up to 30 minutes and wait for the run to finish; do not cancel early)
+- `eng/src/agent-scripts/orchestrate-solutions.ps1` (also via `./go.ps1`)
 
 ## Author and Reviewer Checklists
 
 Author
+
 - [ ] Added/updated L0 tests for all new or changed logic
 - [ ] Considered L1 tests when infra seams are involved
 - [ ] Tests are deterministic, isolated, and fast
@@ -167,13 +176,16 @@ Author
 - [ ] For UI/API journeys, added Playwright tests at L3 (or L2 API flows) where valuable
 - [ ] Coverage meets goals (target 100%, minimum 80%; aim 95–100%); no regressions on touched code
 - [ ] Mutation score maintained or improved; surviving mutants addressed or justified
+- [ ] If notable gaps remain (e.g., coverage), rerun `summarize-coverage-gaps.ps1` to sync pending tasks automatically (see Agent Scratchpad). Mutation survivors already generate per-mutant tasks via `summarize-mutation-survivors.ps1`; verify they exist by rerunning the script instead of creating them manually.
 
 Reviewer
+
 - [ ] L0 present for core logic; L1 used judiciously
 - [ ] No external calls in L0; minimal, isolated infra in L1
 - [ ] Tests follow naming, async, and DI seam patterns
 - [ ] Coverage target met (≥80%, aiming for 95–100%) with no regressions on touched files
 - [ ] Mutation score non-regression; surviving mutants handled appropriately
+- [ ] For remaining gaps, confirm a scratchpad task exists for follow-up where appropriate (coverage and mutation gaps should already be mirrored automatically by their summarizer scripts)
 - [ ] Playwright usage is resilient and artifacts are captured on failure
 
 ## Non-Goals and Clarifications
@@ -183,16 +195,4 @@ Reviewer
 - Samples are examples: they demonstrate testing patterns but aren’t subject to mutation testing
 
 ---
-
 This guidance aligns with Build Rules and Quality Standards and with repository-wide analyzers and conventions. Use it with the C#, Logging, Orleans, and Project instructions to keep tests reliable and fast.
-
-## Related Guidelines
-
-This document should be read in conjunction with:
-
-- **Build Rules and Quality Standards** (`.github/instructions/build-rules.instructions.md`) - For zero-warnings policy, CI gates, and mutation testing enforcement
-- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For testability patterns, DI seams, and immutability
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For LoggerExtensions usage and structured logging in tests and testable code
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans-safe patterns that influence test design (no blocking, DI seams)
-- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For serializer patterns and analyzer compliance that affect tests
-- **Project File Management** (`.github/instructions/projects.instructions.md`) - For automatic test project configuration and centralized package management

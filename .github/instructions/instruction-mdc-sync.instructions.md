@@ -14,9 +14,12 @@ Keep our written instructions and Cursor AI rule files in lockstep. Any change t
 - Prefer using the sync helper script to reduce human error.
 
 ### Quick Command
+
 ```powershell
-pwsh ./scripts/sync-instructions-to-mdc.ps1
+pwsh ./eng/src/agent-scripts/sync-instructions-to-mdc.ps1
 ```
+
+> **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
 ## Scope
 
@@ -39,7 +42,7 @@ When you change an instruction file:
 Preferred automated flow: run the repository helper script which mirrors instruction Markdown into Cursor `.mdc` files. This reduces human error and keeps parity consistent:
 
 ```pwsh
-pwsh ./scripts/sync-instructions-to-mdc.ps1
+pwsh ./eng/src/agent-scripts/sync-instructions-to-mdc.ps1
 ```
 
 When you change a Cursor `.mdc` rule file:
@@ -59,6 +62,8 @@ When you change a Cursor `.mdc` rule file:
 - [ ] Changed instruction Markdown and matching `.mdc` updated in the same commit/PR
 - [ ] Semantics parity verified (no rules exist in one place without an intentional exception noted in the PR description)
 
+- If parity cannot be completed immediately, create a focused task in `.scratchpad/tasks/pending` with the specific Markdown ↔ `.mdc` sections to sync and a short due date. See `.github/instructions/agent-scratchpad.instructions.md`.
+
 ## Quick Validation Tips
 
 - Diff review: compare the changed sections side-by-side (Markdown ↔ `.mdc`) to confirm parity.
@@ -66,5 +71,3 @@ When you change a Cursor `.mdc` rule file:
 - Prefer small, focused commits to make parity obvious in review.
 
 - Quick check: you can run the sync helper to validate parity before opening a PR.
-
-

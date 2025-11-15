@@ -4,11 +4,12 @@ applyTo: '**/*.cs'
 
 # Service Registration and Configuration Pattern
 
-This document defines the service registration standards and configuration patterns for dependency injection in the Mississippi Framework. All service registration classes must follow these guidelines to ensure consistency, maintainability, and proper configuration handling across features.
+This document defines the service registration standards and configuration patterns for dependency injection in the Mississippi Framework. All service registration classes MUST follow these guidelines to ensure consistency, maintainability, and proper configuration handling across features.
 
 ## Core Principles
 
 ### Hierarchical Feature-Based Registration
+
 - **Feature-aligned organization** — service registration follows the feature namespace structure
 - **ServiceRegistration class per feature** — create `public static class ServiceRegistration` in each feature folder with `Add{FeatureName}()` methods
 - **Parent-child registration pattern** — parent features call child feature registrations to build composable service collections
@@ -16,6 +17,7 @@ This document defines the service registration standards and configuration patte
 - **Internal for implementation details** — sub-features and implementation components should have `internal` registration methods
 
 ### Configuration and Options Pattern
+
 - **Always use Options pattern for configuration** — NEVER use direct configuration parameters in constructors; always use `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>`
 - **Make everything configurable** — follow cloud-native principles by externalizing all configuration; prefer configuration over hard-coded values
 - **Support multiple configuration overloads** — provide overloads for `Action<TOptions>`, `IConfiguration`, and explicit parameters to support different consumption patterns
@@ -26,12 +28,14 @@ This document defines the service registration standards and configuration patte
 - **Connection string patterns** — accept connection strings as parameters and register clients using factory patterns, not direct instantiation in DI
 
 ### Integration Requirements
+
 - **Follow dependency injection property pattern** — all registered services must use `private Type Name { get; }` pattern when injected
 - **Consistent naming pattern** — use `Add{FeatureName}()` naming convention following PascalCase rules from naming guidelines
 - **XML documentation requirements** — follow naming conventions for all public registration methods with parameter and return value documentation
 - **Access control compliance** — follow sealed classes and minimal access principles from C# guidelines
 
 ### Orleans and Hosting Service Integration
+
 - **Service registration must be synchronous** — NEVER perform async operations (database calls, external service calls) during service registration
 - **Use IHostedService for async initialization** — defer async setup operations to hosted services that run after DI container is built
 - **Use Orleans lifecycle participants** — for Orleans-specific initialization that needs to happen at specific lifecycle stages
@@ -41,7 +45,8 @@ This document defines the service registration standards and configuration patte
 ## Service Registration Implementation Pattern
 
 ### Required File Structure
-```
+
+```text
 Mississippi.EventSourcing/
 ├── ServiceRegistration.cs              // Calls child registrations
 ├── Streams/
@@ -1001,31 +1006,9 @@ These service registration standards should be enforced through:
 8. **Async Pattern Reviews**: Ensure all async initialization uses IHostedService, Orleans lifecycle participants, or factory patterns - never inline in registration methods
 9. **Orleans Integration Reviews**: Verify Orleans-specific async work uses lifecycle participants and proper service lifecycle stages
 
-## Related Guidelines
-
-This document should be read in conjunction with:
-
-- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection patterns, and access control principles
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For high-performance logging patterns, LoggerExtensions classes, and mandatory ILogger usage with dependency injection properties
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans-specific grain development patterns, POCO grain requirements, and IGrainBase implementation with sealed classes
-- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards, zero warnings policy, and build pipeline requirements that enforce access control analyzer rules
-- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For ServiceRegistration class naming patterns, feature-based namespace structure, and XML documentation requirements for public members
-- **Project File Management** (`.github/instructions/projects.instructions.md`) - For proper PackageReference usage and centralized package management
-
-### Cross-Reference Alignment
-
-- **Service Registration + C# Access Control**: ServiceRegistration classes must follow access control principles with sealed classes and minimal exposure
-- **Service Registration + Naming**: ServiceRegistration classes must follow `public static class ServiceRegistration` naming with `Add{FeatureName}()` method patterns
-- **Service Registration + Build Rules**: Registration methods must maintain zero warnings and pass analyzer checks for access control violations
-- **Service Registration + Orleans**: All Orleans grains registered must follow POCO pattern with IGrainBase and sealed classes; async initialization must use Orleans lifecycle participants
-- **Service Registration + Logging**: All hosted services and lifecycle participants must use LoggerExtensions pattern for async initialization logging
-- **Configuration + Options Pattern**: All configuration must use `IOptions<T>` pattern with dependency injection properties following `private IOptions<T> Name { get; }` pattern
-- **Configuration + Logging**: All options validation failures must be logged using LoggerExtensions pattern with proper correlation IDs
-- **Configuration + Build Rules**: Options classes must include validation rules that fail fast at startup, enforced through build pipeline
-- **Configuration + Naming**: Options classes must follow `{FeatureName}Options` naming pattern with XML documentation for all properties
-- **Async Initialization + Orleans**: Orleans-specific async work must use `ILifecycleParticipant<ISiloLifecycle>` with appropriate service lifecycle stages
-- **Async Initialization + Hosting**: Non-Orleans async work must use `IHostedService` pattern with proper startup/shutdown lifecycle management
-- **Factory Patterns + Dependency Injection**: All factories must follow dependency injection property pattern and use proper thread-safe initialization
+---
+Last verified: 2025-11-09
+Default branch: main
 
 ## Further Reading
 
