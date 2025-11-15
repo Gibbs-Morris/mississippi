@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest ]
         solution: [ mississippi.slnx, samples.slnx ]
     steps:
       - name: Checkout repository
