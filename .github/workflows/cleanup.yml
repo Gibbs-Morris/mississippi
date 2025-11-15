@@ -48,6 +48,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
 
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3.2.1
+        with:
+          versionSpec: "6.0.5"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v3.2.1
+        with:
+          useConfigFile: true
+
+      - name: Restore dotnet packages
+        run: |
+          dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
+
+      - name: Build dotnet projects
+        run: |
+          dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -warnaserror -p:Version=${{ steps.gitversion.outputs.SemVer }}
+
       - name: Check for dotnet tools manifest
         id: check-tools-manifest
         shell: pwsh
@@ -92,6 +111,8 @@ jobs:
           dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$slnPath" --LogLevel=TRACE
           Write-Host "Cleanup completed."
           echo "SLN_PATH=$slnPath" >> $env:GITHUB_ENV
+          $slnFileName = Split-Path -Path $slnPath -Leaf
+          echo "SLN_FILE_NAME=$slnFileName" >> $env:GITHUB_ENV
 
       - name: Check for Uncommitted Changes
         shell: pwsh
@@ -103,7 +124,19 @@ jobs:
             git diff --color=always
             Write-Host ""
             Write-Host "To resolve this locally run:"
-            Write-Host 'dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$env:SLN_PATH"'
+            $slnFileName = $env:SLN_FILE_NAME
+            if (-not $slnFileName -and $env:SLN_PATH) {
+              $slnFileName = Split-Path -Path $env:SLN_PATH -Leaf
+            }
+
+            if ([string]::IsNullOrWhiteSpace($slnFileName)) {
+              Write-Host "Unable to determine the solution file name for local cleanup. Check workflow logs for details."
+            }
+            else {
+              $localCommand = "dotnet tool run jb cleanupcode --profile=`"Built-in: Full Cleanup`" --settings=`"Directory.DotSettings`" $slnFileName"
+              Write-Host "Run the following from the repository root:"
+              Write-Host $localCommand
+            }
             exit 1
           } else {
             Write-Host "No modifications detected. Cleanup check passed."
