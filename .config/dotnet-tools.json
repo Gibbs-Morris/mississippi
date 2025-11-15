@@ -31,28 +31,28 @@
       "rollForward": false
     },
     "JetBrains.ReSharper.GlobalTools": {
-      "version": "2025.2.4",
+      "version": "2025.3.0.1",
       "commands": [
         "jb"
       ],
       "rollForward": false
     },
     "Microsoft.VisualStudio.SlnGen.Tool": {
-      "version": "12.0.23",
+      "version": "12.0.29",
       "commands": [
         "slngen"
       ],
       "rollForward": false
     },
     "dotnet-reportgenerator-globaltool": {
-      "version": "5.4.18",
+      "version": "5.5.0",
       "commands": [
         "reportgenerator"
       ],
       "rollForward": false
     },
     "jetbrains.dotcover.commandlinetools": {
-      "version": "2025.2.4",
+      "version": "2025.3.0.1",
       "commands": [
         "dotCover"
       ],
