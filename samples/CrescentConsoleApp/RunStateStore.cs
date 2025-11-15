@@ -67,7 +67,7 @@ internal static class RunStateStore
     {
         try
         {
-            using FileStream fs = File.Open(FilePath, FileMode.Create, FileAccess.Write, FileShare.Read);
+            using FileStream fs = File.Open(FilePath, FileMode.Create, FileAccess.Write, FileShare.None);
             await JsonSerializer.SerializeAsync(fs, state, SerializerOptions).ConfigureAwait(false);
         }
         catch (IOException ioEx)
