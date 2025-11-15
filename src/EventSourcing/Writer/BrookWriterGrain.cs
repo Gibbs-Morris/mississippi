@@ -21,7 +21,7 @@ namespace Mississippi.EventSourcing.Writer;
 ///     Orleans grain implementation for writing events to a Mississippi brook (event stream).
 ///     Handles event appending and manages the writer lifecycle for a specific brook.
 /// </summary>
-internal class BrookWriterGrain
+internal sealed class BrookWriterGrain
     : IBrookWriterGrain,
       IGrainBase
 {

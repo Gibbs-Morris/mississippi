@@ -11,7 +11,7 @@ namespace Mississippi.Core.Projection;
 ///     that serves as the primary access point for projection data and metadata.
 /// </summary>
 /// <typeparam name="TModel">The type of the projection model.</typeparam>
-[Alias("ProjectionGrain")]
+[Alias("Mississippi.Core.Projection.IProjectionGrain")]
 public interface IProjectionGrain<TModel> : IGrainWithStringKey
 {
     /// <summary>
