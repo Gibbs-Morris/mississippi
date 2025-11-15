@@ -30,14 +30,33 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup .NET SDK
+        id: setup-dotnet
         uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+      
+      - name: Extract SDK version from global.json
+        id: sdk-version
+        run: |
+          SDK_VERSION=$(jq -r '.sdk.version' global.json)
+          echo "SDK_VERSION=$SDK_VERSION" >> $GITHUB_ENV
+          echo "version=$SDK_VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      
+      - name: Install Node.js tools
+        run: |
+          npm install -g markdownlint-cli
 
       - name: Cache GitVersion tools
         uses: actions/cache@v4
@@ -105,10 +124,13 @@ jobs:
         run: |
           echo "## 🎯 Copilot Setup Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ .NET SDK ${{ steps.gitversion.outputs.SemVer }} configured" >> $GITHUB_STEP_SUMMARY
+          echo "✅ .NET SDK ${{ env.SDK_VERSION }} configured" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Node.js 24.x and markdownlint-cli installed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Local tools restored from .config/dotnet-tools.json" >> $GITHUB_STEP_SUMMARY
           echo "✅ Packages restored for mississippi.slnx and samples.slnx" >> $GITHUB_STEP_SUMMARY
           echo "✅ Build validation completed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Test results uploaded for Copilot reference" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Version:** ${{ steps.gitversion.outputs.SemVer }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "The workspace is now fully prepared for GitHub Copilot Workspace/Agents." >> $GITHUB_STEP_SUMMARY
