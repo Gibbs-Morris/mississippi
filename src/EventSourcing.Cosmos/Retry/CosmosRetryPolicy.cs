@@ -84,6 +84,11 @@ internal class CosmosRetryPolicy : IRetryPolicy
                 TimeSpan delay = ComputeDelay(ex, attempt);
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
+            catch (CosmosException ex) when (IsTransientCosmosStatus(ex.StatusCode))
+            {
+                // Final attempt with transient error - store and let loop exit
+                lastException = ex;
+            }
             catch (CosmosException ex)
             {
                 // Non-transient Cosmos error - wrap with context and rethrow
