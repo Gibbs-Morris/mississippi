@@ -1,0 +1,17 @@
+<wpf:ResourceDictionary
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:s="urn:schemas-jetbrains-com:settings-storage-xml">
+  <!-- Injected layer metadata (portable: no AbsolutePath) -->
+  <Boolean x:Key="/Default/Environment/InjectedLayers/FileInjectedLayer/=39393B3F88A34746AB093235AEC66466/@KeyIndexDefined" xmlns="clr-namespace:System;assembly=mscorlib">True</Boolean>
+  <String x:Key="/Default/Environment/InjectedLayers/FileInjectedLayer/=39393B3F88A34746AB093235AEC66466/RelativePath/@EntryValue" xml:space="preserve" xmlns="clr-namespace:System;assembly=mscorlib">..\Directory.DotSettings</String>
+  <Boolean x:Key="/Default/Environment/InjectedLayers/InjectedLayerCustomization/=File39393B3F88A34746AB093235AEC66466/@KeyIndexDefined" xmlns="clr-namespace:System;assembly=mscorlib">True</Boolean>
+  <Double x:Key="/Default/Environment/InjectedLayers/InjectedLayerCustomization/=File39393B3F88A34746AB093235AEC66466/RelativePriority/@EntryValue" xmlns="clr-namespace:System;assembly=mscorlib">1</Double>
+  <s:Settings>
+    <s:SettingsLayer>
+      <s:SettingsLayerFilePath
+        Relative="Directory.DotSettings"
+        Value="$PROJECT_DIR$\Directory.DotSettings" />
+    </s:SettingsLayer>
+  </s:Settings>
+</wpf:ResourceDictionary>

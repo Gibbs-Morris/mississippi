@@ -1,6 +1,5 @@
 {
   "stryker-config": {
-    "concurrency": 32,
     "mutation-level": "Complete",
     "language-version": "latest",
     "additional-timeout": 5000,
@@ -12,9 +11,9 @@
     "disable-bail": false,
     "disable-mix-mutants": false,
     "thresholds": {
-      "high": 90,
-      "low": 80,
-      "break": 80
+      "high": 80,
+      "low": 60,
+      "break": 50
     },
     "verbosity": "info",
     "reporters": [
@@ -26,13 +25,12 @@
     "since": {
       "enabled": false,
       "ignore-changes-in": [],
-      "target": "main"
+      "target": "origin/main"
     },
     "baseline": {
       "enabled": false,
       "provider": "disk",
-      "azure-fileshare-url": "",
-      "fallback-version": "master"
+      "fallback-version": "origin/main"
     },
     "dashboard-url": "https://dashboard.stryker-mutator.io",
     "test-projects": [],

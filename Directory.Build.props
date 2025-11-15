@@ -4,7 +4,7 @@
         <AnalysisMode>All</AnalysisMode>
         <TargetFramework>net9.0</TargetFramework>
         <LangVersion>13.0</LangVersion>
-        <ImplicitUsings>true</ImplicitUsings>
+        <ImplicitUsings>false</ImplicitUsings>
         <Nullable>enable</Nullable>
         <ServerGarbageCollection>true</ServerGarbageCollection>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -13,11 +13,11 @@
         <IncludeSymbols>true</IncludeSymbols>
         <IncludeSource>true</IncludeSource>
         <RepositoryUrl>https://github.com/Gibbs-Morris/mississippi</RepositoryUrl>
-        <NoWarn>
-            SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,SA1600,CA1014,CA2007,CA1040,CA1812,CA1303,VSTHRD111
-        </NoWarn>
         <AssemblyName>Mississippi.$(MSBuildProjectName)</AssemblyName>
         <RootNamespace>Mississippi.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+        <NoWarn>
+            SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,CA1014,CA2007,CA1040,CA1812,CA1303,VSTHRD111,SA1201
+        </NoWarn>
     </PropertyGroup>
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <IsPackable>false</IsPackable>
@@ -28,6 +28,11 @@
         <InternalsVisibleTo Include="$(AssemblyName).Tests" />
         <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
         <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
+        <InternalsVisibleTo Include="$(AssemblyName).L0Tests" />
+        <InternalsVisibleTo Include="$(AssemblyName).L1Tests" />
+        <InternalsVisibleTo Include="$(AssemblyName).L2Tests" />
+        <InternalsVisibleTo Include="$(AssemblyName).L3Tests" />
+        <InternalsVisibleTo Include="$(AssemblyName).L4Tests" />
         <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     </ItemGroup>
     <ItemGroup>

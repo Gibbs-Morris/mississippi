@@ -1,0 +1,113 @@
+---
+applyTo: '**/*.md'
+---
+
+# Markdown Authoring and Lint Compliance
+
+This instruction is mandatory for every Markdown file in the repository. All agents MUST author, review, and
+maintain Markdown so that it passes the canonical set of `markdownlint` rules without exceptions.
+
+## Non-Negotiable Fundamentals
+
+- Treat `markdownlint` warnings as build blockers; fix the source rather than disabling or suppressing a rule.
+- Never disable, suppress, or reconfigure `markdownlint` rules (including via `markdownlint-disable` comments, config overrides, or ignore lists) unless the current user task explicitly instructs you to do so for that single case.
+- Follow GitHub Flavored Markdown (GFM) semantics and ensure rendered output matches intent on GitHub.
+- Keep authored content accessible: use descriptive link text, semantic headings, and alt text on images.
+- Prefer plain Markdown over inline HTML. If HTML is unavoidable, ensure it does not violate any active rule.
+
+## Configuration
+
+The repository uses markdownlint configuration files:
+
+- **Local development**: `.markdownlint-cli2.jsonc` (auto-discovered by markdownlint-cli2)
+- **CI/Super-Linter**: `.github/linters/.markdown-lint.yml` (used by GitHub Super-Linter)
+
+Both files disable only:
+
+- **MD013** (line length) - Technical documentation often requires longer lines for code examples, URLs, command lines, and tables
+
+All other markdownlint rules remain active and MUST be followed.
+
+## Authoring Checklist
+
+1. Structure the document with a single top-level heading and incremental subheadings.
+2. Break paragraphs and lists with required blank lines; avoid trailing whitespace everywhere else.
+3. Keep lists, tables, code fences, emphasis, and links stylistically consistent across the file.
+4. Provide alt text for every image and use meaningful link text instead of generic phrases.
+5. Run `markdownlint` locally (for example: `npx markdownlint-cli2 "**/*.md"` from the repo root) before
+   submitting changes and resolve *all* reported issues.
+
+## markdownlint Rules (Mandatory)
+
+The following rules are enforced exactly as documented by `markdownlint`. Every Markdown file **MUST** comply.
+
+- **MD001 – Heading levels should only increment by one level at a time.**
+- **MD002 – First heading should be the top-level heading.**
+- **MD003 – Use a consistent heading style (ATX or setext).**
+- **MD004 – Use a consistent unordered list marker style.**
+- **MD005 – Indent list items at the same level consistently.**
+- **MD006 – Use consistent indentation for nested lists.**
+- **MD007 – Indent unordered list children by the configured number of spaces (default 2).**
+- **MD009 – Remove trailing spaces except where a hard line break is intended.**
+- **MD010 – Do not use hard tab characters; replace them with spaces.**
+- **MD011 – Use proper link order like `[label](https://example.com/)`; avoid `(label)[https://example.com/]`.**
+- **MD012 – Avoid multiple consecutive blank lines (default maximum is one).**
+- **MD013 – Keep line length within the configured limit (default 80) unless the rule allows otherwise.**
+- **MD014 – Omit leading `$` prompts from shell command examples unless output is shown.**
+- **MD018 – Insert exactly one space after the hash in ATX headings.**
+- **MD019 – Do not use multiple spaces after the hash in ATX headings.**
+- **MD020 – Add a space between hashes and text for closed ATX headings.**
+- **MD021 – Avoid multiple spaces inside the hashes of closed ATX headings.**
+- **MD022 – Surround every heading with the required blank lines.**
+- **MD023 – Start headings at the beginning of the line (no leading indentation).**
+- **MD024 – Prevent duplicate headings (respect configured sibling-only behavior when applicable).**
+- **MD025 – Use a single top-level heading unless front matter supplies the title.**
+- **MD026 – Do not end headings with disallowed punctuation.**
+- **MD027 – Use a single space after the blockquote marker (`>`).**
+- **MD028 – Do not leave blank lines inside blockquotes unless they are part of the quote.**
+- **MD029 – Choose an ordered list numbering style (`1.` or sequential) and stay consistent.**
+- **MD030 – Ensure the correct number of spaces after ordered and unordered list markers.**
+- **MD031 – Surround fenced code blocks with blank lines (respect list exceptions only when configured).**
+- **MD032 – Surround lists with blank lines.**
+- **MD033 – Avoid inline HTML unless it is explicitly permitted by configuration.**
+- **MD034 – Wrap bare URLs and email addresses in angle brackets.**
+- **MD035 – Use a consistent horizontal rule style.**
+- **MD036 – Do not use emphasis in place of headings.**
+- **MD037 – Avoid spaces inside emphasis markers.**
+- **MD038 – Avoid spaces inside code span backticks.**
+- **MD039 – Avoid spaces inside link text brackets.**
+- **MD040 – Specify a language for every fenced code block (use `text` when highlighting is unnecessary).**
+- **MD041 – Start the file with a top-level heading unless front matter declares the title.**
+- **MD042 – Do not create empty links; provide a valid destination.**
+- **MD043 – Match required heading structures when the rule is configured.**
+- **MD044 – Use correct capitalization for proper names per the configured list.**
+- **MD045 – Supply alt text for every image (or mark decorative images with `aria-hidden="true"`).**
+- **MD046 – Use a consistent code block style (fenced or indented) within the file.**
+- **MD047 – End each file with exactly one newline character.**
+- **MD048 – Use a consistent code fence marker (backticks or tildes).**
+- **MD049 – Use a consistent emphasis marker style (`*` or `_`).**
+- **MD050 – Use a consistent strong emphasis marker style (`**` or `__`).**
+- **MD051 – Ensure link fragments map to valid generated anchors or explicit IDs.**
+- **MD052 – Reference links and images must use labels that are defined.**
+- **MD053 – Define reference links and images only when they are used (remove unused or duplicate definitions).**
+- **MD054 – Use only the allowed link and image styles per configuration (autolink, inline, reference).**
+- **MD055 – Keep table rows consistent with the configured presence of leading/trailing pipes.**
+- **MD056 – Ensure every table row has the same number of columns.**
+- **MD058 – Surround tables with blank lines.**
+- **MD059 – Write descriptive link text; avoid generic phrases like “click here”.**
+
+> **Note:** The repository configuration files (`.markdownlint.yaml` and `.github/linters/.markdown-lint.yml`)
+> disable MD013 (line length) only. All other markdownlint rules are active and enforced.
+
+## Quality Enforcement
+
+- Run `npx markdownlint-cli2 --fix "**/*.md"` only when you have reviewed the proposed edits; manual fixes
+  are preferred so the author remains in control of content.
+- Submit Markdown changes only after linting passes with zero errors and warnings.
+- Do not add blanket suppressions, global `markdownlint-disable` directives, or inline overrides unless the
+  current user task explicitly directs that specific exception and you document the instruction in context.
+
+---
+
+Last verified: 2025-11-09
+Default branch: main

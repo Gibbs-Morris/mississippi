@@ -1,4 +1,4 @@
-﻿---
+---
 description: C# General Development Best Practices
 globs: ["**/*.cs"]
 alwaysApply: false
@@ -13,35 +13,53 @@ This document codifies our baseline engineering expectations for any C# service 
 
 ## Core Principles
 
-- **Always apply SOLID** — keep asking whether each class has *only one* reason to change.
-- **Code must remain unit-testable** — leverage dependency injection, side-effect-free functions, and clear seams so every unit can be isolated.
-- **Stick to Microsoft libraries / NuGet packages** — add third-party dependencies only with explicit approval or when they extend tech already in use (e.g., an Orleans storage provider).
-- **Principle priority: SOLID → DRY → KISS** — remove duplication first, then keep the solution as simple as possible.
-- **Follow Microsoft best practices** wherever official guidance exists (coding conventions, security baselines, project layout, etc.).
-- **Prefer cloud-native designs** — build for statelessness, horizontal scaling, and managed services.
-- **Favor immutable objects—pragmatically** — default to C# *records* or `init`-only properties for domain models, events, and public contracts; relax the rule only when there's a clear, justified need.
-- **Keep .NET analyzers enabled** — treat most warnings as build blockers to maintain hygiene.
-- **Use dependency injection with get-only properties** — follow the `private Type Name { get; }` pattern for all injected dependencies, consistent with logging best practices.
-- **If Microsoft Orleans is in the project, think like a grain** — avoid blocking calls, shared mutable state, and chatty inter-grain traffic; design for Orleans' single-threaded scheduler, placement, and storage semantics.
-- **Never use `Parallel.ForEach`** — assume any code might execute inside an Orleans grain; instead use `await` + `Task.WhenAll` for fan-out concurrency.
+- **Always apply SOLID** — Code MUST adhere to SOLID; keep asking whether each class has *only one* reason to change.  
+  Why: Improves maintainability and reduces coupling.
+- **Code MUST remain unit-testable** — leverage dependency injection, side-effect-free functions, and clear seams so every unit can be isolated.  
+  Why: Enables fast, reliable feedback and safer refactoring.
+- **Stick to Microsoft libraries / NuGet packages** — third-party dependencies MAY be added only with explicit approval or when they extend tech already in use (e.g., an Orleans storage provider).  
+  Why: Reduces supply‑chain risk and avoids gratuitous diversity in dependencies.
+- **Principle priority: SOLID → DRY → KISS** — remove duplication first, then keep the solution as simple as possible.  
+  Why: Minimizes complexity while preserving correctness.
+- **Follow Microsoft best practices** wherever official guidance exists (coding conventions, security baselines, project layout, etc.).  
+  Recommendation: Authors SHOULD align with official guidance when available.
+- **Prefer cloud-native designs** — Authors SHOULD build for statelessness, horizontal scaling, and managed services.
+- **Favor immutable objects—pragmatically** — Authors SHOULD default to C# *records* or `init`‑only properties for domain models, events, and public contracts; relax the rule only with a clear, justified need.
+- **Keep .NET analyzers enabled** — treat most warnings as build blockers to maintain hygiene; analyzers MUST remain enabled.  
+  Why: Prevents defects and enforces consistent style automatically.
+- **Use dependency injection with get-only properties** — Authors MUST follow the `private Type Name { get; }` pattern for all injected dependencies, consistent with logging best practices.  
+  Why: Encourages immutability and clarity of dependencies.
+- **If Microsoft Orleans is in the project, think like a grain** — Authors MUST avoid blocking calls, shared mutable state, and chatty inter‑grain traffic; design for Orleans' single‑threaded scheduler, placement, and storage semantics.  
+  Why: Avoids deadlocks and preserves Orleans execution guarantees.
+- **Never use `Parallel.ForEach`** — Code MUST NOT use `Parallel.ForEach`; instead use `await` + `Task.WhenAll` for fan‑out concurrency.  
+  Why: `Parallel.ForEach` violates Orleans’ single‑threaded model and can introduce concurrency bugs.
 
 ## Access Control and Encapsulation Principles
 
-- **Classes are `sealed` by default** — only make classes inheritable when you have a clear, documented need for polymorphism; prefer composition over inheritance
-- **Members are `private` by default** — only expose what consumers actually need; prefer `internal` over `public` when sharing within assemblies
-- **Interfaces are `internal` by default** — only make interfaces `public` when they're part of your deliberate API surface
-- **Orleans grain interfaces access** — grain interfaces are `public` when consumed by external clients; keep `internal` when used only intra-assembly
-- **Explicit access control decisions** — every `public`, `protected`, or unsealed class must have a documented justification in XML comments
-- **Principle of least privilege** — grant the minimum access level required for the intended use case; you can always widen access later, but narrowing it is a breaking change
-- **Follow Orleans POCO pattern** — all grain classes must be `sealed` and implement `IGrainBase` instead of inheriting from `Grain`
+- **Classes are `sealed` by default** — Authors SHOULD only make classes inheritable when there is a clear, documented need for polymorphism; prefer composition over inheritance.  
+  Why: Prevents unintended extension points and reduces API surface area.
+- **Members are `private` by default** — Authors SHOULD only expose what consumers actually need; prefer `internal` over `public` when sharing within assemblies.  
+  Why: Applies the principle of least privilege to APIs.
+- **Interfaces are `internal` by default** — Authors SHOULD only make interfaces `public` when they're part of a deliberate API surface.  
+  Why: Avoids premature commitment to public contracts.
+- **Orleans grain interfaces access** — Grain interfaces MUST be `public` when consumed by external clients; keep `internal` when used only intra‑assembly.  
+  Why: Clarifies intended usage and enforcement boundaries.
+- **Explicit access control decisions** — every `public`, `protected`, or unsealed class MUST have a documented justification in XML comments.  
+  Why: Forces intentional design and assists reviewers.
+- **Principle of least privilege** — Authors SHOULD grant the minimum access level required for the intended use case; widening can happen later, while narrowing is breaking.  
+  Why: Reduces breaking changes and risk.
+- **Follow Orleans POCO pattern** — all grain classes MUST be `sealed` and implement `IGrainBase` instead of inheriting from `Grain`.  
+  Why: Aligns with Orleans performance and versioning guidance.
 
 ## Service Registration and Configuration
 
-- **Use dedicated service registration pattern** — follow hierarchical feature-based registration using extension methods as defined in the service registration guidelines
-- **Always use Options pattern for configuration** — NEVER use direct configuration parameters in constructors; always use `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>`
-- **Follow dependency injection property pattern** — all registered services must use `private Type Name { get; }` pattern when injected, consistent with logging and Orleans best practices
+- **Use dedicated service registration pattern** — Authors SHOULD follow hierarchical feature‑based registration using extension methods as defined in the service registration guidelines.
+- **Always use Options pattern for configuration** — Authors MUST NOT use direct configuration parameters in constructors; Authors MUST use `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>`.  
+  Why: Centralizes configuration, supports validation, and enables hot‑reload where appropriate.
+- **Follow dependency injection property pattern** — all registered services MUST use the `private Type Name { get; }` pattern when injected, consistent with logging and Orleans best practices.  
+  Why: Promotes immutability and consistent dependency usage.
 
-## Twelve-Factor Checklist (Required for Cloud-Native Design)
+## Twelve-Factor Checklist (REQUIRED for Cloud-Native Design)
 
 1. **Codebase** – one codebase, many deploys
 2. **Dependencies** – declare & isolate all dependencies
@@ -464,8 +482,6 @@ namespace SampleApplication
 }
 ```
 
-
-
 ### Cloud-Native Configuration
 
 ```csharp
@@ -488,11 +504,12 @@ builder.Services.Configure<DatabaseSettings>(
 
 ## 🚨 CRITICAL RULE: NEVER DISABLE ANALYZERS 🚨
 
-**⚠️ ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes ⚠️**
+### ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes
 
 **CRITICAL RULE**: Never disable analyzer rules to get around violations. Always fix the underlying issue.
 
 ### Why This Is Critical
+
 - **Analyzers detect real problems** - They identify code quality issues, security vulnerabilities, and maintainability problems
 - **Suppressing warnings hides problems** - It creates technical debt and makes code harder to maintain
 - **Builds will fail** - Analyzer violations are treated as errors with `--warnaserror`
@@ -500,6 +517,7 @@ builder.Services.Configure<DatabaseSettings>(
 - **Team productivity suffers** - Technical debt from suppressed warnings slows down development
 
 ### The Rule: Fix, Don't Suppress
+
 - **ALWAYS fix the underlying issue** - Improve your code to satisfy the analyzer
 - **NEVER use `#pragma warning disable`** without explicit approval and exhaustive justification
 - **NEVER add `[SuppressMessage]` attributes** to hide violations
@@ -515,15 +533,15 @@ This project uses JetBrains Rider `.DotSettings` files for analyzer configuratio
 - **Always fix the violation first** - The primary approach is to resolve the analyzer warning by improving the code
 - **Never disable rules project-wide** - Disabling entire categories or rules across the project is prohibited
 - **No shortcuts allowed** - Taking shortcuts by suppressing warnings undermines code quality
-- **Exhaustive problem-solving required** - Must attempt all possible solutions before considering suppressions
+- **Exhaustive problem-solving required** - MUST attempt all possible solutions before considering suppressions
 
 #### Last Resort Suppression Guidelines
 
 **Only when ALL other options are exhausted** and you can confirm there is absolutely no way to fix the violation:
 
 1. **Single-line suppression only** - Use `#pragma warning disable` for the specific line, never for entire files or projects
-2. **Explicit user confirmation required** - Must get explicit approval from code reviewer or team lead
-3. **Mandatory justification** - Must document why the suppression is necessary and what was attempted
+2. **Explicit user confirmation required** - MUST get explicit approval from code reviewer or team lead
+3. **Mandatory justification** - MUST document why the suppression is necessary and what was attempted
 4. **Restore immediately** - Use `#pragma warning restore` on the very next line
 
 ```csharp
@@ -546,14 +564,15 @@ public void SpecialCase()
 }
 ```
 
-#### Required Documentation for Suppressions
+#### REQUIRED Documentation for Suppressions
 
-Any suppression must include:
+Any suppression MUST include:
+
 - **Why**: Detailed explanation of why the code cannot be fixed
 - **What was tried**: List of all attempted solutions
 - **Who approved**: Name of reviewer who confirmed necessity
 - **When**: Date of approval
-- **Review date**: When this should be revisited
+- **Review date**: When this SHOULD be revisited
 
 #### Build Pipeline Integration
 
@@ -729,40 +748,15 @@ namespace Mississippi.EventSourcing.Grains
 }
 ```
 
-
-
-
-
 ## Enforcement
 
-These practices should be enforced through:
+These practices SHOULD be enforced through:
 
 1. **Code Reviews**: Always verify adherence to SOLID principles and access control decisions
 2. **Static Analysis**: Use .NET analyzers and treat warnings as errors, especially for access modifier violations
 3. **Unit Tests**: Maintain high test coverage and quality
 4. **Build Pipeline**: Fail builds on quality gate violations, including improper access control
 5. **Documentation**: Keep these guidelines updated with examples
-
-## Related Guidelines
-
-This document should be read in conjunction with:
-
-- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For hierarchical service registration patterns, Options pattern implementation, and configuration handling
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For high-performance logging patterns, LoggerExtensions classes, and mandatory ILogger usage with dependency injection properties
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans-specific grain development patterns, POCO grain requirements, and IGrainBase implementation with sealed classes
-- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attributes and version tolerance patterns
-- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards, zero warnings policy, and build pipeline requirements that enforce access control analyzer rules
-- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For consistent naming patterns, feature-based namespace structure, and XML documentation requirements
-- **Project File Management** (`.github/instructions/projects.instructions.md`) - For proper PackageReference usage and centralized package management
-
-### Cross-Reference Alignment
-
-- **Access Control + Orleans**: All grain classes must be `sealed` and implement `IGrainBase` following POCO pattern
-- **Access Control + Logging**: All LoggerExtensions classes must be `public static` with properly scoped methods following access control principles
-- **Access Control + Service Registration**: All ServiceRegistration classes must follow access control principles with proper public/internal boundaries
-- **Access Control + Build Rules**: Access modifier violations must be fixed through code changes, not analyzer suppressions
-- **C# + Service Registration**: Service registration must follow dependency injection property pattern and access control principles defined in this document
-- **C# + Logging**: All services must use dependency injection property pattern for ILogger injection as specified in both documents
 
 ## Further Reading
 

@@ -1,0 +1,67 @@
+name: PowerShell Tests
+
+on:
+  push:
+    branches:
+      - main
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+      - topic/**
+
+jobs:
+  pwsh-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache GitVersion tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.gitversion
+          key: ${{ runner.os }}-gitversion
+          restore-keys: ${{ runner.os }}-gitversion
+
+      - name: Cache nugets
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3.2.1
+        with:
+          versionSpec: "6.0.5"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v3.2.1
+        with:
+          useConfigFile: true
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0
+
+      - name: Run PowerShell test orchestrator
+        shell: pwsh
+        run: pwsh ./eng/tests/orchestrate-powershell-tests.ps1
+
+

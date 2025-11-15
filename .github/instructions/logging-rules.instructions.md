@@ -4,26 +4,29 @@ applyTo: '**/*.cs'
 
 # Enterprise Logging Best Practices
 
-This document defines the logging standards and best practices for the Mississippi Framework and all related applications. All logging must follow these guidelines to ensure consistency, observability, and maintainability across the enterprise.
+This document defines the logging standards and best practices for the Mississippi Framework and all related applications. All logging MUST follow these guidelines to ensure consistency, observability, and maintainability across the enterprise.
 
 ## Core Logging Principles
 
 ### MANDATORY High-Performance Logging Requirements
 
 #### LoggerExtensions Classes - REQUIRED PATTERN
+
 - **ALL logging MUST use the LoggerExtensions pattern** - Create a `public static class [ComponentName]LoggerExtensions` for each component
-- **NO direct ILogger calls allowed** - All logging must go through static extension methods defined in LoggerExtensions classes
+- **NO direct ILogger calls allowed** - All logging MUST go through static extension methods defined in LoggerExtensions classes
 - **Consistent naming convention** - Class name MUST end with `LoggerExtensions` (e.g., `EventProcessingLoggerExtensions`, `OrderProcessingLoggerExtensions`)
-- **Static Action delegates required** - All LoggerMessage patterns must be implemented as private static readonly Action delegates
-- **Extension method pattern** - Each log operation must be exposed as a public static extension method
+- **Static Action delegates required** - All LoggerMessage patterns MUST be implemented as private static readonly Action delegates
+- **Extension method pattern** - Each log operation MUST be exposed as a public static extension method
 
 #### Performance Requirements
+
 - **LoggerMessage is mandatory** - NEVER use direct ILogger.Log() calls, always use LoggerMessage.Define pattern
 - **Static Action caching** - Cache all log message templates as static Action delegates for optimal performance
 - **Zero allocations** - Use strongly-typed parameters to avoid boxing of value types
 - **Compile-time optimization** - Leverage LoggerMessage for pre-compiled message templates
 
 ### Structured Logging with ILogger
+
 - **Always use dependency-injected `ILogger<T>` as a property** - Use `private ILogger<T> Logger { get; }` pattern
 - **Use structured logging** - Log objects and properties, not just strings
 - **Include correlation IDs** - Every log entry should be traceable across services
@@ -39,48 +42,57 @@ This section defines **exactly when logging MUST be added** to ensure determinis
 ### ALWAYS Add Logging For These Operations (REQUIRED)
 
 #### 1. Method Entry/Exit for Public APIs (MANDATORY)
-- **All public service methods** must log entry and successful completion
+
+- **All public service methods** MUST log entry and successful completion
 - **Include method parameters** that provide business context (avoid PII)
 - **Log execution time** for performance monitoring
 
 #### 2. Exception Handling (MANDATORY)
+
 - **Every catch block MUST log the exception** with full context
 - **Include operation details** that were being performed when the exception occurred
 - **Add correlation IDs** to track exceptions across service boundaries
 
 #### 3. Data Mutations (MANDATORY)
-- **All data create/update/delete operations** must be logged
+
+- **All data create/update/delete operations** MUST be logged
 - **Include entity type and identifier** for audit trails
 - **Log both start and completion** of data operations
 
 #### 4. External Service Calls (MANDATORY)
+
 - **All calls to external services** (APIs, databases, file systems)
 - **Log request initiation and response/failure**
 - **Include timing and status information**
 
 #### 5. Orleans Grain Lifecycle (MANDATORY)
-- **Grain activation and deactivation** must be logged
+
+- **Grain activation and deactivation** MUST be logged
 - **All public grain method calls** with timing
 - **Inter-grain communication** with target grain information
 
 #### 6. Business Rule Violations (MANDATORY)
+
 - **Log when business rules prevent operations**
 - **Include rule name and context** that caused the violation
 - **Provide sufficient detail** for business analysis
 
 #### 7. Event Sourcing Operations (MANDATORY)
+
 - **All event append and read operations**
 - **Include stream ID, event count, and position information**
 - **Log both successful and failed operations**
 
 #### 8. Performance-Critical Operations (MANDATORY)
+
 - **Operations that take longer than 1 second**
 - **Significant resource allocations** (> 10MB memory, database connections)
 - **Batch processing operations** with item counts
 
 ### Decision Tree for Adding Logging
 
-#### ALWAYS ADD LOGGING IF:
+#### ALWAYS ADD LOGGING IF
+
 1. Method is public and part of a service interface
 2. Method can throw an exception
 3. Method performs I/O operations (database, file, network)
@@ -92,14 +104,16 @@ This section defines **exactly when logging MUST be added** to ensure determinis
 9. Method allocates significant resources (> 10MB memory, database connections)
 10. Method is part of the event sourcing pipeline
 
-#### CONSIDER ADDING LOGGING IF:
+#### CONSIDER ADDING LOGGING IF
+
 1. Method is complex with multiple decision points
 2. Method is frequently called and performance matters
 3. Method is part of a critical business process
 4. Method handles user input or external data
 5. Method is difficult to test or debug
 
-#### USUALLY DON'T LOG:
+#### USUALLY DON'T LOG
+
 1. Simple getters/setters
 2. Constructors (unless they do significant work)
 3. Private helper methods that are single-purpose
@@ -124,6 +138,7 @@ When reviewing code, ensure logging is present for:
 ### Log Levels and Usage
 
 #### Error Level
+
 - **Application errors** that require immediate attention
 - **Unhandled exceptions** and system failures
 - **Business rule violations** that prevent normal operation
@@ -151,6 +166,7 @@ Logger.EventProcessingFailed(eventId, streamId, ex);
 ```
 
 #### Warning Level
+
 - **Recoverable errors** that don't stop execution
 - **Performance degradation** indicators
 - **Deprecated feature usage**
@@ -175,6 +191,7 @@ Logger.HighMemoryUsageDetected(memoryUsage);
 ```
 
 #### Information Level
+
 - **Business events** and important state changes
 - **Service lifecycle events** (startup, shutdown, health checks)
 - **Performance metrics** and operational data
@@ -199,6 +216,7 @@ Logger.EventAppended(eventId, streamId, position);
 ```
 
 #### Debug Level
+
 - **Detailed execution flow** for troubleshooting
 - **Method entry/exit** with parameters
 - **Intermediate calculation results**
@@ -223,6 +241,7 @@ Logger.ProcessingBatch(eventCount, streamId);
 ```
 
 #### Trace Level
+
 - **Very detailed execution flow** for deep debugging
 - **Loop iterations** and repetitive operations
 - **Memory allocation** and garbage collection events
@@ -249,6 +268,7 @@ Logger.BufferAllocated(bufferSize);
 ## Log Message Formatting
 
 ### Event Numbers and Identifiers
+
 - **Use consistent event numbers** - Prefix with component identifier
 - **Include correlation IDs** - Link related log entries across services
 - **Add request/operation IDs** - Track specific operations end-to-end
@@ -282,6 +302,7 @@ Logger.EventProcessedWithCorrelation(eventId, correlationId);
 ```
 
 ### Structured Data Logging
+
 - **Log objects as structured data** - Not as serialized strings
 - **Use meaningful property names** - Clear, descriptive names
 - **Include relevant context** - IDs, timestamps, user info, etc.
@@ -326,6 +347,7 @@ Logger.OrderCreatedComplete(userId, orderId, itemCount, totalAmount, currency, p
 ```
 
 ### Exception Logging
+
 - **Always include the exception object** - Don't just log the message
 - **Add context information** - What operation was being performed
 - **Include correlation data** - Request ID, user ID, etc.
@@ -380,6 +402,7 @@ catch (Exception ex)
 ## Performance and Sensitive Data
 
 ### High-Performance Logging with LoggerMessage
+
 - **MANDATORY: Always use LoggerMessage for ALL logging** - Direct ILogger calls are FORBIDDEN - reduces allocations and parsing overhead
 - **MANDATORY: Use LoggerExtensions classes** - ALL logging must be implemented in `public static class [ComponentName]LoggerExtensions` classes
 - **Define static Action delegates** - Cache log message templates for better performance as private static readonly fields
@@ -439,6 +462,7 @@ public sealed class EventProcessorGrain : IGrainBase, IEventProcessorGrain
 ```
 
 ### Performance Considerations
+
 - **Use log level checks** - Avoid expensive operations for disabled log levels
 - **Lazy evaluation** - Use lambda expressions for expensive operations
 - **Async logging** - Use async logging providers when available
@@ -478,6 +502,7 @@ Logger.UserDataLogged(userData); // Only serializes if Debug is enabled
 ```
 
 ### Sensitive Data Handling
+
 - **Never log sensitive information** - Passwords, tokens, PII, etc.
 - **Mask or redact sensitive data** - Use placeholders for sensitive fields
 - **Log data classifications** - Indicate when data has been redacted
@@ -513,6 +538,7 @@ Logger.PiiDataRedacted();
 ## Context and Correlation
 
 ### AI-Debuggable Logging
+
 - **Write descriptive log messages** - Include enough context for AI agents to understand operations
 - **Log the "why" not just the "what"** - Explain the business context and decision points
 - **Include state information** - Log relevant system state, configuration, and environment details
@@ -520,6 +546,7 @@ Logger.PiiDataRedacted();
 - **Log decision points** - Include information about business rules, thresholds, and decision logic
 
 ### Correlation IDs
+
 - **Include correlation IDs** in all log entries
 - **Propagate correlation IDs** across service boundaries
 - **Use consistent correlation ID format** - UUID or similar unique identifier
@@ -555,6 +582,7 @@ Logger.AuthenticationWorkflowStarted("UserLogin", userId, authMethod, correlatio
 ```
 
 ### Request Context
+
 - **Log request details** - Method, path, user agent, etc.
 - **Include timing information** - Request duration, processing time
 - **Add business context** - User ID, tenant ID, feature flags
@@ -590,6 +618,7 @@ Logger.HttpRequestCompletedDetailed(method, path, statusCode, duration, userId, 
 ## Mississippi Framework Specific Logging
 
 ### Event Sourcing Operations
+
 - **Log event append operations** - Include stream ID, event count, position
 - **Record read operations** - Stream ID, position range, result count
 - **Track grain operations** - Grain ID, operation type, duration
@@ -623,6 +652,7 @@ Logger.EventsRead(eventCount, streamId, startPosition, endPosition, correlationI
 ```
 
 ### Orleans Grain Operations
+
 - **Log grain activation/deactivation** - Include grain ID and type
 - **Record grain method calls** - Method name, parameters, duration
 - **Track grain state changes** - State transitions and reasons
@@ -762,6 +792,7 @@ public sealed class EventSourcingGrain : IEventSourcingGrain, IGrainBase
 ```
 
 ### Orleans Correlation ID and Request Context Handling
+
 - **Use Orleans RequestContext** - Store and retrieve correlation IDs across grain calls
 - **Propagate correlation IDs** - Pass correlation IDs as parameters to other grains
 - **Handle missing correlation IDs** - Create new correlation IDs when none exist
@@ -919,6 +950,7 @@ public sealed class OrderProcessingGrain : IOrderProcessingGrain, IGrainBase
 ```
 
 ### Cosmos DB Operations
+
 - **Log database operations** - Read/write operations, batch sizes
 - **Record performance metrics** - Request units, latency, throughput
 - **Track retry attempts** - Retry count, backoff strategy, success/failure
@@ -954,6 +986,7 @@ Logger.CosmosRetry(retryCount, operation, backoffMs, correlationId);
 ## Logging Configuration
 
 ### Application Settings
+
 - **Configure log levels** appropriately for each environment
 - **Set up structured logging** with JSON formatting
 - **Configure correlation ID extraction** from headers or context
@@ -987,6 +1020,7 @@ Logger.CosmosRetry(retryCount, operation, backoffMs, correlationId);
 ```
 
 ### Correlation ID Setup
+
 - **Extract from HTTP headers** - X-Correlation-ID, X-Request-ID
 - **Create for background operations** - Use GUID or similar
 - **Propagate across async boundaries** - Use AsyncLocal or similar
@@ -1122,12 +1156,14 @@ public sealed class ExplicitCorrelationController : ControllerBase
 ## Monitoring and Alerting
 
 ### Key Metrics to Monitor
+
 - **Error rates** - Percentage of error logs vs total logs
 - **Performance indicators** - Log entries with high duration values
 - **Business events** - Important business operations and their success rates
 - **System health** - Startup, shutdown, and health check events
 
 ### Alerting Rules
+
 - **High error rates** - Alert when error percentage exceeds threshold
 - **Performance degradation** - Alert on slow operations
 - **Missing correlation IDs** - Alert when logs lack correlation data
@@ -1136,12 +1172,14 @@ public sealed class ExplicitCorrelationController : ControllerBase
 ## Compliance and Audit
 
 ### Audit Requirements
+
 - **Log all security events** - Authentication, authorization, data access
 - **Record data modifications** - Create, update, delete operations
 - **Track configuration changes** - Settings modifications and deployments
 - **Maintain retention policies** - Keep logs for required time periods
 
 ### Data Protection
+
 - **GDPR compliance** - Ensure PII is properly handled
 - **Data retention** - Implement appropriate log retention policies
 - **Access controls** - Restrict log access to authorized personnel
@@ -1150,11 +1188,13 @@ public sealed class ExplicitCorrelationController : ControllerBase
 ## Tools and Integration
 
 ### Recommended Tools
+
 - **Microsoft.Extensions.Logging** - Standard .NET logging framework
 - **OpenTelemetry** - Vendor-neutral observability framework
 - **Console/File/EventLog providers** - Built-in .NET logging providers
 
 ### Integration Patterns
+
 - **Centralized logging** - Send all logs to a central repository
 - **Log aggregation** - Collect logs from multiple services
 - **Real-time monitoring** - Set up dashboards for live log monitoring
@@ -1182,12 +1222,14 @@ When reviewing code that includes logging, ensure:
 - [ ] Writes AI-debuggable log messages with sufficient context
 - [ ] Includes business context and decision points in log messages
 - [ ] Uses clear, descriptive language that AI agents can understand
+- [ ] If direct `ILogger.Log*` calls are found, open a `.scratchpad/tasks` item to convert to LoggerExtensions with LoggerMessage (see Agent Scratchpad)
 
 ## Examples and Templates
 
 ### MANDATORY Scenario Examples
 
 #### Public Service Method with Exception Handling
+
 ```csharp
 public static class OrderServiceLoggerExtensions
 {
@@ -1248,6 +1290,7 @@ public class OrderService
 ```
 
 #### Data Mutation Operations
+
 ```csharp
 public static class UserRepositoryLoggerExtensions
 {
@@ -1307,6 +1350,7 @@ public class UserRepository
 ```
 
 #### Orleans Grain with Mandatory Logging
+
 ```csharp
 public static class EventProcessingGrainLoggerExtensions
 {
@@ -1377,6 +1421,7 @@ public class EventProcessingGrain : IEventProcessingGrain, IGrainBase
 ```
 
 ### Standard Logging Template
+
 ```csharp
 // MANDATORY PATTERN: High-performance logging with LoggerMessage and LoggerExtensions class
 public static class ExampleServiceLoggerExtensions
@@ -1448,34 +1493,26 @@ This logging standard ensures consistent, observable, and maintainable logging a
 ## CRITICAL REQUIREMENTS SUMMARY
 
 ### Technical Requirements (HOW to log)
+
 1. **MANDATORY: LoggerExtensions Classes** - ALL logging must be implemented using `public static class [ComponentName]LoggerExtensions` pattern
 2. **MANDATORY: LoggerMessage Pattern** - ALL logging must use static Action delegates with LoggerMessage.Define
 3. **FORBIDDEN: Direct ILogger calls** - NO direct ILogger.Log*() method calls are allowed anywhere in the codebase
 4. **MANDATORY: High-Performance Pattern** - This is not optional - it's required for all logging without exception
 
 ### Behavioral Requirements (WHEN to log)
-5. **MANDATORY: Public Service Methods** - ALL public service methods must have entry/exit logging
-6. **MANDATORY: Exception Handling** - ALL catch blocks must log exceptions with context
-7. **MANDATORY: Data Mutations** - ALL create/update/delete operations must be logged
-8. **MANDATORY: External Service Calls** - ALL external service interactions must be logged
-9. **MANDATORY: Orleans Grain Operations** - ALL grain methods and lifecycle events must be logged
-10. **MANDATORY: Business Rule Violations** - ALL business rule failures must be logged with context
+
+1. **MANDATORY: Public Service Methods** - ALL public service methods must have entry/exit logging
+2. **MANDATORY: Exception Handling** - ALL catch blocks must log exceptions with context
+3. **MANDATORY: Data Mutations** - ALL create/update/delete operations must be logged
+4. **MANDATORY: External Service Calls** - ALL external service interactions must be logged
+5. **MANDATORY: Orleans Grain Operations** - ALL grain methods and lifecycle events must be logged
+6. **MANDATORY: Business Rule Violations** - ALL business rule failures must be logged with context
 
 ### Agent Implementation Rule
+
 When an AI agent encounters any of the mandatory scenarios above (#5-10), it MUST add appropriate logging following the LoggerExtensions pattern (#1-4). This ensures deterministic behavior and complete observability.
 
 Failure to follow these patterns will result in code review rejection and build failures.
-
-## Related Guidelines
-
-This document should be read in conjunction with:
-
-- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection property patterns, and access control principles
-- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For IHostedService logging patterns, Orleans lifecycle participant logging, and configuration validation logging
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For Orleans grain logging patterns, POCO grain requirements, and grain lifecycle logging
-- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans-specific logging during serialization operations
-- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards, zero warnings policy, and build pipeline requirements that enforce logging standards
-- **Naming Conventions** (`.github/instructions/naming.instructions.md`) - For LoggerExtensions class naming patterns, XML documentation requirements, and structured logging property naming
 
 ## References
 
