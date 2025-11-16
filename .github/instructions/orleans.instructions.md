@@ -8,6 +8,12 @@ This document defines the Orleans development standards and best practices for t
 
 ## Core Principles
 
+### Folder Layout (Vertical Slices)
+
+- **You MUST NOT create a `Grains/` folder** or other horizontal technical silos (e.g., `Models`, `Dtos`, `Services`, `Repositories`). Organize grains and their collaborators under the feature they belong to, mirroring the namespace: `Company/Product/Feature[/SubFeature]`.
+- **You MUST place grains with their feature** (e.g., `Mississippi/EventSourcing/Orders/OrderGrain.cs`), not under a generic `Grains/` directory.
+- **Namespaces MUST mirror folders** and follow `Company.Product.Feature[.SubFeature]`. Type names SHOULD carry the `…Grain` suffix; folders MUST NOT.
+
 ### 1. NEVER Inherit from Grain ❌
 
 **CRITICAL RULE**: Never inherit from the `Grain` base class. Agents MUST always use the POCO (Plain Old CLR Object) grain pattern with `IGrainBase`.

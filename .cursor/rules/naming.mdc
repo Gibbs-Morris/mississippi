@@ -30,6 +30,43 @@ This document establishes comprehensive naming conventions and XML documentation
 
 **Rule N-1:** Maximum five segments; PascalCase alphanumerics; no underscores; abbreviations only when industry-standard (`IO`, `DB`, `Html`).
 
+### 1.1 Vertical Slice Folder & Namespace Rules
+
+- **Feature-first folders** — The directory path MUST mirror the namespace segments exactly: `Company/Product/Feature[/SubFeature]`. Each folder represents a business feature or subfeature, not a technical layer.
+- **Prohibited horizontal folders** — You MUST NOT create technical silo folders at the root or within features, such as: `Models`, `Entities`, `Grains`, `Grain`, `Dtos`, `Dto`, `Services`, `Repositories`, `Repository`, `Interfaces`, `Enums`, `Extensions`, `Utils`, `Helpers`, `Common`. Use type names/suffixes to express roles; co-locate them with the feature.
+- **Types live with their feature** — You MUST place DTOs, handlers, options, validators, grains, etc. alongside the feature they serve. Example: `Mississippi/EventSourcing/Streams/EventStreamProcessor.cs` rather than `Mississippi/EventSourcing/Services/EventStreamProcessor.cs`.
+- **Allowed exceptions (narrow)** — A `ServiceRegistration.cs` per feature MAY be used (see service-registration guidelines). Optional `.Abstractions`/`.Infrastructure` segments MAY be used only when they are essential, stable product boundaries (see Step 4).
+
+Good
+
+```text
+Mississippi/
+  EventSourcing/
+    ServiceRegistration.cs
+    Streams/
+      EventStreamProcessor.cs
+      StreamSettings.cs
+      EventStreamProcessorLoggerExtensions.cs
+    Cosmos/
+      ServiceRegistration.cs
+      BrookStorageOptions.cs
+```
+
+Bad
+
+```text
+Mississippi/
+  EventSourcing/
+    Services/                 # ❌ horizontal layer
+      EventStreamProcessor.cs
+    Models/                   # ❌ horizontal layer
+      StreamSettings.cs
+    Grains/                   # ❌ horizontal layer
+      OrderGrain.cs
+    Dtos/                     # ❌ horizontal layer
+      OrderDto.cs
+```
+
 ## 2. Type-Naming Rules
 
 | ID  | Element                         | Rule                                                                                                                                                            |
