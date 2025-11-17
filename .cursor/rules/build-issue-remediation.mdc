@@ -67,8 +67,6 @@ pwsh ./go.ps1
 
 > **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
-
-
 ## Purpose
 
 This guide helps agents eliminate .NET build issues through iterative, attempt-bounded edits that preserve behavior.
@@ -83,7 +81,6 @@ This guide helps agents eliminate .NET build issues through iterative, attempt-b
 - The scratchpad is ephemeral and ignored by Git; do not reference it from source or tests
 
 ## Procedures
-
 
 - Build Mississippi (strict build in Release):
 

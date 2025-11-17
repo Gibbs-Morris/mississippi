@@ -8,7 +8,32 @@ alwaysApply: true
 
 # Test Improvement Workflow (Legacy/Non‑TDD Code)
 
-This guide defines a practical, repeatable loop to raise unit test coverage and mutation score on projects that were not originally written with TDD. It complements the broader Testing and Build Rules documents and provides exact commands using `eng/src/agent-scripts/test-project-quality.ps1`.
+Governing thought: This guide defines a practical, repeatable loop to raise unit test coverage and mutation score on legacy projects through iterative test additions while maintaining zero-warnings quality standards.
+
+## Rules (RFC 2119)
+
+- Agents **MUST NOT** edit anything outside the `tests/` folder unless explicitly approved.  
+  Why: Assumes production code is correct until tests demonstrate a defect.
+- Agents **MUST** fix all new warnings/errors immediately before proceeding.  
+  Why: Zero-warnings policy applies to test code; maintains quality standards.
+- Agents **MUST** aim for 100% coverage on changed code paths with no regressions.  
+  Why: New test additions should not decrease existing coverage.
+- Agents **MUST** maintain mutation score at or above 80% for Mississippi projects.  
+  Why: Ensures test quality through mutation testing validation.
+- Agents **MUST NOT** disable warnings or suppress analyzer rules in test files.  
+  Why: Test code must meet the same quality standards as production code.
+- Agents **SHOULD** use `-NoBuild` flag after initial build for faster iteration.  
+  Why: Speeds up test-only iterations while maintaining quality through separate build checks.
+- Agents **SHOULD** rerun summarizer scripts to sync coverage gaps and mutation survivors.  
+  Why: Automated task generation prevents manual scratchpad management errors.
+
+## Scope and Audience
+
+**Audience:** Developers improving test coverage on legacy code that wasn't written with TDD.
+
+**In scope:** Test improvement workflow, coverage targets, mutation testing, quality gates.
+
+**Out of scope:** New feature development, production code refactoring without approval.
 
 > **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
@@ -40,38 +65,31 @@ pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <YourTestProj
 
 1. Iterate quickly using `-NoBuild` after the initial build, but keep separate build checks for zero‑warnings.
 
-## Read This First
+## Purpose
 
-- Read all `.github/instructions/*.instructions.md` files before making changes so your approach aligns with repository-wide standards.
-- Cross‑reference:
-  - `.github/instructions/testing.instructions.md`
-  - `.github/instructions/build-rules.instructions.md`
+This workflow provides a systematic approach to improving test coverage and mutation scores on legacy code through iterative, quality-focused test additions.
 
-## Guardrails
+## Core Principles
 
-- Do not edit anything outside of the `tests/` folder during this workflow unless explicitly approved. Assume production code is correct until tests demonstrate a defect. If you believe production changes are required, pause and request confirmation first.
+- Read all `.github/instructions/*.instructions.md` files before starting to align with repository-wide standards
+- Cross-reference testing.instructions.md and build-rules.instructions.md
+- Assume production code is correct until tests demonstrate a defect
+- Use automated summarizer scripts for coverage gaps and mutation survivors
+- The scratchpad is ephemeral and ignored by Git
 
-- For coverage hot spots or other follow-ups that require parallel attention, rerun `summarize-coverage-gaps.ps1` to sync tasks into `.scratchpad/tasks/pending` automatically. Mutation survivors are mirrored the same way by `summarize-mutation-survivors.ps1`. Only create manual scratchpad tasks for gaps not covered by these scripts (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; never reference it from source or tests.
+## Critical: Zero Warnings in Tests
 
-## 🚨 CRITICAL RULE: ZERO WARNINGS IN TESTS 🚨
+Test code quality matters because:
+- Tests are documentation showing how to use code correctly
+- Tests demonstrate patterns and best practices
+- Test code is production code that runs in CI
+- Poor test code creates technical debt
 
-### ATTENTION: Zero warnings policy applies to test code too
-
-### The Rule for Test Code
-
-- **NEVER disable warnings in test files** - Test code must meet the same quality standards as production code
-- **NEVER suppress analyzer rules in tests** - Test code should be exemplary and follow all best practices
-- **NEVER use `#pragma warning disable` in tests** - If you need to suppress a warning in tests, the test design is wrong
-- **ALWAYS fix test code warnings** - Test code should demonstrate proper patterns and practices
-- **Maintain analyzer and StyleCop cleanliness in tests** - Zero warnings policy applies everywhere
-- **Zero new warnings/errors** - Do not introduce any new compiler, analyzer, StyleCop, or ReSharper warnings or errors during this loop. Fix any newly introduced issues immediately before proceeding.
-
-### Why Test Code Quality Matters
-
-- **Tests are documentation** - They show how to use your code correctly
-- **Tests demonstrate patterns** - They should exemplify best practices
-- **Test code is production code** - It runs in CI and affects build quality
-- **Poor test code creates technical debt** - Just like poor production code
+Guidelines:
+- Fix test code warnings immediately
+- Never disable warnings or suppress analyzer rules in tests
+- Never use `#pragma warning disable` in tests
+- Maintain analyzer and StyleCop cleanliness everywhere
 
 ## Targets (per Build/Testing rules)
 

@@ -4,7 +4,32 @@ applyTo: '**'
 
 # Pull Request Review Coaching Guide
 
-This document coaches reviewers to lead elite-quality pull request outcomes across the Mississippi codebase. Use it to mentor teammates toward disciplined, high-signal reviews that protect architecture, testing depth, and documentation standards.
+Governing thought: This document coaches reviewers to lead elite-quality pull request outcomes across the Mississippi codebase through disciplined, high-signal reviews that protect architecture, testing depth, and documentation standards.
+
+## Rules (RFC 2119)
+
+- Reviewers **MUST** pause reviews when diffs exceed ~600 changed lines and coach authors to split before continuing.  
+  Why: Keeps cognitive load manageable and prevents mixed-concern changes.
+- Reviewers **MUST** fail reviews when L0 tests are missing for new code paths.  
+  Why: Every behavior change requires high-quality unit test coverage.
+- Reviewers **MUST** verify that authors ran `pwsh ./go.ps1` or targeted quality scripts before approving.  
+  Why: Ensures all quality gates passed before merge.
+- Reviewers **MUST** enforce single-responsibility PRs; each submission **MUST** own one change narrative.  
+  Why: Prevents bundled changes that mix refactors, features, and cleanup.
+- Reviewers **SHOULD** request splits when size, mixed concerns, or cross-cutting edits appear.  
+  Why: Maintains focused, reviewable changes.
+- Reviewers **SHOULD** offer actionable alternatives rather than vague feedback.  
+  Why: Helps authors understand and implement improvements quickly.
+- Reviewers **SHOULD** balance critique with reinforcement.  
+  Why: Teammates learn which patterns to repeat alongside what to fix.
+
+## Scope and Audience
+
+**Audience:** Code reviewers conducting pull request reviews in the Mississippi repository.
+
+**In scope:** Review workflow, coaching techniques, quality focus points, feedback craft.
+
+**Out of scope:** Specific technical implementations, detailed testing strategies (see testing.instructions.md).
 
 ## At-a-Glance Quick-Start
 
@@ -16,6 +41,10 @@ This document coaches reviewers to lead elite-quality pull request outcomes acro
 - Record TODOs and risks while you read so the summary stays crisp.
 
 > **Drift check:** When you reference build or test commands in review feedback, open the script under `eng/src/agent-scripts/` to confirm its current switches and behavior. Scripts remain authoritative; this guide covers coaching posture.
+
+## Purpose
+
+This guide provides a framework for conducting thorough, constructive pull request reviews that maintain code quality standards while mentoring team members.
 
 ## Core Principles
 
