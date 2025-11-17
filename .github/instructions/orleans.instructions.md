@@ -4,7 +4,7 @@ applyTo: '**/*.cs'
 
 # Orleans Best Practices for Mississippi Framework
 
-This document defines the Orleans development standards and best practices for the Mississippi Framework. All Orleans grains and related code MUST follow these guidelines to ensure consistency, maintainability, and alignment with modern Orleans patterns.
+This document defines the Orleans development standards and best practices for the Mississippi Framework. All Orleans grains and related code should follow these guidelines to ensure consistency, maintainability, and alignment with modern Orleans patterns.
 
 ## Rules (RFC 2119)
 
@@ -179,13 +179,13 @@ using Microsoft.Extensions.Logging; // Logging
 
 All the familiar Orleans helpers are available as extension methods on `this`:
 
-| Old Grain Inheritance | POCO Grain Extension Method |
-|----------------------|------------------------------|
-| `GetPrimaryKey()` | `this.GetPrimaryKey()` |
-| `DeactivateOnIdle()` | `this.DeactivateOnIdle()` |
-| `RegisterOrUpdateReminder()` | `this.RegisterOrUpdateReminder()` |
-| `RegisterGrainTimer()` | `this.RegisterGrainTimer()` |
-| `GetStreamProvider()` | `this.GetStreamProvider()` |
+| Old Grain Inheritance        | POCO Grain Extension Method          |
+| ---------------------------- | ------------------------------------ |
+| `GetPrimaryKey()`            | `this.GetPrimaryKey()`               |
+| `DeactivateOnIdle()`         | `this.DeactivateOnIdle()`            |
+| `RegisterOrUpdateReminder()` | `this.RegisterOrUpdateReminder()`    |
+| `RegisterGrainTimer()`       | `this.RegisterGrainTimer()`          |
+| `GetStreamProvider()`        | `this.GetStreamProvider()`           |
 
 ### 4. Migration Checklist
 

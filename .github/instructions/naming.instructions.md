@@ -18,15 +18,15 @@ This document establishes comprehensive naming conventions and XML documentation
 
 ### Vertical Slice Folder & Namespace Rules
 
-- The directory path **MUST** mirror the namespace segments exactly using the format `Company/Product/Feature[/SubFeature]`.  
+* The directory path **MUST** mirror the namespace segments exactly using the format `Company/Product/Feature[/SubFeature]`.  
   Why: Ensures code organization directly reflects business domain structure, making navigation intuitive.
-- You **MUST NOT** create technical silo folders (horizontal layers) at the root or within features, such as: `Models`, `Entities`, `Grains`, `Grain`, `Dtos`, `Dto`, `Services`, `Repositories`, `Repository`, `Interfaces`, `Enums`, `Extensions`, `Utils`, `Helpers`, `Common`.  
+* You **MUST NOT** create technical silo folders (horizontal layers) at the root or within features, such as: `Models`, `Entities`, `Grains`, `Grain`, `Dtos`, `Dto`, `Services`, `Repositories`, `Repository`, `Interfaces`, `Enums`, `Extensions`, `Utils`, `Helpers`, `Common`.  
   Why: Technical folders scatter related feature code across multiple locations, harming cohesion and maintainability.
-- You **MUST** place DTOs, handlers, options, validators, grains, and other types alongside the feature they serve.  
+* You **MUST** place DTOs, handlers, options, validators, grains, and other types alongside the feature they serve.  
   Why: Co-location keeps all feature-related code together, reducing cognitive load and improving discoverability.
-- A `ServiceRegistration.cs` per feature **MAY** be used as documented in service-registration guidelines.  
+* A `ServiceRegistration.cs` per feature **MAY** be used as documented in service-registration guidelines.  
   Why: Service registration is a cross-cutting concern that benefits from a standard location pattern.
-- Optional `.Abstractions` or `.Infrastructure` segments **MAY** be used only when they represent essential, stable product boundaries.  
+* Optional `.Abstractions` or `.Infrastructure` segments **MAY** be used only when they represent essential, stable product boundaries.  
   Why: These segments provide legitimate architectural boundaries when properly scoped to product/feature responsibilities.
 
 ## 1. Namespace Construction
@@ -35,7 +35,7 @@ This document establishes comprehensive naming conventions and XML documentation
 | ---- | -------------------------------------------------------------------------------------- | --------------------------------- |
 | 1    | **Company/Org root** – PascalCase                                                      | `Contoso`                         |
 | 2    | **Product or bounded context** – PascalCase                                            | `Accounting`                      |
-| 3    | **Feature[.SubFeature]** – PascalCase business terms                                  | `Invoices.Billing`                |
+| 3    | **Feature[.SubFeature]** – PascalCase business terms                                   | `Invoices.Billing`                |
 | 4    | *(Optional)* `.Abstractions`, `.Infrastructure`, `.Api`, etc., **only** when essential | `Contoso.Accounting.Invoices.Api` |
 
 **Rule N-1:** Maximum five segments; PascalCase alphanumerics; no underscores; abbreviations only when industry-standard (`IO`, `DB`, `Html`).
@@ -88,31 +88,31 @@ Mississippi/
 
 ## 3. Member-Naming Rules
 
-| Member Kind                      | Rule                                                                      |
-| -------------------------------- | ------------------------------------------------------------------------- |
-| **Public / internal methods**    | PascalCase **verb phrase** (`CalculateHash`).                             |
-| **Public / internal properties** | PascalCase **noun** (`TotalAmount`).                                      |
-| **Boolean properties**           | Prefix with `Is`, `Has`, `Can`, or `Should` (`IsActive`).                 |
-| **Dependency injection properties** | `private Type Name { get; }` pattern for all injected dependencies (`Logger`, `Repository`). |
-| **Private fields & locals**      | camelCase with **no leading underscore** (`customerId`, `cancellationTokenSource`).  |
-| **Constants**                    | PascalCase and meaningful (`MaxRetryCount`).                              |
-| **Generic type parameters**      | `T` + descriptive (`TResponse`) or a conventional single letter (`TKey`). |
-| **Events**                       | PascalCase past-tense verb (`PaymentCompleted`).                          |
+| Member Kind                         | Rule                                                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Public / internal methods**       | PascalCase **verb phrase** (`CalculateHash`).                                                    |
+| **Public / internal properties**    | PascalCase **noun** (`TotalAmount`).                                                             |
+| **Boolean properties**              | Prefix with `Is`, `Has`, `Can`, or `Should` (`IsActive`).                                        |
+| **Dependency injection properties** | `private Type Name { get; }` pattern for all injected dependencies (`Logger`, `Repository`).     |
+| **Private fields & locals**         | camelCase with **no leading underscore** (`customerId`, `cancellationTokenSource`).              |
+| **Constants**                       | PascalCase and meaningful (`MaxRetryCount`).                                                     |
+| **Generic type parameters**         | `T` + descriptive (`TResponse`) or a conventional single letter (`TKey`).                        |
+| **Events**                          | PascalCase past-tense verb (`PaymentCompleted`).                                                 |
 
 ## 4. XML Documentation & Commenting Rules
 
-| ID   | Rule                                                                                                                                                                                                             |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| C-1  | Every **publicly accessible** symbol **must** include an XML comment containing `<summary>`.                                                                                                                     |
-| C-2  | Follow **class-first narrative flow**: read the type `<summary>` then each member `<summary>`; member docs build on but do not repeat the type doc.                                                              |
-| C-3  | Comments must be **richly descriptive yet 100% factual**—no speculation or placeholders.                                                                                                                        |
-| C-4  | Minimum tags per symbol: `<summary>` (1–3 sentences); `<param>` for every parameter; `<typeparam>` for every generic; `<returns>` for non-void methods. Add `<remarks>` (≤ 8 lines) or `<example>` when helpful. |
-| C-5  | Voice: **imperative, active, present tense** ("Calculates the pro-rata refund."). Avoid "This method…".                                                                                                          |
-| C-6  | Prefer **domain vocabulary** over technical jargon.                                                                                                                                                              |
-| C-7  | **Validation pass**: parameter names match, no empty tags, no TODOs/TBDs, no contradictions with code.                                                                                                           |
-| C-8  | Formatting: `///` (triple slash + single space) at the start of each line; block preceded by one blank line except at file top.                                                                                 |
-| C-9  | **Internal/private** members require docs only when behaviour is non-trivial or exposed via `InternalsVisibleTo`; suppress StyleCop otherwise.                                                                   |
-| C-10 | `<example>` snippets **must compile** in isolation when wrapped in minimal scaffolding.                                                                                                                          |
+| ID   | Rule                                                                                                                                                                                                                     |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| C-1  | Every **publicly accessible** symbol **must** include an XML comment containing `<summary>`.                                                                                                                             |
+| C-2  | Follow **class-first narrative flow**: read the type `<summary>` then each member `<summary>`; member docs build on but do not repeat the type doc.                                                                      |
+| C-3  | Comments must be **richly descriptive yet 100% factual**—no speculation or placeholders.                                                                                                                                 |
+| C-4  | Minimum tags per symbol: `<summary>` (1–3 sentences); `<param>` for every parameter; `<typeparam>` for every generic; `<returns>` for non-void methods. Add `<remarks>` (≤ 8 lines) or `<example>` when helpful.         |
+| C-5  | Voice: **imperative, active, present tense** ("Calculates the pro-rata refund."). Avoid "This method…".                                                                                                                  |
+| C-6  | Prefer **domain vocabulary** over technical jargon.                                                                                                                                                                      |
+| C-7  | **Validation pass**: parameter names match, no empty tags, no TODOs/TBDs, no contradictions with code.                                                                                                                   |
+| C-8  | Formatting: `///` (triple slash + single space) at the start of each line; block preceded by one blank line except at file top.                                                                                          |
+| C-9  | **Internal/private** members require docs only when behaviour is non-trivial or exposed via `InternalsVisibleTo`; suppress StyleCop otherwise.                                                                           |
+| C-10 | `<example>` snippets **must compile** in isolation when wrapped in minimal scaffolding.                                                                                                                                  |
 
 ## 5. Generation Algorithm for the AI Agent
 
