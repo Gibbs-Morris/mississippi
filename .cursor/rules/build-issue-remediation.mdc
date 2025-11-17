@@ -8,7 +8,38 @@ alwaysApply: true
 
 # Build Issue Remediation Protocol
 
-This guide helps agents eliminate .NET build issues (errors, analyzer/StyleCop warnings, cleanup violations) with precise, minimal edits that preserve behavior and align with repository standards.
+Governing thought: Agents eliminate build warnings and errors through precise, minimal, iterative edits within a strict attempt limit, deferring difficult issues to preserve momentum.
+
+## Rules (RFC 2119)
+
+- Agents **MUST** make at most five focused fix attempts per single issue before deferring.  
+  Why: Prevents infinite loops on difficult issues and maintains forward progress.
+- Agents **MUST** define a single issue as a specific warning/error instance in a specific file/location.  
+  Why: Prevents scope creep and ensures clear attempt tracking.
+- Agents **MUST** leave files in a compiling, consistent state when deferring an issue.  
+  Why: Avoids breaking the build for other agents.
+- Agents **MUST NOT** refactor broadly; agents **MUST** change only the lines required to remove the issue.  
+  Why: Preserves behavior and minimizes risk of introducing regressions.
+- Agents **MUST NOT** relax rule severity, remove analyzers, or add project/solution-wide `NoWarn`.  
+  Why: This repository has a zero-warnings policy; global suppressions undermine quality standards.
+- Agents **MUST NOT** edit generated code; agents **MUST** use the narrowest possible local suppression at the call site with justification if an issue originates from generated files.  
+  Why: Generated code should be fixed at the source; local suppressions are safer than bulk changes.
+- Agents **MUST** obey `.editorconfig`, `Directory.Build.props/targets`, and solution conventions.  
+  Why: Maintains consistency across the codebase.
+- Agents **MUST NOT** add package versions to project files.  
+  Why: Respects centralized package management defined in `Directory.Packages.props`.
+- Agents **MUST NOT** add `[SuppressMessage]` attributes without explicit approval.  
+  Why: Analyzer rules exist to enforce quality; suppressions must be justified and rare.
+- Agents **MUST** create/update a scratchpad task under `.scratchpad/tasks` with `status=deferred` when deferring an issue.  
+  Why: Enables other agents to pick up deferred work with full context.
+
+## Scope and Audience
+
+**Audience:** Agents fixing build warnings, errors, analyzer violations, and cleanup issues.
+
+**In scope:** Compiler errors/warnings, analyzer/StyleCop violations, ReSharper cleanup violations, test/build breaks.
+
+**Out of scope:** Broad refactoring, architectural changes, feature development.
 
 ## At-a-Glance Quick-Start
 
@@ -36,37 +67,23 @@ pwsh ./go.ps1
 
 > **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
-## Intent
 
-When asked to “fix build issues” (warnings, analyzer findings, StyleCop, cleanup), follow this protocol to make precise, minimal edits that remove issues while preserving behavior and style.
 
-## Scope
+## Purpose
 
-- Compiler errors and warnings
-- Analyzer and StyleCop violations
-- ReSharper cleanup violations detected by `./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
-- Test/build breaks surfaced by the repository scripts
+This guide helps agents eliminate .NET build issues through iterative, attempt-bounded edits that preserve behavior.
 
-## Guardrails
+## Core Principles
 
-- Do not refactor broadly. Change only the lines required to remove the issue.
-- Do not relax rule severity, remove analyzers, or add project/solution-wide `NoWarn`. This repository has a zero‑warnings policy. Existing `NoWarn` entries maintained by repository owners may remain; the agent must not add or modify `NoWarn`.
-- Do not edit generated code. If an issue originates from generated files, use the narrowest possible, local suppression at the call site with justification.
-- Obey `.editorconfig`, `Directory.Build.props/targets`, and solution conventions. Match existing naming and formatting.
-- Respect centralized package management. Do not add package versions to project files.
-- Do not add `[SuppressMessage]` attributes; analyzer rules must be satisfied unless explicitly approved.
+- Precision over breadth: change only what's necessary to fix the specific issue
+- Attempt-bounded iteration: five focused attempts, then defer to maintain forward progress
+- Preserve existing `NoWarn` entries maintained by repository owners
+- Match existing naming and formatting patterns
+- Count attempts per edit-verify cycle; micro-edits within one cycle count as one attempt
+- The scratchpad is ephemeral and ignored by Git; do not reference it from source or tests
 
-## Attempt Limits and Deferral
+## Procedures
 
-- Apply a strict attempt cap: make at most five focused fix attempts per single issue before deferring.
-- Define a single issue as a specific warning/error instance in a specific file/location (e.g., `CS8618` for `Customer.Name` assignment in `Customer.cs`). Do not aggregate across files/locations.
-- Count an attempt when you perform an edit and run a verify step (build/cleanup/tests). Micro-edits within the same verify cycle count as one attempt.
-- On reaching five attempts without a clean verify, stop working that issue, leave the file in a compiling, consistent state, and defer it.
-- Record every deferred issue (with code, file, brief reason) and move on to the next highest‑impact fix.
-
-- When deferring, create/update a scratchpad task under `.scratchpad/tasks` with `status=deferred`, a concise `reason`, and `nextSteps` so other agents can pick it up (see `.github/instructions/agent-scratchpad.instructions.md`). The scratchpad is ephemeral and ignored by Git; do not reference it from source or tests.
-
-## Commands to Use (Repository Standard)
 
 - Build Mississippi (strict build in Release):
 
