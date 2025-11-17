@@ -352,5 +352,3 @@ function Defer-ScratchpadTask {
 - [x] `.scratchpad/.gitignore` ignores all transient files in that folder
 - [ ] If you change this instruction, mirror to Cursor `.mdc` via `eng/src/agent-scripts/sync-instructions-to-mdc.ps1`
 - [ ] No source code, tests, or CI workflows depend on `.scratchpad/`
-
-
