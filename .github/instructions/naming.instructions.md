@@ -14,6 +14,21 @@ This document establishes comprehensive naming conventions and XML documentation
 * Produce **self-descriptive identifiers and XML comments** detailed enough that a human or LLM can understand intent without opening the body.
 * Ensure all prose is **100% factual**—no invented behaviour or placeholders.
 
+## Rules (RFC 2119)
+
+### Vertical Slice Folder & Namespace Rules
+
+- The directory path **MUST** mirror the namespace segments exactly using the format `Company/Product/Feature[/SubFeature]`.  
+  Why: Ensures code organization directly reflects business domain structure, making navigation intuitive.
+- You **MUST NOT** create technical silo folders (horizontal layers) at the root or within features, such as: `Models`, `Entities`, `Grains`, `Grain`, `Dtos`, `Dto`, `Services`, `Repositories`, `Repository`, `Interfaces`, `Enums`, `Extensions`, `Utils`, `Helpers`, `Common`.  
+  Why: Technical folders scatter related feature code across multiple locations, harming cohesion and maintainability.
+- You **MUST** place DTOs, handlers, options, validators, grains, and other types alongside the feature they serve.  
+  Why: Co-location keeps all feature-related code together, reducing cognitive load and improving discoverability.
+- A `ServiceRegistration.cs` per feature **MAY** be used as documented in service-registration guidelines.  
+  Why: Service registration is a cross-cutting concern that benefits from a standard location pattern.
+- Optional `.Abstractions` or `.Infrastructure` segments **MAY** be used only when they represent essential, stable product boundaries.  
+  Why: These segments provide legitimate architectural boundaries when properly scoped to product/feature responsibilities.
+
 ## 1. Namespace Construction
 
 | Step | Instruction                                                                            | Example                           |
@@ -27,10 +42,9 @@ This document establishes comprehensive naming conventions and XML documentation
 
 ### 1.1 Vertical Slice Folder & Namespace Rules
 
-- **Feature-first folders** — The directory path MUST mirror the namespace segments exactly: `Company/Product/Feature[/SubFeature]`. Each folder represents a business feature or subfeature, not a technical layer.
-- **Prohibited horizontal folders** — You MUST NOT create technical silo folders at the root or within features, such as: `Models`, `Entities`, `Grains`, `Grain`, `Dtos`, `Dto`, `Services`, `Repositories`, `Repository`, `Interfaces`, `Enums`, `Extensions`, `Utils`, `Helpers`, `Common`. Use type names/suffixes to express roles; co-locate them with the feature.
-- **Types live with their feature** — You MUST place DTOs, handlers, options, validators, grains, etc. alongside the feature they serve. Example: `Mississippi/EventSourcing/Streams/EventStreamProcessor.cs` rather than `Mississippi/EventSourcing/Services/EventStreamProcessor.cs`.
-- **Allowed exceptions (narrow)** — A `ServiceRegistration.cs` per feature MAY be used (see service-registration guidelines). Optional `.Abstractions`/`.Infrastructure` segments MAY be used only when they are essential, stable product boundaries (see Step 4).
+Each folder represents a business feature or subfeature, not a technical layer. Use type names and suffixes to express roles; co-locate them with the feature they serve.
+
+Example: `Mississippi/EventSourcing/Streams/EventStreamProcessor.cs` rather than `Mississippi/EventSourcing/Services/EventStreamProcessor.cs`.
 
 Good
 
