@@ -90,7 +90,12 @@ jobs:
           dotnet tool run dotnet-gitversion /version
         continue-on-error: true
 
-      - name: Run build, tests and mutation testing (skip cleanup)
-        shell: pwsh
+      - name: Build Mississippi solution
         run: |
-          ./go.ps1 -Configuration Release -SkipCleanup
+          set -euo pipefail
+          dotnet build mississippi.slnx --configuration Release --no-restore
+
+      - name: Build Samples solution
+        run: |
+          set -euo pipefail
+          dotnet build samples.slnx --configuration Release --no-restore
