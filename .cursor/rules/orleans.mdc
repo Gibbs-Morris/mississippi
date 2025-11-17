@@ -53,7 +53,7 @@ This document establishes Orleans development standards ensuring consistency, ma
 - Leverage extension methods for Orleans functionality
 - Follow modern Orleans 7.0+ patterns for testability and flexibility
 
-#### Why This Rule Exists
+### Why POCO Pattern Over Grain Inheritance
 
 - **Composition over Inheritance**: POCO grains allow you to inherit from your own domain base classes or compose multiple concerns via interfaces/mix-ins
 - **Testability**: POCO grains are easier to unit test and mock
@@ -177,7 +177,7 @@ using Microsoft.Extensions.Logging; // Logging
 All the familiar Orleans helpers are available as extension methods on `this`:
 
 | Old Grain Inheritance | POCO Grain Extension Method |
-|----------------------|------------------------------|
+| --------------------- | ---------------------------- |
 | `GetPrimaryKey()` | `this.GetPrimaryKey()` |
 | `DeactivateOnIdle()` | `this.DeactivateOnIdle()` |
 | `RegisterOrUpdateReminder()` | `this.RegisterOrUpdateReminder()` |
