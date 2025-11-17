@@ -4,24 +4,65 @@ applyTo: '**/*.cs'
 
 # Orleans Serialization Best Practices
 
-This document defines the Orleans serialization standards and best practices for the Mississippi Framework. All serializable types used in Orleans MUST follow these guidelines to ensure version tolerance, performance, and compatibility across deployments.
+Governing thought: Apply explicit Orleans serialization using `[GenerateSerializer]`, `[Id]`, and `[Alias]` attributes with progressive versioning to ensure type safety, version tolerance, and deployment compatibility.
+
+## Rules (RFC 2119)
+
+- All serializable types **MUST** use explicit serialization with `[GenerateSerializer]` and `[Id]` attributes.  
+  Why: Orleans requires explicit marking for version tolerance and avoids implicit serialization issues.
+- Developers **MUST NOT** rely on implicit serialization.  
+  Why: Explicit serialization ensures version tolerance and prevents breaking changes during deployments.
+- All serializable types **MUST** use `[Alias]` attributes for type and method stability.  
+  Why: Enables renames and refactoring without breaking serialization compatibility.
+- Member IDs **MUST** start at zero for each type in the inheritance hierarchy.  
+  Why: Maintains consistent numbering scheme and prevents ID conflicts.
+- Developers **MUST** follow progressive versioning and maintain backward compatibility when evolving types.  
+  Why: Ensures rolling deployments work correctly without serialization errors.
+- Projects **MUST** reference `Microsoft.Orleans.Sdk` and `Microsoft.Orleans.CodeGenerator.MSBuild` packages.  
+  Why: Enables Orleans source generation and build-time serializer creation.
+- All serializable members **MUST** have unique `[Id(n)]` attributes within their inheritance level.  
+  Why: Prevents serialization conflicts and ensures deterministic member ordering.
+- All serializable types **MUST** have `[Alias]` attributes with globally unique names.  
+  Why: Prevents naming conflicts across assemblies and deployments.
+- Developers **MUST NOT** change existing member IDs.  
+  Why: Changing IDs breaks serialization compatibility with existing deployments.
+- Developers **MUST NOT** perform breaking type conversions like converting between `record` and `class`.  
+  Why: Maintains serialization format compatibility across versions.
+- New members **MUST** use previously unused ID numbers.  
+  Why: Preserves existing serialization format and enables additive versioning.
+- Build pipelines **MUST** enable Orleans analyzers with `--warnaserror` to fail builds on violations.  
+  Why: Catches serialization issues at build time before deployment.
+- Reviewers **SHOULD** verify version compatibility when reviewing Orleans serialization changes.  
+  Why: Prevents deployment issues from serialization incompatibilities.
+- Developers **SHOULD** mark removed members with `[NonSerialized]` or `[Obsolete]` instead of deleting immediately.  
+  Why: Allows gradual deprecation without breaking existing serialized data.
+- Developers **SHOULD** widen numeric types (e.g., `int` → `long`) when type changes are needed.  
+  Why: Widening is safe for serialization compatibility; other changes may break.
+- Developers **SHOULD** make non-nullable properties nullable when adding optionality.  
+  Why: Safe versioning operation that doesn't break existing serialized data.
+- For analyzer violations or missing attributes, agents **SHOULD** open focused `.scratchpad/tasks/pending` items to schedule remediation.  
+  Why: Tracks technical debt systematically without blocking immediate work.
+
+## Scope and Audience
+
+**Audience:** Developers creating or modifying Orleans serializable types in the Mississippi Framework.
+
+**In scope:** Serialization attributes, versioning guidelines, analyzer rules, build-time code generation, breaking vs. safe changes.
+
+**Out of scope:** General Orleans grain development (see orleans.instructions.md), Orleans cluster configuration.
+
+## Purpose
+
+This document defines Orleans serialization standards ensuring version tolerance, performance, and compatibility across deployments through explicit attribute-based serialization.
 
 ## Core Principles
 
-### Explicit Serialization Strategy
-
-- **Always use explicit serialization** with `[GenerateSerializer]` and `[Id]` attributes
-- **Never rely on implicit serialization** - Orleans requires explicit marking for version tolerance
-- **Use `[Alias]` attributes** for type and method stability across renames and refactoring
-- **Start member IDs at zero** for each type in the inheritance hierarchy
-- **Follow progressive versioning** - maintain backward compatibility when evolving types
-
-### Build-Time Code Generation
-
-- **Enable Orleans source generation** by referencing appropriate NuGet packages
-- **Use MSBuild package** `Microsoft.Orleans.CodeGenerator.MSBuild` for build-time generation
-- **Let Orleans auto-detect** serializable types in grain interfaces and state classes
-- **Generate comprehensive serializers** for all types crossing grain boundaries
+- Always use explicit serialization with required attributes
+- Never rely on implicit serialization
+- Use aliases for type stability across renames
+- Start member IDs at zero per inheritance level
+- Follow progressive versioning for backward compatibility
+- Enable build-time code generation with MSBuild packages
 
 ## Quick-Start Checklist
 
@@ -49,7 +90,7 @@ public class CustomerData
 ## Orleans Serialization Attributes Reference
 
 | Attribute | Purpose | Scope | Required | Notes |
-|-----------|---------|-------|----------|-------|
+| --------- | ------- | ----- | -------- | ----- |
 | `[GenerateSerializer]` | Marks type for code generation | Class, Record, Struct | Yes | MUST be on every serializable type |
 | `[Id(n)]` | Assigns unique member identifier | Property, Field | Yes | Start from 0, unique per inheritance level |
 | `[Alias("name")]` | Provides stable type/method name | Class, Interface, Method | Recommended | Enables renames without breaking compatibility |
@@ -92,7 +133,7 @@ internal class HeadStorageModel
 ## Versioning Guidelines
 
 | Scenario | ✅ Safe Operations | ❌ Breaking Changes |
-|----------|-------------------|-------------------|
+| -------- | ----------------- | ----------------- |
 | **Adding Members** | Add new properties with unused ID numbers | Change existing member IDs |
 | **Removing Members** | Mark with `[NonSerialized]` or `[Obsolete]` | Delete properties immediately |
 | **Type Changes** | Widen numeric types (`int` → `long`) | Change signedness (`int` → `uint`) |
@@ -180,7 +221,7 @@ public struct UriSurrogate
 ## Common Build-Time Analyzers
 
 | Analyzer ID | Severity | Trigger | Solution |
-|-------------|----------|---------|----------|
+| ----------- | -------- | ------- | -------- |
 | `ORLEANS0004` | Error | Missing `[Id]` attributes on serializable members | Add `[Id(n)]` to all properties/fields |
 | `ORLEANS0005` | Info | `[Serializable]` without `[GenerateSerializer]` | Replace with `[GenerateSerializer]` |
 | `ORLEANS0011` | Error | Duplicate `[Alias]` values | Ensure all aliases are globally unique |
