@@ -55,7 +55,7 @@ public class CustomerData
 | `[Alias("name")]` | Provides stable type/method name | Class, Interface, Method | Recommended | Enables renames without breaking compatibility |
 | `[NonSerialized]` | Excludes member from serialization | Property, Field | Optional | Use for computed or transient properties |
 
-## Worked Example: HeadStorageModel
+## Worked Example: CursorStorageModel
 
 ```csharp
 /// <summary>
@@ -63,8 +63,8 @@ public class CustomerData
 /// Demonstrates proper Orleans serialization attribute usage.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Cosmos.Storage.HeadStorageModel")]
-internal class HeadStorageModel
+[Alias("Mississippi.EventSourcing.Cosmos.Storage.CursorStorageModel")]
+internal class CursorStorageModel
 {
     /// <summary>
     /// Gets or sets the current position of the brook head.
