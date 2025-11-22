@@ -4,16 +4,51 @@ applyTo: '**'
 
 # Mutation Testing Playbook
 
-Use this checklist whenever you need to run Mississippi mutation tests or close surviving mutants. Follow these steps exactly; defer architecture, C#, logging, Orleans, and testing nuances to their dedicated instruction files.
+Governing thought: Use this checklist whenever you need to run Mississippi mutation tests or close surviving mutants, following exact steps while deferring architecture, C#, logging, Orleans, and testing nuances to their dedicated instruction files.
 
-## Precedence
+## Rules (RFC 2119)
 
-1. All repository-wide guidance in `.github/instructions/*.instructions.md` remains authoritative. Resolve conflicts by choosing the most specific file first (feature → language → build). When in doubt, follow the latest modified instruction file without editing it.
-2. If you add or modify any instruction Markdown, immediately mirror the change into the Cursor rule set by running `pwsh ./eng/src/agent-scripts/sync-instructions-to-mdc.ps1` before you finish.
+- Agents **MUST** run `dotnet tool restore` at least once before starting mutation testing.  
+  Why: Ensures required tools (Stryker.NET) are available.
+- Agents **MUST** run a clean build before mutation testing to surface compiler/analyzer issues.  
+  Why: Mutation testing on broken code wastes time and produces invalid results.
+- Agents **MUST** allow mutation test scripts to run for up to 30 minutes without canceling.  
+  Why: Mutation testing is intentionally long-running; early cancellation produces incomplete results.
+- Agents **MUST** commit generated report paths for traceability.  
+  Why: Maintains audit trail of mutation test results.
+- Agents **MUST NOT** change production code to kill mutants unless provably unkillable through tests alone.  
+  Why: Preserves production code behavior; tests should catch issues, not modify behavior.
+- Agents **MUST** fix all build warnings and test failures before continuing mutation work.  
+  Why: Quality gates ensure changes don't introduce regressions.
+- Agents **SHOULD** use the summarizer script with `-SkipMutationRun` for iterative work.  
+  Why: Avoids re-running expensive mutation tests when analyzing existing results.
+- Agents **SHOULD** prioritize high-impact survivors using the ranking system.  
+  Why: Maximizes value by addressing most critical test gaps first.
+
+## Scope and Audience
+
+**Audience:** Developers and agents running mutation tests on Mississippi solution projects.
+
+**In scope:** Mutation testing workflow, survivor prioritization, quality gates, automation scripts.
+
+**Out of scope:** General testing strategy (see testing.instructions.md), specific C# patterns (see csharp.instructions.md).
 
 > **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
-## Execution Loop
+## Purpose
+
+This playbook provides a systematic workflow for running mutation tests, prioritizing survivors, and improving test quality through targeted test additions.
+
+## Core Principles
+
+- All repository-wide guidance in `.github/instructions/*.instructions.md` remains authoritative
+- Resolve conflicts by choosing the most specific file first (feature → language → build)
+- Mirror instruction changes to Cursor rules via `sync-instructions-to-mdc.ps1`
+- Scripts remain the source of truth for parameters and behavior
+
+## Procedures
+
+### Execution Loop
 
 1. **Prep tools** – Ensure `dotnet tool restore` has been run at least once on the repo.
 2. **Clean build** – Run `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` to surface compiler/analyzer issues before mutation work.

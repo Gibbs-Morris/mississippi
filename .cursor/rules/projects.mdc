@@ -8,7 +8,34 @@ alwaysApply: true
 
 # Project File Management Best Practices
 
-This document defines the project file standards and best practices for .NET applications using centralized package management. All `.csproj` files MUST follow these guidelines to ensure consistency, maintainability, and proper utilization of centralized package management.
+Governing thought: All `.csproj` files follow minimal, centralized package management standards to ensure consistency and maintainability across .NET applications.
+
+## Rules (RFC 2119)
+
+- Project files **MUST** be as minimal as possible; project files **MUST NOT** duplicate information from `Directory.Build.props`.  
+  Why: Avoids redundancy and maintains single source of truth for shared configuration.
+- Project files **MUST** use centralized package management via `Directory.Packages.props`.  
+  Why: Prevents version conflicts and ensures consistent package versions across solution.
+- Project files **MUST NOT** specify version numbers in `PackageReference` elements.  
+  Why: All versions are centrally managed; local versions would create conflicts.
+- Agents **MUST** remove any version attributes from `PackageReference` elements.  
+  Why: Enforces centralized package management policy.
+- Project files **MUST** validate with clean builds; agents **MUST** resolve all warnings.  
+  Why: Warnings are treated as errors in CI per Build Rules.
+- Agents **MUST NOT** override automatic assembly/namespace naming without justification.  
+  Why: Automatic naming ensures consistency across the solution.
+- Agents **SHOULD** choose the correct SDK (`Microsoft.NET.Sdk` or `.Web`) for the project type.  
+  Why: SDK determines available features and build behavior.
+- Agents **SHOULD** include only project-specific properties in `.csproj` files.  
+  Why: Common properties are inherited automatically from `Directory.Build.props`.
+
+## Scope and Audience
+
+**Audience:** Developers creating or modifying .NET project files (`.csproj`) in the repository.
+
+**In scope:** Project file structure, centralized package management, minimal configuration.
+
+**Out of scope:** Specific NuGet package choices, build script implementation.
 
 ## At-a-Glance Compliance Checklist
 
@@ -30,16 +57,19 @@ pwsh ./eng/src/agent-scripts/final-build-solutions.ps1
 
 > **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
+## Purpose
+
+This document defines project file standards for .NET applications using centralized package management, ensuring consistency and maintainability.
+
 ## Core Principles
 
 ### Keep Project Files Minimal
 
--- **Project files MUST be as minimal as possible** - avoid duplicating information already defined in `Directory.Build.props`
--- **Use centralized package management** - all package versions are controlled through `Directory.Packages.props`. You MUST NOT specify versions in individual project files.
-
-- **Leverage Directory.Build.props** - common properties, settings, and configurations are inherited automatically
--- **No version numbers in project files** - package versions are managed centrally to prevent version conflicts. Any version attribute MUST be removed.
-- **Focus on project-specific concerns only** - only include settings that are unique to the specific project
+- Project files should be as minimal as possible
+- Avoid duplicating information already defined in `Directory.Build.props`
+- Use centralized package management through `Directory.Packages.props`
+- Leverage inherited common properties, settings, and configurations
+- Focus on project-specific concerns only
 
 ### Central Package Management Strategy
 

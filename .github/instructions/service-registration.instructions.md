@@ -4,43 +4,89 @@ applyTo: '**/*.cs'
 
 # Service Registration and Configuration Pattern
 
-This document defines the service registration standards and configuration patterns for dependency injection in the Mississippi Framework. All service registration classes MUST follow these guidelines to ensure consistency, maintainability, and proper configuration handling across features.
+Governing thought: Use hierarchical feature-based registration with Options pattern and synchronous setup, deferring async initialization to hosted services or lifecycle participants.
+
+## Rules (RFC 2119)
+
+- Service registration classes **MUST** follow feature namespace structure.  
+  Why: Maintains consistency and organization across the solution.
+- Each feature **MUST** have `public static class ServiceRegistration` with `Add{FeatureName}()` methods.  
+  Why: Provides consistent registration pattern across features.
+- Parent features **MUST** call child feature registrations to build composable service collections.  
+  Why: Enables hierarchical composition and modular design.
+- Registration methods **MUST** be `public` only at product/feature boundaries.  
+  Why: Clarifies intended usage and prevents misuse of internal components.
+- Sub-features and implementation components **MUST** have `internal` registration methods.  
+  Why: Hides implementation details and reduces API surface area.
+- Direct configuration parameters **MUST NOT** be used in constructors; **MUST** use `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>`.  
+  Why: Centralizes configuration, supports validation, and enables hot-reload.
+- Multiple configuration overloads **MUST** be provided for `Action<TOptions>`, `IConfiguration`, and explicit parameters.  
+  Why: Supports different consumption patterns and flexibility.
+- Core service registration **MUST** be implemented in private parameterless method.  
+  Why: Separates service registration from configuration handling for clarity.
+- Options classes **MUST** follow `{FeatureName}Options` naming pattern.  
+  Why: Maintains naming consistency across configuration classes.
+- Options classes **MUST** provide sensible defaults using property initializers.  
+  Why: Enables "convention over configuration" approach.
+- Options **MUST** be validated at startup using `IValidateOptions<T>` or `ValidateOnStart()`.  
+  Why: Catches configuration errors early before runtime failures.
+- Registered services **MUST** use `private Type Name { get; }` pattern when injected.  
+  Why: Follows dependency injection property pattern consistently.
+- Registration methods **MUST** use `Add{FeatureName}()` naming convention.  
+  Why: Maintains consistency with .NET extension method patterns.
+- Public registration methods **MUST** include XML documentation with parameter and return value documentation.  
+  Why: Provides IntelliSense and API documentation for consumers.
+- Service registration **MUST** be synchronous; **MUST NOT** perform async operations.  
+  Why: DI container building is synchronous; async operations cause blocking and deadlocks.
+- Async setup operations **MUST** be deferred to IHostedService implementations.  
+  Why: Hosted services run after DI container is built and support async initialization.
+- Orleans-specific initialization **MUST** use Orleans lifecycle participants.  
+  Why: Enables initialization at specific Orleans lifecycle stages.
+- Factories performing async operations **MUST** be registered for deferred initialization.  
+  Why: Avoids blocking during registration while enabling async work when needed.
+- Database and external service initialization **MUST** use hosted services or lifecycle participants.  
+  Why: Prevents blocking during DI container building and startup.
+- Connection strings **MUST** be accepted as parameters and register clients using factory patterns.  
+  Why: Avoids direct instantiation in DI and enables testability.
+- Registration classes **SHOULD** be sealed and follow minimal access principles.  
+  Why: Aligns with C# access control guidelines.
+- Configuration **SHOULD** be externalized following cloud-native principles.  
+  Why: Enables environment-specific configuration without code changes.
+
+## Scope and Audience
+
+**Audience:** Developers implementing service registration and DI configuration in the Mississippi Framework.
+
+**In scope:** Hierarchical registration, Options pattern, configuration overloads, async initialization patterns, IHostedService, Orleans lifecycle participants, factory patterns.
+
+**Out of scope:** Specific service implementations, business logic, Orleans grain implementation details.
+
+## Purpose
+
+This document defines service registration standards ensuring consistency, maintainability, and proper configuration handling across features through hierarchical feature-based registration and Options pattern.
 
 ## Core Principles
 
-### Hierarchical Feature-Based Registration
-
-- **Feature-aligned organization** — service registration follows the feature namespace structure
-- **ServiceRegistration class per feature** — create `public static class ServiceRegistration` in each feature folder with `Add{FeatureName}()` methods
-- **Parent-child registration pattern** — parent features call child feature registrations to build composable service collections
-- **Public at logical boundaries** — make registration methods `public` only at product/feature boundaries where consumers would reasonably register just that subset
-- **Internal for implementation details** — sub-features and implementation components should have `internal` registration methods
-
-### Configuration and Options Pattern
-
-- **Always use Options pattern for configuration** — NEVER use direct configuration parameters in constructors; always use `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>`
-- **Make everything configurable** — follow cloud-native principles by externalizing all configuration; prefer configuration over hard-coded values
-- **Support multiple configuration overloads** — provide overloads for `Action<TOptions>`, `IConfiguration`, and explicit parameters to support different consumption patterns
-- **Private core registration method** — implement core service registration in a private parameterless method, then create public overloads that handle configuration
-- **Options classes follow naming conventions** — use `{FeatureName}Options` naming pattern (e.g., `BrookStorageOptions`, `StreamingOptions`)
-- **Default options values** — provide sensible defaults in options classes using property initializers
-- **Validate options at startup** — use `IValidateOptions<T>` or `ValidateOnStart()` to catch configuration errors early
-- **Connection string patterns** — accept connection strings as parameters and register clients using factory patterns, not direct instantiation in DI
-
-### Integration Requirements
-
-- **Follow dependency injection property pattern** — all registered services must use `private Type Name { get; }` pattern when injected
-- **Consistent naming pattern** — use `Add{FeatureName}()` naming convention following PascalCase rules from naming guidelines
-- **XML documentation requirements** — follow naming conventions for all public registration methods with parameter and return value documentation
-- **Access control compliance** — follow sealed classes and minimal access principles from C# guidelines
-
-### Orleans and Hosting Service Integration
-
-- **Service registration must be synchronous** — NEVER perform async operations (database calls, external service calls) during service registration
-- **Use IHostedService for async initialization** — defer async setup operations to hosted services that run after DI container is built
-- **Use Orleans lifecycle participants** — for Orleans-specific initialization that needs to happen at specific lifecycle stages
-- **Factory patterns for deferred initialization** — register factories that perform async operations when first called, not during registration
-- **Database/external service initialization** — always use hosted services or lifecycle participants, never inline in registration methods
+- Feature-aligned organization following namespace structure
+- ServiceRegistration class per feature with Add methods
+- Parent-child registration pattern for composable service collections
+- Public at logical boundaries, internal for implementation details
+- Always use Options pattern (never direct configuration parameters)
+- Make everything configurable following cloud-native principles
+- Support multiple configuration overloads (Action, IConfiguration, explicit)
+- Private core registration method + public configuration overloads
+- Use naming pattern: {FeatureName}Options
+- Provide sensible defaults in options classes
+- Validate options at startup
+- Accept connection strings as parameters, use factory patterns
+- Follow dependency injection property pattern (private Type Name { get; })
+- Use Add{FeatureName}() naming convention
+- Include XML documentation on public methods
+- Service registration must be synchronous (no async operations)
+- Use IHostedService for async initialization
+- Use Orleans lifecycle participants for Orleans-specific init
+- Register factories for deferred async operations
+- Never initialize database/external services inline during registration
 
 ## Service Registration Implementation Pattern
 

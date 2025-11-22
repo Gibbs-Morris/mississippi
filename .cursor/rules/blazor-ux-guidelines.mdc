@@ -9,17 +9,88 @@ alwaysApply: false
 
 # Blazor UX Design System Guidelines
 
-These guidelines define how we design, compose, and test Blazor UI components by combining atomic design,
-BEM naming, state management discipline, accessibility, and WebAssembly readiness. Agents MUST use this document
-whenever they author or review Razor components, regardless of whether the design system is fully matured
-or still emerging.
+Governing thought: Build scalable Blazor UI components using atomic design, BEM naming, Redux-style state management, and WCAG 2.2 accessibility while staying WebAssembly-ready and consistent with repository C# standards.
 
-## Intent
+## Rules (RFC 2119)
 
-- Build a scalable component library that grows from atoms to pages without duplicating behavior or styles.
-- Keep authoring consistent with our existing C# and logging instructions while embracing Blazor idioms.
-- Enable teams to ship usable interfaces early, even before a full design framework exists, by layering
-  components predictably.
+- Agents **MUST** use this document when authoring or reviewing Razor components.  
+  Why: Ensures consistent patterns across all Blazor development regardless of design system maturity.
+- Components **MUST** mirror atomic layers in directory structure with components under a single root.  
+  Why: Maintains predictable organization and prevents scattered component locations.
+- Every component **MUST** live in its own folder with Razor file, backing partial class, styles, and optional tests.  
+  Why: Co-locates related files for easier maintenance and navigation.
+- Partial class backing files **MUST** follow the same namespace model as C# instructions and be `partial` and `sealed` unless composition requires extension.  
+  Why: Aligns with repository C# standards and prevents unintended inheritance.
+- View-only components **MUST** stay presentational, expose `[Parameter]` inputs and `EventCallback` outputs, and **MUST NOT** host business rules.  
+  Why: Separates concerns and keeps components reusable across different contexts.
+- Markup and logic **MUST** be split using `.razor` for markup and `.razor.cs` partial classes for logic.  
+  Why: Keeps diffs focused, supports unit tests, and aligns with repository C# standards.
+- Child components **MUST NOT** call APIs or manage side effects directly.  
+  Why: Pages act as containers and orchestrate services; components remain pure views.
+- Domain logic **MUST** live outside the UI in domain or application services.  
+  Why: Maintains single source of truth and enables reuse across channels.
+- Effects **MUST** call interfaces that encapsulate IO and business requests.  
+  Why: Enables testing through mocking without touching UI components.
+- Selectors **MUST** feed components instead of raw store state.  
+  Why: Avoids unnecessary re-renders and simplifies reasoning about state changes.
+- Components **MUST** render state and raise intent without mutating domain rules.  
+  Why: Keeps UI as pure view over state and enables alternate frontend implementations.
+- Server-only dependencies **MUST NOT** be introduced into shared components.  
+  Why: Maintains WebAssembly compatibility for both hosting scenarios.
+- All `[Parameter]` members **MUST** be PascalCase.  
+  Why: Follows .NET property naming conventions.
+- Atoms **MUST NOT** rely on global styles.  
+  Why: Keeps atoms self-contained and reusable across different contexts.
+- Direct data access **MUST NOT** occur in organisms.  
+  Why: Organisms know about domain models but delegate data operations to services.
+- Injection inside Razor markup **MUST NOT** be done.  
+  Why: Keeps markup focused on structure while partial class handles dependencies.
+- Templates **MUST NOT** fetch data.  
+  Why: Templates are layout scaffolds; pages handle data access.
+- All interactive atoms **MUST** be keyboard accessible and expose ARIA attributes when semantics require it.  
+  Why: Meets WCAG 2.2 AA accessibility standards by default.
+- Component logic **MUST** include L0 tests for state transitions and event callbacks.  
+  Why: Maintains test coverage and prevents regressions in component behavior.
+- Agents **SHOULD** use Redux-style state with actions, reducers, selectors, and effects.  
+  Why: Provides predictable updates and simplified unit testing compared to fragmented approaches.
+- Atoms **SHOULD** forward unrecognized attributes via `AdditionalAttributes`.  
+  Why: Keeps atoms flexible when design tokens evolve.
+- Hard-coded atoms **SHOULD** be refactored in favor of child content or `RenderFragment` slots.  
+  Why: Improves composition and reusability of molecules.
+- Molecules **SHOULD** only orchestrate visual relationships, not validation logic.  
+  Why: Validation belongs in dedicated services or `EditContext` helpers.
+- Raw UI state **SHOULD** be treated as a refactoring task when a value object conveys intent better.  
+  Why: Strongly typed callbacks improve clarity and type safety.
+- Pages **SHOULD** use `@implements IAsyncDisposable` when creating long-lived resources.  
+  Why: Ensures proper cleanup of resources and prevents memory leaks.
+- Component duplication **SHOULD** be avoided through parameters or `RenderFragment` slots.  
+  Why: Versioning through parameters maintains backward compatibility.
+- Global overrides **SHOULD NOT** be required for theming.  
+  Why: CSS variables enable theme swapping without component edits.
+- Tight coupling **SHOULD NOT** be introduced between UI and contracts.  
+  Why: Keeps contracts channel-agnostic for potential frontend replacement.
+- Fragmented state approaches **SHOULD NOT** be used.  
+  Why: Redux-style stores provide better predictability and testing.
+- Missing a11y audits **SHOULD** be tracked for high-traffic components.  
+  Why: Ensures accessibility gaps are addressed systematically.
+
+## Scope and Audience
+
+**Audience:** Developers authoring or reviewing Blazor Razor components.
+
+**In scope:** Atomic design patterns, component structure, state management, accessibility, WebAssembly readiness, BEM styling, testing requirements.
+
+**Out of scope:** General C# coding standards (see csharp.instructions.md), specific business domain logic, backend service implementations.
+
+## Purpose
+
+This document defines comprehensive standards for building Blazor UI components using atomic design principles, ensuring scalability, accessibility, and consistency across the Mississippi Framework.
+
+## Core Principles
+
+- Build a scalable component library that grows from atoms to pages without duplicating behavior or styles
+- Keep authoring consistent with existing C# and logging instructions while embracing Blazor idioms
+- Enable teams to ship usable interfaces early by layering components predictably
 
 ## Atomic Layering Cheat Sheet
 

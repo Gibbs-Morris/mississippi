@@ -4,16 +4,45 @@ applyTo: '**/*.md'
 
 # Markdown Authoring and Lint Compliance
 
-This instruction is mandatory for every Markdown file in the repository. All agents MUST author, review, and
-maintain Markdown so that it passes the canonical set of `markdownlint` rules without exceptions.
+Governing thought: All Markdown files comply with `markdownlint` rules without exceptions or suppressions; agents fix issues at the source rather than disabling rules.
 
-## Non-Negotiable Fundamentals
+## Rules (RFC 2119)
 
-- Treat `markdownlint` warnings as build blockers; fix the source rather than disabling or suppressing a rule.
-- Never disable, suppress, or reconfigure `markdownlint` rules (including via `markdownlint-disable` comments, config overrides, or ignore lists) unless the current user task explicitly instructs you to do so for that single case.
-- Follow GitHub Flavored Markdown (GFM) semantics and ensure rendered output matches intent on GitHub.
-- Keep authored content accessible: use descriptive link text, semantic headings, and alt text on images.
-- Prefer plain Markdown over inline HTML. If HTML is unavoidable, ensure it does not violate any active rule.
+- Agents **MUST** author, review, and maintain Markdown so that it passes the canonical set of `markdownlint` rules without exceptions.  
+  Why: Ensures consistent, high-quality documentation across the repository.
+- Agents **MUST** treat `markdownlint` warnings as build blockers and fix the source rather than disabling or suppressing rules.  
+  Why: Maintains documentation quality and prevents accumulation of technical debt.
+- Agents **MUST NOT** disable, suppress, or reconfigure `markdownlint` rules (including via `markdownlint-disable` comments, config overrides, or ignore lists) unless the current user task explicitly instructs otherwise for a single case.  
+  Why: Prevents erosion of documentation standards through ad-hoc exceptions.
+- Agents **MUST** follow GitHub Flavored Markdown (GFM) semantics and ensure rendered output matches intent on GitHub.  
+  Why: Documentation is consumed primarily on GitHub; rendering must be correct.
+- Agents **MUST** follow all active markdownlint rules (MD001-MD059).  
+  Why: Rules enforce best practices for readability, accessibility, and consistency.
+- Agents **MUST** run `markdownlint` locally and resolve all reported issues before submitting changes.  
+  Why: Catches issues early and prevents failed CI builds.
+- Agents **SHOULD** prefer plain Markdown over inline HTML.  
+  Why: Plain Markdown is more maintainable and portable across renderers.
+- Agents **SHOULD** keep authored content accessible by using descriptive link text, semantic headings, and alt text on images.  
+  Why: Improves accessibility for screen readers and other assistive technologies.
+
+## Scope and Audience
+
+**Audience:** All contributors authoring or reviewing Markdown files in the repository.
+
+**In scope:** Markdown authoring standards, markdownlint compliance, formatting rules.
+
+**Out of scope:** General writing style, content strategy, documentation architecture.
+
+## Purpose
+
+This instruction ensures every Markdown file in the repository passes `markdownlint` validation, maintaining consistent, accessible, high-quality documentation.
+
+## Core Principles
+
+- Fix at source: address linting issues by improving the Markdown, not by suppressing rules
+- GFM compatibility: ensure correct rendering on GitHub
+- Accessibility first: descriptive links, semantic headings, image alt text
+- Plain Markdown preferred: avoid HTML unless necessary
 
 ## Configuration
 
@@ -26,7 +55,7 @@ Both files disable only:
 
 - **MD013** (line length) - Technical documentation often requires longer lines for code examples, URLs, command lines, and tables
 
-All other markdownlint rules remain active and MUST be followed.
+All other markdownlint rules remain active.
 
 ## Authoring Checklist
 
@@ -37,9 +66,9 @@ All other markdownlint rules remain active and MUST be followed.
 5. Run `markdownlint` locally (for example: `npx markdownlint-cli2 "**/*.md"` from the repo root) before
    submitting changes and resolve *all* reported issues.
 
-## markdownlint Rules (Mandatory)
+## markdownlint Rules Reference
 
-The following rules are enforced exactly as documented by `markdownlint`. Every Markdown file **MUST** comply.
+The following rules are enforced exactly as documented by `markdownlint`.
 
 - **MD001 – Heading levels should only increment by one level at a time.**
 - **MD002 – First heading should be the top-level heading.**

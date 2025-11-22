@@ -4,9 +4,38 @@ applyTo: '**'
 
 # Testing Strategy and Quality Gates
 
-This document defines the Mississippi repository’s testing strategy and expectations. It complements the Build Rules and Quality Standards and clarifies how tests are organized, named, and executed across CI.
+Governing thought: This document defines the Mississippi repository's testing strategy using an L0–L4 layered model to keep feedback fast while ensuring end-to-end confidence.
 
-We use an L0–L4 layered testing model to keep feedback fast while ensuring end-to-end confidence.
+## Rules (RFC 2119)
+
+- Test projects **MUST** follow naming conventions: `<Product>.<Feature>.L0Tests` through `L4Tests`.  
+  Why: Enables consistent tooling, analyzers, and InternalsVisibleTo configuration.
+- Developers **MUST** default to L0 tests for new unit tests; L1 **SHOULD** be added only when light infrastructure is necessary.  
+  Why: Keeps feedback fast and tests deterministic.
+- Tests **MUST** be deterministic and isolated; tests **MUST NOT** use wall-clock sleeps or shared mutable state.  
+  Why: Prevents flaky tests and ensures reliable CI results.
+- Developers **MUST** aim for 100% coverage on changed code; **MUST** maintain ≥80% minimum overall.  
+  Why: Ensures code paths are tested; 80% is absolute minimum per SonarCloud gate.
+- Developers **SHOULD** target 95–100% coverage where technically feasible.  
+  Why: Higher coverage reduces defect risk.
+- Tests **MUST NOT** decrease coverage on touched files.  
+  Why: Prevents coverage regressions.
+- Developers **MUST** run mutation testing for Mississippi projects and maintain or raise the score.  
+  Why: Validates test quality through mutation survival analysis.
+- Test projects **MUST** apply zero-warnings policy; target framework, analyzers, and StyleCop rules apply equally.  
+  Why: Test code quality standards match production code standards.
+
+## Scope and Audience
+
+**Audience:** Developers writing tests for Mississippi framework and sample applications.
+
+**In scope:** Test organization, naming conventions, coverage targets, mutation testing, test levels L0-L4.
+
+**Out of scope:** Specific test implementations, mocking patterns (see csharp.instructions.md).
+
+## Purpose
+
+This document complements Build Rules and Quality Standards, clarifying how tests are organized, named, and executed across CI using a layered testing model.
 
 ## At-a-Glance Quick-Start
 
@@ -40,7 +69,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
   - `<Product>.<Feature>.L2Tests`
   - `<Product>.<Feature>.L3Tests`
   - `<Product>.<Feature>.L4Tests`
-  - Legacy naming: generic `<…>.Tests`, `<…>.UnitTests`, and `<…>.IntegrationTests` are supported for compatibility but SHOULD be migrated to L0–L4 naming over time
+  - Legacy naming: generic `<…>.Tests`, `<…>.UnitTests`, and `<…>.IntegrationTests` are supported for compatibility but should be migrated to L0–L4 naming over time
   - Prefer per-level projects for clarity and analyzer consistency; migrate legacy projects when touched
 - Any project ending with `Tests` is treated as a test project and pulls common test packages (xUnit, runner, coverlet, Allure, Moq)
 - InternalsVisibleTo is already configured for `.Tests`, `.UnitTests`, `.IntegrationTests`, and `.L0Tests` … `.L4Tests` so tests can exercise internal members safely
@@ -60,7 +89,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 - Coverage
   - Aim for 100% unit test coverage on new and changed code paths
   - Absolute minimum: 80% lines/branches for Mississippi projects (SonarCloud gate); target 95–100% where technically feasible
-  - No coverage regressions: touched files SHOULD NOT decrease in coverage
+  - No coverage regressions: touched files should not decrease in coverage
 - Mutation testing
   - Run Stryker.NET for Mississippi projects; keep or raise the mutation score
   - Default thresholds align with repository `stryker-config.json`: high 90, low 80, break 80; avoid score regressions on changed areas
