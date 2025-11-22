@@ -1,11 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
+
 <Solution>
-  <Configurations>
-    <Configuration Name="Debug|Any CPU" />
-    <Configuration Name="Release|Any CPU" />
-  </Configurations>
 
   <Folder Name="/Framework/">
+    <Project Path="src/Aggregates/Aggregates.csproj" />
+    <Project Path="src/Projections/Projections.csproj" />
     <Project Path="src\Core.Abstractions\Core.Abstractions.csproj" />
     <Project Path="src\Core\Core.csproj" />
     <Project Path="src\Hosting\Hosting.csproj" />
@@ -15,6 +13,7 @@
   </Folder>
 
   <Folder Name="/Tests/">
+    <Project Path="tests/Projections.Tests/Projections.Tests.csproj" />
     <Project Path="tests\Architecture.Tests\Architecture.Tests.csproj" />
     <Project Path="tests\Core.Tests\Core.Tests.csproj" />
     <Project Path="tests\Core.Abstractions.Tests\Core.Abstractions.Tests.csproj" />
