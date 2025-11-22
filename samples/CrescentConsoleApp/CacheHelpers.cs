@@ -31,11 +31,11 @@ internal static class CacheHelpers
     )
     {
         logger.RequestingDeactivations(runId, brookKey);
-        await brookGrainFactory.GetBrookHeadGrain(brookKey).DeactivateAsync();
+        await brookGrainFactory.GetBrookCursorGrain(brookKey).DeactivateAsync();
         await brookGrainFactory.GetBrookReaderGrain(brookKey).DeactivateAsync();
 
         // Also trigger slice grains to deactivate: touch a few ranges and request deactivation
-        BrookPosition head = await brookGrainFactory.GetBrookHeadGrain(brookKey).GetLatestPositionAsync();
+        BrookPosition head = await brookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionAsync();
         if (head.Value > 0)
         {
             long step = Math.Max(1, head.Value / 3);

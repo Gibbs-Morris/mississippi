@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Abstractions;
 
@@ -6,18 +6,18 @@ using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.Head;
+namespace Mississippi.EventSourcing.Cursor;
 
 /// <summary>
-///     Orleans grain contract that exposes the head (latest version) of a Mississippi brook.
+///     Orleans grain contract that exposes the cursor (latest version) of a Mississippi brook.
 /// </summary>
 /// <remarks>
 ///     Implementations are keyed by the string returned from
 ///     <see cref="BrookKey" /> to provide
 ///     a unique identifier for each Mississippi brook.
 /// </remarks>
-[Alias("Mississippi.Core.IBrookHeadGrain")]
-public interface IBrookHeadGrain : IGrainWithStringKey
+[Alias("Mississippi.Core.IBrookCursorGrain")]
+public interface IBrookCursorGrain : IGrainWithStringKey
 {
     /// <summary>
     ///     Requests the grain to deactivate when idle, clearing any in-memory caches.
@@ -27,7 +27,7 @@ public interface IBrookHeadGrain : IGrainWithStringKey
     Task DeactivateAsync();
 
     /// <summary>
-    ///     Retrieves the most recent version number of the associated brook.
+    ///     Retrieves the most recent version number of the associated brook cursor.
     /// </summary>
     /// <returns>The highest persisted version of the brook.</returns>
     [ReadOnly]

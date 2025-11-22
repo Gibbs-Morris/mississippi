@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Head;
+using Mississippi.EventSourcing.Cursor;
 using Mississippi.EventSourcing.Tests.Infrastructure;
 using Mississippi.EventSourcing.Writer;
 
@@ -21,17 +21,17 @@ public class BrookWriterGrainTests
     private readonly TestCluster cluster = TestClusterAccess.Cluster;
 
     /// <summary>
-    ///     Appending events should publish a head update visible to the head grain.
+    ///     Appending events should publish a cursor update visible to the cursor grain.
     /// </summary>
     /// <returns>
     ///     A task that represents the asynchronous test operation.
     /// </returns>
     [Fact]
-    public async Task AppendEventsAsyncPublishesHeadUpdate()
+    public async Task AppendEventsAsyncPublishesCursorUpdate()
     {
         BrookKey key = new("t", "w1");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
-        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
+        IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
         ImmutableArray<BrookEvent> events =
         [
             new()
@@ -46,8 +46,8 @@ public class BrookWriterGrainTests
         BrookPosition newPos = await writer.AppendEventsAsync(events);
         Assert.Equal(2, newPos.Value);
 
-        // Confirm head by reading storage-backed path
-        BrookPosition confirmed = await head.GetLatestPositionConfirmedAsync();
+        // Confirm cursor by reading storage-backed path
+        BrookPosition confirmed = await cursor.GetLatestPositionConfirmedAsync();
         Assert.Equal(2, confirmed.Value);
     }
 

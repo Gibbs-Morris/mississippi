@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Head;
+using Mississippi.EventSourcing.Cursor;
 using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.Writer;
 
@@ -13,14 +13,14 @@ using Orleans;
 namespace Mississippi.EventSourcing.Factory;
 
 /// <summary>
-///     Factory for resolving Orleans grains (writers, readers, slices, and head) by key.
+///     Factory for resolving Orleans grains (writers, readers, slices, and cursor) by key.
 /// </summary>
 internal class BrookGrainFactory : IBrookGrainFactory
 {
-    private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingHeadGrain =
+    private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingCursorGrain =
         LoggerMessage.Define<string, BrookKey>(
             LogLevel.Debug,
-            new(4, nameof(GetBrookHeadGrain)),
+            new(4, nameof(GetBrookCursorGrain)),
             "Resolving {GrainType} for Brook {BrookKey}");
 
     private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingReaderGrain =
@@ -61,16 +61,16 @@ internal class BrookGrainFactory : IBrookGrainFactory
     private ILogger<BrookGrainFactory> Logger { get; }
 
     /// <summary>
-    ///     Retrieves an <see cref="IBrookHeadGrain" /> for the specified Brook composite key.
+    ///     Retrieves an <see cref="IBrookCursorGrain" /> for the specified Brook composite key.
     /// </summary>
     /// <param name="brookKey">The key identifying the Brook.</param>
-    /// <returns>An <see cref="IBrookHeadGrain" /> instance for the Brook head.</returns>
-    public IBrookHeadGrain GetBrookHeadGrain(
+    /// <returns>An <see cref="IBrookCursorGrain" /> instance for the Brook cursor.</returns>
+    public IBrookCursorGrain GetBrookCursorGrain(
         BrookKey brookKey
     )
     {
-        LogResolvingHeadGrain(Logger, nameof(IBrookHeadGrain), brookKey, null);
-        return GrainFactory.GetGrain<IBrookHeadGrain>(brookKey);
+        LogResolvingCursorGrain(Logger, nameof(IBrookCursorGrain), brookKey, null);
+        return GrainFactory.GetGrain<IBrookCursorGrain>(brookKey);
     }
 
     /// <summary>

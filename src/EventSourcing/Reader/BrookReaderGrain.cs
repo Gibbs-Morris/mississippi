@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Cursor;
 using Mississippi.EventSourcing.Factory;
-using Mississippi.EventSourcing.Head;
 
 using Orleans;
 using Orleans.Concurrency;
@@ -112,8 +112,8 @@ internal class BrookReaderGrain
         start = readFrom ?? new BrookPosition(0);
         if (!readTo.HasValue)
         {
-            IBrookHeadGrain headGrain = BrookGrainFactory.GetBrookHeadGrain(brookId);
-            end = await headGrain.GetLatestPositionAsync();
+            IBrookCursorGrain cursorGrain = BrookGrainFactory.GetBrookCursorGrain(brookId);
+            end = await cursorGrain.GetLatestPositionAsync();
         }
         else
         {

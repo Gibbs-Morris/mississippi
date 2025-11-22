@@ -39,8 +39,8 @@ internal static class ReadHelpers
     {
         IBrookReaderGrain reader = brookGrainFactory.GetBrookReaderGrain(brookKey);
         BrookPosition latest = confirmedHead
-            ? await brookGrainFactory.GetBrookHeadGrain(brookKey).GetLatestPositionConfirmedAsync()
-            : await brookGrainFactory.GetBrookHeadGrain(brookKey).GetLatestPositionAsync();
+            ? await brookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionConfirmedAsync()
+            : await brookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionAsync();
         logger.ReadbackHead(runId, latest.Value);
         if (latest.Value < 1)
         {

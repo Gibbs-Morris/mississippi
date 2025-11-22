@@ -5,10 +5,10 @@ using Mississippi.EventSourcing.Cosmos.Storage;
 namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
 
 /// <summary>
-///     Test class for <see cref="Mississippi.EventSourcing.Cosmos.Mapping.HeadDocumentToStorageMapper" /> functionality.
+///     Test class for <see cref="Mississippi.EventSourcing.Cosmos.Mapping.CursorDocumentToStorageMapper" /> functionality.
 ///     Contains unit tests to verify the behavior of head document to storage mapping operations.
 /// </summary>
-public class HeadDocumentToStorageMapperTests
+public class CursorDocumentToStorageMapperTests
 {
     /// <summary>
     ///     Verifies that when OriginalPosition is present both values are populated.
@@ -17,15 +17,15 @@ public class HeadDocumentToStorageMapperTests
     public void MapWithOriginalPositionPopulatesBoth()
     {
         // Arrange
-        HeadDocument doc = new()
+        CursorDocument doc = new()
         {
             Position = 42L,
             OriginalPosition = 10L,
         };
-        HeadDocumentToStorageMapper mapper = new();
+        CursorDocumentToStorageMapper mapper = new();
 
         // Act
-        HeadStorageModel result = mapper.Map(doc);
+        CursorStorageModel result = mapper.Map(doc);
 
         // Assert
         Assert.Equal(42L, (long)result.Position);
@@ -40,15 +40,15 @@ public class HeadDocumentToStorageMapperTests
     public void MapWithoutOriginalPositionSetsNullOriginal()
     {
         // Arrange
-        HeadDocument doc = new()
+        CursorDocument doc = new()
         {
             Position = 5L,
             OriginalPosition = null,
         };
-        HeadDocumentToStorageMapper mapper = new();
+        CursorDocumentToStorageMapper mapper = new();
 
         // Act
-        HeadStorageModel result = mapper.Map(doc);
+        CursorStorageModel result = mapper.Map(doc);
 
         // Assert
         Assert.Equal(5L, (long)result.Position);

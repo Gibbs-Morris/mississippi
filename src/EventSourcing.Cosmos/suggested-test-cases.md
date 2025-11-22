@@ -10,7 +10,7 @@
 
 - No batch exceeds Cosmos 100 operation limit.
 - Max request size constraint respected (`BrookStorageOptions.MaxRequestSizeBytes`).
-- Recovery process either commits or rolls back orphaned pending heads; no partial state.
+- Recovery process either commits or rolls back orphaned pending cursors; no partial state.
 - Lock acquisition & renewal logic: never renew too frequently, handles lost lease.
 
 ---
@@ -23,7 +23,7 @@ Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
 |----|----------|-------|------|-----|------|
-| BSP1 | ReadHeadPosition delegates | call -> recoveryService invoked | Delegation | M | Unit |
+| BSP1 | ReadCursorPosition delegates | call -> recoveryService invoked | Delegation | M | Unit |
 | BSP2 | ReadEventsAsync forwards enumeration | yield all from reader | Delegation | M | Unit |
 | BSP3 | AppendEvents validates non-empty | empty list -> ArgException | Validation | H | Unit |
 | BSP4 | AppendEvents delegates | non-empty -> appender called | Delegation | H | Unit |
@@ -105,16 +105,16 @@ Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
 |----|----------|-------------|------|-----|------|
-| CR1 | GetHeadDocumentAsync hit | container returns doc -> mapped | Basic | H | Unit |
-| CR2 | GetHeadDocumentAsync miss | 404 -> null | NotFound | H | Unit |
-| CR3 | CreatePendingHeadAsync uses retry | inject failing first attempt -> retried | Retry | M | Unit |
-| CR4 | CommitHeadPositionAsync success | batch success -> no exception | Batch | H | Unit |
-| CR5 | CommitHeadPositionAsync failure | batch fail -> InvalidOperationException | Error | H | Unit |
+| CR1 | GetCursorDocumentAsync hit | container returns doc -> mapped | Basic | H | Unit |
+| CR2 | GetCursorDocumentAsync miss | 404 -> null | NotFound | H | Unit |
+| CR3 | CreatePendingCursorAsync uses retry | inject failing first attempt -> retried | Retry | M | Unit |
+| CR4 | CommitCursorPositionAsync success | batch success -> no exception | Batch | H | Unit |
+| CR5 | CommitCursorPositionAsync failure | batch fail -> InvalidOperationException | Error | H | Unit |
 | CR6 | EventExistsAsync hit/miss | existing & 404 paths | NotFound | M | Unit |
 | CR7 | GetExistingEventPositionsAsync accumulates | multiple pages -> combined set | Paging | M | Unit |
 | CR8 | AppendEventBatchAsync over op limit guard | >100 ops -> InvalidOperationException | Limit | H | Unit |
-| CR9 | ExecuteTransactionalBatchAsync create head new | NotSet head -> CreateItem used | Branch | M | Unit |
-| CR10 | ExecuteTransactionalBatchAsync replace head | existing head -> ReplaceItem used | Branch | M | Unit |
+| CR9 | ExecuteTransactionalBatchAsync create cursor new | NotSet cursor -> CreateItem used | Branch | M | Unit |
+| CR10 | ExecuteTransactionalBatchAsync replace cursor | existing cursor -> ReplaceItem used | Branch | M | Unit |
 | CR11 | QueryEventsAsync yields ordered | positions ascending | Ordering | M | Unit |
 | CR12 | Batch retry transient | first 429 in ExecuteBatchWithRetryAsync -> success | Retry | M | Unit |
 
@@ -128,12 +128,12 @@ Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
 |----|----------|-------------|------|-----|------|
-| RCV1 | Head exists returns directly | head present -> no recovery | Fast path | H | Unit |
-| RCV2 | Pending head commit path | head null + pending + all events exist -> commit -> new head position | Commit | H | Unit |
-| RCV3 | Pending head rollback path | missing events -> rollback deletes and clears pending | Rollback | H | Unit |
-| RCV4 | Recovery lock contention | first Acquire throws -> second read obtains head else exception | Concurrency | M | Unit |
+| RCV1 | Cursor exists returns directly | cursor present -> no recovery | Fast path | H | Unit |
+| RCV2 | Pending cursor commit path | cursor null + pending + all events exist -> commit -> new cursor position | Commit | H | Unit |
+| RCV3 | Pending cursor rollback path | missing events -> rollback deletes and clears pending | Rollback | H | Unit |
+| RCV4 | Recovery lock contention | first Acquire throws -> second read obtains cursor else exception | Concurrency | M | Unit |
 | RCV5 | Large gap optimization | >10 events -> uses bulk check path | Branch | L | Unit |
-| RCV6 | Exception acquiring recovery lock then still null | lock fail & head still null -> InvalidOperationException | Failure | M | Unit |
+| RCV6 | Exception acquiring recovery lock then still null | lock fail & cursor still null -> InvalidOperationException | Failure | M | Unit |
 
 ---
 
@@ -147,10 +147,10 @@ Test Cases:
 |----|----------|-------------|------|-----|------|
 | EBA1 | AppendEventsAsync empty list | throws ArgException | Validation | H | Unit |
 | EBA2 | Too many events overflow guard | Count > int.MaxValue/2 -> ArgException | Overflow | H | Unit |
-| EBA3 | Expected version mismatch | currentHead != expected -> OptimisticConcurrencyException | Concurrency | H | Unit |
-| EBA4 | Position overflow guard | currentHead near long.MaxValue -> InvalidOperationException | Overflow | H | Unit |
+| EBA3 | Expected version mismatch | currentCursor != expected -> OptimisticConcurrencyException | Concurrency | H | Unit |
+| EBA4 | Position overflow guard | currentCursor near long.MaxValue -> InvalidOperationException | Overflow | H | Unit |
 | EBA5 | Single batch path | count within limits -> ExecuteTransactionalBatchAsync called | Branch | H | Unit |
-| EBA6 | Large batch path | size/count exceed limit -> CreatePendingHead & multi-batch append | Branch | H | Unit |
+| EBA6 | Large batch path | size/count exceed limit -> CreatePendingCursor & multi-batch append | Branch | H | Unit |
 | EBA7 | Large batch rollback on failure | forced failure mid-batches -> rollback deletes appended events | Rollback | H | Unit |
 | EBA8 | Renew lock periodically | long batch triggers RenewAsync iterations | Lease | M | Unit |
 | EBA9 | Logs information (optional) | verify informative log emitted | Logging | L | Unit |
@@ -179,7 +179,7 @@ Test Cases (apply to each mapper):
 | MAP1 | Map copies expected fields | sample input -> output matches | H | Unit |
 | MAP2 | Nullables default fallback | null optional fields -> expected defaults (empty, etc.) | M | Unit |
 | MAP3 | EventDocument -> Storage -> Domain round-trip | document -> storage -> domain (compare key fields) | M | Unit |
-| MAP4 | HeadDocument -> Storage -> round-trip | doc -> storage -> doc (equivalent) | M | Unit |
+| MAP4 | CursorDocument -> Storage -> round-trip | doc -> storage -> doc (equivalent) | M | Unit |
 
 ---
 

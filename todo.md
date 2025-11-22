@@ -4,54 +4,54 @@ This document captures the outstanding improvements and fixes to make the
 Cosmos provider production‑ready. Items are grouped by area, with rationale
 and clear acceptance criteria for future pickup.
 
-## Concurrency: ETag support for head updates
+## Concurrency: ETag support for cursor updates
 
-- **Problem**: `head` updates use unconditional replace; no ETag precondition
-  → races can overwrite head.
+- **Problem**: `cursor` updates use unconditional replace; no ETag precondition
+  → races can overwrite cursor.
 - **Scope**: `src/EventSourcing.Cosmos/Storage/CosmosRepository.cs`,
-  `src/EventSourcing.Cosmos/Storage/HeadDocument.cs`,
-  `src/EventSourcing.Cosmos/Storage/HeadStorageModel.cs`,
-  `src/EventSourcing.Cosmos/Mapping/HeadDocumentToStorageMapper.cs`,
+  `src/EventSourcing.Cosmos/Storage/CursorDocument.cs`,
+  `src/EventSourcing.Cosmos/Storage/CursorStorageModel.cs`,
+  `src/EventSourcing.Cosmos/Mapping/CursorDocumentToStorageMapper.cs`,
   appender paths.
 - **Approach**:
-  - Add ETag fields: add `string? ETag` to `HeadDocument` (map `_etag`) and
-    to `HeadStorageModel`.
-  - Map ETag in `HeadDocumentToStorageMapper`.
-  - In `GetHeadDocumentAsync`, capture `response.ETag` and/or rely on `_etag`
-    to populate `HeadStorageModel.ETag`.
+  - Add ETag fields: add `string? ETag` to `CursorDocument` (map `_etag`) and
+    to `CursorStorageModel`.
+  - Map ETag in `CursorDocumentToStorageMapper`.
+  - In `GetCursorDocumentAsync`, capture `response.ETag` and/or rely on `_etag`
+    to populate `CursorStorageModel.ETag`.
   - In `ExecuteTransactionalBatchAsync`, use
-    `TransactionalBatchItemRequestOptions { IfMatchEtag = currentHead.ETag }`
-    when replacing `head`.
-  - In `CommitHeadPositionAsync`, read current `head` and conditionally update
+    `TransactionalBatchItemRequestOptions { IfMatchEtag = currentCursor.ETag }`
+    when replacing `cursor`.
+  - In `CommitCursorPositionAsync`, read current `cursor` and conditionally update
     using ETag as above.
 - **Acceptance**:
-  - Concurrent append attempts with diverging expected head fail with
+  - Concurrent append attempts with diverging expected cursor fail with
     412‑style behavior (surfaced as a clear exception).
   - Tests demonstrate ETag is round‑tripped and enforced.
 
-## Pending head validation and recovery hardening
+## Pending cursor validation and recovery hardening
 
-- **Problem**: `head-pending` is committed without verifying the `head` still
-  equals `originalPosition`. Orphaned `head-pending` with existing `head`
+- **Problem**: `cursor-pending` is committed without verifying the `cursor` still
+  equals `originalPosition`. Orphaned `cursor-pending` with existing `cursor`
   isn't handled.
-- **Scope**: `CosmosRepository.CommitHeadPositionAsync`,
-  `CosmosRepository.CreatePendingHeadAsync`, `BrookRecoveryService`,
+- **Scope**: `CosmosRepository.CommitCursorPositionAsync`,
+  `CosmosRepository.CreatePendingCursorAsync`, `BrookRecoveryService`,
   `EventBrookAppender.AppendLargeBatchAsync`.
 - **Approach**:
-  - `CreatePendingHeadAsync`: before create, read `head`; if present and not
-    equal to `currentHead`, abort with a specific concurrency error.
-  - `CommitHeadPositionAsync`: read `head` (and `head-pending`) first; only
-    commit if `head.Position == pending.originalPosition` using ETags on both
+  - `CreatePendingCursorAsync`: before create, read `cursor`; if present and not
+    equal to `currentCursor`, abort with a specific concurrency error.
+  - `CommitCursorPositionAsync`: read `cursor` (and `cursor-pending`) first; only
+    commit if `cursor.Position == pending.originalPosition` using ETags on both
     update and delete.
-  - Recovery: if `head` exists AND `head-pending` exists, verify range events;
+  - Recovery: if `cursor` exists AND `cursor-pending` exists, verify range events;
     if none or incomplete, clean up stale pending; otherwise complete commit.
-  - Large append: if `CreatePendingHeadAsync` returns 409 due to existing
+  - Large append: if `CreatePendingCursorAsync` returns 409 due to existing
     pending, invoke recovery flow (or fail with actionable message) instead
     of proceeding.
 - **Acceptance**:
-  - Stale `head-pending` never blocks writes permanently; recovery resolves
+  - Stale `cursor-pending` never blocks writes permanently; recovery resolves
     it or surfaces a clear remediation error.
-  - Commit refuses to advance when `head` diverged during long batch.
+  - Commit refuses to advance when `cursor` diverged during long batch.
 
 ## Locking improvements (distributed blob leases)
 
@@ -105,7 +105,7 @@ and clear acceptance criteria for future pickup.
 
 ## Mapper and data validation polish
 
-- Add `ETag` support as above for head docs.
+- Add `ETag` support as above for cursor docs.
 - Consider validating non‑empty `BrookEvent.Id` before mapping to storage to
   avoid accidental duplicate logical events (position id remains unique, but
   domain ID hygiene helps).
@@ -124,7 +124,7 @@ and clear acceptance criteria for future pickup.
 ## Tests to add
 
 - ETag concurrency tests for single‑batch and large‑batch paths.
-- Pending‑head stale recovery test (head present, pending present).
+- Pending-cursor stale recovery test (cursor present, pending present).
 - Batch limit tests (count and size).
 - Lock contention tests with simulated 409s.
 - Partition key identity test.
@@ -141,8 +141,8 @@ and clear acceptance criteria for future pickup.
 - `src/EventSourcing.Cosmos/Storage/CosmosRepository.cs`
 - `src/EventSourcing.Cosmos/Brooks/EventBrookAppender.cs`
 - `src/EventSourcing.Cosmos/Brooks/BrookRecoveryService.cs`
-- `src/EventSourcing.Cosmos/Storage/HeadDocument.cs`
-- `src/EventSourcing.Cosmos/Storage/HeadStorageModel.cs`
-- `src/EventSourcing.Cosmos/Mapping/HeadDocumentToStorageMapper.cs`
+- `src/EventSourcing.Cosmos/Storage/CursorDocument.cs`
+- `src/EventSourcing.Cosmos/Storage/CursorStorageModel.cs`
+- `src/EventSourcing.Cosmos/Mapping/CursorDocumentToStorageMapper.cs`
 - `src/EventSourcing.Cosmos/BrookStorageProviderRegistrations.cs`
 - `src/EventSourcing.Cosmos/Locking/*`

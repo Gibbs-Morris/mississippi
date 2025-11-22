@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -200,7 +200,7 @@ await ReadHelpers.LogStreamReadAsync(
 
 // Persist final confirmed head for primary stream
 BrookPosition confirmed = await host2.Services.GetRequiredService<IBrookGrainFactory>()
-    .GetBrookHeadGrain(brookKey)
+    .GetBrookCursorGrain(brookKey)
     .GetLatestPositionConfirmedAsync();
 runState.PrimaryHead = confirmed.Value;
 runState.UpsertStream(brookKey.Type, brookKey.Id, confirmed.Value);
