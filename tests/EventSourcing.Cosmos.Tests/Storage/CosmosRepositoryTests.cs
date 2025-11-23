@@ -426,6 +426,37 @@ public class CosmosRepositoryTests
     }
 
     /// <summary>
+    ///     Verifies ExecuteTransactionalBatchAsync creates the cursor document when no value has been set.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteTransactionalBatchAsyncCreatesCursorWhenNotSetAsync()
+    {
+        // Arrange
+        Mock<Container> container = new();
+        Mock<TransactionalBatch> batch = new();
+        batch.Setup(b => b.CreateItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+        Mock<TransactionalBatchResponse> success = new();
+        success.SetupGet(r => r.IsSuccessStatusCode).Returns(true);
+        success.SetupGet(r => r.StatusCode).Returns(HttpStatusCode.OK);
+        batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(success.Object);
+        container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
+        CosmosRepository sut = CreateRepository(container.Object);
+
+        // Act
+        using TransactionalBatchResponse response = await sut.ExecuteTransactionalBatchAsync(
+            new("type", "id"),
+            Array.Empty<EventStorageModel>(),
+            new(),
+            7);
+
+        // Assert
+        Assert.Same(success.Object, response);
+        batch.Verify(b => b.CreateItem(It.Is<CursorDocument>(d => d.Position == 7), null), Times.Once);
+        batch.Verify(b => b.ReplaceItem(It.IsAny<string>(), It.IsAny<CursorDocument>(), null), Times.Never);
+    }
+
+    /// <summary>
     ///     Verifies ExecuteTransactionalBatchAsync returns non-success responses without retry when non-transient.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
@@ -532,6 +563,43 @@ public class CosmosRepositoryTests
     }
 
     /// <summary>
+    ///     Verifies GetCursorDocumentAsync maps and returns the stored cursor document when present.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task GetCursorDocumentAsyncReturnsMappedCursorWhenFoundAsync()
+    {
+        // Arrange
+        Mock<Container> container = new();
+        CursorDocument stored = new()
+        {
+            Position = 10,
+        };
+        Mock<ItemResponse<CursorDocument>> response = new();
+        response.SetupGet(r => r.Resource).Returns(stored);
+        container.Setup(c => c.ReadItemAsync<CursorDocument>(
+                It.IsAny<string>(),
+                It.IsAny<PartitionKey>(),
+                null,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response.Object);
+        CursorStorageModel mapped = new()
+        {
+            Position = new(10),
+        };
+        Mock<IMapper<CursorDocument, CursorStorageModel>> mapper = new();
+        mapper.Setup(m => m.Map(stored)).Returns(mapped);
+        CosmosRepository sut = CreateRepository(container.Object, mapper.Object);
+
+        // Act
+        CursorStorageModel? result = await sut.GetCursorDocumentAsync(new("type", "id"));
+
+        // Assert
+        Assert.Same(mapped, result);
+        mapper.Verify(m => m.Map(stored), Times.Once);
+    }
+
+    /// <summary>
     ///     Verifies GetCursorDocumentAsync returns null when Cosmos returns NotFound.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
@@ -598,6 +666,42 @@ public class CosmosRepositoryTests
                 5,
             },
             result);
+    }
+
+    /// <summary>
+    ///     Verifies GetPendingCursorDocumentAsync maps the stored cursor document when found.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task GetPendingCursorDocumentAsyncReturnsMappedCursorWhenFoundAsync()
+    {
+        // Arrange
+        Mock<Container> container = new();
+        CursorDocument stored = new()
+        {
+            Position = 4,
+        };
+        Mock<ItemResponse<CursorDocument>> response = new();
+        response.SetupGet(r => r.Resource).Returns(stored);
+        container.Setup(c => c.ReadItemAsync<CursorDocument>(
+                It.IsAny<string>(),
+                It.IsAny<PartitionKey>(),
+                null,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response.Object);
+        CursorStorageModel mapped = new()
+        {
+            Position = new(4),
+        };
+        Mock<IMapper<CursorDocument, CursorStorageModel>> mapper = new();
+        mapper.Setup(m => m.Map(stored)).Returns(mapped);
+        CosmosRepository sut = CreateRepository(container.Object, mapper.Object);
+
+        // Act
+        CursorStorageModel? result = await sut.GetPendingCursorDocumentAsync(new("type", "id"));
+
+        // Assert
+        Assert.Same(mapped, result);
     }
 
     /// <summary>
