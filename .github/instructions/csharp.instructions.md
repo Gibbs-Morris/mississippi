@@ -4,79 +4,57 @@ applyTo: '**/*.cs'
 
 # C# General Development Best Practices
 
-Governing thought: Apply SOLID principles, dependency injection, immutable patterns, and cloud-native designs to ensure all C# code is testable, maintainable, and aligned with .NET Framework standards.
-
-## Rules (RFC 2119)
-
-- Code **MUST** adhere to SOLID principles.  
-  Why: Improves maintainability and reduces coupling.
-- Code **MUST** remain unit-testable through dependency injection, side-effect-free functions, and clear seams.  
-  Why: Enables fast, reliable feedback and safer refactoring.
-- Third-party dependencies **MAY** be added only with explicit approval or when extending technology already in use.  
-  Why: Reduces supply-chain risk and avoids gratuitous diversity in dependencies.
-- .NET analyzers **MUST** remain enabled and warnings treated as build blockers.  
-  Why: Prevents defects and enforces consistent style automatically.
-- Authors **MUST** follow `private Type Name { get; }` pattern for all injected dependencies.  
-  Why: Encourages immutability and clarity of dependencies.
-- Authors **MUST** avoid blocking calls, shared mutable state, and chatty inter-grain traffic when using Orleans.  
-  Why: Avoids deadlocks and preserves Orleans execution guarantees.
-- Code **MUST NOT** use `Parallel.ForEach`; use `await` + `Task.WhenAll` instead.  
-  Why: Violates Orleans single-threaded model and can introduce concurrency bugs.
-- Grain interfaces **MUST** be `public` when consumed by external clients; keep `internal` when used only intra-assembly.  
-  Why: Clarifies intended usage and enforcement boundaries.
-- Every `public`, `protected`, or unsealed class **MUST** have documented justification in XML comments.  
-  Why: Forces intentional design and assists reviewers.
-- Grain classes **MUST** be `sealed` and implement `IGrainBase` instead of inheriting from `Grain`.  
-  Why: Aligns with Orleans performance and versioning guidance (POCO pattern).
-- Authors **MUST NOT** use direct configuration parameters in constructors; **MUST** use `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>`.  
-  Why: Centralizes configuration, supports validation, and enables hot-reload.
-- Registered services **MUST** use `private Type Name { get; }` pattern when injected.  
-  Why: Promotes immutability and consistent dependency usage.
-- Authors **SHOULD** align with Microsoft best practices wherever official guidance exists.  
-  Why: Ensures consistency with .NET ecosystem standards.
-- Authors **SHOULD** build for statelessness, horizontal scaling, and managed services.  
-  Why: Enables scalability and resilience in distributed systems.
-- Authors **SHOULD** default to C# records or `init`-only properties for domain models, events, and public contracts.  
-  Why: Encourages immutability while allowing justified exceptions.
-- Authors **SHOULD** only make classes inheritable when there is clear, documented need.  
-  Why: Prevents unintended extension points and reduces API surface area.
-- Authors **SHOULD** only expose members that consumers need; prefer `internal` over `public`.  
-  Why: Applies principle of least privilege to APIs.
-- Authors **SHOULD** only make interfaces `public` when part of deliberate API surface.  
-  Why: Avoids premature commitment to public contracts.
-- Authors **SHOULD** grant minimum access level required for intended use case.  
-  Why: Reduces breaking changes (widening is easier than narrowing).
-- Authors **SHOULD** follow hierarchical feature-based service registration using extension methods.  
-  Why: Maintains consistency with repository service registration patterns.
-
-## Scope and Audience
-
-**Audience:** All developers writing C# services or components in the Mississippi Framework and related applications.
-
-**In scope:** SOLID principles, unit testing, dependency injection, access control, Orleans patterns, service registration, cloud-native design, code quality.
-
-**Out of scope:** Specific Orleans implementations (see orleans.instructions.md), service registration details (see service-registration.instructions.md), logging (see logging-rules.instructions.md).
-
-## Purpose
-
-This document establishes baseline engineering expectations for C# development ensuring consistency, maintainability, and alignment with industry standards.
+This document codifies our baseline engineering expectations for any C# service or component within the Mississippi Framework and related applications. These practices ensure consistency, maintainability, and alignment with industry standards across all C# codebases.
 
 ## Core Principles
 
-- Apply SOLID principles consistently
-- Maintain unit testability through proper dependency injection
-- Stick to Microsoft libraries and approved NuGet packages
-- Keep .NET analyzers enabled and treat warnings as build blockers
-- Use dependency injection with get-only property pattern
-- Think like a grain when using Orleans
-- Never use `Parallel.ForEach` in Orleans contexts
-- Classes are sealed by default; prefer composition over inheritance
-- Members are private by default; apply principle of least privilege
-- Interfaces are internal by default
-- Use Options pattern for all configuration
-- Follow cloud-native twelve-factor principles
+- **Always apply SOLID** — Code MUST adhere to SOLID; keep asking whether each class has *only one* reason to change.  
+  Why: Improves maintainability and reduces coupling.
+- **Code MUST remain unit-testable** — leverage dependency injection, side-effect-free functions, and clear seams so every unit can be isolated.  
+  Why: Enables fast, reliable feedback and safer refactoring.
+- **Stick to Microsoft libraries / NuGet packages** — third-party dependencies MAY be added only with explicit approval or when they extend tech already in use (e.g., an Orleans storage provider).  
+  Why: Reduces supply‑chain risk and avoids gratuitous diversity in dependencies.
+- **Principle priority: SOLID → DRY → KISS** — remove duplication first, then keep the solution as simple as possible.  
+  Why: Minimizes complexity while preserving correctness.
+- **Follow Microsoft best practices** wherever official guidance exists (coding conventions, security baselines, project layout, etc.).  
+  Recommendation: Authors SHOULD align with official guidance when available.
+- **Prefer cloud-native designs** — Authors SHOULD build for statelessness, horizontal scaling, and managed services.
+- **Favor immutable objects—pragmatically** — Authors SHOULD default to C# *records* or `init`‑only properties for domain models, events, and public contracts; relax the rule only with a clear, justified need.
+- **Keep .NET analyzers enabled** — treat most warnings as build blockers to maintain hygiene; analyzers MUST remain enabled.  
+  Why: Prevents defects and enforces consistent style automatically.
+- **Use dependency injection with get-only properties** — Authors MUST follow the `private Type Name { get; }` pattern for all injected dependencies, consistent with logging best practices.  
+  Why: Encourages immutability and clarity of dependencies.
+- **If Microsoft Orleans is in the project, think like a grain** — Authors MUST avoid blocking calls, shared mutable state, and chatty inter‑grain traffic; design for Orleans' single‑threaded scheduler, placement, and storage semantics.  
+  Why: Avoids deadlocks and preserves Orleans execution guarantees.
+- **Never use `Parallel.ForEach`** — Code MUST NOT use `Parallel.ForEach`; instead use `await` + `Task.WhenAll` for fan‑out concurrency.  
+  Why: `Parallel.ForEach` violates Orleans’ single‑threaded model and can introduce concurrency bugs.
 
-## Twelve-Factor Checklist
+## Access Control and Encapsulation Principles
+
+- **Classes are `sealed` by default** — Authors SHOULD only make classes inheritable when there is a clear, documented need for polymorphism; prefer composition over inheritance.  
+  Why: Prevents unintended extension points and reduces API surface area.
+- **Members are `private` by default** — Authors SHOULD only expose what consumers actually need; prefer `internal` over `public` when sharing within assemblies.  
+  Why: Applies the principle of least privilege to APIs.
+- **Interfaces are `internal` by default** — Authors SHOULD only make interfaces `public` when they're part of a deliberate API surface.  
+  Why: Avoids premature commitment to public contracts.
+- **Orleans grain interfaces access** — Grain interfaces MUST be `public` when consumed by external clients; keep `internal` when used only intra‑assembly.  
+  Why: Clarifies intended usage and enforcement boundaries.
+- **Explicit access control decisions** — every `public`, `protected`, or unsealed class MUST have a documented justification in XML comments.  
+  Why: Forces intentional design and assists reviewers.
+- **Principle of least privilege** — Authors SHOULD grant the minimum access level required for the intended use case; widening can happen later, while narrowing is breaking.  
+  Why: Reduces breaking changes and risk.
+- **Follow Orleans POCO pattern** — all grain classes MUST be `sealed` and implement `IGrainBase` instead of inheriting from `Grain`.  
+  Why: Aligns with Orleans performance and versioning guidance.
+
+## Service Registration and Configuration
+
+- **Use dedicated service registration pattern** — Authors SHOULD follow hierarchical feature‑based registration using extension methods as defined in the service registration guidelines.
+- **Always use Options pattern for configuration** — Authors MUST NOT use direct configuration parameters in constructors; Authors MUST use `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>`.  
+  Why: Centralizes configuration, supports validation, and enables hot‑reload where appropriate.
+- **Follow dependency injection property pattern** — all registered services MUST use the `private Type Name { get; }` pattern when injected, consistent with logging and Orleans best practices.  
+  Why: Promotes immutability and consistent dependency usage.
+
+## Twelve-Factor Checklist (REQUIRED for Cloud-Native Design)
 
 1. **Codebase** – one codebase, many deploys
 2. **Dependencies** – declare & isolate all dependencies

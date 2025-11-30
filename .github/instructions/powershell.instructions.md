@@ -4,36 +4,7 @@ applyTo: '**/*.ps*'
 
 # PowerShell Scripting Best Practices
 
-Governing thought: PowerShell scripts in this repository follow strict error handling, explicit parameter contracts, and cross-platform patterns to maintain the same predictability and testability we expect from C# code.
-
-## Rules (RFC 2119)
-
-- Agents **MUST** start every script with `#!/usr/bin/env pwsh`, `Set-StrictMode -Version Latest`, and `$ErrorActionPreference = 'Stop'`.  
-  Why: Guarantees consistent execution environment and fail-fast behavior across platforms.
-- Scripts **MUST NOT** rely on implicit success; scripts **MUST** emit deterministic exit codes (`0` success, non-zero failure).  
-  Why: Enables reliable automation and CI integration.
-- Agents **MUST NOT** relax strict mode or stop-on-error preferences.  
-  Why: Prevents silent failures and maintains script reliability.
-- Scripts **MUST NOT** introduce hidden global state; module scope **MUST** remain clean.  
-  Why: Avoids unexpected side effects and maintains script composability.
-- Helper functions **MUST NOT** swallow errors; functions **MUST** bubble errors up to the caller.  
-  Why: Preserves error context and prevents half-success states.
-- Scripts **MUST** call `exit 0` on success and `exit 1` (or higher) on failure explicitly.  
-  Why: Mirrors explicit return types in C# and enables reliable CI integration.
-- Agents **SHOULD** import shared helpers from `eng/src/agent-scripts/RepositoryAutomation.psm1` instead of duplicating logic.  
-  Why: Reduces drift and maintains consistency across automation scripts.
-- Agents **SHOULD** use built-in cmdlets (`Join-Path`, `Resolve-Path`, `Test-Path`) for cross-platform compatibility.  
-  Why: Avoids OS-specific path logic and ensures scripts work everywhere.
-- Scripts **SHOULD** return structured data with `Write-Output` or `[pscustomobject]` when automation consumes results.  
-  Why: Enables machine-friendly parsing by CI tools and other scripts.
-
-## Scope and Audience
-
-**Audience:** Authors and reviewers of PowerShell scripts and modules in the Mississippi repository.
-
-**In scope:** Script structure, error handling, parameters, output, testing, cross-platform patterns.
-
-**Out of scope:** General PowerShell language features, advanced module authoring not relevant to this repository.
+This document codifies our baseline expectations for any PowerShell script or module that ships with the Mississippi repository. Agents MUST follow these rules to keep scripts predictable, composable, and aligned with the engineering standards we apply to C# code.
 
 ## At-a-Glance Quick-Start
 
@@ -41,13 +12,9 @@ Governing thought: PowerShell scripts in this repository follow strict error han
 - Declare `[CmdletBinding()]` and a typed `param(...)` block; favor explicit defaults and validation attributes.
 - Import shared helpers from `eng/src/agent-scripts/RepositoryAutomation.psm1` instead of re-implementing repository plumbing.
 - Validate changes with `pwsh ./eng/tests/orchestrate-powershell-tests.ps1` (use `-PassThru` for a programmatic summary).
-- Prefer idempotent, cross-platform actions and emit deterministic exit codes (`0` success, non-zero failure).
+- Prefer idempotent, cross-platform actions and emit deterministic exit codes (`0` success, non-zero failure). Scripts MUST NOT rely on implicit success.
 
 > **Drift check:** Before citing a helper script, open it under `eng/src/agent-scripts/` (or `eng/tests/agent-scripts/`) to confirm parameters, behavior, and exit codes. Scripts remain the source of truth.
-
-## Purpose
-
-This document codifies baseline expectations for PowerShell scripts and modules, ensuring they remain predictable, composable, and aligned with engineering standards applied to C# code.
 
 ## Core Principles
 
@@ -62,7 +29,7 @@ This document codifies baseline expectations for PowerShell scripts and modules,
 1. Begin with the shebang to guarantee pwsh execution on every platform.
 2. Add `[CmdletBinding()]` for advanced function semantics, common parameters, and consistent error behavior.
 3. Keep the `param(...)` block at the top; annotate every parameter with types, defaults, and validators where practical.
-4. Immediately enable strict mode and stop-on-error preferences.
+4. Immediately enable strict mode and stop-on-error preferences. These MUST NOT be relaxed.
 5. Use `try { ... } catch { ...; exit 1 }` around top-level orchestration while keeping helper functions pure.
 6. Return from functions explicitly; avoid reliance on PowerShell's implicit output pipelines for complex objects.
 7. Place helper functions above the main execution path so readers see the contract before consumption.
@@ -75,7 +42,7 @@ This document codifies baseline expectations for PowerShell scripts and modules,
 - Expose switches for boolean toggles; avoid string flags like `"yes"`/`"no"`.
 - Emit status with `Write-Host` (ansi colors optional), but return structured data with `Write-Output` or `[pscustomobject]` when other automation consumes the result.
 - Summarize long-running operations using stable key/value pairs (`RESULT: PASS`, `TEST_TOTAL: 42`) to support LLM parsing and CI logs.
-- Always call `exit 0` on success and `exit 1` (or higher) on failure.
+- Always call `exit 0` on success and `exit 1` (or higher) on failure; implicit exit codes MUST NOT be relied upon.
 
 **Why:** Consistent parameter contracts and exit codes mirror the explicit method signatures and return types we expect in C# services.
 
@@ -85,7 +52,7 @@ This document codifies baseline expectations for PowerShell scripts and modules,
 - Wrap risky operations in `try/catch`, log context with `Write-Error`, then rethrow or exit to avoid hiding failures.
 - Use `throw` without arguments to preserve the original stack, mirroring our C# exception rethrow rules.
 - Prefer guard clauses over nested `if` blocks. Validate inputs as soon as they arrive.
-- Helper functions should bubble errors up to the caller.
+- Helper functions MUST NOT swallow errors; bubble them up and let the caller decide.
 
 **Why:** Early, consistent failure keeps pipelines red when they should be red and prevents “half-success” states.
 
@@ -94,7 +61,7 @@ This document codifies baseline expectations for PowerShell scripts and modules,
 - Consolidate reusable logic into `.psm1` modules (e.g., `RepositoryAutomation.psm1`) and import them with explicit paths from `$PSScriptRoot`.
 - Use `Get-RepositoryRoot`, `Invoke-MississippiSolutionBuild`, and other shared helpers rather than shelling out or duplicating logic.
 - Export nouns with approved prefixes (`Get-`, `Invoke-`, `Set-`). Avoid verb collisions and follow Microsoft’s approved verb list.
-- Keep module scope clean: no global variables, no script-scoped state beyond intentional caches.
+- Keep module scope clean: no global variables, no script-scoped state beyond intentional caches. Hidden global state MUST NOT be introduced.
 
 **Why:** Centralized helpers reduce drift, just like shared services and abstractions in our C# solution.
 

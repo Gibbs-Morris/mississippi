@@ -4,51 +4,15 @@ applyTo: '**/*.cs'
 
 # Orleans Best Practices for Mississippi Framework
 
-Governing thought: Use POCO grain pattern with `IGrainBase`, dependency injection properties, and extension methods to build testable, composable Orleans grains aligned with modern Orleans 7.0+ practices.
-
-## Rules (RFC 2119)
-
-- Agents **MUST** always use the POCO (Plain Old CLR Object) grain pattern with `IGrainBase` and **MUST NOT** inherit from the `Grain` base class.  
-  Why: Enables composition over inheritance, improves testability, provides flexibility, and aligns with modern Orleans 7.0+ recommended patterns.
-- All dependency-injected services **MUST** follow the get-only property pattern using `private Type Name { get; }`.  
-  Why: Maintains consistency with logging best practices, improves debugging and testing, and follows enterprise coding standards.
-- Grain implementations **MUST** include `using Orleans.Runtime;` for extension methods.  
-  Why: Enables access to extension methods like `GetPrimaryKey()`, `DeactivateOnIdle()`, and timer/reminder registration.
-- Extension methods **MUST** be called with `this.` qualification.  
-  Why: Makes extension method usage explicit and clear in POCO grain pattern.
-- All dependencies **MUST** be injected through constructor, including `IGrainContext`.  
-  Why: Supports dependency injection pattern and enables proper service resolution.
-- Grain implementations **MUST** implement `IGrainBase` interface.  
-  Why: Provides Orleans infrastructure integration without base class inheritance.
-- Grain implementations **MUST** include `public IGrainContext GrainContext { get; }` property.  
-  Why: Required by `IGrainBase` interface and provides grain context access.
-- Agents **MUST NOT** use private readonly fields for dependency injection.  
-  Why: Violates property pattern and reduces consistency with framework standards.
-- Agents **SHOULD** migrate grains inheriting from `Grain` to POCO pattern and create scratchpad tasks for deferred migrations.  
-  Why: Tracks technical debt and ensures systematic migration to modern patterns.
-- When converting from `Grain<TState>`, developers **SHOULD** inject `IPersistentState<TState>` instead.  
-  Why: POCO pattern uses dependency injection for state management instead of inheritance.
-
-## Scope and Audience
-
-**Audience:** Developers implementing Orleans grains and grain interfaces in the Mississippi Framework.
-
-**In scope:** POCO grain pattern, dependency injection, property patterns, extension method usage, state management, testing patterns.
-
-**Out of scope:** General C# coding standards (see csharp.instructions.md), Orleans cluster configuration, silo hosting setup.
-
-## Purpose
-
-This document establishes Orleans development standards ensuring consistency, maintainability, and alignment with modern Orleans 7.0+ patterns through POCO grains and composition over inheritance.
+This document defines the Orleans development standards and best practices for the Mississippi Framework. All Orleans grains and related code MUST follow these guidelines to ensure consistency, maintainability, and alignment with modern Orleans patterns.
 
 ## Core Principles
 
-- Use POCO grain pattern with `IGrainBase` instead of inheriting from `Grain` base class
-- Apply dependency injection with get-only properties for all services
-- Leverage extension methods for Orleans functionality
-- Follow modern Orleans 7.0+ patterns for testability and flexibility
+### 1. NEVER Inherit from Grain ❌
 
-### Why POCO Pattern Over Grain Inheritance
+**CRITICAL RULE**: Never inherit from the `Grain` base class. Agents MUST always use the POCO (Plain Old CLR Object) grain pattern with `IGrainBase`.
+
+#### Why This Rule Exists
 
 - **Composition over Inheritance**: POCO grains allow you to inherit from your own domain base classes or compose multiple concerns via interfaces/mix-ins
 - **Testability**: POCO grains are easier to unit test and mock
@@ -172,7 +136,7 @@ using Microsoft.Extensions.Logging; // Logging
 All the familiar Orleans helpers are available as extension methods on `this`:
 
 | Old Grain Inheritance | POCO Grain Extension Method |
-| --------------------- | ---------------------------- |
+|----------------------|------------------------------|
 | `GetPrimaryKey()` | `this.GetPrimaryKey()` |
 | `DeactivateOnIdle()` | `this.DeactivateOnIdle()` |
 | `RegisterOrUpdateReminder()` | `this.RegisterOrUpdateReminder()` |

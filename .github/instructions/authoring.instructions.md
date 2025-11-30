@@ -6,7 +6,7 @@ applyTo: '**/*.instructions.md'
 
 Governing thought: Every `*.instructions.md` file follows the Minto Pyramid. Put one consolidated RFC 2119 rules list near the top. Put examples near the end.
 
-## Rules (RFC 2119)
+## Normative Rules (RFC 2119)
 
 The keywords **MUST**, **SHOULD**, **MAY**, **MUST NOT**, and **SHOULD NOT** are as defined in RFC 2119.
 
