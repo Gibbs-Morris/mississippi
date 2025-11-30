@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 
-namespace Crescent.CrescentWebApp.Client;
+namespace Crescent.WebApp.Client;
 
 /// <summary>
 ///     Entry point for the Crescent WebAssembly client application.

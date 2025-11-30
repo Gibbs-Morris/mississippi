@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Orleans;
 
 
-namespace Crescent.CrescentConsoleApp.Grains;
+namespace Crescent.ConsoleApp.Grains;
 
 /// <summary>
 ///     A simple sample grain interface that returns a greeting.

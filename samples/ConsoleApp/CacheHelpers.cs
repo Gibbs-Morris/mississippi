@@ -8,7 +8,7 @@ using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Reader;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Cache and deactivation helpers for Orleans grains used by the sample.

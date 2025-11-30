@@ -8,7 +8,7 @@ using Orleans.Configuration;
 using Orleans.Hosting;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Factory for creating hosts used by cold-start scenarios.

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 
 
-namespace Crescent.CrescentApiApp;
+namespace Crescent.ApiApp;
 
 /// <summary>
 ///     The main program class for the user's application.

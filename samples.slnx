@@ -6,15 +6,15 @@
         <File Path="global.json"/>
     </Folder>
     <Folder Name="/Sample Applications/">
-        <Project Path="samples\CrescentApiApp\CrescentApiApp.csproj"/>
-        <Project Path="samples\CrescentConsoleApp\CrescentConsoleApp.csproj"/>
-        <Project Path="samples\CrescentWebApp\CrescentWebApp.Client\CrescentWebApp.Client.csproj" Type="Classic C#"/>
-        <Project Path="samples\CrescentWebApp\CrescentWebApp\CrescentWebApp.csproj" Type="Classic C#"/>
+        <Project Path="samples\ApiApp\ApiApp.csproj"/>
+        <Project Path="samples\ConsoleApp\ConsoleApp.csproj"/>
+        <Project Path="samples\WebApp\WebApp.Client\WebApp.Client.csproj" Type="Classic C#"/>
+        <Project Path="samples\WebApp\WebApp\WebApp.csproj" Type="Classic C#"/>
     </Folder>
     <Folder Name="/Sample Tests/">
-        <Project Path="samples\CrescentApiApp.Tests\CrescentApiApp.Tests.csproj"/>
-        <Project Path="samples\CrescentConsoleApp.Tests\CrescentConsoleApp.Tests.csproj"/>
-        <Project Path="samples\CrescentWebApp.Tests\CrescentWebApp.Tests.csproj" Type="Classic C#"/>
+        <Project Path="samples\ApiApp.Tests\ApiApp.Tests.csproj"/>
+        <Project Path="samples\ConsoleApp.Tests\ConsoleApp.Tests.csproj"/>
+        <Project Path="samples\WebApp.Tests\WebApp.Tests.csproj" Type="Classic C#"/>
     </Folder>
 
     <Folder Name="/Framework/">

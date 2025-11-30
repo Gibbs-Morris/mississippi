@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Represents persisted identifiers and known heads used by the console scenarios to resume work.

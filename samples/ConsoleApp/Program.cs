@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using Crescent.CrescentConsoleApp;
+using Crescent.ConsoleApp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -66,7 +66,7 @@ builder.Services.AddCosmosBrookStorageProvider(
 using IHost host = builder.Build();
 await host.StartAsync();
 ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
-ILogger logger = loggerFactory.CreateLogger("CrescentConsoleApp");
+ILogger logger = loggerFactory.CreateLogger("ConsoleApp");
 string runId = Guid.NewGuid().ToString("N");
 logger.HostStarted(runId);
 

@@ -11,7 +11,7 @@ using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Writer;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Runs append scenarios against a specific brook.

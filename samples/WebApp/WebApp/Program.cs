@@ -1,11 +1,11 @@
-using Crescent.CrescentWebApp.Components;
+using Crescent.WebApp.Components;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using _Imports = Crescent.CrescentWebApp.Client._Imports;
+using _Imports = Crescent.WebApp.Client._Imports;
 
-namespace Crescent.CrescentWebApp;
+namespace Crescent.WebApp;
 
 /// <summary>
 ///     Entry point for the Crescent server-side host which serves the Blazor WebAssembly client.

@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Immutable;
 using System.Security.Cryptography;
 
 using Mississippi.EventSourcing.Abstractions;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Factory methods to generate synthetic <see cref="BrookEvent" /> payloads for sample scenarios.

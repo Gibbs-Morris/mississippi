@@ -5,12 +5,12 @@ using Microsoft.Extensions.Logging;
 using Mississippi.EventSourcing.Abstractions;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
-///     LoggerMessage-based high-performance logging extensions for the Crescent console sample.
+///     LoggerMessage-based high-performance logging extensions for the console sample.
 /// </summary>
-internal static class CrescentConsoleAppLoggerExtensions
+internal static class ConsoleAppLoggerExtensions
 {
     private static readonly Action<ILogger, string, Exception?> HostStartedMessage = LoggerMessage.Define<string>(
         LogLevel.Information,

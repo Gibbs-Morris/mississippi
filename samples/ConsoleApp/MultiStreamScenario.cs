@@ -12,7 +12,7 @@ using Mississippi.EventSourcing.Writer;
 using Orleans.Runtime;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Runs a multi-stream interleaved workload and reports heads and counts.

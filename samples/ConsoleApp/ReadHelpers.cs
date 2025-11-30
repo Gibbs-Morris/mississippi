@@ -11,7 +11,7 @@ using Mississippi.EventSourcing.Reader;
 using Orleans.Runtime;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Helpers for logging readback operations on a brook.

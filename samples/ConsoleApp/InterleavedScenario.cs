@@ -12,7 +12,7 @@ using Mississippi.EventSourcing.Writer;
 using Orleans.Runtime;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Runs a single-stream interleaved read/write scenario.

@@ -3,7 +3,7 @@ using System;
 using Microsoft.Extensions.Logging;
 
 
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Strongly-typed logging extension methods for the console app, implemented via LoggerMessage.

@@ -1,4 +1,4 @@
-namespace Crescent.CrescentConsoleApp;
+namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     Represents the head information for a specific stream.
