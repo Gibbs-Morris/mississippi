@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\EventSourcing.Projections.Abstractions\EventSourcing.Projections.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

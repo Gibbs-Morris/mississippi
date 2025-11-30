@@ -12,6 +12,17 @@
     <Project Path="src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
     <Project Path="src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
     <Project Path="src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+    <Project Path="src\EventSourcing.Projections.Abstractions\EventSourcing.Projections.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Projections\EventSourcing.Projections.csproj" />
+    <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+    <Project Path="src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
+    <Project Path="src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
+    <Project Path="src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
   </Folder>
 
   <Folder Name="/Tests/">
@@ -22,6 +33,18 @@
     <Project Path="tests\EventSourcing.Brooks.Cosmos.Tests\EventSourcing.Brooks.Cosmos.Tests.csproj" />
     <Project Path="tests\Hosting.Tests\Hosting.Tests.csproj" />
     <Project Path="tests\EventSourcing.Brooks.Abstractions.Tests\EventSourcing.Brooks.Abstractions.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Aggregates.Tests\EventSourcing.Aggregates.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Aggregates.Abstractions.Tests\EventSourcing.Aggregates.Abstractions.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Projections.Tests\EventSourcing.Projections.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Projections.Abstractions.Tests\EventSourcing.Projections.Abstractions.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Reducers.Tests\EventSourcing.Reducers.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Reducers.Abstractions.Tests\EventSourcing.Reducers.Abstractions.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Snapshots.Tests\EventSourcing.Snapshots.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Snapshots.Abstractions.Tests\EventSourcing.Snapshots.Abstractions.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Snapshots.Cosmos.Tests\EventSourcing.Snapshots.Cosmos.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Serialization.Tests\EventSourcing.Serialization.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Serialization.Abstractions.Tests\EventSourcing.Serialization.Abstractions.Tests.csproj" />
+    <Project Path="tests\EventSourcing.Serialization.Json.Tests\EventSourcing.Serialization.Json.Tests.csproj" />
   </Folder>
 
   <Folder Name="/Workflows/">
