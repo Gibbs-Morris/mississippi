@@ -1,0 +1,196 @@
+name: Verify .NET support
+
+on:
+  push:
+    branches: [ main ]
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+
+jobs:
+  dotnet-support-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    # ------------------------------------------------------------
+    # 1. Checkout
+    # ------------------------------------------------------------
+    - uses: actions/checkout@v4
+
+    # ------------------------------------------------------------
+    # 2. Fetch supported channels from Microsoft
+    # ------------------------------------------------------------
+    - name: Fetch supported .NET channels
+      id: fetch-matrix
+      shell: pwsh
+      run: |
+        $url = 'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json'
+        Write-Host "↘️  Downloading $url"
+        $today = Get-Date
+        $json  = Invoke-RestMethod $url -UseBasicParsing
+        $supported = $json.'releases-index' |
+          Where-Object { ($null -eq $_.'eol-date') -or ((Get-Date $_.'eol-date') -ge $today) } |
+          ForEach-Object { $_.'channel-version' }
+
+        Write-Host "✅ Supported channels: $($supported -join ', ')"
+        "SUPPORTED_CHANNELS=$($supported -join ',')" >> $Env:GITHUB_ENV
+
+    # ------------------------------------------------------------
+    # 3. Validate TFMs / SDK pins in the repository
+    # ------------------------------------------------------------
+    - name: Validate project target frameworks
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        $supported        = $Env:SUPPORTED_CHANNELS -split ',' | ForEach-Object Trim
+        $foundTfms        = [System.Collections.Generic.List[object]]::new()
+        $unsupportedList  = [System.Collections.Generic.List[string]]::new()
+        $supportedList    = [System.Collections.Generic.List[string]]::new()
+
+        function Extract-TFMsFromProject ([string]$file) {
+          try { $xml = [xml](Get-Content $file -Raw) } catch {
+            Write-Warning "⚠️  Skipping unparsable XML file $file"
+            return
+          }
+          if (-not $xml.Project) { return }
+
+          foreach ($grp in $xml.Project.PropertyGroup) {
+            foreach ($prop in 'TargetFramework','TargetFrameworks') {
+              $node = $grp.$prop
+              if ($node) {
+                $raw = $node.'#text'
+                if ($raw) {
+                  $raw.Split(';') | ForEach-Object {
+                    $foundTfms.Add([pscustomobject]@{ Path = $file; Item = $_.Trim() })
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        Get-ChildItem -Recurse -File -Include *.csproj,*.fsproj,*.vbproj,Directory.Build.props,Directory.Build.targets |
+          ForEach-Object { Extract-TFMsFromProject $_.FullName }
+
+        if (Test-Path global.json) {
+          $gj = Get-Content global.json -Raw | ConvertFrom-Json
+          if ($gj.sdk.version) {
+            $foundTfms.Add([pscustomobject]@{ Path = 'global.json'; Item = "sdk:$($gj.sdk.version)" })
+          }
+        }
+
+        foreach ($entry in $foundTfms) {
+          $item    = $entry.Item
+          $version = switch -Regex ($item) {
+            '^sdk:(\d+)\.(\d+)'        { "$($matches[1]).$($matches[2])"; break }
+            '^netcoreapp(\d+)\.(\d+)'  { "$($matches[1]).$($matches[2])"; break }
+            '^net(\d+)\.(\d+)'         { "$($matches[1]).$($matches[2])"; break }
+            default                    { $null; break }
+          }
+          if ($version -and ($supported -contains $version)) {
+            Write-Host "✅ $($entry.Path) → $item"
+            $supportedList.Add("$($entry.Path) → $item")
+          } else {
+            Write-Host "❌ $($entry.Path) → $item"
+            $unsupportedList.Add("$($entry.Path) → $item")
+          }
+        }
+
+        if ($supportedList.Count)   { "SUPPORTED_TFMS_LIST=$($supportedList -join '::')"    >> $Env:GITHUB_ENV }
+        if ($unsupportedList.Count) { "UNSUPPORTED_TFMS_LIST=$($unsupportedList -join '::')" >> $Env:GITHUB_ENV; "HAS_UNSUPPORTED=true" >> $Env:GITHUB_ENV }
+
+    # ------------------------------------------------------------
+    # 4. Validate explicit installs in workflow YAML
+    # ------------------------------------------------------------
+    - name: Validate workflow installs
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        $supported        = $Env:SUPPORTED_CHANNELS -split ',' | ForEach-Object Trim
+        $yamlFiles        = Get-ChildItem .github/workflows -Recurse -File -Include *.yml,*.yaml -ErrorAction SilentlyContinue
+        $foundInstalls    = [System.Collections.Generic.List[object]]::new()
+        $unsupportedList  = [System.Collections.Generic.List[string]]::new()
+        $supportedList    = [System.Collections.Generic.List[string]]::new()
+
+        foreach ($file in $yamlFiles) {
+          $text = Get-Content $file.FullName -Raw
+
+          # pattern a) dotnet-version: …
+          [regex]::Matches($text,'(?im)^\s*dotnet-version\s*:\s*(.+?)(?=\r?\n\S|\r?\n$)') |
+            ForEach-Object {
+              $v = $_.Groups[1].Value.Trim()
+              if ($v -eq '|') {
+                $after = $text.Substring($_.Index) -split '\r?\n'
+                foreach ($line in $after[1..($after.Length-1)]) {
+                  if ($line -match '^\s+[0-9]+\.[^\s]+') { $foundInstalls.Add([pscustomobject]@{ Path = $file.FullName; Item = $line.Trim() }) }
+                  elseif ($line -match '^\s*\S') { break }
+                }
+              } else {
+                $foundInstalls.Add([pscustomobject]@{ Path = $file.FullName; Item = $v })
+              }
+            }
+
+          # pattern b) dotnet-install.* --version …
+          [regex]::Matches($text,'(?im)dotnet-install\.(?:ps1|sh).*?--?version\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)') |
+            ForEach-Object { $foundInstalls.Add([pscustomobject]@{ Path = $file.FullName; Item = $_.Groups[1].Value }) }
+        }
+
+        foreach ($entry in $foundInstalls | Sort-Object -Property Path,Item -Unique) {
+          $item = $entry.Item
+          if ($item -match '^(\d+)\.(\d+)') {
+            $chan = "$($matches[1]).$($matches[2])"
+            if ($supported -contains $chan) {
+              Write-Host "✅ $($entry.Path) → $item"
+              $supportedList.Add("$($entry.Path) → $item")
+            } else {
+              Write-Host "❌ $($entry.Path) → $item"
+              $unsupportedList.Add("$($entry.Path) → $item")
+            }
+          }
+        }
+
+        if ($supportedList.Count)   { "SUPPORTED_INSTALLS_LIST=$($supportedList -join '::')"    >> $Env:GITHUB_ENV }
+        if ($unsupportedList.Count) { "UNSUPPORTED_INSTALLS_LIST=$($unsupportedList -join '::')" >> $Env:GITHUB_ENV; "HAS_UNSUPPORTED=true" >> $Env:GITHUB_ENV }
+
+    # ------------------------------------------------------------
+    # 5. Human-friendly summary & final decision
+    # ------------------------------------------------------------
+    - name: Summarise supported / unsupported items
+      if: always()
+      shell: pwsh
+      run: |
+        $supportedTfms     = ($Env:SUPPORTED_TFMS_LIST      ?? '') -split '::' | Where-Object { $_ }
+        $unsupportedTfms   = ($Env:UNSUPPORTED_TFMS_LIST    ?? '') -split '::' | Where-Object { $_ }
+        $supportedInstalls = ($Env:SUPPORTED_INSTALLS_LIST  ?? '') -split '::' | Where-Object { $_ }
+        $unsupportedInst   = ($Env:UNSUPPORTED_INSTALLS_LIST ?? '') -split '::' | Where-Object { $_ }
+
+        $sb = [System.Text.StringBuilder]::new()
+
+        [void]$sb.AppendLine('## .NET support checker summary')
+        [void]$sb.AppendLine()
+
+        if ($unsupportedTfms.Count -or $unsupportedInst.Count) {
+          [void]$sb.AppendLine('### ❌ **Action required**')
+          [void]$sb.AppendLine()
+          foreach ($row in $unsupportedTfms + $unsupportedInst) { [void]$sb.AppendLine("- $row") }
+          $needsFix = $true
+        } else {
+          [void]$sb.AppendLine('### ✅ Everything in support – no action needed')
+          [void]$sb.AppendLine()
+          $needsFix = $false
+        }
+
+        if ($supportedTfms.Count -or $supportedInstalls.Count) {
+          [void]$sb.AppendLine('### ℹ️  Items already in support')
+          [void]$sb.AppendLine()
+          foreach ($row in $supportedTfms + $supportedInstalls) { [void]$sb.AppendLine("- $row") }
+        }
+
+        $sb.ToString() | Set-Content -Path $Env:GITHUB_STEP_SUMMARY
+
+        if ($needsFix) {
+          Write-Error "One or more TFMs / SDK installs are out of support – fix them and re-run."
+          exit 1
+        }
