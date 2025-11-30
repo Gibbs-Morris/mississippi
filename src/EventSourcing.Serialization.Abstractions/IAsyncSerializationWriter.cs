@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.Core.Abstractions.Providers.Serialization;
+namespace Mississippi.EventSourcing.Serialization.Abstractions;
 
 /// <summary>
 ///     Provides asynchronous serialization functionality for writing objects to streams.
