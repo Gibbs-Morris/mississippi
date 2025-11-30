@@ -237,14 +237,14 @@
           "xunit.abstractions": "2.0.3"
         }
       },
-      "Mississippi.EventSourcing.Serialization.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.EventSourcing.Serialization.Json": {
+      "Mississippi.EventSourcing.Serialization": {
         "type": "Project",
         "dependencies": {
           "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )"
         }
+      },
+      "Mississippi.EventSourcing.Serialization.Abstractions": {
+        "type": "Project"
       },
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
