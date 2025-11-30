@@ -22,6 +22,7 @@
     <Project Path="src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
     <Project Path="src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
     <Project Path="src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Serialization\EventSourcing.Serialization.csproj" />
     <Project Path="src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
   </Folder>
 
