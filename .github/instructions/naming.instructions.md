@@ -25,6 +25,8 @@ This document establishes comprehensive naming conventions and XML documentation
 
 **Rule N-1:** Maximum five segments; PascalCase alphanumerics; no underscores; abbreviations only when industry-standard (`IO`, `DB`, `Html`).
 
+> For `.Abstractions` suffixes, follow `abstractions-projects.instructions.md` so that new namespaces are added only when the contracts split rules require it (and create the abstractions project if the mandatory conditions apply before introducing the namespace).
+
 ## 2. Type-Naming Rules
 
 | ID  | Element                         | Rule                                                                                                                                                            |
