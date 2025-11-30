@@ -8,6 +8,6 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Core.Abstractions\Core.Abstractions.csproj" />
-        <ProjectReference Include="..\EventSourcing.Abstractions\EventSourcing.Abstractions.csproj"/>
+        <ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj"/>
     </ItemGroup>
 </Project>
