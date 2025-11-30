@@ -1,0 +1,8 @@
+<Project>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)..'))" />
+
+    <PropertyGroup>
+        <AssemblyName>Crescent.$(MSBuildProjectName)</AssemblyName>
+        <RootNamespace>Crescent.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    </PropertyGroup>
+</Project>
