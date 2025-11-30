@@ -1,4 +1,4 @@
-﻿namespace Mississippi.Core.Abstractions.Providers.Serialization;
+﻿namespace Mississippi.EventSourcing.Serialization.Abstractions;
 
 /// <summary>
 ///     Provides unified access to serialization operations combining read, write, and async operations.
