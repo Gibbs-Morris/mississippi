@@ -1,0 +1,96 @@
+---
+applyTo: '**'
+---
+
+# Abstractions Projects Instructions
+
+Governing thought: Split long-lived public contracts into dedicated `*.Abstractions` projects so consumers depend on stable interfaces without dragging heavy implementations, and always add the abstractions project whenever the required conditions apply.
+
+## Rules (RFC 2119)
+
+- **Contracts-Only Scope** — `X.Y[.Feature].Abstractions` projects **MUST** contain only public contracts (interfaces, abstract base types, DTOs, domain exceptions, and CQRS requests) with no infrastructure, DI, persistence, or hosting glue. *Why:* Keeps the dependency surface lightweight and reusable across services.
+- **Implementation Separation** — `X.Y[.Feature]` (the main library) **MUST** own every implementation detail, infrastructure-specific type, DI/hosting extension, and helper that realizes the abstractions. *Why:* Prevents consumers from accidentally taking heavy runtime dependencies when they only need contracts.
+- **Dependency Direction** — `X.Y[.Feature].Abstractions` **MUST NOT** depend on implementation assemblies, while `X.Y[.Feature]` **MUST** reference its abstractions package once one exists; downstream consumers **SHOULD** reference only the abstractions unless they explicitly need the default implementation. *Why:* Preserves a clean layering model that mirrors `Microsoft.Extensions.*` and Orleans packages.
+- **Mandatory Creation Trigger** — When the mandatory conditions in §3 (cross-assembly/service contracts, multiple implementations, stable public API) all apply and no abstractions project exists, contributors **MUST** create `X.Y[.Feature].Abstractions` before adding or modifying the affected contracts. *Why:* Ensures required separation happens immediately instead of accruing technical debt.
+- **Recommended Creation Trigger** — When any condition in §4 (dependency minimization, testing/mocking needs, cross-team reuse, versioning flexibility) applies, contributors **SHOULD** create an abstractions project unless the team deliberately documents tighter coupling. *Why:* Encourages lightweight packages whenever they provide clear value.
+- **Placement Guidance** — Types that describe *what* the component does (contracts) **SHOULD** live in the abstractions project; types that describe *how* it does it (infrastructure/configuration) **MUST** stay in the main library. *Why:* Keeps the public programming model stable while internal details evolve freely.
+- **Naming Alignment** — Abstractions projects **SHOULD** follow the `{Vendor}.{Area}[.{Feature}].Abstractions` naming pattern called out in `naming.instructions.md`, matching the main library’s prefix. *Why:* Maintains predictable discovery across the solution.
+- **Decision Rule** — If a type belongs to the public contract that multiple consumers rely on and it has no hard infrastructure dependency, it **SHOULD** be placed in the abstractions project (and **MUST** when §3 applies); infrastructure-heavy types **MUST** stay in the main project. *Why:* Provides a one-line litmus test for everyday coding decisions.
+
+## Scope and Audience
+
+Applies to all engineers creating or updating Mississippi libraries (production or samples) whenever the solution includes or needs `*.Abstractions` projects.
+
+## At-a-Glance Quick-Start
+
+- Identify whether your change introduces or modifies cross-assembly contracts.
+- If the §3 mandatory conditions all apply, scaffold `X.Y[.Feature].Abstractions` immediately and move qualifying types there.
+- Keep implementations, storage, and DI extensions in the main project and reference the abstractions via `ProjectReference`.
+
+> **Drift check:** When citing repository scripts (e.g., build/tests) or scaffolding helpers, open the script under `eng/src/agent-scripts/` first; the scripts remain authoritative if behavior drifts.
+
+## Core Principles and Rationale
+
+- **Contracts stay lightweight** — Consumers should pull only the surface they need, mirroring `Microsoft.Extensions.*.Abstractions`.
+- **Implementations remain flexible** — Runtime packages can evolve without forcing downstream recompiles.
+- **Dependency direction stays clean** — Prevents circular references and accidental infrastructure leakage.
+- **Creation is proactive** — Teams add abstractions projects as soon as the triggers appear rather than waiting for a refactor.
+
+## Procedures
+
+### Determine What Belongs Where
+
+1. List the types you are touching (interfaces, DTOs, exceptions, infrastructure helpers).
+2. For each type, ask whether callers outside the assembly/service consume it or implement it.
+3. If yes and the type has no heavy infrastructure dependency, place or move it into `X.Y[.Feature].Abstractions`.
+4. Keep any concrete implementation, DI extension, mapper, storage/client type, or hosting primitive in `X.Y[.Feature]`.
+5. Verify the abstractions project references only minimal dependencies (BCL, low-level primitives) and the main project references the abstractions project.
+
+**Why:** Ensures consumers can depend on contracts without inheriting unwanted transitive packages.
+
+### When to Create an Abstractions Project
+
+1. Evaluate the §3 mandatory criteria:
+   - a) The contracts are used across multiple assemblies, services, or client/server boundaries.
+   - b) Multiple implementations exist today or are expected (e.g., SQL vs. in-memory, multiple providers).
+   - c) The contracts form a stable public programming model.
+2. If all three are true and no abstractions project exists, scaffold `X.Y[.Feature].Abstractions` (copy the `.csproj` template from a peer project, keep it minimal) **before** adding more contracts.
+3. If any §4 optional criteria apply (dependency minimization, testing/mocking needs, cross-team reuse, versioning cadence), prefer creating the project even if not strictly required; document the deliberate decision if you decline.
+4. Update solutions, `Directory.Build.props` includes, and `ProjectReference` entries so the main library depends on the new abstractions project.
+5. Add unit tests or usage samples referencing only the abstractions package where appropriate.
+
+**Why:** Codifies when the split is non-negotiable versus strongly recommended, so the team acts consistently.
+
+### When to Avoid Creating One
+
+1. Confirm the library is truly internal to a single bounded context with a single implementation and no expectation of reuse.
+2. Ensure the contracts are still volatile; splitting early would multiply breaking changes.
+3. Document the reasoning if you choose not to split so future contributors can revisit later when conditions change.
+
+**Why:** Prevents over-abstraction and unnecessary project sprawl.
+
+## Examples
+
+- **Messaging library** — `Contoso.Messaging.Abstractions` hosts `INotificationSender`, DTOs like `SendEmailRequest`, and domain exceptions. `Contoso.Messaging` implements SMTP, queues, and DI extensions.
+- **Event sourcing** — `Mississippi.EventSourcing.Abstractions` contains grain interfaces, projection contracts, and shared errors; `Mississippi.EventSourcing` holds Orleans grains, storage adapters, and registration helpers.
+- **Optional split avoided** — A single in-app helper with one implementation and no reuse stays in `Contoso.BackOffice.Reports` until additional consumers emerge.
+
+## External References
+
+- [Abstractions (Abstract Types and Interfaces) – Microsoft Learn][ref1]
+- [Logging guidance for .NET library authors – Microsoft Learn][ref2]
+- [Compile-time logging source generation – Microsoft Learn][ref3]
+- [Orleans NuGet packages – Microsoft Learn][ref6]
+- [Logging with ILogger Recommendations – Rico Suter][ref7]
+- [.NET Abstractions: It’s Not Just About Testing – Thinktecture][ref8]
+- [.NET Standard DI abstractions discussion – Stack Overflow][ref9]
+- [When to split assemblies – Software Engineering Stack Exchange][ref10]
+
+[ref1]: https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/abstractions-abstract-types-and-interfaces?utm_source=chatgpt.com
+[ref2]: https://learn.microsoft.com/en-us/dotnet/core/extensions/logging-library-authors?utm_source=chatgpt.com
+[ref3]: https://learn.microsoft.com/en-us/dotnet/core/extensions/logger-message-generator?utm_source=chatgpt.com
+[ref6]: https://learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?utm_source=chatgpt.com
+[ref7]: https://blog.rsuter.com/logging-with-ilogger-recommendations-and-best-practices/?utm_source=chatgpt.com
+[ref8]: https://www.thinktecture.com/en/net/net-abstractions-its-not-just-about-testing/?utm_source=chatgpt.com
+[ref9]: https://stackoverflow.com/questions/56783260/net-standard-2-0-which-microsoft-extensions-dependencyinjection-abstractions?utm_source=chatgpt.com
+[ref10]: https://softwareengineering.stackexchange.com/questions/117461/when-should-a-class-or-module-be-in-a-separate-assembly-dll?utm_source=chatgpt.com

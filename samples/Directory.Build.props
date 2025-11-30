@@ -1,0 +1,8 @@
+<Project>
+  <Import Project="..\Directory.Build.props" />
+
+  <PropertyGroup>
+    <AssemblyName>Crescent.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>Crescent.$([System.String]::Copy('$(MSBuildProjectName)').Replace(' ', '_'))</RootNamespace>
+  </PropertyGroup>
+</Project>

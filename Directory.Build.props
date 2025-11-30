@@ -25,15 +25,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="$(AssemblyName).Tests" />
-        <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
-        <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
-        <InternalsVisibleTo Include="$(AssemblyName).L0Tests" />
-        <InternalsVisibleTo Include="$(AssemblyName).L1Tests" />
-        <InternalsVisibleTo Include="$(AssemblyName).L2Tests" />
-        <InternalsVisibleTo Include="$(AssemblyName).L3Tests" />
-        <InternalsVisibleTo Include="$(AssemblyName).L4Tests" />
-        <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+        <InternalsVisibleTo Include="$(AssemblyName).Tests"/>
+        <InternalsVisibleTo Include="$(AssemblyName).UnitTests"/>
+        <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests"/>
+        <InternalsVisibleTo Include="$(AssemblyName).L0Tests"/>
+        <InternalsVisibleTo Include="$(AssemblyName).L1Tests"/>
+        <InternalsVisibleTo Include="$(AssemblyName).L2Tests"/>
+        <InternalsVisibleTo Include="$(AssemblyName).L3Tests"/>
+        <InternalsVisibleTo Include="$(AssemblyName).L4Tests"/>
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers">
@@ -62,10 +62,10 @@
         </PackageReference>
     </ItemGroup>
     <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
-        <PackageReference Include="Moq" />
-        <PackageReference Include="Allure.Xunit" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="xunit" />
+        <PackageReference Include="Moq"/>
+        <PackageReference Include="Allure.Xunit"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="xunit"/>
         <PackageReference Include="xunit.runner.visualstudio">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
@@ -76,6 +76,6 @@
         </PackageReference>
     </ItemGroup>
     <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
-        <Using Include="Xunit" />
+        <Using Include="Xunit"/>
     </ItemGroup>
 </Project>

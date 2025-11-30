@@ -1,5 +1,7 @@
 # Copilot Instructions
 
+Agents MUST read the relevant `.github/instructions/*.instructions.md` files before working, treat those documents as the single source of truth for repository rules, and avoid duplicating their content elsewhere in order to prevent drift. Before declaring any task complete (including answering a question or finalizing code edits), Agents MUST re-review the applicable instruction files and explicitly ensure their work complies with every rule—use this as a mandatory fail-safe verification step for every response.
+
 Agents MUST follow the Microsoft C# coding conventions.
 When generating or refactoring code, Agents MUST match those conventions—including
 file‑scoped namespaces, expression‑bodied members where beneficial, and the

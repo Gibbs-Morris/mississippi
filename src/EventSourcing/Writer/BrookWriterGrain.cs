@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Abstractions.Storage;
-using Mississippi.EventSourcing.Head;
+using Mississippi.EventSourcing.Cursor;
 using Mississippi.EventSourcing.Reader;
 
 using Orleans;
@@ -61,15 +61,15 @@ internal sealed class BrookWriterGrain
 
     /// <summary>
     ///     Appends a collection of events to the brook (event stream).
-    ///     Validates the expected head position and publishes head movement events after successful append.
+    ///     Validates the expected cursor position and publishes cursor movement events after successful append.
     /// </summary>
     /// <param name="events">The immutable array of events to append to the brook.</param>
-    /// <param name="expectedHeadPosition">Optional expected current head position for optimistic concurrency control.</param>
+    /// <param name="expectedCursorPosition">Optional expected current cursor position for optimistic concurrency control.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
-    /// <returns>The new head position of the brook after appending the events.</returns>
+    /// <returns>The new cursor position of the brook after appending the events.</returns>
     public async Task<BrookPosition> AppendEventsAsync(
         ImmutableArray<BrookEvent> events,
-        BrookPosition? expectedHeadPosition = null,
+        BrookPosition? expectedCursorPosition = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -77,12 +77,12 @@ internal sealed class BrookWriterGrain
         BrookPosition newPosition = await BrookWriterService.AppendEventsAsync(
             key,
             events,
-            expectedHeadPosition,
+            expectedCursorPosition,
             cancellationToken);
-        IAsyncStream<BrookHeadMovedEvent> stream = this
+        IAsyncStream<BrookCursorMovedEvent> stream = this
             .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
-            .GetStream<BrookHeadMovedEvent>(
-                StreamId.Create(EventSourcingOrleansStreamNames.HeadUpdateStreamName, this.GetPrimaryKeyString()));
+            .GetStream<BrookCursorMovedEvent>(
+                StreamId.Create(EventSourcingOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
         await stream.OnNextAsync(new(newPosition));
         return newPosition;
     }

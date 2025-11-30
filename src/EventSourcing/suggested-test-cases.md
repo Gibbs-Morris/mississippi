@@ -36,7 +36,7 @@ Test Cases:
 
 | ID | Scenario | Given / When / Then | Priority | Type |
 |----|----------|---------------------|----------|------|
-| STRN1 | HeadUpdateStreamName constant valid | value non-empty == "StreamHeadUpdates" | M | Unit |
+| STRN1 | CursorUpdateStreamName constant valid | value non-empty == "StreamCursorUpdates" | M | Unit |
 
 ---
 
@@ -56,7 +56,7 @@ Test Cases:
 
 #### Type: BrookGrainFactory
 
-Members: `GetBrookWriterGrain`, `GetBrookReaderGrain`, `GetBrookSliceReaderGrain`, `GetBrookHeadGrain`
+Members: `GetBrookWriterGrain`, `GetBrookReaderGrain`, `GetBrookSliceReaderGrain`, `GetBrookCursorGrain`
 Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
@@ -69,11 +69,11 @@ Test Cases:
 
 ---
 
-### File: Head/BrookHeadGrain.cs
+### File: Head/BrookCursorGrain.cs
 
-#### Type: BrookHeadGrain
+#### Type: BrookCursorGrain
 
-State: `TrackedHeadPosition`, token ordering, stream subscription.
+State: `TrackedCursorPosition`, token ordering, stream subscription.
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Pri | Type |
@@ -88,9 +88,9 @@ Test Cases:
 
 ---
 
-### File: Head/BrookHeadMovedEvent.cs
+### File: Head/BrookCursorMovedEvent.cs
 
-#### Type: BrookHeadMovedEvent (record)
+#### Type: BrookCursorMovedEvent (record)
 
 Test Cases:
 
@@ -149,7 +149,7 @@ Test Cases:
 |----|----------|-------|------|-----|------|
 | BWG1 | AppendEventsAsync happy path | events-> storage append -> head event published | Basic | H | Unit |
 | BWG2 | Expected head mismatch propagation | storage throws concurrency -> surface exception | Concurrency | H | Unit |
-| BWG3 | Publishes BrookHeadMovedEvent | append success -> Stream.OnNext invoked | Event | H | Unit |
+| BWG3 | Publishes BrookCursorMovedEvent | append success -> Stream.OnNext invoked | Event | H | Unit |
 | BWG4 | Cancellation token passed | cancel before storage call -> operation canceled | Cancellation | M | Unit |
 
 ---
