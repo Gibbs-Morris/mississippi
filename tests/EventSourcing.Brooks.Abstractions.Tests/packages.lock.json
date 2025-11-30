@@ -657,7 +657,7 @@
           "xunit.abstractions": "2.0.3"
         }
       },
-      "Mississippi.EventSourcing.Abstractions": {
+      "Mississippi.EventSourcing.Brooks.Abstractions": {
         "type": "Project",
         "dependencies": {
           "CloudNative.CloudEvents": "[2.8.0, )",
