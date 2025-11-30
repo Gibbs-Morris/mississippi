@@ -12,9 +12,9 @@
         <Project Path="samples\WebApp\WebApp\WebApp.csproj" Type="Classic C#"/>
     </Folder>
     <Folder Name="/Sample Tests/">
-        <Project Path="samples\ApiApp.Tests\ApiApp.Tests.csproj"/>
-        <Project Path="samples\ConsoleApp.Tests\ConsoleApp.Tests.csproj"/>
-        <Project Path="samples\WebApp.Tests\WebApp.Tests.csproj" Type="Classic C#"/>
+        <Project Path="samples\ApiApp.L0Tests\ApiApp.L0Tests.csproj"/>
+        <Project Path="samples\ConsoleApp.L0Tests\ConsoleApp.L0Tests.csproj"/>
+        <Project Path="samples\WebApp.L0Tests\WebApp.L0Tests.csproj" Type="Classic C#"/>
     </Folder>
 
     <Folder Name="/Framework/">
@@ -39,25 +39,25 @@
     </Folder>
 
     <Folder Name="/Tests/">
-        <Project Path="tests\Architecture.Tests\Architecture.Tests.csproj"/>
-        <Project Path="tests\Core.Tests\Core.Tests.csproj"/>
-        <Project Path="tests\Core.Abstractions.Tests\Core.Abstractions.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Brooks.Tests\EventSourcing.Brooks.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Brooks.Cosmos.Tests\EventSourcing.Brooks.Cosmos.Tests.csproj"/>
-        <Project Path="tests\Hosting.Tests\Hosting.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Brooks.Abstractions.Tests\EventSourcing.Brooks.Abstractions.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Aggregates.Tests\EventSourcing.Aggregates.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Aggregates.Abstractions.Tests\EventSourcing.Aggregates.Abstractions.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Projections.Tests\EventSourcing.Projections.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Projections.Abstractions.Tests\EventSourcing.Projections.Abstractions.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Reducers.Tests\EventSourcing.Reducers.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Reducers.Abstractions.Tests\EventSourcing.Reducers.Abstractions.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Snapshots.Tests\EventSourcing.Snapshots.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Snapshots.Abstractions.Tests\EventSourcing.Snapshots.Abstractions.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Snapshots.Cosmos.Tests\EventSourcing.Snapshots.Cosmos.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Serialization.Tests\EventSourcing.Serialization.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Serialization.Abstractions.Tests\EventSourcing.Serialization.Abstractions.Tests.csproj"/>
-        <Project Path="tests\EventSourcing.Serialization.Json.Tests\EventSourcing.Serialization.Json.Tests.csproj"/>
+        <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj"/>
+        <Project Path="tests\Core.L0Tests\Core.L0Tests.csproj"/>
+        <Project Path="tests\Core.Abstractions.L0Tests\Core.Abstractions.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Brooks.L0Tests\EventSourcing.Brooks.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Brooks.Cosmos.L0Tests\EventSourcing.Brooks.Cosmos.L0Tests.csproj"/>
+        <Project Path="tests\Hosting.L0Tests\Hosting.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Brooks.Abstractions.L0Tests\EventSourcing.Brooks.Abstractions.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Aggregates.L0Tests\EventSourcing.Aggregates.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Aggregates.Abstractions.L0Tests\EventSourcing.Aggregates.Abstractions.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Projections.L0Tests\EventSourcing.Projections.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Projections.Abstractions.L0Tests\EventSourcing.Projections.Abstractions.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Reducers.L0Tests\EventSourcing.Reducers.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Reducers.Abstractions.L0Tests\EventSourcing.Reducers.Abstractions.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Snapshots.L0Tests\EventSourcing.Snapshots.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Snapshots.Abstractions.L0Tests\EventSourcing.Snapshots.Abstractions.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Snapshots.Cosmos.L0Tests\EventSourcing.Snapshots.Cosmos.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Serialization.L0Tests\EventSourcing.Serialization.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Serialization.Abstractions.L0Tests\EventSourcing.Serialization.Abstractions.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Serialization.Json.L0Tests\EventSourcing.Serialization.Json.L0Tests.csproj"/>
     </Folder>
 
 </Solution>
