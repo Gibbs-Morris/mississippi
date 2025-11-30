@@ -30,11 +30,10 @@ pwsh ./eng/src/agent-scripts/final-build-solutions.ps1
 
 ### Keep Project Files Minimal
 
--- **Project files MUST be as minimal as possible** - avoid duplicating information already defined in `Directory.Build.props`
--- **Use centralized package management** - all package versions are controlled through `Directory.Packages.props`. You MUST NOT specify versions in individual project files.
-
+- **Project files MUST be as minimal as possible** - avoid duplicating information already defined in `Directory.Build.props`
+- **Use centralized package management** - all package versions are controlled through `Directory.Packages.props`. You MUST NOT specify versions in individual project files.
 - **Leverage Directory.Build.props** - common properties, settings, and configurations are inherited automatically
--- **No version numbers in project files** - package versions are managed centrally to prevent version conflicts. Any version attribute MUST be removed.
+- **No version numbers in project files** - package versions are managed centrally to prevent version conflicts. Any version attribute MUST be removed.
 - **Focus on project-specific concerns only** - only include settings that are unique to the specific project
 
 ### Central Package Management Strategy
