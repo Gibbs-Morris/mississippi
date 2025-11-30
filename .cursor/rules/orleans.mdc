@@ -3,21 +3,58 @@ description: Orleans Best Practices for Mississippi Framework
 globs: ["**/*.cs"]
 alwaysApply: false
 ---
+
 # Orleans Best Practices for Mississippi Framework
+
 **Source:** .github/instructions/orleans.instructions.md
 
+This document defines the Orleans development standards and best practices for the Mississippi Framework. All Orleans grains and related code should follow these guidelines to ensure consistency, maintainability, and alignment with modern Orleans patterns.
 
-# Orleans Best Practices for Mississippi Framework
+## Rules (RFC 2119)
 
-This document defines the Orleans development standards and best practices for the Mississippi Framework. All Orleans grains and related code MUST follow these guidelines to ensure consistency, maintainability, and alignment with modern Orleans patterns.
+### Vertical Slice Folder & Namespace Rules
+
+- You **MUST NOT** create a `Grains/` folder or other horizontal technical silos (e.g., `Models`, `Dtos`, `Services`, `Repositories`).  
+  Why: Horizontal folders scatter grain code away from the business features they implement, reducing cohesion.
+- You **MUST** place grains with their feature (e.g., `Mississippi/EventSourcing/Orders/OrderGrain.cs`), not under a generic `Grains/` directory.  
+  Why: Co-locating grains with features keeps related code together and mirrors domain structure.
+- Namespaces **MUST** mirror folders and follow `Company.Product.Feature[.SubFeature]`.  
+  Why: Namespace-folder alignment ensures predictable navigation and import statements.
+- Type names **SHOULD** carry the `…Grain` suffix; folders **MUST NOT** use the `Grain` suffix.  
+  Why: Type suffixes clarify grain roles without creating redundant folder hierarchies.
 
 ## Core Principles
 
 ### Folder Layout (Vertical Slices)
 
-- **You MUST NOT create a `Grains/` folder** or other horizontal technical silos (e.g., `Models`, `Dtos`, `Services`, `Repositories`). Organize grains and their collaborators under the feature they belong to, mirroring the namespace: `Company/Product/Feature[/SubFeature]`.
-- **You MUST place grains with their feature** (e.g., `Mississippi/EventSourcing/Orders/OrderGrain.cs`), not under a generic `Grains/` directory.
-- **Namespaces MUST mirror folders** and follow `Company.Product.Feature[.SubFeature]`. Type names SHOULD carry the `…Grain` suffix; folders MUST NOT.
+Organize grains and their collaborators under the feature they belong to, mirroring the namespace: `Company/Product/Feature[/SubFeature]`.
+
+Good
+
+```text
+Mississippi/
+  EventSourcing/
+    Orders/
+      OrderGrain.cs
+      OrderState.cs
+      OrderValidator.cs
+    Streams/
+      EventStreamProcessor.cs
+      StreamSettings.cs
+```
+
+Bad
+
+```text
+Mississippi/
+  EventSourcing/
+    Grains/                   # ❌ horizontal layer
+      OrderGrain.cs
+    Models/                   # ❌ horizontal layer
+      OrderState.cs
+    Services/                 # ❌ horizontal layer
+      OrderValidator.cs
+```
 
 ### 1. NEVER Inherit from Grain ❌
 
@@ -146,13 +183,13 @@ using Microsoft.Extensions.Logging; // Logging
 
 All the familiar Orleans helpers are available as extension methods on `this`:
 
-| Old Grain Inheritance | POCO Grain Extension Method |
-|----------------------|------------------------------|
-| `GetPrimaryKey()` | `this.GetPrimaryKey()` |
-| `DeactivateOnIdle()` | `this.DeactivateOnIdle()` |
-| `RegisterOrUpdateReminder()` | `this.RegisterOrUpdateReminder()` |
-| `RegisterGrainTimer()` | `this.RegisterGrainTimer()` |
-| `GetStreamProvider()` | `this.GetStreamProvider()` |
+| Old Grain Inheritance        | POCO Grain Extension Method          |
+| ---------------------------- | ------------------------------------ |
+| `GetPrimaryKey()`            | `this.GetPrimaryKey()`               |
+| `DeactivateOnIdle()`         | `this.DeactivateOnIdle()`            |
+| `RegisterOrUpdateReminder()` | `this.RegisterOrUpdateReminder()`    |
+| `RegisterGrainTimer()`       | `this.RegisterGrainTimer()`          |
+| `GetStreamProvider()`        | `this.GetStreamProvider()`           |
 
 ### 4. Migration Checklist
 
