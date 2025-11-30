@@ -1,5 +1,7 @@
 # Copilot Instructions
 
+For `.Abstractions` suffixes, follow `abstractions-projects.instructions.md` so that new namespaces are added only when the contracts split rules require it (and create the abstractions project if the mandatory conditions apply before introducing the namespace).
+
 Agents MUST follow the Microsoft C# coding conventions.
 When generating or refactoring code, Agents MUST match those conventions—including
 file‑scoped namespaces, expression‑bodied members where beneficial, and the
