@@ -197,7 +197,7 @@ await ReadHelpers.LogStreamReadAsync(
     runId,
     host2.Services.GetRequiredService<IBrookGrainFactory>(),
     brookKey,
-    useConfirmedCursor: true);
+    true);
 
 // Persist final confirmed cursor for primary stream
 BrookPosition confirmed = await host2.Services.GetRequiredService<IBrookGrainFactory>()

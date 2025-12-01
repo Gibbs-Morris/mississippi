@@ -77,6 +77,18 @@ internal class BrookStorageProvider : IBrookStorageProvider
     }
 
     /// <summary>
+    ///     Reads the current cursor position of the specified brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The current cursor position of the brook.</returns>
+    public async Task<BrookPosition> ReadCursorPositionAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    ) =>
+        await RecoveryService.GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
+
+    /// <summary>
     ///     Reads events from the specified brook range asynchronously.
     /// </summary>
     /// <param name="brookRange">The brook range specifying which events to read.</param>
@@ -92,16 +104,4 @@ internal class BrookStorageProvider : IBrookStorageProvider
             yield return brookEvent;
         }
     }
-
-    /// <summary>
-    ///     Reads the current cursor position of the specified brook.
-    /// </summary>
-    /// <param name="brookId">The brook identifier specifying the target brook.</param>
-    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The current cursor position of the brook.</returns>
-    public async Task<BrookPosition> ReadCursorPositionAsync(
-        BrookKey brookId,
-        CancellationToken cancellationToken = default
-    ) =>
-        await RecoveryService.GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
 }

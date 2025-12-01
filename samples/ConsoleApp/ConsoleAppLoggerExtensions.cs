@@ -315,28 +315,6 @@ internal static class ConsoleAppLoggerExtensions
             null);
 
     /// <summary>
-    ///     Log the banner for the explicit cache flush and readback scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    public static void ExplicitCacheFlushReadback(
-        this ILogger logger
-    ) =>
-        ExplicitCacheFlushReadbackMessage(logger, null);
-
-    /// <summary>
-    ///     Log the full-range read count observed in the interleaved scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="count">The full-range read count.</param>
-    public static void FullRangeReadCount(
-        this ILogger logger,
-        string runId,
-        int count
-    ) =>
-        FullRangeReadCountMessage(logger, runId, count, null);
-
-    /// <summary>
     ///     Log the cursor position after the first write in the interleaved scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
@@ -376,6 +354,28 @@ internal static class ConsoleAppLoggerExtensions
         long cursorB
     ) =>
         CursorsABMessage(logger, runId, cursorA, cursorB, null);
+
+    /// <summary>
+    ///     Log the banner for the explicit cache flush and readback scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    public static void ExplicitCacheFlushReadback(
+        this ILogger logger
+    ) =>
+        ExplicitCacheFlushReadbackMessage(logger, null);
+
+    /// <summary>
+    ///     Log the full-range read count observed in the interleaved scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="count">The full-range read count.</param>
+    public static void FullRangeReadCount(
+        this ILogger logger,
+        string runId,
+        int count
+    ) =>
+        FullRangeReadCountMessage(logger, runId, count, null);
 
     /// <summary>
     ///     Log that the host has started for the provided run identifier.

@@ -106,7 +106,8 @@ public class EventBrookAppenderTests
                     EventId = "e1",
                 });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>())).ReturnsAsync(cursor);
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cursor);
         Mock<ILogger<EventBrookAppender>> logger = new();
         EventBrookAppender sut = new(
             repository.Object,

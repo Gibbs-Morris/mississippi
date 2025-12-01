@@ -28,7 +28,8 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 public class EventBrookAppenderRollbackTests
 {
     /// <summary>
-    ///     When initial append fails with no processed events, rollback should clean up the pending cursor entry without aggregate
+    ///     When initial append fails with no processed events, rollback should clean up the pending cursor entry without
+    ///     aggregate
     ///     exception.
     /// </summary>
     /// <returns>

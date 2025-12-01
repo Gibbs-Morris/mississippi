@@ -76,7 +76,7 @@ public class BrookStorageProviderRegistrationsTests
         Assert.Contains(
             descriptors,
             sd => (sd.ServiceType == typeof(IMapper<CursorDocument, CursorStorageModel>)) &&
-                (sd.ImplementationType == typeof(CursorDocumentToStorageMapper)));
+                  (sd.ImplementationType == typeof(CursorDocumentToStorageMapper)));
         Assert.Contains(
             descriptors,
             sd => (sd.ServiceType == typeof(IMapper<EventDocument, EventStorageModel>)) &&

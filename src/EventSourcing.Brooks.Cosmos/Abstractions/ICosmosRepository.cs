@@ -113,6 +113,17 @@ internal interface ICosmosRepository
     );
 
     /// <summary>
+    ///     Gets the cursor document for the specified brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The cursor storage model if found, otherwise null.</returns>
+    Task<CursorStorageModel?> GetCursorDocumentAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     ///     Gets the set of existing event positions within the specified range.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
@@ -124,17 +135,6 @@ internal interface ICosmosRepository
         BrookKey brookId,
         long startPosition,
         long endPosition,
-        CancellationToken cancellationToken = default
-    );
-
-    /// <summary>
-    ///     Gets the cursor document for the specified brook.
-    /// </summary>
-    /// <param name="brookId">The brook identifier specifying the target brook.</param>
-    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The cursor storage model if found, otherwise null.</returns>
-    Task<CursorStorageModel?> GetCursorDocumentAsync(
-        BrookKey brookId,
         CancellationToken cancellationToken = default
     );
 

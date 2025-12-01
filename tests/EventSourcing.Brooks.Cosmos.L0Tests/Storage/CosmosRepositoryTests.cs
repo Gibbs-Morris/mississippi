@@ -98,10 +98,10 @@ public class CosmosRepositoryTests
     )
     {
         cursorMapper ??= Mock.Of<IMapper<CursorDocument, CursorStorageModel>>(m => m.Map(It.IsAny<CursorDocument>()) ==
-                                                                                 new CursorStorageModel
-                                                                                 {
-                                                                                     Position = new(0),
-                                                                                 });
+            new CursorStorageModel
+            {
+                Position = new(0),
+            });
         eventMapper ??=
             Mock.Of<IMapper<EventDocument, EventStorageModel>>(m =>
                 m.Map(It.IsAny<EventDocument>()) == new EventStorageModel());
@@ -532,6 +532,30 @@ public class CosmosRepositoryTests
     }
 
     /// <summary>
+    ///     Verifies GetCursorDocumentAsync returns null when Cosmos returns NotFound.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task GetCursorDocumentAsyncReturnsNullOnNotFoundAsync()
+    {
+        // Arrange
+        Mock<Container> container = new();
+        container.Setup(c => c.ReadItemAsync<CursorDocument>(
+                It.IsAny<string>(),
+                It.IsAny<PartitionKey>(),
+                null,
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(CreateCosmosException(HttpStatusCode.NotFound));
+        CosmosRepository sut = CreateRepository(container.Object);
+
+        // Act
+        CursorStorageModel? result = await sut.GetCursorDocumentAsync(new("type", "id"));
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    /// <summary>
     ///     Verifies GetExistingEventPositionsAsync returns the set of positions from the iterator.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
@@ -574,30 +598,6 @@ public class CosmosRepositoryTests
                 5,
             },
             result);
-    }
-
-    /// <summary>
-    ///     Verifies GetCursorDocumentAsync returns null when Cosmos returns NotFound.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task GetCursorDocumentAsyncReturnsNullOnNotFoundAsync()
-    {
-        // Arrange
-        Mock<Container> container = new();
-        container.Setup(c => c.ReadItemAsync<CursorDocument>(
-                It.IsAny<string>(),
-                It.IsAny<PartitionKey>(),
-                null,
-                It.IsAny<CancellationToken>()))
-            .ThrowsAsync(CreateCosmosException(HttpStatusCode.NotFound));
-        CosmosRepository sut = CreateRepository(container.Object);
-
-        // Act
-        CursorStorageModel? result = await sut.GetCursorDocumentAsync(new("type", "id"));
-
-        // Assert
-        Assert.Null(result);
     }
 
     /// <summary>

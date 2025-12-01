@@ -17,9 +17,9 @@ internal sealed class InMemoryBrookStorage
     : IBrookStorageReader,
       IBrookStorageWriter
 {
-    private readonly Dictionary<string, List<BrookEvent>> eventsByKey = new();
-
     private readonly Dictionary<string, long> cursors = new();
+
+    private readonly Dictionary<string, List<BrookEvent>> eventsByKey = new();
 
     /// <inheritdoc />
     public Task<BrookPosition> AppendEventsAsync(
@@ -49,6 +49,16 @@ internal sealed class InMemoryBrookStorage
     }
 
     /// <inheritdoc />
+    public Task<BrookPosition> ReadCursorPositionAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        _ = cursors.TryGetValue(brookId, out long v);
+        return Task.FromResult(new BrookPosition(v));
+    }
+
+    /// <inheritdoc />
     public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
         BrookRangeKey brookRange,
         [EnumeratorCancellation] CancellationToken cancellationToken = default
@@ -66,16 +76,6 @@ internal sealed class InMemoryBrookStorage
         }
 
         await Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public Task<BrookPosition> ReadCursorPositionAsync(
-        BrookKey brookId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        _ = cursors.TryGetValue(brookId, out long v);
-        return Task.FromResult(new BrookPosition(v));
     }
 
     /// <summary>

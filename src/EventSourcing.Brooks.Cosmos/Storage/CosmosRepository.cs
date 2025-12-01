@@ -21,6 +21,8 @@ namespace Mississippi.EventSourcing.Cosmos.Storage;
 /// </summary>
 internal class CosmosRepository : ICosmosRepository
 {
+    private const string CursorDocumentId = "cursor";
+
     private const string CursorPending = "cursor-pending";
 
     /// <summary>
@@ -45,9 +47,9 @@ internal class CosmosRepository : ICosmosRepository
 
     private Container Container { get; }
 
-    private IMapper<EventDocument, EventStorageModel> EventDocumentMapper { get; }
-
     private IMapper<CursorDocument, CursorStorageModel> CursorDocumentMapper { get; }
+
+    private IMapper<EventDocument, EventStorageModel> EventDocumentMapper { get; }
 
     private IRetryPolicy RetryPolicy { get; }
 
@@ -166,8 +168,8 @@ internal class CosmosRepository : ICosmosRepository
         PartitionKey partitionKey = new(brookId.ToString());
         CursorDocument cursorDoc = new()
         {
-            Id = "cursor",
-            Type = "cursor",
+            Id = CursorDocumentId,
+            Type = CursorDocumentId,
             Position = finalPosition,
             BrookPartitionKey = brookId.ToString(),
         };
@@ -315,8 +317,8 @@ internal class CosmosRepository : ICosmosRepository
         TransactionalBatch? batch = Container.CreateTransactionalBatch(partitionKey);
         CursorDocument cursorDoc = new()
         {
-            Id = "cursor",
-            Type = "cursor",
+            Id = CursorDocumentId,
+            Type = CursorDocumentId,
             Position = newPosition,
             BrookPartitionKey = brookId.ToString(),
         };
@@ -326,12 +328,37 @@ internal class CosmosRepository : ICosmosRepository
         }
         else
         {
-            batch = batch.ReplaceItem("cursor", cursorDoc);
+            batch = batch.ReplaceItem(CursorDocumentId, cursorDoc);
         }
 
         // Use transactional batch only for cursor; events are created individually above
         TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);
         return response;
+    }
+
+    /// <summary>
+    ///     Gets the cursor document for a brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The cursor storage model, or null if not found.</returns>
+    public async Task<CursorStorageModel?> GetCursorDocumentAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            ItemResponse<CursorDocument>? response = await Container.ReadItemAsync<CursorDocument>(
+                CursorDocumentId,
+                new(brookId.ToString()),
+                cancellationToken: cancellationToken);
+            return CursorDocumentMapper.Map(response.Resource);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -373,31 +400,6 @@ internal class CosmosRepository : ICosmosRepository
         }
 
         return existingPositions;
-    }
-
-    /// <summary>
-    ///     Gets the cursor document for a brook.
-    /// </summary>
-    /// <param name="brookId">The brook identifier.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The cursor storage model, or null if not found.</returns>
-    public async Task<CursorStorageModel?> GetCursorDocumentAsync(
-        BrookKey brookId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            ItemResponse<CursorDocument>? response = await Container.ReadItemAsync<CursorDocument>(
-                "cursor",
-                new(brookId.ToString()),
-                cancellationToken: cancellationToken);
-            return CursorDocumentMapper.Map(response.Resource);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            return null;
-        }
     }
 
     /// <summary>
