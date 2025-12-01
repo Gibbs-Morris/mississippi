@@ -64,27 +64,27 @@ public class BrookRecoveryServiceTests
         Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
         BrookKey brookId = new("t", "i");
 
-        // Sequence for GetHeadDocumentAsync: null (first), then after commit returns the cursor document with target position
-        repo.SetupSequence(r => r.GetHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((HeadStorageModel?)null)
+        // Sequence for GetCursorDocumentAsync: null (first), then after commit returns the cursor document with target position
+        repo.SetupSequence(r => r.GetCursorDocumentAsync(brookId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CursorStorageModel?)null)
             .ReturnsAsync(
-                new HeadStorageModel
+                new CursorStorageModel
                 {
                     Position = new(3),
                 });
 
         // pending cursor indicates original 1 -> target 3 (positions 2 and 3 must exist)
-        HeadStorageModel pending = new()
+        CursorStorageModel pending = new()
         {
             OriginalPosition = new BrookPosition(1),
             Position = new(3),
         };
-        repo.Setup(r => r.GetPendingHeadDocumentAsync(brookId, It.IsAny<CancellationToken>())).ReturnsAsync(pending);
+        repo.Setup(r => r.GetPendingCursorDocumentAsync(brookId, It.IsAny<CancellationToken>())).ReturnsAsync(pending);
 
         // EventExists should return true for positions 2 and 3
         repo.Setup(r => r.EventExistsAsync(brookId, 2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         repo.Setup(r => r.EventExistsAsync(brookId, 3, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        repo.Setup(r => r.CommitHeadPositionAsync(brookId, 3, It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.CommitCursorPositionAsync(brookId, 3, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         Mock<IDistributedLock> lockMock1 = new(MockBehavior.Strict);
         lockMock1.Setup(l => l.DisposeAsync()).Returns(default(ValueTask));
@@ -101,8 +101,8 @@ public class BrookRecoveryServiceTests
                 }));
         BrookPosition result = await service.GetOrRecoverCursorPositionAsync(brookId);
         Assert.Equal(3, result.Value);
-        repo.Verify(r => r.CommitHeadPositionAsync(brookId, 3, It.IsAny<CancellationToken>()), Times.Once);
-        repo.Verify(r => r.DeletePendingHeadAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()), Times.Never);
+        repo.Verify(r => r.CommitCursorPositionAsync(brookId, 3, It.IsAny<CancellationToken>()), Times.Once);
+        repo.Verify(r => r.DeletePendingCursorAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
@@ -110,16 +110,16 @@ public class BrookRecoveryServiceTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
     [Fact]
-    public async Task GetOrRecoverCursorPositionAsyncReturnsMinusOneWhenNoHeadAsync()
+    public async Task GetOrRecoverCursorPositionAsyncReturnsMinusOneWhenNoCursorAsync()
     {
         Mock<ICosmosRepository> repo = new(MockBehavior.Strict);
         Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
 
         // No cursor document and no pending cursor entry
-        repo.Setup(r => r.GetHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((HeadStorageModel?)null);
-        repo.Setup(r => r.GetPendingHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((HeadStorageModel?)null);
+        repo.Setup(r => r.GetCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CursorStorageModel?)null);
+        repo.Setup(r => r.GetPendingCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CursorStorageModel?)null);
         BrookRecoveryService service = new(
             repo.Object,
             new TestRetryPolicy(),
@@ -128,10 +128,10 @@ public class BrookRecoveryServiceTests
         BrookPosition result = await service.GetOrRecoverCursorPositionAsync(new("t", "i"));
         Assert.Equal(-1, result.Value);
         repo.Verify(
-            r => r.GetHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
+            r => r.GetCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
             Times.AtLeastOnce);
         repo.Verify(
-            r => r.GetPendingHeadDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
+            r => r.GetPendingCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -145,23 +145,23 @@ public class BrookRecoveryServiceTests
         Mock<ICosmosRepository> repo = new(MockBehavior.Strict);
         Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
         BrookKey brookId = new("t", "i2");
-        repo.SetupSequence(r => r.GetHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((HeadStorageModel?)null)
-            .ReturnsAsync((HeadStorageModel?)null);
-        HeadStorageModel pending = new()
+        repo.SetupSequence(r => r.GetCursorDocumentAsync(brookId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CursorStorageModel?)null)
+            .ReturnsAsync((CursorStorageModel?)null);
+        CursorStorageModel pending = new()
         {
             OriginalPosition = new BrookPosition(0),
             Position = new(2),
         };
-        repo.Setup(r => r.GetPendingHeadDocumentAsync(brookId, It.IsAny<CancellationToken>())).ReturnsAsync(pending);
+        repo.Setup(r => r.GetPendingCursorDocumentAsync(brookId, It.IsAny<CancellationToken>())).ReturnsAsync(pending);
 
         // Simulate missing event at position 1 (first to check) -> triggers rollback
         repo.Setup(r => r.EventExistsAsync(brookId, 1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        // Expect DeleteEventAsync for positions 1..2 and DeletePendingHeadAsync once
+        // Expect DeleteEventAsync for positions 1..2 and DeletePendingCursorAsync once
         repo.Setup(r => r.DeleteEventAsync(brookId, 1, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         repo.Setup(r => r.DeleteEventAsync(brookId, 2, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        repo.Setup(r => r.DeletePendingHeadAsync(brookId, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        repo.Setup(r => r.DeletePendingCursorAsync(brookId, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         Mock<IDistributedLock> lockMock2 = new(MockBehavior.Strict);
         lockMock2.Setup(l => l.DisposeAsync()).Returns(default(ValueTask));
         lockMgr.Setup(m => m.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
@@ -181,9 +181,9 @@ public class BrookRecoveryServiceTests
         Assert.Equal(-1, result.Value);
         repo.Verify(r => r.DeleteEventAsync(brookId, 1, It.IsAny<CancellationToken>()), Times.Once);
         repo.Verify(r => r.DeleteEventAsync(brookId, 2, It.IsAny<CancellationToken>()), Times.Once);
-        repo.Verify(r => r.DeletePendingHeadAsync(brookId, It.IsAny<CancellationToken>()), Times.Once);
+        repo.Verify(r => r.DeletePendingCursorAsync(brookId, It.IsAny<CancellationToken>()), Times.Once);
         repo.Verify(
-            r => r.CommitHeadPositionAsync(It.IsAny<BrookKey>(), It.IsAny<long>(), It.IsAny<CancellationToken>()),
+            r => r.CommitCursorPositionAsync(It.IsAny<BrookKey>(), It.IsAny<long>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -192,17 +192,17 @@ public class BrookRecoveryServiceTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
     [Fact]
-    public async Task GetOrRecoverCursorPositionAsyncThrowsWhenHeadStillNullAfterWaitAsync()
+    public async Task GetOrRecoverCursorPositionAsyncThrowsWhenCursorStillNullAfterWaitAsync()
     {
         Mock<ICosmosRepository> repo = new(MockBehavior.Strict);
         Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
         BrookKey brookId = new("t", "i4");
-        repo.SetupSequence(r => r.GetHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((HeadStorageModel?)null)
-            .ReturnsAsync((HeadStorageModel?)null);
-        repo.Setup(r => r.GetPendingHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
+        repo.SetupSequence(r => r.GetCursorDocumentAsync(brookId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CursorStorageModel?)null)
+            .ReturnsAsync((CursorStorageModel?)null);
+        repo.Setup(r => r.GetPendingCursorDocumentAsync(brookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
-                new HeadStorageModel
+                new CursorStorageModel
                 {
                     OriginalPosition = new BrookPosition(0),
                     Position = new(1),
@@ -234,16 +234,16 @@ public class BrookRecoveryServiceTests
         BrookKey brookId = new("t", "i3");
 
         // First read returns null, second read (after wait) returns a cursor document
-        repo.SetupSequence(r => r.GetHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((HeadStorageModel?)null)
+        repo.SetupSequence(r => r.GetCursorDocumentAsync(brookId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CursorStorageModel?)null)
             .ReturnsAsync(
-                new HeadStorageModel
+                new CursorStorageModel
                 {
                     Position = new(7),
                 });
-        repo.Setup(r => r.GetPendingHeadDocumentAsync(brookId, It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.GetPendingCursorDocumentAsync(brookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
-                new HeadStorageModel
+                new CursorStorageModel
                 {
                     OriginalPosition = new BrookPosition(0),
                     Position = new(5),

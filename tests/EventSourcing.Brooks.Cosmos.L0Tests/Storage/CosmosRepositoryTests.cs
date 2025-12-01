@@ -93,19 +93,19 @@ public class CosmosRepositoryTests
 
     private static CosmosRepository CreateRepository(
         Container container,
-        IMapper<HeadDocument, HeadStorageModel>? headMapper = null,
+        IMapper<CursorDocument, CursorStorageModel>? cursorMapper = null,
         IMapper<EventDocument, EventStorageModel>? eventMapper = null
     )
     {
-        headMapper ??= Mock.Of<IMapper<HeadDocument, HeadStorageModel>>(m => m.Map(It.IsAny<HeadDocument>()) ==
-                                                                             new HeadStorageModel
-                                                                             {
-                                                                                 Position = new(0),
-                                                                             });
+        cursorMapper ??= Mock.Of<IMapper<CursorDocument, CursorStorageModel>>(m => m.Map(It.IsAny<CursorDocument>()) ==
+                                                                                 new CursorStorageModel
+                                                                                 {
+                                                                                     Position = new(0),
+                                                                                 });
         eventMapper ??=
             Mock.Of<IMapper<EventDocument, EventStorageModel>>(m =>
                 m.Map(It.IsAny<EventDocument>()) == new EventStorageModel());
-        return new(container, new NoOpRetryPolicy(), headMapper, eventMapper);
+        return new(container, new NoOpRetryPolicy(), cursorMapper, eventMapper);
     }
 
     /// <summary>
@@ -229,42 +229,42 @@ public class CosmosRepositoryTests
     }
 
     /// <summary>
-    ///     Verifies CommitHeadPositionAsync upserts head and deletes pending head.
+    ///     Verifies CommitCursorPositionAsync upserts cursor and deletes pending cursor.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task CommitHeadPositionAsyncUpsertsHeadAndDeletesPendingAsync()
+    public async Task CommitCursorPositionAsyncUpsertsCursorAndDeletesPendingAsync()
     {
         // Arrange
         Mock<Container> container = new();
         container.Setup(c => c.UpsertItemAsync(
-                It.IsAny<HeadDocument>(),
+                It.IsAny<CursorDocument>(),
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Mock.Of<ItemResponse<HeadDocument>>());
-        container.Setup(c => c.DeleteItemAsync<HeadDocument>(
+            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
+        container.Setup(c => c.DeleteItemAsync<CursorDocument>(
                 It.IsAny<string>(),
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Mock.Of<ItemResponse<HeadDocument>>());
+            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        await sut.CommitHeadPositionAsync(new("type", "id"), 42);
+        await sut.CommitCursorPositionAsync(new("type", "id"), 42);
 
         // Assert
         container.Verify(
             c => c.UpsertItemAsync(
-                It.Is<HeadDocument>(h => (h.Id == "head") && (h.Position == 42)),
+                It.Is<CursorDocument>(h => (h.Id == "cursor") && (h.Position == 42)),
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()),
             Times.Once);
         container.Verify(
-            c => c.DeleteItemAsync<HeadDocument>(
-                It.Is<string>(s => s == "head-pending"),
+            c => c.DeleteItemAsync<CursorDocument>(
+                It.Is<string>(s => s == "cursor-pending"),
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()),
@@ -272,43 +272,43 @@ public class CosmosRepositoryTests
     }
 
     /// <summary>
-    ///     Verifies CreatePendingHeadAsync creates the expected pending head document.
+    ///     Verifies CreatePendingCursorAsync creates the expected pending cursor document.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task CreatePendingHeadAsyncCreatesPendingHeadAsync()
+    public async Task CreatePendingCursorAsyncCreatesPendingCursorAsync()
     {
         // Arrange
         Mock<Container> container = new();
-        HeadDocument? captured = null;
+        CursorDocument? captured = null;
         container.Setup(c => c.CreateItemAsync(
-                It.IsAny<HeadDocument>(),
+                It.IsAny<CursorDocument>(),
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
             .Callback((
-                HeadDocument d,
+                CursorDocument d,
                 PartitionKey? pk,
                 ItemRequestOptions? options,
                 CancellationToken ct
             ) => captured = d)
-            .ReturnsAsync(Mock.Of<ItemResponse<HeadDocument>>());
+            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
         CosmosRepository sut = CreateRepository(container.Object);
         BrookKey key = new("type", "id");
 
         // Act
-        await sut.CreatePendingHeadAsync(key, new(5), 10);
+        await sut.CreatePendingCursorAsync(key, new(5), 10);
 
         // Assert
         Assert.NotNull(captured);
-        Assert.Equal("head-pending", captured!.Id);
-        Assert.Equal("head-pending", captured.Type);
+        Assert.Equal("cursor-pending", captured!.Id);
+        Assert.Equal("cursor-pending", captured.Type);
         Assert.Equal(10, captured.Position);
         Assert.Equal(5, captured.OriginalPosition);
         Assert.Equal(key.ToString(), captured.BrookPartitionKey);
         container.Verify(
             c => c.CreateItemAsync(
-                It.IsAny<HeadDocument>(),
+                It.IsAny<CursorDocument>(),
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()),
@@ -347,15 +347,15 @@ public class CosmosRepositoryTests
     }
 
     /// <summary>
-    ///     Verifies DeletePendingHeadAsync ignores NotFound exceptions.
+    ///     Verifies DeletePendingCursorAsync ignores NotFound exceptions.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task DeletePendingHeadAsyncIgnoresNotFoundAsync()
+    public async Task DeletePendingCursorAsyncIgnoresNotFoundAsync()
     {
         // Arrange
         Mock<Container> container = new();
-        container.Setup(c => c.DeleteItemAsync<HeadDocument>(
+        container.Setup(c => c.DeleteItemAsync<CursorDocument>(
                 It.IsAny<string>(),
                 It.IsAny<PartitionKey>(),
                 null,
@@ -364,12 +364,12 @@ public class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act - should not throw
-        Exception? ex = await Record.ExceptionAsync(() => sut.DeletePendingHeadAsync(new("t", "i")));
+        Exception? ex = await Record.ExceptionAsync(() => sut.DeletePendingCursorAsync(new("t", "i")));
 
         // Assert - delete was attempted exactly once and exception swallowed
         Assert.Null(ex);
         container.Verify(
-            c => c.DeleteItemAsync<HeadDocument>(
+            c => c.DeleteItemAsync<CursorDocument>(
                 It.IsAny<string>(),
                 It.IsAny<PartitionKey>(),
                 null,
@@ -435,7 +435,7 @@ public class CosmosRepositoryTests
         // Arrange
         Mock<Container> container = new();
         Mock<TransactionalBatch> batch = new();
-        batch.Setup(b => b.ReplaceItem(It.IsAny<string>(), It.IsAny<HeadDocument>(), null)).Returns(batch.Object);
+        batch.Setup(b => b.ReplaceItem(It.IsAny<string>(), It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
         Mock<TransactionalBatchResponse> nonTransient = new();
         nonTransient.SetupGet(r => r.IsSuccessStatusCode).Returns(false);
         nonTransient.SetupGet(r => r.StatusCode).Returns(HttpStatusCode.BadRequest);
@@ -464,7 +464,7 @@ public class CosmosRepositoryTests
         // Arrange
         Mock<Container> container = new();
         Mock<TransactionalBatch> batch = new();
-        batch.Setup(b => b.ReplaceItem(It.IsAny<string>(), It.IsAny<HeadDocument>(), null)).Returns(batch.Object);
+        batch.Setup(b => b.ReplaceItem(It.IsAny<string>(), It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
 
         // Simulate CosmosException 413 thrown from ExecuteAsync
         CosmosException ex = CreateCosmosException(HttpStatusCode.RequestEntityTooLarge);
@@ -484,20 +484,20 @@ public class CosmosRepositoryTests
     }
 
     /// <summary>
-    ///     Verifies ExecuteTransactionalBatchAsync replaces head and retries on transient status until success.
+    ///     Verifies ExecuteTransactionalBatchAsync replaces the cursor and retries on transient status until success.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task ExecuteTransactionalBatchAsyncUpsertsHeadWithRetriesAsync()
+    public async Task ExecuteTransactionalBatchAsyncUpsertsCursorWithRetriesAsync()
     {
         // Arrange
         Mock<Container> container = new();
         Mock<TransactionalBatch> batch = new();
 
         // Chain ReplaceItem; CreateItem should not be called in this scenario
-        batch.Setup(b => b.ReplaceItem(It.Is<string>(id => id == "head"), It.IsAny<HeadDocument>(), null))
+        batch.Setup(b => b.ReplaceItem(It.Is<string>(id => id == "cursor"), It.IsAny<CursorDocument>(), null))
             .Returns(batch.Object);
-        batch.Setup(b => b.CreateItem(It.IsAny<HeadDocument>(), null)).Returns(batch.Object);
+        batch.Setup(b => b.CreateItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
 
         // First response 429 with RetryAfter, second success
         Mock<TransactionalBatchResponse> r1 = new();
@@ -526,8 +526,8 @@ public class CosmosRepositoryTests
 
         // Assert
         Assert.Same(r2.Object, response);
-        batch.Verify(b => b.ReplaceItem("head", It.IsAny<HeadDocument>(), null), Times.Once);
-        batch.Verify(b => b.CreateItem(It.IsAny<HeadDocument>(), null), Times.Never);
+        batch.Verify(b => b.ReplaceItem("cursor", It.IsAny<CursorDocument>(), null), Times.Once);
+        batch.Verify(b => b.CreateItem(It.IsAny<CursorDocument>(), null), Times.Never);
         batch.Verify(b => b.ExecuteAsync(It.IsAny<CancellationToken>()), Times.AtLeast(2));
     }
 
@@ -577,15 +577,15 @@ public class CosmosRepositoryTests
     }
 
     /// <summary>
-    ///     Verifies GetHeadDocumentAsync returns null when Cosmos returns NotFound.
+    ///     Verifies GetCursorDocumentAsync returns null when Cosmos returns NotFound.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task GetHeadDocumentAsyncReturnsNullOnNotFoundAsync()
+    public async Task GetCursorDocumentAsyncReturnsNullOnNotFoundAsync()
     {
         // Arrange
         Mock<Container> container = new();
-        container.Setup(c => c.ReadItemAsync<HeadDocument>(
+        container.Setup(c => c.ReadItemAsync<CursorDocument>(
                 It.IsAny<string>(),
                 It.IsAny<PartitionKey>(),
                 null,
@@ -594,22 +594,22 @@ public class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        HeadStorageModel? result = await sut.GetHeadDocumentAsync(new("type", "id"));
+        CursorStorageModel? result = await sut.GetCursorDocumentAsync(new("type", "id"));
 
         // Assert
         Assert.Null(result);
     }
 
     /// <summary>
-    ///     Verifies GetPendingHeadDocumentAsync returns null when Cosmos returns NotFound.
+    ///     Verifies GetPendingCursorDocumentAsync returns null when Cosmos returns NotFound.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task GetPendingHeadDocumentAsyncReturnsNullOnNotFoundAsync()
+    public async Task GetPendingCursorDocumentAsyncReturnsNullOnNotFoundAsync()
     {
         // Arrange
         Mock<Container> container = new();
-        container.Setup(c => c.ReadItemAsync<HeadDocument>(
+        container.Setup(c => c.ReadItemAsync<CursorDocument>(
                 It.IsAny<string>(),
                 It.IsAny<PartitionKey>(),
                 null,
@@ -618,7 +618,7 @@ public class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        HeadStorageModel? result = await sut.GetPendingHeadDocumentAsync(new("type", "id"));
+        CursorStorageModel? result = await sut.GetPendingCursorDocumentAsync(new("type", "id"));
 
         // Assert
         Assert.Null(result);

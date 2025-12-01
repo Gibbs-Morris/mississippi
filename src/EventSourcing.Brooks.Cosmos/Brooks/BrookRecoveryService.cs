@@ -60,15 +60,15 @@ internal class BrookRecoveryService : IBrookRecoveryService
         CancellationToken cancellationToken = default
     )
     {
-        HeadStorageModel? headDocument = await RetryPolicy.ExecuteAsync(
-            async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+        CursorStorageModel? cursorDocument = await RetryPolicy.ExecuteAsync(
+            async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
             cancellationToken);
-        if (headDocument == null)
+        if (cursorDocument == null)
         {
-            HeadStorageModel? pendingHead = await RetryPolicy.ExecuteAsync(
-                async () => await Repository.GetPendingHeadDocumentAsync(brookId, cancellationToken),
+            CursorStorageModel? pendingCursor = await RetryPolicy.ExecuteAsync(
+                async () => await Repository.GetPendingCursorDocumentAsync(brookId, cancellationToken),
                 cancellationToken);
-            if (pendingHead != null)
+            if (pendingCursor != null)
             {
                 // Use a shorter timeout for recovery lock to prevent deadlocks
                 TimeSpan recoveryTimeout = TimeSpan.FromSeconds(Math.Min(Options.LeaseDurationSeconds, 30));
@@ -78,9 +78,9 @@ internal class BrookRecoveryService : IBrookRecoveryService
                         $"recovery-{brookId}", // Use different lock key for recovery
                         recoveryTimeout,
                         cancellationToken);
-                    await RecoverFromOrphanedOperationAsync(brookId, pendingHead, cancellationToken);
-                    headDocument = await RetryPolicy.ExecuteAsync(
-                        async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+                    await RecoverFromOrphanedOperationAsync(brookId, pendingCursor, cancellationToken);
+                    cursorDocument = await RetryPolicy.ExecuteAsync(
+                        async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
                         cancellationToken);
                 }
                 catch (RequestFailedException)
@@ -88,12 +88,12 @@ internal class BrookRecoveryService : IBrookRecoveryService
                     // If we can't acquire the recovery lock, assume another process is handling recovery
                     // Wait a bit and try to read the cursor again
                     await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
-                    headDocument = await RetryPolicy.ExecuteAsync(
-                        async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
+                    cursorDocument = await RetryPolicy.ExecuteAsync(
+                        async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
                         cancellationToken);
 
                     // If the cursor is still null after waiting, we have a problem
-                    if (headDocument == null)
+                    if (cursorDocument == null)
                     {
                         throw new InvalidOperationException(
                             $"Unable to recover cursor position for brook {brookId}. " +
@@ -103,7 +103,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
             }
         }
 
-        return headDocument?.Position ?? new BrookPosition(-1);
+        return cursorDocument?.Position ?? new BrookPosition(-1);
     }
 
     private async Task<bool> CheckAllEventsExistAsync(
@@ -137,12 +137,12 @@ internal class BrookRecoveryService : IBrookRecoveryService
 
     private async Task RecoverFromOrphanedOperationAsync(
         BrookKey brookId,
-        HeadStorageModel pendingHead,
+        CursorStorageModel pendingCursor,
         CancellationToken cancellationToken
     )
     {
-        long originalPosition = pendingHead.OriginalPosition?.Value ?? -1;
-        long targetPosition = pendingHead.Position.Value;
+        long originalPosition = pendingCursor.OriginalPosition?.Value ?? -1;
+        long targetPosition = pendingCursor.Position.Value;
         bool allEventsExist = await CheckAllEventsExistAsync(
             brookId,
             originalPosition,
@@ -150,7 +150,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
             cancellationToken);
         if (allEventsExist)
         {
-            await Repository.CommitHeadPositionAsync(brookId, targetPosition, cancellationToken);
+            await Repository.CommitCursorPositionAsync(brookId, targetPosition, cancellationToken);
         }
         else
         {
@@ -179,7 +179,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
         await RetryPolicy.ExecuteAsync(
             async () =>
             {
-                await Repository.DeletePendingHeadAsync(brookId, cancellationToken);
+                await Repository.DeletePendingCursorAsync(brookId, cancellationToken);
                 return true;
             },
             cancellationToken);

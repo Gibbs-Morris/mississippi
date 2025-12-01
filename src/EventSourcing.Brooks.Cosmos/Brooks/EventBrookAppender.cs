@@ -170,31 +170,31 @@ internal class EventBrookAppender : IEventBrookAppender
     )
     {
         // Get current cursor position while holding the lock to ensure consistency
-        BrookPosition currentHead = await RecoveryService.GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
+        BrookPosition currentCursor = await RecoveryService.GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
 
         // Perform optimistic concurrency check inside the lock
-        if (expectedVersion.HasValue && (expectedVersion.Value != currentHead))
+        if (expectedVersion.HasValue && (expectedVersion.Value != currentCursor))
         {
             throw new OptimisticConcurrencyException(
-                $"Expected version {expectedVersion.Value} but current cursor is {currentHead}");
+                $"Expected version {expectedVersion.Value} but current cursor is {currentCursor}");
         }
 
         // Check for potential overflow in position calculation
-        if (currentHead.Value > (long.MaxValue - events.Count))
+        if (currentCursor.Value > (long.MaxValue - events.Count))
         {
             throw new InvalidOperationException(
-                $"Position overflow: current cursor {currentHead.Value} + {events.Count} events would exceed maximum position");
+                $"Position overflow: current cursor {currentCursor.Value} + {events.Count} events would exceed maximum position");
         }
 
-        long finalPosition = currentHead.Value + events.Count;
+        long finalPosition = currentCursor.Value + events.Count;
         long estimatedSize = SizeEstimator.EstimateBatchSize(events);
-        LogAppenderSummary(Logger, brookId, events.Count, estimatedSize, currentHead.Value, finalPosition, null);
+        LogAppenderSummary(Logger, brookId, events.Count, estimatedSize, currentCursor.Value, finalPosition, null);
         if ((events.Count > Options.MaxEventsPerBatch) || (estimatedSize > Options.MaxRequestSizeBytes))
         {
             return await AppendLargeBatchAsync(
                 brookId,
                 events,
-                currentHead,
+                currentCursor,
                 finalPosition,
                 distributedLock,
                 cancellationToken);
@@ -203,7 +203,7 @@ internal class EventBrookAppender : IEventBrookAppender
         return await AppendSingleBatchAsync(
             brookId,
             events,
-            currentHead,
+            currentCursor,
             finalPosition,
             distributedLock,
             cancellationToken);
@@ -212,7 +212,7 @@ internal class EventBrookAppender : IEventBrookAppender
     private async Task<BrookPosition> AppendLargeBatchAsync(
         BrookKey brookId,
         IReadOnlyList<BrookEvent> events,
-        BrookPosition currentHead,
+        BrookPosition currentCursor,
         long finalPosition,
         IDistributedLock distributedLock,
         CancellationToken cancellationToken
@@ -224,14 +224,14 @@ internal class EventBrookAppender : IEventBrookAppender
                 Options.MaxEventsPerBatch,
                 Options.MaxRequestSizeBytes)
             .ToList();
-        await Repository.CreatePendingHeadAsync(brookId, currentHead, finalPosition, cancellationToken);
+        await Repository.CreatePendingCursorAsync(brookId, currentCursor, finalPosition, cancellationToken);
         int processedEvents = 0;
         try
         {
             LogLargeBatchSummaryPart1(Logger, brookId, events.Count, batches.Count, null);
             LogLargeBatchSummaryPart2(
                 Logger,
-                currentHead.Value,
+                currentCursor.Value,
                 finalPosition,
                 Options.MaxEventsPerBatch,
                 Options.MaxRequestSizeBytes,
@@ -249,7 +249,7 @@ internal class EventBrookAppender : IEventBrookAppender
                 }
 
                 IReadOnlyList<BrookEvent> batchEvents = batches[batchIndex];
-                long batchStartPosition = currentHead.Value + processedEvents + 1;
+                long batchStartPosition = currentCursor.Value + processedEvents + 1;
                 long estBatchSize = SizeEstimator.EstimateBatchSize(batchEvents);
                 LogBatchProgress(
                     Logger,
@@ -269,7 +269,7 @@ internal class EventBrookAppender : IEventBrookAppender
                 processedEvents += batchEvents.Count;
             }
 
-            await Repository.CommitHeadPositionAsync(brookId, finalPosition, cancellationToken);
+            await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
             LogLargeBatchCommitted(Logger, brookId, finalPosition, batches.Count, null);
             return new(finalPosition);
         }
@@ -279,8 +279,8 @@ internal class EventBrookAppender : IEventBrookAppender
             // processedEvents reflects successfully created items
             await RollbackLargeBatchAsync(
                 brookId,
-                new(currentHead.Value),
-                currentHead.Value + processedEvents,
+                new(currentCursor.Value),
+                currentCursor.Value + processedEvents,
                 cancellationToken);
             throw;
         }
@@ -289,7 +289,7 @@ internal class EventBrookAppender : IEventBrookAppender
     private async Task<BrookPosition> AppendSingleBatchAsync(
         BrookKey brookId,
         IReadOnlyList<BrookEvent> events,
-        BrookPosition currentHead,
+        BrookPosition currentCursor,
         long finalPosition,
         IDistributedLock distributedLock,
         CancellationToken cancellationToken
@@ -297,30 +297,30 @@ internal class EventBrookAppender : IEventBrookAppender
     {
         await distributedLock.RenewAsync(cancellationToken);
         long estBatchSize = SizeEstimator.EstimateBatchSize(events);
-        LogSingleBatchStart(Logger, brookId, events.Count, estBatchSize, currentHead.Value + 1, finalPosition, null);
+        LogSingleBatchStart(Logger, brookId, events.Count, estBatchSize, currentCursor.Value + 1, finalPosition, null);
         List<EventStorageModel> storageEvents = events.Select(EventMapper.Map).ToList();
 
-        // Fallback to non-transactional flow (pending head -> append -> commit) to ensure reliability with emulator
-        await Repository.CreatePendingHeadAsync(brookId, currentHead, finalPosition, cancellationToken);
+        // Fallback to non-transactional flow (pending cursor -> append -> commit) to ensure reliability with emulator
+        await Repository.CreatePendingCursorAsync(brookId, currentCursor, finalPosition, cancellationToken);
         await RetryPolicy.ExecuteAsync(
             async () =>
             {
                 await Repository.AppendEventBatchAsync(
                     brookId,
                     storageEvents,
-                    currentHead.Value + 1,
+                    currentCursor.Value + 1,
                     cancellationToken);
                 return true;
             },
             cancellationToken);
-        await Repository.CommitHeadPositionAsync(brookId, finalPosition, cancellationToken);
+        await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
         LogSingleBatchCommitted(Logger, brookId, finalPosition, 200, 0, null);
         return new(finalPosition);
     }
 
     private async Task RollbackLargeBatchAsync(
         BrookKey brookId,
-        BrookPosition originalHead,
+        BrookPosition originalCursor,
         long failedFinalPosition,
         CancellationToken cancellationToken
     )
@@ -353,7 +353,7 @@ internal class EventBrookAppender : IEventBrookAppender
         }
 
         // First pass: attempt to delete all appended events
-        for (long pos = originalHead.Value + 1; pos <= failedFinalPosition; pos++)
+        for (long pos = originalCursor.Value + 1; pos <= failedFinalPosition; pos++)
         {
             long capturedPos = pos; // avoid modified closure
             await TryWithRetryAsync(
@@ -361,13 +361,13 @@ internal class EventBrookAppender : IEventBrookAppender
                 $"Failed to delete event at position {capturedPos}");
         }
 
-        // Delete pending head
+        // Delete pending cursor state
         await TryWithRetryAsync(
-            () => Repository.DeletePendingHeadAsync(brookId, cancellationToken),
-            "Failed to delete pending head");
+            () => Repository.DeletePendingCursorAsync(brookId, cancellationToken),
+            "Failed to delete pending cursor");
 
         // Second pass: verify all events are actually deleted
-        for (long pos = originalHead.Value + 1; pos <= failedFinalPosition; pos++)
+        for (long pos = originalCursor.Value + 1; pos <= failedFinalPosition; pos++)
         {
             try
             {
@@ -400,13 +400,13 @@ internal class EventBrookAppender : IEventBrookAppender
             LogRollbackFailed(
                 Logger,
                 brookId,
-                originalHead.Value,
+                originalCursor.Value,
                 failedFinalPosition,
                 string.Join(", ", remainingEvents),
                 new AggregateException(allErrors));
             throw new AggregateException("Rollback failed - brook may be in an inconsistent state", allErrors);
         }
 
-        LogRollbackSucceeded(Logger, brookId, originalHead.Value, null);
+        LogRollbackSucceeded(Logger, brookId, originalCursor.Value, null);
     }
 }
