@@ -81,7 +81,7 @@ jobs:
           allure generate ${{ github.workspace }}/.scratchpad/coverage-test-results -o ${{ github.workspace }}/allure-report
 
       - name: Upload Allure Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: allure-test-results-${{ matrix.solution }}-${{ matrix.os }}-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
           path: ${{ github.workspace }}/allure-report

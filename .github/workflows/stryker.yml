@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload HTML Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-results-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
           path: ${{ github.workspace }}/.scratchpad/mutation-test-results/**/**/*.html
