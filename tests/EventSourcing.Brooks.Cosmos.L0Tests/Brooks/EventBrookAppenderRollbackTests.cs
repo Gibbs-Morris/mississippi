@@ -28,7 +28,7 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 public class EventBrookAppenderRollbackTests
 {
     /// <summary>
-    ///     When initial append fails with no processed events, rollback should clean up pending head without aggregate
+    ///     When initial append fails with no processed events, rollback should clean up the pending cursor entry without aggregate
     ///     exception.
     /// </summary>
     /// <returns>
@@ -59,7 +59,7 @@ public class EventBrookAppenderRollbackTests
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
         Mock<ILogger<EventBrookAppender>> logger = new();
         EventBrookAppender sut = new(
@@ -138,7 +138,7 @@ public class EventBrookAppenderRollbackTests
                 Time = e.Time ?? DateTimeOffset.UtcNow,
             });
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
         Mock<ILogger<EventBrookAppender>> logger = new();
         EventBrookAppender sut = new(

@@ -17,7 +17,7 @@ public interface IBrookStorageWriter
     /// <param name="events">The events to append to the brook.</param>
     /// <param name="expectedVersion">The expected version for optimistic concurrency control.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The new head position after appending the events.</returns>
+    /// <returns>The new cursor position after appending the events.</returns>
     Task<BrookPosition> AppendEventsAsync(
         BrookKey brookId,
         IReadOnlyList<BrookEvent> events,

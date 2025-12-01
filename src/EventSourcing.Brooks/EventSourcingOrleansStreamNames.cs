@@ -1,13 +1,13 @@
 namespace Mississippi.EventSourcing;
 
 /// <summary>
-///     Contains constant stream names used for Orleans event sourcing head updates.
+///     Contains constant stream names used for Orleans event sourcing cursor updates.
 /// </summary>
 public static class EventSourcingOrleansStreamNames
 {
     /// <summary>
-    ///     The stream name used for brook head position update notifications in Orleans.
-    ///     This stream carries notifications when brook head positions change.
+    ///     The stream name used for brook cursor position update notifications in Orleans.
+    ///     This stream carries notifications when brook cursor positions change.
     /// </summary>
-    public const string HeadUpdateStreamName = "StreamHeadUpdates";
+    public const string CursorUpdateStreamName = "BrookCursorUpdates";
 }

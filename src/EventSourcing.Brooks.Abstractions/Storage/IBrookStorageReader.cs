@@ -22,12 +22,12 @@ public interface IBrookStorageReader
     );
 
     /// <summary>
-    ///     Reads the current head position for a brook.
+    ///     Reads the current cursor position for a brook.
     /// </summary>
-    /// <param name="brookId">The identifier of the brook.</param>
+    /// <param name="brookId">The brook identifier.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The current head position of the brook.</returns>
-    Task<BrookPosition> ReadHeadPositionAsync(
+    /// <returns>The current cursor position of the brook.</returns>
+    Task<BrookPosition> ReadCursorPositionAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
     );

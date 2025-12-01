@@ -28,7 +28,7 @@ internal class EventBrookAppender : IEventBrookAppender
         LoggerMessage.Define<BrookKey, int, long, long, long>(
             LogLevel.Information,
             new(1001, nameof(AppendEventsAsync)),
-            "CosmosAppender: brook={Brook} count={Count} estSize={Size}B head={Head} -> final={Final}");
+            "CosmosAppender: brook={Brook} count={Count} estSize={Size}B cursor={Cursor} -> final={Final}");
 
     private static readonly Action<ILogger, int, int, BrookKey, int, long, long, Exception?> LogBatchProgress =
         LoggerMessage.Define<int, int, BrookKey, int, long, long>(
@@ -40,7 +40,7 @@ internal class EventBrookAppender : IEventBrookAppender
         LoggerMessage.Define<BrookKey, long, int>(
             LogLevel.Information,
             new(1007, nameof(AppendLargeBatchAsync)),
-            "CosmosAppender: LargeBatch committed brook={Brook} newHead={Head} batches={Batches}");
+            "CosmosAppender: LargeBatch committed brook={Brook} newCursor={Cursor} batches={Batches}");
 
     private static readonly Action<ILogger, BrookKey, int, int, Exception?> LogLargeBatchSummaryPart1 =
         LoggerMessage.Define<BrookKey, int, int>(
@@ -52,25 +52,25 @@ internal class EventBrookAppender : IEventBrookAppender
         LoggerMessage.Define<long, long, int, long>(
             LogLevel.Information,
             new(1004, nameof(AppendLargeBatchAsync)),
-            "CosmosAppender: LargeBatch head={Head} final={Final} maxPerBatch={MaxEv} maxReq={MaxReq}");
+            "CosmosAppender: LargeBatch cursor={Cursor} final={Final} maxPerBatch={MaxEv} maxReq={MaxReq}");
 
     private static readonly Action<ILogger, BrookKey, long, long, string, Exception?> LogRollbackFailed =
         LoggerMessage.Define<BrookKey, long, long, string>(
             LogLevel.Error,
             new(1008, nameof(RollbackLargeBatchAsync)),
-            "CosmosAppender: Rollback failed brook={Brook} originalHead={Head} failedFinal={Final} remainingEvents={Remaining}");
+            "CosmosAppender: Rollback failed brook={Brook} originalCursor={Cursor} failedFinal={Final} remainingEvents={Remaining}");
 
     private static readonly Action<ILogger, BrookKey, long, Exception?> LogRollbackSucceeded =
         LoggerMessage.Define<BrookKey, long>(
             LogLevel.Warning,
             new(1009, nameof(RollbackLargeBatchAsync)),
-            "CosmosAppender: Rollback succeeded brook={Brook} restoredHead={Head}");
+            "CosmosAppender: Rollback succeeded brook={Brook} restoredCursor={Cursor}");
 
     private static readonly Action<ILogger, BrookKey, long, int, double, Exception?> LogSingleBatchCommitted =
         LoggerMessage.Define<BrookKey, long, int, double>(
             LogLevel.Information,
             new(1006, nameof(AppendSingleBatchAsync)),
-            "CosmosAppender: SingleBatch committed brook={Brook} newHead={Head} status={Status} charge={Charge}");
+            "CosmosAppender: SingleBatch committed brook={Brook} newCursor={Cursor} status={Status} charge={Charge}");
 
     private static readonly Action<ILogger, BrookKey, int, long, long, long, Exception?> LogSingleBatchStart =
         LoggerMessage.Define<BrookKey, int, long, long, long>(
@@ -87,7 +87,7 @@ internal class EventBrookAppender : IEventBrookAppender
     /// <param name="retryPolicy">The retry policy for handling transient failures.</param>
     /// <param name="options">The configuration options for brook storage.</param>
     /// <param name="eventMapper">The mapper for converting events to storage models.</param>
-    /// <param name="recoveryService">The brook recovery service for head position management.</param>
+    /// <param name="recoveryService">The brook recovery service for cursor position management.</param>
     /// <param name="logger">The logger used to record operational diagnostics.</param>
     public EventBrookAppender(
         ICosmosRepository repository,
@@ -169,21 +169,21 @@ internal class EventBrookAppender : IEventBrookAppender
         CancellationToken cancellationToken
     )
     {
-        // Get current head position while holding the lock to ensure consistency
-        BrookPosition currentHead = await RecoveryService.GetOrRecoverHeadPositionAsync(brookId, cancellationToken);
+        // Get current cursor position while holding the lock to ensure consistency
+        BrookPosition currentHead = await RecoveryService.GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
 
         // Perform optimistic concurrency check inside the lock
         if (expectedVersion.HasValue && (expectedVersion.Value != currentHead))
         {
             throw new OptimisticConcurrencyException(
-                $"Expected version {expectedVersion.Value} but current head is {currentHead}");
+                $"Expected version {expectedVersion.Value} but current cursor is {currentHead}");
         }
 
         // Check for potential overflow in position calculation
         if (currentHead.Value > (long.MaxValue - events.Count))
         {
             throw new InvalidOperationException(
-                $"Position overflow: current head {currentHead.Value} + {events.Count} events would exceed maximum position");
+                $"Position overflow: current cursor {currentHead.Value} + {events.Count} events would exceed maximum position");
         }
 
         long finalPosition = currentHead.Value + events.Count;

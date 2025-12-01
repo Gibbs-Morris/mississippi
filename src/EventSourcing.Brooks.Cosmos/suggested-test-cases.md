@@ -10,7 +10,7 @@
 
 - No batch exceeds Cosmos 100 operation limit.
 - Max request size constraint respected (`BrookStorageOptions.MaxRequestSizeBytes`).
-- Recovery process either commits or rolls back orphaned pending heads; no partial state.
+- Recovery process either commits or rolls back orphaned pending cursor entries; no partial state.
 - Lock acquisition & renewal logic: never renew too frequently, handles lost lease.
 
 ---
@@ -23,7 +23,7 @@ Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
 |----|----------|-------|------|-----|------|
-| BSP1 | ReadHeadPosition delegates | call -> recoveryService invoked | Delegation | M | Unit |
+| BSP1 | ReadCursorPosition delegates | call -> recoveryService invoked | Delegation | M | Unit |
 | BSP2 | ReadEventsAsync forwards enumeration | yield all from reader | Delegation | M | Unit |
 | BSP3 | AppendEvents validates non-empty | empty list -> ArgException | Validation | H | Unit |
 | BSP4 | AppendEvents delegates | non-empty -> appender called | Delegation | H | Unit |

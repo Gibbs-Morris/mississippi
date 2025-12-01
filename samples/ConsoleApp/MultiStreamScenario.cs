@@ -39,9 +39,9 @@ internal static class MultiStreamScenario
         await wA.AppendEventsAsync(SampleEventFactory.CreateFixedSizeEvents(50, 1024));
         await wB.AppendEventsAsync(SampleEventFactory.CreateRangeSizeEvents(50, 512, 4096));
 
-        // Use confirmed heads to avoid cached -1 during immediate readback
-        BrookPosition hA = await brookGrainFactory.GetBrookHeadGrain(keyA).GetLatestPositionConfirmedAsync();
-        BrookPosition hB = await brookGrainFactory.GetBrookHeadGrain(keyB).GetLatestPositionConfirmedAsync();
+        // Use confirmed cursor positions to avoid cached -1 during immediate readback
+        BrookPosition hA = await brookGrainFactory.GetBrookCursorGrain(keyA).GetLatestPositionConfirmedAsync();
+        BrookPosition hB = await brookGrainFactory.GetBrookCursorGrain(keyB).GetLatestPositionConfirmedAsync();
         logger.HeadsAB(runId, hA.Value, hB.Value);
 
         // Read a portion from each

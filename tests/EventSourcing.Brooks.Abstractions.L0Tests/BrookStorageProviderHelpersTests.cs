@@ -43,7 +43,7 @@ public class BrookStorageProviderHelpersTests
             yield break;
         }
 
-        public Task<BrookPosition> ReadHeadPositionAsync(
+        public Task<BrookPosition> ReadCursorPositionAsync(
             BrookKey brookId,
             CancellationToken cancellationToken = default
         ) =>

@@ -50,16 +50,16 @@ public class EventBrookAppenderTests
     }
 
     /// <summary>
-    ///     Verifies <see cref="EventBrookAppender.AppendEventsAsync" /> creates a pending head before appending events
-    ///     and commits the head afterwards.
+    ///     Verifies <see cref="EventBrookAppender.AppendEventsAsync" /> creates a pending cursor entry before appending events
+    ///     and commits the cursor afterwards.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task AppendEventsAsyncCreatesPendingHeadBeforeAppendAsync()
+    public async Task AppendEventsAsyncCreatesPendingCursorBeforeAppendAsync()
     {
         // Arrange
         BrookKey brook = new("type", "id");
-        BrookPosition head = new(0);
+        BrookPosition cursor = new(0);
         BrookEvent[] events = new[]
         {
             new BrookEvent
@@ -69,9 +69,9 @@ public class EventBrookAppenderTests
         };
         Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
         MockSequence seq = new();
-        long final = head.Value + events.Length;
+        long final = cursor.Value + events.Length;
         repository.InSequence(seq)
-            .Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
+            .Setup(r => r.CreatePendingHeadAsync(brook, cursor, final, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         repository.InSequence(seq)
             .Setup(r => r.AppendEventBatchAsync(
@@ -106,7 +106,7 @@ public class EventBrookAppenderTests
                     EventId = "e1",
                 });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>())).ReturnsAsync(head);
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>())).ReturnsAsync(cursor);
         Mock<ILogger<EventBrookAppender>> logger = new();
         EventBrookAppender sut = new(
             repository.Object,
@@ -132,7 +132,7 @@ public class EventBrookAppenderTests
     }
 
     /// <summary>
-    ///     Verifies rollback on failure during large-batch append deletes created events and pending head.
+    ///     Verifies rollback on failure during large-batch append deletes created events and the pending cursor entry.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
@@ -140,7 +140,7 @@ public class EventBrookAppenderTests
     {
         // Arrange
         BrookKey brook = new("type", "id");
-        BrookPosition head = new(100);
+        BrookPosition cursor = new(100);
         BrookEvent[] allEvents = new[]
         {
             new BrookEvent
@@ -211,17 +211,17 @@ public class EventBrookAppenderTests
                     EventId = "e4",
                 });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(head));
-        long final = head.Value + allEvents.Length;
-        repository.Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(cursor));
+        long final = cursor.Value + allEvents.Length;
+        repository.Setup(r => r.CreatePendingHeadAsync(brook, cursor, final, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // First batch succeeds
         repository.Setup(r => r.AppendEventBatchAsync(
                 brook,
                 It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
-                head.Value + 1,
+                cursor.Value + 1,
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
@@ -229,7 +229,7 @@ public class EventBrookAppenderTests
         repository.Setup(r => r.AppendEventBatchAsync(
                 brook,
                 It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
-                head.Value + 3,
+                cursor.Value + 3,
                 It.IsAny<CancellationToken>()))
             .Returns(Task.FromException(new InvalidOperationException("batch failure")));
 
@@ -324,7 +324,7 @@ public class EventBrookAppenderTests
     {
         // Arrange
         BrookKey brook = new("type", "id");
-        BrookPosition head = new(long.MaxValue - 5);
+        BrookPosition cursor = new(long.MaxValue - 5);
         BrookEvent[] events = new[]
         {
             new BrookEvent
@@ -379,8 +379,8 @@ public class EventBrookAppenderTests
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(head));
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(cursor));
         Mock<ILogger<EventBrookAppender>> logger = new();
         EventBrookAppender sut = new(
             repository.Object,
@@ -429,7 +429,7 @@ public class EventBrookAppenderTests
     }
 
     /// <summary>
-    ///     Verifies optimistic concurrency check throws when expected version mismatches current head.
+    ///     Verifies optimistic concurrency check throws when expected version mismatches the current cursor position.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
@@ -456,7 +456,7 @@ public class EventBrookAppenderTests
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new BrookPosition(5)));
         Mock<ILogger<EventBrookAppender>> logger = new();
         EventBrookAppender sut = new(
@@ -483,7 +483,7 @@ public class EventBrookAppenderTests
     {
         // Arrange
         BrookKey brook = new("type", "id");
-        BrookPosition head = new(10);
+        BrookPosition cursor = new(10);
         BrookEvent[] allEvents = new[]
         {
             new BrookEvent
@@ -571,27 +571,27 @@ public class EventBrookAppenderTests
                     EventId = "e6",
                 });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(head));
-        long final = head.Value + allEvents.Length;
-        repository.Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(cursor));
+        long final = cursor.Value + allEvents.Length;
+        repository.Setup(r => r.CreatePendingHeadAsync(brook, cursor, final, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.AppendEventBatchAsync(
                 brook,
                 It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
-                head.Value + 1,
+                cursor.Value + 1,
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.AppendEventBatchAsync(
                 brook,
                 It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
-                head.Value + 3,
+                cursor.Value + 3,
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.AppendEventBatchAsync(
                 brook,
                 It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
-                head.Value + 5,
+                cursor.Value + 5,
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.CommitHeadPositionAsync(brook, final, It.IsAny<CancellationToken>()))
@@ -626,7 +626,7 @@ public class EventBrookAppenderTests
     }
 
     /// <summary>
-    ///     Verifies the single-batch path is used under thresholds and commits the head.
+    ///     Verifies the single-batch path is used under thresholds and commits the cursor position.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
@@ -634,7 +634,7 @@ public class EventBrookAppenderTests
     {
         // Arrange
         BrookKey brook = new("type", "id");
-        BrookPosition head = new(2);
+        BrookPosition cursor = new(2);
         BrookEvent[] events = new[]
         {
             new BrookEvent
@@ -689,15 +689,15 @@ public class EventBrookAppenderTests
                     EventId = "e3",
                 });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(head));
-        long final = head.Value + events.Length;
-        repository.Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(cursor));
+        long final = cursor.Value + events.Length;
+        repository.Setup(r => r.CreatePendingHeadAsync(brook, cursor, final, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.AppendEventBatchAsync(
                 brook,
                 It.Is<IReadOnlyList<EventStorageModel>>(lst => lst.Count == 3),
-                head.Value + 1,
+                cursor.Value + 1,
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.CommitHeadPositionAsync(brook, final, It.IsAny<CancellationToken>()))
@@ -741,7 +741,7 @@ public class EventBrookAppenderTests
     {
         // Arrange 6 batches to trigger renewal at batchIndex 5 (0-based), since 5 % 5 == 0
         BrookKey brook = new("type", "id");
-        BrookPosition head = new(0);
+        BrookPosition cursor = new(0);
         List<BrookEvent> allEvents = new();
         for (int i = 1; i <= 12; i++)
         {
@@ -789,16 +789,16 @@ public class EventBrookAppenderTests
         }
 
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brook, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(head));
-        long final = head.Value + allEvents.Count;
-        repository.Setup(r => r.CreatePendingHeadAsync(brook, head, final, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(cursor));
+        long final = cursor.Value + allEvents.Count;
+        repository.Setup(r => r.CreatePendingHeadAsync(brook, cursor, final, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Expect 6 appends starting at positions 1,3,5,7,9,11
         for (int i = 0; i < 6; i++)
         {
-            long start = head.Value + (i * 2) + 1;
+            long start = cursor.Value + (i * 2) + 1;
             repository.Setup(r => r.AppendEventBatchAsync(
                     brook,
                     It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),

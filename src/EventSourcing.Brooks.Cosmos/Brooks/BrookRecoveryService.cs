@@ -17,7 +17,7 @@ using Mississippi.EventSourcing.Cosmos.Storage;
 namespace Mississippi.EventSourcing.Cosmos.Brooks;
 
 /// <summary>
-///     Service for recovering and managing brook head positions in Cosmos DB.
+///     Service for recovering and managing brook cursor positions in Cosmos DB.
 /// </summary>
 internal class BrookRecoveryService : IBrookRecoveryService
 {
@@ -50,12 +50,12 @@ internal class BrookRecoveryService : IBrookRecoveryService
     private IRetryPolicy RetryPolicy { get; }
 
     /// <summary>
-    ///     Gets the current head position for a brook, or recovers it if necessary.
+    ///     Gets the current cursor position for a brook, or recovers it if necessary.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The current or recovered head position of the brook.</returns>
-    public async Task<BrookPosition> GetOrRecoverHeadPositionAsync(
+    /// <returns>The current or recovered cursor position of the brook.</returns>
+    public async Task<BrookPosition> GetOrRecoverCursorPositionAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
     )
@@ -86,17 +86,17 @@ internal class BrookRecoveryService : IBrookRecoveryService
                 catch (RequestFailedException)
                 {
                     // If we can't acquire the recovery lock, assume another process is handling recovery
-                    // Wait a bit and try to read the head again
+                    // Wait a bit and try to read the cursor again
                     await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
                     headDocument = await RetryPolicy.ExecuteAsync(
                         async () => await Repository.GetHeadDocumentAsync(brookId, cancellationToken),
                         cancellationToken);
 
-                    // If head is still null after waiting, we have a problem
+                    // If the cursor is still null after waiting, we have a problem
                     if (headDocument == null)
                     {
                         throw new InvalidOperationException(
-                            $"Unable to recover head position for brook {brookId}. " +
+                            $"Unable to recover cursor position for brook {brookId}. " +
                             "Another recovery operation may be in progress or has failed.");
                     }
                 }
