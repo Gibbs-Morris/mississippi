@@ -4,36 +4,7 @@ applyTo: '**'
 
 # Build Rules and Quality Standards
 
-Governing thought: This project maintains zero tolerance for warnings and requires comprehensive test coverage; all code changes must pass the full quality pipeline before being considered complete.
-
-## Rules (RFC 2119)
-
-- Agents **MUST** resolve all compiler warnings; warnings are treated as errors in CI.  
-  Why: Ensures code quality and prevents technical debt accumulation.
-- Agents **MUST** pass all quality gates: build, unit tests, mutation testing, code cleanup.  
-  Why: Maintains consistent quality standards across the codebase.
-- Agents **MUST NOT** disable warnings, suppress analyzer rules, or use `#pragma warning disable` without explicit approval.  
-  Why: Prevents hiding real problems; code quality degrades when warnings are suppressed.
-- Agents **MUST NOT** add `[SuppressMessage]` attributes without explicit approval and exhaustive justification.  
-  Why: Forces proper fixes rather than hiding violations.
-- Agents **MUST** fix StyleCop violations; code style **MUST** be consistent.  
-  Why: Style consistency improves readability and maintainability.
-- Agents **MUST** ensure ReSharper cleanup scripts pass without issues.  
-  Why: Automated cleanup maintains code hygiene.
-- Agents **MUST** add comprehensive tests for Mississippi solution changes.  
-  Why: Core library requires full test coverage.
-- Agents **SHOULD** add minimal example tests for Samples solution.  
-  Why: Samples demonstrate patterns but don't require full coverage.
-- Agents **MUST** allow mutation tests to run for up to 30 minutes without canceling.  
-  Why: Mutation testing is intentionally long-running; early cancellation produces incomplete results.
-
-## Scope and Audience
-
-**Audience:** All developers making code changes in the repository.
-
-**In scope:** Build standards, warning policy, quality gates, testing requirements.
-
-**Out of scope:** Specific implementation patterns (see csharp.instructions.md, testing.instructions.md).
+This project maintains **zero tolerance for warnings** and requires comprehensive test coverage. All code changes must pass the full quality pipeline before being considered complete.
 
 ## At-a-Glance Quick-Start
 
@@ -67,39 +38,44 @@ pwsh ./go.ps1
 
 > **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
 
-## Purpose
+## 🚨 CRITICAL RULE: ZERO WARNINGS POLICY 🚨
 
-This document defines the build and quality standards that ensure code maintainability, consistency, and reliability across the Mississippi framework.
+### ATTENTION: This rule is NON-NEGOTIABLE and applies to ALL code changes
 
-## Core Principles
+### The Rule
+
+- **NEVER disable warnings** - Fix the underlying code issues instead
+- **NEVER suppress analyzer rules** - Improve the code to satisfy the analyzer
+- **NEVER use `#pragma warning disable`** without explicit approval and exhaustive justification
+- **NEVER add `[SuppressMessage]` attributes** to hide violations
+- **ALWAYS fix compiler warnings** - They indicate real problems in your code
+- **ALWAYS fix analyzer warnings** - They indicate code quality issues
+- **ALWAYS fix StyleCop violations** - They indicate style inconsistencies
+
+### Why This Matters
+
+- **Warnings are treated as errors** in CI builds with `--warnaserror`
+- **Builds will fail** if any warnings are present
+- **PRs will be blocked** until all warnings are resolved
+- **Code quality degrades** when warnings are suppressed instead of fixed
+- **Technical debt accumulates** when issues are hidden rather than addressed
+
+### What To Do Instead
+
+1. **Read the warning message** - Understand what the analyzer is telling you
+2. **Fix the underlying issue** - Improve your code to satisfy the rule
+3. **Refactor if necessary** - Sometimes warnings indicate design problems
+4. **Ask for help** - If you're unsure how to fix a warning, ask the team
+5. **Document exceptions** - Only suppress warnings with explicit approval and justification
+
+## Quality Standards
 
 ### Zero Warnings Policy
 
-This rule is non-negotiable and applies to all code changes:
-
-- Never disable warnings; fix the underlying code issues instead
-- Never suppress analyzer rules; improve code to satisfy the analyzer
-- Never use `#pragma warning disable` without explicit approval
-- Never add `[SuppressMessage]` attributes to hide violations
-- Always fix compiler warnings (they indicate real problems)
-- Always fix analyzer warnings (they indicate quality issues)
-- Always fix StyleCop violations (they indicate style inconsistencies)
-
-Why this matters:
-
-- Warnings are treated as errors in CI builds with `--warnaserror`
-- Builds will fail if any warnings are present
-- PRs will be blocked until all warnings are resolved
-- Code quality degrades when warnings are suppressed
-- Technical debt accumulates when issues are hidden
-
-What to do instead:
-
-1. Read the warning message and understand the analyzer
-2. Fix the underlying issue; improve code to satisfy the rule
-3. Refactor if necessary; warnings may indicate design problems
-4. Ask for help if unsure how to fix a warning
-5. Document exceptions only with explicit approval and justification
+- **All compiler warnings must be resolved** - warnings are treated as errors in CI
+- **No ReSharper code inspections warnings** - cleanup scripts must pass cleanly
+- **No StyleCop violations** - code style must be consistent across the project
+- Use `--warnaserror` flag in builds to enforce this standard
 
 ### Required Quality Gates
 

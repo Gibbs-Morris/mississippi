@@ -4,82 +4,15 @@ applyTo: '**/*.cs'
 
 # Feature-Centric C# Naming & Commenting Playbook
 
-Governing thought: Apply comprehensive C# naming conventions and XML documentation standards that match .NET Framework design guidelines, enforce StyleCop compliance, and produce self-descriptive identifiers understandable without reading implementation.
+This document establishes comprehensive naming conventions and XML documentation standards for the Mississippi Framework and all related applications. All C# code MUST follow these guidelines to ensure consistency, maintainability, and alignment with .NET Framework design principles.
 
-## Rules (RFC 2119)
+## 0. Core Objectives
 
-- All C# code **MUST** follow these naming and documentation guidelines.  
-  Why: Ensures consistency, maintainability, and alignment with .NET Framework design principles.
-- StyleCop SA13xx (naming) and SA16xx (documentation) violations **MUST** be treated as build-breaking errors.  
-  Why: Enforces naming and documentation standards automatically through build pipeline.
-- Developers **MUST** use feature-oriented folder/namespace layout and **MUST NOT** use technical silos like "Services" or "Models".  
-  Why: Aligns code organization with business domains for better discoverability.
-- Namespaces **MUST** have maximum five segments in PascalCase alphanumerics with no underscores.  
-  Why: Keeps namespace hierarchy manageable and follows .NET conventions.
-- Abbreviations **MUST** only be used when industry-standard (e.g., `IO`, `DB`, `Html`).  
-  Why: Maintains clarity while respecting well-known acronyms.
-- Classes, records, and structs **MUST** use PascalCase noun or noun phrase expressing core responsibility.  
-  Why: Makes type purpose immediately clear from the name.
-- Interfaces **MUST** be prefixed with `I` followed by capability adjective/noun.  
-  Why: Follows .NET interface naming convention and distinguishes interfaces from classes.
-- Public and internal methods **MUST** use PascalCase verb phrase.  
-  Why: Makes method actions clear and follows .NET naming guidelines.
-- Public and internal properties **MUST** use PascalCase noun.  
-  Why: Distinguishes properties from methods and follows .NET conventions.
-- Boolean properties **MUST** be prefixed with `Is`, `Has`, `Can`, or `Should`.  
-  Why: Makes boolean nature and intent immediately clear.
-- Dependency injection properties **MUST** follow `private Type Name { get; }` pattern.  
-  Why: Aligns with repository logging standards and DI best practices.
-- Private fields and locals **MUST** use camelCase with no leading underscore.  
-  Why: Maintains consistency with repository C# standards.
-- Constants **MUST** use PascalCase and be meaningful.  
-  Why: Distinguishes constants from variables and improves readability.
-- Every publicly accessible symbol **MUST** include XML comment with `<summary>`.  
-  Why: Provides IntelliSense documentation and enables automated documentation generation.
-- XML comments **MUST** be richly descriptive yet 100% factual with no speculation or placeholders.  
-  Why: Ensures documentation accuracy and usefulness for developers and tools.
-- XML comments **MUST** include minimum tags: `<summary>`, `<param>` for every parameter, `<typeparam>` for generics, `<returns>` for non-void methods.  
-  Why: Provides complete documentation for all method signatures.
-- XML comment voice **MUST** use imperative, active, present tense and avoid "This method…".  
-  Why: Keeps documentation concise and action-oriented.
-- XML comments **MUST** pass validation with parameter names matching, no empty tags, no TODOs/TBDs, and no contradictions.  
-  Why: Ensures documentation quality and consistency with code.
-- `<example>` snippets **MUST** compile in isolation when wrapped in minimal scaffolding.  
-  Why: Guarantees examples are correct and executable.
-- Agents **MUST** run StyleCop analyzers (SA1300-SA1314, SA1600-SA1619) and fix all diagnostics.  
-  Why: Enforces naming and documentation rules through automated tooling.
-- Abstract base classes **SHOULD NOT** be prefixed with "Base" unless consumers must derive from them.  
-  Why: Reduces verbosity when inheritance isn't the primary purpose.
-- XML comments **SHOULD** follow class-first narrative flow where member docs build on but do not repeat type doc.  
-  Why: Avoids redundancy and provides progressive detail.
-- XML comments **SHOULD** prefer domain vocabulary over technical jargon.  
-  Why: Makes documentation accessible to business stakeholders.
-- Internal/private members **SHOULD** have docs only when behavior is non-trivial or exposed via `InternalsVisibleTo`.  
-  Why: Balances documentation value with effort while allowing StyleCop suppression when appropriate.
-- Developers **SHOULD** add `<remarks>` (≤ 8 lines) or `<example>` when helpful.  
-  Why: Provides additional context for complex scenarios without cluttering simple cases.
-- When many SA13xx/SA16xx findings exist, agents **SHOULD** create discrete tasks in `.scratchpad/tasks/pending` for parallel remediation.  
-  Why: Enables systematic cleanup without blocking immediate work.
-
-## Scope and Audience
-
-**Audience:** All developers writing C# code in the Mississippi Framework and related applications.
-
-**In scope:** Namespace construction, type naming, member naming, XML documentation, StyleCop SA13xx and SA16xx rules, code generation guidelines.
-
-**Out of scope:** General C# coding standards (see csharp.instructions.md), specific business domain logic, Orleans-specific patterns (see orleans.instructions.md).
-
-## Purpose
-
-This document establishes comprehensive naming conventions and XML documentation standards ensuring all C# code matches .NET Framework design guidelines, maintains StyleCop compliance, and produces self-descriptive identifiers.
-
-## Core Principles
-
-- Match .NET Framework design guidelines so every identifier feels native to .NET
-- Treat StyleCop violations as build-breaking errors to maintain quality
-- Use feature-oriented folder/namespace layout instead of technical silos
-- Produce self-descriptive identifiers and XML comments detailed enough for understanding without reading implementation
-- Ensure all documentation prose is 100% factual with no invented behavior or placeholders
+* **Match .NET Framework design guidelines** so every identifier feels native to .NET.
+* Treat **StyleCop SA13xx (naming) and SA16xx (documentation)** violations as build-breaking errors.
+* Use a **feature-oriented folder/namespace layout**—never technical silos such as *Services* or *Models*.
+* Produce **self-descriptive identifiers and XML comments** detailed enough that a human or LLM can understand intent without opening the body.
+* Ensure all prose is **100% factual**—no invented behaviour or placeholders.
 
 ## 1. Namespace Construction
 
@@ -91,6 +24,8 @@ This document establishes comprehensive naming conventions and XML documentation
 | 4    | *(Optional)* `.Abstractions`, `.Infrastructure`, `.Api`, etc., **only** when essential | `Contoso.Accounting.Invoices.Api` |
 
 **Rule N-1:** Maximum five segments; PascalCase alphanumerics; no underscores; abbreviations only when industry-standard (`IO`, `DB`, `Html`).
+
+> For `.Abstractions` suffixes, follow `abstractions-projects.instructions.md` so that new namespaces are added only when the contracts split rules require it (and create the abstractions project if the mandatory conditions apply before introducing the namespace).
 
 ## 2. Type-Naming Rules
 
@@ -115,20 +50,20 @@ This document establishes comprehensive naming conventions and XML documentation
 | **Generic type parameters**      | `T` + descriptive (`TResponse`) or a conventional single letter (`TKey`). |
 | **Events**                       | PascalCase past-tense verb (`PaymentCompleted`).                          |
 
-## 4. XML Documentation & Commenting Guidelines
+## 4. XML Documentation & Commenting Rules
 
-| ID   | Guideline                                                                                                                                                                                                        |
+| ID   | Rule                                                                                                                                                                                                             |
 | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| C-1  | Every publicly accessible symbol includes an XML comment containing `<summary>`.                                                                                                                                 |
-| C-2  | Follow class-first narrative flow: read the type `<summary>` then each member `<summary>`; member docs build on but do not repeat the type doc.                                                                 |
-| C-3  | Comments are richly descriptive yet 100% factual—no speculation or placeholders.                                                                                                                                 |
+| C-1  | Every **publicly accessible** symbol **must** include an XML comment containing `<summary>`.                                                                                                                     |
+| C-2  | Follow **class-first narrative flow**: read the type `<summary>` then each member `<summary>`; member docs build on but do not repeat the type doc.                                                              |
+| C-3  | Comments must be **richly descriptive yet 100% factual**—no speculation or placeholders.                                                                                                                        |
 | C-4  | Minimum tags per symbol: `<summary>` (1–3 sentences); `<param>` for every parameter; `<typeparam>` for every generic; `<returns>` for non-void methods. Add `<remarks>` (≤ 8 lines) or `<example>` when helpful. |
-| C-5  | Voice: imperative, active, present tense ("Calculates the pro-rata refund."). Avoid "This method…".                                                                                                             |
-| C-6  | Prefer domain vocabulary over technical jargon.                                                                                                                                                                  |
-| C-7  | Validation pass: parameter names match, no empty tags, no TODOs/TBDs, no contradictions with code.                                                                                                              |
+| C-5  | Voice: **imperative, active, present tense** ("Calculates the pro-rata refund."). Avoid "This method…".                                                                                                          |
+| C-6  | Prefer **domain vocabulary** over technical jargon.                                                                                                                                                              |
+| C-7  | **Validation pass**: parameter names match, no empty tags, no TODOs/TBDs, no contradictions with code.                                                                                                           |
 | C-8  | Formatting: `///` (triple slash + single space) at the start of each line; block preceded by one blank line except at file top.                                                                                 |
-| C-9  | Internal/private members have docs only when behavior is non-trivial or exposed via `InternalsVisibleTo`; suppress StyleCop otherwise.                                                                          |
-| C-10 | `<example>` snippets compile in isolation when wrapped in minimal scaffolding.                                                                                                                                   |
+| C-9  | **Internal/private** members require docs only when behaviour is non-trivial or exposed via `InternalsVisibleTo`; suppress StyleCop otherwise.                                                                   |
+| C-10 | `<example>` snippets **must compile** in isolation when wrapped in minimal scaffolding.                                                                                                                          |
 
 ## 5. Generation Algorithm for the AI Agent
 
@@ -323,44 +258,44 @@ All naming conventions are enforced through StyleCop analyzers. The following ru
 
 ### Naming Rules (SA13xx)
 
-- **SA1300**: Element should begin with uppercase letter
-- **SA1301**: Element should begin with lowercase letter
-- **SA1302**: Interface names should begin with I
-- **SA1303**: Const field names should begin with uppercase letter
-- **SA1304**: Non-private readonly fields should begin with uppercase letter
-- **SA1305**: Field names should not use Hungarian notation
-- **SA1306**: Field names should begin with lowercase letter
-- **SA1307**: Accessible fields should begin with uppercase letter
-- **SA1308**: Variable names should not be prefixed
-- **SA1309**: Field names should not begin with underscore
-- **SA1310**: Field names should not contain underscore
-- **SA1311**: Static readonly fields should begin with uppercase letter
-- **SA1312**: Variable names should begin with lowercase letter
-- **SA1313**: Parameter names should begin with lowercase letter
-- **SA1314**: Type parameter names should begin with T
+* **SA1300**: Element should begin with uppercase letter
+* **SA1301**: Element should begin with lowercase letter
+* **SA1302**: Interface names should begin with I
+* **SA1303**: Const field names should begin with uppercase letter
+* **SA1304**: Non-private readonly fields should begin with uppercase letter
+* **SA1305**: Field names should not use Hungarian notation
+* **SA1306**: Field names should begin with lowercase letter
+* **SA1307**: Accessible fields should begin with uppercase letter
+* **SA1308**: Variable names should not be prefixed
+* **SA1309**: Field names should not begin with underscore
+* **SA1310**: Field names should not contain underscore
+* **SA1311**: Static readonly fields should begin with uppercase letter
+* **SA1312**: Variable names should begin with lowercase letter
+* **SA1313**: Parameter names should begin with lowercase letter
+* **SA1314**: Type parameter names should begin with T
 
 ### Documentation Rules (SA16xx)
 
-- **SA1600**: Elements should be documented
-- **SA1601**: Partial elements should be documented
-- **SA1602**: Enumeration items should be documented
-- **SA1603**: Documentation should contain meaningful text
-- **SA1604**: Element documentation should have summary
-- **SA1605**: Partial element documentation should have summary
-- **SA1606**: Element documentation should have summary text
-- **SA1607**: Partial element documentation should have summary text
-- **SA1608**: Element documentation should not have default summary
-- **SA1609**: Property documentation should have value
-- **SA1610**: Property documentation should have value text
-- **SA1611**: Element parameters should be documented
-- **SA1612**: Element parameter documentation should match element parameters
-- **SA1613**: Element parameter documentation should declare parameter name
-- **SA1614**: Element parameter documentation should have text
-- **SA1615**: Element return value should be documented
-- **SA1616**: Element return value documentation should have text
-- **SA1617**: Void return value should not be documented
-- **SA1618**: Generic type parameters should be documented
-- **SA1619**: Generic type parameters should be documented partial class
+* **SA1600**: Elements should be documented
+* **SA1601**: Partial elements should be documented
+* **SA1602**: Enumeration items should be documented
+* **SA1603**: Documentation should contain meaningful text
+* **SA1604**: Element documentation should have summary
+* **SA1605**: Partial element documentation should have summary
+* **SA1606**: Element documentation should have summary text
+* **SA1607**: Partial element documentation should have summary text
+* **SA1608**: Element documentation should not have default summary
+* **SA1609**: Property documentation should have value
+* **SA1610**: Property documentation should have value text
+* **SA1611**: Element parameters should be documented
+* **SA1612**: Element parameter documentation should match element parameters
+* **SA1613**: Element parameter documentation should declare parameter name
+* **SA1614**: Element parameter documentation should have text
+* **SA1615**: Element return value should be documented
+* **SA1616**: Element return value documentation should have text
+* **SA1617**: Void return value should not be documented
+* **SA1618**: Generic type parameters should be documented
+* **SA1619**: Generic type parameters should be documented partial class
 
 When addressing many SA13xx/SA16xx findings at once, prefer creating small, discrete tasks in `.scratchpad/tasks/pending` (one per file or logical unit) so agents can fix them in parallel with deterministic ownership. See `.github/instructions/agent-scratchpad.instructions.md`.
 
@@ -370,42 +305,42 @@ This naming convention document aligns with and reinforces patterns established 
 
 ### C# General Best Practices Alignment
 
-- **Dependency injection properties**: Follow the `private Type Name { get; }` pattern specified in csharp.instructions.md
-- **Immutable objects**: Support the preference for records and init-only properties
-- **SOLID principles**: Naming should reflect single responsibility and clear interfaces
+* **Dependency injection properties**: Follow the `private Type Name { get; }` pattern specified in csharp.instructions.md
+* **Immutable objects**: Support the preference for records and init-only properties
+* **SOLID principles**: Naming should reflect single responsibility and clear interfaces
 
 ### Logging Rules Alignment
 
-- **Logger property naming**: Use `private ILogger<T> Logger { get; }` pattern consistently
-- **High-performance logging**: Naming conventions support LoggerMessage pattern usage
-- **Structured logging**: Property names should support structured logging requirements
+* **Logger property naming**: Use `private ILogger<T> Logger { get; }` pattern consistently
+* **High-performance logging**: Naming conventions support LoggerMessage pattern usage
+* **Structured logging**: Property names should support structured logging requirements
 
 ### Orleans Best Practices Alignment
 
-- **POCO grain pattern**: Naming conventions work with `IGrainBase` implementation
-- **Extension method usage**: Support for Orleans extension methods like `this.GetPrimaryKey()`
-- **Grain naming**: Grain classes should end with "Grain" suffix (e.g., `TodoGrain`)
+* **POCO grain pattern**: Naming conventions work with `IGrainBase` implementation
+* **Extension method usage**: Support for Orleans extension methods like `this.GetPrimaryKey()`
+* **Grain naming**: Grain classes should end with "Grain" suffix (e.g., `TodoGrain`)
 
 ### Build Rules Alignment
 
-- **Zero warnings policy**: All naming violations must be fixed, not suppressed
-- **StyleCop enforcement**: SA13xx and SA16xx rules are treated as build errors
-- **Quality standards**: Naming supports comprehensive test coverage and mutation testing
+* **Zero warnings policy**: All naming violations must be fixed, not suppressed
+* **StyleCop enforcement**: SA13xx and SA16xx rules are treated as build errors
+* **Quality standards**: Naming supports comprehensive test coverage and mutation testing
 
 ## 10. Reference Summary
 
-- *Microsoft Framework Design Guidelines*, 3rd ed., chapters on Naming & Documentation.
-- .NET documentation: *C# Identifier and Namespace Conventions*.
-- *StyleCop Analyzers* rule sets SA13xx (Naming) and SA16xx (Documentation).
+* *Microsoft Framework Design Guidelines*, 3rd ed., chapters on Naming & Documentation.
+* .NET documentation: *C# Identifier and Namespace Conventions*.
+* *StyleCop Analyzers* rule sets SA13xx (Naming) and SA16xx (Documentation).
 
 ## 11. Related Guidelines
 
 This document should be read in conjunction with:
 
-- **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection patterns, and immutable object preferences
-- **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For ServiceRegistration class naming patterns, Options class naming conventions, and XML documentation requirements for registration methods
-- **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For Logger property naming, LoggerExtensions class naming patterns, and structured logging support
-- **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For POCO grain patterns and Orleans-specific naming
-- **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attribute usage and type naming in serializable classes
-- **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy
-- **Project File Management** (`.github/instructions/projects.instructions.md`) - For assembly naming conventions and project ID naming patterns
+* **C# General Development Best Practices** (`.github/instructions/csharp.instructions.md`) - For SOLID principles, dependency injection patterns, and immutable object preferences
+* **Service Registration and Configuration** (`.github/instructions/service-registration.instructions.md`) - For ServiceRegistration class naming patterns, Options class naming conventions, and XML documentation requirements for registration methods
+* **Logging Rules** (`.github/instructions/logging-rules.instructions.md`) - For Logger property naming, LoggerExtensions class naming patterns, and structured logging support
+* **Orleans Best Practices** (`.github/instructions/orleans.instructions.md`) - For POCO grain patterns and Orleans-specific naming
+* **Orleans Serialization** (`.github/instructions/orleans-serialization.instructions.md`) - For Orleans serialization attribute usage and type naming in serializable classes
+* **Build Rules** (`.github/instructions/build-rules.instructions.md`) - For quality standards and zero warnings policy
+* **Project File Management** (`.github/instructions/projects.instructions.md`) - For assembly naming conventions and project ID naming patterns
