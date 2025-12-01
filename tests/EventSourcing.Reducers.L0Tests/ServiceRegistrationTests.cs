@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Reducers.Tests;
+namespace Mississippi.EventSourcing.Reducers.L0Tests;
 
 /// <summary>
 ///     Exercises the public service registration surface for reducers.

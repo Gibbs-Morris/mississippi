@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Reducers.Tests;
+namespace Mississippi.EventSourcing.Reducers.L0Tests;
 
 /// <summary>
 ///     Validates the default root reducer behavior.
@@ -47,7 +47,7 @@ public sealed class RootReducerTests
         ) =>
             obj is MutableModel other && (Value == other.Value);
 
-        public override int GetHashCode() => Value.GetHashCode();
+        public override int GetHashCode() => Value;
 
         public void Increment(
             int amount
