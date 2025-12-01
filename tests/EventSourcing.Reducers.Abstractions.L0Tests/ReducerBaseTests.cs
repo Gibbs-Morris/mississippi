@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Reducers.Abstractions.Tests;
+namespace Mississippi.EventSourcing.Reducers.Abstractions.L0Tests;
 
 /// <summary>
 ///     Verifies the shared behavior provided by <see cref="ReducerBase{TModel, TEvent}" />.
