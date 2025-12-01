@@ -1,14 +1,14 @@
 namespace Crescent.ConsoleApp;
 
 /// <summary>
-///     Represents the head information for a specific stream.
+///     Represents the cursor information for a specific stream.
 /// </summary>
 internal sealed class StreamState
 {
     /// <summary>
-    ///     Gets or sets the last known head position for this stream.
+    ///     Gets or sets the last known cursor position for this stream.
     /// </summary>
-    public long Head { get; set; }
+    public long Cursor { get; set; }
 
     /// <summary>
     ///     Gets or sets the stream identifier.

@@ -14,30 +14,30 @@ using Orleans.Runtime;
 using Orleans.Streams;
 
 
-namespace Mississippi.EventSourcing.Head;
+namespace Mississippi.EventSourcing.Brooks.Cursor;
 
 /// <summary>
-///     Orleans grain implementation that observes and maintains the head position of a Mississippi brook.
+///     Orleans grain implementation that observes and maintains the cursor position of a Mississippi brook.
 /// </summary>
-[ImplicitStreamSubscription(EventSourcingOrleansStreamNames.HeadUpdateStreamName)]
-internal class BrookHeadGrain
-    : IBrookHeadGrain,
-      IAsyncObserver<BrookHeadMovedEvent>,
+[ImplicitStreamSubscription(EventSourcingOrleansStreamNames.CursorUpdateStreamName)]
+internal class BrookCursorGrain
+    : IBrookCursorGrain,
+      IAsyncObserver<BrookCursorMovedEvent>,
       IGrainBase
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="BrookHeadGrain" /> class.
-    ///     Sets up the grain with required dependencies for brook head position tracking.
+    ///     Initializes a new instance of the <see cref="BrookCursorGrain" /> class.
+    ///     Sets up the grain with required dependencies for brook cursor position tracking.
     /// </summary>
-    /// <param name="brookReaderProvider">The brook storage reader service for reading head positions.</param>
+    /// <param name="brookReaderProvider">The brook storage reader service for reading cursor positions.</param>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
-    /// <param name="logger">Logger instance for logging head grain operations.</param>
+    /// <param name="logger">Logger instance for logging cursor grain operations.</param>
     /// <param name="streamProviderOptions">Configuration options for the Orleans stream provider.</param>
     /// <param name="streamIdFactory">Factory for creating Orleans stream identifiers.</param>
-    public BrookHeadGrain(
+    public BrookCursorGrain(
         IBrookStorageReader brookReaderProvider,
         IGrainContext grainContext,
-        ILogger<BrookHeadGrain> logger,
+        ILogger<BrookCursorGrain> logger,
         IOptions<BrookProviderOptions> streamProviderOptions,
         IStreamIdFactory streamIdFactory
     )
@@ -62,15 +62,15 @@ internal class BrookHeadGrain
 
     private StreamSequenceToken? LastToken { get; set; }
 
-    private ILogger<BrookHeadGrain> Logger { get; }
+    private ILogger<BrookCursorGrain> Logger { get; }
 
-    private IAsyncStream<BrookHeadMovedEvent>? Stream { get; set; }
+    private IAsyncStream<BrookCursorMovedEvent>? Stream { get; set; }
 
     private IStreamIdFactory StreamIdFactory { get; }
 
     private IOptions<BrookProviderOptions> StreamProviderOptions { get; }
 
-    private BrookPosition TrackedHeadPosition { get; set; } = -1;
+    private BrookPosition TrackedCursorPosition { get; set; } = -1;
 
     /// <summary>
     ///     Deactivate the grain on idle, used by tests to flush caches and lifecycle state.
@@ -83,32 +83,32 @@ internal class BrookHeadGrain
     }
 
     /// <summary>
-    ///     Gets the latest position of the brook head, loading from storage if not initialized.
+    ///     Gets the latest position of the brook cursor, loading from storage if not initialized.
     /// </summary>
-    /// <returns>The most recent persisted head position.</returns>
+    /// <returns>The most recent persisted cursor position.</returns>
     public Task<BrookPosition> GetLatestPositionAsync() =>
 
-        // Fast path: return cached head. Writers publish updates on success.
-        Task.FromResult(TrackedHeadPosition);
+        // Fast path: return cached cursor. Writers publish updates on success.
+        Task.FromResult(TrackedCursorPosition);
 
     /// <summary>
     ///     Gets the latest position by issuing a strongly consistent storage read and updating the cache if newer.
     /// </summary>
-    /// <returns>The confirmed most recent persisted head position.</returns>
+    /// <returns>The confirmed most recent persisted cursor position.</returns>
     public async Task<BrookPosition> GetLatestPositionConfirmedAsync()
     {
         // Strongly consistent path: read from storage and update cache if newer.
-        BrookPosition storagePosition = await BrookReaderProvider.ReadHeadPositionAsync(BrookId);
-        if (storagePosition.IsNewerThan(TrackedHeadPosition))
+        BrookPosition storagePosition = await BrookReaderProvider.ReadCursorPositionAsync(BrookId);
+        if (storagePosition.IsNewerThan(TrackedCursorPosition))
         {
-            TrackedHeadPosition = storagePosition;
+            TrackedCursorPosition = storagePosition;
         }
 
-        return TrackedHeadPosition;
+        return TrackedCursorPosition;
     }
 
     /// <summary>
-    ///     Subscribes the grain as an observer to the head update stream on activation.
+    ///     Subscribes the grain as an observer to the cursor update stream on activation.
     /// </summary>
     /// <param name="token">Cancellation token for activation.</param>
     /// <returns>A task representing the asynchronous activation operation.</returns>
@@ -129,7 +129,7 @@ internal class BrookHeadGrain
 
         StreamId key = StreamIdFactory.Create(BrookId);
         Stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
-            .GetStream<BrookHeadMovedEvent>(key);
+            .GetStream<BrookCursorMovedEvent>(key);
         await Stream.SubscribeAsync(this);
     }
 
@@ -148,13 +148,13 @@ internal class BrookHeadGrain
     }
 
     /// <summary>
-    ///     Handles a head moved event and updates the grain's position if the event is newer.
+    ///     Handles a cursor moved event and updates the grain's position if the event is newer.
     /// </summary>
-    /// <param name="item">The event containing the new brook head position.</param>
+    /// <param name="item">The event containing the new brook cursor position.</param>
     /// <param name="token">Optional sequence token for ordering updates.</param>
     /// <returns>A completed task representing the asynchronous event handling operation.</returns>
     public Task OnNextAsync(
-        BrookHeadMovedEvent item,
+        BrookCursorMovedEvent item,
         StreamSequenceToken? token = null
     )
     {
@@ -165,9 +165,9 @@ internal class BrookHeadGrain
         }
 
         LastToken = token;
-        if (item.NewPosition.IsNewerThan(TrackedHeadPosition))
+        if (item.NewPosition.IsNewerThan(TrackedCursorPosition))
         {
-            TrackedHeadPosition = item.NewPosition;
+            TrackedCursorPosition = item.NewPosition;
         }
 
         return Task.CompletedTask;

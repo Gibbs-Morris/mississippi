@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Head;
+using Mississippi.EventSourcing.Brooks.Cursor;
 
 using Orleans;
 
@@ -22,16 +22,16 @@ namespace Mississippi.EventSourcing.Writer;
 public interface IBrookWriterGrain : IGrainWithStringKey
 {
     /// <summary>
-    ///     Appends events to the Mississippi brook and publishes a <see cref="BrookHeadMovedEvent" /> on success.
+    ///     Appends events to the Mississippi brook and publishes a <see cref="BrookCursorMovedEvent" /> on success.
     /// </summary>
     /// <param name="events">The events to append to the Mississippi brook.</param>
-    /// <param name="expectedHeadPosition">Optional expected head position for optimistic concurrency.</param>
+    /// <param name="expectedCursorPosition">Optional expected cursor position for optimistic concurrency.</param>
     /// <param name="cancellationToken">Token to observe cancellation requests.</param>
-    /// <returns>The new brook head position after appending events.</returns>
+    /// <returns>The new brook cursor position after appending events.</returns>
     [Alias("AppendEventsAsync")]
     Task<BrookPosition> AppendEventsAsync(
         ImmutableArray<BrookEvent> events,
-        BrookPosition? expectedHeadPosition = null,
+        BrookPosition? expectedCursorPosition = null,
         CancellationToken cancellationToken = default
     );
 }

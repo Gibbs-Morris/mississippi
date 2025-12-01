@@ -21,33 +21,35 @@ namespace Mississippi.EventSourcing.Cosmos.Storage;
 /// </summary>
 internal class CosmosRepository : ICosmosRepository
 {
-    private const string HeadPending = "head-pending";
+    private const string CursorDocumentId = "cursor";
+
+    private const string CursorPending = "cursor-pending";
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="CosmosRepository" /> class.
     /// </summary>
     /// <param name="container">The Cosmos DB container for storing data.</param>
     /// <param name="retryPolicy">The retry policy for handling transient failures.</param>
-    /// <param name="headDocumentMapper">The mapper for head documents.</param>
+    /// <param name="cursorDocumentMapper">The mapper for cursor documents.</param>
     /// <param name="eventDocumentMapper">The mapper for event documents.</param>
     public CosmosRepository(
         Container container,
         IRetryPolicy retryPolicy,
-        IMapper<HeadDocument, HeadStorageModel> headDocumentMapper,
+        IMapper<CursorDocument, CursorStorageModel> cursorDocumentMapper,
         IMapper<EventDocument, EventStorageModel> eventDocumentMapper
     )
     {
         Container = container;
         RetryPolicy = retryPolicy;
-        HeadDocumentMapper = headDocumentMapper;
+        CursorDocumentMapper = cursorDocumentMapper;
         EventDocumentMapper = eventDocumentMapper;
     }
 
     private Container Container { get; }
 
-    private IMapper<EventDocument, EventStorageModel> EventDocumentMapper { get; }
+    private IMapper<CursorDocument, CursorStorageModel> CursorDocumentMapper { get; }
 
-    private IMapper<HeadDocument, HeadStorageModel> HeadDocumentMapper { get; }
+    private IMapper<EventDocument, EventStorageModel> EventDocumentMapper { get; }
 
     private IRetryPolicy RetryPolicy { get; }
 
@@ -151,67 +153,67 @@ internal class CosmosRepository : ICosmosRepository
     }
 
     /// <summary>
-    ///     Commits the head position for a brook by finalizing the pending position.
+    ///     Commits the cursor position for a brook by finalizing the pending position.
     /// </summary>
     /// <param name="brookId">The brook identifier.</param>
     /// <param name="finalPosition">The final position to commit.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task CommitHeadPositionAsync(
+    public async Task CommitCursorPositionAsync(
         BrookKey brookId,
         long finalPosition,
         CancellationToken cancellationToken = default
     )
     {
         PartitionKey partitionKey = new(brookId.ToString());
-        HeadDocument headDoc = new()
+        CursorDocument cursorDoc = new()
         {
-            Id = "head",
-            Type = "head",
+            Id = CursorDocumentId,
+            Type = CursorDocumentId,
             Position = finalPosition,
             BrookPartitionKey = brookId.ToString(),
         };
 
-        // Upsert head
+        // Upsert cursor
         await RetryPolicy.ExecuteAsync(
             async () =>
             {
-                await Container.UpsertItemAsync(headDoc, partitionKey, cancellationToken: cancellationToken);
+                await Container.UpsertItemAsync(cursorDoc, partitionKey, cancellationToken: cancellationToken);
                 return true;
             },
             cancellationToken);
 
-        // Delete pending
-        await DeletePendingHeadAsync(brookId, cancellationToken);
+        // Delete pending cursor state
+        await DeletePendingCursorAsync(brookId, cancellationToken);
     }
 
     /// <summary>
-    ///     Creates a pending head document for a brook transaction.
+    ///     Creates a pending cursor document for a brook transaction.
     /// </summary>
     /// <param name="brookId">The brook identifier.</param>
-    /// <param name="currentHead">The current head position.</param>
+    /// <param name="currentCursor">The current cursor position.</param>
     /// <param name="finalPosition">The final position to be committed.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task CreatePendingHeadAsync(
+    public async Task CreatePendingCursorAsync(
         BrookKey brookId,
-        BrookPosition currentHead,
+        BrookPosition currentCursor,
         long finalPosition,
         CancellationToken cancellationToken = default
     )
     {
-        HeadDocument pendingHeadDoc = new()
+        CursorDocument pendingCursorDoc = new()
         {
-            Id = HeadPending,
-            Type = HeadPending,
+            Id = CursorPending,
+            Type = CursorPending,
             Position = finalPosition,
-            OriginalPosition = currentHead.Value,
+            OriginalPosition = currentCursor.Value,
             BrookPartitionKey = brookId.ToString(),
         };
         PartitionKey partitionKey = new(brookId.ToString());
         await RetryPolicy.ExecuteAsync(
             async () => await Container.CreateItemAsync(
-                pendingHeadDoc,
+                pendingCursorDoc,
                 partitionKey,
                 cancellationToken: cancellationToken),
             cancellationToken);
@@ -244,26 +246,26 @@ internal class CosmosRepository : ICosmosRepository
     }
 
     /// <summary>
-    ///     Deletes the pending head document for a brook.
+    ///     Deletes the pending cursor document for a brook.
     /// </summary>
     /// <param name="brookId">The brook identifier.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task DeletePendingHeadAsync(
+    public async Task DeletePendingCursorAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
-            await Container.DeleteItemAsync<HeadDocument>(
-                HeadPending,
+            await Container.DeleteItemAsync<CursorDocument>(
+                CursorPending,
                 new(brookId.ToString()),
                 cancellationToken: cancellationToken);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            // Pending head doesn't exist, which is acceptable for deletion
+            // Pending cursor doesn't exist, which is acceptable for deletion
         }
     }
 
@@ -295,43 +297,68 @@ internal class CosmosRepository : ICosmosRepository
     }
 
     /// <summary>
-    ///     Executes a transactional batch that updates the head position and appends events.
+    ///     Executes a transactional batch that updates the cursor position and appends events.
     /// </summary>
     /// <param name="brookId">The brook identifier.</param>
     /// <param name="events">The events to append.</param>
-    /// <param name="currentHead">The current head position.</param>
-    /// <param name="newPosition">The new head position after appending events.</param>
+    /// <param name="currentCursor">The current cursor position.</param>
+    /// <param name="newPosition">The new cursor position after appending events.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The transactional batch response.</returns>
     public async Task<TransactionalBatchResponse> ExecuteTransactionalBatchAsync(
         BrookKey brookId,
         IReadOnlyList<EventStorageModel> events,
-        BrookPosition currentHead,
+        BrookPosition currentCursor,
         long newPosition,
         CancellationToken cancellationToken = default
     )
     {
         PartitionKey partitionKey = new(brookId.ToString());
         TransactionalBatch? batch = Container.CreateTransactionalBatch(partitionKey);
-        HeadDocument headDoc = new()
+        CursorDocument cursorDoc = new()
         {
-            Id = "head",
-            Type = "head",
+            Id = CursorDocumentId,
+            Type = CursorDocumentId,
             Position = newPosition,
             BrookPartitionKey = brookId.ToString(),
         };
-        if (currentHead.NotSet)
+        if (currentCursor.NotSet)
         {
-            batch = batch.CreateItem(headDoc);
+            batch = batch.CreateItem(cursorDoc);
         }
         else
         {
-            batch = batch.ReplaceItem("head", headDoc);
+            batch = batch.ReplaceItem(CursorDocumentId, cursorDoc);
         }
 
-        // Use transactional batch only for head; events are created individually above
+        // Use transactional batch only for cursor; events are created individually above
         TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);
         return response;
+    }
+
+    /// <summary>
+    ///     Gets the cursor document for a brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The cursor storage model, or null if not found.</returns>
+    public async Task<CursorStorageModel?> GetCursorDocumentAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            ItemResponse<CursorDocument>? response = await Container.ReadItemAsync<CursorDocument>(
+                CursorDocumentId,
+                new(brookId.ToString()),
+                cancellationToken: cancellationToken);
+            return CursorDocumentMapper.Map(response.Resource);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -376,48 +403,23 @@ internal class CosmosRepository : ICosmosRepository
     }
 
     /// <summary>
-    ///     Gets the head document for a brook.
+    ///     Gets the pending cursor document for a brook.
     /// </summary>
     /// <param name="brookId">The brook identifier.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The head storage model, or null if not found.</returns>
-    public async Task<HeadStorageModel?> GetHeadDocumentAsync(
+    /// <returns>The pending cursor storage model, or null if not found.</returns>
+    public async Task<CursorStorageModel?> GetPendingCursorDocumentAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
-            ItemResponse<HeadDocument>? response = await Container.ReadItemAsync<HeadDocument>(
-                "head",
+            ItemResponse<CursorDocument>? response = await Container.ReadItemAsync<CursorDocument>(
+                CursorPending,
                 new(brookId.ToString()),
                 cancellationToken: cancellationToken);
-            return HeadDocumentMapper.Map(response.Resource);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets the pending head document for a brook.
-    /// </summary>
-    /// <param name="brookId">The brook identifier.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The pending head storage model, or null if not found.</returns>
-    public async Task<HeadStorageModel?> GetPendingHeadDocumentAsync(
-        BrookKey brookId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            ItemResponse<HeadDocument>? response = await Container.ReadItemAsync<HeadDocument>(
-                HeadPending,
-                new(brookId.ToString()),
-                cancellationToken: cancellationToken);
-            return HeadDocumentMapper.Map(response.Resource);
+            return CursorDocumentMapper.Map(response.Resource);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {

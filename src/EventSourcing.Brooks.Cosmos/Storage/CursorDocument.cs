@@ -1,12 +1,12 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Storage;
 
 /// <summary>
-///     Document model for storing brook head position information in Cosmos DB.
+///     Document model for storing brook cursor position information in Cosmos DB.
 /// </summary>
-internal class HeadDocument
+internal class CursorDocument
 {
     /// <summary>
     ///     Gets or sets the partition key value for the document. Must match container partition key path
@@ -22,13 +22,13 @@ internal class HeadDocument
     public string Id { get; set; } = string.Empty;
 
     /// <summary>
-    ///     Gets or sets the original position of the brook head before any updates.
+    ///     Gets or sets the original position of the brook cursor before any updates.
     /// </summary>
     [JsonProperty("originalPosition")]
     public long? OriginalPosition { get; set; }
 
     /// <summary>
-    ///     Gets or sets the current position of the brook head.
+    ///     Gets or sets the current position of the brook cursor.
     /// </summary>
     [JsonProperty("position")]
     public long Position { get; set; }

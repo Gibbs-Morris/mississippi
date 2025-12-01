@@ -51,7 +51,7 @@ public static class BrookStorageProviderRegistrations
         services.AddSingleton<IRetryPolicy, CosmosRetryPolicy>();
         services.AddMapper<EventStorageModel, BrookEvent, EventStorageToEventMapper>();
         services.AddMapper<BrookEvent, EventStorageModel, EventToStorageMapper>();
-        services.AddMapper<HeadDocument, HeadStorageModel, HeadDocumentToStorageMapper>();
+        services.AddMapper<CursorDocument, CursorStorageModel, CursorDocumentToStorageMapper>();
         services.AddMapper<EventDocument, EventStorageModel, EventDocumentToStorageMapper>();
 
         // Register storage provider interfaces using the helper

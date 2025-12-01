@@ -15,7 +15,7 @@ using Orleans.Runtime;
 namespace Crescent.ConsoleApp;
 
 /// <summary>
-///     Runs a multi-stream interleaved workload and reports heads and counts.
+///     Runs a multi-stream interleaved workload and reports cursors and counts.
 /// </summary>
 internal static class MultiStreamScenario
 {
@@ -39,16 +39,16 @@ internal static class MultiStreamScenario
         await wA.AppendEventsAsync(SampleEventFactory.CreateFixedSizeEvents(50, 1024));
         await wB.AppendEventsAsync(SampleEventFactory.CreateRangeSizeEvents(50, 512, 4096));
 
-        // Use confirmed heads to avoid cached -1 during immediate readback
-        BrookPosition hA = await brookGrainFactory.GetBrookHeadGrain(keyA).GetLatestPositionConfirmedAsync();
-        BrookPosition hB = await brookGrainFactory.GetBrookHeadGrain(keyB).GetLatestPositionConfirmedAsync();
-        logger.HeadsAB(runId, hA.Value, hB.Value);
+        // Use confirmed cursor positions to avoid cached -1 during immediate readback
+        BrookPosition cA = await brookGrainFactory.GetBrookCursorGrain(keyA).GetLatestPositionConfirmedAsync();
+        BrookPosition cB = await brookGrainFactory.GetBrookCursorGrain(keyB).GetLatestPositionConfirmedAsync();
+        logger.CursorsAB(runId, cA.Value, cB.Value);
 
         // Read a portion from each
         IBrookReaderGrain rA = brookGrainFactory.GetBrookReaderGrain(keyA);
         IBrookReaderGrain rB = brookGrainFactory.GetBrookReaderGrain(keyB);
         int ca = 0, cb = 0;
-        if (hA.Value >= 1)
+        if (cA.Value >= 1)
         {
             int attemptsA = 0;
             while (true)
@@ -56,7 +56,7 @@ internal static class MultiStreamScenario
                 try
                 {
                     ca = 0;
-                    await foreach (BrookEvent ignoredEvent in rA.ReadEventsAsync(new(1), hA))
+                    await foreach (BrookEvent ignoredEvent in rA.ReadEventsAsync(new(1), cA))
                     {
                         ca++;
                     }
@@ -85,7 +85,7 @@ internal static class MultiStreamScenario
             logger.StreamAEmpty(runId);
         }
 
-        if (hB.Value >= 1)
+        if (cB.Value >= 1)
         {
             int attemptsB = 0;
             while (true)
@@ -93,7 +93,7 @@ internal static class MultiStreamScenario
                 try
                 {
                     cb = 0;
-                    await foreach (BrookEvent ignoredEvent in rB.ReadEventsAsync(new(1), hB))
+                    await foreach (BrookEvent ignoredEvent in rB.ReadEventsAsync(new(1), cB))
                     {
                         cb++;
                     }
@@ -129,13 +129,13 @@ internal static class MultiStreamScenario
             {
                 Type = keyA.Type,
                 Id = keyA.Id,
-                Head = hA.Value,
+                Cursor = cA.Value,
             },
             new()
             {
                 Type = keyB.Type,
                 Id = keyB.Id,
-                Head = hB.Value,
+                Cursor = cB.Value,
             },
         };
     }

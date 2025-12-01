@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Abstractions.Storage;
+using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Factory;
-using Mississippi.EventSourcing.Head;
 
 using Orleans;
 using Orleans.Runtime;
@@ -80,8 +80,8 @@ internal class BrookSliceReaderGrain
     )
     {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
-        IBrookHeadGrain head = BrookGrainFactory.GetBrookHeadGrain(brookRangeKey.ToBrookCompositeKey());
-        BrookPosition lastPositionOfBrook = await head.GetLatestPositionAsync();
+        IBrookCursorGrain cursor = BrookGrainFactory.GetBrookCursorGrain(brookRangeKey.ToBrookCompositeKey());
+        BrookPosition lastPositionOfBrook = await cursor.GetLatestPositionAsync();
         BrookPosition lastPositionOfSlice = brookRangeKey.End;
         long lastPositionOfCacheValue = Cache.Length == 0
             ? brookRangeKey.Start.Value - 1

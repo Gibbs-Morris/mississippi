@@ -27,7 +27,7 @@ internal static class AppendScenarioRunner
     /// <param name="brookKey">Target brook to append to.</param>
     /// <param name="scenarioName">Friendly scenario name for logging.</param>
     /// <param name="eventFactory">Factory to create the events to append.</param>
-    /// <param name="expectedHead">Optional expected head for optimistic concurrency.</param>
+    /// <param name="expectedCursor">Optional expected cursor for optimistic concurrency.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The task representing the asynchronous operation.</returns>
     public static async Task RunAsync(
@@ -37,7 +37,7 @@ internal static class AppendScenarioRunner
         BrookKey brookKey,
         string scenarioName,
         Func<ImmutableArray<BrookEvent>> eventFactory,
-        BrookPosition? expectedHead = null,
+        BrookPosition? expectedCursor = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -48,12 +48,12 @@ internal static class AppendScenarioRunner
         DateTimeOffset started = DateTimeOffset.UtcNow;
         try
         {
-            BrookPosition newHead = await writer.AppendEventsAsync(events, expectedHead, cancellationToken);
+            BrookPosition newCursor = await writer.AppendEventsAsync(events, expectedCursor, cancellationToken);
             TimeSpan elapsed = DateTimeOffset.UtcNow - started;
             logger.AppendComplete(
                 runId,
                 scenarioName,
-                newHead.Value,
+                newCursor.Value,
                 (int)elapsed.TotalMilliseconds,
                 events.Length / Math.Max(0.001, elapsed.TotalSeconds),
                 totalBytes / 1_000_000.0 / Math.Max(0.001, elapsed.TotalSeconds));

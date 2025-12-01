@@ -41,16 +41,16 @@ internal static class InterleavedScenario
         IBrookReaderGrain reader = brookGrainFactory.GetBrookReaderGrain(brookKey);
 
         // Write a small batch
-        BrookPosition head1 = await writer.AppendEventsAsync(
+        BrookPosition cursor1 = await writer.AppendEventsAsync(
             SampleEventFactory.CreateFixedSizeEvents(5, 1024),
             null,
             cancellationToken);
-        logger.HeadAfterWrite1(runId, head1.Value);
+        logger.CursorAfterWrite1(runId, cursor1.Value);
 
         // Read a tail subset
         int tailCount = 0;
-        long tailStart = Math.Max(1, head1.Value - Math.Min(4, head1.Value));
-        await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(new(tailStart), head1, cancellationToken))
+        long tailStart = Math.Max(1, cursor1.Value - Math.Min(4, cursor1.Value));
+        await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(new(tailStart), cursor1, cancellationToken))
         {
             tailCount++;
         }
@@ -58,20 +58,20 @@ internal static class InterleavedScenario
         logger.TailReadCount(runId, tailCount);
 
         // Write another mixed batch
-        BrookPosition head2 = await writer.AppendEventsAsync(
+        BrookPosition cursor2 = await writer.AppendEventsAsync(
             SampleEventFactory.CreateRangeSizeEvents(20, 512, 4096),
-            head1,
+            cursor1,
             cancellationToken);
-        logger.HeadAfterWrite2(runId, head2.Value);
+        logger.CursorAfterWrite2(runId, cursor2.Value);
 
-        // Verify continuous read from 1..head2
+        // Verify continuous read from 1..cursor2
         int attempts = 0;
         while (true)
         {
             try
             {
                 int count = 0;
-                await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(new(1), head2, cancellationToken))
+                await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(new(1), cursor2, cancellationToken))
                 {
                     count++;
                 }

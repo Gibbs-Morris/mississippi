@@ -175,10 +175,10 @@ await InterleavedScenario.RunAsync(logger, runId, brookFactory, brookKey);
 logger.ScenarioMultiStream();
 List<StreamState> multiStates = await MultiStreamScenario.RunAsync(logger, runId, brookFactory);
 
-// Persist multi-stream heads
+// Persist multi-stream cursors
 foreach (StreamState s in multiStates)
 {
-    runState.UpsertStream(s.Type, s.Id, s.Head);
+    runState.UpsertStream(s.Type, s.Id, s.Cursor);
 }
 
 // Scenario 8: Explicit cache flush (deactivate grains) then read again
@@ -199,11 +199,11 @@ await ReadHelpers.LogStreamReadAsync(
     brookKey,
     true);
 
-// Persist final confirmed head for primary stream
+// Persist final confirmed cursor for primary stream
 BrookPosition confirmed = await host2.Services.GetRequiredService<IBrookGrainFactory>()
-    .GetBrookHeadGrain(brookKey)
+    .GetBrookCursorGrain(brookKey)
     .GetLatestPositionConfirmedAsync();
-runState.PrimaryHead = confirmed.Value;
+runState.PrimaryCursor = confirmed.Value;
 runState.UpsertStream(brookKey.Type, brookKey.Id, confirmed.Value);
 await RunStateStore.SaveAsync(runState, logger);
 await host2.StopAsync();

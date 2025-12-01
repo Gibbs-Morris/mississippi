@@ -113,7 +113,7 @@ internal static class ConsoleAppLoggerExtensions
         AppendCompleteMessage = LoggerMessage.Define<string, string, long, int, double, double>(
             LogLevel.Information,
             new(31, nameof(AppendComplete)),
-            "Run {RunId} [{Scenario}]: Append complete -> head={Head} in {Ms} ms (throughput {RateEvN}/s, {RateMB}/s)");
+            "Run {RunId} [{Scenario}]: Append complete -> cursor={Cursor} in {Ms} ms (throughput {RateEvN}/s, {RateMB}/s)");
 
     private static readonly Action<ILogger, string, string, int, int, long, Exception> AppendFailedMessage =
         LoggerMessage.Define<string, string, int, int, long>(
@@ -121,11 +121,11 @@ internal static class ConsoleAppLoggerExtensions
             new(32, nameof(AppendFailed)),
             "Run {RunId} [{Scenario}]: Append failed after {Ms} ms (attempted count={Count}, bytes={Bytes})");
 
-    private static readonly Action<ILogger, string, long, Exception?> ReadbackHeadMessage =
+    private static readonly Action<ILogger, string, long, Exception?> ReadbackCursorMessage =
         LoggerMessage.Define<string, long>(
             LogLevel.Information,
-            new(40, nameof(ReadbackHead)),
-            "Run {RunId}: Readback head={Head}");
+            new(40, nameof(ReadbackCursor)),
+            "Run {RunId}: Readback cursor={Cursor}");
 
     private static readonly Action<ILogger, string, Exception?> NoEventsToReadMessage = LoggerMessage.Define<string>(
         LogLevel.Information,
@@ -155,11 +155,11 @@ internal static class ConsoleAppLoggerExtensions
         new(50, nameof(InterleaveStart)),
         "Run {RunId} [Interleave]: Start");
 
-    private static readonly Action<ILogger, string, long, Exception?> HeadAfterWrite1Message =
+    private static readonly Action<ILogger, string, long, Exception?> CursorAfterWrite1Message =
         LoggerMessage.Define<string, long>(
             LogLevel.Information,
-            new(51, nameof(HeadAfterWrite1)),
-            "Run {RunId} [Interleave]: Head after write1={Head}");
+            new(51, nameof(CursorAfterWrite1)),
+            "Run {RunId} [Interleave]: Cursor after write1={Cursor}");
 
     private static readonly Action<ILogger, string, int, Exception?> TailReadCountMessage =
         LoggerMessage.Define<string, int>(
@@ -167,11 +167,11 @@ internal static class ConsoleAppLoggerExtensions
             new(52, nameof(TailReadCount)),
             "Run {RunId} [Interleave]: Tail read count={Count}");
 
-    private static readonly Action<ILogger, string, long, Exception?> HeadAfterWrite2Message =
+    private static readonly Action<ILogger, string, long, Exception?> CursorAfterWrite2Message =
         LoggerMessage.Define<string, long>(
             LogLevel.Information,
-            new(53, nameof(HeadAfterWrite2)),
-            "Run {RunId} [Interleave]: Head after write2={Head}");
+            new(53, nameof(CursorAfterWrite2)),
+            "Run {RunId} [Interleave]: Cursor after write2={Cursor}");
 
     private static readonly Action<ILogger, string, int, Exception?> FullRangeReadCountMessage =
         LoggerMessage.Define<string, int>(
@@ -185,11 +185,11 @@ internal static class ConsoleAppLoggerExtensions
             new(55, nameof(InterleaveEnumerationAbortedRetry)),
             "Run {RunId} [Interleave]: Enumeration aborted; retrying once");
 
-    private static readonly Action<ILogger, string, long, long, Exception?> HeadsABMessage =
+    private static readonly Action<ILogger, string, long, long, Exception?> CursorsABMessage =
         LoggerMessage.Define<string, long, long>(
             LogLevel.Information,
-            new(60, nameof(HeadsAB)),
-            "Run {RunId} [Multi]: Heads A={HA} B={HB}");
+            new(60, nameof(CursorsAB)),
+            "Run {RunId} [Multi]: Cursors A={CA} B={CB}");
 
     private static readonly Action<ILogger, string, Exception?> StreamAEmptyMessage = LoggerMessage.Define<string>(
         LogLevel.Information,
@@ -232,7 +232,7 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     /// <param name="runId">The run identifier associated with this execution.</param>
     /// <param name="scenario">The scenario name for the append operation.</param>
-    /// <param name="head">The resulting head position after the append.</param>
+    /// <param name="cursor">The resulting cursor position after the append.</param>
     /// <param name="ms">The elapsed time in milliseconds for the append.</param>
     /// <param name="rateEvN">Event throughput in events/second.</param>
     /// <param name="rateMB">Data throughput in MB/second.</param>
@@ -240,12 +240,12 @@ internal static class ConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         string scenario,
-        long head,
+        long cursor,
         int ms,
         double rateEvN,
         double rateMB
     ) =>
-        AppendCompleteMessage(logger, runId, scenario, head, ms, rateEvN, rateMB, null);
+        AppendCompleteMessage(logger, runId, scenario, cursor, ms, rateEvN, rateMB, null);
 
     /// <summary>
     ///     Log a failed append operation along with failure metrics.
@@ -315,6 +315,47 @@ internal static class ConsoleAppLoggerExtensions
             null);
 
     /// <summary>
+    ///     Log the cursor position after the first write in the interleaved scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="cursor">The cursor position after the write.</param>
+    public static void CursorAfterWrite1(
+        this ILogger logger,
+        string runId,
+        long cursor
+    ) =>
+        CursorAfterWrite1Message(logger, runId, cursor, null);
+
+    /// <summary>
+    ///     Log the cursor position after the second write in the interleaved scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="cursor">The cursor position after the write.</param>
+    public static void CursorAfterWrite2(
+        this ILogger logger,
+        string runId,
+        long cursor
+    ) =>
+        CursorAfterWrite2Message(logger, runId, cursor, null);
+
+    /// <summary>
+    ///     Log the cursor positions for streams A and B in multi-stream scenarios.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="cursorA">The cursor position for stream A.</param>
+    /// <param name="cursorB">The cursor position for stream B.</param>
+    public static void CursorsAB(
+        this ILogger logger,
+        string runId,
+        long cursorA,
+        long cursorB
+    ) =>
+        CursorsABMessage(logger, runId, cursorA, cursorB, null);
+
+    /// <summary>
     ///     Log the banner for the explicit cache flush and readback scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
@@ -335,47 +376,6 @@ internal static class ConsoleAppLoggerExtensions
         int count
     ) =>
         FullRangeReadCountMessage(logger, runId, count, null);
-
-    /// <summary>
-    ///     Log the head position after the first write in the interleaved scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="head">The head position after the write.</param>
-    public static void HeadAfterWrite1(
-        this ILogger logger,
-        string runId,
-        long head
-    ) =>
-        HeadAfterWrite1Message(logger, runId, head, null);
-
-    /// <summary>
-    ///     Log the head position after the second write in the interleaved scenario.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="head">The head position after the write.</param>
-    public static void HeadAfterWrite2(
-        this ILogger logger,
-        string runId,
-        long head
-    ) =>
-        HeadAfterWrite2Message(logger, runId, head, null);
-
-    /// <summary>
-    ///     Log the head positions for streams A and B in multi-stream scenarios.
-    /// </summary>
-    /// <param name="logger">The logger used to write the message.</param>
-    /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="headA">The head position for stream A.</param>
-    /// <param name="headB">The head position for stream B.</param>
-    public static void HeadsAB(
-        this ILogger logger,
-        string runId,
-        long headA,
-        long headB
-    ) =>
-        HeadsABMessage(logger, runId, headA, headB, null);
 
     /// <summary>
     ///     Log that the host has started for the provided run identifier.
@@ -542,17 +542,17 @@ internal static class ConsoleAppLoggerExtensions
         ReadbackCompleteMessage(logger, runId, count, bytes, ms, rateEvN, rateMB, null);
 
     /// <summary>
-    ///     Log the current readback head position for the run.
+    ///     Log the current readback cursor position for the run.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
     /// <param name="runId">The run identifier associated with this execution.</param>
-    /// <param name="head">The head position observed during readback.</param>
-    public static void ReadbackHead(
+    /// <param name="cursor">The cursor position observed during readback.</param>
+    public static void ReadbackCursor(
         this ILogger logger,
         string runId,
-        long head
+        long cursor
     ) =>
-        ReadbackHeadMessage(logger, runId, head, null);
+        ReadbackCursorMessage(logger, runId, cursor, null);
 
     /// <summary>
     ///     Log that the host is requesting grain deactivations for the specified brook key.

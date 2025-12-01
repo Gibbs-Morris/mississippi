@@ -1,5 +1,5 @@
 using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Head;
+using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.Writer;
 
@@ -7,16 +7,16 @@ using Mississippi.EventSourcing.Writer;
 namespace Mississippi.EventSourcing.Factory;
 
 /// <summary>
-///     Defines a factory for resolving Orleans grains for writing, reading, slicing, and head retrieval.
+///     Defines a factory for resolving Orleans grains for writing, reading, slicing, and cursor retrieval.
 /// </summary>
 public interface IBrookGrainFactory
 {
     /// <summary>
-    ///     Retrieves an <see cref="IBrookHeadGrain" /> for the specified Brook composite key.
+    ///     Retrieves an <see cref="IBrookCursorGrain" /> for the specified Brook composite key.
     /// </summary>
     /// <param name="brookKey">The key identifying the Brook.</param>
-    /// <returns>An <see cref="IBrookHeadGrain" /> instance for the Brook head.</returns>
-    IBrookHeadGrain GetBrookHeadGrain(
+    /// <returns>An <see cref="IBrookCursorGrain" /> instance for the Brook cursor.</returns>
+    IBrookCursorGrain GetBrookCursorGrain(
         BrookKey brookKey
     );
 

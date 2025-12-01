@@ -31,7 +31,7 @@ public class StreamIdFactoryTests
     {
         StreamIdFactory factory = new();
         BrookKey key = new("typeX", "idX");
-        StreamId expected = StreamId.Create(EventSourcingOrleansStreamNames.HeadUpdateStreamName, key);
+        StreamId expected = StreamId.Create(EventSourcingOrleansStreamNames.CursorUpdateStreamName, key);
         StreamId actual = factory.Create(key);
         Assert.Equal(expected, actual);
     }

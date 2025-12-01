@@ -4,12 +4,12 @@
 ## Project Metadata
 
 - Assembly: `Mississippi.EventSourcing`
-- Focus: Orleans grains (writer, reader, slice, head) + factory + registrations + stream id.
+- Focus: Orleans grains (writer, reader, slice, cursor) + factory + registrations + stream id.
 
 ## Global Invariants
 
 - Grains respect Orleans threading model (no shared mutable static state mutated).
-- Head position monotonic non-decreasing.
+- Cursor position monotonic non-decreasing.
 - Slice caching never returns events outside requested min/max.
 - Stream IDs are deterministic from BrookKey.
 
@@ -36,7 +36,7 @@ Test Cases:
 
 | ID | Scenario | Given / When / Then | Priority | Type |
 |----|----------|---------------------|----------|------|
-| STRN1 | HeadUpdateStreamName constant valid | value non-empty == "StreamHeadUpdates" | M | Unit |
+| STRN1 | CursorUpdateStreamName constant valid | value non-empty == "BrookCursorUpdates" | M | Unit |
 
 ---
 
@@ -56,7 +56,7 @@ Test Cases:
 
 #### Type: BrookGrainFactory
 
-Members: `GetBrookWriterGrain`, `GetBrookReaderGrain`, `GetBrookSliceReaderGrain`, `GetBrookHeadGrain`
+Members: `GetBrookWriterGrain`, `GetBrookReaderGrain`, `GetBrookSliceReaderGrain`, `GetBrookCursorGrain`
 Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
@@ -64,23 +64,23 @@ Test Cases:
 | GF1 | Resolves writer grain | mock grainFactory -> expect GetGrain with IBrookWriterGrain(key) called | DI proxy | M | Unit |
 | GF2 | Resolves reader grain | similar to GF1 | | M | Unit |
 | GF3 | Resolves slice reader grain | range key | | M | Unit |
-| GF4 | Resolves head grain | key | | M | Unit |
+| GF4 | Resolves cursor grain | key | | M | Unit |
 | GF5 | Null dependencies throw | pass null logger | ArgNullException Validation | L | Unit |
 
 ---
 
-### File: Head/BrookHeadGrain.cs
+### File: Cursor/BrookCursorGrain.cs
 
-#### Type: BrookHeadGrain
+#### Type: BrookCursorGrain
 
-State: `TrackedHeadPosition`, token ordering, stream subscription.
+State: `TrackedCursorPosition`, token ordering, stream subscription.
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Pri | Type |
 |----|----------|---------------------|------|-----|------|
-| HG1 | Initial head default | new grain -> GetLatestPositionAsync -> -1 | Default | H | Unit |
-| HG2 | OnNext newer updates | start -1 -> OnNext(newPos=5) -> head=5 | Monotonic | H | Unit |
-| HG3 | OnNext older ignored | head=5 -> OnNext(newPos=3) -> head stays 5 | Ordering | H | Unit |
+| HG1 | Initial cursor default | new grain -> GetLatestPositionAsync -> -1 | Default | H | Unit |
+| HG2 | OnNext newer updates | start -1 -> OnNext(newPos=5) -> cursor=5 | Monotonic | H | Unit |
+| HG3 | OnNext older ignored | cursor=5 -> OnNext(newPos=3) -> cursor stays 5 | Ordering | H | Unit |
 | HG4 | Token ordering skip | token1 newer than token2 -> second ignored | Token | M | Unit |
 | HG5 | GetLatestPositionConfirmed loads storage | storage higher than cache -> cache updated | Consistency | M | Unit |
 | HG6 | DeactivateAsync triggers DeactivateOnIdle | instrumentation | Lifecycle | L | Unit |
@@ -88,9 +88,9 @@ Test Cases:
 
 ---
 
-### File: Head/BrookHeadMovedEvent.cs
+### File: Cursor/BrookCursorMovedEvent.cs
 
-#### Type: BrookHeadMovedEvent (record)
+#### Type: BrookCursorMovedEvent (record)
 
 Test Cases:
 
@@ -116,7 +116,7 @@ Test Cases:
 | BRG3 | Mid-range partial | start=5 end=24 size=10 -> buckets (0:5..9),(1:10..19),(2:20..24) | Partitioning | H | Unit |
 | BRG4 | Start>End throws | start=5 end=4 -> ArgException | Validation | H | Unit |
 | BRG5 | Size zero invalid | sliceSize=0 -> ArgOutOfRange | Validation | H | Unit |
-| BRG6 | ReadEventsAsync full end null | no readTo -> queries head grain once | Head fetch | M | Unit |
+| BRG6 | ReadEventsAsync full end null | no readTo -> queries cursor grain once | Cursor fetch | M | Unit |
 | BRG7 | ReadEventsBatchAsync aggregates | enumerates underlying stream | Aggregation | M | Unit |
 | BRG8 | Cancellation respected | cancel during enumeration -> throws | Cancellation | M | Unit |
 
@@ -147,9 +147,9 @@ Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
 |----|----------|-------|------|-----|------|
-| BWG1 | AppendEventsAsync happy path | events-> storage append -> head event published | Basic | H | Unit |
-| BWG2 | Expected head mismatch propagation | storage throws concurrency -> surface exception | Concurrency | H | Unit |
-| BWG3 | Publishes BrookHeadMovedEvent | append success -> Stream.OnNext invoked | Event | H | Unit |
+| BWG1 | AppendEventsAsync happy path | events-> storage append -> cursor event published | Basic | H | Unit |
+| BWG2 | Expected cursor mismatch propagation | storage throws concurrency -> surface exception | Concurrency | H | Unit |
+| BWG3 | Publishes BrookCursorMovedEvent | append success -> Stream.OnNext invoked | Event | H | Unit |
 | BWG4 | Cancellation token passed | cancel before storage call -> operation canceled | Cancellation | M | Unit |
 
 ---

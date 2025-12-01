@@ -28,7 +28,8 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 public class EventBrookAppenderRollbackTests
 {
     /// <summary>
-    ///     When initial append fails with no processed events, rollback should clean up pending head without aggregate
+    ///     When initial append fails with no processed events, rollback should clean up the pending cursor entry without
+    ///     aggregate
     ///     exception.
     /// </summary>
     /// <returns>
@@ -59,7 +60,7 @@ public class EventBrookAppenderRollbackTests
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
         Mock<ILogger<EventBrookAppender>> logger = new();
         EventBrookAppender sut = new(
@@ -76,7 +77,7 @@ public class EventBrookAppenderRollbackTests
             new(),
             new(),
         };
-        repo.Setup(r => r.CreatePendingHeadAsync(key, new(0), 2, It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.CreatePendingCursorAsync(key, new(0), 2, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Throw on first append to force rollback with processedEvents == 0
@@ -86,14 +87,14 @@ public class EventBrookAppenderRollbackTests
                 It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("fail early"));
-        repo.Setup(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        repo.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AppendEventsAsync(key, events, null));
 
         // Assert: no specific verifications, just that rollback completed without AggregateException
-        repo.Verify(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>()), Times.Once);
+        repo.Verify(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
@@ -138,7 +139,7 @@ public class EventBrookAppenderRollbackTests
                 Time = e.Time ?? DateTimeOffset.UtcNow,
             });
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
         Mock<ILogger<EventBrookAppender>> logger = new();
         EventBrookAppender sut = new(
@@ -174,8 +175,8 @@ public class EventBrookAppenderRollbackTests
             },
         };
 
-        // CreatePendingHead succeeds
-        repo.Setup(r => r.CreatePendingHeadAsync(key, new(0), 3, It.IsAny<CancellationToken>()))
+        // CreatePendingCursor succeeds
+        repo.Setup(r => r.CreatePendingCursorAsync(key, new(0), 3, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         int appendCalls = 0;
         repo.Setup(r => r.AppendEventBatchAsync(
@@ -199,13 +200,13 @@ public class EventBrookAppenderRollbackTests
                 return Task.CompletedTask;
             });
 
-        // CommitHead shouldn't be reached, but safe default
-        repo.Setup(r => r.CommitHeadPositionAsync(key, 3, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        // CommitCursor shouldn't be reached, but safe default
+        repo.Setup(r => r.CommitCursorPositionAsync(key, 3, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         // Rollback: simulate mixed failures and leftovers
         repo.Setup(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("delete failed"));
-        repo.Setup(r => r.DeletePendingHeadAsync(key, It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("delete pending failed"));
         repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 

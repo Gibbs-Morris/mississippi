@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Abstractions.Storage;
-using Mississippi.EventSourcing.Head;
+using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Reader;
 
 using Moq;
@@ -14,12 +14,12 @@ using Moq;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Tests.Head;
+namespace Mississippi.EventSourcing.Tests.Cursor;
 
 /// <summary>
-///     Unit tests for <see cref="BrookHeadGrain" />.
+///     Unit tests for <see cref="BrookCursorGrain" />.
 /// </summary>
-public class BrookHeadGrainUnitTests
+public class BrookCursorGrainUnitTests
 {
     /// <summary>
     ///     Ensures activation logs and throws when the primary key cannot be parsed.
@@ -33,12 +33,12 @@ public class BrookHeadGrainUnitTests
         // Arrange
         Mock<IBrookStorageReader> storage = new();
         Mock<IGrainContext> context = new();
-        Mock<ILogger<BrookHeadGrain>> logger = new();
+        Mock<ILogger<BrookCursorGrain>> logger = new();
         logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
-        BrookHeadGrain sut = new(storage.Object, context.Object, logger.Object, options, streamIdFactory.Object);
-        GrainId grainId = GrainId.Create("brook-head", "invalid-key");
+        BrookCursorGrain sut = new(storage.Object, context.Object, logger.Object, options, streamIdFactory.Object);
+        GrainId grainId = GrainId.Create("brook-cursor", "invalid-key");
         context.SetupGet(c => c.GrainId).Returns(grainId);
 
         // Act + Assert
@@ -47,11 +47,11 @@ public class BrookHeadGrainUnitTests
             l => l.Log(
                 LogLevel.Error,
                 It.Is<EventId>(id =>
-                    (id.Id == 1) && (id.Name == nameof(BrookHeadGrainLoggerExtensions.InvalidPrimaryKey))),
+                    (id.Id == 1) && (id.Name == nameof(BrookCursorGrainLoggerExtensions.InvalidPrimaryKey))),
                 It.Is<It.IsAnyType>((
                     state,
                     _
-                ) => state.ToString() == "Failed to parse brook head grain primary key 'invalid-key'."),
+                ) => state.ToString() == "Failed to parse brook cursor grain primary key 'invalid-key'."),
                 It.Is<Exception>(ex => ex is FormatException),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -69,10 +69,10 @@ public class BrookHeadGrainUnitTests
         // Arrange
         Mock<IBrookStorageReader> storage = new();
         Mock<IGrainContext> context = new();
-        Mock<ILogger<BrookHeadGrain>> logger = new();
+        Mock<ILogger<BrookCursorGrain>> logger = new();
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
-        BrookHeadGrain sut = new(storage.Object, context.Object, logger.Object, options, streamIdFactory.Object);
+        BrookCursorGrain sut = new(storage.Object, context.Object, logger.Object, options, streamIdFactory.Object);
 
         // Act
         await sut.OnErrorAsync(new InvalidOperationException("boom"));

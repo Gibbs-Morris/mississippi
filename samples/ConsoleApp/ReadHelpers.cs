@@ -19,13 +19,13 @@ namespace Crescent.ConsoleApp;
 internal static class ReadHelpers
 {
     /// <summary>
-    ///     Reads and logs events between 1 and the latest head (confirmed optionally).
+    ///     Reads and logs events between 1 and the latest cursor (confirmed optionally).
     /// </summary>
     /// <param name="logger">Logger for structured messages.</param>
     /// <param name="runId">Correlation identifier for the current run.</param>
     /// <param name="brookGrainFactory">Factory for resolving Orleans brook grains.</param>
     /// <param name="brookKey">Target brook to read.</param>
-    /// <param name="confirmedHead">If true, uses the confirmed head; otherwise latest head.</param>
+    /// <param name="useConfirmedCursor">If true, uses the confirmed cursor; otherwise latest cursor.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task LogStreamReadAsync(
@@ -33,15 +33,15 @@ internal static class ReadHelpers
         string runId,
         IBrookGrainFactory brookGrainFactory,
         BrookKey brookKey,
-        bool confirmedHead = false,
+        bool useConfirmedCursor = false,
         CancellationToken cancellationToken = default
     )
     {
         IBrookReaderGrain reader = brookGrainFactory.GetBrookReaderGrain(brookKey);
-        BrookPosition latest = confirmedHead
-            ? await brookGrainFactory.GetBrookHeadGrain(brookKey).GetLatestPositionConfirmedAsync()
-            : await brookGrainFactory.GetBrookHeadGrain(brookKey).GetLatestPositionAsync();
-        logger.ReadbackHead(runId, latest.Value);
+        BrookPosition latest = useConfirmedCursor
+            ? await brookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionConfirmedAsync()
+            : await brookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionAsync();
+        logger.ReadbackCursor(runId, latest.Value);
         if (latest.Value < 1)
         {
             logger.NoEventsToRead(runId);
