@@ -18,6 +18,7 @@
     </Folder>
 
     <Folder Name="/Framework/">
+        <Project Path="src\AspNetCore.Orleans\AspNetCore.Orleans.csproj"/>
         <Project Path="src\Core.Abstractions\Core.Abstractions.csproj"/>
         <Project Path="src\Core\Core.csproj"/>
         <Project Path="src\Hosting\Hosting.csproj"/>
@@ -40,6 +41,7 @@
 
     <Folder Name="/Tests/">
         <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj"/>
+        <Project Path="tests\AspNetCore.Orleans.L0Tests\AspNetCore.Orleans.L0Tests.csproj"/>
         <Project Path="tests\Core.L0Tests\Core.L0Tests.csproj"/>
         <Project Path="tests\Core.Abstractions.L0Tests\Core.Abstractions.L0Tests.csproj"/>
         <Project Path="tests\EventSourcing.Brooks.L0Tests\EventSourcing.Brooks.L0Tests.csproj"/>
