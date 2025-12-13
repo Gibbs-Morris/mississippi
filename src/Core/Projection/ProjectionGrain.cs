@@ -56,11 +56,6 @@ public abstract class ProjectionGrain<TModel>
     private Immutable<ProjectionSnapshot<TModel>>? CachedSnapshot { get; set; }
 
     /// <summary>
-    ///     Gets the Orleans grain factory used to resolve related projection grains.
-    /// </summary>
-    private IGrainFactory GrainFactory { get; }
-
-    /// <summary>
     ///     Gets or sets the last known cursor position for the projection associated with this grain.
     /// </summary>
     /// <remarks>
@@ -69,6 +64,11 @@ public abstract class ProjectionGrain<TModel>
     ///     A value of <c>-1</c> indicates that no snapshot has been loaded yet.
     /// </remarks>
     private long CursorPosition { get; set; } = -1;
+
+    /// <summary>
+    ///     Gets the Orleans grain factory used to resolve related projection grains.
+    /// </summary>
+    private IGrainFactory GrainFactory { get; }
 
     /// <summary>
     ///     Gets the current projection snapshot for the grain's primary key.
