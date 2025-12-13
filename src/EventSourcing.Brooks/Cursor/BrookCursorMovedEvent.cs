@@ -11,5 +11,5 @@ namespace Mississippi.EventSourcing.Brooks.Cursor;
 /// </summary>
 /// <param name="NewPosition">The new position of the brook cursor after the move operation.</param>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Head.BrookHeadMovedEvent")]
+[Alias("Mississippi.EventSourcing.Cursor.BrookCursorMovedEvent")]
 public record BrookCursorMovedEvent([property: Id(0)] BrookPosition NewPosition);

@@ -11,7 +11,7 @@ namespace Mississippi.Core.Projection;
 ///     Abstract base class for stateless projection grains that provide access to projection data for a single
 ///     projection model type.
 ///     This grain is intended to be used as a lightweight, stateless, read-only façade over
-///     <see cref="IProjectionHeadGrain{TModel}" /> and <see cref="IPersistantProjectionSnapshotGrain{TModel}" />
+///     <see cref="IProjectionCursorGrain{TModel}" /> and <see cref="IPersistantProjectionSnapshotGrain{TModel}" />
 ///     grains.
 /// </summary>
 /// <typeparam name="TModel">
@@ -29,7 +29,7 @@ public abstract class ProjectionGrain<TModel>
     /// </summary>
     /// <param name="grainContext">The Orleans grain context associated with this grain instance.</param>
     /// <param name="grainFactory">
-    ///     The Orleans grain factory used to obtain references to the projection head and snapshot grains
+    ///     The Orleans grain factory used to obtain references to the projection cursor and snapshot grains
     ///     that back this projection.
     /// </param>
     protected ProjectionGrain(
@@ -51,7 +51,7 @@ public abstract class ProjectionGrain<TModel>
     /// </summary>
     /// <remarks>
     ///     This value is stored purely in memory on the current silo and is used as a simple cache to avoid
-    ///     repeated calls to the underlying snapshot grain when the projection head position has not changed.
+    ///     repeated calls to the underlying snapshot grain when the projection cursor position has not changed.
     /// </remarks>
     private Immutable<ProjectionSnapshot<TModel>>? CachedSnapshot { get; set; }
 
@@ -61,21 +61,21 @@ public abstract class ProjectionGrain<TModel>
     private IGrainFactory GrainFactory { get; }
 
     /// <summary>
-    ///     Gets or sets the last known head position for the projection associated with this grain.
+    ///     Gets or sets the last known cursor position for the projection associated with this grain.
     /// </summary>
     /// <remarks>
-    ///     The value is maintained in memory only and is compared against the head position reported by the
-    ///     corresponding <see cref="IProjectionHeadGrain{TModel}" /> to decide whether a cached snapshot can be reused.
+    ///     The value is maintained in memory only and is compared against the cursor position reported by the
+    ///     corresponding <see cref="IProjectionCursorGrain{TModel}" /> to decide whether a cached snapshot can be reused.
     ///     A value of <c>-1</c> indicates that no snapshot has been loaded yet.
     /// </remarks>
-    private long HeadPosition { get; set; } = -1;
+    private long CursorPosition { get; set; } = -1;
 
     /// <summary>
     ///     Gets the current projection snapshot for the grain's primary key.
     /// </summary>
     /// <remarks>
-    ///     This method first queries the <see cref="IProjectionHeadGrain{TModel}" /> to obtain the current head
-    ///     position. If the head position matches the last known <see cref="HeadPosition" /> and a
+    ///     This method first queries the <see cref="IProjectionCursorGrain{TModel}" /> to obtain the current cursor
+    ///     position. If the cursor position matches the last known <see cref="CursorPosition" /> and a
     ///     <see cref="CachedSnapshot" /> is available, the cached snapshot is returned. Otherwise, the method fetches
     ///     the latest snapshot from the corresponding <see cref="IPersistantProjectionSnapshotGrain{TModel}" />,
     ///     updates the in-memory cache, and returns the fresh snapshot.
@@ -86,11 +86,11 @@ public abstract class ProjectionGrain<TModel>
     /// </returns>
     public async Task<Immutable<ProjectionSnapshot<TModel>>> GetAsync()
     {
-        IProjectionHeadGrain<TModel> head =
-            GrainFactory.GetGrain<IProjectionHeadGrain<TModel>>(this.GetPrimaryKeyString());
-        long position = await head.GetHeadPositionAsync();
+        IProjectionCursorGrain<TModel> cursor =
+            GrainFactory.GetGrain<IProjectionCursorGrain<TModel>>(this.GetPrimaryKeyString());
+        long position = await cursor.GetCursorPositionAsync();
         Immutable<ProjectionSnapshot<TModel>>? cached = CachedSnapshot;
-        if ((position == HeadPosition) && cached.HasValue)
+        if ((position == CursorPosition) && cached.HasValue)
         {
             return cached.Value;
         }
@@ -99,25 +99,25 @@ public abstract class ProjectionGrain<TModel>
             GrainFactory.GetGrain<IPersistantProjectionSnapshotGrain<TModel>>(
                 this.GetPrimaryKeyString() + "/v" + position);
         Immutable<ProjectionSnapshot<TModel>> data = await projectionSnapshotGrain.GetAsync();
-        HeadPosition = position;
+        CursorPosition = position;
         CachedSnapshot = data;
         return data;
     }
 
     /// <summary>
-    ///     Gets the current head position for the projection associated with this grain's primary key.
+    ///     Gets the current cursor position for the projection associated with this grain's primary key.
     /// </summary>
     /// <remarks>
-    ///     This method delegates to the underlying <see cref="IProjectionHeadGrain{TModel}" /> instance, which tracks
-    ///     the logical end (or "head") of the projection stream.
+    ///     This method delegates to the underlying <see cref="IProjectionCursorGrain{TModel}" /> instance, which tracks
+    ///     the logical end (or "cursor") of the projection stream.
     /// </remarks>
     /// <returns>
-    ///     A task that, when completed, provides the current head position as a <see cref="long" /> value.
+    ///     A task that, when completed, provides the current cursor position as a <see cref="long" /> value.
     /// </returns>
-    public async Task<long> GetHeadPositionAsync()
+    public async Task<long> GetCursorPositionAsync()
     {
-        IProjectionHeadGrain<TModel> head =
-            GrainFactory.GetGrain<IProjectionHeadGrain<TModel>>(this.GetPrimaryKeyString());
-        return await head.GetHeadPositionAsync();
+        IProjectionCursorGrain<TModel> cursor =
+            GrainFactory.GetGrain<IProjectionCursorGrain<TModel>>(this.GetPrimaryKeyString());
+        return await cursor.GetCursorPositionAsync();
     }
 }
