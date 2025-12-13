@@ -57,22 +57,15 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
     /// <inheritdoc/>
     public async ValueTask SetAsync(string key, byte[] value, string[]? tags, TimeSpan validFor, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
-
-        if (value is null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(value);
 
         DateTimeOffset expiresAt = TimeProvider.GetUtcNow() + validFor;
         OutputCacheEntryData data = new()
         {
             Body = value,
             ExpiresAt = expiresAt,
-            Tags = tags ?? []
+            Tags = tags ?? [],
         };
 
         string grainKey = GetGrainKey(key);
@@ -86,7 +79,7 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
         // Note: This is a simplified implementation. For production, you'd need a tag index grain
         // that tracks all keys associated with a tag for efficient eviction.
         // For now, we just log that this operation would need a more sophisticated design.
-        Logger.LogWarning("EvictByTagAsync called but tag-based eviction requires a tag index implementation");
+        OutputCacheStoreLoggerExtensions.TagEvictionNotImplemented(Logger, tag);
         await Task.CompletedTask;
     }
 
@@ -94,4 +87,24 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
     {
         return $"{Options.Value.KeyPrefix}{key}";
     }
+}
+
+/// <summary>
+/// Logger extensions for <see cref="OrleansOutputCacheStore"/>.
+/// </summary>
+internal static class OutputCacheStoreLoggerExtensions
+{
+    private static readonly Action<ILogger, string, Exception?> TagEvictionNotImplementedMessage =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(1, nameof(TagEvictionNotImplemented)),
+            "EvictByTagAsync called for tag '{Tag}' but tag-based eviction requires a tag index implementation");
+
+    /// <summary>
+    /// Logs that tag eviction is not implemented.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="tag">The tag to evict.</param>
+    public static void TagEvictionNotImplemented(this ILogger<OrleansOutputCacheStore> logger, string tag) =>
+        TagEvictionNotImplementedMessage(logger, tag, null);
 }

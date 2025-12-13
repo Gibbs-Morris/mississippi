@@ -150,18 +150,46 @@ internal static class CacheEntryGrainLoggerExtensions
             new EventId(5, nameof(CacheEntryExpired)),
             "Cache entry expired: Key={Key}, Reason={Reason}");
 
+    /// <summary>
+    /// Logs that a cache entry was retrieved.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="key">The cache entry key.</param>
+    /// <param name="size">The size of the cache entry in bytes.</param>
     public static void CacheEntryRetrieved(this ILogger<CacheEntryGrain> logger, string key, int size) =>
         CacheEntryRetrievedMessage(logger, key, size, null);
 
+    /// <summary>
+    /// Logs that a cache entry was set.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="key">The cache entry key.</param>
+    /// <param name="size">The size of the cache entry in bytes.</param>
     public static void CacheEntrySet(this ILogger<CacheEntryGrain> logger, string key, int size) =>
         CacheEntrySetMessage(logger, key, size, null);
 
+    /// <summary>
+    /// Logs that a cache entry was removed.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="key">The cache entry key.</param>
     public static void CacheEntryRemoved(this ILogger<CacheEntryGrain> logger, string key) =>
         CacheEntryRemovedMessage(logger, key, null);
 
+    /// <summary>
+    /// Logs that a cache entry was refreshed.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="key">The cache entry key.</param>
     public static void CacheEntryRefreshed(this ILogger<CacheEntryGrain> logger, string key) =>
         CacheEntryRefreshedMessage(logger, key, null);
 
+    /// <summary>
+    /// Logs that a cache entry expired.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="key">The cache entry key.</param>
+    /// <param name="reason">The reason for expiration.</param>
     public static void CacheEntryExpired(this ILogger<CacheEntryGrain> logger, string key, string reason) =>
         CacheEntryExpiredMessage(logger, key, reason, null);
 }

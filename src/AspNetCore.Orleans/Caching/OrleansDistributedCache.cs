@@ -43,16 +43,13 @@ public sealed class OrleansDistributedCache : IDistributedCache
     /// <inheritdoc/>
     public byte[]? Get(string key)
     {
-        return GetAsync(key).GetAwaiter().GetResult();
+        return GetAsync(key, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc/>
     public async Task<byte[]?> GetAsync(string key, CancellationToken token = default)
     {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
+        ArgumentNullException.ThrowIfNull(key);
 
         string grainKey = GetGrainKey(key);
         ICacheEntryGrain grain = ClusterClient.GetGrain<ICacheEntryGrain>(grainKey);
@@ -71,26 +68,14 @@ public sealed class OrleansDistributedCache : IDistributedCache
     /// <inheritdoc/>
     public void Set(string key, byte[] value, DistributedCacheEntryOptions options)
     {
-        SetAsync(key, value, options).GetAwaiter().GetResult();
+        SetAsync(key, value, options, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc/>
     public async Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = default)
     {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
-
-        if (value is null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
-
-        if (options is null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(value);
 
         DateTimeOffset now = TimeProvider.GetUtcNow();
         DateTimeOffset? absoluteExpiration = null;
@@ -136,16 +121,13 @@ public sealed class OrleansDistributedCache : IDistributedCache
     /// <inheritdoc/>
     public void Refresh(string key)
     {
-        RefreshAsync(key).GetAwaiter().GetResult();
+        RefreshAsync(key, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc/>
     public async Task RefreshAsync(string key, CancellationToken token = default)
     {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
+        ArgumentNullException.ThrowIfNull(key);
 
         string grainKey = GetGrainKey(key);
         ICacheEntryGrain grain = ClusterClient.GetGrain<ICacheEntryGrain>(grainKey);
@@ -157,16 +139,13 @@ public sealed class OrleansDistributedCache : IDistributedCache
     /// <inheritdoc/>
     public void Remove(string key)
     {
-        RemoveAsync(key).GetAwaiter().GetResult();
+        RemoveAsync(key, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc/>
     public async Task RemoveAsync(string key, CancellationToken token = default)
     {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
+        ArgumentNullException.ThrowIfNull(key);
 
         string grainKey = GetGrainKey(key);
         ICacheEntryGrain grain = ClusterClient.GetGrain<ICacheEntryGrain>(grainKey);

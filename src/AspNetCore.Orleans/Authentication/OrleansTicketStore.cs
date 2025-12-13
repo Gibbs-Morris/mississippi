@@ -46,10 +46,7 @@ public sealed class OrleansTicketStore : ITicketStore
     /// <inheritdoc/>
     public async Task<string> StoreAsync(AuthenticationTicket ticket)
     {
-        if (ticket is null)
-        {
-            throw new ArgumentNullException(nameof(ticket));
-        }
+        ArgumentNullException.ThrowIfNull(ticket);
 
         string key = GenerateKey();
         byte[] ticketBytes = TicketSerializer.Serialize(ticket);
@@ -60,7 +57,7 @@ public sealed class OrleansTicketStore : ITicketStore
         {
             TicketBytes = ticketBytes,
             ExpiresAt = expiresAt,
-            LastRenewedAt = null
+            LastRenewedAt = null,
         };
 
         IAuthTicketGrain grain = ClusterClient.GetGrain<IAuthTicketGrain>(key);
@@ -73,15 +70,8 @@ public sealed class OrleansTicketStore : ITicketStore
     /// <inheritdoc/>
     public async Task RenewAsync(string key, AuthenticationTicket ticket)
     {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
-
-        if (ticket is null)
-        {
-            throw new ArgumentNullException(nameof(ticket));
-        }
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(ticket);
 
         byte[] ticketBytes = TicketSerializer.Serialize(ticket);
         DateTimeOffset expiresAt = ticket.Properties.ExpiresUtc ?? TimeProvider.GetUtcNow().Add(Options.Value.DefaultExpiration);
@@ -90,7 +80,7 @@ public sealed class OrleansTicketStore : ITicketStore
         {
             TicketBytes = ticketBytes,
             ExpiresAt = expiresAt,
-            LastRenewedAt = TimeProvider.GetUtcNow()
+            LastRenewedAt = TimeProvider.GetUtcNow(),
         };
 
         IAuthTicketGrain grain = ClusterClient.GetGrain<IAuthTicketGrain>(key);

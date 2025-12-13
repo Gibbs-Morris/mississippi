@@ -66,10 +66,7 @@ public sealed class OrleansHubLifetimeManager<THub> : HubLifetimeManager<THub>
     /// <inheritdoc/>
     public override async Task OnDisconnectedAsync(HubConnectionContext connection)
     {
-        if (connection is null)
-        {
-            throw new ArgumentNullException(nameof(connection));
-        }
+        ArgumentNullException.ThrowIfNull(connection);
 
         lock (connectionsLock)
         {
@@ -113,10 +110,7 @@ public sealed class OrleansHubLifetimeManager<THub> : HubLifetimeManager<THub>
     /// <inheritdoc/>
     public override Task SendConnectionAsync(string connectionId, string methodName, object?[] args, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(connectionId))
-        {
-            throw new ArgumentNullException(nameof(connectionId));
-        }
+        ArgumentNullException.ThrowIfNull(connectionId);
 
         HubConnectionContext? connection;
         lock (connectionsLock)
@@ -135,10 +129,7 @@ public sealed class OrleansHubLifetimeManager<THub> : HubLifetimeManager<THub>
     /// <inheritdoc/>
     public override Task SendConnectionsAsync(IReadOnlyList<string> connectionIds, string methodName, object?[] args, CancellationToken cancellationToken = default)
     {
-        if (connectionIds is null)
-        {
-            throw new ArgumentNullException(nameof(connectionIds));
-        }
+        ArgumentNullException.ThrowIfNull(connectionIds);
 
         List<Task> tasks = new();
         foreach (string connectionId in connectionIds)
@@ -181,10 +172,7 @@ public sealed class OrleansHubLifetimeManager<THub> : HubLifetimeManager<THub>
     /// <inheritdoc/>
     public override Task SendGroupsAsync(IReadOnlyList<string> groupNames, string methodName, object?[] args, CancellationToken cancellationToken = default)
     {
-        if (groupNames is null)
-        {
-            throw new ArgumentNullException(nameof(groupNames));
-        }
+        ArgumentNullException.ThrowIfNull(groupNames);
 
         return SendAllAsync(methodName, args, cancellationToken);
     }
@@ -192,10 +180,7 @@ public sealed class OrleansHubLifetimeManager<THub> : HubLifetimeManager<THub>
     /// <inheritdoc/>
     public override Task SendGroupExceptAsync(string groupName, string methodName, object?[] args, IReadOnlyList<string> excludedConnectionIds, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(groupName))
-        {
-            throw new ArgumentNullException(nameof(groupName));
-        }
+        ArgumentNullException.ThrowIfNull(groupName);
 
         List<HubConnectionContext> connections;
         lock (connectionsLock)
@@ -212,10 +197,7 @@ public sealed class OrleansHubLifetimeManager<THub> : HubLifetimeManager<THub>
     /// <inheritdoc/>
     public override Task SendUserAsync(string userId, string methodName, object?[] args, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            throw new ArgumentNullException(nameof(userId));
-        }
+        ArgumentNullException.ThrowIfNull(userId);
 
         List<HubConnectionContext> connections;
         lock (connectionsLock)
@@ -232,10 +214,7 @@ public sealed class OrleansHubLifetimeManager<THub> : HubLifetimeManager<THub>
     /// <inheritdoc/>
     public override Task SendUsersAsync(IReadOnlyList<string> userIds, string methodName, object?[] args, CancellationToken cancellationToken = default)
     {
-        if (userIds is null)
-        {
-            throw new ArgumentNullException(nameof(userIds));
-        }
+        ArgumentNullException.ThrowIfNull(userIds);
 
         List<HubConnectionContext> connections;
         lock (connectionsLock)

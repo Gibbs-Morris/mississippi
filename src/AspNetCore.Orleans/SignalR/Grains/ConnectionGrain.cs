@@ -45,7 +45,7 @@ internal sealed class ConnectionGrain : IGrainBase, IConnectionGrain
         {
             ConnectionId = connectionId,
             UserId = userId,
-            Groups = groups ?? []
+            Groups = groups ?? [],
         };
         await State.WriteStateAsync();
     }
