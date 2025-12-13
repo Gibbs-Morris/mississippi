@@ -56,7 +56,7 @@ internal static class MultiStreamScenario
                 try
                 {
                     ca = 0;
-                    await foreach (BrookEvent ignoredEvent in rA.ReadEventsAsync(new(1), cA))
+                    await foreach (BrookEvent _ in rA.ReadEventsAsync(new(1), cA))
                     {
                         ca++;
                     }
@@ -93,7 +93,7 @@ internal static class MultiStreamScenario
                 try
                 {
                     cb = 0;
-                    await foreach (BrookEvent ignoredEvent in rB.ReadEventsAsync(new(1), cB))
+                    await foreach (BrookEvent _ in rB.ReadEventsAsync(new(1), cB))
                     {
                         cb++;
                     }

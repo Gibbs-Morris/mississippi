@@ -322,14 +322,7 @@ internal class CosmosRepository : ICosmosRepository
             Position = newPosition,
             BrookPartitionKey = brookId.ToString(),
         };
-        if (currentCursor.NotSet)
-        {
-            batch = batch.CreateItem(cursorDoc);
-        }
-        else
-        {
-            batch = batch.ReplaceItem(CursorDocumentId, cursorDoc);
-        }
+        batch = currentCursor.NotSet ? batch.CreateItem(cursorDoc) : batch.ReplaceItem(CursorDocumentId, cursorDoc);
 
         // Use transactional batch only for cursor; events are created individually above
         TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);

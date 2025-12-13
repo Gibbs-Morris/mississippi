@@ -50,7 +50,7 @@ internal static class InterleavedScenario
         // Read a tail subset
         int tailCount = 0;
         long tailStart = Math.Max(1, cursor1.Value - Math.Min(4, cursor1.Value));
-        await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(new(tailStart), cursor1, cancellationToken))
+        await foreach (BrookEvent _ in reader.ReadEventsAsync(new(tailStart), cursor1, cancellationToken))
         {
             tailCount++;
         }
@@ -71,7 +71,7 @@ internal static class InterleavedScenario
             try
             {
                 int count = 0;
-                await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(new(1), cursor2, cancellationToken))
+                await foreach (BrookEvent _ in reader.ReadEventsAsync(new(1), cursor2, cancellationToken))
                 {
                     count++;
                 }
