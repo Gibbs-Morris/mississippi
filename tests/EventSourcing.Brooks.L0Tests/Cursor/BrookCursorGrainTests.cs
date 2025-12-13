@@ -1,20 +1,20 @@
 using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Head;
+using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Tests.Infrastructure;
 using Mississippi.EventSourcing.Writer;
 
 using Orleans.TestingHost;
 
 
-namespace Mississippi.EventSourcing.Tests.Head;
+namespace Mississippi.EventSourcing.Tests.Cursor;
 
 /// <summary>
-///     Integration tests for <see cref="IBrookHeadGrain" /> behavior.
+///     Integration tests for <see cref="IBrookCursorGrain" /> behavior.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
-public class BrookHeadGrainTests
+public class BrookCursorGrainTests
 {
     private readonly TestCluster cluster = TestClusterAccess.Cluster;
 
@@ -27,11 +27,11 @@ public class BrookHeadGrainTests
     [Fact]
     public async Task DeactivateAsyncCompletesWithoutError()
     {
-        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(new BrookKey("t", "id4"));
-        await head.DeactivateAsync();
+        IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(new BrookKey("t", "id4"));
+        await cursor.DeactivateAsync();
 
         // No exception indicates success; optionally ensure we can still call read
-        BrookPosition p = await head.GetLatestPositionAsync();
+        BrookPosition p = await cursor.GetLatestPositionAsync();
         Assert.True(p.Value >= -1);
     }
 
@@ -44,8 +44,8 @@ public class BrookHeadGrainTests
     [Fact]
     public async Task GetLatestPositionAsyncReturnsCachedDefaultIsMinusOne()
     {
-        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(new BrookKey("t", "id"));
-        BrookPosition p = await head.GetLatestPositionAsync();
+        IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(new BrookKey("t", "id"));
+        BrookPosition p = await cursor.GetLatestPositionAsync();
         Assert.Equal(-1, p.Value);
     }
 
@@ -64,27 +64,27 @@ public class BrookHeadGrainTests
         [
             new(), new(), new(), new(), new(),
         ]);
-        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
-        BrookPosition confirmed = await head.GetLatestPositionConfirmedAsync();
+        IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
+        BrookPosition confirmed = await cursor.GetLatestPositionConfirmedAsync();
         Assert.Equal(5, confirmed.Value);
-        BrookPosition cached = await head.GetLatestPositionAsync();
+        BrookPosition cached = await cursor.GetLatestPositionAsync();
         Assert.Equal(5, cached.Value);
     }
 
     /// <summary>
-    ///     OnNextAsync updates tracked head when a newer position is observed.
+    ///     OnNextAsync updates tracked cursor when a newer position is observed.
     /// </summary>
     /// <returns>
     ///     A task that represents the asynchronous test operation.
     /// </returns>
     [Fact]
-    public async Task OnNextAsyncUpdatesTrackedHeadWhenNewer()
+    public async Task OnNextAsyncUpdatesTrackedCursorWhenNewer()
     {
         BrookKey key = new("t", "id3");
-        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
+        IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
 
-        // Force-confirm head position via storage-backed read to avoid timing flakiness
-        BrookPosition confirmed = await head.GetLatestPositionConfirmedAsync();
+        // Force-confirm cursor position via storage-backed read to avoid timing flakiness
+        BrookPosition confirmed = await cursor.GetLatestPositionConfirmedAsync();
         Assert.True(confirmed.Value >= -1);
     }
 }

@@ -162,6 +162,29 @@ public class BrookStorageProviderTests
     }
 
     /// <summary>
+    ///     Verifies cursor position reads delegate to the recovery service and return its value.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ReadCursorPositionAsyncDelegatesToRecoveryServiceAsync()
+    {
+        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
+        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
+        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
+        BrookKey brookId = new("type", "id");
+        BrookPosition expected = new(42);
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brookId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        BrookPosition result = await provider.ReadCursorPositionAsync(brookId, CancellationToken.None);
+        Assert.Equal(expected, result);
+        recovery.Verify(r => r.GetOrRecoverCursorPositionAsync(brookId, It.IsAny<CancellationToken>()), Times.Once);
+        recovery.VerifyNoOtherCalls();
+        reader.VerifyNoOtherCalls();
+        appender.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
     ///     Verifies events are yielded directly from the reader.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
@@ -208,29 +231,6 @@ public class BrookStorageProviderTests
         Assert.Equal(3, collected.Count);
         Assert.Equal(events.Select(e => e.Id), collected.Select(e => e.Id));
         reader.Verify(r => r.ReadEventsAsync(range, It.IsAny<CancellationToken>()), Times.Once);
-        recovery.VerifyNoOtherCalls();
-        reader.VerifyNoOtherCalls();
-        appender.VerifyNoOtherCalls();
-    }
-
-    /// <summary>
-    ///     Verifies head position reads delegate to the recovery service and return its value.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task ReadHeadPositionAsyncDelegatesToRecoveryServiceAsync()
-    {
-        Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        BrookKey brookId = new("type", "id");
-        BrookPosition expected = new(42);
-        recovery.Setup(r => r.GetOrRecoverHeadPositionAsync(brookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expected);
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
-        BrookPosition result = await provider.ReadHeadPositionAsync(brookId, CancellationToken.None);
-        Assert.Equal(expected, result);
-        recovery.Verify(r => r.GetOrRecoverHeadPositionAsync(brookId, It.IsAny<CancellationToken>()), Times.Once);
         recovery.VerifyNoOtherCalls();
         reader.VerifyNoOtherCalls();
         appender.VerifyNoOtherCalls();

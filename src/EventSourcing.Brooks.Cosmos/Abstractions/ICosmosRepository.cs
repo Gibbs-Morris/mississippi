@@ -31,29 +31,29 @@ internal interface ICosmosRepository
     );
 
     /// <summary>
-    ///     Commits the head position by updating the main head document and removing the pending head.
+    ///     Commits the cursor position by updating the main cursor document and removing the pending cursor state.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
     /// <param name="finalPosition">The final position to commit.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task CommitHeadPositionAsync(
+    Task CommitCursorPositionAsync(
         BrookKey brookId,
         long finalPosition,
         CancellationToken cancellationToken = default
     );
 
     /// <summary>
-    ///     Creates a pending head document for optimistic concurrency control during batch operations.
+    ///     Creates a pending cursor document for optimistic concurrency control during batch operations.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
-    /// <param name="currentHead">The current head position before the operation.</param>
+    /// <param name="currentCursor">The current cursor position before the operation.</param>
     /// <param name="finalPosition">The expected final position after the operation.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task CreatePendingHeadAsync(
+    Task CreatePendingCursorAsync(
         BrookKey brookId,
-        BrookPosition currentHead,
+        BrookPosition currentCursor,
         long finalPosition,
         CancellationToken cancellationToken = default
     );
@@ -72,12 +72,12 @@ internal interface ICosmosRepository
     );
 
     /// <summary>
-    ///     Deletes the pending head document for the specified brook.
+    ///     Deletes the pending cursor document for the specified brook.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task DeletePendingHeadAsync(
+    Task DeletePendingCursorAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
     );
@@ -100,15 +100,26 @@ internal interface ICosmosRepository
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
     /// <param name="events">The collection of events to append in the transaction.</param>
-    /// <param name="currentHead">The current head position before the operation.</param>
-    /// <param name="newPosition">The new head position after the operation.</param>
+    /// <param name="currentCursor">The current cursor position before the operation.</param>
+    /// <param name="newPosition">The new cursor position after the operation.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>The transactional batch response from Cosmos DB.</returns>
     Task<TransactionalBatchResponse> ExecuteTransactionalBatchAsync(
         BrookKey brookId,
         IReadOnlyList<EventStorageModel> events,
-        BrookPosition currentHead,
+        BrookPosition currentCursor,
         long newPosition,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    ///     Gets the cursor document for the specified brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The cursor storage model if found, otherwise null.</returns>
+    Task<CursorStorageModel?> GetCursorDocumentAsync(
+        BrookKey brookId,
         CancellationToken cancellationToken = default
     );
 
@@ -128,23 +139,12 @@ internal interface ICosmosRepository
     );
 
     /// <summary>
-    ///     Gets the head document for the specified brook.
+    ///     Gets the pending cursor document for the specified brook.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The head storage model if found, otherwise null.</returns>
-    Task<HeadStorageModel?> GetHeadDocumentAsync(
-        BrookKey brookId,
-        CancellationToken cancellationToken = default
-    );
-
-    /// <summary>
-    ///     Gets the pending head document for the specified brook.
-    /// </summary>
-    /// <param name="brookId">The brook identifier specifying the target brook.</param>
-    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The pending head storage model if found, otherwise null.</returns>
-    Task<HeadStorageModel?> GetPendingHeadDocumentAsync(
+    /// <returns>The pending cursor storage model if found, otherwise null.</returns>
+    Task<CursorStorageModel?> GetPendingCursorDocumentAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
     );

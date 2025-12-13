@@ -19,7 +19,7 @@ internal class BrookStorageProvider : IBrookStorageProvider
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookStorageProvider" /> class.
     /// </summary>
-    /// <param name="recoveryService">The brook recovery service for managing head positions.</param>
+    /// <param name="recoveryService">The brook recovery service for managing cursor positions.</param>
     /// <param name="eventReader">The event reader for reading events from brooks.</param>
     /// <param name="eventAppender">The event appender for writing events to brooks.</param>
     public BrookStorageProvider(
@@ -49,7 +49,7 @@ internal class BrookStorageProvider : IBrookStorageProvider
     private IEventBrookReader EventReader { get; }
 
     /// <summary>
-    ///     Gets the brook recovery service for managing head positions.
+    ///     Gets the brook recovery service for managing cursor positions.
     /// </summary>
     private IBrookRecoveryService RecoveryService { get; }
 
@@ -77,6 +77,18 @@ internal class BrookStorageProvider : IBrookStorageProvider
     }
 
     /// <summary>
+    ///     Reads the current cursor position of the specified brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The current cursor position of the brook.</returns>
+    public async Task<BrookPosition> ReadCursorPositionAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    ) =>
+        await RecoveryService.GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
+
+    /// <summary>
     ///     Reads events from the specified brook range asynchronously.
     /// </summary>
     /// <param name="brookRange">The brook range specifying which events to read.</param>
@@ -92,16 +104,4 @@ internal class BrookStorageProvider : IBrookStorageProvider
             yield return brookEvent;
         }
     }
-
-    /// <summary>
-    ///     Reads the current head position of the specified brook.
-    /// </summary>
-    /// <param name="brookId">The brook identifier specifying the target brook.</param>
-    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The current head position of the brook.</returns>
-    public async Task<BrookPosition> ReadHeadPositionAsync(
-        BrookKey brookId,
-        CancellationToken cancellationToken = default
-    ) =>
-        await RecoveryService.GetOrRecoverHeadPositionAsync(brookId, cancellationToken);
 }

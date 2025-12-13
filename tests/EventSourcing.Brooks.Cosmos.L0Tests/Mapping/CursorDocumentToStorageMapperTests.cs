@@ -5,27 +5,26 @@ using Mississippi.EventSourcing.Cosmos.Storage;
 namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
 
 /// <summary>
-///     Test class for <see cref="Mississippi.EventSourcing.Cosmos.Mapping.HeadDocumentToStorageMapper" /> functionality.
-///     Contains unit tests to verify the behavior of head document to storage mapping operations.
+///     Tests <see cref="CursorDocumentToStorageMapper" /> to ensure cursor documents are mapped correctly.
 /// </summary>
-public class HeadDocumentToStorageMapperTests
+public class CursorDocumentToStorageMapperTests
 {
     /// <summary>
-    ///     Verifies that when OriginalPosition is present both values are populated.
+    ///     Verifies the mapper copies both the cursor position and original position when present.
     /// </summary>
     [Fact]
     public void MapWithOriginalPositionPopulatesBoth()
     {
         // Arrange
-        HeadDocument doc = new()
+        CursorDocument doc = new()
         {
             Position = 42L,
             OriginalPosition = 10L,
         };
-        HeadDocumentToStorageMapper mapper = new();
+        CursorDocumentToStorageMapper mapper = new();
 
         // Act
-        HeadStorageModel result = mapper.Map(doc);
+        CursorStorageModel result = mapper.Map(doc);
 
         // Assert
         Assert.Equal(42L, (long)result.Position);
@@ -34,21 +33,21 @@ public class HeadDocumentToStorageMapperTests
     }
 
     /// <summary>
-    ///     Verifies that when OriginalPosition is null the mapped OriginalPosition is null.
+    ///     Verifies the mapper leaves OriginalPosition null when the document omits it.
     /// </summary>
     [Fact]
     public void MapWithoutOriginalPositionSetsNullOriginal()
     {
         // Arrange
-        HeadDocument doc = new()
+        CursorDocument doc = new()
         {
             Position = 5L,
             OriginalPosition = null,
         };
-        HeadDocumentToStorageMapper mapper = new();
+        CursorDocumentToStorageMapper mapper = new();
 
         // Act
-        HeadStorageModel result = mapper.Map(doc);
+        CursorStorageModel result = mapper.Map(doc);
 
         // Assert
         Assert.Equal(5L, (long)result.Position);

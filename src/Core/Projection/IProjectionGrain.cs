@@ -23,10 +23,10 @@ public interface IProjectionGrain<TModel> : IGrainWithStringKey
     Task<Immutable<ProjectionSnapshot<TModel>>> GetAsync();
 
     /// <summary>
-    ///     Gets the current head position of the projection, indicating the latest processed event position.
+    ///     Gets the current cursor position of the projection, indicating the latest processed event position.
     /// </summary>
-    /// <returns>The head position as a long value representing the latest processed event sequence number.</returns>
+    /// <returns>The cursor position as a long value representing the latest processed event sequence number.</returns>
     [ReadOnly]
-    [Alias("GetHeadPositionAsync")]
-    Task<long> GetHeadPositionAsync();
+    [Alias("GetCursorPositionAsync")]
+    Task<long> GetCursorPositionAsync();
 }

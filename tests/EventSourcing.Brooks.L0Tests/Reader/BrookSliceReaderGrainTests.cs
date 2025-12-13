@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Head;
+using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.Tests.Infrastructure;
 using Mississippi.EventSourcing.Writer;
@@ -34,7 +34,7 @@ public class BrookSliceReaderGrainTests
     {
         BrookKey key = new("t", "slice1");
 
-        // Seed events via writer to fill storage and head positions
+        // Seed events via writer to fill storage and cursor positions
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
         ImmutableArray<BrookEvent> batch = Enumerable.Range(0, 10)
             .Select(i => new BrookEvent
@@ -44,9 +44,9 @@ public class BrookSliceReaderGrainTests
             .ToImmutableArray();
         await writer.AppendEventsAsync(batch);
 
-        // Ensure head cache has advanced before slice read
-        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
-        await head.GetLatestPositionConfirmedAsync();
+        // Ensure cursor cache has advanced before slice read
+        IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
+        await cursor.GetLatestPositionConfirmedAsync();
         BrookRangeKey sliceKey = BrookRangeKey.FromBrookCompositeKey(key, 2, 8); // covers [2..10)
         IBrookSliceReaderGrain slice = cluster.GrainFactory.GetGrain<IBrookSliceReaderGrain>(sliceKey);
         List<BrookEvent> got = new();
@@ -77,8 +77,8 @@ public class BrookSliceReaderGrainTests
             })
             .ToImmutableArray();
         await writer.AppendEventsAsync(batch);
-        IBrookHeadGrain head = cluster.GrainFactory.GetGrain<IBrookHeadGrain>(key);
-        await head.GetLatestPositionConfirmedAsync();
+        IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
+        await cursor.GetLatestPositionConfirmedAsync();
         BrookRangeKey sliceKey = BrookRangeKey.FromBrookCompositeKey(key, 0, 5);
         IBrookSliceReaderGrain slice = cluster.GrainFactory.GetGrain<IBrookSliceReaderGrain>(sliceKey);
         ImmutableArray<BrookEvent> got = await slice.ReadBatchAsync(1, 3);

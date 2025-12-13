@@ -17,9 +17,9 @@ internal sealed class InMemoryBrookStorage
     : IBrookStorageReader,
       IBrookStorageWriter
 {
-    private readonly Dictionary<string, List<BrookEvent>> eventsByKey = new();
+    private readonly Dictionary<string, long> cursors = new();
 
-    private readonly Dictionary<string, long> heads = new();
+    private readonly Dictionary<string, List<BrookEvent>> eventsByKey = new();
 
     /// <inheritdoc />
     public Task<BrookPosition> AppendEventsAsync(
@@ -36,16 +36,26 @@ internal sealed class InMemoryBrookStorage
             eventsByKey[key] = list;
         }
 
-        long head = heads.TryGetValue(key, out long v) ? v : 0;
-        if (expectedVersion.HasValue && (expectedVersion.Value.Value != head))
+        long cursor = cursors.TryGetValue(key, out long v) ? v : 0;
+        if (expectedVersion.HasValue && (expectedVersion.Value.Value != cursor))
         {
             throw new InvalidOperationException("expectedVersion mismatch");
         }
 
         list.AddRange(events);
-        head += events.Count;
-        heads[key] = head;
-        return Task.FromResult(new BrookPosition(head));
+        cursor += events.Count;
+        cursors[key] = cursor;
+        return Task.FromResult(new BrookPosition(cursor));
+    }
+
+    /// <inheritdoc />
+    public Task<BrookPosition> ReadCursorPositionAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        _ = cursors.TryGetValue(brookId, out long v);
+        return Task.FromResult(new BrookPosition(v));
     }
 
     /// <inheritdoc />
@@ -68,24 +78,14 @@ internal sealed class InMemoryBrookStorage
         await Task.CompletedTask;
     }
 
-    /// <inheritdoc />
-    public Task<BrookPosition> ReadHeadPositionAsync(
-        BrookKey brookId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        _ = heads.TryGetValue(brookId, out long v);
-        return Task.FromResult(new BrookPosition(v));
-    }
-
     /// <summary>
-    ///     Forces the head position for the specified brook in the in-memory store.
+    ///     Forces the cursor position for the specified brook in the in-memory store.
     /// </summary>
     /// <param name="brookId">The brook identifier.</param>
-    /// <param name="position">The head position to set.</param>
-    public void SetHead(
+    /// <param name="position">The cursor position to set.</param>
+    public void SetCursor(
         BrookKey brookId,
         long position
     ) =>
-        heads[(string)brookId] = position;
+        cursors[(string)brookId] = position;
 }

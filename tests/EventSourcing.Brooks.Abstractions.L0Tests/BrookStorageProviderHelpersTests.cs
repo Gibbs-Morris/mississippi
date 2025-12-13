@@ -34,6 +34,12 @@ public class BrookStorageProviderHelpersTests
         ) =>
             Task.FromResult(new BrookPosition(events.Count));
 
+        public Task<BrookPosition> ReadCursorPositionAsync(
+            BrookKey brookId,
+            CancellationToken cancellationToken = default
+        ) =>
+            Task.FromResult(new BrookPosition(0));
+
         public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
             BrookRangeKey brookRange,
             [EnumeratorCancellation] CancellationToken cancellationToken = default
@@ -42,12 +48,6 @@ public class BrookStorageProviderHelpersTests
             await Task.CompletedTask;
             yield break;
         }
-
-        public Task<BrookPosition> ReadHeadPositionAsync(
-            BrookKey brookId,
-            CancellationToken cancellationToken = default
-        ) =>
-            Task.FromResult(new BrookPosition(0));
     }
 
     /// <summary>
