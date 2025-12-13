@@ -5,5 +5,10 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Orleans.Sdk"/>
         <PackageReference Include="Microsoft.Orleans.Server"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies"/>
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection"/>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Core"/>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.Json"/>
     </ItemGroup>
 </Project>
