@@ -56,18 +56,18 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
     {
         ArgumentNullException.ThrowIfNull(tag);
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         // Get all keys associated with this tag from the tag index
         ITagIndexGrain tagIndexGrain = ClusterClient.GetGrain<ITagIndexGrain>(tag);
         IReadOnlyList<string> keys = await tagIndexGrain.GetKeysAsync();
-        
+
         // Evict each entry that has this tag
         foreach (string key in keys)
         {
             IOutputCacheEntryGrain grain = ClusterClient.GetGrain<IOutputCacheEntryGrain>(key);
             await grain.EvictAsync();
         }
-        
+
         Logger.TagEvicted(tag, keys.Count);
     }
 
@@ -111,7 +111,7 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
         string grainKey = GetGrainKey(key);
         IOutputCacheEntryGrain grain = ClusterClient.GetGrain<IOutputCacheEntryGrain>(grainKey);
         await grain.SetAsync(data, tags);
-        
+
         // Update tag index for each tag
         if (tags is { Length: > 0 })
         {

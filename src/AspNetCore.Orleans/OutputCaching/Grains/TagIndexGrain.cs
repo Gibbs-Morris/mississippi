@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
@@ -13,7 +12,9 @@ namespace Mississippi.AspNetCore.Orleans.OutputCaching.Grains;
 /// <summary>
 ///     Orleans grain implementation for tracking cache keys by tag.
 /// </summary>
-internal sealed class TagIndexGrain : IGrainBase, ITagIndexGrain
+internal sealed class TagIndexGrain
+    : IGrainBase,
+      ITagIndexGrain
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="TagIndexGrain" /> class.
