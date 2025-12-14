@@ -13,9 +13,6 @@ namespace Mississippi.EventSourcing.Reducers.L0Tests;
 /// <summary>
 ///     Tests for ServiceRegistration extension methods.
 /// </summary>
-#pragma warning disable CA1707 // Test methods use underscore naming convention per repository standards
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable SA1600 // Elements should be documented
 public sealed class ServiceRegistrationTests
 {
     [Fact]
