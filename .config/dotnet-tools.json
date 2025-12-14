@@ -17,7 +17,7 @@
       "rollForward": false
     },
     "gitversion.tool": {
-      "version": "6.5.0",
+      "version": "6.5.1",
       "commands": [
         "dotnet-gitversion"
       ],
@@ -31,28 +31,28 @@
       "rollForward": false
     },
     "JetBrains.ReSharper.GlobalTools": {
-      "version": "2025.3.0.1",
+      "version": "2025.3.0.4",
       "commands": [
         "jb"
       ],
       "rollForward": false
     },
     "Microsoft.VisualStudio.SlnGen.Tool": {
-      "version": "12.0.29",
+      "version": "12.0.32",
       "commands": [
         "slngen"
       ],
       "rollForward": false
     },
     "dotnet-reportgenerator-globaltool": {
-      "version": "5.5.0",
+      "version": "5.5.1",
       "commands": [
         "reportgenerator"
       ],
       "rollForward": false
     },
     "jetbrains.dotcover.commandlinetools": {
-      "version": "2025.3.0.1",
+      "version": "2025.3.0.4",
       "commands": [
         "dotCover"
       ],
