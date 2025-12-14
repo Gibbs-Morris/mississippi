@@ -1,35 +1,41 @@
-namespace Mississippi.AspNetCore.Orleans.OutputCaching;
-
 using System;
+
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
 using Mississippi.AspNetCore.Orleans.OutputCaching.Options;
 
+
+namespace Mississippi.AspNetCore.Orleans.OutputCaching;
+
 /// <summary>
-/// Provides service registration for Orleans-backed output caching.
+///     Provides service registration for Orleans-backed output caching.
 /// </summary>
 public static class ServiceRegistration
 {
     /// <summary>
-    /// Registers Orleans-backed output caching with default configuration.
+    ///     Registers Orleans-backed output caching with default configuration.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for method chaining.</returns>
-    public static IServiceCollection AddOrleansOutputCaching(this IServiceCollection services)
+    public static IServiceCollection AddOrleansOutputCaching(
+        this IServiceCollection services
+    )
     {
         return services.AddOrleansOutputCaching(_ => { });
     }
 
     /// <summary>
-    /// Registers Orleans-backed output caching with configuration action.
+    ///     Registers Orleans-backed output caching with configuration action.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configureOptions">Action to configure the output cache options.</param>
     /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection AddOrleansOutputCaching(
         this IServiceCollection services,
-        Action<OrleansOutputCacheOptions> configureOptions)
+        Action<OrleansOutputCacheOptions> configureOptions
+    )
     {
         if (services is null)
         {
@@ -46,14 +52,15 @@ public static class ServiceRegistration
     }
 
     /// <summary>
-    /// Registers Orleans-backed output caching with IConfiguration binding.
+    ///     Registers Orleans-backed output caching with IConfiguration binding.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration section.</param>
     /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection AddOrleansOutputCaching(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration
+    )
     {
         if (services is null)
         {
@@ -69,7 +76,9 @@ public static class ServiceRegistration
         return AddOrleansOutputCachingCore(services);
     }
 
-    private static IServiceCollection AddOrleansOutputCachingCore(IServiceCollection services)
+    private static IServiceCollection AddOrleansOutputCachingCore(
+        IServiceCollection services
+    )
     {
         services.AddSingleton<IOutputCacheStore, OrleansOutputCacheStore>();
         return services;

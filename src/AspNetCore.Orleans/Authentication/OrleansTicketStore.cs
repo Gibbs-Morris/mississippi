@@ -1,28 +1,26 @@
 using System;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 using Mississippi.AspNetCore.Orleans.Authentication.Grains;
 using Mississippi.AspNetCore.Orleans.Authentication.Options;
+
 using Orleans;
+
 
 namespace Mississippi.AspNetCore.Orleans.Authentication;
 
 /// <summary>
-/// Orleans-backed implementation of <see cref="ITicketStore"/> for authentication ticket storage.
+///     Orleans-backed implementation of <see cref="ITicketStore" /> for authentication ticket storage.
 /// </summary>
 public sealed class OrleansTicketStore : ITicketStore
 {
-    private ILogger<OrleansTicketStore> Logger { get; }
-    private IClusterClient ClusterClient { get; }
-    private IOptions<TicketStoreOptions> Options { get; }
-    private TicketSerializer TicketSerializer { get; }
-    private TimeProvider TimeProvider { get; }
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="OrleansTicketStore"/> class.
+    ///     Initializes a new instance of the <see cref="OrleansTicketStore" /> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="clusterClient">The Orleans cluster client.</param>
@@ -34,7 +32,8 @@ public sealed class OrleansTicketStore : ITicketStore
         IClusterClient clusterClient,
         IOptions<TicketStoreOptions> options,
         TicketSerializer ticketSerializer,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider
+    )
     {
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         ClusterClient = clusterClient ?? throw new ArgumentNullException(nameof(clusterClient));
@@ -43,76 +42,20 @@ public sealed class OrleansTicketStore : ITicketStore
         TimeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
-    /// <inheritdoc/>
-    public async Task<string> StoreAsync(AuthenticationTicket ticket)
-    {
-        ArgumentNullException.ThrowIfNull(ticket);
+    private IClusterClient ClusterClient { get; }
 
-        string key = GenerateKey();
-        byte[] ticketBytes = TicketSerializer.Serialize(ticket);
+    private ILogger<OrleansTicketStore> Logger { get; }
 
-        DateTimeOffset expiresAt = ticket.Properties.ExpiresUtc ?? TimeProvider.GetUtcNow().Add(Options.Value.DefaultExpiration);
+    private IOptions<TicketStoreOptions> Options { get; }
 
-        AuthTicketData data = new()
-        {
-            TicketBytes = ticketBytes,
-            ExpiresAt = expiresAt,
-            LastRenewedAt = null,
-        };
+    private TicketSerializer TicketSerializer { get; }
 
-        IAuthTicketGrain grain = ClusterClient.GetGrain<IAuthTicketGrain>(key);
-        await grain.StoreAsync(data);
+    private TimeProvider TimeProvider { get; }
 
-        OrleansTicketStoreLoggerExtensions.TicketStored(Logger, key);
-        return key;
-    }
-
-    /// <inheritdoc/>
-    public async Task RenewAsync(string key, AuthenticationTicket ticket)
-    {
-        ArgumentNullException.ThrowIfNull(key);
-        ArgumentNullException.ThrowIfNull(ticket);
-
-        byte[] ticketBytes = TicketSerializer.Serialize(ticket);
-        DateTimeOffset expiresAt = ticket.Properties.ExpiresUtc ?? TimeProvider.GetUtcNow().Add(Options.Value.DefaultExpiration);
-
-        AuthTicketData data = new()
-        {
-            TicketBytes = ticketBytes,
-            ExpiresAt = expiresAt,
-            LastRenewedAt = TimeProvider.GetUtcNow(),
-        };
-
-        IAuthTicketGrain grain = ClusterClient.GetGrain<IAuthTicketGrain>(key);
-        await grain.StoreAsync(data);
-
-        OrleansTicketStoreLoggerExtensions.TicketRenewed(Logger, key);
-    }
-
-    /// <inheritdoc/>
-    public async Task<AuthenticationTicket?> RetrieveAsync(string key)
-    {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
-
-        IAuthTicketGrain grain = ClusterClient.GetGrain<IAuthTicketGrain>(key);
-        AuthTicketData? data = await grain.GetAsync();
-
-        if (data is null)
-        {
-            OrleansTicketStoreLoggerExtensions.TicketNotFound(Logger, key);
-            return null;
-        }
-
-        AuthenticationTicket? ticket = TicketSerializer.Deserialize(data.TicketBytes);
-        OrleansTicketStoreLoggerExtensions.TicketRetrieved(Logger, key);
-        return ticket;
-    }
-
-    /// <inheritdoc/>
-    public async Task RemoveAsync(string key)
+    /// <inheritdoc />
+    public async Task RemoveAsync(
+        string key
+    )
     {
         if (string.IsNullOrWhiteSpace(key))
         {
@@ -121,63 +64,136 @@ public sealed class OrleansTicketStore : ITicketStore
 
         IAuthTicketGrain grain = ClusterClient.GetGrain<IAuthTicketGrain>(key);
         await grain.RemoveAsync();
-
-        OrleansTicketStoreLoggerExtensions.TicketRemoved(Logger, key);
+        Logger.TicketRemoved(key);
     }
 
-    private string GenerateKey()
+    /// <inheritdoc />
+    public async Task RenewAsync(
+        string key,
+        AuthenticationTicket ticket
+    )
     {
-        return $"{Options.Value.KeyPrefix}{Guid.NewGuid():N}";
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(ticket);
+        byte[] ticketBytes = TicketSerializer.Serialize(ticket);
+        DateTimeOffset expiresAt = ticket.Properties.ExpiresUtc ??
+                                   TimeProvider.GetUtcNow().Add(Options.Value.DefaultExpiration);
+        AuthTicketData data = new()
+        {
+            TicketBytes = ticketBytes,
+            ExpiresAt = expiresAt,
+            LastRenewedAt = TimeProvider.GetUtcNow(),
+        };
+        IAuthTicketGrain grain = ClusterClient.GetGrain<IAuthTicketGrain>(key);
+        await grain.StoreAsync(data);
+        Logger.TicketRenewed(key);
     }
+
+    /// <inheritdoc />
+    public async Task<AuthenticationTicket?> RetrieveAsync(
+        string key
+    )
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new ArgumentNullException(nameof(key));
+        }
+
+        IAuthTicketGrain grain = ClusterClient.GetGrain<IAuthTicketGrain>(key);
+        AuthTicketData? data = await grain.GetAsync();
+        if (data is null)
+        {
+            Logger.TicketNotFound(key);
+            return null;
+        }
+
+        AuthenticationTicket? ticket = TicketSerializer.Deserialize(data.TicketBytes);
+        Logger.TicketRetrieved(key);
+        return ticket;
+    }
+
+    /// <inheritdoc />
+    public async Task<string> StoreAsync(
+        AuthenticationTicket ticket
+    )
+    {
+        ArgumentNullException.ThrowIfNull(ticket);
+        string key = GenerateKey();
+        byte[] ticketBytes = TicketSerializer.Serialize(ticket);
+        DateTimeOffset expiresAt = ticket.Properties.ExpiresUtc ??
+                                   TimeProvider.GetUtcNow().Add(Options.Value.DefaultExpiration);
+        AuthTicketData data = new()
+        {
+            TicketBytes = ticketBytes,
+            ExpiresAt = expiresAt,
+            LastRenewedAt = null,
+        };
+        IAuthTicketGrain grain = ClusterClient.GetGrain<IAuthTicketGrain>(key);
+        await grain.StoreAsync(data);
+        Logger.TicketStored(key);
+        return key;
+    }
+
+    private string GenerateKey() => $"{Options.Value.KeyPrefix}{Guid.NewGuid():N}";
 }
 
 /// <summary>
-/// High-performance logger extensions for ticket store operations.
+///     High-performance logger extensions for ticket store operations.
 /// </summary>
 internal static class OrleansTicketStoreLoggerExtensions
 {
-    private static readonly Action<ILogger, string, Exception?> TicketStoredMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Debug,
-            new EventId(1, nameof(TicketStored)),
-            "Ticket stored: Key={Key}");
+    private static readonly Action<ILogger, string, Exception?> TicketStoredMessage = LoggerMessage.Define<string>(
+        LogLevel.Debug,
+        new(1, nameof(TicketStored)),
+        "Ticket stored: Key={Key}");
 
-    private static readonly Action<ILogger, string, Exception?> TicketRenewedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Debug,
-            new EventId(2, nameof(TicketRenewed)),
-            "Ticket renewed: Key={Key}");
+    private static readonly Action<ILogger, string, Exception?> TicketRenewedMessage = LoggerMessage.Define<string>(
+        LogLevel.Debug,
+        new(2, nameof(TicketRenewed)),
+        "Ticket renewed: Key={Key}");
 
-    private static readonly Action<ILogger, string, Exception?> TicketRetrievedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Debug,
-            new EventId(3, nameof(TicketRetrieved)),
-            "Ticket retrieved: Key={Key}");
+    private static readonly Action<ILogger, string, Exception?> TicketRetrievedMessage = LoggerMessage.Define<string>(
+        LogLevel.Debug,
+        new(3, nameof(TicketRetrieved)),
+        "Ticket retrieved: Key={Key}");
 
-    private static readonly Action<ILogger, string, Exception?> TicketNotFoundMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Debug,
-            new EventId(4, nameof(TicketNotFound)),
-            "Ticket not found: Key={Key}");
+    private static readonly Action<ILogger, string, Exception?> TicketNotFoundMessage = LoggerMessage.Define<string>(
+        LogLevel.Debug,
+        new(4, nameof(TicketNotFound)),
+        "Ticket not found: Key={Key}");
 
-    private static readonly Action<ILogger, string, Exception?> TicketRemovedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Debug,
-            new EventId(5, nameof(TicketRemoved)),
-            "Ticket removed: Key={Key}");
+    private static readonly Action<ILogger, string, Exception?> TicketRemovedMessage = LoggerMessage.Define<string>(
+        LogLevel.Debug,
+        new(5, nameof(TicketRemoved)),
+        "Ticket removed: Key={Key}");
 
-    public static void TicketStored(this ILogger<OrleansTicketStore> logger, string key) =>
-        TicketStoredMessage(logger, key, null);
-
-    public static void TicketRenewed(this ILogger<OrleansTicketStore> logger, string key) =>
-        TicketRenewedMessage(logger, key, null);
-
-    public static void TicketRetrieved(this ILogger<OrleansTicketStore> logger, string key) =>
-        TicketRetrievedMessage(logger, key, null);
-
-    public static void TicketNotFound(this ILogger<OrleansTicketStore> logger, string key) =>
+    public static void TicketNotFound(
+        this ILogger<OrleansTicketStore> logger,
+        string key
+    ) =>
         TicketNotFoundMessage(logger, key, null);
 
-    public static void TicketRemoved(this ILogger<OrleansTicketStore> logger, string key) =>
+    public static void TicketRemoved(
+        this ILogger<OrleansTicketStore> logger,
+        string key
+    ) =>
         TicketRemovedMessage(logger, key, null);
+
+    public static void TicketRenewed(
+        this ILogger<OrleansTicketStore> logger,
+        string key
+    ) =>
+        TicketRenewedMessage(logger, key, null);
+
+    public static void TicketRetrieved(
+        this ILogger<OrleansTicketStore> logger,
+        string key
+    ) =>
+        TicketRetrievedMessage(logger, key, null);
+
+    public static void TicketStored(
+        this ILogger<OrleansTicketStore> logger,
+        string key
+    ) =>
+        TicketStoredMessage(logger, key, null);
 }

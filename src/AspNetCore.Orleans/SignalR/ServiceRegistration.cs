@@ -1,30 +1,35 @@
-namespace Mississippi.AspNetCore.Orleans.SignalR;
-
 using System;
+
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
 using Mississippi.AspNetCore.Orleans.SignalR.Options;
 
+
+namespace Mississippi.AspNetCore.Orleans.SignalR;
+
 /// <summary>
-/// Provides service registration for Orleans-backed SignalR scale-out.
+///     Provides service registration for Orleans-backed SignalR scale-out.
 /// </summary>
 public static class ServiceRegistration
 {
     /// <summary>
-    /// Registers Orleans-backed SignalR scale-out with default configuration.
+    ///     Registers Orleans-backed SignalR scale-out with default configuration.
     /// </summary>
     /// <typeparam name="THub">The hub type.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for method chaining.</returns>
-    public static IServiceCollection AddOrleansSignalRScaleOut<THub>(this IServiceCollection services)
+    public static IServiceCollection AddOrleansSignalRScaleOut<THub>(
+        this IServiceCollection services
+    )
         where THub : Hub
     {
         return services.AddOrleansSignalRScaleOut<THub>(_ => { });
     }
 
     /// <summary>
-    /// Registers Orleans-backed SignalR scale-out with configuration action.
+    ///     Registers Orleans-backed SignalR scale-out with configuration action.
     /// </summary>
     /// <typeparam name="THub">The hub type.</typeparam>
     /// <param name="services">The service collection.</param>
@@ -32,7 +37,8 @@ public static class ServiceRegistration
     /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection AddOrleansSignalRScaleOut<THub>(
         this IServiceCollection services,
-        Action<SignalROptions> configureOptions)
+        Action<SignalROptions> configureOptions
+    )
         where THub : Hub
     {
         if (services is null)
@@ -50,7 +56,7 @@ public static class ServiceRegistration
     }
 
     /// <summary>
-    /// Registers Orleans-backed SignalR scale-out with IConfiguration binding.
+    ///     Registers Orleans-backed SignalR scale-out with IConfiguration binding.
     /// </summary>
     /// <typeparam name="THub">The hub type.</typeparam>
     /// <param name="services">The service collection.</param>
@@ -58,7 +64,8 @@ public static class ServiceRegistration
     /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection AddOrleansSignalRScaleOut<THub>(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration
+    )
         where THub : Hub
     {
         if (services is null)
@@ -75,7 +82,9 @@ public static class ServiceRegistration
         return AddOrleansSignalRScaleOutCore<THub>(services);
     }
 
-    private static IServiceCollection AddOrleansSignalRScaleOutCore<THub>(IServiceCollection services)
+    private static IServiceCollection AddOrleansSignalRScaleOutCore<THub>(
+        IServiceCollection services
+    )
         where THub : Hub
     {
         services.AddSingleton<HubLifetimeManager<THub>, OrleansHubLifetimeManager<THub>>();

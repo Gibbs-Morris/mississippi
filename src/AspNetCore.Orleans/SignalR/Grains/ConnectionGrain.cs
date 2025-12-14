@@ -1,27 +1,23 @@
-namespace Mississippi.AspNetCore.Orleans.SignalR.Grains;
-
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using global::Orleans;
-using global::Orleans.Runtime;
+
 using Microsoft.Extensions.Logging;
 
+using Orleans;
+using Orleans.Runtime;
+
+
+namespace Mississippi.AspNetCore.Orleans.SignalR.Grains;
+
 /// <summary>
-/// Orleans grain implementation for SignalR connection state management.
+///     Orleans grain implementation for SignalR connection state management.
 /// </summary>
-internal sealed class ConnectionGrain : IGrainBase, IConnectionGrain
+internal sealed class ConnectionGrain
+    : IGrainBase,
+      IConnectionGrain
 {
     /// <summary>
-    /// Gets the grain context required by IGrainBase.
-    /// </summary>
-    public IGrainContext GrainContext { get; }
-
-    private ILogger<ConnectionGrain> Logger { get; }
-    private IPersistentState<ConnectionState> State { get; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ConnectionGrain"/> class.
+    ///     Initializes a new instance of the <see cref="ConnectionGrain" /> class.
     /// </summary>
     /// <param name="grainContext">The grain context.</param>
     /// <param name="logger">The logger instance.</param>
@@ -30,39 +26,27 @@ internal sealed class ConnectionGrain : IGrainBase, IConnectionGrain
         IGrainContext grainContext,
         ILogger<ConnectionGrain> logger,
         [PersistentState("connection", "SignalRStorage")]
-        IPersistentState<ConnectionState> state)
+        IPersistentState<ConnectionState> state
+    )
     {
         GrainContext = grainContext;
         Logger = logger;
         State = state;
     }
 
-    /// <inheritdoc/>
-    public async Task RegisterAsync(string? userId, string[] groups)
-    {
-        string connectionId = this.GetPrimaryKeyString();
-        State.State.Data = new ConnectionData
-        {
-            ConnectionId = connectionId,
-            UserId = userId,
-            Groups = groups ?? [],
-        };
-        await State.WriteStateAsync();
-    }
+    /// <summary>
+    ///     Gets the grain context required by IGrainBase.
+    /// </summary>
+    public IGrainContext GrainContext { get; }
 
-    /// <inheritdoc/>
-    public Task<ConnectionData?> GetAsync()
-    {
-        if (!State.RecordExists || State.State.Data is null)
-        {
-            return Task.FromResult<ConnectionData?>(null);
-        }
+    private ILogger<ConnectionGrain> Logger { get; }
 
-        return Task.FromResult<ConnectionData?>(State.State.Data);
-    }
+    private IPersistentState<ConnectionState> State { get; }
 
-    /// <inheritdoc/>
-    public async Task AddToGroupAsync(string groupName)
+    /// <inheritdoc />
+    public async Task AddToGroupAsync(
+        string groupName
+    )
     {
         if (!State.RecordExists || State.State.Data is null)
         {
@@ -73,13 +57,45 @@ internal sealed class ConnectionGrain : IGrainBase, IConnectionGrain
         if (!groups.Contains(groupName))
         {
             groups.Add(groupName);
-            State.State.Data = State.State.Data with { Groups = [.. groups] };
+            State.State.Data = State.State.Data with
+            {
+                Groups = [.. groups],
+            };
             await State.WriteStateAsync();
         }
     }
 
-    /// <inheritdoc/>
-    public async Task RemoveFromGroupAsync(string groupName)
+    /// <inheritdoc />
+    public Task<ConnectionData?> GetAsync()
+    {
+        if (!State.RecordExists || State.State.Data is null)
+        {
+            return Task.FromResult<ConnectionData?>(null);
+        }
+
+        return Task.FromResult<ConnectionData?>(State.State.Data);
+    }
+
+    /// <inheritdoc />
+    public async Task RegisterAsync(
+        string? userId,
+        string[] groups
+    )
+    {
+        string connectionId = this.GetPrimaryKeyString();
+        State.State.Data = new()
+        {
+            ConnectionId = connectionId,
+            UserId = userId,
+            Groups = groups ?? [],
+        };
+        await State.WriteStateAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task RemoveFromGroupAsync(
+        string groupName
+    )
     {
         if (!State.RecordExists || State.State.Data is null)
         {
@@ -89,12 +105,15 @@ internal sealed class ConnectionGrain : IGrainBase, IConnectionGrain
         List<string> groups = [.. State.State.Data.Groups];
         if (groups.Remove(groupName))
         {
-            State.State.Data = State.State.Data with { Groups = [.. groups] };
+            State.State.Data = State.State.Data with
+            {
+                Groups = [.. groups],
+            };
             await State.WriteStateAsync();
         }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task UnregisterAsync()
     {
         await State.ClearStateAsync();
