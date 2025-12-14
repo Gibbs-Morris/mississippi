@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -53,12 +54,21 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
         CancellationToken cancellationToken
     )
     {
+        ArgumentNullException.ThrowIfNull(tag);
         cancellationToken.ThrowIfCancellationRequested();
-        // Note: This is a simplified implementation. For production, you'd need a tag index grain
-        // that tracks all keys associated with a tag for efficient eviction.
-        // For now, we just log that this operation would need a more sophisticated design.
-        Logger.TagEvictionNotImplemented(tag);
-        await Task.CompletedTask;
+        
+        // Get all keys associated with this tag from the tag index
+        ITagIndexGrain tagIndexGrain = ClusterClient.GetGrain<ITagIndexGrain>(tag);
+        IReadOnlyList<string> keys = await tagIndexGrain.GetKeysAsync();
+        
+        // Evict each entry that has this tag
+        foreach (string key in keys)
+        {
+            IOutputCacheEntryGrain grain = ClusterClient.GetGrain<IOutputCacheEntryGrain>(key);
+            await grain.EvictAsync();
+        }
+        
+        Logger.TagEvicted(tag, keys.Count);
     }
 
     /// <inheritdoc />
@@ -101,6 +111,16 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
         string grainKey = GetGrainKey(key);
         IOutputCacheEntryGrain grain = ClusterClient.GetGrain<IOutputCacheEntryGrain>(grainKey);
         await grain.SetAsync(data, tags);
+        
+        // Update tag index for each tag
+        if (tags is { Length: > 0 })
+        {
+            foreach (string tag in tags)
+            {
+                ITagIndexGrain tagIndexGrain = ClusterClient.GetGrain<ITagIndexGrain>(tag);
+                await tagIndexGrain.AddKeyAsync(grainKey);
+            }
+        }
     }
 
     private string GetGrainKey(
@@ -114,20 +134,22 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
 /// </summary>
 internal static class OutputCacheStoreLoggerExtensions
 {
-    private static readonly Action<ILogger, string, Exception?> TagEvictionNotImplementedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Warning,
-            new(1, nameof(TagEvictionNotImplemented)),
-            "EvictByTagAsync called for tag '{Tag}' but tag-based eviction requires a tag index implementation");
+    private static readonly Action<ILogger, string, int, Exception?> TagEvictedMessage =
+        LoggerMessage.Define<string, int>(
+            LogLevel.Debug,
+            new(1, nameof(TagEvicted)),
+            "Evicted {Count} entries with tag '{Tag}'");
 
     /// <summary>
-    ///     Logs that tag eviction is not implemented.
+    ///     Logs that entries were evicted by tag.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    /// <param name="tag">The tag to evict.</param>
-    public static void TagEvictionNotImplemented(
+    /// <param name="tag">The tag for eviction.</param>
+    /// <param name="count">The number of entries evicted.</param>
+    public static void TagEvicted(
         this ILogger<OrleansOutputCacheStore> logger,
-        string tag
+        string tag,
+        int count
     ) =>
-        TagEvictionNotImplementedMessage(logger, tag, null);
+        TagEvictedMessage(logger, tag, count, null);
 }
