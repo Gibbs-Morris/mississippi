@@ -33,6 +33,7 @@
         <InternalsVisibleTo Include="$(AssemblyName).L2Tests" />
         <InternalsVisibleTo Include="$(AssemblyName).L3Tests" />
         <InternalsVisibleTo Include="$(AssemblyName).L4Tests" />
+        <InternalsVisibleTo Include="$(AssemblyName).Benchmarks" />
         <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     </ItemGroup>
     <ItemGroup>
@@ -74,6 +75,12 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+    </ItemGroup>
+    <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Benchmarks'))">
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+    <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Benchmarks'))">
+        <PackageReference Include="BenchmarkDotNet" />
     </ItemGroup>
     <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <Using Include="Xunit" />
