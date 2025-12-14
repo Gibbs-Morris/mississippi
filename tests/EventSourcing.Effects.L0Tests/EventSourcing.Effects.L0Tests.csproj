@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EventSourcing.Effects\EventSourcing.Effects.csproj" />
+  </ItemGroup>
+</Project>

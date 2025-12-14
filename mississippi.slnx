@@ -17,6 +17,8 @@
     <Project Path="src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
     <Project Path="src\EventSourcing.Projections.Abstractions\EventSourcing.Projections.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Projections\EventSourcing.Projections.csproj" />
+    <Project Path="src\EventSourcing.Effects.Abstractions\EventSourcing.Effects.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Effects\EventSourcing.Effects.csproj" />
     <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
     <Project Path="src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
@@ -40,6 +42,8 @@
     <Project Path="tests\EventSourcing.Aggregates.Abstractions.L0Tests\EventSourcing.Aggregates.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Projections.L0Tests\EventSourcing.Projections.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Projections.Abstractions.L0Tests\EventSourcing.Projections.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\EventSourcing.Effects.L0Tests\EventSourcing.Effects.L0Tests.csproj" />
+    <Project Path="tests\EventSourcing.Effects.Abstractions.L0Tests\EventSourcing.Effects.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Reducers.L0Tests\EventSourcing.Reducers.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Reducers.Abstractions.L0Tests\EventSourcing.Reducers.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Snapshots.L0Tests\EventSourcing.Snapshots.L0Tests.csproj" />
