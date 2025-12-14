@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Mississippi.AspNetCore.Orleans.L0Tests.Infrastructure;
+using Mississippi.AspNetCore.Orleans.L1Tests.Infrastructure;
 using Mississippi.AspNetCore.Orleans.SignalR;
 using Mississippi.AspNetCore.Orleans.SignalR.Grains;
 using Mississippi.AspNetCore.Orleans.SignalR.Options;
@@ -17,22 +17,27 @@ using Orleans;
 using Orleans.TestingHost;
 using Xunit;
 
-namespace Mississippi.AspNetCore.Orleans.L0Tests.SignalR;
+namespace Mississippi.AspNetCore.Orleans.L1Tests.SignalR;
 
 /// <summary>
-/// Comprehensive tests for <see cref="OrleansHubLifetimeManager{THub}"/> covering all interface methods and edge cases.
+/// Comprehensive L1 integration tests for <see cref="OrleansHubLifetimeManager{THub}"/> using Orleans TestCluster.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
 public sealed class OrleansHubLifetimeManagerTests
 {
-    private readonly TestCluster cluster = TestClusterAccess.Cluster;
+    private readonly TestCluster cluster;
+
+    public OrleansHubLifetimeManagerTests(ClusterFixture fixture)
+    {
+        cluster = fixture.Cluster;
+    }
 
     /// <summary>
     /// Creates a new OrleansHubLifetimeManager instance for testing with specified options.
     /// </summary>
     private OrleansHubLifetimeManager<TestHub> CreateManager(SignalROptions? options = null)
     {
-        var opts = options ?? new SignalROptions { StreamProvider = "SignalRStreamProvider" };
+        var opts = options ?? new SignalROptions { StreamProviderName = "SignalRStreamProvider" };
         var logger = cluster.ServiceProvider.GetService(typeof(ILogger<OrleansHubLifetimeManager<TestHub>>)) as ILogger<OrleansHubLifetimeManager<TestHub>>;
         return new OrleansHubLifetimeManager<TestHub>(
             logger ?? throw new InvalidOperationException("Logger not found"),

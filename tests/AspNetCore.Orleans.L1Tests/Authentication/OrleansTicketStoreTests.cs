@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,20 +10,25 @@ using Microsoft.Extensions.Options;
 using Mississippi.AspNetCore.Orleans.Authentication;
 using Mississippi.AspNetCore.Orleans.Authentication.Grains;
 using Mississippi.AspNetCore.Orleans.Authentication.Options;
-using Mississippi.AspNetCore.Orleans.L0Tests.Infrastructure;
+using Mississippi.AspNetCore.Orleans.L1Tests.Infrastructure;
 using Orleans;
 using Orleans.TestingHost;
 using Xunit;
 
-namespace Mississippi.AspNetCore.Orleans.L0Tests.Authentication;
+namespace Mississippi.AspNetCore.Orleans.L1Tests.Authentication;
 
 /// <summary>
-/// Comprehensive tests for <see cref="OrleansTicketStore"/> covering all interface methods and edge cases.
+/// Comprehensive L1 integration tests for <see cref="OrleansTicketStore"/> using Orleans TestCluster.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
 public sealed class OrleansTicketStoreTests
 {
-    private readonly TestCluster cluster = TestClusterAccess.Cluster;
+    private readonly TestCluster cluster;
+
+    public OrleansTicketStoreTests(ClusterFixture fixture)
+    {
+        cluster = fixture.Cluster;
+    }
 
     /// <summary>
     /// Creates a new OrleansTicketStore instance for testing with specified options.
@@ -31,7 +37,7 @@ public sealed class OrleansTicketStoreTests
     {
         var opts = options ?? new TicketStoreOptions { KeyPrefix = "test" };
         var logger = cluster.ServiceProvider.GetService(typeof(ILogger<OrleansTicketStore>)) as ILogger<OrleansTicketStore>;
-        var serializer = new TicketSerializer();
+        var serializer = new Mississippi.AspNetCore.Orleans.Authentication.TicketSerializer();
         return new OrleansTicketStore(
             logger ?? throw new InvalidOperationException("Logger not found"),
             cluster.Client,

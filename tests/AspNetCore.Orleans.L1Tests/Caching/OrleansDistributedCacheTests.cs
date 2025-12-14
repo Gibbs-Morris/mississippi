@@ -8,20 +8,25 @@ using Microsoft.Extensions.Options;
 using Mississippi.AspNetCore.Orleans.Caching;
 using Mississippi.AspNetCore.Orleans.Caching.Grains;
 using Mississippi.AspNetCore.Orleans.Caching.Options;
-using Mississippi.AspNetCore.Orleans.L0Tests.Infrastructure;
+using Mississippi.AspNetCore.Orleans.L1Tests.Infrastructure;
 using Orleans;
 using Orleans.TestingHost;
 using Xunit;
 
-namespace Mississippi.AspNetCore.Orleans.L0Tests.Caching;
+namespace Mississippi.AspNetCore.Orleans.L1Tests.Caching;
 
 /// <summary>
-/// Comprehensive tests for <see cref="OrleansDistributedCache"/> covering all interface methods and edge cases.
+/// Comprehensive L1 integration tests for <see cref="OrleansDistributedCache"/> using Orleans TestCluster.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
 public sealed class OrleansDistributedCacheTests
 {
-    private readonly TestCluster cluster = TestClusterAccess.Cluster;
+    private readonly TestCluster cluster;
+
+    public OrleansDistributedCacheTests(ClusterFixture fixture)
+    {
+        cluster = fixture.Cluster;
+    }
 
     /// <summary>
     /// Creates a new OrleansDistributedCache instance for testing with specified options.

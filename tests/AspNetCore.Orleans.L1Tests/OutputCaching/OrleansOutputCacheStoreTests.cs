@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Mississippi.AspNetCore.Orleans.L0Tests.Infrastructure;
+using Mississippi.AspNetCore.Orleans.L1Tests.Infrastructure;
 using Mississippi.AspNetCore.Orleans.OutputCaching;
 using Mississippi.AspNetCore.Orleans.OutputCaching.Grains;
 using Mississippi.AspNetCore.Orleans.OutputCaching.Options;
@@ -13,15 +13,20 @@ using Orleans;
 using Orleans.TestingHost;
 using Xunit;
 
-namespace Mississippi.AspNetCore.Orleans.L0Tests.OutputCaching;
+namespace Mississippi.AspNetCore.Orleans.L1Tests.OutputCaching;
 
 /// <summary>
-/// Comprehensive tests for <see cref="OrleansOutputCacheStore"/> covering all interface methods and edge cases.
+/// Comprehensive L1 integration tests for <see cref="OrleansOutputCacheStore"/> using Orleans TestCluster.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
 public sealed class OrleansOutputCacheStoreTests
 {
-    private readonly TestCluster cluster = TestClusterAccess.Cluster;
+    private readonly TestCluster cluster;
+
+    public OrleansOutputCacheStoreTests(ClusterFixture fixture)
+    {
+        cluster = fixture.Cluster;
+    }
 
     /// <summary>
     /// Creates a new OrleansOutputCacheStore instance for testing with specified options.
@@ -64,7 +69,7 @@ public sealed class OrleansOutputCacheStoreTests
         var store = CreateStore();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => store.GetAsync(null!, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.GetAsync(null!, CancellationToken.None));
     }
 
     /// <summary>
@@ -100,7 +105,7 @@ public sealed class OrleansOutputCacheStoreTests
         var validFor = TimeSpan.FromMinutes(5);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => store.SetAsync(null!, value, null, validFor, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.SetAsync(null!, value, null, validFor, CancellationToken.None));
     }
 
     /// <summary>
@@ -115,7 +120,7 @@ public sealed class OrleansOutputCacheStoreTests
         var validFor = TimeSpan.FromMinutes(5);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => store.SetAsync(key, null!, null, validFor, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.SetAsync(key, null!, null, validFor, CancellationToken.None));
     }
 
     /// <summary>
@@ -128,7 +133,7 @@ public sealed class OrleansOutputCacheStoreTests
         var store = CreateStore();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => store.EvictByTagAsync(null!, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.EvictByTagAsync(null!, CancellationToken.None));
     }
 
     /// <summary>
@@ -177,7 +182,7 @@ public sealed class OrleansOutputCacheStoreTests
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => store.GetAsync(key, cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await store.GetAsync(key, cts.Token));
     }
 
     /// <summary>
@@ -195,7 +200,7 @@ public sealed class OrleansOutputCacheStoreTests
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => store.SetAsync(key, value, null, validFor, cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await store.SetAsync(key, value, null, validFor, cts.Token));
     }
 
     /// <summary>
