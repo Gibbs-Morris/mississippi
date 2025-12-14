@@ -134,7 +134,7 @@ public sealed class OrleansTicketStore : ITicketStore
         return key;
     }
 
-    private string GenerateKey() => $"{Options.Value.KeyPrefix}{Guid.NewGuid():N}";
+    private string GenerateKey() => $"{Options.Value.KeyPrefix}:{Guid.NewGuid():N}";
 }
 
 /// <summary>

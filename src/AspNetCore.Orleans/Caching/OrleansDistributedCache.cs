@@ -61,6 +61,7 @@ public sealed class OrleansDistributedCache : IDistributedCache
     )
     {
         ArgumentNullException.ThrowIfNull(key);
+        token.ThrowIfCancellationRequested();
         string grainKey = GetGrainKey(key);
         ICacheEntryGrain grain = ClusterClient.GetGrain<ICacheEntryGrain>(grainKey);
         CacheEntryData? data = await grain.GetAsync();
@@ -89,6 +90,7 @@ public sealed class OrleansDistributedCache : IDistributedCache
     )
     {
         ArgumentNullException.ThrowIfNull(key);
+        token.ThrowIfCancellationRequested();
         string grainKey = GetGrainKey(key);
         ICacheEntryGrain grain = ClusterClient.GetGrain<ICacheEntryGrain>(grainKey);
         await grain.RefreshAsync();
@@ -110,6 +112,7 @@ public sealed class OrleansDistributedCache : IDistributedCache
     )
     {
         ArgumentNullException.ThrowIfNull(key);
+        token.ThrowIfCancellationRequested();
         string grainKey = GetGrainKey(key);
         ICacheEntryGrain grain = ClusterClient.GetGrain<ICacheEntryGrain>(grainKey);
         await grain.RemoveAsync();
@@ -136,6 +139,7 @@ public sealed class OrleansDistributedCache : IDistributedCache
     {
         ArgumentNullException.ThrowIfNull(key);
         ArgumentNullException.ThrowIfNull(value);
+        token.ThrowIfCancellationRequested();
         DateTimeOffset now = TimeProvider.GetUtcNow();
         DateTimeOffset? absoluteExpiration = null;
         TimeSpan? slidingExpiration = null;
@@ -177,7 +181,7 @@ public sealed class OrleansDistributedCache : IDistributedCache
     private string GetGrainKey(
         string key
     ) =>
-        $"{Options.Value.KeyPrefix}{key}";
+        $"{Options.Value.KeyPrefix}:{key}";
 }
 
 /// <summary>

@@ -53,6 +53,7 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
         CancellationToken cancellationToken
     )
     {
+        cancellationToken.ThrowIfCancellationRequested();
         // Note: This is a simplified implementation. For production, you'd need a tag index grain
         // that tracks all keys associated with a tag for efficient eviction.
         // For now, we just log that this operation would need a more sophisticated design.
@@ -71,6 +72,7 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
             throw new ArgumentNullException(nameof(key));
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         string grainKey = GetGrainKey(key);
         IOutputCacheEntryGrain grain = ClusterClient.GetGrain<IOutputCacheEntryGrain>(grainKey);
         OutputCacheEntryData? data = await grain.GetAsync();
@@ -88,6 +90,7 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
     {
         ArgumentNullException.ThrowIfNull(key);
         ArgumentNullException.ThrowIfNull(value);
+        cancellationToken.ThrowIfCancellationRequested();
         DateTimeOffset expiresAt = TimeProvider.GetUtcNow() + validFor;
         OutputCacheEntryData data = new()
         {
@@ -103,7 +106,7 @@ public sealed class OrleansOutputCacheStore : IOutputCacheStore
     private string GetGrainKey(
         string key
     ) =>
-        $"{Options.Value.KeyPrefix}{key}";
+        $"{Options.Value.KeyPrefix}:{key}";
 }
 
 /// <summary>
