@@ -31,8 +31,12 @@
     <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />
     <Project Path="tests\AspNetCore.Orleans.L0Tests\AspNetCore.Orleans.L0Tests.csproj" />
     <Project Path="tests\Core.L0Tests\Core.L0Tests.csproj" />
+    <Project Path="tests\Core.L1Tests\Core.L1Tests.csproj" />
+    <Project Path="tests\Core.L2Tests\Core.L2Tests.csproj" />
     <Project Path="tests\Core.Abstractions.L0Tests\Core.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Brooks.L0Tests\EventSourcing.Brooks.L0Tests.csproj" />
+    <Project Path="tests\EventSourcing.Brooks.L1Tests\EventSourcing.Brooks.L1Tests.csproj" />
+    <Project Path="tests\EventSourcing.Brooks.L2Tests\EventSourcing.Brooks.L2Tests.csproj" />
     <Project Path="tests\EventSourcing.Brooks.Cosmos.L0Tests\EventSourcing.Brooks.Cosmos.L0Tests.csproj" />
     <Project Path="tests\Hosting.L0Tests\Hosting.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Brooks.Abstractions.L0Tests\EventSourcing.Brooks.Abstractions.L0Tests.csproj" />
