@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+  </ItemGroup>
+
+</Project>

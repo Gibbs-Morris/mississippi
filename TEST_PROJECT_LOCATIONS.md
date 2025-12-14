@@ -40,19 +40,55 @@ Pure unit tests with no external dependencies:
 - `tests/EventSourcing.Snapshots.Cosmos.L0Tests/`
 - `tests/Hosting.L0Tests/`
 
-### L1 Test Projects (2 projects)
+### L1 Test Projects (20 projects)
 
 Tests with lightweight infrastructure dependencies:
 
-- `tests/Core.L1Tests/` - Contains placeholder test with Level:L1 trait
-- `tests/EventSourcing.Brooks.L1Tests/` - Contains placeholder test with Level:L1 trait
+- `tests/Architecture.L1Tests/`
+- `tests/AspNetCore.Orleans.L1Tests/`
+- `tests/Core.L1Tests/`
+- `tests/Core.Abstractions.L1Tests/`
+- `tests/EventSourcing.Aggregates.L1Tests/`
+- `tests/EventSourcing.Aggregates.Abstractions.L1Tests/`
+- `tests/EventSourcing.Brooks.L1Tests/`
+- `tests/EventSourcing.Brooks.Abstractions.L1Tests/`
+- `tests/EventSourcing.Brooks.Cosmos.L1Tests/`
+- `tests/EventSourcing.Projections.L1Tests/`
+- `tests/EventSourcing.Projections.Abstractions.L1Tests/`
+- `tests/EventSourcing.Reducers.L1Tests/`
+- `tests/EventSourcing.Reducers.Abstractions.L1Tests/`
+- `tests/EventSourcing.Serialization.L1Tests/`
+- `tests/EventSourcing.Serialization.Abstractions.L1Tests/`
+- `tests/EventSourcing.Serialization.Json.L1Tests/`
+- `tests/EventSourcing.Snapshots.L1Tests/`
+- `tests/EventSourcing.Snapshots.Abstractions.L1Tests/`
+- `tests/EventSourcing.Snapshots.Cosmos.L1Tests/`
+- `tests/Hosting.L1Tests/`
 
-### L2 Test Projects (2 projects)
+### L2 Test Projects (20 projects)
 
 Functional tests against test deployments:
 
-- `tests/Core.L2Tests/` - Contains placeholder test with Level:L2 trait
-- `tests/EventSourcing.Brooks.L2Tests/` - Contains placeholder test with Level:L2 trait
+- `tests/Architecture.L2Tests/`
+- `tests/AspNetCore.Orleans.L2Tests/`
+- `tests/Core.L2Tests/`
+- `tests/Core.Abstractions.L2Tests/`
+- `tests/EventSourcing.Aggregates.L2Tests/`
+- `tests/EventSourcing.Aggregates.Abstractions.L2Tests/`
+- `tests/EventSourcing.Brooks.L2Tests/`
+- `tests/EventSourcing.Brooks.Abstractions.L2Tests/`
+- `tests/EventSourcing.Brooks.Cosmos.L2Tests/`
+- `tests/EventSourcing.Projections.L2Tests/`
+- `tests/EventSourcing.Projections.Abstractions.L2Tests/`
+- `tests/EventSourcing.Reducers.L2Tests/`
+- `tests/EventSourcing.Reducers.Abstractions.L2Tests/`
+- `tests/EventSourcing.Serialization.L2Tests/`
+- `tests/EventSourcing.Serialization.Abstractions.L2Tests/`
+- `tests/EventSourcing.Serialization.Json.L2Tests/`
+- `tests/EventSourcing.Snapshots.L2Tests/`
+- `tests/EventSourcing.Snapshots.Abstractions.L2Tests/`
+- `tests/EventSourcing.Snapshots.Cosmos.L2Tests/`
+- `tests/Hosting.L2Tests/`
 
 ## Placeholder Tests
 
