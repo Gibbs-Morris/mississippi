@@ -32,6 +32,28 @@ public sealed class RootReducerTests
         }
     }
 
+    private sealed class CountingReducer : IReducer<TestProjection>
+    {
+        public int InvocationCount { get; private set; }
+
+        public bool TryReduce(
+            TestProjection state,
+            object eventData,
+            out TestProjection projection
+        )
+        {
+            InvocationCount++;
+            if (eventData is not TestEvent typedEvent)
+            {
+                projection = default!;
+                return false;
+            }
+
+            projection = new($"{state.Value}-{typedEvent.Value}-c{InvocationCount}");
+            return true;
+        }
+    }
+
     private sealed record MutableEvent(string Value);
 
     private sealed class MutableProjection
@@ -106,6 +128,17 @@ public sealed class RootReducerTests
     }
 
     /// <summary>
+    ///     Ensures Reduce throws when event data is null.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void ReduceShouldThrowWhenEventIsNull()
+    {
+        RootReducer<TestProjection> root = new(Array.Empty<IReducer<TestProjection>>());
+        Assert.Throws<ArgumentNullException>(() => root.Reduce(new TestProjection("s0"), null!));
+    }
+
+    /// <summary>
     ///     Ensures reducers cannot mutate and return the same projection instance.
     /// </summary>
     [AllureEpic("Reducers")]
@@ -139,6 +172,24 @@ public sealed class RootReducerTests
     }
 
     /// <summary>
+    ///     Ensures Reduce stops iterating after the first matching reducer.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void ReduceShouldStopAfterFirstMatchingReducer()
+    {
+        CountingReducer first = new();
+        ThrowingReducer second = new();
+        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { first, second };
+        RootReducer<TestProjection> root = new(reducers);
+        TestProjection state = new("s0");
+        TestProjection result = root.Reduce(state, new TestEvent("e1"));
+        Assert.Equal("s0-e1-c1", result.Value);
+        Assert.Equal(1, first.InvocationCount);
+        Assert.False(second.Invoked);
+    }
+
+    /// <summary>
     ///     Ensures Reduce returns the existing state when no reducer matches the event.
     /// </summary>
     [AllureEpic("Reducers")]
@@ -150,5 +201,20 @@ public sealed class RootReducerTests
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new TestEvent("e0"));
         Assert.Same(state, result);
+    }
+
+    private sealed class ThrowingReducer : IReducer<TestProjection>
+    {
+        public bool Invoked { get; private set; }
+
+        public bool TryReduce(
+            TestProjection state,
+            object eventData,
+            out TestProjection projection
+        )
+        {
+            Invoked = true;
+            throw new InvalidOperationException("This reducer should not be invoked when a prior reducer matches.");
+        }
     }
 }

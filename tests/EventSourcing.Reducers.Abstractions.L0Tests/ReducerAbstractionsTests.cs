@@ -11,6 +11,36 @@ namespace Mississippi.EventSourcing.Reducers.Abstractions.L0Tests;
 /// </summary>
 public sealed class ReducerAbstractionsTests
 {
+    private sealed record MutableEvent(string Value);
+
+    private sealed class MutableProjection
+    {
+        public string Value { get; set; } = string.Empty;
+    }
+
+    private sealed class MutatingReducer : Reducer<MutableEvent, MutableProjection>
+    {
+        protected override MutableProjection ReduceCore(
+            MutableProjection state,
+            MutableEvent eventData
+        )
+        {
+            state.Value = eventData.Value;
+            return state;
+        }
+    }
+
+    private sealed class NonMutatingReducer : Reducer<MutableEvent, MutableProjection>
+    {
+        protected override MutableProjection ReduceCore(
+            MutableProjection state,
+            MutableEvent eventData
+        ) => new()
+        {
+            Value = $"{state.Value}-{eventData.Value}",
+        };
+    }
+
     /// <summary>
     ///     Verifies the projection-scoped reducer contract shape stays stable.
     /// </summary>
@@ -74,6 +104,73 @@ public sealed class ReducerAbstractionsTests
         Assert.Contains(
             reducerType.GetInterfaces(),
             x => x.IsGenericType && (x.GetGenericTypeDefinition() == typeof(IReducer<,>)));
+    }
+
+    /// <summary>
+    ///     Verifies the base reducer guard prevents returning the same reference for reference types.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void ReducerBaseClassShouldRejectMutatingReducerReturningSameInstance()
+    {
+        MutableProjection state = new()
+        {
+            Value = "s0",
+        };
+        MutatingReducer reducer = new();
+        Assert.Throws<InvalidOperationException>(() => reducer.Reduce(state, new MutableEvent("e0")));
+    }
+
+    /// <summary>
+    ///     Verifies TryReduce also enforces the immutability guard.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void TryReduceShouldRejectMutatingReducerReturningSameInstance()
+    {
+        MutableProjection state = new()
+        {
+            Value = "s0",
+        };
+        MutatingReducer reducer = new();
+        Assert.Throws<InvalidOperationException>(() => reducer.TryReduce(state, new MutableEvent("e0"), out _));
+    }
+
+    /// <summary>
+    ///     Verifies TryReduce returns false and leaves state unchanged when the event type does not match.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void TryReduceShouldReturnFalseWhenEventTypeDoesNotMatch()
+    {
+        MutableProjection state = new()
+        {
+            Value = "s0",
+        };
+        MutatingReducer reducer = new();
+        bool reduced = reducer.TryReduce(state, new object(), out MutableProjection projection);
+        Assert.False(reduced);
+        Assert.Null(projection);
+        Assert.Equal("s0", state.Value);
+    }
+
+    /// <summary>
+    ///     Verifies TryReduce returns the projection produced by ReduceCore when the event matches.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void TryReduceShouldReturnProjectionWhenEventMatches()
+    {
+        MutableProjection state = new()
+        {
+            Value = "s0",
+        };
+        NonMutatingReducer reducer = new();
+        bool reduced = reducer.TryReduce(state, new MutableEvent("e1"), out MutableProjection projection);
+        Assert.True(reduced);
+        Assert.NotSame(state, projection);
+        Assert.Equal("s0-e1", projection.Value);
+        Assert.Equal("s0", state.Value);
     }
 
     /// <summary>
