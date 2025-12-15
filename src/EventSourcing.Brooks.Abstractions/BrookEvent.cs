@@ -49,8 +49,8 @@ public sealed record BrookEvent
     public DateTimeOffset? Time { get; init; }
 
     /// <summary>
-    ///     Gets the semantic type of the event.
+    ///     Gets the semantic event type used to interpret and deserialize the payload downstream.
     /// </summary>
     [Id(0)]
-    public string Type { get; init; } = string.Empty;
+    public string EventType { get; init; } = string.Empty;
 }

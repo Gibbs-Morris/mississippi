@@ -1,12 +1,11 @@
 namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 
 /// <summary>
-///     Combines snapshot read, write, delete, and pruning operations for a given projection snapshot type.
+///     Combines snapshot read, write, delete, and pruning operations for snapshot envelopes.
 /// </summary>
-/// <typeparam name="TProjection">The projection snapshot model.</typeparam>
-public interface ISnapshotStorageProvider<TProjection>
-    : ISnapshotStorageReader<TProjection>,
-      ISnapshotStorageWriter<TProjection>
+public interface ISnapshotStorageProvider
+        : ISnapshotStorageReader,
+            ISnapshotStorageWriter
 {
     /// <summary>
     ///     Gets the storage format identifier for this snapshot provider.

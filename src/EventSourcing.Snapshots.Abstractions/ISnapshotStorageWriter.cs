@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 
 /// <summary>
-///     Provides write, delete, and pruning operations for projection snapshots.
+///     Provides write, delete, and pruning operations for projection snapshots using raw envelopes.
 /// </summary>
-/// <typeparam name="TProjection">The projection snapshot model.</typeparam>
-public interface ISnapshotStorageWriter<TProjection>
+public interface ISnapshotStorageWriter
 {
     /// <summary>
     ///     Deletes all snapshots for a projection stream, optionally scoped by reducers hash.
@@ -55,12 +54,12 @@ public interface ISnapshotStorageWriter<TProjection>
     ///     Implementations must store one snapshot per version.
     /// </summary>
     /// <param name="snapshotKey">The snapshot key identifying projection type, projection id, reducers hash, and version.</param>
-    /// <param name="projection">The projection snapshot to persist.</param>
+    /// <param name="snapshot">The snapshot envelope to persist.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task that completes when the snapshot is persisted.</returns>
     Task WriteAsync(
         SnapshotKey snapshotKey,
-        TProjection projection,
+        SnapshotEnvelope snapshot,
         CancellationToken cancellationToken = default
     );
 }

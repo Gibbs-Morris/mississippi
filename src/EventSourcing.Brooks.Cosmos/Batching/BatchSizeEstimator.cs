@@ -30,7 +30,7 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
         // String properties (UTF-8 encoding, so multiply by 2 for safety)
         size += (brookEvent.Id?.Length ?? 0) * 2;
         size += (brookEvent.Source?.Length ?? 0) * 2;
-        size += (brookEvent.Type?.Length ?? 0) * 2;
+        size += (brookEvent.EventType?.Length ?? 0) * 2;
         size += (brookEvent.DataContentType?.Length ?? 0) * 2;
 
         // Data size (Cosmos JSON stores bytes as base64, adds ~33% overhead)
@@ -132,7 +132,7 @@ internal class BatchSizeEstimator : IBatchSizeEstimator
                 Position = 1,
                 EventId = brookEvent.Id ?? string.Empty,
                 Source = brookEvent.Source,
-                EventType = brookEvent.Type ?? string.Empty,
+                EventType = brookEvent.EventType ?? string.Empty,
                 DataContentType = brookEvent.DataContentType,
                 Data = brookEvent.Data.ToArray(),
                 Time = brookEvent.Time ?? DateTimeOffset.UtcNow,

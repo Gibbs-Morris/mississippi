@@ -24,7 +24,7 @@ internal class EventStorageToEventMapper : IMapper<EventStorageModel, BrookEvent
         {
             Id = input.EventId,
             Source = input.Source ?? string.Empty,
-            Type = input.EventType,
+            EventType = input.EventType,
             DataContentType = input.DataContentType ?? string.Empty,
             Data = input.Data?.ToImmutableArray() ?? ImmutableArray<byte>.Empty,
             Time = input.Time,

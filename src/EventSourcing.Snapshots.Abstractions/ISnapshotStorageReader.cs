@@ -5,18 +5,17 @@ using System.Threading.Tasks;
 namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 
 /// <summary>
-///     Provides read access to projection snapshots stored for a specific projection type.
+///     Provides read access to projection snapshots as raw envelopes so storage remains serialization-agnostic.
 /// </summary>
-/// <typeparam name="TProjection">The projection snapshot model.</typeparam>
-public interface ISnapshotStorageReader<TProjection>
+public interface ISnapshotStorageReader
 {
     /// <summary>
     ///     Reads a specific snapshot version for a projection stream.
     /// </summary>
     /// <param name="snapshotKey">The snapshot key identifying projection type, projection id, reducers hash, and version.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The snapshot projection, or <c>null</c> when the snapshot does not exist.</returns>
-    Task<TProjection?> ReadAsync(
+    /// <returns>The snapshot envelope, or <c>null</c> when the snapshot does not exist.</returns>
+    Task<SnapshotEnvelope?> ReadAsync(
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
     );
