@@ -26,6 +26,21 @@ public sealed class DelegateReducerTests
     }
 
     /// <summary>
+    ///     Verifies the immutability guard does not fire when both state and projection are null.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void ReduceShouldAllowNullStateAndProjection()
+    {
+        DelegateReducer<string, string?> reducer = new((
+            state,
+            @event
+        ) => null);
+        string? projection = reducer.Reduce(null!, "e0");
+        Assert.Null(projection);
+    }
+
+    /// <summary>
     ///     Verifies reducers must return a new projection instance instead of mutating and returning the same reference.
     /// </summary>
     [AllureEpic("Reducers")]

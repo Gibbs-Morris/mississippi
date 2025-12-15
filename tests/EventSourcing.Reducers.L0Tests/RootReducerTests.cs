@@ -106,6 +106,20 @@ public sealed class RootReducerTests
         }
     }
 
+    private sealed class NullReturningReducer : IReducer<string?>
+    {
+        public bool TryReduce(
+            string? state,
+            object eventData,
+            out string? projection
+        )
+        {
+            ArgumentNullException.ThrowIfNull(eventData);
+            projection = null;
+            return true;
+        }
+    }
+
     private sealed record TestEvent(string Value);
 
     private sealed record TestProjection(string Value);
@@ -140,6 +154,19 @@ public sealed class RootReducerTests
         string hashB = rootB.GetReducerHash();
         Assert.Equal(hashA, hashB);
         Assert.NotEmpty(hashA);
+    }
+
+    /// <summary>
+    ///     Ensures reducers can legitimately return null when given null state without tripping the immutability guard.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void ReduceShouldAllowNullStateAndProjection()
+    {
+        IReducer<string?>[] reducers = new IReducer<string?>[] { new NullReturningReducer() };
+        RootReducer<string?> root = new(reducers);
+        string? projection = root.Reduce(null!, "e0");
+        Assert.Null(projection);
     }
 
     /// <summary>

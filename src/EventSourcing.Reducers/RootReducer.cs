@@ -70,7 +70,7 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
             IReducer<TProjection> reducer = reducers[i];
             if (reducer.TryReduce(state, eventData, out TProjection projection))
             {
-                if (!typeof(TProjection).IsValueType && ReferenceEquals(state, projection))
+                if (!typeof(TProjection).IsValueType && state is not null && ReferenceEquals(state, projection))
                 {
                     Logger.RootReducerProjectionInstanceReused(reducer.GetType().Name, projectionType, eventType);
                     throw new InvalidOperationException(

@@ -43,7 +43,7 @@ public sealed class DelegateReducer<TEvent, TProjection> : Reducer<TEvent, TProj
         string eventType = typeof(TEvent).Name;
         Logger.DelegateReducerReducing(projectionType, eventType);
         TProjection projection = reduce(state, eventData);
-        if (!typeof(TProjection).IsValueType && ReferenceEquals(state, projection))
+        if (!typeof(TProjection).IsValueType && state is not null && ReferenceEquals(state, projection))
         {
             Logger.DelegateReducerProjectionInstanceReused(projectionType, eventType);
             throw new InvalidOperationException(
