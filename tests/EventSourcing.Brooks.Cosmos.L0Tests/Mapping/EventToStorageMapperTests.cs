@@ -26,7 +26,7 @@ public class EventToStorageMapperTests
         {
             Id = "evt-1",
             Source = "the-source",
-            Type = "my-type",
+            EventType = "my-type",
             DataContentType = "application/json",
             Data = ImmutableArray.Create<byte>(1, 2, 3),
             Time = DateTimeOffset.UtcNow,
@@ -39,7 +39,7 @@ public class EventToStorageMapperTests
         // Assert
         Assert.Equal(input.Id, result.EventId);
         Assert.Equal(input.Source, result.Source);
-        Assert.Equal(input.Type, result.EventType);
+        Assert.Equal(input.EventType, result.EventType);
         Assert.Equal(input.DataContentType, result.DataContentType);
         Assert.Equal(input.Data.ToArray(), result.Data);
         Assert.Equal(input.Time, result.Time);

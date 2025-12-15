@@ -27,7 +27,7 @@ public class BatchSizeEstimatorTests
         {
             Id = source.Id,
             Source = source.Source,
-            Type = source.Type,
+            EventType = source.EventType,
             DataContentType = source.DataContentType,
             Data = source.Data,
             Time = source.Time,
@@ -40,7 +40,7 @@ public class BatchSizeEstimatorTests
         long size = 300;
         size += (brookEvent.Id?.Length ?? 0) * 2L;
         size += (brookEvent.Source?.Length ?? 0) * 2L;
-        size += (brookEvent.Type?.Length ?? 0) * 2L;
+        size += (brookEvent.EventType?.Length ?? 0) * 2L;
         size += (brookEvent.DataContentType?.Length ?? 0) * 2L;
         long base64Size = (brookEvent.Data.Length * 4L) / 3L;
         size += base64Size + 64;
@@ -69,7 +69,7 @@ public class BatchSizeEstimatorTests
         {
             Id = "boundary",
             Source = "src",
-            Type = "type",
+            EventType = "type",
             Data = CreatePayload(512, 0x33),
             Time = DateTimeOffset.UtcNow,
         };
@@ -99,7 +99,7 @@ public class BatchSizeEstimatorTests
             {
                 Id = $"e{i}",
                 Source = "s",
-                Type = "t",
+                EventType = "t",
                 Data = ImmutableArray.Create(new byte[10]),
             })
             .ToArray();
@@ -125,7 +125,7 @@ public class BatchSizeEstimatorTests
         {
             Id = "size",
             Source = "src",
-            Type = "type",
+            EventType = "type",
             DataContentType = "application/octet-stream",
             Data = CreatePayload(256, 0x1A),
             Time = DateTimeOffset.FromUnixTimeSeconds(1),
@@ -159,7 +159,7 @@ public class BatchSizeEstimatorTests
         {
             Id = "oversize",
             Source = "source",
-            Type = "type",
+            EventType = "type",
             DataContentType = "application/octet-stream",
             Data = CreatePayload(1024, 0x52),
             Time = DateTimeOffset.FromUnixTimeSeconds(321),
@@ -188,7 +188,7 @@ public class BatchSizeEstimatorTests
         {
             Id = "oversized",
             Source = "s",
-            Type = "t",
+            EventType = "t",
             Data = ImmutableArray.Create(new byte[2000]),
         };
 
@@ -226,7 +226,7 @@ public class BatchSizeEstimatorTests
         {
             Id = "inc",
             Source = "src",
-            Type = "type",
+            EventType = "type",
             DataContentType = "application/octet-stream",
             Data = CreatePayload(128, 0x11),
             Time = DateTimeOffset.FromUnixTimeSeconds(100),
@@ -246,7 +246,7 @@ public class BatchSizeEstimatorTests
         BrookEvent e1 = new()
         {
             Id = "1",
-            Type = "A",
+            EventType = "A",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.Create<byte>(1, 2, 3, 4),
             Time = DateTimeOffset.FromUnixTimeSeconds(11),
@@ -254,7 +254,7 @@ public class BatchSizeEstimatorTests
         BrookEvent e2 = new()
         {
             Id = "2",
-            Type = "B",
+            EventType = "B",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.Create<byte>(5),
             Time = DateTimeOffset.FromUnixTimeSeconds(12),
@@ -288,7 +288,7 @@ public class BatchSizeEstimatorTests
         {
             Id = new('I', 10),
             Source = new('S', 9),
-            Type = new('T', 8),
+            EventType = new('T', 8),
             DataContentType = "text/custom",
         };
         long expected = ComputeFallbackEstimate(decorated);
@@ -309,7 +309,7 @@ public class BatchSizeEstimatorTests
         {
             Id = new('X', 5),
             Source = new('Y', 7),
-            Type = new('Z', 3),
+            EventType = new('Z', 3),
             DataContentType = "text/plain",
             Data = CreatePayload(payloadLength, 0x5A),
             Time = DateTimeOffset.FromUnixTimeSeconds(512),
@@ -339,7 +339,7 @@ public class BatchSizeEstimatorTests
         {
             Id = "big-evt",
             Source = "big-src",
-            Type = "BIG",
+            EventType = "BIG",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.CreateRange(largeData),
             Time = DateTimeOffset.UtcNow,
@@ -372,7 +372,7 @@ public class BatchSizeEstimatorTests
         {
             Id = new('i', 12),
             Source = new('s', 8),
-            Type = new('t', 6),
+            EventType = new('t', 6),
             DataContentType = "application/vnd.custom",
         };
         EventDocument expectedDoc = new()
@@ -382,7 +382,7 @@ public class BatchSizeEstimatorTests
             Position = 1,
             EventId = rich.Id!,
             Source = rich.Source,
-            EventType = rich.Type!,
+            EventType = rich.EventType!,
             DataContentType = rich.DataContentType,
             Data = rich.Data.ToArray(),
             Time = rich.Time!.Value,
@@ -406,7 +406,7 @@ public class BatchSizeEstimatorTests
         {
             Id = "id-1",
             Source = "src",
-            Type = "T",
+            EventType = "T",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.CreateRange(Enumerable.Range(0, 100).Select(i => (byte)i)),
             Time = DateTimeOffset.UtcNow,
@@ -432,7 +432,7 @@ public class BatchSizeEstimatorTests
         {
             Id = new('a', 8),
             Source = new('b', 6),
-            Type = new('c', 4),
+            EventType = new('c', 4),
             DataContentType = "application/custom",
             Data = CreatePayload(threshold, 0x2A),
             Time = DateTimeOffset.FromUnixTimeSeconds(42),
@@ -445,7 +445,7 @@ public class BatchSizeEstimatorTests
             Position = 1,
             EventId = ev.Id,
             Source = ev.Source,
-            EventType = ev.Type,
+            EventType = ev.EventType,
             DataContentType = ev.DataContentType,
             Data = ev.Data.ToArray(),
             Time = ev.Time.Value,

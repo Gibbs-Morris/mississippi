@@ -52,7 +52,7 @@ public class BrookStorageProviderTests
             {
                 Id = "e1",
                 Source = "s",
-                Type = "t",
+                EventType = "t",
                 Data = ImmutableArray<byte>.Empty,
             },
         };
@@ -201,21 +201,21 @@ public class BrookStorageProviderTests
             {
                 Id = "e1",
                 Source = "s",
-                Type = "t",
+                EventType = "t",
                 Data = ImmutableArray<byte>.Empty,
             },
             new()
             {
                 Id = "e2",
                 Source = "s",
-                Type = "t",
+                EventType = "t",
                 Data = ImmutableArray<byte>.Empty,
             },
             new()
             {
                 Id = "e3",
                 Source = "s",
-                Type = "t",
+                EventType = "t",
                 Data = ImmutableArray<byte>.Empty,
             },
         };

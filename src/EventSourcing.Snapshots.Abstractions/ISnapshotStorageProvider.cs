@@ -4,8 +4,8 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 ///     Combines snapshot read, write, delete, and pruning operations for snapshot envelopes.
 /// </summary>
 public interface ISnapshotStorageProvider
-        : ISnapshotStorageReader,
-            ISnapshotStorageWriter
+    : ISnapshotStorageReader,
+      ISnapshotStorageWriter
 {
     /// <summary>
     ///     Gets the storage format identifier for this snapshot provider.

@@ -31,6 +31,12 @@ public sealed record BrookEvent
     public string DataContentType { get; init; } = string.Empty;
 
     /// <summary>
+    ///     Gets the semantic event type used to interpret and deserialize the payload downstream.
+    /// </summary>
+    [Id(0)]
+    public string EventType { get; init; } = string.Empty;
+
+    /// <summary>
     ///     Gets the unique identifier for the event instance.
     /// </summary>
     [Id(2)]
@@ -47,10 +53,4 @@ public sealed record BrookEvent
     /// </summary>
     [Id(3)]
     public DateTimeOffset? Time { get; init; }
-
-    /// <summary>
-    ///     Gets the semantic event type used to interpret and deserialize the payload downstream.
-    /// </summary>
-    [Id(0)]
-    public string EventType { get; init; } = string.Empty;
 }

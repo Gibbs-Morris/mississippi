@@ -38,7 +38,7 @@ public class EventStorageToEventMapperTests
         // Assert
         Assert.Equal(input.EventId, result.Id);
         Assert.Equal(input.Source, result.Source);
-        Assert.Equal(input.EventType, result.Type);
+        Assert.Equal(input.EventType, result.EventType);
         Assert.Equal(input.DataContentType, result.DataContentType);
         Assert.Equal(input.Data, result.Data.ToArray());
         Assert.Equal(input.Time, result.Time);

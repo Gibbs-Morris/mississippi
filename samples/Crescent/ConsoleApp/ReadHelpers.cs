@@ -66,7 +66,7 @@ internal static class ReadHelpers
                             runId,
                             readCount,
                             mississippiEvent.Id,
-                            mississippiEvent.Type,
+                            mississippiEvent.EventType,
                             mississippiEvent.Data.Length);
                     }
                 }
