@@ -648,6 +648,13 @@
           "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
+      "Mississippi.Core.Cosmos": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Azure.Cosmos": "[3.54.1, )",
+          "Newtonsoft.Json": "[13.0.4, )"
+        }
+      },
       "Mississippi.EventSourcing.Snapshots.Abstractions": {
         "type": "Project",
         "dependencies": {

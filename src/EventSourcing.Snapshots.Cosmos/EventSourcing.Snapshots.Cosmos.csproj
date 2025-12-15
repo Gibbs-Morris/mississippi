@@ -7,6 +7,7 @@
     </ItemGroup>
     <ItemGroup>
     <ProjectReference Include="..\Core.Abstractions\Core.Abstractions.csproj" />
+      <ProjectReference Include="..\Core.Cosmos\Core.Cosmos.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
   </ItemGroup>
 </Project>
