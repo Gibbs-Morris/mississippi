@@ -35,10 +35,11 @@ public sealed class ReducerAbstractionsTests
         protected override MutableProjection ReduceCore(
             MutableProjection state,
             MutableEvent eventData
-        ) => new()
-        {
-            Value = $"{state.Value}-{eventData.Value}",
-        };
+        ) =>
+            new()
+            {
+                Value = $"{state.Value}-{eventData.Value}",
+            };
     }
 
     /// <summary>
@@ -118,7 +119,7 @@ public sealed class ReducerAbstractionsTests
             Value = "s0",
         };
         MutatingReducer reducer = new();
-        Assert.Throws<InvalidOperationException>(() => reducer.Reduce(state, new MutableEvent("e0")));
+        Assert.Throws<InvalidOperationException>(() => reducer.Reduce(state, new("e0")));
     }
 
     /// <summary>
@@ -133,7 +134,10 @@ public sealed class ReducerAbstractionsTests
             Value = "s0",
         };
         MutatingReducer reducer = new();
-        Assert.Throws<InvalidOperationException>(() => reducer.TryReduce(state, new MutableEvent("e0"), out _));
+        Assert.Throws<InvalidOperationException>(() => reducer.TryReduce(
+            state,
+            new MutableEvent("e0"),
+            out MutableProjection _));
     }
 
     /// <summary>
@@ -148,7 +152,7 @@ public sealed class ReducerAbstractionsTests
             Value = "s0",
         };
         MutatingReducer reducer = new();
-        bool reduced = reducer.TryReduce(state, new object(), out MutableProjection projection);
+        bool reduced = reducer.TryReduce(state, new(), out MutableProjection projection);
         Assert.False(reduced);
         Assert.Null(projection);
         Assert.Equal("s0", state.Value);

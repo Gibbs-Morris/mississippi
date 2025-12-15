@@ -48,6 +48,21 @@ public sealed class DelegateReducerTests
     }
 
     /// <summary>
+    ///     Verifies the adapter forwards to the provided delegate using current state.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void ReduceShouldReturnProjectionFromDelegate()
+    {
+        DelegateReducer<int, string> reducer = new((
+                state,
+                @event
+            ) => $"{state}-v{@event}");
+        string result = reducer.Reduce("s0", 42);
+        Assert.Equal("s0-v42", result);
+    }
+
+    /// <summary>
     ///     Verifies Reduce throws when the event is null.
     /// </summary>
     [AllureEpic("Reducers")]
@@ -55,9 +70,9 @@ public sealed class DelegateReducerTests
     public void ReduceShouldThrowWhenEventIsNull()
     {
         DelegateReducer<string, string> reducer = new((
-                state,
-                @event
-            ) => state + @event);
+            state,
+            @event
+        ) => state + @event);
         Assert.Throws<ArgumentNullException>(() => reducer.Reduce("s0", null!));
     }
 
@@ -80,7 +95,7 @@ public sealed class DelegateReducerTests
         {
             Value = "s0",
         };
-        Assert.Throws<InvalidOperationException>(() => reducer.TryReduce(state, "v1", out _));
+        Assert.Throws<InvalidOperationException>(() => reducer.TryReduce(state, "v1", out var _));
     }
 
     /// <summary>
@@ -97,20 +112,5 @@ public sealed class DelegateReducerTests
         bool reduced = reducer.TryReduce("s0", 7, out string projection);
         Assert.True(reduced);
         Assert.Equal("s0-v7", projection);
-    }
-
-    /// <summary>
-    ///     Verifies the adapter forwards to the provided delegate using current state.
-    /// </summary>
-    [AllureEpic("Reducers")]
-    [Fact]
-    public void ReduceShouldReturnProjectionFromDelegate()
-    {
-        DelegateReducer<int, string> reducer = new((
-                state,
-                @event
-            ) => $"{state}-v{@event}");
-        string result = reducer.Reduce("s0", 42);
-        Assert.Equal("s0-v42", result);
     }
 }
