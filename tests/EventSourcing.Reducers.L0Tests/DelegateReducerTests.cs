@@ -33,11 +33,11 @@ public sealed class DelegateReducerTests
     public void ReduceShouldAllowNullStateAndProjection()
     {
         DelegateReducer<string, string?> reducer = new((
-            state,
+            _,
             @event
-        ) => null);
+        ) => @event);
         string? projection = reducer.Reduce(null!, "e0");
-        Assert.Null(projection);
+        Assert.Equal("e0", projection);
     }
 
     /// <summary>

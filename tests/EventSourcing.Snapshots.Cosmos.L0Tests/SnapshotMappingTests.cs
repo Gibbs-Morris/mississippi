@@ -1,0 +1,150 @@
+using System.Collections.Immutable;
+using System.Linq;
+
+using Allure.Xunit.Attributes;
+
+using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.EventSourcing.Snapshots.Cosmos.Mapping;
+using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+
+
+namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
+
+/// <summary>
+///     Tests for snapshot mapping utilities.
+/// </summary>
+public sealed class SnapshotMappingTests
+{
+    private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
+
+    /// <summary>
+    ///     Ensures documents map to envelopes.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void SnapshotDocumentToEnvelopeMapperShouldMapFields()
+    {
+        SnapshotDocument document = new()
+        {
+            Data = new byte[] { 1, 2 },
+            DataContentType = "ct",
+        };
+        SnapshotEnvelope envelope = new SnapshotDocumentToEnvelopeMapper().Map(document);
+        Assert.Equal(new byte[] { 1, 2 }, envelope.Data.ToArray());
+        Assert.Equal("ct", envelope.DataContentType);
+    }
+
+    /// <summary>
+    ///     Ensures documents map to storage models with composed stream keys.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void SnapshotDocumentToStorageMapperShouldMapFields()
+    {
+        SnapshotDocument document = new()
+        {
+            Data = new byte[] { 3 },
+            DataContentType = "json",
+            ProjectionType = StreamKey.ProjectionType,
+            ProjectionId = StreamKey.ProjectionId,
+            ReducersHash = StreamKey.ReducersHash,
+            Version = 5,
+        };
+        SnapshotStorageModel storage = new SnapshotDocumentToStorageMapper().Map(document);
+        Assert.Equal(document.Data, storage.Data);
+        Assert.Equal(document.DataContentType, storage.DataContentType);
+        Assert.Equal(StreamKey, storage.StreamKey);
+        Assert.Equal(5, storage.Version);
+    }
+
+    /// <summary>
+    ///     Ensures storage models map to documents and populate identifiers.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void SnapshotStorageToDocumentMapperShouldMapFields()
+    {
+        SnapshotStorageModel storage = new()
+        {
+            StreamKey = StreamKey,
+            Version = 7,
+            Data = new byte[] { 9 },
+            DataContentType = "xml",
+        };
+        SnapshotDocument document = new SnapshotStorageToDocumentMapper().Map(storage);
+        Assert.Equal("7", document.Id);
+        Assert.Equal("snapshot", document.Type);
+        Assert.Equal(StreamKey.ToString(), document.SnapshotPartitionKey);
+        Assert.Equal(StreamKey.ProjectionType, document.ProjectionType);
+        Assert.Equal(StreamKey.ProjectionId, document.ProjectionId);
+        Assert.Equal(StreamKey.ReducersHash, document.ReducersHash);
+        Assert.Equal(storage.Data, document.Data);
+        Assert.Equal(storage.DataContentType, document.DataContentType);
+        Assert.Equal(7, document.Version);
+    }
+
+    /// <summary>
+    ///     Ensures storage models map to envelopes.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void SnapshotStorageToEnvelopeMapperShouldMapFields()
+    {
+        SnapshotStorageModel storage = new()
+        {
+            Data = new byte[] { 4, 5 },
+            DataContentType = "bin",
+            StreamKey = StreamKey,
+            Version = 2,
+        };
+        SnapshotEnvelope envelope = new SnapshotStorageToEnvelopeMapper().Map(storage);
+        Assert.Equal(new byte[] { 4, 5 }, envelope.Data.ToArray());
+        Assert.Equal("bin", envelope.DataContentType);
+    }
+
+    /// <summary>
+    ///     Ensures write models map to documents.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void SnapshotWriteModelToDocumentMapperShouldMapFields()
+    {
+        SnapshotEnvelope envelope = new()
+        {
+            Data = ImmutableArray.Create((byte)7),
+            DataContentType = "text",
+        };
+        SnapshotKey key = new(StreamKey, 11);
+        SnapshotWriteModel writeModel = new(key, envelope);
+        SnapshotDocument document = new SnapshotWriteModelToDocumentMapper().Map(writeModel);
+        Assert.Equal("11", document.Id);
+        Assert.Equal(StreamKey.ToString(), document.SnapshotPartitionKey);
+        Assert.Equal(StreamKey.ProjectionType, document.ProjectionType);
+        Assert.Equal(StreamKey.ProjectionId, document.ProjectionId);
+        Assert.Equal(StreamKey.ReducersHash, document.ReducersHash);
+        Assert.Equal(11, document.Version);
+        Assert.Equal(new byte[] { 7 }, document.Data);
+        Assert.Equal("text", document.DataContentType);
+    }
+
+    /// <summary>
+    ///     Ensures write models map to storage models.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void SnapshotWriteModelToStorageMapperShouldMapFields()
+    {
+        SnapshotEnvelope envelope = new()
+        {
+            Data = ImmutableArray.Create((byte)8, (byte)9),
+            DataContentType = "bytes",
+        };
+        SnapshotKey key = new(StreamKey, 3);
+        SnapshotWriteModel writeModel = new(key, envelope);
+        SnapshotStorageModel storage = new SnapshotWriteModelToStorageMapper().Map(writeModel);
+        Assert.Equal(StreamKey, storage.StreamKey);
+        Assert.Equal(3, storage.Version);
+        Assert.Equal(new byte[] { 8, 9 }, storage.Data);
+        Assert.Equal("bytes", storage.DataContentType);
+    }
+}
