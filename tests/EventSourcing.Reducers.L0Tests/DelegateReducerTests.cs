@@ -95,7 +95,7 @@ public sealed class DelegateReducerTests
         {
             Value = "s0",
         };
-        Assert.Throws<InvalidOperationException>(() => reducer.TryReduce(state, "v1", out var _));
+        Assert.Throws<InvalidOperationException>(() => reducer.TryReduce(state, "v1", out MutableProjection _));
     }
 
     /// <summary>
