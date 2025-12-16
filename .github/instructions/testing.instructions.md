@@ -80,7 +80,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 - Unit testing: xUnit (Microsoft.NET.Test.Sdk + xunit.runner.visualstudio)
 - Mocking: Moq
 - Coverage: coverlet.collector (collected in CI)
-- Reporting: Allure.Xunit (optional annotations/labels)
+- Reporting: Allure.Xunit (optional annotations/labels; see `allure-test-naming.instructions.md` for naming conventions)
 - UI and API journeys: Playwright (used primarily at L3; optionally at L2 for API flows)
 - Mutation testing: Stryker.NET (Mississippi solution only)
 
