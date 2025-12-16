@@ -6,12 +6,14 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotStorageOptions" />.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Snapshots Cosmos")]
+[AllureSubSuite("Storage Options")]
 public sealed class SnapshotStorageOptionsTests
 {
     /// <summary>
     ///     Verifies ContainerId can be set via configuration.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ContainerIdShouldBeSettable()
     {
@@ -25,7 +27,6 @@ public sealed class SnapshotStorageOptionsTests
     /// <summary>
     ///     Verifies ContainerId returns the default value.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ContainerIdShouldReturnDefaultValue()
     {
@@ -36,7 +37,6 @@ public sealed class SnapshotStorageOptionsTests
     /// <summary>
     ///     Verifies DatabaseId can be set.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void DatabaseIdShouldBeSettable()
     {
@@ -50,7 +50,6 @@ public sealed class SnapshotStorageOptionsTests
     /// <summary>
     ///     Verifies DatabaseId returns the default value.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void DatabaseIdShouldReturnDefaultValue()
     {
@@ -61,7 +60,6 @@ public sealed class SnapshotStorageOptionsTests
     /// <summary>
     ///     Verifies QueryBatchSize can be set.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void QueryBatchSizeShouldBeSettable()
     {
@@ -75,7 +73,6 @@ public sealed class SnapshotStorageOptionsTests
     /// <summary>
     ///     Verifies QueryBatchSize returns the default value.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void QueryBatchSizeShouldReturnDefaultValue()
     {

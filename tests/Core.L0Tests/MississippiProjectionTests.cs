@@ -11,12 +11,14 @@ namespace Mississippi.Core.L0Tests;
 /// <summary>
 ///     Tests for <see cref="MississippiProjection" />.
 /// </summary>
+[AllureParentSuite("Core")]
+[AllureSuite("Projection")]
+[AllureSubSuite("Mississippi Projection")]
 public sealed class MississippiProjectionTests
 {
     /// <summary>
     ///     Ensures property initialization flows through the record constructor.
     /// </summary>
-    [AllureEpic("Core")]
     [Fact]
     public void MississippiProjectionShouldAllowInitialization()
     {
@@ -44,7 +46,6 @@ public sealed class MississippiProjectionTests
     /// <summary>
     ///     Ensures the record initializes with empty defaults and accepts populated values.
     /// </summary>
-    [AllureEpic("Core")]
     [Fact]
     public void MississippiProjectionShouldInitializeDefaults()
     {

@@ -9,6 +9,9 @@ namespace Mississippi.EventSourcing.Reducers.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for reducer abstractions.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Reducers Abstractions")]
+[AllureSubSuite("Reducer Abstractions")]
 public sealed class ReducerAbstractionsTests
 {
     private sealed record MutableEvent(string Value);
@@ -54,7 +57,6 @@ public sealed class ReducerAbstractionsTests
     /// <summary>
     ///     Verifies the projection-scoped reducer contract shape stays stable.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void IReducerShouldExposeTryReduceMethod()
     {
@@ -76,7 +78,6 @@ public sealed class ReducerAbstractionsTests
     /// <summary>
     ///     Verifies the root reducer contract shape stays stable.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void IRootReducerShouldExposeHashAndReduceMethods()
     {
@@ -100,7 +101,6 @@ public sealed class ReducerAbstractionsTests
     /// <summary>
     ///     Verifies reducers may legitimately return null when both state and projection are null.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldPermitNullStateAndProjection()
     {
@@ -112,7 +112,6 @@ public sealed class ReducerAbstractionsTests
     /// <summary>
     ///     Verifies the base reducer class is available for inheritance.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReducerBaseClassShouldBeAbstractAndImplementIReducer()
     {
@@ -131,7 +130,6 @@ public sealed class ReducerAbstractionsTests
     /// <summary>
     ///     Verifies the base reducer guard prevents returning the same reference for reference types.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReducerBaseClassShouldRejectMutatingReducerReturningSameInstance()
     {
@@ -146,7 +144,6 @@ public sealed class ReducerAbstractionsTests
     /// <summary>
     ///     Verifies TryReduce also enforces the immutability guard.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void TryReduceShouldRejectMutatingReducerReturningSameInstance()
     {
@@ -164,7 +161,6 @@ public sealed class ReducerAbstractionsTests
     /// <summary>
     ///     Verifies TryReduce returns false and leaves state unchanged when the event type does not match.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void TryReduceShouldReturnFalseWhenEventTypeDoesNotMatch()
     {
@@ -182,7 +178,6 @@ public sealed class ReducerAbstractionsTests
     /// <summary>
     ///     Verifies TryReduce returns the projection produced by ReduceCore when the event matches.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void TryReduceShouldReturnProjectionWhenEventMatches()
     {
@@ -201,7 +196,6 @@ public sealed class ReducerAbstractionsTests
     /// <summary>
     ///     Verifies the typed reducer contract shape stays stable.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void TypedIReducerShouldDeriveFromProjectionReducer()
     {

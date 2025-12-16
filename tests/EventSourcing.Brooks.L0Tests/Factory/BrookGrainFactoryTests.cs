@@ -1,3 +1,5 @@
+using Allure.Xunit.Attributes;
+
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
@@ -15,7 +17,10 @@ namespace Mississippi.EventSourcing.Tests.Factory;
 /// <summary>
 ///     Tests for <see cref="BrookGrainFactory" />.
 /// </summary>
-public class BrookGrainFactoryTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks")]
+[AllureSubSuite("Brook Grain Factory")]
+public sealed class BrookGrainFactoryTests
 {
     /// <summary>
     ///     Resolves a reader grain via Orleans IGrainFactory and returns the instance.

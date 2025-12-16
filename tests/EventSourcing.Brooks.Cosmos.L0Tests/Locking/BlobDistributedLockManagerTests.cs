@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -19,6 +21,9 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Locking;
 /// <summary>
 ///     Tests for <see cref="BlobDistributedLockManager" /> lease acquisition paths.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Cosmos")]
+[AllureSubSuite("Blob Distributed Lock Manager")]
 public sealed class BlobDistributedLockManagerTests
 {
     /// <summary>

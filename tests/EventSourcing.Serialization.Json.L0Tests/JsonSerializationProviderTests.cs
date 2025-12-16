@@ -5,12 +5,17 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 
 namespace Mississippi.EventSourcing.Serialization.Json.Tests;
 
 /// <summary>
 ///     Tests for <see cref="JsonSerializationProvider" /> behavior.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Serialization")]
+[AllureSubSuite("JSON Serialization Provider")]
 public sealed class JsonSerializationProviderTests
 {
     private static JsonSerializationProvider CreateProvider() => new();

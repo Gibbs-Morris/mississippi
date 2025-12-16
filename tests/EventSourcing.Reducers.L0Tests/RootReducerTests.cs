@@ -10,6 +10,9 @@ namespace Mississippi.EventSourcing.Reducers.L0Tests;
 /// <summary>
 ///     Tests for <see cref="RootReducer{TProjection}" />.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Reducers")]
+[AllureSubSuite("Root Reducer")]
 public sealed class RootReducerTests
 {
     private sealed class CountingReducer : IReducer<TestProjection>
@@ -142,7 +145,6 @@ public sealed class RootReducerTests
     /// <summary>
     ///     Ensures reducer hash generation is stable and insensitive to reducer order.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void GetReducerHashShouldBeStableAndOrderIndependent()
     {
@@ -159,7 +161,6 @@ public sealed class RootReducerTests
     /// <summary>
     ///     Ensures reducers can legitimately return null when given null state without tripping the immutability guard.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldAllowNullStateAndProjection()
     {
@@ -172,7 +173,6 @@ public sealed class RootReducerTests
     /// <summary>
     ///     Ensures reducers cannot mutate and return the same projection instance.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldRejectMutatingReducersReturningSameInstance()
     {
@@ -188,7 +188,6 @@ public sealed class RootReducerTests
     /// <summary>
     ///     Ensures the first matching reducer determines the resulting projection.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldReturnProjectionFromFirstMatchingReducer()
     {
@@ -205,7 +204,6 @@ public sealed class RootReducerTests
     /// <summary>
     ///     Ensures Reduce returns the existing state when no reducer matches the event.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldReturnStateWhenNoReducerMatchesEvent()
     {
@@ -219,7 +217,6 @@ public sealed class RootReducerTests
     /// <summary>
     ///     Ensures Reduce stops iterating after the first matching reducer.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldStopAfterFirstMatchingReducer()
     {
@@ -237,7 +234,6 @@ public sealed class RootReducerTests
     /// <summary>
     ///     Ensures Reduce throws when event data is null.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldThrowWhenEventIsNull()
     {

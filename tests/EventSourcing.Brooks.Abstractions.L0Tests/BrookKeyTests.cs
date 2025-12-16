@@ -1,12 +1,17 @@
 using System;
 
+using Allure.Xunit.Attributes;
+
 
 namespace Mississippi.EventSourcing.Abstractions.Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookKey" /> behavior.
 /// </summary>
-public class BrookKeyTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Abstractions")]
+[AllureSubSuite("Brook Key")]
+public sealed class BrookKeyTests
 {
     /// <summary>
     ///     Component values containing the separator are rejected.

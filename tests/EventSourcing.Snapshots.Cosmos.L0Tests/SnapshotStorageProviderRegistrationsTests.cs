@@ -21,12 +21,14 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for snapshot storage provider DI registrations.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Snapshots Cosmos")]
+[AllureSubSuite("Storage Provider Registrations")]
 public sealed class SnapshotStorageProviderRegistrationsTests
 {
     /// <summary>
     ///     Ensures the registrations wire dependencies when a CosmosClient is already in DI.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void AddCosmosSnapshotStorageProviderShouldRegisterServices()
     {
@@ -56,7 +58,6 @@ public sealed class SnapshotStorageProviderRegistrationsTests
     /// <summary>
     ///     Ensures the overload with IConfiguration binds options from configuration.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void AddCosmosSnapshotStorageProviderWithConfigurationShouldBindOptions()
     {
@@ -83,7 +84,6 @@ public sealed class SnapshotStorageProviderRegistrationsTests
     /// <summary>
     ///     Ensures the overload with a configuration action applies option configuration.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void AddCosmosSnapshotStorageProviderWithConfigureActionShouldBindOptions()
     {
@@ -104,7 +104,6 @@ public sealed class SnapshotStorageProviderRegistrationsTests
     /// <summary>
     ///     Ensures the overload that creates a CosmosClient applies option configuration.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void AddCosmosSnapshotStorageProviderWithConnectionStringShouldBindOptions()
     {

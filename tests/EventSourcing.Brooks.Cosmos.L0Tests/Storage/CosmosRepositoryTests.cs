@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Microsoft.Azure.Cosmos;
 
 using Mississippi.Core.Abstractions.Mapping;
@@ -21,7 +23,10 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Storage;
 /// <summary>
 ///     Tests for <see cref="CosmosRepository" /> covering the Storage/CosmosRepository plan items.
 /// </summary>
-public class CosmosRepositoryTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Cosmos")]
+[AllureSubSuite("Cosmos Repository")]
+public sealed class CosmosRepositoryTests
 {
     private static bool CaptureMaxItemCount(
         QueryRequestOptions options,
