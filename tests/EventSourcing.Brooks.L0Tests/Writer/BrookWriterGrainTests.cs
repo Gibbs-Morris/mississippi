@@ -2,6 +2,8 @@ using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Tests.Infrastructure;
@@ -16,7 +18,10 @@ namespace Mississippi.EventSourcing.Tests.Writer;
 ///     Integration tests for <see cref="IBrookWriterGrain" />.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
-public class BrookWriterGrainTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks")]
+[AllureSubSuite("Brook Writer Grain")]
+public sealed class BrookWriterGrainTests
 {
     private readonly TestCluster cluster = TestClusterAccess.Cluster;
 

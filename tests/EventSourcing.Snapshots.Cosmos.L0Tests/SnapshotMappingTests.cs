@@ -13,6 +13,9 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for snapshot mapping utilities.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Snapshots Cosmos")]
+[AllureSubSuite("Snapshot Mapping")]
 public sealed class SnapshotMappingTests
 {
     private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
@@ -20,7 +23,6 @@ public sealed class SnapshotMappingTests
     /// <summary>
     ///     Ensures documents map to envelopes.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotDocumentToEnvelopeMapperShouldMapFields()
     {
@@ -37,7 +39,6 @@ public sealed class SnapshotMappingTests
     /// <summary>
     ///     Ensures documents map to storage models with composed stream keys.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotDocumentToStorageMapperShouldMapFields()
     {
@@ -60,7 +61,6 @@ public sealed class SnapshotMappingTests
     /// <summary>
     ///     Ensures storage models map to documents and populate identifiers.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotStorageToDocumentMapperShouldMapFields()
     {
@@ -86,7 +86,6 @@ public sealed class SnapshotMappingTests
     /// <summary>
     ///     Ensures storage models map to envelopes.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotStorageToEnvelopeMapperShouldMapFields()
     {
@@ -105,7 +104,6 @@ public sealed class SnapshotMappingTests
     /// <summary>
     ///     Ensures write models map to documents.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotWriteModelToDocumentMapperShouldMapFields()
     {
@@ -130,7 +128,6 @@ public sealed class SnapshotMappingTests
     /// <summary>
     ///     Ensures write models map to storage models.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotWriteModelToStorageMapperShouldMapFields()
     {

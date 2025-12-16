@@ -13,6 +13,9 @@ namespace Mississippi.EventSourcing.Reducers.L0Tests;
 /// <summary>
 ///     Tests for reducer registrations.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Reducers")]
+[AllureSubSuite("Reducer Registrations")]
 public sealed class ReducerRegistrationsTests
 {
     private sealed record TestEvent(string Value);
@@ -51,7 +54,6 @@ public sealed class ReducerRegistrationsTests
     /// <summary>
     ///     Verifies the delegate-based AddReducer overload registers the reducer and root reducer.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void AddReducerDelegateOverloadShouldRegisterReducerAndRootReducer()
     {
@@ -74,7 +76,6 @@ public sealed class ReducerRegistrationsTests
     /// <summary>
     ///     Verifies AddReducer registers the reducer implementation as a transient service.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void AddReducerShouldRegisterReducerAsTransient()
     {
@@ -97,7 +98,6 @@ public sealed class ReducerRegistrationsTests
     /// <summary>
     ///     Verifies AddReducer also registers a root reducer for the projection type when missing.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void AddReducerShouldRegisterRootReducerWhenMissing()
     {
@@ -113,7 +113,6 @@ public sealed class ReducerRegistrationsTests
     /// <summary>
     ///     Verifies AddRootReducer registers the root reducer implementation as a transient service.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void AddRootReducerShouldRegisterRootReducerAsTransient()
     {

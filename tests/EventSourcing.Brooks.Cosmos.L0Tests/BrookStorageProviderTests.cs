@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos.Abstractions;
 
@@ -16,7 +18,10 @@ namespace Mississippi.EventSourcing.Cosmos.Tests;
 /// <summary>
 ///     Tests for <see cref="BrookStorageProvider" /> behavior.
 /// </summary>
-public class BrookStorageProviderTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Cosmos")]
+[AllureSubSuite("Brook Storage Provider")]
+public sealed class BrookStorageProviderTests
 {
     /// <summary>
     ///     Helper that converts a sequence to an async-enumerable.

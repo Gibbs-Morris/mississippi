@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 
+using Allure.Xunit.Attributes;
+
 using Mississippi.Core.Abstractions.Mapping;
 
 using Moq;
@@ -12,7 +14,10 @@ namespace Mississippi.Core.Abstractions.Tests.Mapping;
 /// <summary>
 ///     Contains unit tests for the <see cref="EnumerableMapper{TFrom,TTo}" /> class.
 /// </summary>
-public class EnumerableMapperTests
+[AllureParentSuite("Core Abstractions")]
+[AllureSuite("Mapping")]
+[AllureSubSuite("Enumerable Mapper")]
+public sealed class EnumerableMapperTests
 {
     /// <summary>
     ///     Tests that passing a null value to the Map function throws an ArgumentNullException.

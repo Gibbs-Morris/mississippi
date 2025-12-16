@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 
+using Allure.Xunit.Attributes;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -14,7 +16,10 @@ namespace Mississippi.EventSourcing.Tests;
 /// <summary>
 ///     Tests for <see cref="EventSourcingRegistrations" /> extension methods.
 /// </summary>
-public class EventSourcingRegistrationsTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks")]
+[AllureSubSuite("Event Sourcing Registrations")]
+public sealed class EventSourcingRegistrationsTests
 {
     /// <summary>
     ///     Verifies that calling <c>AddEventSourcingByService</c> registers the expected singletons and options.

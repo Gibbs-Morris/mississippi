@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +20,10 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Registrations;
 /// <summary>
 ///     Tests for Cosmos container/database initialization wiring.
 /// </summary>
-public class CosmosContainerInitializerTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Cosmos")]
+[AllureSubSuite("Cosmos Container Initializer")]
+public sealed class CosmosContainerInitializerTests
 {
     private static CosmosException CreateCosmosException(
         HttpStatusCode statusCode,

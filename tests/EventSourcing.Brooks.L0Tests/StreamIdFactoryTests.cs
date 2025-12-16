@@ -1,3 +1,5 @@
+using Allure.Xunit.Attributes;
+
 using Mississippi.EventSourcing.Abstractions;
 
 using Orleans.Runtime;
@@ -8,7 +10,10 @@ namespace Mississippi.EventSourcing.Tests;
 /// <summary>
 ///     Tests for <see cref="StreamIdFactory" /> behavior.
 /// </summary>
-public class StreamIdFactoryTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks")]
+[AllureSubSuite("Stream ID Factory")]
+public sealed class StreamIdFactoryTests
 {
     /// <summary>
     ///     Verifies that creating a StreamId for the same BrookKey is deterministic.

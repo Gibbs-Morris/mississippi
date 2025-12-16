@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -25,7 +27,10 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 /// <summary>
 ///     Tests for rollback behavior in <see cref="EventBrookAppender" />.
 /// </summary>
-public class EventBrookAppenderRollbackTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Cosmos")]
+[AllureSubSuite("Event Brook Appender Rollback")]
+public sealed class EventBrookAppenderRollbackTests
 {
     /// <summary>
     ///     When initial append fails with no processed events, rollback should clean up the pending cursor entry without
