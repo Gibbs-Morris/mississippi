@@ -157,7 +157,7 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 ## Patterns and Practices
 
 - xUnit
-  - Prefer method naming: `MethodName_Should_Outcome_GivenCondition`
+  - Use PascalCase verb phrase naming per `naming.instructions.md` (e.g., `ProcessOrderReturnsSuccessWhenValid`); keep names analyzer-safe with no underscores
   - Use `Theory` + inline/member data for input spaces
   - Use `IClassFixture`/`CollectionDefinition` to manage shared expensive setup without test interdependence
   - Async all the way; no `.Result`/`.Wait()`; time-bound operations with cancellation tokens

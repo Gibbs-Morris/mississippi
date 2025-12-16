@@ -15,7 +15,7 @@ Governing thought: Keep every Mississippi change rooted in clear Domain-Driven D
   Why: Keeps ubiquitous language, contracts, and verification aligned.
 - Domain logic **MUST** reside inside aggregates, value objects, or domain services; application services **MUST** stay orchestration-focused, and infrastructure concerns **MUST** be isolated per `.github/instructions/service-registration.instructions.md`.  
   Why: Preserves clean layering, SOLID design, and replaceable infrastructure.
-- Agents **MUST** align test strategy with `.github/instructions/testing.instructions.md`: name tests `MethodName_Should_Outcome_GivenCondition`, target 100 % coverage on touched code (maintaining ≥ 80 % overall and aiming for ≥ 95 % on domain/application layers), and keep Mississippi projects mutation-clean.  
+- Agents **MUST** align test strategy with `.github/instructions/testing.instructions.md`: use PascalCase verb phrase test names per `naming.instructions.md` (no underscores), target 100 % coverage on touched code (maintaining ≥ 80 % overall and aiming for ≥ 95 % on domain/application layers), and keep Mississippi projects mutation-clean.  
   Why: Ensures consistent verification quality across the solution.
 - Monetary calculations and other financial rules **MUST** use decimal-based value objects, precise rounding, and recorded domain events to satisfy audit requirements from `.github/instructions/csharp.instructions.md` and `.github/instructions/logging-rules.instructions.md`.  
   Why: Protects financial integrity and compliance obligations.
@@ -76,7 +76,7 @@ Evaluate layer assignments, SOLID adherence, DI/service-registration impacts, an
 
 ### Step 3: Implementation Planning
 
-List files to touch, highlight new interfaces/contracts, detail domain events and persistence decisions, and specify test classes with `MethodName_Should_Outcome_GivenCondition` names. Note telemetry/logging additions per logging rules.
+List files to touch, highlight new interfaces/contracts, detail domain events and persistence decisions, and specify test classes with PascalCase verb phrase names per `naming.instructions.md`. Note telemetry/logging additions per logging rules.
 
 ### Step 4: Implementation Execution
 
@@ -159,7 +159,7 @@ Verify coverage/mutation metrics, re-read applicable instruction files, confirm 
 ## Testing Guidelines
 
 - Follow `.github/instructions/testing.instructions.md`: default to L0 tests for domain logic, keep deterministic behavior, and extend to L1/L2+ only when infra is required.
-- Use xUnit naming `MethodName_Should_Outcome_GivenCondition`; cover success, edge, and failure paths.
+- Use PascalCase verb phrase test names per `naming.instructions.md` (no underscores); cover success, edge, and failure paths.
 - Aim for 100 % coverage on touched files, keep overall ≥ 80 %, and push ≥ 95 % for domain/application layers. Mississippi projects must maintain or raise mutation scores via Stryker.
 - Validate domain events, invariants, concurrency boundaries, and mapping logic in tests; prefer value-object builders or fixtures for readability.
 - Use `.scratchpad/` tasks (generated via summarize scripts) for outstanding coverage/mutation gaps rather than leaving TODOs in code.
