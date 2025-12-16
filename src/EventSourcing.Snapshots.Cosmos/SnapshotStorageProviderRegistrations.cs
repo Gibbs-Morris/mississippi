@@ -35,7 +35,8 @@ public static class SnapshotStorageProviderRegistrations
         this IServiceCollection services
     )
     {
-        services.AddSingleton<ISnapshotQueryService, CosmosSnapshotQueryService>();
+        // Register container operations abstraction (single point of Cosmos SDK contact)
+        services.AddSingleton<ISnapshotContainerOperations, SnapshotContainerOperations>();
         services.AddSingleton<ISnapshotCosmosRepository, SnapshotCosmosRepository>();
         services.AddSingleton<IRetryPolicy, CosmosRetryPolicy>();
         services.AddMapper<SnapshotDocument, SnapshotStorageModel, SnapshotDocumentToStorageMapper>();

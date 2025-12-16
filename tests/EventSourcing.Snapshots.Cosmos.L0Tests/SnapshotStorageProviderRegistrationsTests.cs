@@ -40,6 +40,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
         services.AddCosmosSnapshotStorageProvider();
         using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.NotNull(provider.GetRequiredService<ISnapshotContainerOperations>());
         Assert.NotNull(provider.GetRequiredService<ISnapshotCosmosRepository>());
         Assert.NotNull(provider.GetRequiredService<ISnapshotStorageProvider>());
         Assert.NotNull(provider.GetRequiredService<IRetryPolicy>());

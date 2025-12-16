@@ -2,14 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Azure.Cosmos;
-
 using Mississippi.Core.Abstractions.Mapping;
-using Mississippi.Core.Cosmos.Retry;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 
@@ -19,15 +15,22 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 /// <summary>
 ///     Cosmos-backed implementation of <see cref="ISnapshotCosmosRepository" />.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This class follows the Single Responsibility Principle (SRP) by focusing solely
+///         on domain-level snapshot operations, delegating all Cosmos SDK interactions
+///         to <see cref="ISnapshotContainerOperations" />.
+///     </para>
+///     <para>
+///         Dependency Inversion Principle (DIP): Depends on abstractions (ISnapshotContainerOperations,
+///         IMapper) rather than concrete implementations or the Cosmos SDK directly.
+///     </para>
+/// </remarks>
 internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
 {
-    private readonly Container container;
+    private readonly ISnapshotContainerOperations containerOperations;
 
     private readonly IMapper<SnapshotDocument, SnapshotStorageModel> documentToStorageMapper;
-
-    private readonly ISnapshotQueryService queryService;
-
-    private readonly IRetryPolicy retryPolicy;
 
     private readonly IMapper<SnapshotStorageModel, SnapshotDocument> storageToDocumentMapper;
 
@@ -38,25 +41,20 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     /// <summary>
     ///     Initializes a new instance of the <see cref="SnapshotCosmosRepository" /> class.
     /// </summary>
-    /// <param name="container">The Cosmos container used for snapshots.</param>
-    /// <param name="queryService">The query service for reading snapshot identifiers.</param>
+    /// <param name="containerOperations">The container operations abstraction for Cosmos access.</param>
     /// <param name="documentToStorageMapper">Maps Cosmos documents to snapshot storage models.</param>
     /// <param name="storageToEnvelopeMapper">Maps storage models to snapshot envelopes.</param>
     /// <param name="writeModelToStorageMapper">Maps snapshot write models to storage models.</param>
     /// <param name="storageToDocumentMapper">Maps storage models to Cosmos documents.</param>
-    /// <param name="retryPolicy">Retry policy for transient Cosmos errors.</param>
     public SnapshotCosmosRepository(
-        Container container,
-        ISnapshotQueryService queryService,
+        ISnapshotContainerOperations containerOperations,
         IMapper<SnapshotDocument, SnapshotStorageModel> documentToStorageMapper,
         IMapper<SnapshotStorageModel, SnapshotEnvelope> storageToEnvelopeMapper,
         IMapper<SnapshotWriteModel, SnapshotStorageModel> writeModelToStorageMapper,
-        IMapper<SnapshotStorageModel, SnapshotDocument> storageToDocumentMapper,
-        IRetryPolicy retryPolicy
+        IMapper<SnapshotStorageModel, SnapshotDocument> storageToDocumentMapper
     )
     {
-        this.container = container ?? throw new ArgumentNullException(nameof(container));
-        this.queryService = queryService ?? throw new ArgumentNullException(nameof(queryService));
+        this.containerOperations = containerOperations ?? throw new ArgumentNullException(nameof(containerOperations));
         this.documentToStorageMapper =
             documentToStorageMapper ?? throw new ArgumentNullException(nameof(documentToStorageMapper));
         this.storageToEnvelopeMapper =
@@ -65,18 +63,17 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
                                          throw new ArgumentNullException(nameof(writeModelToStorageMapper));
         this.storageToDocumentMapper =
             storageToDocumentMapper ?? throw new ArgumentNullException(nameof(storageToDocumentMapper));
-        this.retryPolicy = retryPolicy ?? throw new ArgumentNullException(nameof(retryPolicy));
     }
-
-    private static PartitionKey Partition(
-        SnapshotStreamKey streamKey
-    ) =>
-        new(streamKey.ToString());
 
     private static string ToDocumentId(
         long version
     ) =>
         version.ToString(CultureInfo.InvariantCulture);
+
+    private static string ToPartitionKey(
+        SnapshotStreamKey streamKey
+    ) =>
+        streamKey.ToString();
 
     /// <inheritdoc />
     public async Task DeleteAllAsync(
@@ -84,9 +81,13 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         CancellationToken cancellationToken = default
     )
     {
-        await foreach (SnapshotIdVersion item in queryService.ReadIdsAsync(streamKey, cancellationToken))
+        string partitionKey = ToPartitionKey(streamKey);
+        await foreach (SnapshotIdVersion item in containerOperations.QuerySnapshotIdsAsync(
+                           partitionKey,
+                           cancellationToken))
         {
-            await DeleteDocumentAsync(streamKey, item.Id, cancellationToken);
+            await containerOperations.DeleteDocumentAsync(partitionKey, item.Id, cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 
@@ -94,22 +95,12 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     public async Task DeleteAsync(
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            await retryPolicy.ExecuteAsync(
-                () => container.DeleteItemAsync<SnapshotDocument>(
-                    ToDocumentId(snapshotKey.Version),
-                    Partition(snapshotKey.Stream),
-                    cancellationToken: cancellationToken),
-                cancellationToken);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            // Already deleted.
-        }
-    }
+    ) =>
+        await containerOperations.DeleteDocumentAsync(
+                ToPartitionKey(snapshotKey.Stream),
+                ToDocumentId(snapshotKey.Version),
+                cancellationToken)
+            .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task PruneAsync(
@@ -118,8 +109,11 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         CancellationToken cancellationToken = default
     )
     {
+        string partitionKey = ToPartitionKey(streamKey);
         List<SnapshotIdVersion> ids = new();
-        await foreach (SnapshotIdVersion item in queryService.ReadIdsAsync(streamKey, cancellationToken))
+        await foreach (SnapshotIdVersion item in containerOperations.QuerySnapshotIdsAsync(
+                           partitionKey,
+                           cancellationToken))
         {
             ids.Add(item);
         }
@@ -141,7 +135,8 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
                 continue;
             }
 
-            await DeleteDocumentAsync(streamKey, item.Id, cancellationToken);
+            await containerOperations.DeleteDocumentAsync(partitionKey, item.Id, cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 
@@ -151,22 +146,18 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         CancellationToken cancellationToken = default
     )
     {
-        try
-        {
-            ItemResponse<SnapshotDocument> response = await retryPolicy.ExecuteAsync(
-                () => container.ReadItemAsync<SnapshotDocument>(
-                    ToDocumentId(snapshotKey.Version),
-                    Partition(snapshotKey.Stream),
-                    cancellationToken: cancellationToken),
-                cancellationToken);
-            SnapshotDocument doc = response.Resource;
-            SnapshotStorageModel storage = documentToStorageMapper.Map(doc);
-            return storageToEnvelopeMapper.Map(storage);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        SnapshotDocument? doc = await containerOperations.ReadDocumentAsync(
+                ToPartitionKey(snapshotKey.Stream),
+                ToDocumentId(snapshotKey.Version),
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (doc is null)
         {
             return null;
         }
+
+        SnapshotStorageModel storage = documentToStorageMapper.Map(doc);
+        return storageToEnvelopeMapper.Map(storage);
     }
 
     /// <inheritdoc />
@@ -179,32 +170,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         SnapshotWriteModel writeModel = new(snapshotKey, snapshot);
         SnapshotStorageModel storageModel = writeModelToStorageMapper.Map(writeModel);
         SnapshotDocument document = storageToDocumentMapper.Map(storageModel);
-        await retryPolicy.ExecuteAsync(
-            () => container.UpsertItemAsync(
-                document,
-                Partition(snapshotKey.Stream),
-                cancellationToken: cancellationToken),
-            cancellationToken);
-    }
-
-    private async Task DeleteDocumentAsync(
-        SnapshotStreamKey streamKey,
-        string id,
-        CancellationToken cancellationToken
-    )
-    {
-        try
-        {
-            await retryPolicy.ExecuteAsync(
-                () => container.DeleteItemAsync<SnapshotDocument>(
-                    id,
-                    Partition(streamKey),
-                    cancellationToken: cancellationToken),
-                cancellationToken);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            // Already removed.
-        }
+        await containerOperations.UpsertDocumentAsync(ToPartitionKey(snapshotKey.Stream), document, cancellationToken)
+            .ConfigureAwait(false);
     }
 }
