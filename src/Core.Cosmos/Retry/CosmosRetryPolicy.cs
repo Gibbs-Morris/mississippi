@@ -33,6 +33,21 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
         (statusCode == HttpStatusCode.InternalServerError) ||
         (statusCode == HttpStatusCode.GatewayTimeout);
 
+    private static void ThrowKnownCosmosErrors(
+        CosmosException exception
+    )
+    {
+        switch (exception.StatusCode)
+        {
+            case HttpStatusCode.RequestEntityTooLarge:
+                throw new InvalidOperationException(
+                    "Request size exceeds maximum allowed limit. Consider reducing payload size.",
+                    exception);
+            case HttpStatusCode.NotFound:
+                throw exception;
+        }
+    }
+
     /// <inheritdoc />
     public async Task<T> ExecuteAsync<T>(
         Func<Task<T>> operation,
@@ -50,44 +65,45 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
             }
             catch (CosmosException ex)
             {
-                switch (ex.StatusCode)
-                {
-                    case HttpStatusCode.RequestEntityTooLarge:
-                        throw new InvalidOperationException(
-                            "Request size exceeds maximum allowed limit. Consider reducing payload size.",
-                            ex);
-                    case HttpStatusCode.NotFound:
-                        throw;
-                }
-
+                ThrowKnownCosmosErrors(ex);
                 if (IsTransient(ex.StatusCode))
                 {
                     lastException = ex;
-                    if (attempt < MaxRetries)
+                    if (await TryDelayForRetryAsync(ex, attempt, cancellationToken).ConfigureAwait(false))
                     {
-                        TimeSpan delay = ex.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-                        await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
                         continue;
                     }
-
-                    break;
                 }
 
                 throw new InvalidOperationException($"Cosmos operation failed with status {ex.StatusCode}", ex);
             }
-            catch (TaskCanceledException ex) when (cancellationToken.IsCancellationRequested)
-            {
-                throw new OperationCanceledException("Cosmos operation canceled", ex, cancellationToken);
-            }
             catch (TaskCanceledException ex)
             {
                 throw new OperationCanceledException(
-                    "Cosmos operation canceled before completion.",
+                    cancellationToken.IsCancellationRequested
+                        ? "Cosmos operation canceled"
+                        : "Cosmos operation canceled before completion.",
                     ex,
                     cancellationToken);
             }
         }
 
         throw new InvalidOperationException($"Operation failed after {MaxRetries + 1} attempts", lastException);
+    }
+
+    private async Task<bool> TryDelayForRetryAsync(
+        CosmosException exception,
+        int attempt,
+        CancellationToken cancellationToken
+    )
+    {
+        if (attempt >= MaxRetries)
+        {
+            return false;
+        }
+
+        TimeSpan delay = exception.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
+        await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+        return true;
     }
 }
