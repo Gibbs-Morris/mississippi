@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Azure.Cosmos;
@@ -83,5 +84,44 @@ public class CosmosRetryPolicyTests
             return Task.FromResult(42);
         });
         Assert.Equal(2, attempts);
+    }
+
+    /// <summary>
+    ///     Verifies request-too-large errors are surfaced with an informative exception.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncThrowsForRequestTooLargeAsync()
+    {
+        CosmosRetryPolicy policy = new();
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            policy.ExecuteAsync(() => Task.FromException<int>(CreateCosmosException(HttpStatusCode.RequestEntityTooLarge))));
+        Assert.Contains("Request size exceeds", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     Verifies cancellation tokens propagate as <see cref="OperationCanceledException" />.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncHonorsCancellationAsync()
+    {
+        CosmosRetryPolicy policy = new();
+        using CancellationTokenSource cts = new();
+        await cts.CancelAsync();
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            policy.ExecuteAsync(() => Task.FromCanceled<int>(cts.Token), cts.Token));
+    }
+
+    /// <summary>
+    ///     Verifies the policy gives up after exhausting retries on transient failures.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncThrowsAfterExhaustingRetriesAsync()
+    {
+        CosmosRetryPolicy policy = new();
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            policy.ExecuteAsync(() => Task.FromException<int>(CreateCosmosException(HttpStatusCode.TooManyRequests))));
     }
 }
