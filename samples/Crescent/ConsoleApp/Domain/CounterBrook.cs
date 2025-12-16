@@ -9,7 +9,7 @@ namespace Crescent.ConsoleApp.Domain;
 ///     Provides compile-time type safety for referencing the counter event stream.
 /// </summary>
 [BrookName("CRESCENT", "SAMPLE", "COUNTER")]
-public sealed class CounterBrook : IBrookDefinition
+internal sealed class CounterBrook : IBrookDefinition
 {
     /// <inheritdoc />
     public static string BrookName => "CRESCENT.SAMPLE.COUNTER";

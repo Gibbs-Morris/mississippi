@@ -9,7 +9,7 @@ namespace Crescent.ConsoleApp.Domain;
 /// <summary>
 ///     Extension methods for registering counter aggregate services.
 /// </summary>
-public static class CounterRegistrations
+internal static class CounterRegistrations
 {
     /// <summary>
     ///     Adds the counter aggregate services to the service collection.

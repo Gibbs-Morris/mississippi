@@ -9,7 +9,7 @@ namespace Crescent.ConsoleApp.Domain;
 /// </summary>
 [GenerateSerializer]
 [Alias("Crescent.ConsoleApp.Domain.CounterState")]
-public sealed record CounterState
+internal sealed record CounterState
 {
     /// <summary>
     ///     Gets the current count value.

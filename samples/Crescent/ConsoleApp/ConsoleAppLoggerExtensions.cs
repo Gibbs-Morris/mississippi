@@ -244,18 +244,11 @@ internal static class ConsoleAppLoggerExtensions
             "Run {RunId}: Note: {Note}");
 
     // Aggregate scenario messages
-
     private static readonly Action<ILogger, string, int, int, int, int, double, Exception?>
         AggregateThroughputResultMessage = LoggerMessage.Define<string, int, int, int, int, double>(
             LogLevel.Information,
             new(85, nameof(AggregateThroughputResult)),
             "Run {RunId}: Throughput test complete: total={Total} success={Success} failed={Failed} in {Ms} ms ({OpsPerSec} ops/sec)");
-
-    // Append scenario
-
-    // Readback
-
-    // Flush caches
 
     private static readonly Action<ILogger, Exception?> ScenarioAggregateBasicLifecycleMessage = LoggerMessage.Define(
         LogLevel.Information,
