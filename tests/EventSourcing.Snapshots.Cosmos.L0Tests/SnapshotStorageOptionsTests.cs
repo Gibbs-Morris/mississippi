@@ -9,6 +9,20 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 public sealed class SnapshotStorageOptionsTests
 {
     /// <summary>
+    ///     Verifies ContainerId can be set via configuration.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void ContainerIdShouldBeSettable()
+    {
+        SnapshotStorageOptions options = new()
+        {
+            ContainerId = "custom-container",
+        };
+        Assert.Equal("custom-container", options.ContainerId);
+    }
+
+    /// <summary>
     ///     Verifies ContainerId returns the default value.
     /// </summary>
     [AllureEpic("Snapshots")]

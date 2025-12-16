@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
@@ -27,7 +28,9 @@ public static class ReducerRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(reduce);
-        services.AddTransient<DelegateReducer<TEvent, TProjection>>(_ => new(reduce));
+        services.AddTransient<DelegateReducer<TEvent, TProjection>>(sp => new(
+            reduce,
+            sp.GetService<ILogger<DelegateReducer<TEvent, TProjection>>>()));
         services.AddTransient<IReducer<TProjection>>(sp =>
             sp.GetRequiredService<DelegateReducer<TEvent, TProjection>>());
         services.AddTransient<IReducer<TEvent, TProjection>>(sp =>

@@ -18,7 +18,7 @@ public abstract class Reducer<TEvent, TProjection> : IReducer<TEvent, TProjectio
     {
         ArgumentNullException.ThrowIfNull(eventData);
         TProjection projection = ReduceCore(state, eventData);
-        if (!typeof(TProjection).IsValueType && ReferenceEquals(state, projection))
+        if (!typeof(TProjection).IsValueType && state is not null && ReferenceEquals(state, projection))
         {
             throw new InvalidOperationException(
                 "Reducers must return a new projection instance. Use a copy/with expression instead of mutating state.");

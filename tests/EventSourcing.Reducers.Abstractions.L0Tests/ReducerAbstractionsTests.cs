@@ -42,6 +42,15 @@ public sealed class ReducerAbstractionsTests
             };
     }
 
+    private sealed class NullProjectionReducer : Reducer<MutableEvent, MutableProjection?>
+    {
+        protected override MutableProjection? ReduceCore(
+            MutableProjection? state,
+            MutableEvent eventData
+        ) =>
+            null;
+    }
+
     /// <summary>
     ///     Verifies the projection-scoped reducer contract shape stays stable.
     /// </summary>
@@ -86,6 +95,18 @@ public sealed class ReducerAbstractionsTests
         Assert.True(reduceParameters[0].ParameterType.IsGenericParameter);
         Assert.Equal(typeof(object), reduceParameters[1].ParameterType);
         Assert.True(reduceMethod.ReturnType.IsGenericParameter);
+    }
+
+    /// <summary>
+    ///     Verifies reducers may legitimately return null when both state and projection are null.
+    /// </summary>
+    [AllureEpic("Reducers")]
+    [Fact]
+    public void ReduceShouldPermitNullStateAndProjection()
+    {
+        NullProjectionReducer reducer = new();
+        MutableProjection? projection = reducer.Reduce(null!, new("e2"));
+        Assert.Null(projection);
     }
 
     /// <summary>

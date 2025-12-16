@@ -6,9 +6,9 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos;
 public class SnapshotStorageOptions
 {
     /// <summary>
-    ///     Gets the Cosmos container identifier for snapshots.
+    ///     Gets or sets the Cosmos container identifier for snapshots.
     /// </summary>
-    public string ContainerId { get; } = "snapshots";
+    public string ContainerId { get; set; } = "snapshots";
 
     /// <summary>
     ///     Gets or sets the Cosmos database identifier.

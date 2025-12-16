@@ -58,11 +58,17 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
             {
                 throw;
             }
-            catch (CosmosException ex) when (IsTransient(ex.StatusCode) && (attempt < MaxRetries))
+            catch (CosmosException ex) when (IsTransient(ex.StatusCode))
             {
                 lastException = ex;
-                TimeSpan delay = ex.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                if (attempt < MaxRetries)
+                {
+                    TimeSpan delay = ex.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
+                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                break;
             }
             catch (CosmosException ex)
             {
