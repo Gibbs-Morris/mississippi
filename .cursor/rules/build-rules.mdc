@@ -8,275 +8,32 @@ alwaysApply: true
 
 # Build Rules and Quality Standards
 
-Governing thought: This project maintains zero tolerance for warnings and requires comprehensive test coverage; all code changes must pass the full quality pipeline before being considered complete.
+Governing thought: Every change ships only after warning-free builds, cleanup, tests, and (for Mississippi) mutation gates succeed.
 
 ## Rules (RFC 2119)
 
-- Agents **MUST** resolve all compiler warnings; warnings are treated as errors in CI.  
-  Why: Ensures code quality and prevents technical debt accumulation.
-- Agents **MUST** pass all quality gates: build, unit tests, mutation testing, code cleanup.  
-  Why: Maintains consistent quality standards across the codebase.
-- Agents **MUST NOT** disable warnings, suppress analyzer rules, or use `#pragma warning disable` without explicit approval.  
-  Why: Prevents hiding real problems; code quality degrades when warnings are suppressed.
-- Agents **MUST NOT** add `[SuppressMessage]` attributes without explicit approval and exhaustive justification.  
-  Why: Forces proper fixes rather than hiding violations.
-- Agents **MUST** fix StyleCop violations; code style **MUST** be consistent.  
-  Why: Style consistency improves readability and maintainability.
-- Agents **MUST** ensure ReSharper cleanup scripts pass without issues.  
-  Why: Automated cleanup maintains code hygiene.
-- Agents **MUST** add comprehensive tests for Mississippi solution changes.  
-  Why: Core library requires full test coverage.
-- Agents **SHOULD** add minimal example tests for Samples solution.  
-  Why: Samples demonstrate patterns but don't require full coverage.
-- Agents **MUST** allow mutation tests to run for up to 30 minutes without canceling.  
-  Why: Mutation testing is intentionally long-running; early cancellation produces incomplete results.
+- Builds **MUST** be free of compiler/analyzer/StyleCop warnings; suppressions (`#pragma`, `[SuppressMessage]`, rule disables) **MUST NOT** be added without explicit approval and narrow scope.
+- All changes **MUST** pass build, cleanup (ReSharper), unit tests, and mutation tests for Mississippi projects; mutation runs **MUST** be allowed to finish (plan for ~30 minutes). StyleCop violations **MUST** be fixed.
+- Mississippi changes **MUST** include comprehensive tests; samples **SHOULD** include minimal illustrative tests.
+- Package versions **MUST** remain centralized (CPM); do not add version attributes to project files.
+
+## Quick Start
+
+- Build → Clean → Fix until zero warnings:
+  - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`
+  - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
+- Run tests and mutation (Mississippi):
+  - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
+  - `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`
+- Final gate for both solutions: `pwsh ./go.ps1`.
 
 ## Scope and Audience
 
-**Audience:** All developers making code changes in the repository.
+All contributors to Mississippi and Samples solutions.
 
-**In scope:** Build standards, warning policy, quality gates, testing requirements.
+## Review Checklist
 
-**Out of scope:** Specific implementation patterns (see csharp.instructions.md, testing.instructions.md).
-
-## At-a-Glance Quick-Start
-
-- Build → Clean → Fix until there are zero warnings.
-
-```powershell
-pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
-pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
-```
-
-- Add/update tests: comprehensive for Mississippi; minimal examples for Samples.
-- Run tests (Mississippi solution).
-
-```powershell
-pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
-```
-
-- Run mutation tests (Mississippi ONLY).
-
-```powershell
-pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
-```
-
-> Mutation tests are intentionally long-running. Wait for this script to finish, even if it takes the full 30 minutes.
-
-- Final validation for both solutions.
-
-```powershell
-pwsh ./go.ps1
-```
-
-> **Drift check:** Before running any PowerShell script referenced here, open the script in `eng/src/agent-scripts/` (or the specified path) to confirm its current behavior matches this guidance. Treat this document as best-effort context—the scripts remain the source of truth for step ordering and options.
-
-## Purpose
-
-This document defines the build and quality standards that ensure code maintainability, consistency, and reliability across the Mississippi framework.
-
-## Core Principles
-
-### Zero Warnings Policy
-
-This rule is non-negotiable and applies to all code changes:
-
-- Never disable warnings; fix the underlying code issues instead
-- Never suppress analyzer rules; improve code to satisfy the analyzer
-- Never use `#pragma warning disable` without explicit approval
-- Never add `[SuppressMessage]` attributes to hide violations
-- Always fix compiler warnings (they indicate real problems)
-- Always fix analyzer warnings (they indicate quality issues)
-- Always fix StyleCop violations (they indicate style inconsistencies)
-
-Why this matters:
-
-- Warnings are treated as errors in CI builds with `--warnaserror`
-- Builds will fail if any warnings are present
-- PRs will be blocked until all warnings are resolved
-- Code quality degrades when warnings are suppressed
-- Technical debt accumulates when issues are hidden
-
-What to do instead:
-
-1. Read the warning message and understand the analyzer
-2. Fix the underlying issue; improve code to satisfy the rule
-3. Refactor if necessary; warnings may indicate design problems
-4. Ask for help if unsure how to fix a warning
-5. Document exceptions only with explicit approval and justification
-
-### Required Quality Gates
-
-1. **Successful Build** - Code must compile without errors or warnings
-2. **Unit Tests** - All tests must pass with 100% success rate
-3. **Mutation Testing** - Must maintain high mutation score (Mississippi solution only)
-4. **Code Cleanup** - ReSharper cleanup must pass without issues
-
-## Repository Structure
-
-This repository contains **two distinct solutions**:
-
-1. **Mississippi Solution** (`mississippi.slnx`) - The core library with full test coverage requirements
-2. **Samples Solution** (`samples.slnx`) - Includes all Mississippi projects PLUS sample applications
-
-### Testing Strategy by Solution
-
-- **Mississippi Solution**: Requires comprehensive unit tests, integration tests, and mutation testing
-- **Samples Solution**: Only needs minimal unit tests as examples - **NO mutation testing required**
-
-## Scripts Overview
-
-The `eng/src/agent-scripts/` directory contains PowerShell automation for the build-test-quality pipeline:
-
-### Core Build Scripts
-
-- **`build-mississippi-solution.ps1`** - Compiles the main Mississippi solution in Release mode
-- **`build-sample-solution.ps1`** - Builds sample applications demonstrating library usage
-- **`final-build-solutions.ps1`** - Strict build with `--warnaserror` for both solutions
-
-### Testing Scripts
-
-- **`unit-test-mississippi-solution.ps1`** - Executes all unit and integration tests for Mississippi
-- **`unit-test-sample-solution.ps1`** - Runs minimal tests for sample applications (examples only)
-- **`mutation-test-mississippi-solution.ps1`** - Performs mutation testing with Stryker.NET (Mississippi ONLY). Expect this script to run for up to 30 minutes and allow it to finish; do not cancel early.
-- **`test-project-quality.ps1`** - Quickly evaluate a single test project: runs `dotnet test` with coverage and optionally Stryker mutation testing. Prints a concise, machine-readable summary (RESULT, TEST_*, COVERAGE, MUTATION_SCORE) to aid AI tools.
-
-### Quality Scripts
-
-- **`clean-up-mississippi-solution.ps1`** - Applies ReSharper code formatting and inspections
-- **`clean-up-sample-solution.ps1`** - Cleans up sample code formatting
-- **`summarize-coverage-gaps.ps1`** - Aggregates the latest Cobertura reports and syncs coverage gap tasks into `.scratchpad/tasks`
-- **`summarize-mutation-survivors.ps1`** - Reads the most recent Stryker output (or reruns it when asked) and mirrors mutation survivors into `.scratchpad/tasks`
-
-### Orchestration
-
-- **`orchestrate-solutions.ps1`** - Runs the complete pipeline in proper order, including both summarizer scripts so coverage and mutation tasks stay current
-- **`go.ps1`** (root) - Convenience script that calls orchestrate-solutions.ps1
-
-### Commands Index (quick)
-
-- **Build Mississippi**: `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`
-- **Build Samples**: `pwsh ./eng/src/agent-scripts/build-sample-solution.ps1`
-- **Cleanup Mississippi**: `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
-- **Cleanup Samples**: `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1`
-- **Unit tests (Mississippi)**: `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
-- **Unit tests (Samples)**: `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1`
-- **Mutation tests (Mississippi)**: `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` (plan for up to 30 minutes and wait for completion)
-- **Per-project test quality**: `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name> [-SkipMutation]`
-- **Final pipeline (both solutions)**: `pwsh ./go.ps1`
-
-## Development Workflow Pattern
-
-When making ANY code changes, follow this strict pattern:
-
-### 1. Build → Clean → Fix → Repeat
-
-```powershell
-# Build to check for errors/warnings
-pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
-
-# Run cleanup to fix formatting and detect issues
-pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
-
-# Fix any errors or warnings reported
-# Repeat until clean
-```
-
-### 2. Add Unit Tests
-
-- **ALWAYS add unit tests** for new functionality in Mississippi solution
-- **Update existing tests** when modifying behavior
-- **Sample projects** only need minimal unit tests to demonstrate testing patterns
-- Aim for comprehensive test coverage of new code paths in Mississippi projects
-
-### 3. Run Tests
-
-```powershell
-# Run unit tests to ensure functionality
-pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
-
-# Run mutation tests for quality validation (Mississippi ONLY)
-pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
-```
-
-> Mutation tests are intentionally long-running. Plan for up to 30 minutes and do not cancel the script; wait for completion.
-
-#### Per-project quick quality check (recommended during iteration)
-
-```powershell
-# Tests + coverage only (fast)
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
-
-# Tests + coverage + Stryker mutation score
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
-
-# If the source project cannot be inferred from <ProjectReference>
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SourceProject ./src/Core.Abstractions/Core.Abstractions.csproj
-```
-
-Notes:
-
-- `-TestProject` accepts a test project name (one test project per assembly) or a path to the `.csproj`/directory.
-- Exit code is non-zero if tests fail or Stryker breaks thresholds.
-
-### 4. Final Validation
-
-```powershell
-# Run the complete pipeline for both solutions
-pwsh ./go.ps1
-```
-
-## CI/CD Integration
-
-The CI system runs multiple parallel workflows that enforce these quality standards:
-
-### GitHub Actions Workflows
-
-- **`full-build.yml`** - Builds both solutions with `--warnaserror`
-- **`unit-tests.yml`** - Executes all unit tests
-- **`stryker.yml`** - Runs mutation testing
-- **`cleanup.yml`** - Validates ReSharper code cleanup
-- **`sonar-cloud.yml`** - Performs static code analysis
-
-### CI Failure Causes
-
-The CI will **fail** if any of these conditions occur:
-
-- Compiler warnings or errors
-- Unit test failures
-- Mutation score below threshold
-- ReSharper cleanup detects issues
-- SonarCloud quality gate failures
-
-### Success Criteria
-
-The CI considers code **ready for merge** when:
-✅ Clean build with zero warnings
-✅ All unit tests pass
-✅ Mutation score meets requirements
-✅ Code cleanup passes without changes needed
-✅ SonarCloud quality gate passes
-
-## Code Change Requirements
-
-When modifying code, you MUST:
-
-1. **Build and fix all warnings/errors**
-2. **Run cleanup scripts and resolve any issues**
-3. **Add or update unit tests for all changes** (comprehensive for Mississippi, minimal examples for samples)
-4. **Ensure mutation testing maintains high scores** (Mississippi solution only)
-5. **Run `pwsh ./go.ps1` to validate the complete pipeline passes**
-
-This process should be repeated iteratively until all quality gates pass cleanly. The `go.ps1` script orchestrates the entire build-test-quality pipeline and ensures both solutions meet their respective quality standards.
-
-## Tools Required
-
-- **.NET SDK** (version specified in `global.json`)
-- **PowerShell 7+** (`pwsh`)
-- **Local tools** (installed via `dotnet tool restore`):
-  - GitVersion
-  - SLNGen
-  - JetBrains ReSharper CLI
-  - Stryker.NET
-
-Run `dotnet tool restore` from the repository root to install all required tools.
+- [ ] No warnings; no new suppressions without approval.
+- [ ] Build/cleanup/tests/mutation scripts executed as appropriate; mutation not cancelled.
+- [ ] Mississippi changes have full tests; sample changes have minimal examples.
+- [ ] CPM honored; no package versions in project files.

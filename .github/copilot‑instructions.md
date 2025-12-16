@@ -1,124 +1,38 @@
 # Copilot Instructions
 
-For `.Abstractions` suffixes, follow `abstractions-projects.instructions.md` so that new namespaces are added only when the contracts split rules require it (and create the abstractions project if the mandatory conditions apply before introducing the namespace).
+- For `.Abstractions` suffixes, follow `abstractions-projects.instructions.md`—create the abstractions project when the required conditions apply.
+- Agents **MUST** follow Microsoft C# conventions (file-scoped namespaces, expression-bodied members when beneficial, nullable guidance).
+- Before answering usage/run questions, Agents **MUST** read `README.md` and treat it as the authoritative source.
 
-Agents MUST follow the Microsoft C# coding conventions.
-When generating or refactoring code, Agents MUST match those conventions—including
-file‑scoped namespaces, expression‑bodied members where beneficial, and the
-latest nullable‑reference guidelines.
-Why: Ensures generated code integrates cleanly and remains consistent with repository standards.
+## Build & Tidy
 
-Before answering questions about how to run or use this project, Agents MUST read
-**README.md** at the repository root, and MUST treat usage examples, environment variables,
-and public API surfaces documented there as the single source of truth.
-Why: Prevents drift and ensures guidance reflects the authoritative documentation.
+- **MUST** build/test with `pwsh ./go.ps1`.
+- **MUST** finish with `pwsh ./clean-up.ps1`; **MUST NOT** assume additional formatters beyond those scripts.
 
----
+## Dependency / Project Rules
 
-## Build & tidy
+- Repository-wide MSBuild settings live in `Directory.Build.props`; package versions live in `Directory.Packages.props`—Agents **MUST** review these before editing any `.csproj`.
+- Use `dotnet add|remove package`; with CPM, **MUST NOT** specify `Version` attributes in project files when a version exists in `Directory.Packages.props`.
 
-* To build, restore dependencies, and run all tests, Agents MUST call **`pwsh ./go.ps1`**
-  from the repo root.  
-  Why: This orchestrates build/test gates and catches regressions consistently.
-* To format / tidy code you generate or modify, Agents MUST finish with
-  **`pwsh ./clean-up.ps1`**.  
-  Why: Applies the repository's canonical housekeeping steps for consistent results.
-  – Agents MUST NOT assume extra formatters unless they are explicitly referenced here.
-  Why: Avoids unintended formatting changes and keeps tooling deterministic.
+## Architectural Preferences
 
----
+- Default to cloud-native, 12-factor, container-first designs with structured logging/metrics.
+- Prefer CQRS + actor/message-driven runtimes for complex domains; favor immutable-by-design types (records, readonly members).
+- Primary persistence is NoSQL unless a relational model is explicitly required.
+- All code **MUST** honor SOLID principles.
 
-## Dependency / project‑file rules
+## Testing Expectations
 
-* Repository‑wide MSBuild settings live in **`Directory.Build.props`**;
-  NuGet package versions live in **`Directory.Packages.props`**.
-  Agents MUST inspect these files before touching any `.csproj`.  
-  Why: Central Package Management (CPM) and shared props centralize configuration and prevent duplication.
-* When adding or removing NuGet packages, Agents MUST use the
-  `dotnet add|remove package` CLI. With Central Package Management enabled,
-  the command updates `Directory.Packages.props` for versions and adds
-  versionless `<PackageReference>` items to the project file automatically.  
-  Why: Ensures versions are centralized and project files remain versionless.
-* If a package version already exists in `Directory.Packages.props`, Agents MUST NOT
-  repeat the `Version` attribute in a project's `<PackageReference>`
-  element—let CPM supply it.  
-  Why: Avoids NU1008/NU1010 warnings and guarantees a single source of truth for versions.
-
----
-
-## Architectural preferences
-
-* **Cloud‑native** by default – 12‑Factor, container‑first, stateless processes,
-  health probes, structured logging, metrics & traces.
-* Embrace **CQRS** combined with an **actor‑model** or other message‑driven
-  runtime for complex or high‑concurrency domains.
-* Prefer **immutable‑by‑design** types (records, readonly properties/collections,
-  value objects, functional helpers).
-* The primary persistence layer is **NoSQL** (document or key‑value) unless
-  a relational model is explicitly required.
-* All code MUST honour **SOLID** principles (SRP, OCP, LSP, ISP, DIP).  
-  Why: Upholds maintainability and design quality across the codebase.
-
----
-
-## Testing expectations
-
-* Unit tests MUST use xUnit and FluentAssertions.  
-  Why: Standardizes test frameworks and assertions for reliable tooling.
-* Agents SHOULD target **≥ 80 % line / branch coverage** across all production assemblies
-  (use Coverlet or equivalent).  
-  Why: Encourages meaningful coverage without over-constraining contributors.
-* Agents SHOULD run **Stryker.NET** mutation testing and achieve **≥ 80 % mutation score**
-  (kill ≥ 80 % of mutants). Surface the Stryker report in build output.  
-  Why: Validates test quality by ensuring assertions catch injected faults.
-* Agents MUST place tests under `/tests` and name files `<TypeUnderTest>.Tests.cs`,
-  covering both "happy path" and edge cases.  
-  Why: Improves discoverability and consistency across solutions.
-
----
+- Unit tests **MUST** use xUnit and FluentAssertions; target ≥80% line/branch coverage, covering happy and edge paths. Tests belong under `/tests` and **SHOULD** be named `<TypeUnderTest>.Tests.cs`.
+- Agents **SHOULD** run Stryker.NET and aim for ≥80% mutation score.
 
 ## C# Code Quality & SOLID Verification
 
-* **After each change to a C# file**, Agents MUST verify that the code adheres to all five SOLID principles:
-  1. **Single Responsibility Principle (SRP)**: Each class should have only one reason to change.
-  2. **Open/Closed Principle (OCP)**: Classes should be open for extension but closed for modification.
-  3. **Liskov Substitution Principle (LSP)**: Derived classes must be substitutable for their base classes.
-  4. **Interface Segregation Principle (ISP)**: Clients should not be forced to depend on interfaces they don't use.
-  5. **Dependency Inversion Principle (DIP)**: Depend on abstractions, not concretions.
-  
-  Why: SOLID violations lead to maintenance issues and testing difficulties.
+- After each C# change, Agents **MUST** verify SRP/OCP/LSP/ISP/DIP and fix violations immediately, adjusting design before proceeding.
+- Review responsibilities, dependencies, and interfaces to ensure separation of concerns.
 
-* When SOLID violations are detected, Agents MUST adjust the design immediately—**do not take shortcuts**.
-  Why: Shortcuts create technical debt that manifests as failures during testing and maintenance.
+## Copilot Chat / Search Behaviour
 
-* Agents MUST review class responsibilities, dependencies, and interfaces to ensure proper separation of concerns.
-  Why: Proper design verification prevents cascading issues in the test phase.
-
-* If refactoring is needed to comply with SOLID principles, Agents MUST complete the refactoring
-  before moving to the next task.
-  Why: Ensures code quality remains high and tests are meaningful.
-
-* Agents SHOULD consult `.github/instructions/csharp.instructions.md` for detailed SOLID
-  implementation examples and anti-patterns to avoid.
-  Why: Provides concrete guidance on applying SOLID principles correctly.
-
----
-
-## Copilot Chat / Search behaviour
-
-* When suggesting code or docs, Agents MUST respect every rule above: architectural,
-  dependency, and testing.  
-  Why: Keeps AI suggestions aligned with repository policies.
-* When choosing symbols to show, Agents SHOULD prioritise public APIs surfaced in README.md;
-  avoid private helpers unless explicitly requested.  
-  Why: Highlights stable, user-facing contracts first.
-* Agents SHOULD respond concisely, and when referencing repository code, include file paths
-  and line numbers for clarity.  
-  Why: Improves traceability and reviewability of suggestions.
-* When a request spans many small, independent fixes, Agents SHOULD stage work via
-  `.scratchpad/tasks` and claim tasks using atomic moves as defined in
-  `.github/instructions/agent-scratchpad.instructions.md`.  
-  Why: Enables incremental, reviewable progress.
-* Agents MUST NOT reference `.scratchpad/` from source or tests; it is ephemeral
-  and ignored by Git.  
-  Why: Prevents accidental dependencies on temporary workspace artifacts.
+- Responses **MUST** respect all rules above (architecture, dependency, testing). Prefer public APIs documented in `README.md` when showing symbols.
+- Respond concisely with file paths/line references; for many small fixes, stage work via `.scratchpad/tasks` per `agent-scratchpad.instructions.md`.
+- **MUST NOT** reference `.scratchpad/` from source or tests.
