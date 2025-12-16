@@ -1,0 +1,183 @@
+---
+applyTo: '**/*.cs'
+---
+
+# Allure Test Naming and Reporting
+
+Governing thought: Standardize Allure xUnit attributes to produce consistent, navigable test reports that map tests to architecture (Suite hierarchy) and backlog semantics (Epic/Feature/Story).
+
+## Rules (RFC 2119)
+
+### Hierarchy and Taxonomy
+
+- Test authors **MUST** assign exactly one `[AllureParentSuite]`, `[AllureSuite]`, and `[AllureSubSuite]` per test class or method.  
+  Why: The Suite axis represents vertical architecture; one-to-one mapping keeps the report navigable.
+- Test authors **MUST** assign exactly one `[AllureEpic]` per test.  
+  Why: Epic is the top-level backlog container; multiples fragment traceability.
+- Test authors **SHOULD** assign a single `[AllureFeature]` and `[AllureStory]` per test; multiple values **MAY** be used only when a test genuinely spans multiple backlog items and this is documented in the test's summary.  
+  Why: Keeps behavior-based filtering predictable.
+- Test authors **MUST** use ParentSuite for the vertical slice (e.g., bounded context or layer), Suite for the component, and SubSuite for the capability group.  
+  Why: Aligns with feature-oriented namespace layout per `naming.instructions.md`.
+
+### Naming Stability
+
+- Allure names **MUST** be stable across runs; names **MUST NOT** include timestamps, GUIDs, environment names, or customer data.  
+  Why: Enables trend analysis and avoids polluting history.
+- Names **MUST** use Title Case and domain language; names **MUST NOT** expose type or method names directly.  
+  Why: Reports target stakeholders who understand domain terms, not code identifiers.
+- Test authors **MUST** ensure `[AllureId]` values are unique and stable over time; changing an ID orphans historical data.  
+  Why: Allure uses ID to correlate runs.
+
+### Display Names and Conflicts
+
+- Test authors **MUST** use either xUnit `DisplayName` (on `[Fact]`/`[Theory]`) or `[AllureName]`, but **MUST NOT** set both simultaneously.  
+  Why: Allure.Xunit prefers `[AllureName]` when present; duplicating causes confusion.
+- When `[AllureName]` is set, it **MUST** match or extend the `DisplayName` semantically; contradictions **MUST NOT** exist.  
+  Why: Ensures a single source of truth for the test label.
+
+### Tags and Metadata
+
+- Tag values **MUST** follow the controlled `key:value` pattern (e.g., `priority:high`, `layer:domain`).  
+  Why: Enables structured filtering without free-text sprawl.
+- Tags **MUST NOT** duplicate information already captured by hierarchy attributes (ParentSuite, Epic, etc.).  
+  Why: Reduces redundancy and report noise.
+- `[AllureOwner]` **MUST** reference a team or alias, not an individual.  
+  Why: Ownership survives personnel changes.
+
+### Step Naming
+
+- Step descriptions **MUST** be verb phrases in domain language (e.g., "Submit Order", "Verify Confirmation Email").  
+  Why: Aligns with BDD Given/When/Then style and keeps logs readable.
+- Step parameters **SHOULD** use human-friendly names; parameters containing sensitive data **MUST** be skipped or masked.  
+  Why: Reports may be shared broadly; protect PII and secrets.
+
+### Bounded-Context Tests
+
+- Tests that span multiple bounded contexts **MUST** be split so each test exercises exactly one vertical slice.  
+  Why: Keeps ownership and failure attribution clear; avoids cross-context coupling.
+
+## Scope and Audience
+
+**Audience:** Developers writing xUnit tests in Mississippi projects that use Allure.Xunit for reporting.
+
+**In scope:** Allure attribute usage, naming conventions, hierarchy mapping, controlled vocabulary.
+
+**Out of scope:** General test organization (see `testing.instructions.md`), C# naming rules (see `naming.instructions.md`), coverage targets (see `testing.instructions.md`).
+
+## At-a-Glance Quick-Start
+
+- Add `[AllureParentSuite]`, `[AllureSuite]`, `[AllureSubSuite]` for architecture axis.
+- Add `[AllureEpic]` (required), `[AllureFeature]`, `[AllureStory]` for backlog axis.
+- Use Title Case, domain terms, and stable identifiers—no GUIDs or timestamps.
+- Prefer `DisplayName` on `[Fact]`/`[Theory]`; add `[AllureName]` only when a distinct report label is needed.
+
+> **Drift check:** Allure.Xunit behavior may evolve. Verify attribute precedence in the package release notes before assuming behavior described here.
+
+## Core Principles and Rationale
+
+- **Suite-based axis = architecture:** ParentSuite → Suite → SubSuite mirrors bounded contexts, components, and capabilities.
+- **Behavior-based axis = backlog:** Epic → Feature → Story maps to product planning artifacts.
+- **Stable identifiers:** Enable historical trends, flaky-test detection, and reliable linking.
+- **Domain language:** Reports are consumed by QA, product, and leadership—not just developers.
+
+## Taxonomy Mapping
+
+| Allure Attribute      | Axis        | Represents                                  | Cardinality |
+| --------------------- | ----------- | ------------------------------------------- | ----------- |
+| `AllureParentSuite`   | Suite       | Vertical slice / bounded context            | Exactly 1   |
+| `AllureSuite`         | Suite       | Component or module                         | Exactly 1   |
+| `AllureSubSuite`      | Suite       | Capability group or sub-feature             | Exactly 1   |
+| `AllureEpic`          | Behavior    | Top-level backlog epic                      | Exactly 1   |
+| `AllureFeature`       | Behavior    | Feature within the epic                     | 1 (default) |
+| `AllureStory`         | Behavior    | User story or scenario                      | 1 (default) |
+| `AllureId`            | Metadata    | Stable unique test identifier               | Exactly 1   |
+| `AllureOwner`         | Metadata    | Team or alias (not individual)              | 0–1         |
+| `AllureTag`           | Metadata    | Controlled `key:value` labels               | 0–N         |
+
+## Examples
+
+### Minimal xUnit Test with Allure Attributes
+
+```csharp
+using Allure.Xunit.Attributes;
+using Xunit;
+
+namespace Mississippi.Orders.Tests;
+
+/// <summary>
+/// Verifies order submission behavior in the Orders bounded context.
+/// </summary>
+[AllureParentSuite("Orders")]
+[AllureSuite("Submission")]
+[AllureSubSuite("Validation")]
+[AllureEpic("Order Management")]
+[AllureFeature("Submit Order")]
+public sealed class SubmitOrderTests
+{
+    [Fact(DisplayName = "Valid Order Submits Successfully")]
+    [AllureStory("Happy Path")]
+    [AllureOwner("team-orders")]
+    [AllureTag("priority:high")]
+    [AllureId("ORD-001")]
+    public void ValidOrderSubmitsSuccessfully()
+    {
+        // Arrange / Act / Assert
+    }
+
+    [Theory(DisplayName = "Invalid Order Fails Validation")]
+    [AllureStory("Validation Errors")]
+    [AllureId("ORD-002")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void InvalidOrderFailsValidation(string? customerId)
+    {
+        // Arrange / Act / Assert
+    }
+}
+```
+
+### Step Naming in Allure
+
+```csharp
+using Allure.Xunit;
+
+[Fact(DisplayName = "Order Confirmation Sends Email")]
+public void OrderConfirmationSendsEmail()
+{
+    AllureLifecycle.Instance.WrapInStep(() =>
+    {
+        // step logic
+    }, "Submit Order with Valid Data");
+
+    AllureLifecycle.Instance.WrapInStep(() =>
+    {
+        // step logic
+    }, "Verify Confirmation Email Sent");
+}
+```
+
+## Anti-Patterns
+
+- ❌ Using runtime values in names (e.g., `$"Test-{DateTime.Now}"`) → ✅ Use static, descriptive names.
+- ❌ Setting both `DisplayName` and `[AllureName]` to different values → ✅ Use one or ensure they match.
+- ❌ `[AllureOwner("john.doe")]` (individual) → ✅ `[AllureOwner("team-orders")]` (team alias).
+- ❌ `[AllureTag("important")]` (free-text) → ✅ `[AllureTag("priority:high")]` (key:value).
+- ❌ Single test spanning Orders and Payments contexts → ✅ Split into two tests, one per context.
+- ❌ `[AllureParentSuite("OrderServiceTests")]` (type name) → ✅ `[AllureParentSuite("Orders")]` (domain term).
+
+## Enforcement
+
+- **Reviewers** should verify Allure attributes match this taxonomy during code review.
+- **Agents** should flag tests missing required attributes (`AllureParentSuite`, `AllureSuite`, `AllureSubSuite`, `AllureEpic`).
+- Consider adding an analyzer or unit test that scans for missing required Allure attributes if the codebase grows.
+
+## Related Guidelines
+
+- [Testing Strategy and Quality Gates](./testing.instructions.md) — Test levels, coverage, mutation testing.
+- [Feature-Centric C# Naming](./naming.instructions.md) — Namespace and identifier naming aligned with domains.
+- [RFC 2119 Keyword Usage](./rfc2119.instructions.md) — Normative keyword definitions.
+
+## External References
+
+- [Allure Framework Documentation](https://allurereport.org/docs/)
+- [Allure.Xunit NuGet Package](https://www.nuget.org/packages/Allure.Xunit)
