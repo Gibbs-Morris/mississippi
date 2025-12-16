@@ -8,6 +8,9 @@ namespace Mississippi.EventSourcing.Reducers.L0Tests;
 /// <summary>
 ///     Tests for <see cref="DelegateReducer{TEvent, TProjection}" />.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Reducers")]
+[AllureSubSuite("Delegate Reducer")]
 public sealed class DelegateReducerTests
 {
     private sealed class MutableProjection
@@ -18,7 +21,6 @@ public sealed class DelegateReducerTests
     /// <summary>
     ///     Verifies null delegates are rejected.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ConstructorShouldThrowArgumentNullExceptionWhenDelegateIsNull()
     {
@@ -28,7 +30,6 @@ public sealed class DelegateReducerTests
     /// <summary>
     ///     Verifies the immutability guard does not fire when both state and projection are null.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldAllowNullStateAndProjection()
     {
@@ -43,7 +44,6 @@ public sealed class DelegateReducerTests
     /// <summary>
     ///     Verifies reducers must return a new projection instance instead of mutating and returning the same reference.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldRejectMutatingSameInstance()
     {
@@ -65,7 +65,6 @@ public sealed class DelegateReducerTests
     /// <summary>
     ///     Verifies the adapter forwards to the provided delegate using current state.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldReturnProjectionFromDelegate()
     {
@@ -80,7 +79,6 @@ public sealed class DelegateReducerTests
     /// <summary>
     ///     Verifies Reduce throws when the event is null.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void ReduceShouldThrowWhenEventIsNull()
     {
@@ -94,7 +92,6 @@ public sealed class DelegateReducerTests
     /// <summary>
     ///     Verifies TryReduce enforces the immutability guard when the delegate mutates and reuses the same instance.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void TryReduceShouldRejectMutatingSameInstance()
     {
@@ -116,7 +113,6 @@ public sealed class DelegateReducerTests
     /// <summary>
     ///     Verifies TryReduce forwards to the delegate and returns the produced projection.
     /// </summary>
-    [AllureEpic("Reducers")]
     [Fact]
     public void TryReduceShouldReturnProjectionFromDelegate()
     {

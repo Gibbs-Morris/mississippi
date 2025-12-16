@@ -24,6 +24,9 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 ///     verify correct SDK interaction patterns including retry, exception handling,
 ///     and document operations.
 /// </remarks>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Snapshots Cosmos")]
+[AllureSubSuite("Container Operations")]
 public sealed class SnapshotContainerOperationsTests
 {
     private static CosmosException CreateCosmosNotFound() =>
@@ -56,7 +59,6 @@ public sealed class SnapshotContainerOperationsTests
     /// <summary>
     ///     Verifies that constructor throws when container is null.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ConstructorShouldThrowWhenContainerIsNull()
     {
@@ -69,7 +71,6 @@ public sealed class SnapshotContainerOperationsTests
     /// <summary>
     ///     Verifies that constructor throws when options is null.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ConstructorShouldThrowWhenOptionsIsNull()
     {
@@ -83,7 +84,6 @@ public sealed class SnapshotContainerOperationsTests
     /// <summary>
     ///     Verifies that constructor throws when retryPolicy is null.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ConstructorShouldThrowWhenRetryPolicyIsNull()
     {
@@ -98,7 +98,6 @@ public sealed class SnapshotContainerOperationsTests
     ///     Ensures DeleteDocumentAsync returns false when document not found.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task DeleteDocumentAsyncShouldReturnFalseWhenNotFound()
     {
@@ -118,7 +117,6 @@ public sealed class SnapshotContainerOperationsTests
     ///     Ensures DeleteDocumentAsync returns true when document is deleted.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task DeleteDocumentAsyncShouldReturnTrueWhenDeleted()
     {
@@ -138,7 +136,6 @@ public sealed class SnapshotContainerOperationsTests
     ///     Ensures ReadDocumentAsync returns document when found.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task ReadDocumentAsyncShouldReturnDocumentWhenFound()
     {
@@ -168,7 +165,6 @@ public sealed class SnapshotContainerOperationsTests
     ///     Ensures ReadDocumentAsync returns null when not found.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task ReadDocumentAsyncShouldReturnNullWhenNotFound()
     {
@@ -191,7 +187,6 @@ public sealed class SnapshotContainerOperationsTests
     ///     Ensures UpsertDocumentAsync calls container with correct parameters.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task UpsertDocumentAsyncShouldCallContainer()
     {
@@ -222,7 +217,6 @@ public sealed class SnapshotContainerOperationsTests
     ///     Ensures UpsertDocumentAsync throws when document is null.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task UpsertDocumentAsyncShouldThrowWhenDocumentIsNull()
     {

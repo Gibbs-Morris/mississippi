@@ -1,5 +1,7 @@
 using System;
 
+using Allure.Xunit.Attributes;
+
 using Mississippi.EventSourcing.Abstractions.Attributes;
 
 
@@ -8,7 +10,10 @@ namespace Mississippi.EventSourcing.Abstractions.Tests.Attributes;
 /// <summary>
 ///     Contains unit tests that verify the behavior of the <see cref="BrookNameAttribute" /> class.
 /// </summary>
-public class BrookNameAttributeTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Abstractions")]
+[AllureSubSuite("Brook Name Attribute")]
+public sealed class BrookNameAttributeTests
 {
     /// <summary>
     ///     Confirms that component strings consisting solely of digits or prefixed by digits are still

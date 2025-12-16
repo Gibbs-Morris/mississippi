@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Microsoft.Azure.Cosmos;
 
 using Mississippi.EventSourcing.Cosmos.Retry;
@@ -15,7 +17,10 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Retry;
 /// <summary>
 ///     Tests for <see cref="Mississippi.EventSourcing.Cosmos.Retry.CosmosRetryPolicy" />.
 /// </summary>
-public class CosmosRetryPolicyTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Cosmos")]
+[AllureSubSuite("Cosmos Retry Policy")]
+public sealed class CosmosRetryPolicyTests
 {
     private static CosmosException CreateCosmosException(
         HttpStatusCode statusCode,

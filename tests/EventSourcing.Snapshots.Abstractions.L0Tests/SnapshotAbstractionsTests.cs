@@ -15,6 +15,9 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for snapshot abstractions and registration helpers.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Snapshots Abstractions")]
+[AllureSubSuite("Snapshot Abstractions")]
 public sealed class SnapshotAbstractionsTests
 {
     private sealed class FakeOptions
@@ -62,7 +65,6 @@ public sealed class SnapshotAbstractionsTests
     /// <summary>
     ///     Ensures the registration helper wires both reader and writer roles for a provider.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void RegisterSnapshotStorageProviderShouldRegisterReaderAndWriter()
     {
@@ -78,7 +80,6 @@ public sealed class SnapshotAbstractionsTests
     /// <summary>
     ///     Ensures the overload binding configuration section wires options and registration.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void RegisterSnapshotStorageProviderWithConfigurationShouldBind()
     {
@@ -99,7 +100,6 @@ public sealed class SnapshotAbstractionsTests
     /// <summary>
     ///     Ensures the overload binding configuration delegates wires options and registration.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void RegisterSnapshotStorageProviderWithOptionsDelegateShouldConfigure()
     {
@@ -113,7 +113,6 @@ public sealed class SnapshotAbstractionsTests
     /// <summary>
     ///     Ensures the envelope defaults are empty and can be initialized.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotEnvelopeShouldRoundTripData()
     {

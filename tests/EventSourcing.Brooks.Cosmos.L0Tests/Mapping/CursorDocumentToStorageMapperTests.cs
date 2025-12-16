@@ -1,3 +1,5 @@
+using Allure.Xunit.Attributes;
+
 using Mississippi.EventSourcing.Cosmos.Mapping;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
@@ -7,7 +9,10 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
 /// <summary>
 ///     Tests <see cref="CursorDocumentToStorageMapper" /> to ensure cursor documents are mapped correctly.
 /// </summary>
-public class CursorDocumentToStorageMapperTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Cosmos")]
+[AllureSubSuite("Cursor Document To Storage Mapper")]
+public sealed class CursorDocumentToStorageMapperTests
 {
     /// <summary>
     ///     Verifies the mapper copies both the cursor position and original position when present.

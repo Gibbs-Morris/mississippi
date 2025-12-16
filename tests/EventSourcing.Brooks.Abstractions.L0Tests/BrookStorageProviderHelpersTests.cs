@@ -3,6 +3,8 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -15,7 +17,10 @@ namespace Mississippi.EventSourcing.Abstractions.Tests;
 /// <summary>
 ///     Tests for <see cref="BrookStorageProviderHelpers" /> registration helpers.
 /// </summary>
-public class BrookStorageProviderHelpersTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Abstractions")]
+[AllureSubSuite("Brook Storage Provider Helpers")]
+public sealed class BrookStorageProviderHelpersTests
 {
     private sealed class FakeOptions
     {

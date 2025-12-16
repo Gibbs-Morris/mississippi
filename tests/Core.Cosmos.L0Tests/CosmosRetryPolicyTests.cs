@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Microsoft.Azure.Cosmos;
 
 using Mississippi.Core.Cosmos.Retry;
@@ -15,7 +17,10 @@ namespace Mississippi.Core.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="CosmosRetryPolicy" />.
 /// </summary>
-public class CosmosRetryPolicyTests
+[AllureParentSuite("Core")]
+[AllureSuite("Cosmos")]
+[AllureSubSuite("Retry Policy")]
+public sealed class CosmosRetryPolicyTests
 {
     /// <summary>
     ///     Creates a <see cref="CosmosException" /> using the first available constructor that accepts

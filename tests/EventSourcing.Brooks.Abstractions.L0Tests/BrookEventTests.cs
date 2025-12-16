@@ -1,13 +1,18 @@
 using System;
 using System.Collections.Immutable;
 
+using Allure.Xunit.Attributes;
+
 
 namespace Mississippi.EventSourcing.Abstractions.Tests;
 
 /// <summary>
 ///     Tests for the <see cref="BrookEvent" /> record.
 /// </summary>
-public class BrookEventTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Abstractions")]
+[AllureSubSuite("Brook Event")]
+public sealed class BrookEventTests
 {
     /// <summary>
     ///     Default-constructed values are empty or null as defined.

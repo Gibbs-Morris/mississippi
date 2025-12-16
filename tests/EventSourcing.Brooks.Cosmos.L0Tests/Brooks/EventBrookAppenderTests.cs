@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -25,7 +27,10 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Brooks;
 ///     Unit tests for <see cref="EventBrookAppender" /> covering validation, single/large batch flows,
 ///     rollback behavior, and lease renewal.
 /// </summary>
-public class EventBrookAppenderTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Cosmos")]
+[AllureSubSuite("Event Brook Appender")]
+public sealed class EventBrookAppenderTests
 {
     /// <summary>
     ///     A minimal fake read-only list that reports a custom Count without allocating elements.

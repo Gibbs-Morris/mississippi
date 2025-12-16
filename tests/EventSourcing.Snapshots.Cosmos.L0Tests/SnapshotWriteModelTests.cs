@@ -11,6 +11,9 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotWriteModel" />.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Snapshots Cosmos")]
+[AllureSubSuite("Write Model")]
 public sealed class SnapshotWriteModelTests
 {
     private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
@@ -18,7 +21,6 @@ public sealed class SnapshotWriteModelTests
     /// <summary>
     ///     Ensures two models with different keys are not equal.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotWriteModelShouldNotBeEqualWithDifferentKey()
     {
@@ -37,7 +39,6 @@ public sealed class SnapshotWriteModelTests
     /// <summary>
     ///     Ensures the record stores key and snapshot correctly.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotWriteModelShouldStoreKeyAndSnapshot()
     {
@@ -55,7 +56,6 @@ public sealed class SnapshotWriteModelTests
     /// <summary>
     ///     Ensures two models with same values are equal.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotWriteModelShouldSupportValueEquality()
     {

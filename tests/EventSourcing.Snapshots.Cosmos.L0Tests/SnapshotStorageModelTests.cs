@@ -8,12 +8,14 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotStorageModel" />.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Snapshots Cosmos")]
+[AllureSubSuite("Storage Model")]
 public sealed class SnapshotStorageModelTests
 {
     /// <summary>
     ///     Verifies properties can be set during initialization.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotStorageModelShouldStoreValues()
     {
@@ -33,7 +35,6 @@ public sealed class SnapshotStorageModelTests
     /// <summary>
     ///     Verifies defaults are empty and zeroed.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void SnapshotStorageModelShouldUseDefaults()
     {

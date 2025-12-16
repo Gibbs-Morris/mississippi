@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Factory;
@@ -15,7 +17,10 @@ namespace Mississippi.EventSourcing.Tests.Reader;
 /// <summary>
 ///     Unit tests for <see cref="BrookReaderGrain" />.
 /// </summary>
-public class BrookReaderGrainUnitTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks")]
+[AllureSubSuite("Brook Reader Grain Unit")]
+public sealed class BrookReaderGrainUnitTests
 {
     /// <summary>
     ///     Ensures deactivation path completes without error.

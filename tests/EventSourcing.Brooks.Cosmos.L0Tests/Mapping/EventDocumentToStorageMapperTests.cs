@@ -1,5 +1,7 @@
 using System;
 
+using Allure.Xunit.Attributes;
+
 using Mississippi.EventSourcing.Cosmos.Mapping;
 using Mississippi.EventSourcing.Cosmos.Storage;
 
@@ -10,7 +12,10 @@ namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
 ///     Test class for EventDocumentToStorageMapper functionality.
 ///     Contains unit tests to verify the behavior of event document to storage mapping operations.
 /// </summary>
-public class EventDocumentToStorageMapperTests
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Brooks Cosmos")]
+[AllureSubSuite("Event Document To Storage Mapper")]
+public sealed class EventDocumentToStorageMapperTests
 {
     /// <summary>
     ///     Verifies mapping copies fields from document to storage model.

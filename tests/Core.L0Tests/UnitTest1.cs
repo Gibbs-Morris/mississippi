@@ -6,15 +6,15 @@ namespace Mississippi.Core.Tests;
 /// <summary>
 ///     A test class.
 /// </summary>
-public class UnitTest1
+[AllureParentSuite("Core")]
+[AllureSuite("Core")]
+[AllureSubSuite("Smoke Tests")]
+public sealed class UnitTest1
 {
     /// <summary>
     ///     A test method.
     /// </summary>
-    [AllureEpic("EF-1")]
-    [AllureParentSuite("Web interface")]
-    [AllureSuite("Essential features")]
-    [Fact]
+    [Fact(DisplayName = "Placeholder Test Passes")]
     public void Test1()
     {
         Assert.Equal(1, 1);

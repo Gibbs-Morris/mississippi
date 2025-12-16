@@ -25,6 +25,9 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 ///     <see cref="ISnapshotContainerOperations" /> instead of the Cosmos SDK Container directly.
 ///     Following the Dependency Inversion Principle makes mocking straightforward.
 /// </remarks>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Snapshots Cosmos")]
+[AllureSubSuite("Cosmos Repository")]
 public sealed class SnapshotCosmosRepositoryTests
 {
     private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
@@ -83,7 +86,6 @@ public sealed class SnapshotCosmosRepositoryTests
     /// <summary>
     ///     Verifies that constructor throws when containerOperations is null.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ConstructorShouldThrowWhenContainerOperationsIsNull()
     {
@@ -98,7 +100,6 @@ public sealed class SnapshotCosmosRepositoryTests
     /// <summary>
     ///     Verifies that constructor throws when documentToStorageMapper is null.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ConstructorShouldThrowWhenDocumentToStorageMapperIsNull()
     {
@@ -114,7 +115,6 @@ public sealed class SnapshotCosmosRepositoryTests
     /// <summary>
     ///     Verifies that constructor throws when storageToDocumentMapper is null.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ConstructorShouldThrowWhenStorageToDocumentMapperIsNull()
     {
@@ -130,7 +130,6 @@ public sealed class SnapshotCosmosRepositoryTests
     /// <summary>
     ///     Verifies that constructor throws when storageToEnvelopeMapper is null.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ConstructorShouldThrowWhenStorageToEnvelopeMapperIsNull()
     {
@@ -146,7 +145,6 @@ public sealed class SnapshotCosmosRepositoryTests
     /// <summary>
     ///     Verifies that constructor throws when writeModelToStorageMapper is null.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ConstructorShouldThrowWhenWriteModelToStorageMapperIsNull()
     {
@@ -163,7 +161,6 @@ public sealed class SnapshotCosmosRepositoryTests
     ///     Ensures DeleteAllAsync deletes all snapshots returned by the query.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task DeleteAllAsyncShouldDeleteAllSnapshotsFromQuery()
     {
@@ -193,7 +190,6 @@ public sealed class SnapshotCosmosRepositoryTests
     ///     Ensures DeleteAllAsync handles empty query results gracefully.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task DeleteAllAsyncShouldHandleEmptyQueryResults()
     {
@@ -211,7 +207,6 @@ public sealed class SnapshotCosmosRepositoryTests
     ///     Ensures delete calls container operations with correct parameters.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task DeleteAsyncShouldCallContainerOperations()
     {
@@ -227,7 +222,6 @@ public sealed class SnapshotCosmosRepositoryTests
     ///     Ensures PruneAsync always retains the maximum version.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task PruneAsyncShouldAlwaysRetainMaxVersion()
     {
@@ -260,7 +254,6 @@ public sealed class SnapshotCosmosRepositoryTests
     ///     Ensures PruneAsync deletes snapshots that don't match the modulus rules.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task PruneAsyncShouldDeleteSnapshotsNotMatchingModulus()
     {
@@ -296,7 +289,6 @@ public sealed class SnapshotCosmosRepositoryTests
     ///     Ensures PruneAsync handles empty query results gracefully.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task PruneAsyncShouldHandleEmptyQueryResults()
     {
@@ -314,7 +306,6 @@ public sealed class SnapshotCosmosRepositoryTests
     ///     Ensures reads return mapped envelopes.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task ReadAsyncShouldReturnEnvelope()
     {
@@ -354,7 +345,6 @@ public sealed class SnapshotCosmosRepositoryTests
     ///     Ensures reads return null when document not found.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task ReadAsyncShouldReturnNullWhenNotFound()
     {
@@ -370,7 +360,6 @@ public sealed class SnapshotCosmosRepositoryTests
     ///     Ensures writes map and upsert documents.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task WriteAsyncShouldUpsertDocument()
     {

@@ -16,6 +16,9 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotStorageProvider" />.
 /// </summary>
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("Snapshots Cosmos")]
+[AllureSubSuite("Storage Provider")]
 public sealed class SnapshotStorageProviderTests
 {
     private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
@@ -25,7 +28,6 @@ public sealed class SnapshotStorageProviderTests
     /// <summary>
     ///     Ensures constructor throws when repository is null.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void ConstructorShouldThrowWhenRepositoryIsNull()
     {
@@ -36,7 +38,6 @@ public sealed class SnapshotStorageProviderTests
     ///     Ensures delete-all forwards to the repository.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task DeleteAllAsyncShouldDelegate()
     {
@@ -50,7 +51,6 @@ public sealed class SnapshotStorageProviderTests
     ///     Ensures delete forwards to the repository.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task DeleteAsyncShouldDelegate()
     {
@@ -63,7 +63,6 @@ public sealed class SnapshotStorageProviderTests
     /// <summary>
     ///     Ensures the provider exposes the expected format.
     /// </summary>
-    [AllureEpic("Snapshots")]
     [Fact]
     public void FormatShouldReturnCosmosDb()
     {
@@ -75,7 +74,6 @@ public sealed class SnapshotStorageProviderTests
     ///     Ensures prune validates arguments and delegates to the repository.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task PruneAsyncShouldDelegate()
     {
@@ -93,7 +91,6 @@ public sealed class SnapshotStorageProviderTests
     ///     Ensures prune rejects null retain sets.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task PruneAsyncShouldThrowWhenRetainModuliNull()
     {
@@ -108,7 +105,6 @@ public sealed class SnapshotStorageProviderTests
     ///     Ensures read forwards to the repository.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task ReadAsyncShouldDelegate()
     {
@@ -125,7 +121,6 @@ public sealed class SnapshotStorageProviderTests
     ///     Ensures write forwards to the repository.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
-    [AllureEpic("Snapshots")]
     [Fact]
     public async Task WriteAsyncShouldDelegate()
     {
