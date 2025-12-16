@@ -80,6 +80,131 @@ public sealed class SnapshotCosmosRepositoryTests
     }
 
     /// <summary>
+    ///     Verifies that constructor throws when container is null.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void ConstructorShouldThrowWhenContainerIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
+            null!,
+            Options.Create(new SnapshotStorageOptions()),
+            new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
+            new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            new PassThroughRetryPolicy()));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when documentToStorageMapper is null.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void ConstructorShouldThrowWhenDocumentToStorageMapperIsNull()
+    {
+        Mock<Container> container = new();
+        Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
+            container.Object,
+            Options.Create(new SnapshotStorageOptions()),
+            null!,
+            new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
+            new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            new PassThroughRetryPolicy()));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when options is null.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void ConstructorShouldThrowWhenOptionsIsNull()
+    {
+        Mock<Container> container = new();
+        Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
+            container.Object,
+            null!,
+            new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
+            new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            new PassThroughRetryPolicy()));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when retryPolicy is null.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void ConstructorShouldThrowWhenRetryPolicyIsNull()
+    {
+        Mock<Container> container = new();
+        Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
+            container.Object,
+            Options.Create(new SnapshotStorageOptions()),
+            new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
+            new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            null!));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when storageToDocumentMapper is null.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void ConstructorShouldThrowWhenStorageToDocumentMapperIsNull()
+    {
+        Mock<Container> container = new();
+        Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
+            container.Object,
+            Options.Create(new SnapshotStorageOptions()),
+            new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
+            new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
+            null!,
+            new PassThroughRetryPolicy()));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when storageToEnvelopeMapper is null.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void ConstructorShouldThrowWhenStorageToEnvelopeMapperIsNull()
+    {
+        Mock<Container> container = new();
+        Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
+            container.Object,
+            Options.Create(new SnapshotStorageOptions()),
+            new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
+            null!,
+            new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            new PassThroughRetryPolicy()));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when writeModelToStorageMapper is null.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void ConstructorShouldThrowWhenWriteModelToStorageMapperIsNull()
+    {
+        Mock<Container> container = new();
+        Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
+            container.Object,
+            Options.Create(new SnapshotStorageOptions()),
+            new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
+            new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
+            null!,
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            new PassThroughRetryPolicy()));
+    }
+
+    /// <summary>
     ///     Ensures delete ignores not-found responses.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
@@ -96,6 +221,28 @@ public sealed class SnapshotCosmosRepositoryTests
                 It.IsAny<CancellationToken>()))
             .Callback(() => deleteCalled = true)
             .ThrowsAsync(CreateCosmosNotFound());
+        SnapshotCosmosRepository repository = CreateRepository(container);
+        await repository.DeleteAsync(SnapshotKey, CancellationToken.None);
+        Assert.True(deleteCalled);
+    }
+
+    /// <summary>
+    ///     Ensures delete succeeds when item exists.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public async Task DeleteAsyncShouldSucceedWhenItemExists()
+    {
+        bool deleteCalled = false;
+        Mock<Container> container = new();
+        container.Setup(c => c.DeleteItemAsync<SnapshotDocument>(
+                "3",
+                It.IsAny<PartitionKey>(),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .Callback(() => deleteCalled = true)
+            .ReturnsAsync(Mock.Of<ItemResponse<SnapshotDocument>>());
         SnapshotCosmosRepository repository = CreateRepository(container);
         await repository.DeleteAsync(SnapshotKey, CancellationToken.None);
         Assert.True(deleteCalled);
