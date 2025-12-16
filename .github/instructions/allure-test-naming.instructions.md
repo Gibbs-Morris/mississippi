@@ -1,10 +1,10 @@
 ---
-applyTo: '**/*.cs'
+applyTo: 'tests/**/*.cs'
 ---
 
 # Allure Test Naming and Reporting
 
-Governing thought: Standardize Allure xUnit attributes to produce consistent, navigable test reports that map tests to architecture (Suite hierarchy) and optionally to backlog semantics (Epic/Feature/Story) when project management tooling is in use.
+Governing thought: Standardize Allure xUnit attributes in test files to produce consistent, navigable test reports that map tests to architecture (Suite hierarchy) and optionally to backlog semantics (Epic/Feature/Story) when project management tooling is in use.
 
 ## Rules (RFC 2119)
 
@@ -65,9 +65,9 @@ Governing thought: Standardize Allure xUnit attributes to produce consistent, na
 
 **Audience:** Developers writing xUnit tests in Mississippi projects that use Allure.Xunit for reporting.
 
-**In scope:** Allure attribute usage, naming conventions, hierarchy mapping, controlled vocabulary.
+**In scope:** Allure attribute usage in `.cs` test files located in the `tests` folder, naming conventions, hierarchy mapping, controlled vocabulary.
 
-**Out of scope:** General test organization (see `testing.instructions.md`), C# naming rules (see `naming.instructions.md`), coverage targets (see `testing.instructions.md`).
+**Out of scope:** Non-test C# files, general test organization (see `testing.instructions.md`), C# naming rules (see `naming.instructions.md`), coverage targets (see `testing.instructions.md`).
 
 ## At-a-Glance Quick-Start
 
