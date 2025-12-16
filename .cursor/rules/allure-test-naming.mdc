@@ -9,7 +9,7 @@ alwaysApply: false
 
 # Allure Test Naming and Reporting
 
-Governing thought: Standardize Allure xUnit attributes to produce consistent, navigable test reports that map tests to architecture (Suite hierarchy) and backlog semantics (Epic/Feature/Story).
+Governing thought: Standardize Allure xUnit attributes to produce consistent, navigable test reports that map tests to architecture (Suite hierarchy) and optionally to backlog semantics (Epic/Feature/Story) when project management tooling is in use.
 
 ## Rules (RFC 2119)
 
@@ -17,12 +17,17 @@ Governing thought: Standardize Allure xUnit attributes to produce consistent, na
 
 - Test authors **MUST** assign exactly one `[AllureParentSuite]`, `[AllureSuite]`, and `[AllureSubSuite]` per test class or method.  
   Why: The Suite axis represents vertical architecture; one-to-one mapping keeps the report navigable.
-- Test authors **MUST** assign exactly one `[AllureEpic]` per test.  
+- Test authors **MUST** use ParentSuite for the vertical slice (e.g., bounded context or layer), Suite for the component, and SubSuite for the capability group.  
+  Why: Aligns with feature-oriented namespace layout per `naming.instructions.md`.
+
+### Backlog Semantics (Optional)
+
+> **Note:** The behavior-based axis (`[AllureEpic]`, `[AllureFeature]`, `[AllureStory]`) is optional and intended for teams using project management software. When not using PM tooling, these attributes **MAY** be omitted.
+
+- When used, test authors **SHOULD** assign exactly one `[AllureEpic]` per test.  
   Why: Epic is the top-level backlog container; multiples fragment traceability.
 - Test authors **SHOULD** assign a single `[AllureFeature]` and `[AllureStory]` per test; multiple values **MAY** be used only when a test genuinely spans multiple backlog items and this is documented in the test's summary.  
   Why: Keeps behavior-based filtering predictable.
-- Test authors **MUST** use ParentSuite for the vertical slice (e.g., bounded context or layer), Suite for the component, and SubSuite for the capability group.  
-  Why: Aligns with feature-oriented namespace layout per `naming.instructions.md`.
 
 ### Naming Stability
 
@@ -71,8 +76,8 @@ Governing thought: Standardize Allure xUnit attributes to produce consistent, na
 
 ## At-a-Glance Quick-Start
 
-- Add `[AllureParentSuite]`, `[AllureSuite]`, `[AllureSubSuite]` for architecture axis.
-- Add `[AllureEpic]` (required), `[AllureFeature]`, `[AllureStory]` for backlog axis.
+- Add `[AllureParentSuite]`, `[AllureSuite]`, `[AllureSubSuite]` for architecture axis (required).
+- Optionally add `[AllureEpic]`, `[AllureFeature]`, `[AllureStory]` for backlog axis (when using PM tooling).
 - Use Title Case, domain terms, and stable identifiers—no GUIDs or timestamps.
 - Prefer `DisplayName` on `[Fact]`/`[Theory]`; add `[AllureName]` only when a distinct report label is needed.
 
@@ -80,28 +85,64 @@ Governing thought: Standardize Allure xUnit attributes to produce consistent, na
 
 ## Core Principles and Rationale
 
-- **Suite-based axis = architecture:** ParentSuite → Suite → SubSuite mirrors bounded contexts, components, and capabilities.
-- **Behavior-based axis = backlog:** Epic → Feature → Story maps to product planning artifacts.
+- **Suite-based axis = architecture (required):** ParentSuite → Suite → SubSuite mirrors bounded contexts, components, and capabilities.
+- **Behavior-based axis = backlog (optional):** Epic → Feature → Story maps to product planning artifacts when PM tooling is in use.
 - **Stable identifiers:** Enable historical trends, flaky-test detection, and reliable linking.
 - **Domain language:** Reports are consumed by QA, product, and leadership—not just developers.
 
 ## Taxonomy Mapping
 
-| Allure Attribute      | Axis        | Represents                                  | Cardinality |
-| --------------------- | ----------- | ------------------------------------------- | ----------- |
-| `AllureParentSuite`   | Suite       | Vertical slice / bounded context            | Exactly 1   |
-| `AllureSuite`         | Suite       | Component or module                         | Exactly 1   |
-| `AllureSubSuite`      | Suite       | Capability group or sub-feature             | Exactly 1   |
-| `AllureEpic`          | Behavior    | Top-level backlog epic                      | Exactly 1   |
-| `AllureFeature`       | Behavior    | Feature within the epic                     | 1 (default) |
-| `AllureStory`         | Behavior    | User story or scenario                      | 1 (default) |
-| `AllureId`            | Metadata    | Stable unique test identifier               | Exactly 1   |
-| `AllureOwner`         | Metadata    | Team or alias (not individual)              | 0–1         |
-| `AllureTag`           | Metadata    | Controlled `key:value` labels               | 0–N         |
+| Allure Attribute      | Axis        | Represents                                  | Cardinality    |
+| --------------------- | ----------- | ------------------------------------------- | -------------- |
+| `AllureParentSuite`   | Suite       | Vertical slice / bounded context            | Exactly 1      |
+| `AllureSuite`         | Suite       | Component or module                         | Exactly 1      |
+| `AllureSubSuite`      | Suite       | Capability group or sub-feature             | Exactly 1      |
+| `AllureEpic`          | Behavior    | Top-level backlog epic                      | 0–1 (optional) |
+| `AllureFeature`       | Behavior    | Feature within the epic                     | 0–1 (optional) |
+| `AllureStory`         | Behavior    | User story or scenario                      | 0–1 (optional) |
+| `AllureId`            | Metadata    | Stable unique test identifier               | Exactly 1      |
+| `AllureOwner`         | Metadata    | Team or alias (not individual)              | 0–1            |
+| `AllureTag`           | Metadata    | Controlled `key:value` labels               | 0–N            |
 
 ## Examples
 
-### Minimal xUnit Test with Allure Attributes
+### Minimal xUnit Test with Allure Attributes (Architecture Only)
+
+```csharp
+using Allure.Xunit.Attributes;
+using Xunit;
+
+namespace Mississippi.Orders.Tests;
+
+/// <summary>
+/// Verifies order submission behavior in the Orders bounded context.
+/// </summary>
+[AllureParentSuite("Orders")]
+[AllureSuite("Submission")]
+[AllureSubSuite("Validation")]
+public sealed class SubmitOrderTests
+{
+    [Fact(DisplayName = "Valid Order Submits Successfully")]
+    [AllureOwner("team-orders")]
+    [AllureTag("priority:high")]
+    [AllureId("ORD-001")]
+    public void ValidOrderSubmitsSuccessfully()
+    {
+        // Arrange / Act / Assert
+    }
+
+    [Theory(DisplayName = "Invalid Order Fails Validation")]
+    [AllureId("ORD-002")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void InvalidOrderFailsValidation(string? customerId)
+    {
+        // Arrange / Act / Assert
+    }
+}
+```
+
+### Full Example with Backlog Semantics (When Using PM Tooling)
 
 ```csharp
 using Allure.Xunit.Attributes;
@@ -125,16 +166,6 @@ public sealed class SubmitOrderTests
     [AllureTag("priority:high")]
     [AllureId("ORD-001")]
     public void ValidOrderSubmitsSuccessfully()
-    {
-        // Arrange / Act / Assert
-    }
-
-    [Theory(DisplayName = "Invalid Order Fails Validation")]
-    [AllureStory("Validation Errors")]
-    [AllureId("ORD-002")]
-    [InlineData("")]
-    [InlineData(null)]
-    public void InvalidOrderFailsValidation(string? customerId)
     {
         // Arrange / Act / Assert
     }
@@ -173,7 +204,7 @@ public void OrderConfirmationSendsEmail()
 ## Enforcement
 
 - **Reviewers** should verify Allure attributes match this taxonomy during code review.
-- **Agents** should flag tests missing required attributes (`AllureParentSuite`, `AllureSuite`, `AllureSubSuite`, `AllureEpic`).
+- **Agents** should flag tests missing required attributes (`AllureParentSuite`, `AllureSuite`, `AllureSubSuite`).
 - Consider adding an analyzer or unit test that scans for missing required Allure attributes if the codebase grows.
 
 ## Related Guidelines
