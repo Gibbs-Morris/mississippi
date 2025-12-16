@@ -16,7 +16,7 @@ public class BrookEventTests
     public void DefaultValuesAreEmptyOrNull()
     {
         BrookEvent e = new();
-        Assert.Equal(string.Empty, e.Type);
+        Assert.Equal(string.Empty, e.EventType);
         Assert.Equal(string.Empty, e.Source);
         Assert.Equal(string.Empty, e.Id);
         Assert.Equal(string.Empty, e.DataContentType);
@@ -34,14 +34,14 @@ public class BrookEventTests
         DateTimeOffset now = DateTimeOffset.UtcNow;
         BrookEvent e = new()
         {
-            Type = "T",
+            EventType = "T",
             Source = "S",
             Id = "I",
             DataContentType = "application/json",
             Data = data,
             Time = now,
         };
-        Assert.Equal("T", e.Type);
+        Assert.Equal("T", e.EventType);
         Assert.Equal("S", e.Source);
         Assert.Equal("I", e.Id);
         Assert.Equal("application/json", e.DataContentType);

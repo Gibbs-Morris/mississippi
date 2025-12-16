@@ -102,7 +102,7 @@ public class EventBrookReaderTests
                 {
                     Id = e1.EventId,
                     Source = e1.Source ?? string.Empty,
-                    Type = e1.EventType,
+                    EventType = e1.EventType,
                     DataContentType = e1.DataContentType ?? string.Empty,
                     Time = e1.Time,
                 });
@@ -112,7 +112,7 @@ public class EventBrookReaderTests
                 {
                     Id = e2.EventId,
                     Source = e2.Source ?? string.Empty,
-                    Type = e2.EventType,
+                    EventType = e2.EventType,
                     DataContentType = e2.DataContentType ?? string.Empty,
                     Time = e2.Time,
                 });
@@ -122,7 +122,7 @@ public class EventBrookReaderTests
                 {
                     Id = e3.EventId,
                     Source = e3.Source ?? string.Empty,
-                    Type = e3.EventType,
+                    EventType = e3.EventType,
                     DataContentType = e3.DataContentType ?? string.Empty,
                     Time = e3.Time,
                 });
@@ -139,9 +139,9 @@ public class EventBrookReaderTests
         Assert.Equal(3, results.Count);
         Assert.Collection(
             results,
-            a => Assert.Equal("T1", a.Type),
-            b => Assert.Equal("T2", b.Type),
-            c => Assert.Equal("T3", c.Type));
+            a => Assert.Equal("T1", a.EventType),
+            b => Assert.Equal("T2", b.EventType),
+            c => Assert.Equal("T3", c.EventType));
         repositoryMock.Verify(
             r => r.QueryEventsAsync(range, options.QueryBatchSize, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -198,14 +198,14 @@ public class EventBrookReaderTests
                 new BrookEvent
                 {
                     Id = e1.EventId,
-                    Type = e1.EventType,
+                    EventType = e1.EventType,
                 });
         mapperMock.Setup(m => m.Map(e2))
             .Returns(
                 new BrookEvent
                 {
                     Id = e2.EventId,
-                    Type = e2.EventType,
+                    EventType = e2.EventType,
                 });
         EventBrookReader reader = new(repositoryMock.Object, retryPolicy, Options.Create(options), mapperMock.Object);
         using CancellationTokenSource cts = new();
@@ -224,7 +224,7 @@ public class EventBrookReaderTests
             }
         });
         Assert.Single(results);
-        Assert.Equal("T1", results[0].Type);
+        Assert.Equal("T1", results[0].EventType);
         repositoryMock.Verify(
             r => r.QueryEventsAsync(range, options.QueryBatchSize, It.IsAny<CancellationToken>()),
             Times.Once);

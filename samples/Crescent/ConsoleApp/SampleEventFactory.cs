@@ -101,7 +101,7 @@ internal static class SampleEventFactory
             DataContentType = contentType ?? "application/octet-stream",
             Source = GenerateSourceTag(),
             Time = DateTimeOffset.UtcNow,
-            Type = Pick(Categories),
+            EventType = Pick(Categories),
         };
     }
 
@@ -117,7 +117,7 @@ internal static class SampleEventFactory
             DataContentType = Pick(MimeTypes),
             Source = GenerateSourceTag(),
             Time = DateTimeOffset.UtcNow.AddSeconds(-RandomNumberGenerator.GetInt32(0, 86_400)),
-            Type = Pick(Categories),
+            EventType = Pick(Categories),
         };
     }
 

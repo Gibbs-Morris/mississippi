@@ -25,7 +25,7 @@ internal class EventToStorageMapper : IMapper<BrookEvent, EventStorageModel>
         {
             EventId = input.Id ?? string.Empty,
             Source = input.Source,
-            EventType = input.Type ?? string.Empty,
+            EventType = input.EventType ?? string.Empty,
             DataContentType = input.DataContentType,
             Data = input.Data.ToArray(),
             Time = input.Time ?? DateTimeOffset.UtcNow,

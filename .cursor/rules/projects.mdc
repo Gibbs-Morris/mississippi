@@ -283,6 +283,12 @@ Projects ending with `Tests` **automatically receive**:
 <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
 ```
 
+#### Benchmark Projects Get Extra Configuration
+
+Projects ending with `Benchmarks` can receive BenchmarkDotNet wiring via `Directory.Build.props` (packages and optional `InternalsVisibleTo` support).
+
+See `.github/instructions/benchmarks.instructions.md` for the project naming and folder layout conventions.
+
 ### Directory.Packages.props - Centralized Package Management
 
 - **`ManagePackageVersionsCentrally` is enabled** - all versions controlled centrally

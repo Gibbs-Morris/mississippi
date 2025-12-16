@@ -38,6 +38,12 @@ public sealed record MississippiProjection
     public string DataContentType { get; init; } = string.Empty;
 
     /// <summary>
+    ///     Gets the semantic event type used to interpret and deserialize the payload downstream.
+    /// </summary>
+    [Id(0)]
+    public string EventType { get; init; } = string.Empty;
+
+    /// <summary>
     ///     Gets or initializes a hash value for the projection event.
     ///     Used for data integrity verification and caching purposes.
     /// </summary>
@@ -56,10 +62,4 @@ public sealed record MississippiProjection
     /// </summary>
     [Id(1)]
     public string Source { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the semantic type of the event.
-    /// </summary>
-    [Id(0)]
-    public string Type { get; init; } = string.Empty;
 }

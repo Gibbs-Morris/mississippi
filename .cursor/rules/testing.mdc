@@ -158,6 +158,12 @@ These conventions match `Directory.Build.props` so analyzers, InternalsVisibleTo
 - Samples solution (apps + examples): include L0/L1 examples only; mutation testing is not required.
 - L2/L3/L4 projects may live under `tests/` or `samples/` as dedicated test applications; wire them into scheduled CI rather than PR gates.
 
+## Benchmarks
+
+Benchmarks are performance measurements and are not part of the L0–L4 correctness test levels.
+
+Use dedicated `*.Benchmarks` console projects and follow `.github/instructions/benchmarks.instructions.md`.
+
 ## Patterns and Practices
 
 - xUnit

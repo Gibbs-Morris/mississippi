@@ -443,7 +443,7 @@ public class EventBrookAppenderTests
             new BrookEvent
             {
                 Id = "e1",
-                Type = "T",
+                EventType = "T",
             },
         };
         Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
@@ -641,17 +641,17 @@ public class EventBrookAppenderTests
             new BrookEvent
             {
                 Id = "e1",
-                Type = "T1",
+                EventType = "T1",
             },
             new BrookEvent
             {
                 Id = "e2",
-                Type = "T2",
+                EventType = "T2",
             },
             new BrookEvent
             {
                 Id = "e3",
-                Type = "T3",
+                EventType = "T3",
             },
         };
         Mock<ICosmosRepository> repository = new(MockBehavior.Strict);

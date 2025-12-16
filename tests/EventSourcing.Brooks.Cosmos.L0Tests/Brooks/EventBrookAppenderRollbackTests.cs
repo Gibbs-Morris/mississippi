@@ -132,7 +132,7 @@ public class EventBrookAppenderRollbackTests
             .Returns<BrookEvent>(e => new()
             {
                 EventId = e.Id,
-                EventType = e.Type,
+                EventType = e.EventType,
                 Data = e.Data.ToArray(),
                 DataContentType = e.DataContentType,
                 Source = e.Source,

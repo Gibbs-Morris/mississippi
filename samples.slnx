@@ -21,6 +21,7 @@
         <Project Path="src\AspNetCore.Orleans\AspNetCore.Orleans.csproj"/>
         <Project Path="src\Core.Abstractions\Core.Abstractions.csproj"/>
         <Project Path="src\Core\Core.csproj"/>
+        <Project Path="src\Core.Cosmos\Core.Cosmos.csproj"/>
         <Project Path="src\Hosting\Hosting.csproj"/>
         <Project Path="src\EventSourcing.Brooks\EventSourcing.Brooks.csproj"/>
         <Project Path="src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj"/>
@@ -29,6 +30,8 @@
         <Project Path="src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj"/>
         <Project Path="src\EventSourcing.Projections.Abstractions\EventSourcing.Projections.Abstractions.csproj"/>
         <Project Path="src\EventSourcing.Projections\EventSourcing.Projections.csproj"/>
+        <Project Path="src\EventSourcing.Effects.Abstractions\EventSourcing.Effects.Abstractions.csproj"/>
+        <Project Path="src\EventSourcing.Effects\EventSourcing.Effects.csproj"/>
         <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj"/>
         <Project Path="src\EventSourcing.Reducers\EventSourcing.Reducers.csproj"/>
         <Project Path="src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj"/>
@@ -43,6 +46,7 @@
         <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj"/>
         <Project Path="tests\AspNetCore.Orleans.L0Tests\AspNetCore.Orleans.L0Tests.csproj"/>
         <Project Path="tests\Core.L0Tests\Core.L0Tests.csproj"/>
+        <Project Path="tests\Core.Cosmos.L0Tests\Core.Cosmos.L0Tests.csproj"/>
         <Project Path="tests\Core.Abstractions.L0Tests\Core.Abstractions.L0Tests.csproj"/>
         <Project Path="tests\EventSourcing.Brooks.L0Tests\EventSourcing.Brooks.L0Tests.csproj"/>
         <Project Path="tests\EventSourcing.Brooks.Cosmos.L0Tests\EventSourcing.Brooks.Cosmos.L0Tests.csproj"/>
@@ -52,6 +56,8 @@
         <Project Path="tests\EventSourcing.Aggregates.Abstractions.L0Tests\EventSourcing.Aggregates.Abstractions.L0Tests.csproj"/>
         <Project Path="tests\EventSourcing.Projections.L0Tests\EventSourcing.Projections.L0Tests.csproj"/>
         <Project Path="tests\EventSourcing.Projections.Abstractions.L0Tests\EventSourcing.Projections.Abstractions.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Effects.L0Tests\EventSourcing.Effects.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.Effects.Abstractions.L0Tests\EventSourcing.Effects.Abstractions.L0Tests.csproj"/>
         <Project Path="tests\EventSourcing.Reducers.L0Tests\EventSourcing.Reducers.L0Tests.csproj"/>
         <Project Path="tests\EventSourcing.Reducers.Abstractions.L0Tests\EventSourcing.Reducers.Abstractions.L0Tests.csproj"/>
         <Project Path="tests\EventSourcing.Snapshots.L0Tests\EventSourcing.Snapshots.L0Tests.csproj"/>
