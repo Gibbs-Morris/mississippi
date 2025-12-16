@@ -35,6 +35,7 @@ public static class SnapshotStorageProviderRegistrations
         this IServiceCollection services
     )
     {
+        services.AddSingleton<ISnapshotQueryService, CosmosSnapshotQueryService>();
         services.AddSingleton<ISnapshotCosmosRepository, SnapshotCosmosRepository>();
         services.AddSingleton<IRetryPolicy, CosmosRetryPolicy>();
         services.AddMapper<SnapshotDocument, SnapshotStorageModel, SnapshotDocumentToStorageMapper>();

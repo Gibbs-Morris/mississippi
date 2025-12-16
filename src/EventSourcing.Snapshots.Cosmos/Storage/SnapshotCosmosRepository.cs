@@ -7,14 +7,11 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Abstractions.Mapping;
 using Mississippi.Core.Cosmos.Retry;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
-
-using Newtonsoft.Json;
 
 
 namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
@@ -28,7 +25,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
 
     private readonly IMapper<SnapshotDocument, SnapshotStorageModel> documentToStorageMapper;
 
-    private readonly SnapshotStorageOptions options;
+    private readonly ISnapshotQueryService queryService;
 
     private readonly IRetryPolicy retryPolicy;
 
@@ -42,7 +39,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     ///     Initializes a new instance of the <see cref="SnapshotCosmosRepository" /> class.
     /// </summary>
     /// <param name="container">The Cosmos container used for snapshots.</param>
-    /// <param name="options">The snapshot storage options.</param>
+    /// <param name="queryService">The query service for reading snapshot identifiers.</param>
     /// <param name="documentToStorageMapper">Maps Cosmos documents to snapshot storage models.</param>
     /// <param name="storageToEnvelopeMapper">Maps storage models to snapshot envelopes.</param>
     /// <param name="writeModelToStorageMapper">Maps snapshot write models to storage models.</param>
@@ -50,7 +47,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     /// <param name="retryPolicy">Retry policy for transient Cosmos errors.</param>
     public SnapshotCosmosRepository(
         Container container,
-        IOptions<SnapshotStorageOptions> options,
+        ISnapshotQueryService queryService,
         IMapper<SnapshotDocument, SnapshotStorageModel> documentToStorageMapper,
         IMapper<SnapshotStorageModel, SnapshotEnvelope> storageToEnvelopeMapper,
         IMapper<SnapshotWriteModel, SnapshotStorageModel> writeModelToStorageMapper,
@@ -59,6 +56,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     )
     {
         this.container = container ?? throw new ArgumentNullException(nameof(container));
+        this.queryService = queryService ?? throw new ArgumentNullException(nameof(queryService));
         this.documentToStorageMapper =
             documentToStorageMapper ?? throw new ArgumentNullException(nameof(documentToStorageMapper));
         this.storageToEnvelopeMapper =
@@ -68,7 +66,6 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         this.storageToDocumentMapper =
             storageToDocumentMapper ?? throw new ArgumentNullException(nameof(storageToDocumentMapper));
         this.retryPolicy = retryPolicy ?? throw new ArgumentNullException(nameof(retryPolicy));
-        this.options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     private static PartitionKey Partition(
@@ -87,8 +84,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         CancellationToken cancellationToken = default
     )
     {
-        IReadOnlyList<SnapshotIdVersion> ids = await ReadIdsAsync(streamKey, cancellationToken);
-        foreach (SnapshotIdVersion item in ids)
+        await foreach (SnapshotIdVersion item in queryService.ReadIdsAsync(streamKey, cancellationToken))
         {
             await DeleteDocumentAsync(streamKey, item.Id, cancellationToken);
         }
@@ -122,7 +118,12 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         CancellationToken cancellationToken = default
     )
     {
-        IReadOnlyList<SnapshotIdVersion> ids = await ReadIdsAsync(streamKey, cancellationToken);
+        List<SnapshotIdVersion> ids = new();
+        await foreach (SnapshotIdVersion item in queryService.ReadIdsAsync(streamKey, cancellationToken))
+        {
+            ids.Add(item);
+        }
+
         if (ids.Count == 0)
         {
             return;
@@ -205,54 +206,5 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         {
             // Already removed.
         }
-    }
-
-    private async Task<IReadOnlyList<SnapshotIdVersion>> ReadIdsAsync(
-        SnapshotStreamKey streamKey,
-        CancellationToken cancellationToken
-    )
-    {
-        QueryDefinition query =
-            new QueryDefinition("SELECT c.id, c.version FROM c WHERE c.snapshotPartitionKey = @pk").WithParameter(
-                "@pk",
-                streamKey.ToString());
-        using FeedIterator<SnapshotIdVersionDto> iterator = container.GetItemQueryIterator<SnapshotIdVersionDto>(
-            query,
-            requestOptions: new()
-            {
-                PartitionKey = Partition(streamKey),
-                MaxItemCount = options.QueryBatchSize,
-            });
-        List<SnapshotIdVersion> results = new();
-        while (iterator.HasMoreResults)
-        {
-            FeedResponse<SnapshotIdVersionDto> page = await retryPolicy.ExecuteAsync(
-                () => iterator.ReadNextAsync(cancellationToken),
-                cancellationToken);
-            results.AddRange(page.Select(item => new SnapshotIdVersion(item.Id, item.Version)));
-        }
-
-        return results;
-    }
-
-    private sealed record SnapshotIdVersion(string Id, long Version);
-
-    private sealed class SnapshotIdVersionDto
-    {
-        [JsonConstructor]
-        public SnapshotIdVersionDto(
-            string id,
-            long version
-        )
-        {
-            Id = id ?? string.Empty;
-            Version = version;
-        }
-
-        [JsonProperty(PropertyName = "id")]
-        public string Id { get; }
-
-        [JsonProperty(PropertyName = "version")]
-        public long Version { get; }
     }
 }

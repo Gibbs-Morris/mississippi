@@ -1,18 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
 using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Abstractions.Mapping;
 using Mississippi.Core.Cosmos.Retry;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
 using Moq;
@@ -32,27 +33,43 @@ public sealed class SnapshotCosmosRepositoryTests
     private static CosmosException CreateCosmosNotFound() =>
         new("not-found", HttpStatusCode.NotFound, 0, string.Empty, 0);
 
+    private static CosmosException CreateCosmosServiceUnavailable() =>
+        new("service-unavailable", HttpStatusCode.ServiceUnavailable, 0, string.Empty, 0);
+
     private static SnapshotCosmosRepository CreateRepository(
         Mock<Container> container,
+        ISnapshotQueryService? queryService = null,
         IMapper<SnapshotDocument, SnapshotStorageModel>? documentToStorageMapper = null,
         IMapper<SnapshotStorageModel, SnapshotEnvelope>? storageToEnvelopeMapper = null,
         IMapper<SnapshotWriteModel, SnapshotStorageModel>? writeModelToStorageMapper = null,
         IMapper<SnapshotStorageModel, SnapshotDocument>? storageToDocumentMapper = null
     )
     {
+        queryService ??= new EmptyQueryService();
         documentToStorageMapper ??= new StubMapper<SnapshotDocument, SnapshotStorageModel>(new());
         storageToEnvelopeMapper ??= new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new());
         writeModelToStorageMapper ??= new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new());
         storageToDocumentMapper ??= new StubMapper<SnapshotStorageModel, SnapshotDocument>(new());
-        SnapshotStorageOptions options = new();
         return new(
             container.Object,
-            Options.Create(options),
+            queryService,
             documentToStorageMapper,
             storageToEnvelopeMapper,
             writeModelToStorageMapper,
             storageToDocumentMapper,
             new PassThroughRetryPolicy());
+    }
+
+    private sealed class EmptyQueryService : ISnapshotQueryService
+    {
+        public async IAsyncEnumerable<SnapshotIdVersion> ReadIdsAsync(
+            SnapshotStreamKey streamKey,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default
+        )
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
     }
 
     private sealed class PassThroughRetryPolicy : IRetryPolicy
@@ -80,6 +97,27 @@ public sealed class SnapshotCosmosRepositoryTests
     }
 
     /// <summary>
+    ///     Test query service that returns a predefined list of snapshot IDs.
+    /// </summary>
+    private sealed class TestQueryService(IEnumerable<SnapshotIdVersion> items) : ISnapshotQueryService
+    {
+        /// <inheritdoc />
+        public async IAsyncEnumerable<SnapshotIdVersion> ReadIdsAsync(
+            SnapshotStreamKey streamKey,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default
+        )
+        {
+            foreach (SnapshotIdVersion item in items)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return item;
+            }
+
+            await Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
     ///     Verifies that constructor throws when container is null.
     /// </summary>
     [AllureEpic("Snapshots")]
@@ -88,7 +126,7 @@ public sealed class SnapshotCosmosRepositoryTests
     {
         Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
             null!,
-            Options.Create(new SnapshotStorageOptions()),
+            new EmptyQueryService(),
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
@@ -106,7 +144,7 @@ public sealed class SnapshotCosmosRepositoryTests
         Mock<Container> container = new();
         Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
             container.Object,
-            Options.Create(new SnapshotStorageOptions()),
+            new EmptyQueryService(),
             null!,
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
@@ -115,11 +153,11 @@ public sealed class SnapshotCosmosRepositoryTests
     }
 
     /// <summary>
-    ///     Verifies that constructor throws when options is null.
+    ///     Verifies that constructor throws when queryService is null.
     /// </summary>
     [AllureEpic("Snapshots")]
     [Fact]
-    public void ConstructorShouldThrowWhenOptionsIsNull()
+    public void ConstructorShouldThrowWhenQueryServiceIsNull()
     {
         Mock<Container> container = new();
         Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
@@ -142,7 +180,7 @@ public sealed class SnapshotCosmosRepositoryTests
         Mock<Container> container = new();
         Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
             container.Object,
-            Options.Create(new SnapshotStorageOptions()),
+            new EmptyQueryService(),
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
@@ -160,7 +198,7 @@ public sealed class SnapshotCosmosRepositoryTests
         Mock<Container> container = new();
         Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
             container.Object,
-            Options.Create(new SnapshotStorageOptions()),
+            new EmptyQueryService(),
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
@@ -178,7 +216,7 @@ public sealed class SnapshotCosmosRepositoryTests
         Mock<Container> container = new();
         Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
             container.Object,
-            Options.Create(new SnapshotStorageOptions()),
+            new EmptyQueryService(),
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
             null!,
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
@@ -196,12 +234,65 @@ public sealed class SnapshotCosmosRepositoryTests
         Mock<Container> container = new();
         Assert.Throws<ArgumentNullException>(() => new SnapshotCosmosRepository(
             container.Object,
-            Options.Create(new SnapshotStorageOptions()),
+            new EmptyQueryService(),
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
             null!,
             new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
             new PassThroughRetryPolicy()));
+    }
+
+    /// <summary>
+    ///     Ensures DeleteAllAsync deletes all snapshots returned by the query service.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public async Task DeleteAllAsyncShouldDeleteAllSnapshotsFromQueryService()
+    {
+        List<string> deletedIds = [];
+        Mock<Container> container = new();
+        container.Setup(c => c.DeleteItemAsync<SnapshotDocument>(
+                It.IsAny<string>(),
+                It.Is<PartitionKey>(pk => pk.Equals(new(StreamKey.ToString()))),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, PartitionKey, ItemRequestOptions, CancellationToken>((
+                id,
+                _,
+                _,
+                _
+            ) => deletedIds.Add(id))
+            .ReturnsAsync(Mock.Of<ItemResponse<SnapshotDocument>>());
+        ISnapshotQueryService queryService = new TestQueryService(
+        [
+            new("snap-1", 1),
+            new("snap-2", 2),
+            new("snap-3", 3),
+        ]);
+        SnapshotCosmosRepository repository = CreateRepository(container, queryService);
+        await repository.DeleteAllAsync(StreamKey, CancellationToken.None);
+        Assert.Equal(["snap-1", "snap-2", "snap-3"], deletedIds);
+    }
+
+    /// <summary>
+    ///     Ensures DeleteAllAsync handles empty query results gracefully.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public async Task DeleteAllAsyncShouldHandleEmptyQueryResults()
+    {
+        Mock<Container> container = new();
+        SnapshotCosmosRepository repository = CreateRepository(container, new EmptyQueryService());
+        await repository.DeleteAllAsync(StreamKey, CancellationToken.None);
+        container.Verify(
+            c => c.DeleteItemAsync<SnapshotDocument>(
+                It.IsAny<string>(),
+                It.IsAny<PartitionKey>(),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     /// <summary>
@@ -227,6 +318,25 @@ public sealed class SnapshotCosmosRepositoryTests
     }
 
     /// <summary>
+    ///     Ensures delete rethrows non-NotFound Cosmos exceptions.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public async Task DeleteAsyncShouldRethrowNonNotFoundExceptions()
+    {
+        Mock<Container> container = new();
+        container.Setup(c => c.DeleteItemAsync<SnapshotDocument>(
+                "3",
+                It.IsAny<PartitionKey>(),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(CreateCosmosServiceUnavailable());
+        SnapshotCosmosRepository repository = CreateRepository(container);
+        await Assert.ThrowsAsync<CosmosException>(() => repository.DeleteAsync(SnapshotKey, CancellationToken.None));
+    }
+
+    /// <summary>
     ///     Ensures delete succeeds when item exists.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
@@ -246,6 +356,120 @@ public sealed class SnapshotCosmosRepositoryTests
         SnapshotCosmosRepository repository = CreateRepository(container);
         await repository.DeleteAsync(SnapshotKey, CancellationToken.None);
         Assert.True(deleteCalled);
+    }
+
+    /// <summary>
+    ///     Ensures PruneAsync always retains the maximum version.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public async Task PruneAsyncShouldAlwaysRetainMaxVersion()
+    {
+        List<string> deletedIds = [];
+        Mock<Container> container = new();
+        container.Setup(c => c.DeleteItemAsync<SnapshotDocument>(
+                It.IsAny<string>(),
+                It.Is<PartitionKey>(pk => pk.Equals(new(StreamKey.ToString()))),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, PartitionKey, ItemRequestOptions, CancellationToken>((
+                id,
+                _,
+                _,
+                _
+            ) => deletedIds.Add(id))
+            .ReturnsAsync(Mock.Of<ItemResponse<SnapshotDocument>>());
+        ISnapshotQueryService queryService = new TestQueryService(
+        [
+            new("snap-3", 3),
+            new("snap-5", 5),
+        ]);
+        SnapshotCosmosRepository repository = CreateRepository(container, queryService);
+
+        // No modulus matches, but max (5) should be retained
+        await repository.PruneAsync(StreamKey, [10], CancellationToken.None);
+
+        // Only snap-3 deleted; snap-5 is max so retained
+        Assert.Equal(["snap-3"], deletedIds);
+    }
+
+    /// <summary>
+    ///     Ensures PruneAsync deletes snapshots that don't match the modulus rules.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public async Task PruneAsyncShouldDeleteSnapshotsNotMatchingModulus()
+    {
+        List<string> deletedIds = [];
+        Mock<Container> container = new();
+        container.Setup(c => c.DeleteItemAsync<SnapshotDocument>(
+                It.IsAny<string>(),
+                It.Is<PartitionKey>(pk => pk.Equals(new(StreamKey.ToString()))),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, PartitionKey, ItemRequestOptions, CancellationToken>((
+                id,
+                _,
+                _,
+                _
+            ) => deletedIds.Add(id))
+            .ReturnsAsync(Mock.Of<ItemResponse<SnapshotDocument>>());
+        ISnapshotQueryService queryService = new TestQueryService(
+        [
+            new("snap-1", 1),
+            new("snap-2", 2),
+            new("snap-3", 3),
+            new("snap-4", 4),
+            new("snap-5", 5),
+        ]);
+        SnapshotCosmosRepository repository = CreateRepository(container, queryService);
+
+        // Retain versions divisible by 2 (2, 4) and the max (5)
+        await repository.PruneAsync(StreamKey, [2], CancellationToken.None);
+
+        // snap-1 and snap-3 should be deleted (not divisible by 2, not max)
+        Assert.Equal(["snap-1", "snap-3"], deletedIds);
+    }
+
+    /// <summary>
+    ///     Ensures PruneAsync handles empty query results gracefully.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public async Task PruneAsyncShouldHandleEmptyQueryResults()
+    {
+        Mock<Container> container = new();
+        SnapshotCosmosRepository repository = CreateRepository(container, new EmptyQueryService());
+        await repository.PruneAsync(StreamKey, [1], CancellationToken.None);
+        container.Verify(
+            c => c.DeleteItemAsync<SnapshotDocument>(
+                It.IsAny<string>(),
+                It.IsAny<PartitionKey>(),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
+    ///     Ensures read rethrows non-NotFound Cosmos exceptions.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public async Task ReadAsyncShouldRethrowNonNotFoundExceptions()
+    {
+        Mock<Container> container = new();
+        container.Setup(c => c.ReadItemAsync<SnapshotDocument>(
+                "3",
+                It.IsAny<PartitionKey>(),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(CreateCosmosServiceUnavailable());
+        SnapshotCosmosRepository repository = CreateRepository(container);
+        await Assert.ThrowsAsync<CosmosException>(() => repository.ReadAsync(SnapshotKey, CancellationToken.None));
     }
 
     /// <summary>
@@ -282,6 +506,7 @@ public sealed class SnapshotCosmosRepositoryTests
             .ReturnsAsync(Mock.Of<ItemResponse<SnapshotDocument>>(r => r.Resource == document));
         SnapshotCosmosRepository repository = CreateRepository(
             container,
+            null,
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(storage),
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(envelope),
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(storage),
@@ -329,7 +554,7 @@ public sealed class SnapshotCosmosRepositoryTests
         {
             StreamKey = StreamKey,
             Version = SnapshotKey.Version,
-            Data = envelope.Data.ToArray(),
+            Data = [.. envelope.Data],
             DataContentType = envelope.DataContentType,
         };
         SnapshotDocument document = new()
@@ -348,6 +573,7 @@ public sealed class SnapshotCosmosRepositoryTests
             .ReturnsAsync(Mock.Of<ItemResponse<SnapshotDocument>>());
         SnapshotCosmosRepository repository = CreateRepository(
             container,
+            null,
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(storage),
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(envelope),
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(storage),
