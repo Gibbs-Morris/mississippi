@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 
 namespace Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -22,8 +23,11 @@ public static class SnapshotStorageProviderHelpers
     )
         where TProvider : class, ISnapshotStorageProvider
     {
-        services.AddSingleton<ISnapshotStorageReader, TProvider>();
-        services.AddSingleton<ISnapshotStorageWriter, TProvider>();
+        services.TryAddSingleton<ISnapshotStorageProvider, TProvider>();
+        services.AddSingleton<ISnapshotStorageReader>(provider =>
+            provider.GetRequiredService<ISnapshotStorageProvider>());
+        services.AddSingleton<ISnapshotStorageWriter>(provider =>
+            provider.GetRequiredService<ISnapshotStorageProvider>());
         return services;
     }
 
