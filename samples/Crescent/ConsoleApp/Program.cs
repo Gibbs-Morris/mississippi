@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using Crescent.ConsoleApp;
+using Crescent.ConsoleApp.Domain;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,7 +13,10 @@ using Mississippi.EventSourcing;
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Cosmos;
 using Mississippi.EventSourcing.Factory;
+using Mississippi.EventSourcing.Serialization.Abstractions;
+using Mississippi.EventSourcing.Serialization.Json;
 
+using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
 
@@ -66,6 +70,12 @@ builder.Services.AddCosmosBrookStorageProvider(
         options.QueryBatchSize = 50;
         options.MaxEventsPerBatch = 50;
     });
+
+// Add JSON serialization for aggregate events
+builder.Services.AddSingleton<ISerializationProvider, JsonSerializationProvider>();
+
+// Add counter aggregate domain services
+builder.Services.AddCounterAggregate();
 using IHost host = builder.Build();
 await host.StartAsync();
 ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
@@ -186,7 +196,40 @@ logger.ExplicitCacheFlushReadback();
 await CacheHelpers.FlushCachesAsync(logger, runId, brookFactory, brookKey);
 await ReadHelpers.LogStreamReadAsync(logger, runId, brookFactory, brookKey);
 
-// Scenario 9: Cold start resume: stop host, build a new host, start again, then read
+// ============================================================================
+// Aggregate Scenarios - Testing command/event aggregate patterns
+// ============================================================================
+IGrainFactory grainFactory = host.Services.GetRequiredService<IGrainFactory>();
+
+// Scenario 9: Basic aggregate lifecycle (init → increment → decrement → reset)
+logger.ScenarioAggregateBasicLifecycle();
+await AggregateScenarioRunner.RunBasicLifecycleAsync(logger, runId, grainFactory, $"counter-{Guid.NewGuid():N}");
+
+// Scenario 10: Validation error scenarios
+logger.ScenarioAggregateValidation();
+await AggregateScenarioRunner.RunValidationScenarioAsync(
+    logger,
+    runId,
+    grainFactory,
+    $"counter-validation-{Guid.NewGuid():N}");
+
+// Scenario 11: Concurrency/version tracking
+logger.ScenarioAggregateConcurrency();
+await AggregateScenarioRunner.RunConcurrencyScenarioAsync(
+    logger,
+    runId,
+    grainFactory,
+    $"counter-concurrency-{Guid.NewGuid():N}");
+
+// Scenario 12: Throughput test (100 rapid operations)
+logger.ScenarioAggregateThroughput();
+await AggregateScenarioRunner.RunThroughputScenarioAsync(
+    logger,
+    runId,
+    grainFactory,
+    $"counter-throughput-{Guid.NewGuid():N}");
+
+// Scenario 13: Cold start resume: stop host, build a new host, start again, then read
 logger.PerformingColdRestartOfHost(runId);
 await host.StopAsync();
 using IHost host2 = HostFactory.BuildColdStartHost();

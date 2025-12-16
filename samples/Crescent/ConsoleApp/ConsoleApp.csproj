@@ -7,8 +7,11 @@
       <PackageReference Include="Microsoft.Orleans.Server" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
       <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
       <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
       <ProjectReference Include="..\..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+      <ProjectReference Include="..\..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+      <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
     </ItemGroup>
 </Project>

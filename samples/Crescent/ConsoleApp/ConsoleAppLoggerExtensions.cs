@@ -207,16 +207,171 @@ internal static class ConsoleAppLoggerExtensions
             new(63, nameof(ReadCountsAB)),
             "Run {RunId} [Multi]: Read counts A={CA} B={CB}");
 
-    // Append scenario
-
-    // Readback
-
-    // Flush caches
     private static readonly Action<ILogger, string, BrookKey, Exception?> RequestingDeactivationsMessage =
         LoggerMessage.Define<string, BrookKey>(
             LogLevel.Information,
             new(70, nameof(RequestingDeactivations)),
             "Run {RunId} [Flush]: Requesting grain deactivations for {BrookKey}");
+
+    private static readonly Action<ILogger, string, string, string, Exception?> AggregateScenarioStartMessage =
+        LoggerMessage.Define<string, string, string>(
+            LogLevel.Information,
+            new(80, nameof(AggregateScenarioStart)),
+            "Run {RunId} [Aggregate:{Scenario}]: Starting with counterId={CounterId}");
+
+    private static readonly Action<ILogger, string, string, string, int, Exception?> AggregateScenarioCompleteMessage =
+        LoggerMessage.Define<string, string, string, int>(
+            LogLevel.Information,
+            new(81, nameof(AggregateScenarioComplete)),
+            "Run {RunId} [Aggregate:{Scenario}]: Complete for counterId={CounterId} in {Ms} ms");
+
+    private static readonly Action<ILogger, string, string, Exception?> AggregateCommandSuccessMessage =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Debug,
+            new(82, nameof(AggregateCommandSuccess)),
+            "Run {RunId}: Command {Command} succeeded");
+
+    private static readonly Action<ILogger, string, string, string, string, Exception?> AggregateCommandFailedMessage =
+        LoggerMessage.Define<string, string, string, string>(
+            LogLevel.Warning,
+            new(83, nameof(AggregateCommandFailed)),
+            "Run {RunId}: Command {Command} failed: {ErrorCode} - {ErrorMessage}");
+
+    private static readonly Action<ILogger, string, string, Exception?> AggregateScenarioNoteMessage =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Information,
+            new(84, nameof(AggregateScenarioNote)),
+            "Run {RunId}: Note: {Note}");
+
+    // Aggregate scenario messages
+
+    private static readonly Action<ILogger, string, int, int, int, int, double, Exception?>
+        AggregateThroughputResultMessage = LoggerMessage.Define<string, int, int, int, int, double>(
+            LogLevel.Information,
+            new(85, nameof(AggregateThroughputResult)),
+            "Run {RunId}: Throughput test complete: total={Total} success={Success} failed={Failed} in {Ms} ms ({OpsPerSec} ops/sec)");
+
+    // Append scenario
+
+    // Readback
+
+    // Flush caches
+
+    private static readonly Action<ILogger, Exception?> ScenarioAggregateBasicLifecycleMessage = LoggerMessage.Define(
+        LogLevel.Information,
+        new(86, nameof(ScenarioAggregateBasicLifecycle)),
+        "=== Scenario: Aggregate Basic Lifecycle ===");
+
+    private static readonly Action<ILogger, Exception?> ScenarioAggregateValidationMessage = LoggerMessage.Define(
+        LogLevel.Information,
+        new(87, nameof(ScenarioAggregateValidation)),
+        "=== Scenario: Aggregate Validation Errors ===");
+
+    private static readonly Action<ILogger, Exception?> ScenarioAggregateThroughputMessage = LoggerMessage.Define(
+        LogLevel.Information,
+        new(88, nameof(ScenarioAggregateThroughput)),
+        "=== Scenario: Aggregate Throughput ===");
+
+    private static readonly Action<ILogger, Exception?> ScenarioAggregateConcurrencyMessage = LoggerMessage.Define(
+        LogLevel.Information,
+        new(89, nameof(ScenarioAggregateConcurrency)),
+        "=== Scenario: Aggregate Concurrency ===");
+
+    /// <summary>
+    ///     Log that an aggregate command failed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="commandName">The name of the command that failed.</param>
+    /// <param name="errorCode">The error code.</param>
+    /// <param name="errorMessage">The error message.</param>
+    public static void AggregateCommandFailed(
+        this ILogger logger,
+        string runId,
+        string commandName,
+        string errorCode,
+        string errorMessage
+    ) =>
+        AggregateCommandFailedMessage(logger, runId, commandName, errorCode, errorMessage, null);
+
+    /// <summary>
+    ///     Log that an aggregate command succeeded.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="commandName">The name of the command that succeeded.</param>
+    public static void AggregateCommandSuccess(
+        this ILogger logger,
+        string runId,
+        string commandName
+    ) =>
+        AggregateCommandSuccessMessage(logger, runId, commandName, null);
+
+    /// <summary>
+    ///     Log that an aggregate scenario has completed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="scenarioName">The scenario name.</param>
+    /// <param name="counterId">The counter identifier.</param>
+    /// <param name="ms">The elapsed time in milliseconds.</param>
+    public static void AggregateScenarioComplete(
+        this ILogger logger,
+        string runId,
+        string scenarioName,
+        string counterId,
+        int ms
+    ) =>
+        AggregateScenarioCompleteMessage(logger, runId, scenarioName, counterId, ms, null);
+
+    /// <summary>
+    ///     Log a note during an aggregate scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="note">The note to log.</param>
+    public static void AggregateScenarioNote(
+        this ILogger logger,
+        string runId,
+        string note
+    ) =>
+        AggregateScenarioNoteMessage(logger, runId, note, null);
+
+    /// <summary>
+    ///     Log that an aggregate scenario has started.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="scenarioName">The scenario name.</param>
+    /// <param name="counterId">The counter identifier.</param>
+    public static void AggregateScenarioStart(
+        this ILogger logger,
+        string runId,
+        string scenarioName,
+        string counterId
+    ) =>
+        AggregateScenarioStartMessage(logger, runId, scenarioName, counterId, null);
+
+    /// <summary>
+    ///     Log the result of a throughput test.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="total">Total number of operations attempted.</param>
+    /// <param name="success">Number of successful operations.</param>
+    /// <param name="failed">Number of failed operations.</param>
+    /// <param name="ms">The elapsed time in milliseconds.</param>
+    /// <param name="opsPerSec">Operations per second throughput.</param>
+    public static void AggregateThroughputResult(
+        this ILogger logger,
+        string runId,
+        int total,
+        int success,
+        int failed,
+        int ms,
+        double opsPerSec
+    ) =>
+        AggregateThroughputResultMessage(logger, runId, total, success, failed, ms, opsPerSec, null);
 
     // Multi-stream scenario
 
@@ -577,6 +732,42 @@ internal static class ConsoleAppLoggerExtensions
         string runId
     ) =>
         ResolvingGrainFactoryMessage(logger, runId, null);
+
+    /// <summary>
+    ///     Log the banner for the aggregate basic lifecycle scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    public static void ScenarioAggregateBasicLifecycle(
+        this ILogger logger
+    ) =>
+        ScenarioAggregateBasicLifecycleMessage(logger, null);
+
+    /// <summary>
+    ///     Log the banner for the aggregate concurrency scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    public static void ScenarioAggregateConcurrency(
+        this ILogger logger
+    ) =>
+        ScenarioAggregateConcurrencyMessage(logger, null);
+
+    /// <summary>
+    ///     Log the banner for the aggregate throughput scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    public static void ScenarioAggregateThroughput(
+        this ILogger logger
+    ) =>
+        ScenarioAggregateThroughputMessage(logger, null);
+
+    /// <summary>
+    ///     Log the banner for the aggregate validation errors scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    public static void ScenarioAggregateValidation(
+        this ILogger logger
+    ) =>
+        ScenarioAggregateValidationMessage(logger, null);
 
     /// <summary>
     ///     Log the banner for the Bulk_100_Mixed scenario.

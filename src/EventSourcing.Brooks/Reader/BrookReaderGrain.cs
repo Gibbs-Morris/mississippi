@@ -107,9 +107,8 @@ internal class BrookReaderGrain
     )
     {
         BrookKey brookId = this.GetPrimaryKeyString();
-        BrookPosition start = 0;
-        BrookPosition end = 0;
-        start = readFrom ?? new BrookPosition(0);
+        BrookPosition start = readFrom ?? new BrookPosition(0);
+        BrookPosition end;
         if (!readTo.HasValue)
         {
             IBrookCursorGrain cursorGrain = BrookGrainFactory.GetBrookCursorGrain(brookId);
@@ -118,6 +117,12 @@ internal class BrookReaderGrain
         else
         {
             end = readTo.Value;
+        }
+
+        // If the brook is empty (cursor returns -1) or end < start, there's nothing to read
+        if ((end.Value < 0) || (end.Value < start.Value))
+        {
+            yield break;
         }
 
         long sliceSize = Options.Value.BrookSliceSize;

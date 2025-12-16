@@ -55,6 +55,18 @@ public readonly record struct BrookKey
     public string Type { get; }
 
     /// <summary>
+    ///     Creates a brook key from a brook definition type and an entity identifier.
+    /// </summary>
+    /// <typeparam name="TBrook">The brook definition type that provides the brook name.</typeparam>
+    /// <param name="entityId">The unique identifier for the entity within the brook.</param>
+    /// <returns>A brook key constructed from the brook name and entity identifier.</returns>
+    public static BrookKey For<TBrook>(
+        string entityId
+    )
+        where TBrook : IBrookDefinition =>
+        new(TBrook.BrookName, entityId);
+
+    /// <summary>
     ///     Converts a brook key to its string representation.
     /// </summary>
     /// <param name="key">The brook key to convert.</param>
