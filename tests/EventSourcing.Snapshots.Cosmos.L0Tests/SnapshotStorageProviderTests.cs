@@ -23,6 +23,16 @@ public sealed class SnapshotStorageProviderTests
     private static readonly SnapshotKey SnapshotKey = new(StreamKey, 5);
 
     /// <summary>
+    ///     Ensures constructor throws when repository is null.
+    /// </summary>
+    [AllureEpic("Snapshots")]
+    [Fact]
+    public void ConstructorShouldThrowWhenRepositoryIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => new SnapshotStorageProvider(null!));
+    }
+
+    /// <summary>
     ///     Ensures delete-all forwards to the repository.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
