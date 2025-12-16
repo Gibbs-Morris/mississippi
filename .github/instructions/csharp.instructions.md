@@ -602,7 +602,7 @@ Any suppression MUST include:
 
 ```csharp
 [Fact]
-public async Task ProcessOrder_ValidOrder_ReturnsSuccess()
+public async Task ProcessOrderReturnsSuccessWhenValid()
 {
     // Arrange
     var mockRepository = new Mock<IOrderRepository>();
