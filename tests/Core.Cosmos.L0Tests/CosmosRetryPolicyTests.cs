@@ -53,6 +53,21 @@ public class CosmosRetryPolicyTests
     }
 
     /// <summary>
+    ///     Verifies cancellation tokens propagate as <see cref="OperationCanceledException" />.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncHonorsCancellationAsync()
+    {
+        CosmosRetryPolicy policy = new();
+        using CancellationTokenSource cts = new();
+        await cts.CancelAsync();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => policy.ExecuteAsync(
+            () => Task.FromCanceled<int>(cts.Token),
+            cts.Token));
+    }
+
+    /// <summary>
     ///     Verifies not found errors pass through without retries.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
@@ -87,33 +102,6 @@ public class CosmosRetryPolicyTests
     }
 
     /// <summary>
-    ///     Verifies request-too-large errors are surfaced with an informative exception.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task ExecuteAsyncThrowsForRequestTooLargeAsync()
-    {
-        CosmosRetryPolicy policy = new();
-        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            policy.ExecuteAsync(() => Task.FromException<int>(CreateCosmosException(HttpStatusCode.RequestEntityTooLarge))));
-        Assert.Contains("Request size exceeds", ex.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    ///     Verifies cancellation tokens propagate as <see cref="OperationCanceledException" />.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task ExecuteAsyncHonorsCancellationAsync()
-    {
-        CosmosRetryPolicy policy = new();
-        using CancellationTokenSource cts = new();
-        await cts.CancelAsync();
-        await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            policy.ExecuteAsync(() => Task.FromCanceled<int>(cts.Token), cts.Token));
-    }
-
-    /// <summary>
     ///     Verifies the policy gives up after exhausting retries on transient failures.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
@@ -123,5 +111,19 @@ public class CosmosRetryPolicyTests
         CosmosRetryPolicy policy = new();
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             policy.ExecuteAsync(() => Task.FromException<int>(CreateCosmosException(HttpStatusCode.TooManyRequests))));
+    }
+
+    /// <summary>
+    ///     Verifies request-too-large errors are surfaced with an informative exception.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncThrowsForRequestTooLargeAsync()
+    {
+        CosmosRetryPolicy policy = new();
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            policy.ExecuteAsync(() =>
+                Task.FromException<int>(CreateCosmosException(HttpStatusCode.RequestEntityTooLarge))));
+        Assert.Contains("Request size exceeds", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
