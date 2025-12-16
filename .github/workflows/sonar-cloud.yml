@@ -9,6 +9,11 @@ on:
       - main
       - feature/**
       - topic/**
+
+concurrency:
+  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   SONAR_PROJECT_KEY: "Gibbs-Morris_mississippi"
   SONAR_ORGANIZATION: "gibbs-morris"
