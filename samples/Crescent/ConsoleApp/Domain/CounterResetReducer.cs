@@ -17,7 +17,6 @@ internal sealed class CounterResetReducer : Reducer<CounterReset, CounterState>
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         return (state ?? new()) with
         {
             Count = @event.NewValue,

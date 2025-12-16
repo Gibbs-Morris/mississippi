@@ -17,7 +17,6 @@ internal sealed class CounterIncrementedReducer : Reducer<CounterIncremented, Co
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         return (state ?? new()) with
         {
             Count = state?.Count + @event.Amount ?? @event.Amount,

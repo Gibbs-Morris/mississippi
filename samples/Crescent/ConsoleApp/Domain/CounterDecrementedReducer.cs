@@ -17,7 +17,6 @@ internal sealed class CounterDecrementedReducer : Reducer<CounterDecremented, Co
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         return (state ?? new()) with
         {
             Count = state?.Count - @event.Amount ?? -@event.Amount,

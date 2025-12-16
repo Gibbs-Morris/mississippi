@@ -18,7 +18,6 @@ internal sealed class DecrementCounterHandler : ICommandHandler<DecrementCounter
     )
     {
         ArgumentNullException.ThrowIfNull(command);
-
         if (state?.IsInitialized != true)
         {
             return OperationResult.Fail<IReadOnlyList<object>>(

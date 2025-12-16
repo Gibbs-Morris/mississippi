@@ -17,7 +17,6 @@ internal sealed class CounterInitializedReducer : Reducer<CounterInitialized, Co
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         return (state ?? new()) with
         {
             Count = @event.InitialValue,
