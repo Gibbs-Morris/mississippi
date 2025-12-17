@@ -6,6 +6,7 @@ using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.EventSourcing.Snapshots.Abstractions;
 
 using Orleans.Runtime;
 
@@ -25,26 +26,26 @@ internal sealed class CounterAggregateGrain
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="brookGrainFactory">Factory for resolving brook grains.</param>
     /// <param name="brookEventConverter">Converter for domain events to/from brook events.</param>
-    /// <param name="rootReducer">The root reducer for computing state from events.</param>
-    /// <param name="eventTypeRegistry">Registry for resolving event type names and CLR types.</param>
     /// <param name="rootCommandHandler">The root command handler for processing commands.</param>
+    /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
+    /// <param name="rootReducer">The root reducer for obtaining the reducers hash.</param>
     /// <param name="logger">Logger instance.</param>
     public CounterAggregateGrain(
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
         IBrookEventConverter brookEventConverter,
-        IRootReducer<CounterState> rootReducer,
-        IEventTypeRegistry eventTypeRegistry,
         IRootCommandHandler<CounterState> rootCommandHandler,
+        ISnapshotGrainFactory snapshotGrainFactory,
+        IRootReducer<CounterState> rootReducer,
         ILogger<CounterAggregateGrain> logger
     )
         : base(
             grainContext,
             brookGrainFactory,
             brookEventConverter,
-            rootReducer,
-            eventTypeRegistry,
             rootCommandHandler,
+            snapshotGrainFactory,
+            rootReducer.GetReducerHash(),
             logger)
     {
     }

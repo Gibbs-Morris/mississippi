@@ -1,6 +1,7 @@
 using System;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Factory;
@@ -27,6 +28,7 @@ internal sealed class TestableSnapshotCacheGrain
     /// <param name="rootReducer">The root reducer.</param>
     /// <param name="snapshotStateConverter">The snapshot state converter.</param>
     /// <param name="snapshotGrainFactory">The snapshot grain factory.</param>
+    /// <param name="retentionOptions">The snapshot retention options.</param>
     /// <param name="logger">The logger.</param>
     public TestableSnapshotCacheGrain(
         IGrainContext grainContext,
@@ -35,6 +37,7 @@ internal sealed class TestableSnapshotCacheGrain
         IRootReducer<SnapshotCacheGrainTestState> rootReducer,
         ISnapshotStateConverter<SnapshotCacheGrainTestState> snapshotStateConverter,
         ISnapshotGrainFactory snapshotGrainFactory,
+        IOptions<SnapshotRetentionOptions> retentionOptions,
         ILogger logger
     )
         : base(
@@ -44,6 +47,7 @@ internal sealed class TestableSnapshotCacheGrain
             rootReducer,
             snapshotStateConverter,
             snapshotGrainFactory,
+            retentionOptions,
             logger)
     {
     }

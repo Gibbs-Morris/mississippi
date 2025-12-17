@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Factory;
@@ -28,9 +29,19 @@ namespace Mississippi.EventSourcing.Snapshots;
 ///         the state is immutable and cached in memory for fast read access.
 ///     </para>
 ///     <para>
-///         On activation, the grain first attempts to load the snapshot from storage.
-///         If the snapshot does not exist or has a stale reducer hash, the grain reads events
-///         from the underlying brook and rebuilds the state using the registered reducers.
+///         On activation, the grain uses a retention-based strategy for efficient state building:
+///         <list type="number">
+///             <item>First attempts to load the exact snapshot from storage.</item>
+///             <item>If not found, calculates the nearest retained base snapshot (using <see cref="SnapshotRetentionOptions"/>).</item>
+///             <item>Gets state from the base snapshot grain and replays only the delta events.</item>
+///         </list>
+///     </para>
+///     <para>
+///         For example, with a modulus of 100, requesting state at version 364:
+///         <list type="bullet">
+///             <item>Base snapshot at version 300 is retrieved (or built recursively).</item>
+///             <item>Only events 301-364 (64 events) are replayed.</item>
+///         </list>
 ///     </para>
 ///     <para>
 ///         After state is built (from storage or rebuilt), a one-way call is made to an
@@ -56,6 +67,7 @@ public abstract class SnapshotCacheGrain<TState, TBrook>
     /// <param name="rootReducer">The root reducer for computing state from events.</param>
     /// <param name="snapshotStateConverter">Converter for serializing/deserializing state to/from envelopes.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
+    /// <param name="retentionOptions">Options controlling snapshot retention and replay strategy.</param>
     /// <param name="logger">Logger instance.</param>
     protected SnapshotCacheGrain(
         IGrainContext grainContext,
@@ -64,6 +76,7 @@ public abstract class SnapshotCacheGrain<TState, TBrook>
         IRootReducer<TState> rootReducer,
         ISnapshotStateConverter<TState> snapshotStateConverter,
         ISnapshotGrainFactory snapshotGrainFactory,
+        IOptions<SnapshotRetentionOptions> retentionOptions,
         ILogger logger
     )
     {
@@ -74,6 +87,7 @@ public abstract class SnapshotCacheGrain<TState, TBrook>
         SnapshotStateConverter =
             snapshotStateConverter ?? throw new ArgumentNullException(nameof(snapshotStateConverter));
         SnapshotGrainFactory = snapshotGrainFactory ?? throw new ArgumentNullException(nameof(snapshotGrainFactory));
+        RetentionOptions = retentionOptions?.Value ?? throw new ArgumentNullException(nameof(retentionOptions));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -114,6 +128,11 @@ public abstract class SnapshotCacheGrain<TState, TBrook>
     ///     Gets the reader for loading snapshots from storage.
     /// </summary>
     protected ISnapshotStorageReader SnapshotStorageReader { get; }
+
+    /// <summary>
+    ///     Gets the snapshot retention options controlling replay strategy.
+    /// </summary>
+    protected SnapshotRetentionOptions RetentionOptions { get; }
 
     /// <inheritdoc />
     public ValueTask<TState> GetStateAsync(
@@ -198,14 +217,39 @@ public abstract class SnapshotCacheGrain<TState, TBrook>
         string keyString = snapshotKey;
         Logger.RebuildingFromStream(brookKey, keyString);
 
-        // Initialize state
-        state = CreateInitialState();
+        long targetVersion = snapshotKey.Version;
+        long baseVersion = RetentionOptions.GetBaseSnapshotVersion<TState>(targetVersion);
+        BrookPosition readFrom;
+
+        if (baseVersion > 0)
+        {
+            // We have a base snapshot to build from
+            long deltaEvents = targetVersion - baseVersion;
+            Logger.UsingBaseSnapshot(baseVersion, targetVersion, deltaEvents);
+
+            // Get state from the base snapshot
+            SnapshotKey baseSnapshotKey = new(snapshotKey.Stream, baseVersion);
+            ISnapshotCacheGrain<TState> baseSnapshotGrain =
+                SnapshotGrainFactory.GetSnapshotCacheGrain<TState>(baseSnapshotKey);
+            state = await baseSnapshotGrain.GetStateAsync(token);
+
+            // Read events starting after the base version
+            readFrom = new BrookPosition(baseVersion + 1);
+        }
+        else
+        {
+            // No base snapshot available, rebuild from the beginning
+            Logger.NoBaseSnapshotAvailable(keyString);
+            state = CreateInitialState();
+            readFrom = new BrookPosition();
+        }
+
         long eventCount = 0;
 
         // Read events up to the snapshot version
-        BrookPosition readTo = new(snapshotKey.Version);
+        BrookPosition readTo = new(targetVersion);
         IBrookReaderGrain readerGrain = BrookGrainFactory.GetBrookReaderGrain(brookKey);
-        await foreach (BrookEvent brookEvent in readerGrain.ReadEventsAsync(readTo: readTo, cancellationToken: token)
+        await foreach (BrookEvent brookEvent in readerGrain.ReadEventsAsync(readFrom: readFrom, readTo: readTo, cancellationToken: token)
                            .WithCancellation(token))
         {
             // The brook event data needs to be deserialized by the derived class

@@ -62,4 +62,21 @@ internal static partial class SnapshotCacheGrainLoggerExtensions
         long eventCount,
         string snapshotKey
     );
+
+    [LoggerMessage(
+        9,
+        LogLevel.Debug,
+        "Using base snapshot at version {BaseVersion} for target {TargetVersion}, replaying {DeltaEvents} events")]
+    public static partial void UsingBaseSnapshot(
+        this ILogger logger,
+        long baseVersion,
+        long targetVersion,
+        long deltaEvents
+    );
+
+    [LoggerMessage(10, LogLevel.Debug, "No base snapshot available for key {SnapshotKey}, rebuilding from beginning")]
+    public static partial void NoBaseSnapshotAvailable(
+        this ILogger logger,
+        string snapshotKey
+    );
 }
