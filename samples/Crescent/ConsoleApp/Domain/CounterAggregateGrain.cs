@@ -6,7 +6,6 @@ using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Serialization.Abstractions;
 
 using Orleans.Runtime;
 
@@ -39,7 +38,14 @@ internal sealed class CounterAggregateGrain
         IRootCommandHandler<CounterState> rootCommandHandler,
         ILogger<CounterAggregateGrain> logger
     )
-        : base(grainContext, brookGrainFactory, brookEventConverter, rootReducer, eventTypeRegistry, rootCommandHandler, logger)
+        : base(
+            grainContext,
+            brookGrainFactory,
+            brookEventConverter,
+            rootReducer,
+            eventTypeRegistry,
+            rootCommandHandler,
+            logger)
     {
     }
 
