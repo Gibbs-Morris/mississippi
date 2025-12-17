@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace Mississippi.EventSourcing.Aggregates;
 
 /// <summary>
-///     High-performance logging helpers for <see cref="RootCommandHandler{TState}" />.
+///     High-performance logging helpers for <see cref="RootCommandHandler{TSnapshot}" />.
 /// </summary>
 internal static partial class RootCommandHandlerLoggerExtensions
 {

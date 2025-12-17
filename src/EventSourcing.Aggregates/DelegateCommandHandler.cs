@@ -10,31 +10,31 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///     Command handler that wraps a delegate for processing commands.
 /// </summary>
 /// <typeparam name="TCommand">The command type.</typeparam>
-/// <typeparam name="TState">The aggregate state type.</typeparam>
-internal sealed class DelegateCommandHandler<TCommand, TState> : ICommandHandler<TCommand, TState>
+/// <typeparam name="TSnapshot">The aggregate state type.</typeparam>
+internal sealed class DelegateCommandHandler<TCommand, TSnapshot> : ICommandHandler<TCommand, TSnapshot>
 {
-    private readonly Func<TCommand, TState?, OperationResult<IReadOnlyList<object>>> handler;
+    private readonly Func<TCommand, TSnapshot?, OperationResult<IReadOnlyList<object>>> handler;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="DelegateCommandHandler{TCommand, TState}" /> class.
+    ///     Initializes a new instance of the <see cref="DelegateCommandHandler{TCommand, TSnapshot}" /> class.
     /// </summary>
     /// <param name="handler">The delegate that handles the command.</param>
     public DelegateCommandHandler(
-        Func<TCommand, TState?, OperationResult<IReadOnlyList<object>>> handler
+        Func<TCommand, TSnapshot?, OperationResult<IReadOnlyList<object>>> handler
     ) =>
         this.handler = handler ?? throw new ArgumentNullException(nameof(handler));
 
     /// <inheritdoc />
     public OperationResult<IReadOnlyList<object>> Handle(
         TCommand command,
-        TState? state
+        TSnapshot? state
     ) =>
         handler(command, state);
 
     /// <inheritdoc />
     public bool TryHandle(
         object command,
-        TState? state,
+        TSnapshot? state,
         out OperationResult<IReadOnlyList<object>> result
     )
     {

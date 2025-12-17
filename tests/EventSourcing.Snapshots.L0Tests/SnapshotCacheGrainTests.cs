@@ -21,7 +21,7 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.Snapshots.Tests;
 
 /// <summary>
-///     Tests for <see cref="SnapshotCacheGrain{TState, TBrook}" />.
+///     Tests for <see cref="SnapshotCacheGrain{TSnapshot, TBrook}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Snapshots")]
@@ -178,7 +178,10 @@ public sealed class SnapshotCacheGrainTests
             .Returns(expectedState);
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<IBrookReaderGrain> readerGrainMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(It.IsAny<BrookPosition?>(), It.IsAny<BrookPosition?>(), It.IsAny<CancellationToken>()))
+        readerGrainMock.Setup(r => r.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
             .Returns(GetEmptyEventsAsync);
         brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
@@ -222,7 +225,10 @@ public sealed class SnapshotCacheGrainTests
         rootReducerMock.Setup(r => r.GetReducerHash()).Returns(currentReducerHash);
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<IBrookReaderGrain> readerGrainMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(It.IsAny<BrookPosition?>(), It.IsAny<BrookPosition?>(), It.IsAny<CancellationToken>()))
+        readerGrainMock.Setup(r => r.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
             .Returns(GetEmptyEventsAsync);
         brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
@@ -245,7 +251,10 @@ public sealed class SnapshotCacheGrainTests
 
         // Should have triggered stream read
         readerGrainMock.Verify(
-            r => r.ReadEventsAsync(It.IsAny<BrookPosition?>(), It.IsAny<BrookPosition?>(), It.IsAny<CancellationToken>()),
+            r => r.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -273,7 +282,10 @@ public sealed class SnapshotCacheGrainTests
         rootReducerMock.Setup(r => r.GetReducerHash()).Returns(currentReducerHash);
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<IBrookReaderGrain> readerGrainMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(It.IsAny<BrookPosition?>(), It.IsAny<BrookPosition?>(), It.IsAny<CancellationToken>()))
+        readerGrainMock.Setup(r => r.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
             .Returns(GetEmptyEventsAsync);
         brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
@@ -296,7 +308,10 @@ public sealed class SnapshotCacheGrainTests
 
         // Should have triggered stream read
         readerGrainMock.Verify(
-            r => r.ReadEventsAsync(It.IsAny<BrookPosition?>(), It.IsAny<BrookPosition?>(), It.IsAny<CancellationToken>()),
+            r => r.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -317,7 +332,10 @@ public sealed class SnapshotCacheGrainTests
         rootReducerMock.Setup(r => r.GetReducerHash()).Returns(reducerHash);
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<IBrookReaderGrain> readerGrainMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(It.IsAny<BrookPosition?>(), It.IsAny<BrookPosition?>(), It.IsAny<CancellationToken>()))
+        readerGrainMock.Setup(r => r.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
             .Returns(GetEmptyEventsAsync);
         brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();

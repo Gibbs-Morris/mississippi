@@ -17,7 +17,8 @@ namespace Mississippi.EventSourcing.Snapshots;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This grain is designed to receive fire-and-forget calls from <see cref="SnapshotCacheGrain{TState, TBrook}" />,
+///         This grain is designed to receive fire-and-forget calls from
+///         <see cref="SnapshotCacheGrain{TSnapshot, TBrook}" />,
 ///         allowing the cache grain to return immediately after building state
 ///         while persistence happens asynchronously.
 ///     </para>

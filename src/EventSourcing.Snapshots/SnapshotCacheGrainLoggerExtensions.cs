@@ -20,6 +20,12 @@ internal static partial class SnapshotCacheGrainLoggerExtensions
         string snapshotKey
     );
 
+    [LoggerMessage(10, LogLevel.Debug, "No base snapshot available for key {SnapshotKey}, rebuilding from beginning")]
+    public static partial void NoBaseSnapshotAvailable(
+        this ILogger logger,
+        string snapshotKey
+    );
+
     [LoggerMessage(4, LogLevel.Debug, "No snapshot found in storage for key {SnapshotKey}, rebuilding from stream")]
     public static partial void NoSnapshotInStorage(
         this ILogger logger,
@@ -72,11 +78,5 @@ internal static partial class SnapshotCacheGrainLoggerExtensions
         long baseVersion,
         long targetVersion,
         long deltaEvents
-    );
-
-    [LoggerMessage(10, LogLevel.Debug, "No base snapshot available for key {SnapshotKey}, rebuilding from beginning")]
-    public static partial void NoBaseSnapshotAvailable(
-        this ILogger logger,
-        string snapshotKey
     );
 }

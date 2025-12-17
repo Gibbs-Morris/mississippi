@@ -30,15 +30,15 @@ public static class SnapshotRegistrations
     /// <summary>
     ///     Registers a snapshot state converter for the specified state type.
     /// </summary>
-    /// <typeparam name="TState">The state type to convert.</typeparam>
+    /// <typeparam name="TSnapshot">The state type to convert.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddSnapshotStateConverter<TState>(
+    public static IServiceCollection AddSnapshotStateConverter<TSnapshot>(
         this IServiceCollection services
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        services.TryAddTransient<ISnapshotStateConverter<TState>, SnapshotStateConverter<TState>>();
+        services.TryAddTransient<ISnapshotStateConverter<TSnapshot>, SnapshotStateConverter<TSnapshot>>();
         return services;
     }
 }

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using Mississippi.EventSourcing.Abstractions.Attributes;
+
 
 namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 
@@ -43,53 +45,27 @@ public sealed class SnapshotRetentionOptions
     /// <summary>
     ///     Gets the collection of per-state-type retention modulus overrides.
     /// </summary>
-    /// <value>A dictionary mapping state type full names to their retention modulus values.</value>
+    /// <value>A dictionary mapping state type snapshot names to their retention modulus values.</value>
     /// <remarks>
     ///     Use this to configure specific state types that need different snapshot intervals.
     ///     For example, complex aggregates with expensive state computation might use a smaller
     ///     modulus (e.g., 50) to reduce replay cost, while simple aggregates might use a larger
     ///     modulus (e.g., 200) to reduce storage overhead.
+    ///     Keys should be the <see cref="SnapshotNameAttribute.SnapshotName" /> value
+    ///     (e.g., "MYAPP.DOMAIN.COUNTERSTATE.V1") for refactoring safety.
     /// </remarks>
     /// <example>
     ///     <code>
-    /// options.StateTypeOverrides["MyApp.Domain.ComplexState"] = 50;
-    /// options.StateTypeOverrides["MyApp.Domain.SimpleState"] = 200;
+    /// options.StateTypeOverrides["MYAPP.DOMAIN.COMPLEXSTATE.V1"] = 50;
+    /// options.StateTypeOverrides["MYAPP.DOMAIN.SIMPLESTATE.V1"] = 200;
     /// </code>
     /// </example>
     public Dictionary<string, int> StateTypeOverrides { get; } = new(StringComparer.Ordinal);
 
     /// <summary>
-    ///     Gets the retention modulus for a specific state type.
-    /// </summary>
-    /// <typeparam name="TState">The state type to get the modulus for.</typeparam>
-    /// <returns>
-    ///     The configured modulus for the state type if an override exists;
-    ///     otherwise, <see cref="DefaultRetainModulus" />.
-    /// </returns>
-    public int GetRetainModulus<TState>() => GetRetainModulus(typeof(TState));
-
-    /// <summary>
-    ///     Gets the retention modulus for a specific state type.
-    /// </summary>
-    /// <param name="stateType">The state type to get the modulus for.</param>
-    /// <returns>
-    ///     The configured modulus for the state type if an override exists;
-    ///     otherwise, <see cref="DefaultRetainModulus" />.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="stateType" /> is null.</exception>
-    public int GetRetainModulus(
-        Type stateType
-    )
-    {
-        ArgumentNullException.ThrowIfNull(stateType);
-        string typeName = stateType.FullName ?? stateType.Name;
-        return StateTypeOverrides.TryGetValue(typeName, out int modulus) ? modulus : DefaultRetainModulus;
-    }
-
-    /// <summary>
     ///     Calculates the base snapshot version for a given target version.
     /// </summary>
-    /// <typeparam name="TState">The state type to calculate the base version for.</typeparam>
+    /// <typeparam name="TSnapshot">The state type to calculate the base version for.</typeparam>
     /// <param name="targetVersion">The target version to find the base snapshot for.</param>
     /// <returns>
     ///     The nearest retained snapshot version that is less than or equal to the target version.
@@ -104,10 +80,10 @@ public sealed class SnapshotRetentionOptions
     ///         <item>Target 99 → base 0</item>
     ///     </list>
     /// </remarks>
-    public long GetBaseSnapshotVersion<TState>(
+    public long GetBaseSnapshotVersion<TSnapshot>(
         long targetVersion
     ) =>
-        GetBaseSnapshotVersion(typeof(TState), targetVersion);
+        GetBaseSnapshotVersion(typeof(TSnapshot), targetVersion);
 
     /// <summary>
     ///     Calculates the base snapshot version for a given target version.
@@ -132,5 +108,47 @@ public sealed class SnapshotRetentionOptions
 
         int modulus = GetRetainModulus(stateType);
         return (targetVersion / modulus) * modulus;
+    }
+
+    /// <summary>
+    ///     Gets the retention modulus for a specific state type.
+    /// </summary>
+    /// <typeparam name="TSnapshot">The state type to get the modulus for.</typeparam>
+    /// <returns>
+    ///     The configured modulus for the state type if an override exists;
+    ///     otherwise, <see cref="DefaultRetainModulus" />.
+    /// </returns>
+    public int GetRetainModulus<TSnapshot>() => GetRetainModulus(typeof(TSnapshot));
+
+    /// <summary>
+    ///     Gets the retention modulus for a specific state type.
+    /// </summary>
+    /// <param name="stateType">The state type to get the modulus for.</param>
+    /// <returns>
+    ///     The configured modulus for the state type if an override exists;
+    ///     otherwise, <see cref="DefaultRetainModulus" />.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="stateType" /> is null.</exception>
+    /// <remarks>
+    ///     Looks up by <see cref="SnapshotNameAttribute.SnapshotName" /> first if the type
+    ///     is decorated with the attribute; falls back to <see cref="Type.FullName" /> for
+    ///     backward compatibility.
+    /// </remarks>
+    public int GetRetainModulus(
+        Type stateType
+    )
+    {
+        ArgumentNullException.ThrowIfNull(stateType);
+
+        // Prefer the stable snapshot name when available
+        if (SnapshotNameHelper.TryGetSnapshotName(stateType, out string? snapshotName) &&
+            StateTypeOverrides.TryGetValue(snapshotName!, out int modulusBySnapshotName))
+        {
+            return modulusBySnapshotName;
+        }
+
+        // Fall back to CLR type name for backward compatibility
+        string typeName = stateType.FullName ?? stateType.Name;
+        return StateTypeOverrides.TryGetValue(typeName, out int modulus) ? modulus : DefaultRetainModulus;
     }
 }

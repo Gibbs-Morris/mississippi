@@ -7,14 +7,14 @@ using Mississippi.EventSourcing.Snapshots.Abstractions;
 namespace Mississippi.EventSourcing.Snapshots;
 
 /// <summary>
-///     Default implementation of <see cref="ISnapshotStateConverter{TState}" /> that uses
+///     Default implementation of <see cref="ISnapshotStateConverter{TSnapshot}" /> that uses
 ///     <see cref="ISerializationProvider" /> for payload encoding.
 /// </summary>
-/// <typeparam name="TState">The type of state to convert.</typeparam>
-internal sealed class SnapshotStateConverter<TState> : ISnapshotStateConverter<TState>
+/// <typeparam name="TSnapshot">The type of state to convert.</typeparam>
+internal sealed class SnapshotStateConverter<TSnapshot> : ISnapshotStateConverter<TSnapshot>
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="SnapshotStateConverter{TState}" /> class.
+    ///     Initializes a new instance of the <see cref="SnapshotStateConverter{TSnapshot}" /> class.
     /// </summary>
     /// <param name="serializationProvider">The provider for state serialization and deserialization.</param>
     public SnapshotStateConverter(
@@ -28,18 +28,18 @@ internal sealed class SnapshotStateConverter<TState> : ISnapshotStateConverter<T
     private ISerializationProvider SerializationProvider { get; }
 
     /// <inheritdoc />
-    public TState FromEnvelope(
+    public TSnapshot FromEnvelope(
         SnapshotEnvelope envelope
     )
     {
         ArgumentNullException.ThrowIfNull(envelope);
         ReadOnlyMemory<byte> data = envelope.Data.AsMemory();
-        return SerializationProvider.Deserialize<TState>(data);
+        return SerializationProvider.Deserialize<TSnapshot>(data);
     }
 
     /// <inheritdoc />
     public SnapshotEnvelope ToEnvelope(
-        TState state,
+        TSnapshot state,
         string reducerHash
     )
     {

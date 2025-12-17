@@ -11,7 +11,7 @@ using Moq;
 namespace Mississippi.EventSourcing.Snapshots.Tests;
 
 /// <summary>
-///     Tests for <see cref="SnapshotStateConverter{TState}" />.
+///     Tests for <see cref="SnapshotStateConverter{TSnapshot}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Snapshots")]

@@ -6,12 +6,12 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 public interface ISnapshotGrainFactory
 {
     /// <summary>
-    ///     Retrieves an <see cref="ISnapshotCacheGrain{TState}" /> for the specified snapshot key.
+    ///     Retrieves an <see cref="ISnapshotCacheGrain{TSnapshot}" /> for the specified snapshot key.
     /// </summary>
-    /// <typeparam name="TState">The type of state stored in the snapshot.</typeparam>
+    /// <typeparam name="TSnapshot">The type of state stored in the snapshot.</typeparam>
     /// <param name="snapshotKey">The key identifying the snapshot (projection type, id, reducer hash, and version).</param>
-    /// <returns>An <see cref="ISnapshotCacheGrain{TState}" /> instance for the snapshot.</returns>
-    ISnapshotCacheGrain<TState> GetSnapshotCacheGrain<TState>(
+    /// <returns>An <see cref="ISnapshotCacheGrain{TSnapshot}" /> instance for the snapshot.</returns>
+    ISnapshotCacheGrain<TSnapshot> GetSnapshotCacheGrain<TSnapshot>(
         SnapshotKey snapshotKey
     );
 

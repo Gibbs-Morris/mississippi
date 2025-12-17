@@ -23,7 +23,7 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.Aggregates.Tests;
 
 /// <summary>
-///     Tests for <see cref="AggregateGrain{TState, TBrook}" />.
+///     Tests for <see cref="AggregateGrain{TSnapshot, TBrook}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Aggregates")]

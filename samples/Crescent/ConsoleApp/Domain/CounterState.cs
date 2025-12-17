@@ -1,3 +1,5 @@
+using Mississippi.EventSourcing.Abstractions.Attributes;
+
 using Orleans;
 
 
@@ -7,6 +9,7 @@ namespace Crescent.ConsoleApp.Domain;
 ///     Internal state for the counter aggregate.
 ///     This is never exposed externally; use projections for read queries.
 /// </summary>
+[SnapshotName("CRESCENT", "SAMPLE", "COUNTERSTATE")]
 [GenerateSerializer]
 [Alias("Crescent.ConsoleApp.Domain.CounterState")]
 internal sealed record CounterState

@@ -3,15 +3,15 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 /// <summary>
 ///     Converts between typed snapshot state and serialized <see cref="SnapshotEnvelope" /> payloads.
 /// </summary>
-/// <typeparam name="TState">The type of state to convert.</typeparam>
-public interface ISnapshotStateConverter<TState>
+/// <typeparam name="TSnapshot">The type of state to convert.</typeparam>
+public interface ISnapshotStateConverter<TSnapshot>
 {
     /// <summary>
     ///     Deserializes a <see cref="SnapshotEnvelope" /> to typed state.
     /// </summary>
     /// <param name="envelope">The envelope containing the serialized state.</param>
     /// <returns>The deserialized state.</returns>
-    TState FromEnvelope(
+    TSnapshot FromEnvelope(
         SnapshotEnvelope envelope
     );
 
@@ -22,7 +22,7 @@ public interface ISnapshotStateConverter<TState>
     /// <param name="reducerHash">The hash of the reducers used to build this state.</param>
     /// <returns>A <see cref="SnapshotEnvelope" /> containing the serialized state.</returns>
     SnapshotEnvelope ToEnvelope(
-        TState state,
+        TSnapshot state,
         string reducerHash
     );
 }

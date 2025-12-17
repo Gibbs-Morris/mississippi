@@ -7,10 +7,10 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///     Interface for root-level command handlers that process commands against aggregate state.
 ///     Provides a method for handling commands and producing domain events.
 /// </summary>
-/// <typeparam name="TState">The aggregate state type used for validation.</typeparam>
+/// <typeparam name="TSnapshot">The aggregate state type used for validation.</typeparam>
 /// <remarks>
 ///     <para>
-///         The root command handler composes one or more <see cref="ICommandHandler{TState}" /> instances
+///         The root command handler composes one or more <see cref="ICommandHandler{TSnapshot}" /> instances
 ///         and dispatches commands to the appropriate handler at runtime.
 ///     </para>
 ///     <para>
@@ -18,7 +18,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         abstraction for command dispatch across aggregates.
 ///     </para>
 /// </remarks>
-public interface IRootCommandHandler<in TState>
+public interface IRootCommandHandler<in TSnapshot>
 {
     /// <summary>
     ///     Handles a command by validating it against current state and producing domain events.
@@ -31,6 +31,6 @@ public interface IRootCommandHandler<in TState>
     /// </returns>
     OperationResult<IReadOnlyList<object>> Handle(
         object command,
-        TState? state
+        TSnapshot? state
     );
 }

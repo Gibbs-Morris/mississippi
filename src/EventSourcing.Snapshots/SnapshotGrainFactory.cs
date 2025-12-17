@@ -40,12 +40,12 @@ internal sealed class SnapshotGrainFactory : ISnapshotGrainFactory
     private ILogger<SnapshotGrainFactory> Logger { get; }
 
     /// <inheritdoc />
-    public ISnapshotCacheGrain<TState> GetSnapshotCacheGrain<TState>(
+    public ISnapshotCacheGrain<TSnapshot> GetSnapshotCacheGrain<TSnapshot>(
         SnapshotKey snapshotKey
     )
     {
-        Logger.ResolvingCacheGrain(nameof(ISnapshotCacheGrain<TState>), snapshotKey);
-        return GrainFactory.GetGrain<ISnapshotCacheGrain<TState>>(snapshotKey);
+        Logger.ResolvingCacheGrain(nameof(ISnapshotCacheGrain<TSnapshot>), snapshotKey);
+        return GrainFactory.GetGrain<ISnapshotCacheGrain<TSnapshot>>(snapshotKey);
     }
 
     /// <inheritdoc />

@@ -10,7 +10,7 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 /// <summary>
 ///     An Orleans grain that acts as an immutable, in-memory cache for a snapshot at a specific version.
 /// </summary>
-/// <typeparam name="TState">The type of state stored in the snapshot.</typeparam>
+/// <typeparam name="TSnapshot">The type of state stored in the snapshot.</typeparam>
 /// <remarks>
 ///     <para>
 ///         This grain is keyed by <see cref="SnapshotKey" /> in the format
@@ -28,7 +28,7 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.EventSourcing.Snapshots.Abstractions.ISnapshotCacheGrain`1")]
-public interface ISnapshotCacheGrain<TState> : IGrainWithStringKey
+public interface ISnapshotCacheGrain<TSnapshot> : IGrainWithStringKey
 {
     /// <summary>
     ///     Gets the cached state for this snapshot version.
@@ -41,7 +41,7 @@ public interface ISnapshotCacheGrain<TState> : IGrainWithStringKey
     /// </remarks>
     [ReadOnly]
     [Alias("GetStateAsync")]
-    ValueTask<TState> GetStateAsync(
+    ValueTask<TSnapshot> GetStateAsync(
         CancellationToken cancellationToken = default
     );
 }

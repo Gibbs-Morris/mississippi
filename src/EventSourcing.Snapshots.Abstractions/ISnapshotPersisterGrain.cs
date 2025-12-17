@@ -12,7 +12,7 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This grain is designed to receive fire-and-forget calls from <see cref="ISnapshotCacheGrain{TState}" />,
+///         This grain is designed to receive fire-and-forget calls from <see cref="ISnapshotCacheGrain{TSnapshot}" />,
 ///         allowing the cache grain to return immediately after building state
 ///         while persistence happens asynchronously.
 ///     </para>

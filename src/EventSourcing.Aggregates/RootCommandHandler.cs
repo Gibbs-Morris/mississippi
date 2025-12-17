@@ -13,9 +13,9 @@ using Mississippi.EventSourcing.Aggregates.Abstractions;
 namespace Mississippi.EventSourcing.Aggregates;
 
 /// <summary>
-///     Root-level command handler that composes one or more <see cref="ICommandHandler{TState}" /> instances.
+///     Root-level command handler that composes one or more <see cref="ICommandHandler{TSnapshot}" /> instances.
 /// </summary>
-/// <typeparam name="TState">The aggregate state type.</typeparam>
+/// <typeparam name="TSnapshot">The aggregate state type.</typeparam>
 /// <remarks>
 ///     <para>
 ///         This class mirrors <c>RootReducer</c> for reducers, providing a consistent pattern
@@ -27,51 +27,53 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///         preserving first-match-wins semantics within the original registration order.
 ///     </para>
 /// </remarks>
-public sealed class RootCommandHandler<TState> : IRootCommandHandler<TState>
+public sealed class RootCommandHandler<TSnapshot> : IRootCommandHandler<TSnapshot>
 {
-    private static readonly Type StateType = typeof(TState);
+    private static readonly Type StateType = typeof(TSnapshot);
 
-    private readonly ImmutableArray<ICommandHandler<TState>> fallbackHandlers;
+    private readonly ImmutableArray<ICommandHandler<TSnapshot>> fallbackHandlers;
 
-    private readonly FrozenDictionary<Type, ImmutableArray<ICommandHandler<TState>>> handlerIndex;
+    private readonly FrozenDictionary<Type, ImmutableArray<ICommandHandler<TSnapshot>>> handlerIndex;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="RootCommandHandler{TState}" /> class.
+    ///     Initializes a new instance of the <see cref="RootCommandHandler{TSnapshot}" /> class.
     /// </summary>
     /// <param name="handlers">The command handlers that can process commands for this state type.</param>
     /// <param name="logger">The logger used for command handler diagnostics.</param>
     public RootCommandHandler(
-        IEnumerable<ICommandHandler<TState>> handlers,
-        ILogger<RootCommandHandler<TState>>? logger = null
+        IEnumerable<ICommandHandler<TSnapshot>> handlers,
+        ILogger<RootCommandHandler<TSnapshot>>? logger = null
     )
     {
         ArgumentNullException.ThrowIfNull(handlers);
-        ICommandHandler<TState>[] handlersArray = handlers.ToArray();
-        Logger = logger ?? NullLogger<RootCommandHandler<TState>>.Instance;
+        ICommandHandler<TSnapshot>[] handlersArray = handlers.ToArray();
+        Logger = logger ?? NullLogger<RootCommandHandler<TSnapshot>>.Instance;
         (handlerIndex, fallbackHandlers) = BuildHandlerIndex(handlersArray);
     }
 
-    private ILogger<RootCommandHandler<TState>> Logger { get; }
+    private ILogger<RootCommandHandler<TSnapshot>> Logger { get; }
 
     /// <summary>
     ///     Builds an index mapping command types to their handlers, preserving registration order.
     /// </summary>
-    private static (FrozenDictionary<Type, ImmutableArray<ICommandHandler<TState>>> Index,
-        ImmutableArray<ICommandHandler<TState>> Fallback) BuildHandlerIndex(
-            ICommandHandler<TState>[] handlersArray
+    private static (FrozenDictionary<Type, ImmutableArray<ICommandHandler<TSnapshot>>> Index,
+        ImmutableArray<ICommandHandler<TSnapshot>> Fallback) BuildHandlerIndex(
+            ICommandHandler<TSnapshot>[] handlersArray
         )
     {
-        Dictionary<Type, ImmutableArray<ICommandHandler<TState>>.Builder> indexBuilder = new();
-        ImmutableArray<ICommandHandler<TState>>.Builder fallbackBuilder =
-            ImmutableArray.CreateBuilder<ICommandHandler<TState>>();
-        foreach (ICommandHandler<TState> handler in handlersArray)
+        Dictionary<Type, ImmutableArray<ICommandHandler<TSnapshot>>.Builder> indexBuilder = new();
+        ImmutableArray<ICommandHandler<TSnapshot>>.Builder fallbackBuilder =
+            ImmutableArray.CreateBuilder<ICommandHandler<TSnapshot>>();
+        foreach (ICommandHandler<TSnapshot> handler in handlersArray)
         {
             Type? commandType = ExtractCommandType(handler.GetType());
             if (commandType is not null)
             {
-                if (!indexBuilder.TryGetValue(commandType, out ImmutableArray<ICommandHandler<TState>>.Builder? list))
+                if (!indexBuilder.TryGetValue(
+                        commandType,
+                        out ImmutableArray<ICommandHandler<TSnapshot>>.Builder? list))
                 {
-                    list = ImmutableArray.CreateBuilder<ICommandHandler<TState>>();
+                    list = ImmutableArray.CreateBuilder<ICommandHandler<TSnapshot>>();
                     indexBuilder[commandType] = list;
                 }
 
@@ -83,19 +85,19 @@ public sealed class RootCommandHandler<TState> : IRootCommandHandler<TState>
             }
         }
 
-        FrozenDictionary<Type, ImmutableArray<ICommandHandler<TState>>> frozenIndex =
+        FrozenDictionary<Type, ImmutableArray<ICommandHandler<TSnapshot>>> frozenIndex =
             indexBuilder.ToFrozenDictionary(kvp => kvp.Key, kvp => kvp.Value.ToImmutable());
         return (frozenIndex, fallbackBuilder.ToImmutable());
     }
 
     /// <summary>
-    ///     Extracts the TCommand type argument from a handler implementing ICommandHandler{TCommand, TState}.
+    ///     Extracts the TCommand type argument from a handler implementing ICommandHandler{TCommand, TSnapshot}.
     /// </summary>
     private static Type? ExtractCommandType(
         Type handlerType
     )
     {
-        // Look for ICommandHandler<TCommand, TState> in the interface list.
+        // Look for ICommandHandler<TCommand, TSnapshot> in the interface list.
         Type genericInterface = typeof(ICommandHandler<,>);
         foreach (Type iface in handlerType.GetInterfaces())
         {
@@ -111,7 +113,7 @@ public sealed class RootCommandHandler<TState> : IRootCommandHandler<TState>
 
             Type[] typeArgs = iface.GetGenericArguments();
 
-            // typeArgs[0] = TCommand, typeArgs[1] = TState
+            // typeArgs[0] = TCommand, typeArgs[1] = TSnapshot
             if ((typeArgs.Length == 2) && (typeArgs[1] == StateType))
             {
                 return typeArgs[0];
@@ -124,7 +126,7 @@ public sealed class RootCommandHandler<TState> : IRootCommandHandler<TState>
     /// <inheritdoc />
     public OperationResult<IReadOnlyList<object>> Handle(
         object command,
-        TState? state
+        TSnapshot? state
     )
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -134,9 +136,9 @@ public sealed class RootCommandHandler<TState> : IRootCommandHandler<TState>
         Logger.RootCommandHandlerHandling(commandType, stateType);
 
         // Fast path: look up handlers registered for this exact command type.
-        if (handlerIndex.TryGetValue(commandRuntimeType, out ImmutableArray<ICommandHandler<TState>> indexed))
+        if (handlerIndex.TryGetValue(commandRuntimeType, out ImmutableArray<ICommandHandler<TSnapshot>> indexed))
         {
-            foreach (ICommandHandler<TState> handler in indexed)
+            foreach (ICommandHandler<TSnapshot> handler in indexed)
             {
                 if (handler.TryHandle(command, state, out OperationResult<IReadOnlyList<object>> result))
                 {
@@ -147,7 +149,7 @@ public sealed class RootCommandHandler<TState> : IRootCommandHandler<TState>
         }
 
         // Slow path: iterate fallback handlers whose command type could not be determined at construction.
-        foreach (ICommandHandler<TState> handler in fallbackHandlers)
+        foreach (ICommandHandler<TSnapshot> handler in fallbackHandlers)
         {
             if (handler.TryHandle(command, state, out OperationResult<IReadOnlyList<object>> result))
             {

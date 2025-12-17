@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Abstractions.Attributes;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -20,7 +21,7 @@ namespace Mississippi.EventSourcing.Aggregates;
 /// <summary>
 ///     Base class for aggregate grains that encapsulate domain state and process commands.
 /// </summary>
-/// <typeparam name="TState">The internal state type of the aggregate.</typeparam>
+/// <typeparam name="TSnapshot">The internal state type of the aggregate.</typeparam>
 /// <typeparam name="TBrook">The brook definition type that identifies the event stream.</typeparam>
 /// <remarks>
 ///     <para>
@@ -36,9 +37,10 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///         for brook identity, ensuring projections can reference the same brook type.
 ///     </para>
 /// </remarks>
-public abstract class AggregateGrain<TState, TBrook>
+public abstract class AggregateGrain<TSnapshot, TBrook>
     : IAggregateGrain,
       IGrainBase
+    where TSnapshot : class
     where TBrook : IBrookDefinition
 {
     private BrookKey brookKey;
@@ -46,7 +48,7 @@ public abstract class AggregateGrain<TState, TBrook>
     private SnapshotStreamKey snapshotStreamKey;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="AggregateGrain{TState, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="AggregateGrain{TSnapshot, TBrook}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="brookGrainFactory">Factory for resolving brook grains.</param>
@@ -59,7 +61,7 @@ public abstract class AggregateGrain<TState, TBrook>
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
         IBrookEventConverter brookEventConverter,
-        IRootCommandHandler<TState> rootCommandHandler,
+        IRootCommandHandler<TSnapshot> rootCommandHandler,
         ISnapshotGrainFactory snapshotGrainFactory,
         string reducersHash,
         ILogger logger
@@ -105,7 +107,7 @@ public abstract class AggregateGrain<TState, TBrook>
     /// <summary>
     ///     Gets the root command handler for processing commands.
     /// </summary>
-    protected IRootCommandHandler<TState> RootCommandHandler { get; }
+    protected IRootCommandHandler<TSnapshot> RootCommandHandler { get; }
 
     /// <summary>
     ///     Gets the factory for resolving snapshot grains.
@@ -123,7 +125,7 @@ public abstract class AggregateGrain<TState, TBrook>
     {
         string primaryKey = this.GetPrimaryKeyString();
         brookKey = BrookKey.FromString(primaryKey);
-        snapshotStreamKey = new(typeof(TState).Name, brookKey.Id, ReducersHash);
+        snapshotStreamKey = new(SnapshotNameHelper.GetSnapshotName<TSnapshot>(), brookKey.Id, ReducersHash);
         Logger.Activated(primaryKey);
         return Task.CompletedTask;
     }
@@ -132,7 +134,7 @@ public abstract class AggregateGrain<TState, TBrook>
     ///     Creates the initial state when no snapshot or events exist.
     /// </summary>
     /// <returns>The initial state, or <c>null</c> if the reducer handles null input.</returns>
-    protected virtual TState? CreateInitialState() => default;
+    protected virtual TSnapshot? CreateInitialState() => default;
 
     /// <summary>
     ///     Executes a command against the aggregate, producing and persisting events.
@@ -169,7 +171,7 @@ public abstract class AggregateGrain<TState, TBrook>
         }
 
         // Get current state from snapshot grain (single source of truth)
-        TState? state;
+        TSnapshot? state;
         if (currentPosition.NotSet)
         {
             // No events yet, use initial state
@@ -178,7 +180,7 @@ public abstract class AggregateGrain<TState, TBrook>
         else
         {
             SnapshotKey snapshotKey = new(snapshotStreamKey, currentPosition.Value);
-            state = await SnapshotGrainFactory.GetSnapshotCacheGrain<TState>(snapshotKey)
+            state = await SnapshotGrainFactory.GetSnapshotCacheGrain<TSnapshot>(snapshotKey)
                 .GetStateAsync(cancellationToken);
         }
 
