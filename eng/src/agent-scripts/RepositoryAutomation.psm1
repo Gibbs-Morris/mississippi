@@ -294,6 +294,40 @@ function Invoke-ReSharperCleanup {
     Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho
 }
 
+function Get-TestProjects {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SolutionPath
+    )
+
+    $solutionDir = Split-Path -Parent $SolutionPath
+    $testProjects = Get-ChildItem -Path $solutionDir -Recurse -Filter "*Tests.csproj" | 
+        Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' } |
+        Select-Object -ExpandProperty FullName
+
+    return $testProjects
+}
+
+function Invoke-StrykerMutationTestPerProject {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ProjectPath,
+        [Parameter(Mandatory)][string]$OutputPath
+    )
+
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ProjectPath)
+    $projectOutputPath = Join-Path $OutputPath $projectName
+    
+    if (-not (Test-Path -LiteralPath $projectOutputPath)) {
+        $null = New-Item -ItemType Directory -Path $projectOutputPath -Force
+    }
+
+    Write-Host "  Running Stryker for project: $projectName" -ForegroundColor ([ConsoleColor]::Cyan)
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('stryker','--project',$projectName,'--output',$projectOutputPath) -ErrorMessage "Stryker mutation testing failed for project $projectName." -SuppressCommandEcho
+    
+    return $projectOutputPath
+}
+
 function Invoke-StrykerMutationTest {
     [CmdletBinding()]
     param(
@@ -307,7 +341,37 @@ function Invoke-StrykerMutationTest {
         $null = New-Item -ItemType Directory -Path $outputFullPath -Force
     }
 
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('stryker','--solution',$resolvedSolution.Path,'--output',$outputFullPath) -ErrorMessage "Stryker mutation testing failed." -SuppressCommandEcho
+    # Workaround for stryker-mutator/stryker-net#2634
+    # Run Stryker per-project instead of at solution level to avoid compilation issues
+    # with source generators (like LoggerMessage)
+    Write-Host "Discovering test projects in solution..." -ForegroundColor ([ConsoleColor]::Cyan)
+    $testProjects = Get-TestProjects -SolutionPath $resolvedSolution.Path
+    Write-Host "Found $($testProjects.Count) test projects" -ForegroundColor ([ConsoleColor]::Green)
+    Write-Host
+
+    $projectResults = @()
+    foreach ($testProject in $testProjects) {
+        try {
+            $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -OutputPath $outputFullPath
+            $projectResults += @{ Project = $testProject; Output = $projectOutput; Success = $true }
+            Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($testProject))" -ForegroundColor ([ConsoleColor]::Green)
+        }
+        catch {
+            Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($testProject)) - $($_.Exception.Message)"
+            $projectResults += @{ Project = $testProject; Output = $null; Success = $false; Error = $_.Exception.Message }
+        }
+        Write-Host
+    }
+
+    # Check if any projects failed
+    $failedProjects = $projectResults | Where-Object { -not $_.Success }
+    if ($failedProjects.Count -gt 0) {
+        Write-Host "WARNING: $($failedProjects.Count) project(s) failed mutation testing" -ForegroundColor ([ConsoleColor]::Yellow)
+        foreach ($failed in $failedProjects) {
+            Write-Host "  - $([System.IO.Path]::GetFileNameWithoutExtension($failed.Project)): $($failed.Error)" -ForegroundColor ([ConsoleColor]::Yellow)
+        }
+    }
+
     return $outputFullPath
 }
 
@@ -665,7 +729,7 @@ function Invoke-SolutionsPipeline {
     Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
+Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
 
 
 

@@ -14,11 +14,11 @@ Governing thought: Use high-performance LoggerExtensions pattern with LoggerMess
   Why: Enforces the LoggerExtensions pattern and prevents performance issues.
 - LoggerExtensions class names **MUST** end with `LoggerExtensions` suffix.  
   Why: Maintains naming consistency across components.
-- LoggerMessage patterns **MUST** be implemented as private static readonly Action delegates.  
-  Why: Enables compile-time optimization and zero-allocation logging.
+- LoggerMessage patterns **MUST** use source generator attributes (`[LoggerMessage]`).  
+  Why: Source generators provide identical performance with ~50% less boilerplate, following KISS and DRY principles.
 - Each log operation **MUST** be exposed as a public static extension method.  
   Why: Provides consistent API for logging across components.
-- Direct ILogger.Log() calls **MUST NOT** be used; always use LoggerMessage.Define pattern.  
+- Direct ILogger.Log() calls **MUST NOT** be used; always use LoggerMessage source generators.  
   Why: LoggerMessage provides pre-compiled message templates and optimal performance.
 - Dependency-injected ILogger **MUST** use `private ILogger<T> Logger { get; }` property pattern.  
   Why: Encourages immutability and clarity of dependencies, consistent with DI best practices.
@@ -84,7 +84,7 @@ This document establishes mandatory logging standards ensuring consistent, obser
 ## Core Principles
 
 - Use LoggerExtensions pattern for all logging (no direct ILogger calls)
-- Implement LoggerMessage with static Action delegates for performance
+- Implement LoggerMessage with source generators
 - Log structured data with meaningful properties
 - Include correlation IDs for distributed tracing
 - Use appropriate log levels consistently
@@ -94,6 +94,54 @@ This document establishes mandatory logging standards ensuring consistent, obser
 - Log Orleans grain lifecycle and method calls
 - Log business rule violations and event sourcing operations
 - Track performance-critical operations and resource allocations
+
+## LoggerExtensions Implementation Pattern
+
+### Source Generator Pattern
+
+The source generator pattern uses `[LoggerMessage]` attributes to generate high-performance logging code at compile time. This approach reduces boilerplate by ~50% compared to manual delegate patterns.
+
+**Benefits:**
+
+- **KISS (Keep It Simple):** No manual delegate definitions needed
+- **DRY (Don't Repeat Yourself):** Method signature defines the message template once
+- **Less boilerplate:** ~50% reduction in lines of code compared to manual patterns
+- **High performance:** Compiles to high-performance delegates at build time
+- **Better maintainability:** Changes to parameters automatically update the delegate
+
+**Pattern:**
+
+```csharp
+using Microsoft.Extensions.Logging;
+
+namespace Mississippi.SomeNamespace;
+
+/// <summary>
+/// High-performance logging extensions for SomeComponent.
+/// </summary>
+internal static partial class SomeComponentLoggerExtensions
+{
+    /// <summary>
+    /// Logs when some event occurs.
+    /// </summary>
+    [LoggerMessage(1, LogLevel.Debug, "Event {Type} for {Key}")]
+    public static partial void SomeEvent(this ILogger logger, string type, string key);
+
+    /// <summary>
+    /// Logs when an operation fails with an exception.
+    /// </summary>
+    [LoggerMessage(2, LogLevel.Error, "Operation {Operation} failed for {EntityId}")]
+    public static partial void OperationFailed(this ILogger logger, string operation, string entityId, Exception exception);
+}
+```
+
+**Key requirements:**
+
+- Class must be declared as `partial`
+- Methods must be declared as `partial` with no method body
+- Use `[LoggerMessage(eventId, logLevel, "message template")]` attribute
+- Parameters in message template must match method parameters (excluding `ILogger` and `Exception`)
+- `Exception` parameter (if present) must be last and named `exception`
 
 ### Log Levels and Usage
 
@@ -105,17 +153,11 @@ This document establishes mandatory logging standards ensuring consistent, obser
 - **External service failures** that impact functionality
 
 ```csharp
-// MANDATORY PATTERN: High-performance logging with LoggerMessage and LoggerExtensions class
-public static class EventProcessingLoggerExtensions
+// PREFERRED PATTERN: Source generator with LoggerExtensions class
+public static partial class EventProcessingLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, Exception> EventProcessingFailedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Error,
-            new EventId(1, nameof(EventProcessingFailed)),
-            "Failed to process event {EventId} for stream {StreamId}");
-
-    public static void EventProcessingFailed(this ILogger<EventProcessingGrain> logger, string eventId, string streamId, Exception ex) =>
-        EventProcessingFailedMessage(logger, eventId, streamId, ex);
+    [LoggerMessage(1, LogLevel.Error, "Failed to process event {EventId} for stream {StreamId}")]
+    public static partial void EventProcessingFailed(this ILogger logger, string eventId, string streamId, Exception exception);
 }
 
 // Usage - ALWAYS call through the LoggerExtensions class
@@ -133,17 +175,11 @@ Logger.EventProcessingFailed(eventId, streamId, ex);
 - **Configuration issues** that have fallbacks
 
 ```csharp
-// MANDATORY PATTERN: LoggerExtensions class with high-performance LoggerMessage
-public static class SystemMonitoringLoggerExtensions
+// PREFERRED PATTERN: Source generator with LoggerExtensions class
+public static partial class SystemMonitoringLoggerExtensions
 {
-    private static readonly Action<ILogger, int, Exception?> HighMemoryUsageDetectedMessage =
-        LoggerMessage.Define<int>(
-            LogLevel.Warning,
-            new EventId(1, nameof(HighMemoryUsageDetected)),
-            "High memory usage detected: {MemoryUsage}MB");
-
-    public static void HighMemoryUsageDetected(this ILogger<SystemMonitoringService> logger, int memoryUsage) =>
-        HighMemoryUsageDetectedMessage(logger, memoryUsage, null);
+    [LoggerMessage(1, LogLevel.Warning, "High memory usage detected: {MemoryUsage}MB")]
+    public static partial void HighMemoryUsageDetected(this ILogger logger, int memoryUsage);
 }
 
 // Usage - ALWAYS through LoggerExtensions
@@ -158,17 +194,11 @@ Logger.HighMemoryUsageDetected(memoryUsage);
 - **User actions** that are significant
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class EventSourcingLoggerExtensions
+// PREFERRED PATTERN: Source generator with LoggerExtensions
+public static partial class EventSourcingLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, long, Exception?> EventAppendedMessage =
-        LoggerMessage.Define<string, string, long>(
-            LogLevel.Information,
-            new EventId(1, nameof(EventAppended)),
-            "Event {EventId} appended to stream {StreamId} at position {Position}");
-
-    public static void EventAppended(this ILogger<EventSourcingService> logger, string eventId, string streamId, long position) =>
-        EventAppendedMessage(logger, eventId, streamId, position, null);
+    [LoggerMessage(1, LogLevel.Information, "Event {EventId} appended to stream {StreamId} at position {Position}")]
+    public static partial void EventAppended(this ILogger logger, string eventId, string streamId, long position);
 }
 
 // Usage
@@ -183,17 +213,11 @@ Logger.EventAppended(eventId, streamId, position);
 - **Configuration values** and settings
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class EventProcessingLoggerExtensions
+// PREFERRED PATTERN: Source generator
+public static partial class EventProcessingLoggerExtensions
 {
-    private static readonly Action<ILogger, int, string, Exception?> ProcessingBatchMessage =
-        LoggerMessage.Define<int, string>(
-            LogLevel.Debug,
-            new EventId(2, nameof(ProcessingBatch)),
-            "Processing batch of {Count} events for stream {StreamId}");
-
-    public static void ProcessingBatch(this ILogger<EventProcessingGrain> logger, int eventCount, string streamId) =>
-        ProcessingBatchMessage(logger, eventCount, streamId, null);
+    [LoggerMessage(2, LogLevel.Debug, "Processing batch of {Count} events for stream {StreamId}")]
+    public static partial void ProcessingBatch(this ILogger logger, int eventCount, string streamId);
 }
 
 // Usage
@@ -208,17 +232,11 @@ Logger.ProcessingBatch(eventCount, streamId);
 - **Network call details** and timing
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class MemoryAllocationLoggerExtensions
+// PREFERRED PATTERN: Source generator
+public static partial class MemoryAllocationLoggerExtensions
 {
-    private static readonly Action<ILogger, int, Exception?> BufferAllocatedMessage =
-        LoggerMessage.Define<int>(
-            LogLevel.Trace,
-            new EventId(1, nameof(BufferAllocated)),
-            "Allocated {Bytes} bytes for event buffer");
-
-    public static void BufferAllocated(this ILogger<MemoryAllocationService> logger, int bufferSize) =>
-        BufferAllocatedMessage(logger, bufferSize, null);
+    [LoggerMessage(1, LogLevel.Trace, "Allocated {Bytes} bytes for event buffer")]
+    public static partial void BufferAllocated(this ILogger logger, int bufferSize);
 }
 
 // Usage
@@ -234,26 +252,14 @@ Logger.BufferAllocated(bufferSize);
 - **Add request/operation IDs** - Track specific operations end-to-end
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class EventProcessingLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class EventProcessingLoggerExtensions
 {
-    private static readonly Action<ILogger, string, Exception?> EventProcessedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new EventId(1, nameof(EventProcessed)),
-            "EVT-001: Event {EventId} processed successfully");
+    [LoggerMessage(1, LogLevel.Information, "EVT-001: Event {EventId} processed successfully")]
+    public static partial void EventProcessed(this ILogger logger, string eventId);
 
-    private static readonly Action<ILogger, string, string, Exception?> EventProcessedWithCorrelationMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new EventId(2, nameof(EventProcessedWithCorrelation)),
-            "EVT-001: Event {EventId} processed successfully. CorrelationId: {CorrelationId}");
-
-    public static void EventProcessed(this ILogger<EventProcessingGrain> logger, string eventId) =>
-        EventProcessedMessage(logger, eventId, null);
-
-    public static void EventProcessedWithCorrelation(this ILogger<EventProcessingGrain> logger, string eventId, string correlationId) =>
-        EventProcessedWithCorrelationMessage(logger, eventId, correlationId, null);
+    [LoggerMessage(2, LogLevel.Information, "EVT-001: Event {EventId} processed successfully. CorrelationId: {CorrelationId}")]
+    public static partial void EventProcessedWithCorrelation(this ILogger logger, string eventId, string correlationId);
 }
 
 // Usage
@@ -269,35 +275,17 @@ Logger.EventProcessedWithCorrelation(eventId, correlationId);
 - **Write descriptive messages for AI debugging** - Include enough context for AI agents to understand the operation and diagnose issues
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class OrderProcessingLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class OrderProcessingLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, int, Exception?> OrderCreatedMessage =
-        LoggerMessage.Define<string, string, int>(
-            LogLevel.Information,
-            new EventId(1, nameof(OrderCreated)),
-            "User {UserId} created order {OrderId} with {ItemCount} items");
+    [LoggerMessage(1, LogLevel.Information, "User {UserId} created order {OrderId} with {ItemCount} items")]
+    public static partial void OrderCreated(this ILogger logger, string userId, string orderId, int itemCount);
 
-    private static readonly Action<ILogger, string, string, int, decimal, string, Exception?> OrderCreatedWithTotalMessage =
-        LoggerMessage.Define<string, string, int, decimal, string>(
-            LogLevel.Information,
-            new EventId(2, nameof(OrderCreatedWithTotal)),
-            "User {UserId} created order {OrderId} with {ItemCount} items. Total: {TotalAmount:C}, Currency: {Currency}");
+    [LoggerMessage(2, LogLevel.Information, "User {UserId} created order {OrderId} with {ItemCount} items. Total: {TotalAmount:C}, Currency: {Currency}")]
+    public static partial void OrderCreatedWithTotal(this ILogger logger, string userId, string orderId, int itemCount, decimal totalAmount, string currency);
 
-    private static readonly Action<ILogger, string, string, int, decimal, string, string, string, Exception?> OrderCreatedCompleteMessage =
-        LoggerMessage.Define<string, string, int, decimal, string, string, string>(
-            LogLevel.Information,
-            new EventId(3, nameof(OrderCreatedComplete)),
-            "E-commerce order creation completed successfully. User: {UserId}, Order: {OrderId}, Items: {ItemCount}, Total: {TotalAmount:C}, Currency: {Currency}, PaymentMethod: {PaymentMethod}, ShippingAddress: {ShippingCountry}");
-
-    public static void OrderCreated(this ILogger<OrderProcessingService> logger, string userId, string orderId, int itemCount) =>
-        OrderCreatedMessage(logger, userId, orderId, itemCount, null);
-
-    public static void OrderCreatedWithTotal(this ILogger<OrderProcessingService> logger, string userId, string orderId, int itemCount, decimal totalAmount, string currency) =>
-        OrderCreatedWithTotalMessage(logger, userId, orderId, itemCount, totalAmount, currency, null);
-
-    public static void OrderCreatedComplete(this ILogger<OrderProcessingService> logger, string userId, string orderId, int itemCount, decimal totalAmount, string currency, string paymentMethod, string shippingCountry) =>
-        OrderCreatedCompleteMessage(logger, userId, orderId, itemCount, totalAmount, currency, paymentMethod, shippingCountry, null);
+    [LoggerMessage(3, LogLevel.Information, "E-commerce order creation completed successfully. User: {UserId}, Order: {OrderId}, Items: {ItemCount}, Total: {TotalAmount:C}, Currency: {Currency}, PaymentMethod: {PaymentMethod}, ShippingAddress: {ShippingCountry}")]
+    public static partial void OrderCreatedComplete(this ILogger logger, string userId, string orderId, int itemCount, decimal totalAmount, string currency, string paymentMethod, string shippingCountry);
 }
 
 // Usage
@@ -314,26 +302,14 @@ Logger.OrderCreatedComplete(userId, orderId, itemCount, totalAmount, currency, p
 - **Provide AI-debuggable context** - Include enough information for AI agents to understand what failed and why
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class EventProcessingLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class EventProcessingLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, string, Exception> EventProcessingFailedMessage =
-        LoggerMessage.Define<string, string, string>(
-            LogLevel.Error,
-            new EventId(3, nameof(EventProcessingFailed)),
-            "Failed to process event {EventId} for stream {StreamId}. CorrelationId: {CorrelationId}");
+    [LoggerMessage(3, LogLevel.Error, "Failed to process event {EventId} for stream {StreamId}. CorrelationId: {CorrelationId}")]
+    public static partial void EventProcessingFailed(this ILogger logger, string eventId, string streamId, string correlationId, Exception exception);
 
-    private static readonly Action<ILogger, string, string, string, string, string, string, int, Exception> EventProcessingFailedDetailedMessage =
-        LoggerMessage.Define<string, string, string, string, string, string, int>(
-            LogLevel.Error,
-            new EventId(4, nameof(EventProcessingFailedDetailed)),
-            "Event processing failed during stream operation. EventId: {EventId}, StreamId: {StreamId}, EventType: {EventType}, EventVersion: {EventVersion}, CorrelationId: {CorrelationId}, ProcessingStep: {ProcessingStep}, RetryCount: {RetryCount}");
-
-    public static void EventProcessingFailed(this ILogger<EventProcessingGrain> logger, string eventId, string streamId, string correlationId, Exception ex) =>
-        EventProcessingFailedMessage(logger, eventId, streamId, correlationId, ex);
-
-    public static void EventProcessingFailedDetailed(this ILogger<EventProcessingGrain> logger, string eventId, string streamId, string eventType, string eventVersion, string correlationId, string processingStep, int retryCount, Exception ex) =>
-        EventProcessingFailedDetailedMessage(logger, eventId, streamId, eventType, eventVersion, correlationId, processingStep, retryCount, ex);
+    [LoggerMessage(4, LogLevel.Error, "Event processing failed during stream operation. EventId: {EventId}, StreamId: {StreamId}, EventType: {EventType}, EventVersion: {EventVersion}, CorrelationId: {CorrelationId}, ProcessingStep: {ProcessingStep}, RetryCount: {RetryCount}")]
+    public static partial void EventProcessingFailedDetailed(this ILogger logger, string eventId, string streamId, string eventType, string eventVersion, string correlationId, string processingStep, int retryCount, Exception exception);
 }
 
 // Usage
@@ -363,34 +339,20 @@ catch (Exception ex)
 
 ### High-Performance Logging with LoggerMessage
 
-- **MANDATORY: Always use LoggerMessage for ALL logging** - Direct ILogger calls are FORBIDDEN - reduces allocations and parsing overhead
-- **MANDATORY: Use LoggerExtensions classes** - ALL logging must be implemented in `public static class [ComponentName]LoggerExtensions` classes
-- **Define static Action delegates** - Cache log message templates for better performance as private static readonly fields
+- **MANDATORY: Always use LoggerMessage source generators for ALL logging** - Direct ILogger calls are FORBIDDEN
+- **MANDATORY: Use LoggerExtensions classes** - ALL logging must be implemented in `public static partial class [ComponentName]LoggerExtensions` classes
 - **Use strongly-typed parameters** - Avoid boxing of value types
-- **Leverage source generation** - Use LoggerMessageAttribute in .NET 6+ for compile-time optimization
 - **NO EXCEPTIONS** - This pattern is required for all logging, without exception
 
 ```csharp
-// MANDATORY PATTERN: LoggerExtensions class with high-performance LoggerMessage
-public static class EventProcessorLoggerExtensions
+// MANDATORY PATTERN: LoggerExtensions class with LoggerMessage source generator
+public static partial class EventProcessorLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, Exception?> EventProcessedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(EventProcessed)),
-            "Event {EventId} processed for stream {StreamId}");
+    [LoggerMessage(1, LogLevel.Information, "Event {EventId} processed for stream {StreamId}")]
+    public static partial void EventProcessed(this ILogger logger, string eventId, string streamId);
 
-    private static readonly Action<ILogger, string, string, Exception> EventProcessingFailedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Error,
-            new EventId(2, nameof(EventProcessingFailed)),
-            "Failed to process event {EventId} for stream {StreamId}");
-
-    public static void EventProcessed(this ILogger<EventProcessorGrain> logger, string eventId, string streamId) =>
-        EventProcessedMessage(logger, eventId, streamId, null);
-
-    public static void EventProcessingFailed(this ILogger<EventProcessorGrain> logger, string eventId, string streamId, Exception ex) =>
-        EventProcessingFailedMessage(logger, eventId, streamId, ex);
+    [LoggerMessage(2, LogLevel.Error, "Failed to process event {EventId} for stream {StreamId}")]
+    public static partial void EventProcessingFailed(this ILogger logger, string eventId, string streamId, Exception exception);
 }
 
 // Usage in Orleans grain
@@ -428,26 +390,14 @@ public sealed class EventProcessorGrain : IGrainBase, IEventProcessorGrain
 - **Async logging** - Use async logging providers when available
 
 ```csharp
-// MANDATORY PATTERN: LoggerExtensions class with high-performance LoggerMessage
-public static class PerformanceServiceLoggerExtensions
+// MANDATORY PATTERN: LoggerExtensions class with LoggerMessage source generator
+public static partial class PerformanceServiceLoggerExtensions
 {
-    private static readonly Action<ILogger, string, Exception?> ExpensiveOperationResultMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Debug,
-            new EventId(1, nameof(ExpensiveOperationResult)),
-            "Expensive operation result: {Result}");
+    [LoggerMessage(1, LogLevel.Debug, "Expensive operation result: {Result}")]
+    public static partial void ExpensiveOperationResult(this ILogger logger, string result);
 
-    private static readonly Action<ILogger, object, Exception?> UserDataLoggedMessage =
-        LoggerMessage.Define<object>(
-            LogLevel.Debug,
-            new EventId(2, nameof(UserDataLogged)),
-            "User data: {@UserData}");
-
-    public static void ExpensiveOperationResult(this ILogger<PerformanceService> logger, string result) =>
-        ExpensiveOperationResultMessage(logger, result, null);
-
-    public static void UserDataLogged(this ILogger<PerformanceService> logger, object userData) =>
-        UserDataLoggedMessage(logger, userData, null);
+    [LoggerMessage(2, LogLevel.Debug, "User data: {@UserData}")]
+    public static partial void UserDataLogged(this ILogger logger, object userData);
 }
 
 // Performance-optimized logging - ALWAYS through LoggerExtensions
@@ -468,26 +418,14 @@ Logger.UserDataLogged(userData); // Only serializes if Debug is enabled
 - **Log data classifications** - Indicate when data has been redacted
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class SecurityLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class SecurityLoggerExtensions
 {
-    private static readonly Action<ILogger, string, Exception?> UserAuthenticatedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new EventId(1, nameof(UserAuthenticated)),
-            "User {UserId} authenticated. Token: [REDACTED]");
+    [LoggerMessage(1, LogLevel.Information, "User {UserId} authenticated. Token: [REDACTED]")]
+    public static partial void UserAuthenticated(this ILogger logger, string userId);
 
-    private static readonly Action<ILogger, Exception?> PiiDataRedactedMessage =
-        LoggerMessage.Define(
-            LogLevel.Information,
-            new EventId(2, nameof(PiiDataRedacted)),
-            "Processing user data. PII fields redacted for privacy compliance");
-
-    public static void UserAuthenticated(this ILogger<SecurityService> logger, string userId) =>
-        UserAuthenticatedMessage(logger, userId, null);
-
-    public static void PiiDataRedacted(this ILogger<SecurityService> logger) =>
-        PiiDataRedactedMessage(logger, null);
+    [LoggerMessage(2, LogLevel.Information, "Processing user data. PII fields redacted for privacy compliance")]
+    public static partial void PiiDataRedacted(this ILogger logger);
 }
 
 // Usage
@@ -512,26 +450,14 @@ Logger.PiiDataRedacted();
 - **Use consistent correlation ID format** - UUID or similar unique identifier
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class OperationLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class OperationLoggerExtensions
 {
-    private static readonly Action<ILogger, string, Exception?> OperationStartedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new EventId(1, nameof(OperationStarted)),
-            "Starting operation. CorrelationId: {CorrelationId}");
+    [LoggerMessage(1, LogLevel.Information, "Starting operation. CorrelationId: {CorrelationId}")]
+    public static partial void OperationStarted(this ILogger logger, string correlationId);
 
-    private static readonly Action<ILogger, string, string, string, string, string, Exception?> AuthenticationWorkflowStartedMessage =
-        LoggerMessage.Define<string, string, string, string, string>(
-            LogLevel.Information,
-            new EventId(2, nameof(AuthenticationWorkflowStarted)),
-            "Starting user authentication workflow. Operation: {Operation}, UserId: {UserId}, AuthMethod: {AuthMethod}, CorrelationId: {CorrelationId}, Environment: {Environment}");
-
-    public static void OperationStarted(this ILogger<OperationService> logger, string correlationId) =>
-        OperationStartedMessage(logger, correlationId, null);
-
-    public static void AuthenticationWorkflowStarted(this ILogger<OperationService> logger, string operation, string userId, string authMethod, string correlationId, string environment) =>
-        AuthenticationWorkflowStartedMessage(logger, operation, userId, authMethod, correlationId, environment, null);
+    [LoggerMessage(2, LogLevel.Information, "Starting user authentication workflow. Operation: {Operation}, UserId: {UserId}, AuthMethod: {AuthMethod}, CorrelationId: {CorrelationId}, Environment: {Environment}")]
+    public static partial void AuthenticationWorkflowStarted(this ILogger logger, string operation, string userId, string authMethod, string correlationId, string environment);
 }
 
 // Usage
@@ -548,26 +474,14 @@ Logger.AuthenticationWorkflowStarted("UserLogin", userId, authMethod, correlatio
 - **Add business context** - User ID, tenant ID, feature flags
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class HttpRequestLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class HttpRequestLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, long, string, string, Exception?> HttpRequestCompletedMessage =
-        LoggerMessage.Define<string, string, long, string, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(HttpRequestCompleted)),
-            "HTTP {Method} {Path} completed in {Duration}ms. User: {UserId}, Tenant: {TenantId}");
+    [LoggerMessage(1, LogLevel.Information, "HTTP {Method} {Path} completed in {Duration}ms. User: {UserId}, Tenant: {TenantId}")]
+    public static partial void HttpRequestCompleted(this ILogger logger, string method, string path, long duration, string userId, string tenantId);
 
-    private static readonly Action<ILogger, string, string, int, long, string, string, string, string, long, long, Exception?> HttpRequestCompletedDetailedMessage =
-        LoggerMessage.Define<string, string, int, long, string, string, string, string, long, long>(
-            LogLevel.Information,
-            new EventId(2, nameof(HttpRequestCompletedDetailed)),
-            "HTTP request completed successfully. Method: {Method}, Path: {Path}, StatusCode: {StatusCode}, Duration: {Duration}ms, User: {UserId}, Tenant: {TenantId}, UserAgent: {UserAgent}, IPAddress: {IPAddress}, RequestSize: {RequestSize}bytes, ResponseSize: {ResponseSize}bytes");
-
-    public static void HttpRequestCompleted(this ILogger<HttpRequestMiddleware> logger, string method, string path, long duration, string userId, string tenantId) =>
-        HttpRequestCompletedMessage(logger, method, path, duration, userId, tenantId, null);
-
-    public static void HttpRequestCompletedDetailed(this ILogger<HttpRequestMiddleware> logger, string method, string path, int statusCode, long duration, string userId, string tenantId, string userAgent, string ipAddress, long requestSize, long responseSize) =>
-        HttpRequestCompletedDetailedMessage(logger, method, path, statusCode, duration, userId, tenantId, userAgent, ipAddress, requestSize, responseSize, null);
+    [LoggerMessage(2, LogLevel.Information, "HTTP request completed successfully. Method: {Method}, Path: {Path}, StatusCode: {StatusCode}, Duration: {Duration}ms, User: {UserId}, Tenant: {TenantId}, UserAgent: {UserAgent}, IPAddress: {IPAddress}, RequestSize: {RequestSize}bytes, ResponseSize: {ResponseSize}bytes")]
+    public static partial void HttpRequestCompletedDetailed(this ILogger logger, string method, string path, int statusCode, long duration, string userId, string tenantId, string userAgent, string ipAddress, long requestSize, long responseSize);
 }
 
 // Usage
@@ -584,26 +498,14 @@ Logger.HttpRequestCompletedDetailed(method, path, statusCode, duration, userId, 
 - **Track grain operations** - Grain ID, operation type, duration
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class EventSourcingOperationsLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class EventSourcingOperationsLoggerExtensions
 {
-    private static readonly Action<ILogger, int, string, long, string, Exception?> EventsAppendedMessage =
-        LoggerMessage.Define<int, string, long, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(EventsAppended)),
-            "EVT-APPEND: Appended {EventCount} events to stream {StreamId} at position {Position}. CorrelationId: {CorrelationId}");
+    [LoggerMessage(1, LogLevel.Information, "EVT-APPEND: Appended {EventCount} events to stream {StreamId} at position {Position}. CorrelationId: {CorrelationId}")]
+    public static partial void EventsAppended(this ILogger logger, int eventCount, string streamId, long position, string correlationId);
 
-    private static readonly Action<ILogger, int, string, long, long, string, Exception?> EventsReadMessage =
-        LoggerMessage.Define<int, string, long, long, string>(
-            LogLevel.Information,
-            new EventId(2, nameof(EventsRead)),
-            "EVT-READ: Read {EventCount} events from stream {StreamId} positions {StartPosition}-{EndPosition}. CorrelationId: {CorrelationId}");
-
-    public static void EventsAppended(this ILogger<EventSourcingService> logger, int eventCount, string streamId, long position, string correlationId) =>
-        EventsAppendedMessage(logger, eventCount, streamId, position, correlationId, null);
-
-    public static void EventsRead(this ILogger<EventSourcingService> logger, int eventCount, string streamId, long startPosition, long endPosition, string correlationId) =>
-        EventsReadMessage(logger, eventCount, streamId, startPosition, endPosition, correlationId, null);
+    [LoggerMessage(2, LogLevel.Information, "EVT-READ: Read {EventCount} events from stream {StreamId} positions {StartPosition}-{EndPosition}. CorrelationId: {CorrelationId}")]
+    public static partial void EventsRead(this ILogger logger, int eventCount, string streamId, long startPosition, long endPosition, string correlationId);
 }
 
 // Usage
@@ -620,53 +522,23 @@ Logger.EventsRead(eventCount, streamId, startPosition, endPosition, correlationI
 - **Handle correlation ID propagation** - Pass correlation IDs between grains and maintain request context
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class EventSourcingGrainLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class EventSourcingGrainLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, string, Exception?> GrainActivatedMessage =
-        LoggerMessage.Define<string, string, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(GrainActivated)),
-            "GRAIN-ACTIVATE: Grain {GrainType} activated with ID {GrainId}. PrimaryKey: {PrimaryKey}");
+    [LoggerMessage(1, LogLevel.Information, "GRAIN-ACTIVATE: Grain {GrainType} activated with ID {GrainId}. PrimaryKey: {PrimaryKey}")]
+    public static partial void GrainActivated(this ILogger logger, string grainType, string grainId, string primaryKey);
 
-    private static readonly Action<ILogger, string, string, string, Exception?> GrainDeactivatedMessage =
-        LoggerMessage.Define<string, string, string>(
-            LogLevel.Information,
-            new EventId(2, nameof(GrainDeactivated)),
-            "GRAIN-DEACTIVATE: Grain {GrainType} deactivated with ID {GrainId}. Reason: {DeactivationReason}");
+    [LoggerMessage(2, LogLevel.Information, "GRAIN-DEACTIVATE: Grain {GrainType} deactivated with ID {GrainId}. Reason: {DeactivationReason}")]
+    public static partial void GrainDeactivated(this ILogger logger, string grainType, string grainId, string deactivationReason);
 
-    private static readonly Action<ILogger, string, string, string, string, Exception?> GrainMethodStartedMessage =
-        LoggerMessage.Define<string, string, string, string>(
-            LogLevel.Information,
-            new EventId(3, nameof(GrainMethodStarted)),
-            "GRAIN-METHOD-START: {MethodName} called on grain {GrainId}. EventId: {EventId}, CorrelationId: {CorrelationId}");
+    [LoggerMessage(3, LogLevel.Information, "GRAIN-METHOD-START: {MethodName} called on grain {GrainId}. EventId: {EventId}, CorrelationId: {CorrelationId}")]
+    public static partial void GrainMethodStarted(this ILogger logger, string methodName, string grainId, string eventId, string correlationId);
 
-    private static readonly Action<ILogger, string, string, long, string, Exception?> GrainMethodSuccessMessage =
-        LoggerMessage.Define<string, string, long, string>(
-            LogLevel.Information,
-            new EventId(4, nameof(GrainMethodSuccess)),
-            "GRAIN-METHOD-SUCCESS: {MethodName} completed on grain {GrainId}. Duration: {Duration}ms, EventId: {EventId}");
+    [LoggerMessage(4, LogLevel.Information, "GRAIN-METHOD-SUCCESS: {MethodName} completed on grain {GrainId}. Duration: {Duration}ms, EventId: {EventId}")]
+    public static partial void GrainMethodSuccess(this ILogger logger, string methodName, string grainId, long duration, string eventId);
 
-    private static readonly Action<ILogger, string, string, long, string, string, Exception> GrainMethodErrorMessage =
-        LoggerMessage.Define<string, string, long, string, string>(
-            LogLevel.Error,
-            new EventId(5, nameof(GrainMethodError)),
-            "GRAIN-METHOD-ERROR: {MethodName} failed on grain {GrainId}. Duration: {Duration}ms, EventId: {EventId}, CorrelationId: {CorrelationId}");
-
-    public static void GrainActivated(this ILogger<EventSourcingGrain> logger, string grainType, string grainId, string primaryKey) =>
-        GrainActivatedMessage(logger, grainType, grainId, primaryKey, null);
-
-    public static void GrainDeactivated(this ILogger<EventSourcingGrain> logger, string grainType, string grainId, string deactivationReason) =>
-        GrainDeactivatedMessage(logger, grainType, grainId, deactivationReason, null);
-
-    public static void GrainMethodStarted(this ILogger<EventSourcingGrain> logger, string methodName, string grainId, string eventId, string correlationId) =>
-        GrainMethodStartedMessage(logger, methodName, grainId, eventId, correlationId, null);
-
-    public static void GrainMethodSuccess(this ILogger<EventSourcingGrain> logger, string methodName, string grainId, long duration, string eventId) =>
-        GrainMethodSuccessMessage(logger, methodName, grainId, duration, eventId, null);
-
-    public static void GrainMethodError(this ILogger<EventSourcingGrain> logger, string methodName, string grainId, long duration, string eventId, string correlationId, Exception ex) =>
-        GrainMethodErrorMessage(logger, methodName, grainId, duration, eventId, correlationId, ex);
+    [LoggerMessage(5, LogLevel.Error, "GRAIN-METHOD-ERROR: {MethodName} failed on grain {GrainId}. Duration: {Duration}ms, EventId: {EventId}, CorrelationId: {CorrelationId}")]
+    public static partial void GrainMethodError(this ILogger logger, string methodName, string grainId, long duration, string eventId, string correlationId, Exception exception);
 }
 
 // Orleans grain with proper logging patterns and correlation ID handling
@@ -760,53 +632,23 @@ public sealed class EventSourcingGrain : IEventSourcingGrain, IGrainBase
 - **Use Orleans telemetry** - Leverage built-in Orleans observability features
 
 ```csharp
-// High-performance logging with LoggerMessage for Orleans correlation handling
-public static class OrleansCorrelationLoggerExtensions
+// High-performance logging with LoggerMessage source generator for Orleans correlation handling
+public static partial class OrleansCorrelationLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, string, Exception?> CorrelationIdPropagatedMessage =
-        LoggerMessage.Define<string, string, string>(
-            LogLevel.Debug,
-            new EventId(1, nameof(CorrelationIdPropagated)),
-            "Correlation ID {CorrelationId} propagated from grain {SourceGrain} to {TargetGrain}");
+    [LoggerMessage(1, LogLevel.Debug, "Correlation ID {CorrelationId} propagated from grain {SourceGrain} to {TargetGrain}")]
+    public static partial void CorrelationIdPropagated(this ILogger logger, string correlationId, string sourceGrain, string targetGrain);
 
-    private static readonly Action<ILogger, string, string, Exception?> CorrelationIdCreatedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Debug,
-            new EventId(2, nameof(CorrelationIdCreated)),
-            "New correlation ID {CorrelationId} created for grain {GrainType}");
+    [LoggerMessage(2, LogLevel.Debug, "New correlation ID {CorrelationId} created for grain {GrainType}")]
+    public static partial void CorrelationIdCreated(this ILogger logger, string correlationId, string grainType);
 
-    private static readonly Action<ILogger, string, string, string, Exception?> GrainCallStartedMessage =
-        LoggerMessage.Define<string, string, string>(
-            LogLevel.Debug,
-            new EventId(3, nameof(GrainCallStarted)),
-            "Grain call started. Method: {MethodName}, Target: {TargetGrain}, CorrelationId: {CorrelationId}");
+    [LoggerMessage(3, LogLevel.Debug, "Grain call started. Method: {MethodName}, Target: {TargetGrain}, CorrelationId: {CorrelationId}")]
+    public static partial void GrainCallStarted(this ILogger logger, string methodName, string targetGrain, string correlationId);
 
-    private static readonly Action<ILogger, string, string, string, long, Exception?> GrainCallCompletedMessage =
-        LoggerMessage.Define<string, string, string, long>(
-            LogLevel.Debug,
-            new EventId(4, nameof(GrainCallCompleted)),
-            "Grain call completed. Method: {MethodName}, Target: {TargetGrain}, CorrelationId: {CorrelationId}, Duration: {Duration}ms");
+    [LoggerMessage(4, LogLevel.Debug, "Grain call completed. Method: {MethodName}, Target: {TargetGrain}, CorrelationId: {CorrelationId}, Duration: {Duration}ms")]
+    public static partial void GrainCallCompleted(this ILogger logger, string methodName, string targetGrain, string correlationId, long duration);
 
-    private static readonly Action<ILogger, string, string, string, long, string, Exception> GrainCallFailedMessage =
-        LoggerMessage.Define<string, string, string, long, string>(
-            LogLevel.Error,
-            new EventId(5, nameof(GrainCallFailed)),
-            "Grain call failed. Method: {MethodName}, Target: {TargetGrain}, CorrelationId: {CorrelationId}, Duration: {Duration}ms, Error: {Error}");
-
-    public static void CorrelationIdPropagated(this ILogger<OrleansCorrelationHelper> logger, string correlationId, string sourceGrain, string targetGrain) =>
-        CorrelationIdPropagatedMessage(logger, correlationId, sourceGrain, targetGrain, null);
-
-    public static void CorrelationIdCreated(this ILogger<OrleansCorrelationHelper> logger, string correlationId, string grainType) =>
-        CorrelationIdCreatedMessage(logger, correlationId, grainType, null);
-
-    public static void GrainCallStarted(this ILogger<OrleansCorrelationHelper> logger, string methodName, string targetGrain, string correlationId) =>
-        GrainCallStartedMessage(logger, methodName, targetGrain, correlationId, null);
-
-    public static void GrainCallCompleted(this ILogger<OrleansCorrelationHelper> logger, string methodName, string targetGrain, string correlationId, long duration) =>
-        GrainCallCompletedMessage(logger, methodName, targetGrain, correlationId, duration, null);
-
-    public static void GrainCallFailed(this ILogger<OrleansCorrelationHelper> logger, string methodName, string targetGrain, string correlationId, long duration, string error, Exception ex) =>
-        GrainCallFailedMessage(logger, methodName, targetGrain, correlationId, duration, error, ex);
+    [LoggerMessage(5, LogLevel.Error, "Grain call failed. Method: {MethodName}, Target: {TargetGrain}, CorrelationId: {CorrelationId}, Duration: {Duration}ms, Error: {Error}")]
+    public static partial void GrainCallFailed(this ILogger logger, string methodName, string targetGrain, string correlationId, long duration, string error, Exception exception);
 }
 
 // Orleans correlation ID helper class
@@ -916,26 +758,14 @@ public sealed class OrderProcessingGrain : IOrderProcessingGrain, IGrainBase
 - **Track retry attempts** - Retry count, backoff strategy, success/failure
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class CosmosDbLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class CosmosDbLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, double, long, string, Exception?> CosmosOperationMessage =
-        LoggerMessage.Define<string, string, double, long, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(CosmosOperation)),
-            "COSMOS-OP: {Operation} on container {Container}. RequestUnits: {RequestUnits}, Duration: {Duration}ms. CorrelationId: {CorrelationId}");
+    [LoggerMessage(1, LogLevel.Information, "COSMOS-OP: {Operation} on container {Container}. RequestUnits: {RequestUnits}, Duration: {Duration}ms. CorrelationId: {CorrelationId}")]
+    public static partial void CosmosOperation(this ILogger logger, string operation, string container, double requestUnits, long duration, string correlationId);
 
-    private static readonly Action<ILogger, int, string, long, string, Exception?> CosmosRetryMessage =
-        LoggerMessage.Define<int, string, long, string>(
-            LogLevel.Warning,
-            new EventId(2, nameof(CosmosRetry)),
-            "COSMOS-RETRY: Retry {RetryCount} for operation {Operation}. Backoff: {BackoffMs}ms. CorrelationId: {CorrelationId}");
-
-    public static void CosmosOperation(this ILogger<CosmosDbService> logger, string operation, string container, double requestUnits, long duration, string correlationId) =>
-        CosmosOperationMessage(logger, operation, container, requestUnits, duration, correlationId, null);
-
-    public static void CosmosRetry(this ILogger<CosmosDbService> logger, int retryCount, string operation, long backoffMs, string correlationId) =>
-        CosmosRetryMessage(logger, retryCount, operation, backoffMs, correlationId, null);
+    [LoggerMessage(2, LogLevel.Warning, "COSMOS-RETRY: Retry {RetryCount} for operation {Operation}. Backoff: {BackoffMs}ms. CorrelationId: {CorrelationId}")]
+    public static partial void CosmosRetry(this ILogger logger, int retryCount, string operation, long backoffMs, string correlationId);
 }
 
 // Usage
@@ -987,17 +817,11 @@ Logger.CosmosRetry(retryCount, operation, backoffMs, correlationId);
 - **Bridge ASP.NET to Orleans** - Pass correlation IDs from HTTP context to grain calls
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class CorrelationIdMiddlewareLoggerExtensions
+// High-performance logging with LoggerMessage source generator
+public static partial class CorrelationIdMiddlewareLoggerExtensions
 {
-    private static readonly Action<ILogger, string, Exception?> RequestStartedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new EventId(1, nameof(RequestStarted)),
-            "Request started. CorrelationId: {CorrelationId}");
-
-    public static void RequestStarted(this ILogger<CorrelationIdMiddleware> logger, string correlationId) =>
-        RequestStartedMessage(logger, correlationId, null);
+    [LoggerMessage(1, LogLevel.Information, "Request started. CorrelationId: {CorrelationId}")]
+    public static partial void RequestStarted(this ILogger logger, string correlationId);
 }
 
 // Correlation ID middleware with Orleans integration
@@ -1166,9 +990,9 @@ public sealed class ExplicitCorrelationController : ControllerBase
 When reviewing code that includes logging, ensure:
 
 - [ ] Uses dependency-injected `ILogger<T>` as a property
-- [ ] **MANDATORY: ALL logging uses LoggerExtensions classes** - Must follow `public static class [ComponentName]LoggerExtensions` pattern
+- [ ] **MANDATORY: ALL logging uses LoggerExtensions classes** - Must follow `public static partial class [ComponentName]LoggerExtensions` pattern
 - [ ] **MANDATORY: NO direct ILogger calls** - All logging must go through static extension methods
-- [ ] **MANDATORY: Uses LoggerMessage pattern** - All logging must use static Action delegates with LoggerMessage.Define
+- [ ] **MANDATORY: Uses LoggerMessage source generators** - All logging must use `[LoggerMessage]` attributes on partial methods
 - [ ] Includes appropriate correlation IDs
 - [ ] Uses correct log levels
 - [ ] Logs structured data, not just strings
@@ -1191,34 +1015,16 @@ When reviewing code that includes logging, ensure:
 #### Public Service Method with Exception Handling
 
 ```csharp
-public static class OrderServiceLoggerExtensions
+public static partial class OrderServiceLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, Exception?> ProcessOrderStartedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(ProcessOrderStarted)),
-            "Processing order {OrderId} for customer {CustomerId}");
+    [LoggerMessage(1, LogLevel.Information, "Processing order {OrderId} for customer {CustomerId}")]
+    public static partial void ProcessOrderStarted(this ILogger logger, string orderId, string customerId);
 
-    private static readonly Action<ILogger, string, string, Exception?> ProcessOrderCompletedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new EventId(2, nameof(ProcessOrderCompleted)),
-            "Order {OrderId} processed successfully with status {Status}");
+    [LoggerMessage(2, LogLevel.Information, "Order {OrderId} processed successfully with status {Status}")]
+    public static partial void ProcessOrderCompleted(this ILogger logger, string orderId, string status);
 
-    private static readonly Action<ILogger, string, Exception> ProcessOrderFailedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Error,
-            new EventId(3, nameof(ProcessOrderFailed)),
-            "Failed to process order {OrderId}");
-
-    public static void ProcessOrderStarted(this ILogger<OrderService> logger, string orderId, string customerId) =>
-        ProcessOrderStartedMessage(logger, orderId, customerId, null);
-
-    public static void ProcessOrderCompleted(this ILogger<OrderService> logger, string orderId, string status) =>
-        ProcessOrderCompletedMessage(logger, orderId, status, null);
-
-    public static void ProcessOrderFailed(this ILogger<OrderService> logger, string orderId, Exception ex) =>
-        ProcessOrderFailedMessage(logger, orderId, ex);
+    [LoggerMessage(3, LogLevel.Error, "Failed to process order {OrderId}")]
+    public static partial void ProcessOrderFailed(this ILogger logger, string orderId, Exception exception);
 }
 
 // MANDATORY: Public service method with logging
@@ -1252,34 +1058,16 @@ public class OrderService
 #### Data Mutation Operations
 
 ```csharp
-public static class UserRepositoryLoggerExtensions
+public static partial class UserRepositoryLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, Exception?> UserCreationStartedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(UserCreationStarted)),
-            "Creating user {UserId} with email {Email}");
+    [LoggerMessage(1, LogLevel.Information, "Creating user {UserId} with email {Email}")]
+    public static partial void UserCreationStarted(this ILogger logger, string userId, string email);
 
-    private static readonly Action<ILogger, string, Exception?> UserCreatedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new EventId(2, nameof(UserCreated)),
-            "User {UserId} created successfully");
+    [LoggerMessage(2, LogLevel.Information, "User {UserId} created successfully")]
+    public static partial void UserCreated(this ILogger logger, string userId);
 
-    private static readonly Action<ILogger, string, Exception> UserCreationFailedMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Error,
-            new EventId(3, nameof(UserCreationFailed)),
-            "Failed to create user {UserId}");
-
-    public static void UserCreationStarted(this ILogger<UserRepository> logger, string userId, string email) =>
-        UserCreationStartedMessage(logger, userId, email, null);
-
-    public static void UserCreated(this ILogger<UserRepository> logger, string userId) =>
-        UserCreatedMessage(logger, userId, null);
-
-    public static void UserCreationFailed(this ILogger<UserRepository> logger, string userId, Exception ex) =>
-        UserCreationFailedMessage(logger, userId, ex);
+    [LoggerMessage(3, LogLevel.Error, "Failed to create user {UserId}")]
+    public static partial void UserCreationFailed(this ILogger logger, string userId, Exception exception);
 }
 
 // MANDATORY: Data mutation logging
@@ -1312,34 +1100,16 @@ public class UserRepository
 #### Orleans Grain with Mandatory Logging
 
 ```csharp
-public static class EventProcessingGrainLoggerExtensions
+public static partial class EventProcessingGrainLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, Exception?> GrainActivatedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(GrainActivated)),
-            "Grain {GrainType} activated with ID {GrainId}");
+    [LoggerMessage(1, LogLevel.Information, "Grain {GrainType} activated with ID {GrainId}")]
+    public static partial void GrainActivated(this ILogger logger, string grainType, string grainId);
 
-    private static readonly Action<ILogger, string, string, string, Exception?> GrainMethodStartedMessage =
-        LoggerMessage.Define<string, string, string>(
-            LogLevel.Information,
-            new EventId(2, nameof(GrainMethodStarted)),
-            "Method {MethodName} started on grain {GrainId} for event {EventId}");
+    [LoggerMessage(2, LogLevel.Information, "Method {MethodName} started on grain {GrainId} for event {EventId}")]
+    public static partial void GrainMethodStarted(this ILogger logger, string methodName, string grainId, string eventId);
 
-    private static readonly Action<ILogger, string, string, string, long, Exception?> GrainMethodCompletedMessage =
-        LoggerMessage.Define<string, string, string, long>(
-            LogLevel.Information,
-            new EventId(3, nameof(GrainMethodCompleted)),
-            "Method {MethodName} completed on grain {GrainId} for event {EventId} in {Duration}ms");
-
-    public static void GrainActivated(this ILogger<EventProcessingGrain> logger, string grainType, string grainId) =>
-        GrainActivatedMessage(logger, grainType, grainId, null);
-
-    public static void GrainMethodStarted(this ILogger<EventProcessingGrain> logger, string methodName, string grainId, string eventId) =>
-        GrainMethodStartedMessage(logger, methodName, grainId, eventId, null);
-
-    public static void GrainMethodCompleted(this ILogger<EventProcessingGrain> logger, string methodName, string grainId, string eventId, long duration) =>
-        GrainMethodCompletedMessage(logger, methodName, grainId, eventId, duration, null);
+    [LoggerMessage(3, LogLevel.Information, "Method {MethodName} completed on grain {GrainId} for event {EventId} in {Duration}ms")]
+    public static partial void GrainMethodCompleted(this ILogger logger, string methodName, string grainId, string eventId, long duration);
 }
 
 // MANDATORY: Orleans grain logging
@@ -1383,35 +1153,17 @@ public class EventProcessingGrain : IEventProcessingGrain, IGrainBase
 ### Standard Logging Template
 
 ```csharp
-// MANDATORY PATTERN: High-performance logging with LoggerMessage and LoggerExtensions class
-public static class ExampleServiceLoggerExtensions
+// PREFERRED PATTERN: Source generator with LoggerExtensions class
+public static partial class ExampleServiceLoggerExtensions
 {
-    private static readonly Action<ILogger, int, string, Exception?> DataProcessingStartedMessage =
-        LoggerMessage.Define<int, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(DataProcessingStarted)),
-            "PROC-001: Starting data processing. DataLength: {DataLength}, CorrelationId: {CorrelationId}");
+    [LoggerMessage(1, LogLevel.Information, "PROC-001: Starting data processing. DataLength: {DataLength}, CorrelationId: {CorrelationId}")]
+    public static partial void DataProcessingStarted(this ILogger logger, int dataLength, string correlationId);
 
-    private static readonly Action<ILogger, string, string, Exception?> DataProcessingCompletedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new EventId(2, nameof(DataProcessingCompleted)),
-            "PROC-002: Data processing completed successfully. Result: {Result}, CorrelationId: {CorrelationId}");
+    [LoggerMessage(2, LogLevel.Information, "PROC-002: Data processing completed successfully. Result: {Result}, CorrelationId: {CorrelationId}")]
+    public static partial void DataProcessingCompleted(this ILogger logger, string result, string correlationId);
 
-    private static readonly Action<ILogger, int, string, Exception> DataProcessingFailedMessage =
-        LoggerMessage.Define<int, string>(
-            LogLevel.Error,
-            new EventId(3, nameof(DataProcessingFailed)),
-            "PROC-ERROR: Data processing failed. DataLength: {DataLength}, CorrelationId: {CorrelationId}");
-
-    public static void DataProcessingStarted(this ILogger<ExampleService> logger, int dataLength, string correlationId) =>
-        DataProcessingStartedMessage(logger, dataLength, correlationId, null);
-
-    public static void DataProcessingCompleted(this ILogger<ExampleService> logger, string result, string correlationId) =>
-        DataProcessingCompletedMessage(logger, result, correlationId, null);
-
-    public static void DataProcessingFailed(this ILogger<ExampleService> logger, int dataLength, string correlationId, Exception ex) =>
-        DataProcessingFailedMessage(logger, dataLength, correlationId, ex);
+    [LoggerMessage(3, LogLevel.Error, "PROC-ERROR: Data processing failed. DataLength: {DataLength}, CorrelationId: {CorrelationId}")]
+    public static partial void DataProcessingFailed(this ILogger logger, int dataLength, string correlationId, Exception exception);
 }
 
 public class ExampleService
@@ -1454,8 +1206,8 @@ This logging standard ensures consistent, observable, and maintainable logging a
 
 ### Technical Requirements (HOW to log)
 
-1. **MANDATORY: LoggerExtensions Classes** - ALL logging must be implemented using `public static class [ComponentName]LoggerExtensions` pattern
-2. **MANDATORY: LoggerMessage Pattern** - ALL logging must use static Action delegates with LoggerMessage.Define
+1. **MANDATORY: LoggerExtensions Classes** - ALL logging must be implemented using `public static partial class [ComponentName]LoggerExtensions` pattern
+2. **MANDATORY: LoggerMessage Source Generators** - ALL logging must use `[LoggerMessage]` attributes on partial methods
 3. **FORBIDDEN: Direct ILogger calls** - NO direct ILogger.Log*() method calls are allowed anywhere in the codebase
 4. **MANDATORY: High-Performance Pattern** - This is not optional - it's required for all logging without exception
 

@@ -4,9 +4,11 @@
     "language-version": "latest",
     "additional-timeout": 5000,
     "mutate": [
-      "**/*"
+      "**/*",
+      "!**/*.g.cs",
+      "!**/*.generated.cs",
+      "!**/*LoggerExtensions.cs"
     ],
-    "solution": "mississippi.sln",
     "coverage-analysis": "perTest",
     "disable-bail": false,
     "disable-mix-mutants": false,
