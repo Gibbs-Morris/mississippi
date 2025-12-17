@@ -1,274 +1,14 @@
-using System;
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
-
 
 namespace Crescent.ConsoleApp;
 
 /// <summary>
 ///     LoggerMessage-based high-performance logging extensions for the Crescent console sample.
 /// </summary>
-internal static class ConsoleAppLoggerExtensions
+internal static partial class ConsoleAppLoggerExtensions
 {
-    private static readonly Action<ILogger, string, Exception?> HostStartedMessage = LoggerMessage.Define<string>(
-        LogLevel.Information,
-        new(1, nameof(HostStarted)),
-        "Run {RunId}: Host started");
-
-    private static readonly Action<ILogger, string, Exception?> ResolvingGrainFactoryMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new(2, nameof(ResolvingGrainFactory)),
-            "Run {RunId}: Resolving Orleans grain factory");
-
-    private static readonly Action<ILogger, string, string, string, string, int, int, Exception?> CosmosOptionsMessage =
-        LoggerMessage.Define<string, string, string, string, int, int>(
-            LogLevel.Information,
-            new(3, nameof(CosmosOptions)),
-            "Run {RunId}: Cosmos options DatabaseId={DatabaseId}, ContainerId={ContainerId}, LockContainer={LockContainer}, MaxEventsPerBatch={MaxEventsPerBatch}, QueryBatchSize={QueryBatchSize}");
-
-    private static readonly Action<ILogger, string, Exception> UnableToResolveBrookStorageOptionsMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Warning,
-            new(4, nameof(UnableToResolveBrookStorageOptions)),
-            "Run {RunId}: Unable to resolve BrookStorageOptions");
-
-    private static readonly Action<ILogger, string, BrookKey, string, Exception?>
-        ModeReuseUsingPersistedBrookKeyMessage = LoggerMessage.Define<string, BrookKey, string>(
-            LogLevel.Information,
-            new(5, nameof(ModeReuseUsingPersistedBrookKey)),
-            "Run {RunId}: Mode=reuse, Using persisted BrookKey={BrookKey} (state file: {Path})");
-
-    private static readonly Action<ILogger, string, BrookKey, string, Exception?> ModeFreshUsingNewBrookKeyMessage =
-        LoggerMessage.Define<string, BrookKey, string>(
-            LogLevel.Information,
-            new(6, nameof(ModeFreshUsingNewBrookKey)),
-            "Run {RunId}: Mode=fresh, Using new BrookKey={BrookKey} (state file: {Path})");
-
-    private static readonly Action<ILogger, Exception?> ScenarioSmallBatch10x1KBMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(10, nameof(ScenarioSmallBatch10x1KB)),
-        "=== Scenario: SmallBatch_10x1KB ===");
-
-    private static readonly Action<ILogger, Exception?> ScenarioBulk100MixedMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(11, nameof(ScenarioBulk100Mixed)),
-        "=== Scenario: Bulk_100_Mixed ===");
-
-    private static readonly Action<ILogger, Exception?> ScenarioLargeSingle200KBMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(12, nameof(ScenarioLargeSingle200KB)),
-        "=== Scenario: LargeSingle_200KB ===");
-
-    private static readonly Action<ILogger, Exception?> ScenarioLargeBatch200x5KBMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(13, nameof(ScenarioLargeBatch200x5KB)),
-        "=== Scenario: LargeBatch_200x5KB ===");
-
-    private static readonly Action<ILogger, Exception?> ScenarioOpsLimit100MixedMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(14, nameof(ScenarioOpsLimit100Mixed)),
-        "=== Scenario: OpsLimit_100_Mixed ===");
-
-    private static readonly Action<ILogger, Exception?> ReadbackAfterInitialAppendsMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(15, nameof(ReadbackAfterInitialAppends)),
-        "=== Readback after initial appends ===");
-
-    private static readonly Action<ILogger, Exception?> ScenarioInterleavedMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(16, nameof(ScenarioInterleaved)),
-        "=== Scenario: Interleaved Read/Write (single stream) ===");
-
-    private static readonly Action<ILogger, Exception?> ScenarioMultiStreamMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(17, nameof(ScenarioMultiStream)),
-        "=== Scenario: Multi-stream interleaved workload ===");
-
-    private static readonly Action<ILogger, Exception?> ExplicitCacheFlushReadbackMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(18, nameof(ExplicitCacheFlushReadback)),
-        "=== Scenario: Explicit cache flush + readback ===");
-
-    private static readonly Action<ILogger, string, Exception?> PerformingColdRestartOfHostMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new(19, nameof(PerformingColdRestartOfHost)),
-            "Run {RunId}: Performing cold restart of host...");
-
-    private static readonly Action<ILogger, Exception?> ScenarioColdRestartReadbackMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(20, nameof(ScenarioColdRestartReadback)),
-        "=== Scenario: Cold restart readback ===");
-
-    private static readonly Action<ILogger, string, string, int, long, Exception?> AppendingCountsMessage =
-        LoggerMessage.Define<string, string, int, long>(
-            LogLevel.Information,
-            new(30, nameof(AppendingCounts)),
-            "Run {RunId} [{Scenario}]: Appending count={Count} totalBytes={Bytes}");
-
-    private static readonly Action<ILogger, string, string, long, int, double, double, Exception?>
-        AppendCompleteMessage = LoggerMessage.Define<string, string, long, int, double, double>(
-            LogLevel.Information,
-            new(31, nameof(AppendComplete)),
-            "Run {RunId} [{Scenario}]: Append complete -> cursor={Cursor} in {Ms} ms (throughput {RateEvN}/s, {RateMB}/s)");
-
-    private static readonly Action<ILogger, string, string, int, int, long, Exception> AppendFailedMessage =
-        LoggerMessage.Define<string, string, int, int, long>(
-            LogLevel.Error,
-            new(32, nameof(AppendFailed)),
-            "Run {RunId} [{Scenario}]: Append failed after {Ms} ms (attempted count={Count}, bytes={Bytes})");
-
-    private static readonly Action<ILogger, string, long, Exception?> ReadbackCursorMessage =
-        LoggerMessage.Define<string, long>(
-            LogLevel.Information,
-            new(40, nameof(ReadbackCursor)),
-            "Run {RunId}: Readback cursor={Cursor}");
-
-    private static readonly Action<ILogger, string, Exception?> NoEventsToReadMessage = LoggerMessage.Define<string>(
-        LogLevel.Information,
-        new(41, nameof(NoEventsToRead)),
-        "Run {RunId}: No events to read");
-
-    private static readonly Action<ILogger, string, int, string, string, int, Exception?> ReadIdxEventMessage =
-        LoggerMessage.Define<string, int, string, string, int>(
-            LogLevel.Debug,
-            new(42, nameof(ReadIdxEvent)),
-            "Run {RunId}: Read idx={Idx} id={Id} type={Type} bytes={Bytes}");
-
-    private static readonly Action<ILogger, string, int, long, int, double, double, Exception?>
-        ReadbackCompleteMessage = LoggerMessage.Define<string, int, long, int, double, double>(
-            LogLevel.Information,
-            new(43, nameof(ReadbackComplete)),
-            "Run {RunId}: Readback complete count={Count} bytes={Bytes} in {Ms} ms (throughput {RateEvN}/s, {RateMB}/s)");
-
-    private static readonly Action<ILogger, string, Exception> ReadEnumerationAbortedRetryMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Warning,
-            new(44, nameof(ReadEnumerationAbortedRetry)),
-            "Run {RunId}: Read enumeration aborted; retrying once from start");
-
-    private static readonly Action<ILogger, string, Exception?> InterleaveStartMessage = LoggerMessage.Define<string>(
-        LogLevel.Information,
-        new(50, nameof(InterleaveStart)),
-        "Run {RunId} [Interleave]: Start");
-
-    private static readonly Action<ILogger, string, long, Exception?> CursorAfterWrite1Message =
-        LoggerMessage.Define<string, long>(
-            LogLevel.Information,
-            new(51, nameof(CursorAfterWrite1)),
-            "Run {RunId} [Interleave]: Cursor after write1={Cursor}");
-
-    private static readonly Action<ILogger, string, int, Exception?> TailReadCountMessage =
-        LoggerMessage.Define<string, int>(
-            LogLevel.Information,
-            new(52, nameof(TailReadCount)),
-            "Run {RunId} [Interleave]: Tail read count={Count}");
-
-    private static readonly Action<ILogger, string, long, Exception?> CursorAfterWrite2Message =
-        LoggerMessage.Define<string, long>(
-            LogLevel.Information,
-            new(53, nameof(CursorAfterWrite2)),
-            "Run {RunId} [Interleave]: Cursor after write2={Cursor}");
-
-    private static readonly Action<ILogger, string, int, Exception?> FullRangeReadCountMessage =
-        LoggerMessage.Define<string, int>(
-            LogLevel.Information,
-            new(54, nameof(FullRangeReadCount)),
-            "Run {RunId} [Interleave]: Full range read count={Count}");
-
-    private static readonly Action<ILogger, string, Exception> InterleaveEnumerationAbortedRetryMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Warning,
-            new(55, nameof(InterleaveEnumerationAbortedRetry)),
-            "Run {RunId} [Interleave]: Enumeration aborted; retrying once");
-
-    private static readonly Action<ILogger, string, long, long, Exception?> CursorsABMessage =
-        LoggerMessage.Define<string, long, long>(
-            LogLevel.Information,
-            new(60, nameof(CursorsAB)),
-            "Run {RunId} [Multi]: Cursors A={CA} B={CB}");
-
-    private static readonly Action<ILogger, string, Exception?> StreamAEmptyMessage = LoggerMessage.Define<string>(
-        LogLevel.Information,
-        new(61, nameof(StreamAEmpty)),
-        "Run {RunId} [Multi]: Stream A empty");
-
-    private static readonly Action<ILogger, string, Exception?> StreamBEmptyMessage = LoggerMessage.Define<string>(
-        LogLevel.Information,
-        new(62, nameof(StreamBEmpty)),
-        "Run {RunId} [Multi]: Stream B empty");
-
-    private static readonly Action<ILogger, string, int, int, Exception?> ReadCountsABMessage =
-        LoggerMessage.Define<string, int, int>(
-            LogLevel.Information,
-            new(63, nameof(ReadCountsAB)),
-            "Run {RunId} [Multi]: Read counts A={CA} B={CB}");
-
-    private static readonly Action<ILogger, string, BrookKey, Exception?> RequestingDeactivationsMessage =
-        LoggerMessage.Define<string, BrookKey>(
-            LogLevel.Information,
-            new(70, nameof(RequestingDeactivations)),
-            "Run {RunId} [Flush]: Requesting grain deactivations for {BrookKey}");
-
-    private static readonly Action<ILogger, string, string, string, Exception?> AggregateScenarioStartMessage =
-        LoggerMessage.Define<string, string, string>(
-            LogLevel.Information,
-            new(80, nameof(AggregateScenarioStart)),
-            "Run {RunId} [Aggregate:{Scenario}]: Starting with counterId={CounterId}");
-
-    private static readonly Action<ILogger, string, string, string, int, Exception?> AggregateScenarioCompleteMessage =
-        LoggerMessage.Define<string, string, string, int>(
-            LogLevel.Information,
-            new(81, nameof(AggregateScenarioComplete)),
-            "Run {RunId} [Aggregate:{Scenario}]: Complete for counterId={CounterId} in {Ms} ms");
-
-    private static readonly Action<ILogger, string, string, Exception?> AggregateCommandSuccessMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Debug,
-            new(82, nameof(AggregateCommandSuccess)),
-            "Run {RunId}: Command {Command} succeeded");
-
-    private static readonly Action<ILogger, string, string, string, string, Exception?> AggregateCommandFailedMessage =
-        LoggerMessage.Define<string, string, string, string>(
-            LogLevel.Warning,
-            new(83, nameof(AggregateCommandFailed)),
-            "Run {RunId}: Command {Command} failed: {ErrorCode} - {ErrorMessage}");
-
-    private static readonly Action<ILogger, string, string, Exception?> AggregateScenarioNoteMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new(84, nameof(AggregateScenarioNote)),
-            "Run {RunId}: Note: {Note}");
-
-    // Aggregate scenario messages
-    private static readonly Action<ILogger, string, int, int, int, int, double, Exception?>
-        AggregateThroughputResultMessage = LoggerMessage.Define<string, int, int, int, int, double>(
-            LogLevel.Information,
-            new(85, nameof(AggregateThroughputResult)),
-            "Run {RunId}: Throughput test complete: total={Total} success={Success} failed={Failed} in {Ms} ms ({OpsPerSec} ops/sec)");
-
-    private static readonly Action<ILogger, Exception?> ScenarioAggregateBasicLifecycleMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(86, nameof(ScenarioAggregateBasicLifecycle)),
-        "=== Scenario: Aggregate Basic Lifecycle ===");
-
-    private static readonly Action<ILogger, Exception?> ScenarioAggregateValidationMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(87, nameof(ScenarioAggregateValidation)),
-        "=== Scenario: Aggregate Validation Errors ===");
-
-    private static readonly Action<ILogger, Exception?> ScenarioAggregateThroughputMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(88, nameof(ScenarioAggregateThroughput)),
-        "=== Scenario: Aggregate Throughput ===");
-
-    private static readonly Action<ILogger, Exception?> ScenarioAggregateConcurrencyMessage = LoggerMessage.Define(
-        LogLevel.Information,
-        new(89, nameof(ScenarioAggregateConcurrency)),
-        "=== Scenario: Aggregate Concurrency ===");
 
     /// <summary>
     ///     Log that an aggregate command failed.
@@ -278,14 +18,13 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="commandName">The name of the command that failed.</param>
     /// <param name="errorCode">The error code.</param>
     /// <param name="errorMessage">The error message.</param>
-    public static void AggregateCommandFailed(
+    [LoggerMessage(83, LogLevel.Warning, "Run {RunId}: Command {CommandName} failed: {ErrorCode} - {ErrorMessage}")]
+    public static partial void AggregateCommandFailed(
         this ILogger logger,
         string runId,
         string commandName,
         string errorCode,
-        string errorMessage
-    ) =>
-        AggregateCommandFailedMessage(logger, runId, commandName, errorCode, errorMessage, null);
+        string errorMessage);
 
     /// <summary>
     ///     Log that an aggregate command succeeded.
@@ -293,12 +32,11 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     /// <param name="runId">The run identifier associated with this execution.</param>
     /// <param name="commandName">The name of the command that succeeded.</param>
-    public static void AggregateCommandSuccess(
+    [LoggerMessage(82, LogLevel.Debug, "Run {RunId}: Command {CommandName} succeeded")]
+    public static partial void AggregateCommandSuccess(
         this ILogger logger,
         string runId,
-        string commandName
-    ) =>
-        AggregateCommandSuccessMessage(logger, runId, commandName, null);
+        string commandName);
 
     /// <summary>
     ///     Log that an aggregate scenario has completed.
@@ -308,14 +46,13 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="scenarioName">The scenario name.</param>
     /// <param name="counterId">The counter identifier.</param>
     /// <param name="ms">The elapsed time in milliseconds.</param>
-    public static void AggregateScenarioComplete(
+    [LoggerMessage(81, LogLevel.Information, "Run {RunId} [Aggregate:{ScenarioName}]: Complete for counterId={CounterId} in {Ms} ms")]
+    public static partial void AggregateScenarioComplete(
         this ILogger logger,
         string runId,
         string scenarioName,
         string counterId,
-        int ms
-    ) =>
-        AggregateScenarioCompleteMessage(logger, runId, scenarioName, counterId, ms, null);
+        int ms);
 
     /// <summary>
     ///     Log a note during an aggregate scenario.
@@ -323,12 +60,11 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="logger">The logger used to write the message.</param>
     /// <param name="runId">The run identifier associated with this execution.</param>
     /// <param name="note">The note to log.</param>
-    public static void AggregateScenarioNote(
+    [LoggerMessage(84, LogLevel.Information, "Run {RunId}: Note: {Note}")]
+    public static partial void AggregateScenarioNote(
         this ILogger logger,
         string runId,
-        string note
-    ) =>
-        AggregateScenarioNoteMessage(logger, runId, note, null);
+        string note);
 
     /// <summary>
     ///     Log that an aggregate scenario has started.
@@ -337,13 +73,12 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="runId">The run identifier associated with this execution.</param>
     /// <param name="scenarioName">The scenario name.</param>
     /// <param name="counterId">The counter identifier.</param>
-    public static void AggregateScenarioStart(
+    [LoggerMessage(80, LogLevel.Information, "Run {RunId} [Aggregate:{ScenarioName}]: Starting with counterId={CounterId}")]
+    public static partial void AggregateScenarioStart(
         this ILogger logger,
         string runId,
         string scenarioName,
-        string counterId
-    ) =>
-        AggregateScenarioStartMessage(logger, runId, scenarioName, counterId, null);
+        string counterId);
 
     /// <summary>
     ///     Log the result of a throughput test.
@@ -355,24 +90,15 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="failed">Number of failed operations.</param>
     /// <param name="ms">The elapsed time in milliseconds.</param>
     /// <param name="opsPerSec">Operations per second throughput.</param>
-    public static void AggregateThroughputResult(
+    [LoggerMessage(85, LogLevel.Information, "Run {RunId}: Throughput test complete: total={Total} success={Success} failed={Failed} in {Ms} ms ({OpsPerSec} ops/sec)")]
+    public static partial void AggregateThroughputResult(
         this ILogger logger,
         string runId,
         int total,
         int success,
         int failed,
         int ms,
-        double opsPerSec
-    ) =>
-        AggregateThroughputResultMessage(logger, runId, total, success, failed, ms, opsPerSec, null);
-
-    // Multi-stream scenario
-
-    // Top-level lifecycle and setup
-
-    // Interleaved scenario
-
-    // Scenario banners
+        double opsPerSec);
 
     /// <summary>
     ///     Log metrics for a completed append operation.
@@ -384,16 +110,15 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="ms">The elapsed time in milliseconds for the append.</param>
     /// <param name="rateEvN">Event throughput in events/second.</param>
     /// <param name="rateMB">Data throughput in MB/second.</param>
-    public static void AppendComplete(
+    [LoggerMessage(31, LogLevel.Information, "Run {RunId} [{Scenario}]: Append complete -> cursor={Cursor} in {Ms} ms (throughput {RateEvN}/s, {RateMB}/s)")]
+    public static partial void AppendComplete(
         this ILogger logger,
         string runId,
         string scenario,
         long cursor,
         int ms,
         double rateEvN,
-        double rateMB
-    ) =>
-        AppendCompleteMessage(logger, runId, scenario, cursor, ms, rateEvN, rateMB, null);
+        double rateMB);
 
     /// <summary>
     ///     Log a failed append operation along with failure metrics.
@@ -405,16 +130,15 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="count">The attempted number of events for the append.</param>
     /// <param name="bytes">The attempted number of bytes for the append.</param>
     /// <param name="ex">The exception that caused the failure.</param>
-    public static void AppendFailed(
+    [LoggerMessage(32, LogLevel.Error, "Run {RunId} [{Scenario}]: Append failed after {Ms} ms (attempted count={Count}, bytes={Bytes})")]
+    public static partial void AppendFailed(
         this ILogger logger,
         string runId,
         string scenario,
         int ms,
         int count,
         long bytes,
-        Exception ex
-    ) =>
-        AppendFailedMessage(logger, runId, scenario, ms, count, bytes, ex);
+        Exception ex);
 
     /// <summary>
     ///     Log information about the number of events being appended.
@@ -424,14 +148,13 @@ internal static class ConsoleAppLoggerExtensions
     /// <param name="scenario">The scenario name for the append operation.</param>
     /// <param name="count">The number of events being appended.</param>
     /// <param name="bytes">The total number of bytes being appended.</param>
-    public static void AppendingCounts(
+    [LoggerMessage(30, LogLevel.Information, "Run {RunId} [{Scenario}]: Appending count={Count} totalBytes={Bytes}")]
+    public static partial void AppendingCounts(
         this ILogger logger,
         string runId,
         string scenario,
         int count,
-        long bytes
-    ) =>
-        AppendingCountsMessage(logger, runId, scenario, count, bytes, null);
+        long bytes);
 
     /// <summary>
     ///     Log the Cosmos DB configuration options used by the sample.
