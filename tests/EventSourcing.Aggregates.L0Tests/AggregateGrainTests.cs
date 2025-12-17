@@ -13,7 +13,6 @@ using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Serialization.Abstractions;
 using Mississippi.EventSourcing.Writer;
 
 using Moq;
@@ -59,7 +58,7 @@ public class AggregateGrainTests
     private static TestableAggregateGrain CreateGrain(
         Mock<IGrainContext>? grainContextMock = null,
         Mock<IBrookGrainFactory>? brookGrainFactoryMock = null,
-        Mock<ISerializationProvider>? serializationProviderMock = null,
+        Mock<IBrookEventConverter>? brookEventConverterMock = null,
         Mock<IRootReducer<AggregateGrainTestState>>? rootReducerMock = null,
         Mock<IEventTypeRegistry>? eventTypeRegistryMock = null,
         Mock<IRootCommandHandler<AggregateGrainTestState>>? rootCommandHandlerMock = null,
@@ -68,7 +67,7 @@ public class AggregateGrainTests
     {
         grainContextMock ??= CreateDefaultGrainContext();
         brookGrainFactoryMock ??= new();
-        serializationProviderMock ??= new();
+        brookEventConverterMock ??= new();
         rootReducerMock ??= new();
         eventTypeRegistryMock ??= new();
         rootCommandHandlerMock ??= new();
@@ -76,7 +75,7 @@ public class AggregateGrainTests
         return new(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             rootReducerMock.Object,
             eventTypeRegistryMock.Object,
             rootCommandHandlerMock.Object,
@@ -100,7 +99,7 @@ public class AggregateGrainTests
         public TestableAggregateGrain(
             IGrainContext grainContext,
             IBrookGrainFactory brookGrainFactory,
-            ISerializationProvider serializationProvider,
+            IBrookEventConverter brookEventConverter,
             IRootReducer<AggregateGrainTestState> rootReducer,
             IEventTypeRegistry eventTypeRegistry,
             IRootCommandHandler<AggregateGrainTestState> rootCommandHandler,
@@ -109,7 +108,7 @@ public class AggregateGrainTests
             : base(
                 grainContext,
                 brookGrainFactory,
-                serializationProvider,
+                brookEventConverter,
                 rootReducer,
                 eventTypeRegistry,
                 rootCommandHandler,
@@ -171,13 +170,35 @@ public class AggregateGrainTests
     }
 
     /// <summary>
+    ///     Constructor should throw when brook event converter is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenBrookEventConverterIsNull()
+    {
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
+        Mock<IEventTypeRegistry> registryMock = new();
+        Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
+        Mock<ILogger> loggerMock = new();
+        Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
+            grainContextMock.Object,
+            brookGrainFactoryMock.Object,
+            null!,
+            rootReducerMock.Object,
+            registryMock.Object,
+            rootCommandHandlerMock.Object,
+            loggerMock.Object));
+    }
+
+    /// <summary>
     ///     Constructor should throw when brook grain factory is null.
     /// </summary>
     [Fact]
     public void ConstructorThrowsWhenBrookGrainFactoryIsNull()
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<ISerializationProvider> serializationProviderMock = new();
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
         Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
         Mock<IEventTypeRegistry> registryMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
@@ -185,7 +206,7 @@ public class AggregateGrainTests
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             null!,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             rootReducerMock.Object,
             registryMock.Object,
             rootCommandHandlerMock.Object,
@@ -200,14 +221,14 @@ public class AggregateGrainTests
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<ISerializationProvider> serializationProviderMock = new();
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
         Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
         Mock<ILogger> loggerMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             rootReducerMock.Object,
             null!,
             rootCommandHandlerMock.Object,
@@ -221,7 +242,7 @@ public class AggregateGrainTests
     public void ConstructorThrowsWhenGrainContextIsNull()
     {
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<ISerializationProvider> serializationProviderMock = new();
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
         Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
         Mock<IEventTypeRegistry> registryMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
@@ -229,7 +250,7 @@ public class AggregateGrainTests
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             null!,
             brookGrainFactoryMock.Object,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             rootReducerMock.Object,
             registryMock.Object,
             rootCommandHandlerMock.Object,
@@ -244,14 +265,14 @@ public class AggregateGrainTests
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<ISerializationProvider> serializationProviderMock = new();
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
         Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
         Mock<IEventTypeRegistry> registryMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             rootReducerMock.Object,
             registryMock.Object,
             rootCommandHandlerMock.Object,
@@ -266,14 +287,14 @@ public class AggregateGrainTests
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<ISerializationProvider> serializationProviderMock = new();
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
         Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
         Mock<IEventTypeRegistry> registryMock = new();
         Mock<ILogger> loggerMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             rootReducerMock.Object,
             registryMock.Object,
             null!,
@@ -288,37 +309,15 @@ public class AggregateGrainTests
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<ISerializationProvider> serializationProviderMock = new();
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
         Mock<IEventTypeRegistry> registryMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
         Mock<ILogger> loggerMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             null!,
-            registryMock.Object,
-            rootCommandHandlerMock.Object,
-            loggerMock.Object));
-    }
-
-    /// <summary>
-    ///     Constructor should throw when serialization provider is null.
-    /// </summary>
-    [Fact]
-    public void ConstructorThrowsWhenSerializationProviderIsNull()
-    {
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        Mock<IEventTypeRegistry> registryMock = new();
-        Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
-        Mock<ILogger> loggerMock = new();
-        Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
-            grainContextMock.Object,
-            brookGrainFactoryMock.Object,
-            null!,
-            rootReducerMock.Object,
             registryMock.Object,
             rootCommandHandlerMock.Object,
             loggerMock.Object));
@@ -387,20 +386,24 @@ public class AggregateGrainTests
             .Returns(GetEmptyEventsAsync);
         brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
         brookGrainFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerGrainMock.Object);
-        Mock<ISerializationProvider> serializationProviderMock = new();
-        serializationProviderMock.Setup(s => s.Serialize(It.IsAny<AggregateGrainTestEvent>()))
-            .Returns(new byte[] { 1, 2, 3 }.AsMemory());
-        serializationProviderMock.Setup(s => s.Format).Returns("json");
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
+        brookEventConverterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(
+                ImmutableArray.Create(
+                    new BrookEvent
+                    {
+                        Id = "e1",
+                        EventType = "TEST.AGGREGATES.TESTEVENT.V1",
+                    }));
         Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
         rootReducerMock.Setup(r => r.Reduce(It.IsAny<AggregateGrainTestState>(), It.IsAny<object>()))
             .Returns(new AggregateGrainTestState(1, "value1"));
         Mock<IEventTypeRegistry> registryMock = new();
-        registryMock.Setup(r => r.ResolveName(typeof(AggregateGrainTestEvent))).Returns("TEST.AGGREGATES.TESTEVENTV1");
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         TestableAggregateGrain grain = new(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             rootReducerMock.Object,
             registryMock.Object,
             rootCommandHandlerMock.Object,
@@ -449,20 +452,24 @@ public class AggregateGrainTests
             .Returns(GetEmptyEventsAsync);
         brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
         brookGrainFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerGrainMock.Object);
-        Mock<ISerializationProvider> serializationProviderMock = new();
-        serializationProviderMock.Setup(s => s.Serialize(It.IsAny<AggregateGrainTestEvent>()))
-            .Returns(new byte[] { 1, 2, 3 }.AsMemory());
-        serializationProviderMock.Setup(s => s.Format).Returns("json");
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
+        brookEventConverterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(
+                ImmutableArray.Create(
+                    new BrookEvent
+                    {
+                        Id = "e1",
+                        EventType = "TEST.AGGREGATES.TESTEVENT.V1",
+                    }));
         Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
         rootReducerMock.Setup(r => r.Reduce(It.IsAny<AggregateGrainTestState>(), It.IsAny<object>()))
             .Returns(new AggregateGrainTestState(1, "value1"));
         Mock<IEventTypeRegistry> registryMock = new();
-        registryMock.Setup(r => r.ResolveName(typeof(AggregateGrainTestEvent))).Returns("TEST.AGGREGATES.TESTEVENTV1");
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         TestableAggregateGrain grain = new(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             rootReducerMock.Object,
             registryMock.Object,
             rootCommandHandlerMock.Object,
@@ -556,7 +563,7 @@ public class AggregateGrainTests
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<ISerializationProvider> serializationProviderMock = new();
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
         Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
         Mock<ILogger> loggerMock = new();
         Mock<IBrookReaderGrain> readerGrainMock = new();
@@ -569,13 +576,13 @@ public class AggregateGrainTests
             yield return new()
             {
                 Id = "e1",
-                EventType = "TEST.AGGREGATES.TESTEVENTV1",
+                EventType = "TEST.AGGREGATES.TESTEVENT.V1",
                 Data = new byte[] { 1, 2, 3 }.ToImmutableArray(),
             };
             yield return new()
             {
                 Id = "e2",
-                EventType = "TEST.AGGREGATES.TESTEVENTV1",
+                EventType = "TEST.AGGREGATES.TESTEVENT.V1",
                 Data = new byte[] { 4, 5, 6 }.ToImmutableArray(),
             };
             await Task.CompletedTask;
@@ -585,11 +592,8 @@ public class AggregateGrainTests
             .Returns(GetEventsAsync);
         brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
 
-        // Set up serialization provider to return the event when reading.
-        // Uses It.IsAny<Type>() because the test doesn't need to verify the specific type -
-        // we just need to ensure the mock returns the expected event for deserialization.
-        serializationProviderMock.Setup(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<ReadOnlyMemory<byte>>()))
-            .Returns(event1);
+        // Set up brook event converter to return the event when reading
+        brookEventConverterMock.Setup(c => c.ToDomainEvent(It.IsAny<BrookEvent>())).Returns(event1);
 
         // Set up reducer
         AggregateGrainTestState afterEvent1 = new(1, "first");
@@ -600,12 +604,11 @@ public class AggregateGrainTests
 
         // Set up event type registry
         Mock<IEventTypeRegistry> registryMock = new();
-        registryMock.Setup(r => r.ResolveType(It.IsAny<string>())).Returns(typeof(AggregateGrainTestEvent));
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
         TestableAggregateGrain grain = new(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
-            serializationProviderMock.Object,
+            brookEventConverterMock.Object,
             rootReducerMock.Object,
             registryMock.Object,
             rootCommandHandlerMock.Object,
@@ -619,7 +622,7 @@ public class AggregateGrainTests
     }
 
     /// <summary>
-    ///     DeserializeEvent should throw when event type cannot be resolved.
+    ///     OnActivateAsync should throw when event type cannot be resolved by converter.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
@@ -644,8 +647,11 @@ public class AggregateGrainTests
             .Returns(GetEventsWithUnknownTypeAsync);
         brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
 
-        // No registry registered, so ResolveEventType returns null
-        TestableAggregateGrain grain = CreateGrain(grainContextMock, brookGrainFactoryMock);
+        // Set up converter to throw when event type cannot be resolved
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
+        brookEventConverterMock.Setup(c => c.ToDomainEvent(It.IsAny<BrookEvent>()))
+            .Throws(new InvalidOperationException("Cannot resolve event type 'Unknown.Event.v1'."));
+        TestableAggregateGrain grain = CreateGrain(grainContextMock, brookGrainFactoryMock, brookEventConverterMock);
         await Assert.ThrowsAsync<InvalidOperationException>(() => grain.OnActivateAsync(CancellationToken.None));
     }
 
@@ -681,7 +687,7 @@ public class AggregateGrainTests
     public async Task ResolveEventTypeReturnsTypeFromRegistry()
     {
         Mock<IEventTypeRegistry> registryMock = new();
-        registryMock.Setup(r => r.ResolveType("TEST.AGGREGATES.TESTEVENTV1")).Returns(typeof(AggregateGrainTestEvent));
+        registryMock.Setup(r => r.ResolveType("TEST.AGGREGATES.TESTEVENT.V1")).Returns(typeof(AggregateGrainTestEvent));
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<IBrookReaderGrain> readerGrainMock = new();
@@ -693,7 +699,7 @@ public class AggregateGrainTests
             brookGrainFactoryMock,
             eventTypeRegistryMock: registryMock);
         await grain.OnActivateAsync(CancellationToken.None);
-        Type? result = grain.TestResolveEventType("TEST.AGGREGATES.TESTEVENTV1");
+        Type? result = grain.TestResolveEventType("TEST.AGGREGATES.TESTEVENT.V1");
         Assert.Equal(typeof(AggregateGrainTestEvent), result);
     }
 }

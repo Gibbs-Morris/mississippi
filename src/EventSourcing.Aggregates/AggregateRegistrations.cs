@@ -44,6 +44,7 @@ public static class AggregateRegistrations
 
             return registry;
         });
+        services.TryAddTransient<IBrookEventConverter, BrookEventConverter>();
         services.TryAddTransient<IAggregateGrainFactory, AggregateGrainFactory>();
         return services;
     }

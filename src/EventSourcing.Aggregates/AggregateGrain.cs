@@ -10,7 +10,6 @@ using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Serialization.Abstractions;
 
 using Orleans;
 using Orleans.Runtime;
@@ -53,7 +52,7 @@ public abstract class AggregateGrain<TState, TBrook>
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="brookGrainFactory">Factory for resolving brook grains.</param>
-    /// <param name="serializationProvider">Provider for event serialization and deserialization.</param>
+    /// <param name="brookEventConverter">Converter for domain events to/from brook events.</param>
     /// <param name="rootReducer">The root reducer for computing state from events.</param>
     /// <param name="eventTypeRegistry">Registry for resolving event type names and CLR types.</param>
     /// <param name="rootCommandHandler">The root command handler for processing commands.</param>
@@ -61,7 +60,7 @@ public abstract class AggregateGrain<TState, TBrook>
     protected AggregateGrain(
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
-        ISerializationProvider serializationProvider,
+        IBrookEventConverter brookEventConverter,
         IRootReducer<TState> rootReducer,
         IEventTypeRegistry eventTypeRegistry,
         IRootCommandHandler<TState> rootCommandHandler,
@@ -70,7 +69,7 @@ public abstract class AggregateGrain<TState, TBrook>
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
         BrookGrainFactory = brookGrainFactory ?? throw new ArgumentNullException(nameof(brookGrainFactory));
-        SerializationProvider = serializationProvider ?? throw new ArgumentNullException(nameof(serializationProvider));
+        BrookEventConverter = brookEventConverter ?? throw new ArgumentNullException(nameof(brookEventConverter));
         RootReducer = rootReducer ?? throw new ArgumentNullException(nameof(rootReducer));
         EventTypeRegistry = eventTypeRegistry ?? throw new ArgumentNullException(nameof(eventTypeRegistry));
         RootCommandHandler = rootCommandHandler ?? throw new ArgumentNullException(nameof(rootCommandHandler));
@@ -84,6 +83,11 @@ public abstract class AggregateGrain<TState, TBrook>
 
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
+
+    /// <summary>
+    ///     Gets the converter for transforming domain events to/from brook events.
+    /// </summary>
+    protected IBrookEventConverter BrookEventConverter { get; }
 
     /// <summary>
     ///     Gets the factory for resolving brook grains.
@@ -111,11 +115,6 @@ public abstract class AggregateGrain<TState, TBrook>
     protected IRootReducer<TState> RootReducer { get; }
 
     /// <summary>
-    ///     Gets the serialization provider for event serialization.
-    /// </summary>
-    protected ISerializationProvider SerializationProvider { get; }
-
-    /// <summary>
     ///     Called when the grain is activated. Hydrates state from the brook.
     /// </summary>
     /// <param name="token">Cancellation token.</param>
@@ -133,7 +132,7 @@ public abstract class AggregateGrain<TState, TBrook>
                            .ReadEventsAsync(cancellationToken: token)
                            .WithCancellation(token))
         {
-            object eventData = DeserializeEvent(brookEvent);
+            object eventData = BrookEventConverter.ToDomainEvent(brookEvent);
             state = RootReducer.Reduce(state!, eventData);
             currentPosition = new(currentPosition.Value + 1);
         }
@@ -182,7 +181,7 @@ public abstract class AggregateGrain<TState, TBrook>
         IReadOnlyList<object> events = handlerResult.Value;
         if (events.Count > 0)
         {
-            ImmutableArray<BrookEvent> brookEvents = ConvertToBrookEvents(events);
+            ImmutableArray<BrookEvent> brookEvents = BrookEventConverter.ToStorageEvents(brookKey, events);
 
             // Pass null for first write (when position is NotSet/-1), otherwise pass current position
             BrookPosition? expectedCursorPosition = currentPosition.NotSet ? null : currentPosition;
@@ -239,45 +238,4 @@ public abstract class AggregateGrain<TState, TBrook>
         string eventTypeName
     ) =>
         EventTypeRegistry.ResolveType(eventTypeName);
-
-    private ImmutableArray<BrookEvent> ConvertToBrookEvents(
-        IReadOnlyList<object> events
-    )
-    {
-        ImmutableArray<BrookEvent>.Builder builder = ImmutableArray.CreateBuilder<BrookEvent>(events.Count);
-        foreach (object eventData in events)
-        {
-            Type eventType = eventData.GetType();
-            string eventTypeName = ResolveEventName(eventType);
-            ReadOnlyMemory<byte> data = SerializationProvider.Serialize(eventData);
-            builder.Add(
-                new()
-                {
-                    Id = Guid.NewGuid().ToString("N"),
-                    EventType = eventTypeName,
-                    Source = brookKey,
-                    Data = data.ToArray().ToImmutableArray(),
-                    DataContentType = SerializationProvider.Format,
-                });
-        }
-
-        return builder.ToImmutable();
-    }
-
-    private object DeserializeEvent(
-        BrookEvent brookEvent
-    )
-    {
-        // Resolve the event type from the registry
-        Type? eventType = ResolveEventType(brookEvent.EventType);
-        if (eventType is null)
-        {
-            throw new InvalidOperationException(
-                $"Cannot resolve event type '{brookEvent.EventType}'. " +
-                "Ensure the event type is registered in the event type registry.");
-        }
-
-        // Use the serialization provider to deserialize with the runtime type
-        return SerializationProvider.Deserialize(eventType, brookEvent.Data.AsMemory());
-    }
 }

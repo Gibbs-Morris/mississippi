@@ -43,7 +43,7 @@ public class EventNameHelperTests
     public void GetEventNameReturnsAttributeValue()
     {
         string eventName = EventNameHelper.GetEventName<DecoratedEvent>();
-        Assert.Equal("APP.MODULE.EVENTV1", eventName);
+        Assert.Equal("APP.MODULE.EVENT.V1", eventName);
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public class EventNameHelperTests
     public void GetEventNameReturnsVersionedName()
     {
         string eventName = EventNameHelper.GetEventName<VersionedEvent>();
-        Assert.Equal("APP.MODULE.EVENTV2", eventName);
+        Assert.Equal("APP.MODULE.EVENT.V2", eventName);
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ public class EventNameHelperTests
     {
         bool result = EventNameHelper.TryGetEventName<DecoratedEvent>(out string? eventName);
         Assert.True(result);
-        Assert.Equal("APP.MODULE.EVENTV1", eventName);
+        Assert.Equal("APP.MODULE.EVENT.V1", eventName);
     }
 
     /// <summary>
