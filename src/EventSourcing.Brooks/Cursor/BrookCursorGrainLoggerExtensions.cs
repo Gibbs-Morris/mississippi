@@ -1,5 +1,7 @@
 using System;
+
 using Microsoft.Extensions.Logging;
+
 
 namespace Mississippi.EventSourcing.Brooks.Cursor;
 
@@ -18,5 +20,6 @@ internal static partial class BrookCursorGrainLoggerExtensions
     public static partial void InvalidPrimaryKey(
         this ILogger logger,
         string primaryKey,
-        Exception? exception);
+        Exception? exception
+    );
 }

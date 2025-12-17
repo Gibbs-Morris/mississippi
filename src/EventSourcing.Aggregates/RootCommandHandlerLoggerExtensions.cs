@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 
+
 namespace Mississippi.EventSourcing.Aggregates;
 
 /// <summary>
@@ -7,18 +8,6 @@ namespace Mississippi.EventSourcing.Aggregates;
 /// </summary>
 internal static partial class RootCommandHandlerLoggerExtensions
 {
-    /// <summary>
-    ///     Logs that command handling is starting for a state and command combination.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="commandType">The command type name.</param>
-    /// <param name="stateType">The state type name.</param>
-    [LoggerMessage(1, LogLevel.Debug, "Handling command {CommandType} against state {StateType}")]
-    public static partial void RootCommandHandlerHandling(
-        this ILogger logger,
-        string commandType,
-        string stateType);
-
     /// <summary>
     ///     Logs that a handler matched and processed the command.
     /// </summary>
@@ -29,7 +18,21 @@ internal static partial class RootCommandHandlerLoggerExtensions
     public static partial void RootCommandHandlerHandlerMatched(
         this ILogger logger,
         string handlerType,
-        string commandType);
+        string commandType
+    );
+
+    /// <summary>
+    ///     Logs that command handling is starting for a state and command combination.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="commandType">The command type name.</param>
+    /// <param name="stateType">The state type name.</param>
+    [LoggerMessage(1, LogLevel.Debug, "Handling command {CommandType} against state {StateType}")]
+    public static partial void RootCommandHandlerHandling(
+        this ILogger logger,
+        string commandType,
+        string stateType
+    );
 
     /// <summary>
     ///     Logs when no handler matches an incoming command for a state.
@@ -41,5 +44,6 @@ internal static partial class RootCommandHandlerLoggerExtensions
     public static partial void RootCommandHandlerNoHandlerMatched(
         this ILogger logger,
         string stateType,
-        string commandType);
+        string commandType
+    );
 }
