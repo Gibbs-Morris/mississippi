@@ -10,13 +10,13 @@ Governing thought: Persisted types (events, snapshots, commands) use stable stri
 
 - Persisted types **MUST** have a naming attribute (e.g., `[EventName]`, `[SnapshotName]`) applied.  
   Why: The attribute provides a stable, version-aware identifier that survives refactoring.
-- Naming attributes **MUST** have a `Version` property (int) that is combined with domain/context/name to form the full identifier.
+- Naming attributes **MUST** have a `version` parameter (int) that is combined with appName/moduleName/name to form the full identifier.
   Why: Separating version as a typed field prevents typos and enables programmatic version queries.
-- The computed full name **MUST** follow the `DOMAIN.CONTEXT.NAME.Vn` pattern (e.g., `ORDER.FULFILLMENT.SHIPPED.V1`).
+- The computed `EventName` property **MUST** follow the `APPNAME.MODULENAME.NAME.Vn` pattern (e.g., `ORDER.FULFILLMENT.SHIPPED.V1`).
   Why: Dot-separated segments enable hierarchical organization and filtering; version suffix enables schema evolution.
-- Domain, context, and name values **MUST NOT** change once types have been persisted to production storage.
+- AppName, ModuleName, and Name values **MUST NOT** change once types have been persisted to production storage.
   Why: Changing these values breaks deserialization of existing stored data.
-- When evolving a type's schema, developers **MUST** increment the `Version` property rather than modifying domain/context/name.
+- When evolving a type's schema, developers **MUST** increment the `version` parameter rather than modifying appName/moduleName/name.
   Why: Maintains backward compatibility with previously stored data.
 - A type registry (e.g., `IEventTypeRegistry`, `ISnapshotTypeRegistry`) **MUST** be used for bidirectional type ↔ name resolution.
   Why: Centralizes lookup logic and enables O(1) cached resolution without per-call reflection.
@@ -42,11 +42,11 @@ Governing thought: Persisted types (events, snapshots, commands) use stable stri
 
 ```csharp
 // ✅ Correct: Stable attribute with version as int, class name can change
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]
 public sealed record OrderShippedEvent(Guid OrderId, DateTimeOffset ShippedAt);
 
 // Later, refactor the class name without breaking storage:
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]  // Same attribute!
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]  // Same attribute!
 public sealed record OrderShipmentCompletedEvent(Guid OrderId, DateTimeOffset ShippedAt);
 ```
 
@@ -69,7 +69,7 @@ The attribute-based naming pattern decouples the **storage identity** from the *
 
 | Concern | Responsibility | Example |
 |---------|----------------|---------|
-| **Storage Identity** | Attribute value | `"ORDER.FULFILLMENT.SHIPPED.V1"` |
+| **Storage Identity** | `EventName` property | `"ORDER.FULFILLMENT.SHIPPED.V1"` |
 | **Code Identity** | Class/record name | `OrderShippedEvent` |
 | **Schema Version** | Version suffix | `V1`, `V2`, etc. |
 
@@ -108,14 +108,14 @@ At startup, assembly scanning populates both lookup dictionaries. Runtime lookup
 
 ### Deserialization
 
-Once the registry resolves a storage name to a CLR type, deserialization is handled by `ISerializationReader.Read(Type, ReadOnlyMemory<byte>)`:
+Once the registry resolves a storage name to a CLR type, deserialization is handled by `ISerializationReader.Deserialize(Type, ReadOnlyMemory<byte>)`:
 
 ```csharp
 // Resolve storage name to CLR type
 Type? eventType = registry.ResolveType(storedEventName);
 
 // Deserialize using the resolved type
-object event = serializationProvider.Read(eventType!, eventData);
+object @event = serializationProvider.Deserialize(eventType!, eventData);
 ```
 
 This approach:
@@ -125,15 +125,15 @@ This approach:
 
 ## Naming Convention
 
-### Pattern: `DOMAIN.CONTEXT.NAME.Vn`
+### Pattern: `APPNAME.MODULENAME.NAME.Vn`
 
 ```
 ORDER.FULFILLMENT.SHIPPED.V1
 │     │           │       │
 │     │           │       └── Version (schema evolution)
 │     │           └────────── Event/Action name (UPPERCASE)
-│     └────────────────────── Context/Feature (UPPERCASE)
-└──────────────────────────── Domain/Bounded Context (UPPERCASE)
+│     └────────────────────── Module name (UPPERCASE)
+└──────────────────────────── Application name (UPPERCASE)
 ```
 
 ### Examples
@@ -163,11 +163,11 @@ You can add nullable/optional fields without incrementing the version:
 
 ```csharp
 // Original
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]
 public sealed record OrderShippedEvent(Guid OrderId, DateTimeOffset ShippedAt);
 
-// Extended (still Version = 1 - backward compatible)
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]
+// Extended (still version: 1 - backward compatible)
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]
 public sealed record OrderShippedEvent(
     Guid OrderId, 
     DateTimeOffset ShippedAt,
@@ -176,15 +176,15 @@ public sealed record OrderShippedEvent(
 
 ### Breaking Changes (Increment Version)
 
-For breaking changes, increment the `Version` property:
+For breaking changes, increment the `version` parameter:
 
 ```csharp
 // Version 1 - Keep for reading old events
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]
 public sealed record OrderShippedEventV1(Guid OrderId, DateTimeOffset ShippedAt);
 
 // Version 2 - New structure for new events
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 2)]
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 2)]
 public sealed record OrderShippedEvent(
     Guid OrderId, 
     DateTimeOffset ShippedAt,
@@ -214,13 +214,13 @@ public OrderState Reduce(OrderState state, object @event) => @event switch
 
 **Before:**
 ```csharp
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]
 public sealed record OrderShippedEvent(Guid OrderId, DateTimeOffset ShippedAt);
 ```
 
 **After:**
 ```csharp
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]  // Unchanged!
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]  // Unchanged!
 public sealed record OrderShipmentCompletedEvent(Guid OrderId, DateTimeOffset ShippedAt);
 ```
 
@@ -232,7 +232,7 @@ public sealed record OrderShipmentCompletedEvent(Guid OrderId, DateTimeOffset Sh
 ```csharp
 namespace MyApp.Orders.Events;
 
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]
 public sealed record OrderShippedEvent(...);
 ```
 
@@ -240,7 +240,7 @@ public sealed record OrderShippedEvent(...);
 ```csharp
 namespace MyApp.Domain.Orders.Fulfillment.Events;  // New namespace
 
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]  // Unchanged!
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]  // Unchanged!
 public sealed record OrderShippedEvent(...);
 ```
 
@@ -259,7 +259,7 @@ When extracting a microservice, the events go with it:
 
 ```csharp
 // Same event, now in a different service
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]
 public sealed record OrderShippedEvent(...);
 ```
 
@@ -269,51 +269,53 @@ public sealed record OrderShippedEvent(...);
 
 ### Attribute Definition
 
-Each persisted type category has its own attribute. The `Version` is a separate int property, and the attribute computes the full storage name:
+Each persisted type category has its own attribute. The `version` is a constructor parameter (with default value 1), and the attribute computes the full storage name:
 
 ```csharp
 /// <summary>
 /// Defines the storage name for an event type.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class EventNameAttribute : Attribute
 {
-    public string Domain { get; }
-    public string Context { get; }
+    public string AppName { get; }
+    public string ModuleName { get; }
     public string Name { get; }
-    public int Version { get; init; } = 1;
+    public int Version { get; }
     
     /// <summary>
-    /// Gets the full storage name in the format DOMAIN.CONTEXT.NAME.Vn.
+    /// Gets the full storage name in the format APPNAME.MODULENAME.NAME.Vn.
     /// </summary>
-    public string FullName => $"{Domain}.{Context}.{Name}.V{Version}";
+    public string EventName => $"{AppName}.{ModuleName}.{Name}.V{Version}";
 
-    public EventNameAttribute(string domain, string context, string name)
+    public EventNameAttribute(string appName, string moduleName, string name, int version = 1)
     {
-        Domain = domain;
-        Context = context;
+        AppName = appName;
+        ModuleName = moduleName;
         Name = name;
+        Version = version;
     }
 }
 
 /// <summary>
 /// Defines the storage name for a snapshot type.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class SnapshotNameAttribute : Attribute
 {
-    public string Domain { get; }
-    public string Context { get; }
+    public string AppName { get; }
+    public string ModuleName { get; }
     public string Name { get; }
-    public int Version { get; init; } = 1;
+    public int Version { get; }
     
-    public string FullName => $"{Domain}.{Context}.{Name}.V{Version}";
+    public string SnapshotName => $"{AppName}.{ModuleName}.{Name}.V{Version}";
 
-    public SnapshotNameAttribute(string domain, string context, string name)
+    public SnapshotNameAttribute(string appName, string moduleName, string name, int version = 1)
     {
-        Domain = domain;
-        Context = context;
+        AppName = appName;
+        ModuleName = moduleName;
         Name = name;
+        Version = version;
     }
 }
 ```
@@ -388,16 +390,16 @@ This pattern applies to any persisted type. Each category has its own attribute 
 
 | Domain | Attribute | Registry | Example |
 |--------|-----------|----------|--------|
-| Events | `[EventName]` | `IEventTypeRegistry` | `[EventName("ORDER", "LIFECYCLE", "CREATED", Version = 1)]` |
-| Snapshots | `[SnapshotName]` | `ISnapshotTypeRegistry` | `[SnapshotName("ORDER", "AGGREGATE", "STATE", Version = 1)]` |
-| Commands | `[CommandName]` | `ICommandTypeRegistry` | `[CommandName("ORDER", "ACTIONS", "CREATE", Version = 1)]` |
-| Messages | `[MessageName]` | `IMessageTypeRegistry` | `[MessageName("ORDER", "NOTIFICATIONS", "ALERT", Version = 1)]` |
+| Events | `[EventName]` | `IEventTypeRegistry` | `[EventName("ORDER", "LIFECYCLE", "CREATED", version: 1)]` |
+| Snapshots | `[SnapshotName]` | `ISnapshotTypeRegistry` | `[SnapshotName("ORDER", "AGGREGATE", "STATE", version: 1)]` |
+| Commands | `[CommandName]` | `ICommandTypeRegistry` | `[CommandName("ORDER", "ACTIONS", "CREATE", version: 1)]` |
+| Messages | `[MessageName]` | `IMessageTypeRegistry` | `[MessageName("ORDER", "NOTIFICATIONS", "ALERT", version: 1)]` |
 
 The same principles apply:
 
-- Attribute provides stable storage identity with explicit `Version` field
+- Attribute provides stable storage identity with explicit `version` parameter
 - Code identity (class name) is free to change
-- `Version` property enables schema evolution (increment, don't change name)
+- `version` parameter enables schema evolution (increment, don't change name)
 - Type-specific registry provides cached bidirectional lookup
 
 ## Anti-Patterns to Avoid
@@ -409,11 +411,11 @@ The same principles apply:
 eventType: "MyApp.Orders.Events.OrderShippedEvent, MyApp.Orders"
 ```
 
-### ❌ Changing Domain/Context/Name Values
+### ❌ Changing AppName/ModuleName/Name Values
 
 ```csharp
 // BAD: Breaks deserialization of stored events
-[EventName("ORDER", "SHIPPING", "COMPLETED", Version = 1)]  // Was "FULFILLMENT", "SHIPPED"!
+[EventName("ORDER", "SHIPPING", "COMPLETED", version: 1)]  // Was "FULFILLMENT", "SHIPPED"!
 public sealed record OrderShippedEvent(...);
 ```
 
@@ -428,22 +430,22 @@ public sealed record OrderShippedEvent(...);  // Missing [EventName]!
 
 ```csharp
 // BAD: Ambiguous - which type should be used?
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]
 public sealed record OrderShippedEvent(...);
 
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]  // Duplicate!
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]  // Duplicate!
 public sealed record ShipmentCompletedEvent(...);
 ```
 
 ### ❌ Embedding Version in the Name String
 
 ```csharp
-// BAD: Version should be the int property, not part of the name
-[EventName("ORDER", "FULFILLMENT", "SHIPPEDV1", Version = 1)]  // "V1" in name AND Version = 1
+// BAD: Version should be the int parameter, not part of the name
+[EventName("ORDER", "FULFILLMENT", "SHIPPEDV1", version: 1)]  // "V1" in name AND version: 1
 public sealed record OrderShippedEvent(...);  // Results in ORDER.FULFILLMENT.SHIPPEDV1.V1
 
-// GOOD: Keep name clean, use Version property
-[EventName("ORDER", "FULFILLMENT", "SHIPPED", Version = 1)]  // Results in ORDER.FULFILLMENT.SHIPPED.V1
+// GOOD: Keep name clean, use version parameter
+[EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]  // Results in ORDER.FULFILLMENT.SHIPPED.V1
 public sealed record OrderShippedEvent(...);
 ```
 
