@@ -102,6 +102,7 @@ This document establishes mandatory logging standards ensuring consistent, obser
 The source generator pattern uses `[LoggerMessage]` attributes to generate high-performance logging code at compile time. This approach reduces boilerplate by ~50% compared to manual delegate patterns.
 
 **Benefits:**
+
 - **KISS (Keep It Simple):** No manual delegate definitions needed
 - **DRY (Don't Repeat Yourself):** Method signature defines the message template once
 - **Less boilerplate:** ~50% reduction in lines of code compared to manual patterns
@@ -109,6 +110,7 @@ The source generator pattern uses `[LoggerMessage]` attributes to generate high-
 - **Better maintainability:** Changes to parameters automatically update the delegate
 
 **Pattern:**
+
 ```csharp
 using Microsoft.Extensions.Logging;
 
@@ -134,6 +136,7 @@ internal static partial class SomeComponentLoggerExtensions
 ```
 
 **Key requirements:**
+
 - Class must be declared as `partial`
 - Methods must be declared as `partial` with no method body
 - Use `[LoggerMessage(eventId, logLevel, "message template")]` attribute
