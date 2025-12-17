@@ -14,11 +14,11 @@ Governing thought: Use high-performance LoggerExtensions pattern with LoggerMess
   Why: Enforces the LoggerExtensions pattern and prevents performance issues.
 - LoggerExtensions class names **MUST** end with `LoggerExtensions` suffix.  
   Why: Maintains naming consistency across components.
-- LoggerMessage patterns **MUST** be implemented as private static readonly Action delegates.  
-  Why: Enables compile-time optimization and zero-allocation logging.
+- LoggerMessage patterns **SHOULD** use source generator attributes (`[LoggerMessage]`) for new code; manual delegates remain acceptable for legacy code.  
+  Why: Source generators provide identical performance with ~50% less boilerplate, following KISS and DRY principles.
 - Each log operation **MUST** be exposed as a public static extension method.  
   Why: Provides consistent API for logging across components.
-- Direct ILogger.Log() calls **MUST NOT** be used; always use LoggerMessage.Define pattern.  
+- Direct ILogger.Log() calls **MUST NOT** be used; always use LoggerMessage source generators or LoggerMessage.Define pattern.  
   Why: LoggerMessage provides pre-compiled message templates and optimal performance.
 - Dependency-injected ILogger **MUST** use `private ILogger<T> Logger { get; }` property pattern.  
   Why: Encourages immutability and clarity of dependencies, consistent with DI best practices.
@@ -84,7 +84,7 @@ This document establishes mandatory logging standards ensuring consistent, obser
 ## Core Principles
 
 - Use LoggerExtensions pattern for all logging (no direct ILogger calls)
-- Implement LoggerMessage with static Action delegates for performance
+- Implement LoggerMessage with source generators (preferred) or static Action delegates (acceptable)
 - Log structured data with meaningful properties
 - Include correlation IDs for distributed tracing
 - Use appropriate log levels consistently
@@ -94,6 +94,141 @@ This document establishes mandatory logging standards ensuring consistent, obser
 - Log Orleans grain lifecycle and method calls
 - Log business rule violations and event sourcing operations
 - Track performance-critical operations and resource allocations
+
+## LoggerExtensions Implementation Patterns
+
+### Preferred: Source Generator Pattern (Recommended for New Code)
+
+The source generator pattern uses `[LoggerMessage]` attributes to generate high-performance logging code at compile time. This approach reduces boilerplate by ~50% while maintaining identical runtime performance.
+
+**Benefits:**
+- **KISS (Keep It Simple):** No manual delegate definitions needed
+- **DRY (Don't Repeat Yourself):** Method signature defines the message template once
+- **Less boilerplate:** ~50% reduction in lines of code
+- **Identical performance:** Compiles to the same high-performance delegates
+- **Better maintainability:** Changes to parameters automatically update the delegate
+
+**Pattern:**
+```csharp
+using Microsoft.Extensions.Logging;
+
+namespace Mississippi.SomeNamespace;
+
+/// <summary>
+/// High-performance logging extensions for SomeComponent.
+/// </summary>
+internal static partial class SomeComponentLoggerExtensions
+{
+    /// <summary>
+    /// Logs when some event occurs.
+    /// </summary>
+    [LoggerMessage(1, LogLevel.Debug, "Event {Type} for {Key}")]
+    public static partial void SomeEvent(this ILogger logger, string type, string key);
+
+    /// <summary>
+    /// Logs when an operation fails with an exception.
+    /// </summary>
+    [LoggerMessage(2, LogLevel.Error, "Operation {Operation} failed for {EntityId}")]
+    public static partial void OperationFailed(this ILogger logger, string operation, string entityId, Exception exception);
+}
+```
+
+**Key requirements:**
+- Class must be declared as `partial`
+- Methods must be declared as `partial` with no method body
+- Use `[LoggerMessage(eventId, logLevel, "message template")]` attribute
+- Parameters in message template must match method parameters (excluding `ILogger` and `Exception`)
+- `Exception` parameter (if present) must be last and named `exception`
+
+### Acceptable: Manual Delegate Pattern (Legacy Code)
+
+The manual delegate pattern explicitly defines `Action<...>` delegates using `LoggerMessage.Define<T>()`. This pattern remains acceptable for existing code but is more verbose.
+
+**Pattern:**
+```csharp
+using System;
+using Microsoft.Extensions.Logging;
+
+namespace Mississippi.SomeNamespace;
+
+/// <summary>
+/// High-performance logging extensions for SomeComponent.
+/// </summary>
+internal static class SomeComponentLoggerExtensions
+{
+    private static readonly Action<ILogger, string, string, Exception?> SomeEventMessage =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Debug,
+            new EventId(1, nameof(SomeEvent)),
+            "Event {Type} for {Key}");
+
+    private static readonly Action<ILogger, string, string, Exception> OperationFailedMessage =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Error,
+            new EventId(2, nameof(OperationFailed)),
+            "Operation {Operation} failed for {EntityId}");
+
+    /// <summary>
+    /// Logs when some event occurs.
+    /// </summary>
+    public static void SomeEvent(this ILogger logger, string type, string key) =>
+        SomeEventMessage(logger, type, key, null);
+
+    /// <summary>
+    /// Logs when an operation fails with an exception.
+    /// </summary>
+    public static void OperationFailed(this ILogger logger, string operation, string entityId, Exception exception) =>
+        OperationFailedMessage(logger, operation, entityId, exception);
+}
+```
+
+**When to use:**
+- Existing code that hasn't been refactored yet
+- When working in codebases that haven't adopted source generators
+- Both patterns compile to identical delegates and have the same performance
+
+### Migration Path
+
+When refactoring from manual delegates to source generators:
+
+1. Add `partial` keyword to the class declaration
+2. Replace delegate fields with `[LoggerMessage]` attributes on method declarations
+3. Change methods to `partial` declarations (remove method body)
+4. Remove `using System;` if no longer needed
+5. Keep XML documentation, event IDs, log levels, and message templates unchanged
+
+**Before:**
+```csharp
+using System;
+using Microsoft.Extensions.Logging;
+
+namespace Mississippi.SomeNamespace;
+
+internal static class SomeLoggerExtensions
+{
+    private static readonly Action<ILogger, string, Exception?> SomeActionMessage =
+        LoggerMessage.Define<string>(
+            LogLevel.Debug,
+            new EventId(1, nameof(SomeAction)),
+            "Some message {Parameter}");
+
+    public static void SomeAction(this ILogger logger, string parameter) =>
+        SomeActionMessage(logger, parameter, null);
+}
+```
+
+**After:**
+```csharp
+using Microsoft.Extensions.Logging;
+
+namespace Mississippi.SomeNamespace;
+
+internal static partial class SomeLoggerExtensions
+{
+    [LoggerMessage(1, LogLevel.Debug, "Some message {Parameter}")]
+    public static partial void SomeAction(this ILogger logger, string parameter);
+}
+```
 
 ### Log Levels and Usage
 
@@ -105,17 +240,11 @@ This document establishes mandatory logging standards ensuring consistent, obser
 - **External service failures** that impact functionality
 
 ```csharp
-// MANDATORY PATTERN: High-performance logging with LoggerMessage and LoggerExtensions class
-public static class EventProcessingLoggerExtensions
+// PREFERRED PATTERN: Source generator with LoggerExtensions class
+public static partial class EventProcessingLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, Exception> EventProcessingFailedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Error,
-            new EventId(1, nameof(EventProcessingFailed)),
-            "Failed to process event {EventId} for stream {StreamId}");
-
-    public static void EventProcessingFailed(this ILogger<EventProcessingGrain> logger, string eventId, string streamId, Exception ex) =>
-        EventProcessingFailedMessage(logger, eventId, streamId, ex);
+    [LoggerMessage(1, LogLevel.Error, "Failed to process event {EventId} for stream {StreamId}")]
+    public static partial void EventProcessingFailed(this ILogger logger, string eventId, string streamId, Exception exception);
 }
 
 // Usage - ALWAYS call through the LoggerExtensions class
@@ -133,17 +262,11 @@ Logger.EventProcessingFailed(eventId, streamId, ex);
 - **Configuration issues** that have fallbacks
 
 ```csharp
-// MANDATORY PATTERN: LoggerExtensions class with high-performance LoggerMessage
-public static class SystemMonitoringLoggerExtensions
+// PREFERRED PATTERN: Source generator with LoggerExtensions class
+public static partial class SystemMonitoringLoggerExtensions
 {
-    private static readonly Action<ILogger, int, Exception?> HighMemoryUsageDetectedMessage =
-        LoggerMessage.Define<int>(
-            LogLevel.Warning,
-            new EventId(1, nameof(HighMemoryUsageDetected)),
-            "High memory usage detected: {MemoryUsage}MB");
-
-    public static void HighMemoryUsageDetected(this ILogger<SystemMonitoringService> logger, int memoryUsage) =>
-        HighMemoryUsageDetectedMessage(logger, memoryUsage, null);
+    [LoggerMessage(1, LogLevel.Warning, "High memory usage detected: {MemoryUsage}MB")]
+    public static partial void HighMemoryUsageDetected(this ILogger logger, int memoryUsage);
 }
 
 // Usage - ALWAYS through LoggerExtensions
@@ -158,17 +281,11 @@ Logger.HighMemoryUsageDetected(memoryUsage);
 - **User actions** that are significant
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class EventSourcingLoggerExtensions
+// PREFERRED PATTERN: Source generator with LoggerExtensions
+public static partial class EventSourcingLoggerExtensions
 {
-    private static readonly Action<ILogger, string, string, long, Exception?> EventAppendedMessage =
-        LoggerMessage.Define<string, string, long>(
-            LogLevel.Information,
-            new EventId(1, nameof(EventAppended)),
-            "Event {EventId} appended to stream {StreamId} at position {Position}");
-
-    public static void EventAppended(this ILogger<EventSourcingService> logger, string eventId, string streamId, long position) =>
-        EventAppendedMessage(logger, eventId, streamId, position, null);
+    [LoggerMessage(1, LogLevel.Information, "Event {EventId} appended to stream {StreamId} at position {Position}")]
+    public static partial void EventAppended(this ILogger logger, string eventId, string streamId, long position);
 }
 
 // Usage
@@ -183,17 +300,11 @@ Logger.EventAppended(eventId, streamId, position);
 - **Configuration values** and settings
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class EventProcessingLoggerExtensions
+// PREFERRED PATTERN: Source generator
+public static partial class EventProcessingLoggerExtensions
 {
-    private static readonly Action<ILogger, int, string, Exception?> ProcessingBatchMessage =
-        LoggerMessage.Define<int, string>(
-            LogLevel.Debug,
-            new EventId(2, nameof(ProcessingBatch)),
-            "Processing batch of {Count} events for stream {StreamId}");
-
-    public static void ProcessingBatch(this ILogger<EventProcessingGrain> logger, int eventCount, string streamId) =>
-        ProcessingBatchMessage(logger, eventCount, streamId, null);
+    [LoggerMessage(2, LogLevel.Debug, "Processing batch of {Count} events for stream {StreamId}")]
+    public static partial void ProcessingBatch(this ILogger logger, int eventCount, string streamId);
 }
 
 // Usage
@@ -208,17 +319,11 @@ Logger.ProcessingBatch(eventCount, streamId);
 - **Network call details** and timing
 
 ```csharp
-// High-performance logging with LoggerMessage
-public static class MemoryAllocationLoggerExtensions
+// PREFERRED PATTERN: Source generator
+public static partial class MemoryAllocationLoggerExtensions
 {
-    private static readonly Action<ILogger, int, Exception?> BufferAllocatedMessage =
-        LoggerMessage.Define<int>(
-            LogLevel.Trace,
-            new EventId(1, nameof(BufferAllocated)),
-            "Allocated {Bytes} bytes for event buffer");
-
-    public static void BufferAllocated(this ILogger<MemoryAllocationService> logger, int bufferSize) =>
-        BufferAllocatedMessage(logger, bufferSize, null);
+    [LoggerMessage(1, LogLevel.Trace, "Allocated {Bytes} bytes for event buffer")]
+    public static partial void BufferAllocated(this ILogger logger, int bufferSize);
 }
 
 // Usage
@@ -1383,35 +1488,17 @@ public class EventProcessingGrain : IEventProcessingGrain, IGrainBase
 ### Standard Logging Template
 
 ```csharp
-// MANDATORY PATTERN: High-performance logging with LoggerMessage and LoggerExtensions class
-public static class ExampleServiceLoggerExtensions
+// PREFERRED PATTERN: Source generator with LoggerExtensions class
+public static partial class ExampleServiceLoggerExtensions
 {
-    private static readonly Action<ILogger, int, string, Exception?> DataProcessingStartedMessage =
-        LoggerMessage.Define<int, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(DataProcessingStarted)),
-            "PROC-001: Starting data processing. DataLength: {DataLength}, CorrelationId: {CorrelationId}");
+    [LoggerMessage(1, LogLevel.Information, "PROC-001: Starting data processing. DataLength: {DataLength}, CorrelationId: {CorrelationId}")]
+    public static partial void DataProcessingStarted(this ILogger logger, int dataLength, string correlationId);
 
-    private static readonly Action<ILogger, string, string, Exception?> DataProcessingCompletedMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new EventId(2, nameof(DataProcessingCompleted)),
-            "PROC-002: Data processing completed successfully. Result: {Result}, CorrelationId: {CorrelationId}");
+    [LoggerMessage(2, LogLevel.Information, "PROC-002: Data processing completed successfully. Result: {Result}, CorrelationId: {CorrelationId}")]
+    public static partial void DataProcessingCompleted(this ILogger logger, string result, string correlationId);
 
-    private static readonly Action<ILogger, int, string, Exception> DataProcessingFailedMessage =
-        LoggerMessage.Define<int, string>(
-            LogLevel.Error,
-            new EventId(3, nameof(DataProcessingFailed)),
-            "PROC-ERROR: Data processing failed. DataLength: {DataLength}, CorrelationId: {CorrelationId}");
-
-    public static void DataProcessingStarted(this ILogger<ExampleService> logger, int dataLength, string correlationId) =>
-        DataProcessingStartedMessage(logger, dataLength, correlationId, null);
-
-    public static void DataProcessingCompleted(this ILogger<ExampleService> logger, string result, string correlationId) =>
-        DataProcessingCompletedMessage(logger, result, correlationId, null);
-
-    public static void DataProcessingFailed(this ILogger<ExampleService> logger, int dataLength, string correlationId, Exception ex) =>
-        DataProcessingFailedMessage(logger, dataLength, correlationId, ex);
+    [LoggerMessage(3, LogLevel.Error, "PROC-ERROR: Data processing failed. DataLength: {DataLength}, CorrelationId: {CorrelationId}")]
+    public static partial void DataProcessingFailed(this ILogger logger, int dataLength, string correlationId, Exception exception);
 }
 
 public class ExampleService
