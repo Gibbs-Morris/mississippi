@@ -67,11 +67,11 @@ The attribute-based naming pattern decouples the **storage identity** from the *
 
 ### Separation of Concerns
 
-| Concern | Responsibility | Example |
-|---------|----------------|---------|
-| **Storage Identity** | `EventName` property | `"ORDER.FULFILLMENT.SHIPPED.V1"` |
-| **Code Identity** | Class/record name | `OrderShippedEvent` |
-| **Schema Version** | Version suffix | `V1`, `V2`, etc. |
+| Concern              | Responsibility       | Example                            |
+| -------------------- | -------------------- | ---------------------------------- |
+| **Storage Identity** | `EventName` property | `"ORDER.FULFILLMENT.SHIPPED.V1"`   |
+| **Code Identity**    | Class/record name    | `OrderShippedEvent`                |
+| **Schema Version**   | Version suffix       | `V1`, `V2`, etc.                   |
 
 The storage layer only knows about attribute values. The code layer only knows about CLR types. The registry bridges them.
 
@@ -119,6 +119,7 @@ object @event = serializationProvider.Deserialize(eventType!, eventData);
 ```
 
 This approach:
+
 - Uses the serializer's native type-based deserialization (e.g., `JsonSerializer.Deserialize(data, type)`)
 - Avoids the complexity of expression tree compilation or delegate caching
 - Maintains type safety through the registry lookup
@@ -127,7 +128,7 @@ This approach:
 
 ### Pattern: `APPNAME.MODULENAME.NAME.Vn`
 
-```
+```text
 ORDER.FULFILLMENT.SHIPPED.V1
 │     │           │       │
 │     │           │       └── Version (schema evolution)
@@ -138,13 +139,13 @@ ORDER.FULFILLMENT.SHIPPED.V1
 
 ### Examples
 
-| Type | Attribute Name |
-|------|----------------|
-| Order shipped | `ORDER.FULFILLMENT.SHIPPED.V1` |
-| Order cancelled | `ORDER.LIFECYCLE.CANCELLED.V1` |
-| Customer registered | `CUSTOMER.ONBOARDING.REGISTERED.V1` |
-| Inventory adjusted | `INVENTORY.STOCK.ADJUSTED.V1` |
-| Payment snapshot | `PAYMENT.ACCOUNT.SNAPSHOT.V1` |
+| Type                | Attribute Name                       |
+| ------------------- | ------------------------------------ |
+| Order shipped       | `ORDER.FULFILLMENT.SHIPPED.V1`       |
+| Order cancelled     | `ORDER.LIFECYCLE.CANCELLED.V1`       |
+| Customer registered | `CUSTOMER.ONBOARDING.REGISTERED.V1`  |
+| Inventory adjusted  | `INVENTORY.STOCK.ADJUSTED.V1`        |
+| Payment snapshot    | `PAYMENT.ACCOUNT.SNAPSHOT.V1`        |
 
 ### Why This Format?
 
@@ -213,12 +214,14 @@ public OrderState Reduce(OrderState state, object @event) => @event switch
 ### Scenario 1: Rename a Class
 
 **Before:**
+
 ```csharp
 [EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]
 public sealed record OrderShippedEvent(Guid OrderId, DateTimeOffset ShippedAt);
 ```
 
 **After:**
+
 ```csharp
 [EventName("ORDER", "FULFILLMENT", "SHIPPED", version: 1)]  // Unchanged!
 public sealed record OrderShipmentCompletedEvent(Guid OrderId, DateTimeOffset ShippedAt);
@@ -229,6 +232,7 @@ public sealed record OrderShipmentCompletedEvent(Guid OrderId, DateTimeOffset Sh
 ### Scenario 2: Move to Different Namespace
 
 **Before:**
+
 ```csharp
 namespace MyApp.Orders.Events;
 
@@ -237,6 +241,7 @@ public sealed record OrderShippedEvent(...);
 ```
 
 **After:**
+
 ```csharp
 namespace MyApp.Domain.Orders.Fulfillment.Events;  // New namespace
 
@@ -321,6 +326,7 @@ public sealed class SnapshotNameAttribute : Attribute
 ```
 
 > **Key insight:** The `Version` is a separate `int` field, not embedded in a string. This:
+>
 > - Prevents typos like `"SHIPPED.V1"` vs `"SHIPPEDV1"` vs `"SHIPPED1"`
 > - Enables programmatic queries like "find all V1 events"
 > - Makes version bumps explicit and IDE-refactorable
@@ -341,14 +347,16 @@ services.AddEventTypeRegistry(options =>
 ### Runtime Flow
 
 **Writing Events:**
-```
+
+```text
 Event Object → Registry.ResolveName(type) → Attribute Name → Serialize → Storage
      ↓                    ↓                        ↓
 OrderShippedEvent    "ORDER.FULFILLMENT.SHIPPED.V1"    { eventType: "...", data: ... }
 ```
 
 **Reading Events:**
-```
+
+```text
 Storage → Attribute Name → Registry.ResolveType(name) → DeserializerFactory.GetDeserializer(type) → Event Object
    ↓            ↓                     ↓                              ↓                                    ↓
 { ... }  "ORDER.FULFILLMENT..."  typeof(OrderShippedEvent)   Func<bytes, object>              OrderShippedEvent
@@ -388,12 +396,12 @@ foreach (var (name, type) in registry.GetRegisteredTypes())
 
 This pattern applies to any persisted type. Each category has its own attribute and registry:
 
-| Domain | Attribute | Registry | Example |
-|--------|-----------|----------|--------|
-| Events | `[EventName]` | `IEventTypeRegistry` | `[EventName("ORDER", "LIFECYCLE", "CREATED", version: 1)]` |
-| Snapshots | `[SnapshotName]` | `ISnapshotTypeRegistry` | `[SnapshotName("ORDER", "AGGREGATE", "STATE", version: 1)]` |
-| Commands | `[CommandName]` | `ICommandTypeRegistry` | `[CommandName("ORDER", "ACTIONS", "CREATE", version: 1)]` |
-| Messages | `[MessageName]` | `IMessageTypeRegistry` | `[MessageName("ORDER", "NOTIFICATIONS", "ALERT", version: 1)]` |
+| Domain    | Attribute         | Registry                 | Example                                                          |
+| --------- | ----------------- | ------------------------ | ---------------------------------------------------------------- |
+| Events    | `[EventName]`     | `IEventTypeRegistry`     | `[EventName("ORDER", "LIFECYCLE", "CREATED", version: 1)]`       |
+| Snapshots | `[SnapshotName]`  | `ISnapshotTypeRegistry`  | `[SnapshotName("ORDER", "AGGREGATE", "STATE", version: 1)]`      |
+| Commands  | `[CommandName]`   | `ICommandTypeRegistry`   | `[CommandName("ORDER", "ACTIONS", "CREATE", version: 1)]`        |
+| Messages  | `[MessageName]`   | `IMessageTypeRegistry`   | `[MessageName("ORDER", "NOTIFICATIONS", "ALERT", version: 1)]`   |
 
 The same principles apply:
 
@@ -463,4 +471,3 @@ public sealed record OrderShippedEvent(...);
 - [Event Sourcing – Martin Fowler](https://martinfowler.com/eaaDev/EventSourcing.html)
 - [Versioning in an Event Sourced System – Greg Young](https://leanpub.com/esversioning)
 - [Schema Evolution in Event-Sourced Systems](https://www.eventstore.com/blog/event-versioning)
-

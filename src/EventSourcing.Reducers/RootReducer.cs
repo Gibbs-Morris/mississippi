@@ -150,43 +150,76 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
         Logger.RootReducerReducing(projectionType, eventType);
 
         // Fast path: look up reducers registered for this exact event type.
-        if (reducerIndex.TryGetValue(eventRuntimeType, out ImmutableArray<IReducer<TProjection>> indexed))
+        if (reducerIndex.TryGetValue(eventRuntimeType, out ImmutableArray<IReducer<TProjection>> indexed) &&
+            TryApplyReducers(indexed, state, eventData, projectionType, eventType, out TProjection result))
         {
-            foreach (IReducer<TProjection> reducer in indexed)
-            {
-                if (reducer.TryReduce(state, eventData, out TProjection projection))
-                {
-                    if (!ProjectionType.IsValueType && state is not null && ReferenceEquals(state, projection))
-                    {
-                        Logger.RootReducerProjectionInstanceReused(reducer.GetType().Name, projectionType, eventType);
-                        throw new InvalidOperationException(
-                            "Reducers must return a new projection instance. Use a copy/with expression instead of mutating state.");
-                    }
-
-                    Logger.RootReducerReducerMatched(reducer.GetType().Name, eventType);
-                    return projection;
-                }
-            }
+            return result;
         }
 
         // Slow path: iterate fallback reducers whose event type could not be determined at construction.
-        foreach (IReducer<TProjection> reducer in fallbackReducers)
+        if (TryApplyReducers(fallbackReducers, state, eventData, projectionType, eventType, out TProjection fallbackResult))
         {
-            if (reducer.TryReduce(state, eventData, out TProjection projection))
-            {
-                if (!ProjectionType.IsValueType && state is not null && ReferenceEquals(state, projection))
-                {
-                    Logger.RootReducerProjectionInstanceReused(reducer.GetType().Name, projectionType, eventType);
-                    throw new InvalidOperationException(
-                        "Reducers must return a new projection instance. Use a copy/with expression instead of mutating state.");
-                }
-
-                Logger.RootReducerReducerMatched(reducer.GetType().Name, eventType);
-                return projection;
-            }
+            return fallbackResult;
         }
 
         Logger.RootReducerNoReducerMatched(projectionType, eventType);
         return state;
+    }
+
+    /// <summary>
+    ///     Attempts to apply the first matching reducer from the given collection.
+    /// </summary>
+    /// <param name="reducers">The collection of reducers to try.</param>
+    /// <param name="state">The current projection state.</param>
+    /// <param name="eventData">The event data to reduce.</param>
+    /// <param name="projectionType">The projection type name for logging.</param>
+    /// <param name="eventType">The event type name for logging.</param>
+    /// <param name="result">The resulting projection if a reducer matched.</param>
+    /// <returns>True if a reducer successfully handled the event; otherwise, false.</returns>
+    private bool TryApplyReducers(
+        IReadOnlyList<IReducer<TProjection>> reducers,
+        TProjection state,
+        object eventData,
+        string projectionType,
+        string eventType,
+        out TProjection result
+    )
+    {
+        foreach (IReducer<TProjection> reducer in reducers)
+        {
+            if (!reducer.TryReduce(state, eventData, out TProjection projection))
+            {
+                continue;
+            }
+
+            ValidateProjectionNotReused(state, projection, reducer.GetType().Name, projectionType, eventType);
+            Logger.RootReducerReducerMatched(reducer.GetType().Name, eventType);
+            result = projection;
+            return true;
+        }
+
+        result = default!;
+        return false;
+    }
+
+    /// <summary>
+    ///     Validates that the projection instance was not reused (mutated in place).
+    /// </summary>
+    private void ValidateProjectionNotReused(
+        TProjection state,
+        TProjection projection,
+        string reducerName,
+        string projectionType,
+        string eventType
+    )
+    {
+        if (ProjectionType.IsValueType || state is null || !ReferenceEquals(state, projection))
+        {
+            return;
+        }
+
+        Logger.RootReducerProjectionInstanceReused(reducerName, projectionType, eventType);
+        throw new InvalidOperationException(
+            "Reducers must return a new projection instance. Use a copy/with expression instead of mutating state.");
     }
 }
