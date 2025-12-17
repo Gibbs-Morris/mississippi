@@ -17,7 +17,7 @@ public interface IAsyncSerializationReader
     /// <param name="source">The stream containing the serialized data.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation with the deserialized object.</returns>
-    ValueTask<T> ReadAsync<T>(
+    ValueTask<T> DeserializeAsync<T>(
         Stream source,
         CancellationToken cancellationToken = default
     );

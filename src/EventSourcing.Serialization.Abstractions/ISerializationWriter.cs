@@ -14,7 +14,7 @@ public interface ISerializationWriter
     /// <typeparam name="T">The type of object to serialize.</typeparam>
     /// <param name="value">The object to serialize.</param>
     /// <returns>A byte array containing the serialized data.</returns>
-    ReadOnlyMemory<byte> Write<T>(
+    ReadOnlyMemory<byte> Serialize<T>(
         T value
     );
 }

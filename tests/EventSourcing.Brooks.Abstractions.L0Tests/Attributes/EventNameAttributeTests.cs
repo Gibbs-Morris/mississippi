@@ -34,7 +34,7 @@ public sealed class EventNameAttributeTests
     )
     {
         EventNameAttribute sut = new(app, mod, evt, version);
-        Assert.Equal($"{app}.{mod}.{evt}V{version}", sut.EventName);
+        Assert.Equal($"{app}.{mod}.{evt}.V{version}", sut.EventName);
     }
 
     /// <summary>
@@ -205,7 +205,7 @@ public sealed class EventNameAttributeTests
     {
         EventNameAttribute sut = new("APP", "MODULE", "EVENT");
         Assert.Equal(1, sut.Version);
-        Assert.Equal("APP.MODULE.EVENTV1", sut.EventName);
+        Assert.Equal("APP.MODULE.EVENT.V1", sut.EventName);
     }
 
     /// <summary>
@@ -232,7 +232,7 @@ public sealed class EventNameAttributeTests
         Assert.Equal(moduleName, sut.ModuleName);
         Assert.Equal(name, sut.Name);
         Assert.Equal(version, sut.Version);
-        Assert.Equal($"{appName}.{moduleName}.{name}V{version}", sut.EventName);
+        Assert.Equal($"{appName}.{moduleName}.{name}.V{version}", sut.EventName);
     }
 
     /// <summary>
@@ -251,7 +251,7 @@ public sealed class EventNameAttributeTests
         Assert.Equal(moduleName, sut.ModuleName);
         Assert.Equal(name, sut.Name);
         Assert.Equal(version, sut.Version);
-        Assert.Equal("APP.MODULE.EVENTV3", sut.EventName);
+        Assert.Equal("APP.MODULE.EVENT.V3", sut.EventName);
     }
 
     /// <summary>
@@ -268,7 +268,7 @@ public sealed class EventNameAttributeTests
     {
         EventNameAttribute sut = new("APP", "MODULE", "EVENT", version);
         Assert.Equal(version, sut.Version);
-        Assert.Equal($"APP.MODULE.EVENTV{version}", sut.EventName);
+        Assert.Equal($"APP.MODULE.EVENT.V{version}", sut.EventName);
     }
 
     /// <summary>
@@ -281,9 +281,9 @@ public sealed class EventNameAttributeTests
     /// <param name="version">The version component.</param>
     /// <param name="expected">The expected fully‑qualified event name.</param>
     [Theory]
-    [InlineData("APP", "MODULE", "EVENT", 1, "APP.MODULE.EVENTV1")]
-    [InlineData("APP", "MODULE", "EVENT", 2, "APP.MODULE.EVENTV2")]
-    [InlineData("TEST", "USER", "CREATED", 1, "TEST.USER.CREATEDV1")]
+    [InlineData("APP", "MODULE", "EVENT", 1, "APP.MODULE.EVENT.V1")]
+    [InlineData("APP", "MODULE", "EVENT", 2, "APP.MODULE.EVENT.V2")]
+    [InlineData("TEST", "USER", "CREATED", 1, "TEST.USER.CREATED.V1")]
     public void EventNameReturnsCorrectFormat(
         string appName,
         string moduleName,

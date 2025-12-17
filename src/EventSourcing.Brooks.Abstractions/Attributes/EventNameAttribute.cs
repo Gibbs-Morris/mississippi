@@ -46,9 +46,9 @@ public sealed partial class EventNameAttribute : Attribute
     public string AppName { get; }
 
     /// <summary>
-    ///     Gets the fully qualified event name in the format {AppName}.{ModuleName}.{Name}V{Version}.
+    ///     Gets the fully qualified event name in the format {AppName}.{ModuleName}.{Name}.V{Version}.
     /// </summary>
-    public string EventName => $"{AppName}.{ModuleName}.{Name}V{Version}";
+    public string EventName => $"{AppName}.{ModuleName}.{Name}.V{Version}";
 
     /// <summary>
     ///     Gets the module name component of the event name.

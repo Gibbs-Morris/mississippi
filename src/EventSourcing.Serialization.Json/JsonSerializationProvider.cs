@@ -26,10 +26,23 @@ public class JsonSerializationProvider : ISerializationProvider
     /// <param name="payload">The byte payload containing the serialized data.</param>
     /// <returns>The deserialized object.</returns>
     /// <exception cref="InvalidOperationException">Thrown when deserialization results in null.</exception>
-    public T Read<T>(
+    public T Deserialize<T>(
         ReadOnlyMemory<byte> payload
     ) =>
         JsonSerializer.Deserialize<T>(payload.Span) ?? throw new InvalidOperationException();
+
+    /// <summary>
+    ///     Deserializes an object from a byte payload using a runtime type.
+    /// </summary>
+    /// <param name="type">The type of object to deserialize.</param>
+    /// <param name="payload">The byte payload containing the serialized data.</param>
+    /// <returns>The deserialized object.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when deserialization results in null.</exception>
+    public object Deserialize(
+        Type type,
+        ReadOnlyMemory<byte> payload
+    ) =>
+        JsonSerializer.Deserialize(payload.Span, type) ?? throw new InvalidOperationException();
 
     /// <summary>
     ///     Asynchronously deserializes an object from a stream.
@@ -39,7 +52,7 @@ public class JsonSerializationProvider : ISerializationProvider
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>The deserialized object.</returns>
     /// <exception cref="InvalidOperationException">Thrown when deserialization results in null.</exception>
-    public async ValueTask<T> ReadAsync<T>(
+    public async ValueTask<T> DeserializeAsync<T>(
         Stream source,
         CancellationToken cancellationToken = default
     )
@@ -54,7 +67,7 @@ public class JsonSerializationProvider : ISerializationProvider
     /// <typeparam name="T">The type of object to serialize.</typeparam>
     /// <param name="value">The object to serialize.</param>
     /// <returns>A byte array containing the serialized data.</returns>
-    public ReadOnlyMemory<byte> Write<T>(
+    public ReadOnlyMemory<byte> Serialize<T>(
         T value
     ) =>
         JsonSerializer.SerializeToUtf8Bytes(value);
@@ -68,7 +81,7 @@ public class JsonSerializationProvider : ISerializationProvider
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when destination is null.</exception>
-    public async ValueTask WriteAsync<T>(
+    public async ValueTask SerializeAsync<T>(
         T value,
         Stream destination,
         CancellationToken cancellationToken = default
