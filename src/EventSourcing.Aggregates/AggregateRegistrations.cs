@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -25,7 +26,24 @@ public static class AggregateRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        services.TryAddSingleton<IEventTypeRegistry, EventTypeRegistry>();
+        services.TryAddSingleton<IEventTypeRegistry>(provider =>
+        {
+            EventTypeRegistry registry = new();
+
+            // Eagerly register all event types contributed via AddEventType<TEvent>().
+            foreach (IEventTypeRegistration registration in provider.GetServices<IEventTypeRegistration>())
+            {
+                registration.Register(registry);
+            }
+
+            // Scan assemblies contributed via AddEventTypeAssembly().
+            foreach (AssemblyRegistration assemblyRegistration in provider.GetServices<AssemblyRegistration>())
+            {
+                registry.ScanAssembly(assemblyRegistration.Assembly);
+            }
+
+            return registry;
+        });
         services.TryAddTransient<IAggregateGrainFactory, AggregateGrainFactory>();
         return services;
     }
@@ -92,6 +110,44 @@ public static class AggregateRegistrations
     }
 
     /// <summary>
+    ///     Scans an assembly for types decorated with <see cref="EventNameAttribute" /> and registers them.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="assembly">The assembly to scan for event types.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <remarks>
+    ///     This method queues the assembly to be scanned when the <see cref="IEventTypeRegistry" /> is created.
+    ///     All types in the assembly decorated with <see cref="EventNameAttribute" /> will be automatically
+    ///     registered, eliminating the need to call <see cref="AddEventType{TEvent}" /> for each type.
+    /// </remarks>
+    public static IServiceCollection ScanAssemblyForEventTypes(
+        this IServiceCollection services,
+        Assembly assembly
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(assembly);
+
+        // Ensure aggregate support is added
+        services.AddAggregateSupport();
+
+        // Queue the assembly for scanning
+        services.AddSingleton(new AssemblyRegistration(assembly));
+        return services;
+    }
+
+    /// <summary>
+    ///     Scans the assembly containing the specified type for event types.
+    /// </summary>
+    /// <typeparam name="TMarker">A type in the assembly to scan.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection ScanAssemblyForEventTypes<TMarker>(
+        this IServiceCollection services
+    ) =>
+        services.ScanAssemblyForEventTypes(typeof(TMarker).Assembly);
+
+    /// <summary>
     ///     Marker interface for event type registrations.
     /// </summary>
     internal interface IEventTypeRegistration
@@ -104,6 +160,12 @@ public static class AggregateRegistrations
             IEventTypeRegistry registry
         );
     }
+
+    /// <summary>
+    ///     A marker record used to queue assemblies for event type scanning during startup.
+    /// </summary>
+    /// <param name="Assembly">The assembly to scan for event types.</param>
+    private sealed record AssemblyRegistration(Assembly Assembly);
 
     /// <summary>
     ///     Implementation of event type registration for a specific event type.

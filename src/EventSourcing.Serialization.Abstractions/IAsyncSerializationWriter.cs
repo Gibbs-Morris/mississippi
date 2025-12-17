@@ -18,7 +18,7 @@ public interface IAsyncSerializationWriter
     /// <param name="destination">The stream to write the serialized data to.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    ValueTask WriteAsync<T>(
+    ValueTask SerializeAsync<T>(
         T value,
         Stream destination,
         CancellationToken cancellationToken = default

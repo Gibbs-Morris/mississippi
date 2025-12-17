@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Abstractions.Attributes;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Reducers.Abstractions;
@@ -55,14 +54,16 @@ public abstract class AggregateGrain<TState, TBrook>
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="brookGrainFactory">Factory for resolving brook grains.</param>
-    /// <param name="serializationProvider">Provider for event serialization.</param>
+    /// <param name="serializationProvider">Provider for event serialization and deserialization.</param>
     /// <param name="rootReducer">The root reducer for computing state from events.</param>
+    /// <param name="eventTypeRegistry">Registry for resolving event type names and CLR types.</param>
     /// <param name="logger">Logger instance.</param>
     protected AggregateGrain(
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
         ISerializationProvider serializationProvider,
         IRootReducer<TState> rootReducer,
+        IEventTypeRegistry eventTypeRegistry,
         ILogger logger
     )
     {
@@ -70,6 +71,7 @@ public abstract class AggregateGrain<TState, TBrook>
         BrookGrainFactory = brookGrainFactory ?? throw new ArgumentNullException(nameof(brookGrainFactory));
         SerializationProvider = serializationProvider ?? throw new ArgumentNullException(nameof(serializationProvider));
         RootReducer = rootReducer ?? throw new ArgumentNullException(nameof(rootReducer));
+        EventTypeRegistry = eventTypeRegistry ?? throw new ArgumentNullException(nameof(eventTypeRegistry));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -87,6 +89,11 @@ public abstract class AggregateGrain<TState, TBrook>
     protected IBrookGrainFactory BrookGrainFactory { get; }
 
     /// <summary>
+    ///     Gets the event type registry for resolving event type names and CLR types.
+    /// </summary>
+    protected IEventTypeRegistry EventTypeRegistry { get; }
+
+    /// <summary>
     ///     Gets the logger instance.
     /// </summary>
     protected ILogger Logger { get; }
@@ -100,11 +107,6 @@ public abstract class AggregateGrain<TState, TBrook>
     ///     Gets the serialization provider for event serialization.
     /// </summary>
     protected ISerializationProvider SerializationProvider { get; }
-
-    /// <summary>
-    ///     Gets the service provider for resolving command handlers.
-    /// </summary>
-    protected IServiceProvider ServiceProvider => GrainContext.ActivationServices;
 
     /// <summary>
     ///     Called when the grain is activated. Hydrates state from the brook.
@@ -162,7 +164,8 @@ public abstract class AggregateGrain<TState, TBrook>
         }
 
         // Resolve command handler
-        ICommandHandler<TCommand, TState>? handler = ServiceProvider.GetService<ICommandHandler<TCommand, TState>>();
+        ICommandHandler<TCommand, TState>? handler =
+            GrainContext.ActivationServices.GetService<ICommandHandler<TCommand, TState>>();
         if (handler is null)
         {
             string message = $"No command handler registered for command type {commandTypeName}.";
@@ -203,21 +206,42 @@ public abstract class AggregateGrain<TState, TBrook>
     }
 
     /// <summary>
+    ///     Resolves the event name for a CLR type using the registry.
+    /// </summary>
+    /// <param name="eventType">The event type.</param>
+    /// <returns>The event name.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the event type is not registered in the registry.
+    /// </exception>
+    protected virtual string ResolveEventName(
+        Type eventType
+    )
+    {
+        ArgumentNullException.ThrowIfNull(eventType);
+        string? eventName = EventTypeRegistry.ResolveName(eventType);
+        if (eventName is not null)
+        {
+            return eventName;
+        }
+
+        throw new InvalidOperationException(
+            $"Cannot resolve event name for type '{eventType.Name}'. " +
+            "Ensure the event type is registered in the event type registry.");
+    }
+
+    /// <summary>
     ///     Resolves an event type from its string name.
     /// </summary>
     /// <param name="eventTypeName">The event type name.</param>
     /// <returns>The event type, or null if not found.</returns>
     /// <remarks>
     ///     Override this method to provide custom event type resolution logic.
-    ///     The default implementation uses the event type registry from the service provider.
+    ///     The default implementation uses the injected event type registry.
     /// </remarks>
     protected virtual Type? ResolveEventType(
         string eventTypeName
-    )
-    {
-        IEventTypeRegistry? registry = ServiceProvider.GetService<IEventTypeRegistry>();
-        return registry?.ResolveType(eventTypeName);
-    }
+    ) =>
+        EventTypeRegistry.ResolveType(eventTypeName);
 
     private ImmutableArray<BrookEvent> ConvertToBrookEvents(
         IReadOnlyList<object> events
@@ -227,8 +251,8 @@ public abstract class AggregateGrain<TState, TBrook>
         foreach (object eventData in events)
         {
             Type eventType = eventData.GetType();
-            string eventTypeName = EventNameHelper.GetEventName(eventType);
-            ReadOnlyMemory<byte> data = SerializationProvider.Write(eventData);
+            string eventTypeName = ResolveEventName(eventType);
+            ReadOnlyMemory<byte> data = SerializationProvider.Serialize(eventData);
             builder.Add(
                 new()
                 {
@@ -247,8 +271,7 @@ public abstract class AggregateGrain<TState, TBrook>
         BrookEvent brookEvent
     )
     {
-        // For now, we need to resolve the event type from the registry
-        // This is a simplified implementation - in production, you'd have an event type registry
+        // Resolve the event type from the registry
         Type? eventType = ResolveEventType(brookEvent.EventType);
         if (eventType is null)
         {
@@ -257,6 +280,7 @@ public abstract class AggregateGrain<TState, TBrook>
                 "Ensure the event type is registered in the event type registry.");
         }
 
-        return SerializationProvider.Read<object>(brookEvent.Data.AsMemory());
+        // Use the serialization provider to deserialize with the runtime type
+        return SerializationProvider.Deserialize(eventType, brookEvent.Data.AsMemory());
     }
 }

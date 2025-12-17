@@ -32,23 +32,29 @@ public sealed class SerializationStorageProviderHelpersTests
     {
         public string Format => "test";
 
-        public T Read<T>(
+        public T Deserialize<T>(
             ReadOnlyMemory<byte> payload
         ) =>
             throw new NotImplementedException();
 
-        public ValueTask<T> ReadAsync<T>(
+        public object Deserialize(
+            Type type,
+            ReadOnlyMemory<byte> payload
+        ) =>
+            throw new NotImplementedException();
+
+        public ValueTask<T> DeserializeAsync<T>(
             Stream source,
             CancellationToken cancellationToken = default
         ) =>
             ValueTask.FromResult(default(T)!);
 
-        public ReadOnlyMemory<byte> Write<T>(
+        public ReadOnlyMemory<byte> Serialize<T>(
             T value
         ) =>
             ReadOnlyMemory<byte>.Empty;
 
-        public ValueTask WriteAsync<T>(
+        public ValueTask SerializeAsync<T>(
             T value,
             Stream destination,
             CancellationToken cancellationToken = default

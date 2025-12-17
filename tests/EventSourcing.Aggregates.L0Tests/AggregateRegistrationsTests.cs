@@ -172,6 +172,20 @@ public class AggregateRegistrationsTests
     }
 
     /// <summary>
+    ///     AddEventType should register the event with the registry.
+    /// </summary>
+    [Fact]
+    public void AddEventTypeRegistersEventWithRegistry()
+    {
+        ServiceCollection services = new();
+        services.AddEventType<TestEvent>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
+        string eventName = EventNameHelper.GetEventName<TestEvent>();
+        Assert.Equal(typeof(TestEvent), registry.ResolveType(eventName));
+    }
+
+    /// <summary>
     ///     AddEventType should return the service collection for chaining.
     /// </summary>
     [Fact]
