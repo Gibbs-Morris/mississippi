@@ -157,7 +157,13 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
         }
 
         // Slow path: iterate fallback reducers whose event type could not be determined at construction.
-        if (TryApplyReducers(fallbackReducers, state, eventData, projectionType, eventType, out TProjection fallbackResult))
+        if (TryApplyReducers(
+                fallbackReducers,
+                state,
+                eventData,
+                projectionType,
+                eventType,
+                out TProjection fallbackResult))
         {
             return fallbackResult;
         }
