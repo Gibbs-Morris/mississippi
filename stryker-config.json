@@ -4,7 +4,9 @@
     "language-version": "latest",
     "additional-timeout": 5000,
     "mutate": [
-      "**/*"
+      "**/*",
+      "!**/*.g.cs",
+      "!**/*.generated.cs"
     ],
     "solution": "mississippi.sln",
     "coverage-analysis": "perTest",
