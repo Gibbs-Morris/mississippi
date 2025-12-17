@@ -6,7 +6,8 @@
     "mutate": [
       "**/*",
       "!**/*.g.cs",
-      "!**/*.generated.cs"
+      "!**/*.generated.cs",
+      "!**/*LoggerExtensions.cs"
     ],
     "solution": "mississippi.sln",
     "coverage-analysis": "perTest",
