@@ -15,6 +15,39 @@ namespace Mississippi.EventSourcing.Reducers.L0Tests;
 [AllureSubSuite("Root Reducer")]
 public sealed class RootReducerTests
 {
+    /// <summary>
+    ///     A second typed reducer for TestEvent to test first-match-wins with duplicates.
+    /// </summary>
+    private sealed class AlternateTestEventReducer : IReducer<TestEvent, TestProjection>
+    {
+        public int InvocationCount { get; private set; }
+
+        public TestProjection Reduce(
+            TestProjection state,
+            TestEvent eventData
+        )
+        {
+            InvocationCount++;
+            return new($"{state.Value}-alternate-{eventData.Value}");
+        }
+
+        public bool TryReduce(
+            TestProjection state,
+            object eventData,
+            out TestProjection projection
+        )
+        {
+            if (eventData is TestEvent typedEvent)
+            {
+                projection = Reduce(state, typedEvent);
+                return true;
+            }
+
+            projection = default!;
+            return false;
+        }
+    }
+
     private sealed class CountingReducer : IReducer<TestProjection>
     {
         public int InvocationCount { get; private set; }
@@ -123,9 +156,52 @@ public sealed class RootReducerTests
         }
     }
 
+    /// <summary>
+    ///     Second event type for testing type-indexed dispatch.
+    /// </summary>
+    private sealed record SecondEvent(string Value);
+
+    /// <summary>
+    ///     A typed reducer for SecondEvent to test type indexing.
+    /// </summary>
+    private sealed class SecondEventReducer : IReducer<SecondEvent, TestProjection>
+    {
+        public int InvocationCount { get; private set; }
+
+        public TestProjection Reduce(
+            TestProjection state,
+            SecondEvent eventData
+        )
+        {
+            InvocationCount++;
+            return new($"{state.Value}-second-{eventData.Value}");
+        }
+
+        public bool TryReduce(
+            TestProjection state,
+            object eventData,
+            out TestProjection projection
+        )
+        {
+            if (eventData is SecondEvent typedEvent)
+            {
+                projection = Reduce(state, typedEvent);
+                return true;
+            }
+
+            projection = default!;
+            return false;
+        }
+    }
+
     private sealed record TestEvent(string Value);
 
     private sealed record TestProjection(string Value);
+
+    /// <summary>
+    ///     Third event type for testing unmatched events.
+    /// </summary>
+    private sealed record ThirdEvent(string Value);
 
     private sealed class ThrowingReducer : IReducer<TestProjection>
     {
@@ -139,6 +215,39 @@ public sealed class RootReducerTests
         {
             Invoked = true;
             throw new InvalidOperationException("This reducer should not be invoked when a prior reducer matches.");
+        }
+    }
+
+    /// <summary>
+    ///     A typed reducer for TestEvent to test type indexing.
+    /// </summary>
+    private sealed class TypedTestEventReducer : IReducer<TestEvent, TestProjection>
+    {
+        public int InvocationCount { get; private set; }
+
+        public TestProjection Reduce(
+            TestProjection state,
+            TestEvent eventData
+        )
+        {
+            InvocationCount++;
+            return new($"{state.Value}-typed-{eventData.Value}");
+        }
+
+        public bool TryReduce(
+            TestProjection state,
+            object eventData,
+            out TestProjection projection
+        )
+        {
+            if (eventData is TestEvent typedEvent)
+            {
+                projection = Reduce(state, typedEvent);
+                return true;
+            }
+
+            projection = default!;
+            return false;
         }
     }
 
@@ -171,6 +280,92 @@ public sealed class RootReducerTests
     }
 
     /// <summary>
+    ///     Ensures Reduce checks indexed reducers before fallback.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldCheckIndexedReducersBeforeFallback()
+    {
+        TypedTestEventReducer typedReducer = new();
+        CountingReducer fallbackReducer = new();
+        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { typedReducer, fallbackReducer };
+        RootReducer<TestProjection> root = new(reducers);
+        TestProjection state = new("s0");
+        TestProjection result = root.Reduce(state, new TestEvent("v1"));
+        Assert.Equal("s0-typed-v1", result.Value);
+        Assert.Equal(1, typedReducer.InvocationCount);
+
+        // Fallback should not be invoked when indexed reducer matches
+        Assert.Equal(0, fallbackReducer.InvocationCount);
+    }
+
+    /// <summary>
+    ///     Ensures Reduce dispatches to the correct reducer via type index.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldDispatchToCorrectReducerViaTypeIndex()
+    {
+        TypedTestEventReducer testEventReducer = new();
+        SecondEventReducer secondEventReducer = new();
+        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { testEventReducer, secondEventReducer };
+        RootReducer<TestProjection> root = new(reducers);
+        TestProjection state = new("s0");
+        TestProjection result = root.Reduce(state, new SecondEvent("v1"));
+        Assert.Equal("s0-second-v1", result.Value);
+        Assert.Equal(0, testEventReducer.InvocationCount);
+        Assert.Equal(1, secondEventReducer.InvocationCount);
+    }
+
+    /// <summary>
+    ///     Ensures Reduce falls through to fallback when indexed reducer does not match.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldFallToFallbackWhenIndexedReducerDoesNotMatch()
+    {
+        SecondEventReducer secondEventReducer = new();
+        CountingReducer fallbackReducer = new();
+        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { secondEventReducer, fallbackReducer };
+        RootReducer<TestProjection> root = new(reducers);
+        TestProjection state = new("s0");
+        TestProjection result = root.Reduce(state, new TestEvent("v1"));
+        Assert.Equal("s0-v1-c1", result.Value);
+        Assert.Equal(0, secondEventReducer.InvocationCount);
+        Assert.Equal(1, fallbackReducer.InvocationCount);
+    }
+
+    /// <summary>
+    ///     Ensures Reduce does not invoke reducers for other event types.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldNotInvokeReducersForOtherEventTypes()
+    {
+        TypedTestEventReducer testEventReducer = new();
+        SecondEventReducer secondEventReducer = new();
+        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { testEventReducer, secondEventReducer };
+        RootReducer<TestProjection> root = new(reducers);
+        TestProjection state = new("s0");
+        root.Reduce(state, new TestEvent("v1"));
+        Assert.Equal(1, testEventReducer.InvocationCount);
+        Assert.Equal(0, secondEventReducer.InvocationCount);
+    }
+
+    /// <summary>
+    ///     Ensures Reduce preserves first-match-wins ordering with duplicate event type handlers.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldPreserveFirstMatchWinsOrderingWithDuplicates()
+    {
+        TypedTestEventReducer firstReducer = new();
+        AlternateTestEventReducer secondReducer = new();
+        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { firstReducer, secondReducer };
+        RootReducer<TestProjection> root = new(reducers);
+        TestProjection state = new("s0");
+        TestProjection result = root.Reduce(state, new TestEvent("v1"));
+        Assert.Equal("s0-typed-v1", result.Value);
+        Assert.Equal(1, firstReducer.InvocationCount);
+        Assert.Equal(0, secondReducer.InvocationCount);
+    }
+
+    /// <summary>
     ///     Ensures reducers cannot mutate and return the same projection instance.
     /// </summary>
     [Fact]
@@ -199,6 +394,23 @@ public sealed class RootReducerTests
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new TestEvent("e0"));
         Assert.Equal("s0-p1", result.Value);
+    }
+
+    /// <summary>
+    ///     Ensures Reduce returns state when indexed reducers do not match and no fallback handles.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldReturnStateWhenNoIndexedReducerMatchesAndNoFallback()
+    {
+        TypedTestEventReducer testEventReducer = new();
+        SecondEventReducer secondEventReducer = new();
+        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { testEventReducer, secondEventReducer };
+        RootReducer<TestProjection> root = new(reducers);
+        TestProjection state = new("s0");
+        TestProjection result = root.Reduce(state, new ThirdEvent("v1"));
+        Assert.Same(state, result);
+        Assert.Equal(0, testEventReducer.InvocationCount);
+        Assert.Equal(0, secondEventReducer.InvocationCount);
     }
 
     /// <summary>
@@ -239,5 +451,20 @@ public sealed class RootReducerTests
     {
         RootReducer<TestProjection> root = new(Array.Empty<IReducer<TestProjection>>());
         Assert.Throws<ArgumentNullException>(() => root.Reduce(new("s0"), null!));
+    }
+
+    /// <summary>
+    ///     Ensures Reduce uses fallback path for reducers without generic interface.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldUseFallbackPathForNonGenericReducers()
+    {
+        CountingReducer fallbackReducer = new();
+        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { fallbackReducer };
+        RootReducer<TestProjection> root = new(reducers);
+        TestProjection state = new("s0");
+        TestProjection result = root.Reduce(state, new TestEvent("v1"));
+        Assert.Equal("s0-v1-c1", result.Value);
+        Assert.Equal(1, fallbackReducer.InvocationCount);
     }
 }
