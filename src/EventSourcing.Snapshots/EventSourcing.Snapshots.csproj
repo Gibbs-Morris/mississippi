@@ -1,5 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+    <ProjectReference Include="..\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
+    <ProjectReference Include="..\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
   </ItemGroup>
 </Project>
