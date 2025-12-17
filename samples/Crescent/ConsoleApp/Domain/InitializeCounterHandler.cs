@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
@@ -9,16 +8,14 @@ namespace Crescent.ConsoleApp.Domain;
 /// <summary>
 ///     Command handler for initializing a counter.
 /// </summary>
-internal sealed class InitializeCounterHandler : ICommandHandler<InitializeCounter, CounterState>
+internal sealed class InitializeCounterHandler : CommandHandler<InitializeCounter, CounterState>
 {
     /// <inheritdoc />
-    public OperationResult<IReadOnlyList<object>> Handle(
+    protected override OperationResult<IReadOnlyList<object>> HandleCore(
         InitializeCounter command,
         CounterState? state
     )
     {
-        ArgumentNullException.ThrowIfNull(command);
-
         // Prevent re-initialization
         if (state?.IsInitialized == true)
         {

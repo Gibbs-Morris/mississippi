@@ -25,17 +25,21 @@ internal sealed class CounterAggregateGrain
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="brookGrainFactory">Factory for resolving brook grains.</param>
-    /// <param name="serializationProvider">Provider for event serialization.</param>
+    /// <param name="brookEventConverter">Converter for domain events to/from brook events.</param>
     /// <param name="rootReducer">The root reducer for computing state from events.</param>
+    /// <param name="eventTypeRegistry">Registry for resolving event type names and CLR types.</param>
+    /// <param name="rootCommandHandler">The root command handler for processing commands.</param>
     /// <param name="logger">Logger instance.</param>
     public CounterAggregateGrain(
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
-        ISerializationProvider serializationProvider,
+        IBrookEventConverter brookEventConverter,
         IRootReducer<CounterState> rootReducer,
+        IEventTypeRegistry eventTypeRegistry,
+        IRootCommandHandler<CounterState> rootCommandHandler,
         ILogger<CounterAggregateGrain> logger
     )
-        : base(grainContext, brookGrainFactory, serializationProvider, rootReducer, logger)
+        : base(grainContext, brookGrainFactory, brookEventConverter, rootReducer, eventTypeRegistry, rootCommandHandler, logger)
     {
     }
 

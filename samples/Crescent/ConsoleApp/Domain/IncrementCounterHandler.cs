@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
@@ -9,15 +8,14 @@ namespace Crescent.ConsoleApp.Domain;
 /// <summary>
 ///     Command handler for incrementing a counter.
 /// </summary>
-internal sealed class IncrementCounterHandler : ICommandHandler<IncrementCounter, CounterState>
+internal sealed class IncrementCounterHandler : CommandHandler<IncrementCounter, CounterState>
 {
     /// <inheritdoc />
-    public OperationResult<IReadOnlyList<object>> Handle(
+    protected override OperationResult<IReadOnlyList<object>> HandleCore(
         IncrementCounter command,
         CounterState? state
     )
     {
-        ArgumentNullException.ThrowIfNull(command);
         if (state?.IsInitialized != true)
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
