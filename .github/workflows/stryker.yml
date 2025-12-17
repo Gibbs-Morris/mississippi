@@ -83,11 +83,7 @@ jobs:
 
       - name: Run Stryker
         run: |
-          MUTATION_ROOT="${{ github.workspace }}/.scratchpad/mutation-test-results"
-          TIMESTAMP=$(date -u +"%Y-%m-%d.%H-%M-%S")
-          OUTPUT_DIR="$MUTATION_ROOT/$TIMESTAMP"
-          mkdir -p "$OUTPUT_DIR"
-          dotnet stryker --solution "${SLN_PATH}" --output "$OUTPUT_DIR"
+          pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 
       - name: Upload HTML Results
         if: always()
