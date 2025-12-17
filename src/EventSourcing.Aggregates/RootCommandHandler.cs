@@ -131,7 +131,7 @@ public sealed class RootCommandHandler<TState> : IRootCommandHandler<TState>
         string stateType = StateType.Name;
         Type commandRuntimeType = command.GetType();
         string commandType = commandRuntimeType.Name;
-        Logger.RootCommandHandlerHandling(stateType, commandType);
+        Logger.RootCommandHandlerHandling(commandType, stateType);
 
         // Fast path: look up handlers registered for this exact command type.
         if (handlerIndex.TryGetValue(commandRuntimeType, out ImmutableArray<ICommandHandler<TState>> indexed))
