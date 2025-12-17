@@ -30,4 +30,22 @@ internal sealed class DelegateCommandHandler<TCommand, TState> : ICommandHandler
         TState? state
     ) =>
         handler(command, state);
+
+    /// <inheritdoc />
+    public bool TryHandle(
+        object command,
+        TState? state,
+        out OperationResult<IReadOnlyList<object>> result
+    )
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        if (command is not TCommand typedCommand)
+        {
+            result = default!;
+            return false;
+        }
+
+        result = Handle(typedCommand, state);
+        return true;
+    }
 }

@@ -62,7 +62,9 @@ public static class AggregateRegistrations
         where THandler : class, ICommandHandler<TCommand, TState>
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.AddTransient<ICommandHandler<TState>, THandler>();
         services.AddTransient<ICommandHandler<TCommand, TState>, THandler>();
+        services.AddRootCommandHandler<TState>();
         return services;
     }
 
@@ -81,8 +83,10 @@ public static class AggregateRegistrations
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(handler);
+        services.AddTransient<ICommandHandler<TState>>(_ => new DelegateCommandHandler<TCommand, TState>(handler));
         services.AddTransient<ICommandHandler<TCommand, TState>>(_ =>
             new DelegateCommandHandler<TCommand, TState>(handler));
+        services.AddRootCommandHandler<TState>();
         return services;
     }
 
@@ -106,6 +110,20 @@ public static class AggregateRegistrations
 
         // Register the event type at startup
         services.AddSingleton<IEventTypeRegistration>(new EventTypeRegistration<TEvent>());
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds a root command handler for the specified state type.
+    /// </summary>
+    /// <typeparam name="TState">The aggregate state type.</typeparam>
+    /// <param name="services">The service collection to add the root command handler to.</param>
+    /// <returns>The updated service collection.</returns>
+    public static IServiceCollection AddRootCommandHandler<TState>(
+        this IServiceCollection services
+    )
+    {
+        services.TryAddTransient<IRootCommandHandler<TState>, RootCommandHandler<TState>>();
         return services;
     }
 

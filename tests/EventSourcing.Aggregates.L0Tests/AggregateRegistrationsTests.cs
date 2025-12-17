@@ -36,6 +36,23 @@ public class AggregateRegistrationsTests
             TestState? state
         ) =>
             OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>());
+
+        /// <inheritdoc />
+        public bool TryHandle(
+            object command,
+            TestState? state,
+            out OperationResult<IReadOnlyList<object>> result
+        )
+        {
+            if (command is TestCommand typedCommand)
+            {
+                result = Handle(typedCommand, state);
+                return true;
+            }
+
+            result = default!;
+            return false;
+        }
     }
 
     /// <summary>

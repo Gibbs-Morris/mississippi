@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
@@ -57,6 +56,7 @@ public abstract class AggregateGrain<TState, TBrook>
     /// <param name="serializationProvider">Provider for event serialization and deserialization.</param>
     /// <param name="rootReducer">The root reducer for computing state from events.</param>
     /// <param name="eventTypeRegistry">Registry for resolving event type names and CLR types.</param>
+    /// <param name="rootCommandHandler">The root command handler for processing commands.</param>
     /// <param name="logger">Logger instance.</param>
     protected AggregateGrain(
         IGrainContext grainContext,
@@ -64,6 +64,7 @@ public abstract class AggregateGrain<TState, TBrook>
         ISerializationProvider serializationProvider,
         IRootReducer<TState> rootReducer,
         IEventTypeRegistry eventTypeRegistry,
+        IRootCommandHandler<TState> rootCommandHandler,
         ILogger logger
     )
     {
@@ -72,6 +73,7 @@ public abstract class AggregateGrain<TState, TBrook>
         SerializationProvider = serializationProvider ?? throw new ArgumentNullException(nameof(serializationProvider));
         RootReducer = rootReducer ?? throw new ArgumentNullException(nameof(rootReducer));
         EventTypeRegistry = eventTypeRegistry ?? throw new ArgumentNullException(nameof(eventTypeRegistry));
+        RootCommandHandler = rootCommandHandler ?? throw new ArgumentNullException(nameof(rootCommandHandler));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -97,6 +99,11 @@ public abstract class AggregateGrain<TState, TBrook>
     ///     Gets the logger instance.
     /// </summary>
     protected ILogger Logger { get; }
+
+    /// <summary>
+    ///     Gets the root command handler for processing commands.
+    /// </summary>
+    protected IRootCommandHandler<TState> RootCommandHandler { get; }
 
     /// <summary>
     ///     Gets the root reducer for computing state from events.
@@ -163,26 +170,16 @@ public abstract class AggregateGrain<TState, TBrook>
             return OperationResult.Fail(AggregateErrorCodes.ConcurrencyConflict, message);
         }
 
-        // Resolve command handler
-        ICommandHandler<TCommand, TState>? handler =
-            GrainContext.ActivationServices.GetService<ICommandHandler<TCommand, TState>>();
-        if (handler is null)
+        // Delegate to root command handler
+        OperationResult<IReadOnlyList<object>> handlerResult = RootCommandHandler.Handle(command, state);
+        if (!handlerResult.Success)
         {
-            string message = $"No command handler registered for command type {commandTypeName}.";
-            Logger.CommandFailed(commandTypeName, aggregateKey, AggregateErrorCodes.CommandHandlerNotFound, message);
-            return OperationResult.Fail(AggregateErrorCodes.CommandHandlerNotFound, message);
-        }
-
-        // Execute handler
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
-        if (!result.Success)
-        {
-            Logger.CommandFailed(commandTypeName, aggregateKey, result.ErrorCode, result.ErrorMessage);
-            return result.ToResult();
+            Logger.CommandFailed(commandTypeName, aggregateKey, handlerResult.ErrorCode, handlerResult.ErrorMessage);
+            return handlerResult.ToResult();
         }
 
         // Persist events if any were produced
-        IReadOnlyList<object> events = result.Value;
+        IReadOnlyList<object> events = handlerResult.Value;
         if (events.Count > 0)
         {
             ImmutableArray<BrookEvent> brookEvents = ConvertToBrookEvents(events);
