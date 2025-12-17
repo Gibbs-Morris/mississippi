@@ -1,6 +1,9 @@
 using System;
+
 using Microsoft.Extensions.Logging;
+
 using Mississippi.EventSourcing.Abstractions;
+
 
 namespace Crescent.ConsoleApp;
 
