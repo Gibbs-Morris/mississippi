@@ -51,7 +51,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotWriteModel, SnapshotStorageModel>>());
         Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotStorageModel, SnapshotDocument>>());
         Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotDocument, SnapshotEnvelope>>());
-        Container resolved = provider.GetRequiredService<Container>();
+        Container resolved = provider.GetRequiredKeyedService<Container>(CosmosContainerKeys.Snapshots);
         Assert.Same(container.Object, resolved);
     }
 

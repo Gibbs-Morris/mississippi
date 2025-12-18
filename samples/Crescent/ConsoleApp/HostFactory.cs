@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing;
 using Mississippi.EventSourcing.Cosmos;
+using Mississippi.EventSourcing.Snapshots.Cosmos;
 
 using Orleans.Configuration;
 using Orleans.Hosting;
@@ -57,6 +58,12 @@ internal static class HostFactory
                 o.QueryBatchSize = 50;
                 o.MaxEventsPerBatch = 50;
             });
+        b.Services.AddCosmosSnapshotStorageProvider(options =>
+        {
+            options.DatabaseId = "mississippi-dev";
+            options.ContainerId = "snapshots";
+            options.QueryBatchSize = 100;
+        });
         return b.Build();
     }
 }

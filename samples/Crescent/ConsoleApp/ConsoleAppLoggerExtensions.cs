@@ -588,6 +588,18 @@ internal static partial class ConsoleAppLoggerExtensions
     );
 
     /// <summary>
+    ///     Log the banner for the end-to-end verification scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    [LoggerMessage(
+        91,
+        LogLevel.Information,
+        "=== Scenario: End-to-End Verification (Aggregate → Events → Snapshot) ===")]
+    public static partial void ScenarioVerificationEndToEnd(
+        this ILogger logger
+    );
+
+    /// <summary>
     ///     Log that stream A is empty for the given run.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
@@ -633,5 +645,230 @@ internal static partial class ConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         Exception ex
+    );
+
+    /// <summary>
+    ///     Log that a command was executed during verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="commandName">The name of the command executed.</param>
+    [LoggerMessage(100, LogLevel.Debug, "Run {RunId} [Verify]: Executed {CommandName}")]
+    public static partial void VerificationCommandExecuted(
+        this ILogger logger,
+        string runId,
+        string commandName
+    );
+
+    /// <summary>
+    ///     Log the total event count during verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="eventCount">The number of events found.</param>
+    [LoggerMessage(105, LogLevel.Information, "Run {RunId} [Verify]: Total events in stream: {EventCount}")]
+    public static partial void VerificationEventCount(
+        this ILogger logger,
+        string runId,
+        int eventCount
+    );
+
+    /// <summary>
+    ///     Log details of an event read during verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="index">The event index.</param>
+    /// <param name="eventType">The type of the event.</param>
+    /// <param name="dataLength">The length of the event data.</param>
+    [LoggerMessage(
+        104,
+        LogLevel.Debug,
+        "Run {RunId} [Verify]: Event[{Index}] Type={EventType} DataLength={DataLength}")]
+    public static partial void VerificationEventRead(
+        this ILogger logger,
+        string runId,
+        int index,
+        string eventType,
+        int dataLength
+    );
+
+    /// <summary>
+    ///     Log a note during verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="note">The note to log.</param>
+    [LoggerMessage(112, LogLevel.Information, "Run {RunId} [Verify]: Note: {Note}")]
+    public static partial void VerificationNote(
+        this ILogger logger,
+        string runId,
+        string note
+    );
+
+    /// <summary>
+    ///     Log that the verification scenario has completed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="counterId">The counter identifier.</param>
+    /// <param name="ms">The elapsed time in milliseconds.</param>
+    /// <param name="result">The verification result.</param>
+    [LoggerMessage(
+        113,
+        LogLevel.Information,
+        "Run {RunId} [Verify]: Verification complete for counterId={CounterId} in {Ms} ms - {Result}")]
+    public static partial void VerificationScenarioComplete(
+        this ILogger logger,
+        string runId,
+        string counterId,
+        int ms,
+        string result
+    );
+
+    /// <summary>
+    ///     Log the start of the verification scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="counterId">The counter identifier.</param>
+    [LoggerMessage(
+        90,
+        LogLevel.Information,
+        "Run {RunId} [Verify]: Starting end-to-end verification for counterId={CounterId}")]
+    public static partial void VerificationScenarioStart(
+        this ILogger logger,
+        string runId,
+        string counterId
+    );
+
+    /// <summary>
+    ///     Log the details of a snapshot read during verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="contentType">The content type of the snapshot.</param>
+    /// <param name="reducerHash">The reducer hash of the snapshot.</param>
+    /// <param name="dataPreview">A preview of the snapshot data.</param>
+    [LoggerMessage(
+        108,
+        LogLevel.Debug,
+        "Run {RunId} [Verify]: Snapshot details - ContentType={ContentType} ReducerHash={ReducerHash} Data={DataPreview}")]
+    public static partial void VerificationSnapshotDetails(
+        this ILogger logger,
+        string runId,
+        string contentType,
+        string reducerHash,
+        string dataPreview
+    );
+
+    /// <summary>
+    ///     Log that a snapshot was found during verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="snapshotType">The type of the snapshot.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <param name="version">The version of the snapshot.</param>
+    /// <param name="dataLength">The length of the snapshot data.</param>
+    [LoggerMessage(
+        107,
+        LogLevel.Information,
+        "Run {RunId} [Verify]: Snapshot FOUND - Type={SnapshotType} EntityId={EntityId} Version={Version} DataLength={DataLength}")]
+    public static partial void VerificationSnapshotFound(
+        this ILogger logger,
+        string runId,
+        string snapshotType,
+        string entityId,
+        long version,
+        int dataLength
+    );
+
+    /// <summary>
+    ///     Log that no snapshot was found during verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="snapshotType">The type of the snapshot.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    [LoggerMessage(
+        109,
+        LogLevel.Warning,
+        "Run {RunId} [Verify]: Snapshot NOT FOUND - Type={SnapshotType} EntityId={EntityId}")]
+    public static partial void VerificationSnapshotNotFound(
+        this ILogger logger,
+        string runId,
+        string snapshotType,
+        string entityId
+    );
+
+    /// <summary>
+    ///     Log a verification step.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="description">The step description.</param>
+    [LoggerMessage(101, LogLevel.Information, "Run {RunId} [Verify]: Step {StepNumber}: {Description}")]
+    public static partial void VerificationStep(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string description
+    );
+
+    /// <summary>
+    ///     Log that a verification step has completed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="result">The step result.</param>
+    [LoggerMessage(110, LogLevel.Information, "Run {RunId} [Verify]: Step {StepNumber} complete: {Result}")]
+    public static partial void VerificationStepComplete(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string result
+    );
+
+    /// <summary>
+    ///     Log that a verification step has failed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="expectation">What was expected.</param>
+    /// <param name="actual">What was actually found.</param>
+    [LoggerMessage(
+        111,
+        LogLevel.Error,
+        "Run {RunId} [Verify]: Step {StepNumber} FAILED - Expected: {Expectation}, Actual: {Actual}")]
+    public static partial void VerificationStepFailed(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string expectation,
+        string actual
+    );
+
+    /// <summary>
+    ///     Log the stream cursor position during verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="brookType">The brook type.</param>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="cursor">The cursor position.</param>
+    [LoggerMessage(
+        103,
+        LogLevel.Information,
+        "Run {RunId} [Verify]: Stream cursor - Type={BrookType} Id={BrookId} Cursor={Cursor}")]
+    public static partial void VerificationStreamCursor(
+        this ILogger logger,
+        string runId,
+        string brookType,
+        string brookId,
+        long cursor
     );
 }

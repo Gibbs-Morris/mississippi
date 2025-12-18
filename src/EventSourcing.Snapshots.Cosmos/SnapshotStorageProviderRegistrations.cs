@@ -49,14 +49,19 @@ public static class SnapshotStorageProviderRegistrations
         // Ensure container exists asynchronously on host start
         services.AddHostedService<CosmosContainerInitializer>();
 
-        // Provide container handle (initializer will create if missing)
-        services.AddSingleton<Container>(provider =>
-        {
-            CosmosClient client = provider.GetRequiredService<CosmosClient>();
-            SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
-            Database database = client.GetDatabase(options.DatabaseId);
-            return database.GetContainer(options.ContainerId);
-        });
+        // Provide container handle using keyed service to avoid conflicts with other Cosmos providers
+        services.AddKeyedSingleton<Container>(
+            CosmosContainerKeys.Snapshots,
+            (
+                provider,
+                _
+            ) =>
+            {
+                CosmosClient client = provider.GetRequiredService<CosmosClient>();
+                SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
+                Database database = client.GetDatabase(options.DatabaseId);
+                return database.GetContainer(options.ContainerId);
+            });
         return services;
     }
 

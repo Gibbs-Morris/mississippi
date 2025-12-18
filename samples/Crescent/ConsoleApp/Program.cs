@@ -11,10 +11,15 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing;
 using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Abstractions.Storage;
 using Mississippi.EventSourcing.Cosmos;
 using Mississippi.EventSourcing.Factory;
+using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Serialization.Abstractions;
 using Mississippi.EventSourcing.Serialization.Json;
+using Mississippi.EventSourcing.Snapshots;
+using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.EventSourcing.Snapshots.Cosmos;
 
 using Orleans;
 using Orleans.Configuration;
@@ -70,6 +75,20 @@ builder.Services.AddCosmosBrookStorageProvider(
         options.QueryBatchSize = 50;
         options.MaxEventsPerBatch = 50;
     });
+
+// Add Cosmos snapshot storage provider with configuration
+builder.Services.AddCosmosSnapshotStorageProvider(options =>
+{
+    options.DatabaseId = "mississippi-dev";
+    options.ContainerId = "snapshots";
+    options.QueryBatchSize = 100;
+});
+
+// Add snapshot caching infrastructure (required for aggregates using snapshots)
+builder.Services.AddSnapshotCaching();
+
+// Add snapshot state converter for CounterState (required for snapshot verification)
+builder.Services.AddSnapshotStateConverter<CounterState>();
 
 // Add JSON serialization for aggregate events
 builder.Services.AddSingleton<ISerializationProvider, JsonSerializationProvider>();
@@ -229,7 +248,28 @@ await AggregateScenarioRunner.RunThroughputScenarioAsync(
     grainFactory,
     $"counter-throughput-{Guid.NewGuid():N}");
 
-// Scenario 13: Cold start resume: stop host, build a new host, start again, then read
+// ============================================================================
+// End-to-End Verification Scenario - Validates event stream persistence
+// ============================================================================
+
+// Scenario 13: End-to-end verification (aggregate → events in Cosmos)
+logger.ScenarioVerificationEndToEnd();
+IBrookStorageProvider brookStorageProvider = host.Services.GetRequiredService<IBrookStorageProvider>();
+ISnapshotStorageProvider snapshotStorageProvider = host.Services.GetRequiredService<ISnapshotStorageProvider>();
+ISnapshotStateConverter<CounterState> snapshotStateConverter =
+    host.Services.GetRequiredService<ISnapshotStateConverter<CounterState>>();
+IRootReducer<CounterState> counterRootReducer = host.Services.GetRequiredService<IRootReducer<CounterState>>();
+await VerificationScenarioRunner.RunEndToEndVerificationAsync(
+    logger,
+    runId,
+    grainFactory,
+    brookStorageProvider,
+    snapshotStorageProvider,
+    snapshotStateConverter,
+    counterRootReducer,
+    $"counter-verify-{Guid.NewGuid():N}");
+
+// Scenario 14: Cold start resume: stop host, build a new host, start again, then read
 logger.PerformingColdRestartOfHost(runId);
 await host.StopAsync();
 using IHost host2 = HostFactory.BuildColdStartHost();
