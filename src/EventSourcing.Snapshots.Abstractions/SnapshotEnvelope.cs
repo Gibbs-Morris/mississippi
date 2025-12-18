@@ -23,4 +23,15 @@ public sealed record SnapshotEnvelope
     /// </summary>
     [Id(1)]
     public string DataContentType { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     Gets the hash of the reducers used to create this snapshot.
+    ///     Used for invalidation when reducer logic changes.
+    /// </summary>
+    /// <remarks>
+    ///     When this value is empty or does not match the current reducer hash,
+    ///     the snapshot is considered stale and must be rebuilt from the event stream.
+    /// </remarks>
+    [Id(2)]
+    public string ReducerHash { get; init; } = string.Empty;
 }

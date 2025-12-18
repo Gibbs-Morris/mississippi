@@ -190,10 +190,10 @@
       },
       "Microsoft.Extensions.Configuration.Binder": {
         "type": "Transitive",
-        "resolved": "8.0.2",
-        "contentHash": "7IQhGK+wjyGrNsPBjJcZwWAr+Wf6D4+TwOptUt77bWtgNkiV8tDEbhFS+dDamtQFZ2X7kWG9m71iZQRj2x3zgQ==",
+        "resolved": "9.0.11",
+        "contentHash": "iPE1jROL5uK/6iJSRzwpEIJt6BuANN36Io+6bLss67JVjbG6DdVedrMnB9nqsxs+Lx3X9RxvARTgFsUgP0MB0g==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0"
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.11"
         }
       },
       "Microsoft.Extensions.Configuration.CommandLine": {
@@ -363,8 +363,8 @@
       },
       "Microsoft.Extensions.Primitives": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "bXJEZrW9ny8vjMF1JV253WeLhpEVzFo1lyaZu1vQ4ZxWUlVvknZ/+ftFgVheLubb4eZPSwwxBeqS1JkCOjxd8g=="
+        "resolved": "9.0.11",
+        "contentHash": "rtUNSIhbQTv8iSBTFvtg2b/ZUkoqC9qAH9DdC2hr+xPpoZrxiCITci9UR/ELUGUGnGUrF8Xye+tGVRhCxE+4LA=="
       },
       "Microsoft.Orleans.Analyzers": {
         "type": "Transitive",
@@ -634,11 +634,28 @@
           "xunit.abstractions": "2.0.3"
         }
       },
+      "Mississippi.EventSourcing.Brooks.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "CloudNative.CloudEvents": "[2.8.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )",
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+        }
+      },
       "Mississippi.EventSourcing.Snapshots.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
+      },
+      "CloudNative.CloudEvents": {
+        "type": "CentralTransitive",
+        "requested": "[2.8.0, )",
+        "resolved": "2.8.0",
+        "contentHash": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "CentralTransitive",
@@ -653,10 +670,10 @@
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "CentralTransitive",
         "requested": "[9.0.11, )",
-        "resolved": "8.0.0",
-        "contentHash": "3lE/iLSutpgX1CC0NOW70FJoGARRHbyKmG7dc0klnUZ9Dd9hS6N/POPWhKhMLCEuNN5nXEY5agmlFtH562vqhQ==",
+        "resolved": "9.0.11",
+        "contentHash": "g23//mPpMa33QdJkLujJICoCRbiLFpiQ4XbROG9JdeDI6/sM+qZPB2t5SmUWNM8GwY8dYW3NucxlZDFe8s3NAQ==",
         "dependencies": {
-          "Microsoft.Extensions.Primitives": "8.0.0"
+          "Microsoft.Extensions.Primitives": "9.0.11"
         }
       },
       "Microsoft.Extensions.DependencyInjection": {
@@ -671,8 +688,8 @@
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "CentralTransitive",
         "requested": "[9.0.11, )",
-        "resolved": "8.0.2",
-        "contentHash": "3iE7UF7MQkCv1cxzCahz+Y/guQbTqieyxyaWKhrRO91itI9cOKO76OHeQDahqG4MmW5umr3CcCvGmK92lWNlbg=="
+        "resolved": "9.0.11",
+        "contentHash": "+ZxxZzcVU+IEzq12GItUzf/V3mEc5nSLiXijwvDc4zyhbjvSZZ043giSZqGnhakrjwRWjkerIHPrRwm9okEIpw=="
       },
       "Microsoft.Extensions.Features": {
         "type": "CentralTransitive",
@@ -746,24 +763,24 @@
       "Microsoft.Extensions.Options": {
         "type": "CentralTransitive",
         "requested": "[9.0.11, )",
-        "resolved": "8.0.2",
-        "contentHash": "dWGKvhFybsaZpGmzkGCbNNwBD1rVlWzrZKANLW/CcbFJpCEceMCGzT7zZwHOGBCbwM0SzBuceMj5HN1LKV1QqA==",
+        "resolved": "9.0.11",
+        "contentHash": "HX4M3BLkW1dtByMKHDVq6r7Jy6e4hf8NDzHpIgz7C8BtYk9JQHhfYX5c1UheQTD5Veg1yBhz/cD9C8vtrGrk9w==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Primitives": "8.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.11",
+          "Microsoft.Extensions.Primitives": "9.0.11"
         }
       },
       "Microsoft.Extensions.Options.ConfigurationExtensions": {
         "type": "CentralTransitive",
         "requested": "[9.0.11, )",
-        "resolved": "8.0.0",
-        "contentHash": "0f4DMRqEd50zQh+UyJc+/HiBsZ3vhAQALgdkcQEalSH1L2isdC7Yj54M3cyo5e+BeO5fcBQ7Dxly8XiBBcvRgw==",
+        "resolved": "9.0.11",
+        "contentHash": "HUzr4c1eMXCQN8Yre2JdCzYmLJAecFGVXfByVhjEY4jBaHIs8EAxdv72WMUa2GcROlkYPbYNzMbcqJPMiznHxw==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Configuration.Binder": "8.0.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Options": "8.0.0",
-          "Microsoft.Extensions.Primitives": "8.0.0"
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.11",
+          "Microsoft.Extensions.Configuration.Binder": "9.0.11",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.11",
+          "Microsoft.Extensions.Options": "9.0.11",
+          "Microsoft.Extensions.Primitives": "9.0.11"
         }
       },
       "Microsoft.Orleans.Sdk": {

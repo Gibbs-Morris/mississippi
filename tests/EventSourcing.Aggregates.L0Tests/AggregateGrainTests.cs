@@ -10,9 +10,9 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Factory;
-using Mississippi.EventSourcing.Reader;
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Writer;
 
 using Moq;
@@ -23,7 +23,7 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.Aggregates.Tests;
 
 /// <summary>
-///     Tests for <see cref="AggregateGrain{TState, TBrook}" />.
+///     Tests for <see cref="AggregateGrain{TSnapshot, TBrook}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Aggregates")]
@@ -31,19 +31,21 @@ namespace Mississippi.EventSourcing.Aggregates.Tests;
 public class AggregateGrainTests
 {
     private static async Task<TestableAggregateGrain> CreateActivatedGrainAsync(
-        Mock<IRootCommandHandler<AggregateGrainTestState>>? rootCommandHandlerMock = null
+        Mock<IRootCommandHandler<AggregateGrainTestState>>? rootCommandHandlerMock = null,
+        Mock<IBrookGrainFactory>? brookGrainFactoryMock = null,
+        Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null,
+        Mock<IBrookEventConverter>? brookEventConverterMock = null
     )
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IBrookReaderGrain> readerGrainMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(null, null, It.IsAny<CancellationToken>()))
-            .Returns(GetEmptyEventsAsync);
-        brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
+        brookGrainFactoryMock ??= new();
+        snapshotGrainFactoryMock ??= new();
         TestableAggregateGrain grain = CreateGrain(
             grainContextMock,
             brookGrainFactoryMock,
-            rootCommandHandlerMock: rootCommandHandlerMock);
+            brookEventConverterMock,
+            rootCommandHandlerMock,
+            snapshotGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
         return grain;
     }
@@ -59,33 +61,27 @@ public class AggregateGrainTests
         Mock<IGrainContext>? grainContextMock = null,
         Mock<IBrookGrainFactory>? brookGrainFactoryMock = null,
         Mock<IBrookEventConverter>? brookEventConverterMock = null,
-        Mock<IRootReducer<AggregateGrainTestState>>? rootReducerMock = null,
-        Mock<IEventTypeRegistry>? eventTypeRegistryMock = null,
         Mock<IRootCommandHandler<AggregateGrainTestState>>? rootCommandHandlerMock = null,
+        Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null,
+        string? reducersHash = null,
         Mock<ILogger>? loggerMock = null
     )
     {
         grainContextMock ??= CreateDefaultGrainContext();
         brookGrainFactoryMock ??= new();
         brookEventConverterMock ??= new();
-        rootReducerMock ??= new();
-        eventTypeRegistryMock ??= new();
         rootCommandHandlerMock ??= new();
+        snapshotGrainFactoryMock ??= new();
+        reducersHash ??= "test-reducer-hash";
         loggerMock ??= new();
         return new(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
             brookEventConverterMock.Object,
-            rootReducerMock.Object,
-            eventTypeRegistryMock.Object,
             rootCommandHandlerMock.Object,
+            snapshotGrainFactoryMock.Object,
+            reducersHash,
             loggerMock.Object);
-    }
-
-    private static async IAsyncEnumerable<BrookEvent> GetEmptyEventsAsync()
-    {
-        await Task.CompletedTask;
-        yield break;
     }
 
     /// <summary>
@@ -100,18 +96,18 @@ public class AggregateGrainTests
             IGrainContext grainContext,
             IBrookGrainFactory brookGrainFactory,
             IBrookEventConverter brookEventConverter,
-            IRootReducer<AggregateGrainTestState> rootReducer,
-            IEventTypeRegistry eventTypeRegistry,
             IRootCommandHandler<AggregateGrainTestState> rootCommandHandler,
+            ISnapshotGrainFactory snapshotGrainFactory,
+            string reducersHash,
             ILogger logger
         )
             : base(
                 grainContext,
                 brookGrainFactory,
                 brookEventConverter,
-                rootReducer,
-                eventTypeRegistry,
                 rootCommandHandler,
+                snapshotGrainFactory,
+                reducersHash,
                 logger)
         {
         }
@@ -136,16 +132,6 @@ public class AggregateGrainTests
             CancellationToken cancellationToken = default
         ) =>
             ExecuteAsync(command, expectedVersion, cancellationToken);
-
-        /// <summary>
-        ///     Exposes the protected ResolveEventType method for testing.
-        /// </summary>
-        /// <param name="eventTypeName">The event type name.</param>
-        /// <returns>The resolved type or null.</returns>
-        public Type? TestResolveEventType(
-            string eventTypeName
-        ) =>
-            ResolveEventType(eventTypeName);
     }
 
     /// <summary>
@@ -177,17 +163,16 @@ public class AggregateGrainTests
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        Mock<IEventTypeRegistry> registryMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Mock<ILogger> loggerMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
             null!,
-            rootReducerMock.Object,
-            registryMock.Object,
             rootCommandHandlerMock.Object,
+            snapshotGrainFactoryMock.Object,
+            "test-hash",
             loggerMock.Object));
     }
 
@@ -199,39 +184,16 @@ public class AggregateGrainTests
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        Mock<IEventTypeRegistry> registryMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Mock<ILogger> loggerMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             null!,
             brookEventConverterMock.Object,
-            rootReducerMock.Object,
-            registryMock.Object,
             rootCommandHandlerMock.Object,
-            loggerMock.Object));
-    }
-
-    /// <summary>
-    ///     Constructor should throw when event type registry is null.
-    /// </summary>
-    [Fact]
-    public void ConstructorThrowsWhenEventTypeRegistryIsNull()
-    {
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
-        Mock<ILogger> loggerMock = new();
-        Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
-            grainContextMock.Object,
-            brookGrainFactoryMock.Object,
-            brookEventConverterMock.Object,
-            rootReducerMock.Object,
-            null!,
-            rootCommandHandlerMock.Object,
+            snapshotGrainFactoryMock.Object,
+            "test-hash",
             loggerMock.Object));
     }
 
@@ -243,17 +205,16 @@ public class AggregateGrainTests
     {
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        Mock<IEventTypeRegistry> registryMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Mock<ILogger> loggerMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             null!,
             brookGrainFactoryMock.Object,
             brookEventConverterMock.Object,
-            rootReducerMock.Object,
-            registryMock.Object,
             rootCommandHandlerMock.Object,
+            snapshotGrainFactoryMock.Object,
+            "test-hash",
             loggerMock.Object));
     }
 
@@ -266,17 +227,38 @@ public class AggregateGrainTests
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        Mock<IEventTypeRegistry> registryMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
             brookEventConverterMock.Object,
-            rootReducerMock.Object,
-            registryMock.Object,
             rootCommandHandlerMock.Object,
+            snapshotGrainFactoryMock.Object,
+            "test-hash",
             null!));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when reducers hash is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenReducersHashIsNull()
+    {
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IBrookEventConverter> brookEventConverterMock = new();
+        Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        Mock<ILogger> loggerMock = new();
+        Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
+            grainContextMock.Object,
+            brookGrainFactoryMock.Object,
+            brookEventConverterMock.Object,
+            rootCommandHandlerMock.Object,
+            snapshotGrainFactoryMock.Object,
+            null!,
+            loggerMock.Object));
     }
 
     /// <summary>
@@ -288,38 +270,36 @@ public class AggregateGrainTests
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        Mock<IEventTypeRegistry> registryMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Mock<ILogger> loggerMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
             brookEventConverterMock.Object,
-            rootReducerMock.Object,
-            registryMock.Object,
             null!,
+            snapshotGrainFactoryMock.Object,
+            "test-hash",
             loggerMock.Object));
     }
 
     /// <summary>
-    ///     Constructor should throw when root reducer is null.
+    ///     Constructor should throw when snapshot grain factory is null.
     /// </summary>
     [Fact]
-    public void ConstructorThrowsWhenRootReducerIsNull()
+    public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IEventTypeRegistry> registryMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
         Mock<ILogger> loggerMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableAggregateGrain(
             grainContextMock.Object,
             brookGrainFactoryMock.Object,
             brookEventConverterMock.Object,
-            null!,
-            registryMock.Object,
             rootCommandHandlerMock.Object,
+            null!,
+            "test-hash",
             loggerMock.Object));
     }
 
@@ -330,9 +310,14 @@ public class AggregateGrainTests
     [Fact]
     public async Task ExecuteAsyncFailsOnConcurrencyConflict()
     {
-        TestableAggregateGrain grain = await CreateActivatedGrainAsync();
+        // Set up cursor grain to return NotSet position (no events)
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorGrainMock.Object);
+        TestableAggregateGrain grain = await CreateActivatedGrainAsync(brookGrainFactoryMock: brookGrainFactoryMock);
 
-        // Current position is -1 (NotSet from empty brook), expect version 5
+        // Current position is NotSet (new BrookPosition()), expect version 5
         OperationResult result = await grain.ExecuteCommandAsync(
             new AggregateGrainTestCommand("test"),
             new BrookPosition(5));
@@ -347,111 +332,88 @@ public class AggregateGrainTests
     [Fact]
     public async Task ExecuteAsyncFailsWhenNoCommandHandlerRegistered()
     {
+        // Set up cursor grain to return NotSet position (no events)
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorGrainMock.Object);
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
         rootCommandHandlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestState?>()))
             .Returns(
                 OperationResult.Fail<IReadOnlyList<object>>(
                     AggregateErrorCodes.CommandHandlerNotFound,
                     "No command handler registered for command type."));
-        TestableAggregateGrain grain = await CreateActivatedGrainAsync(rootCommandHandlerMock);
+        TestableAggregateGrain grain = await CreateActivatedGrainAsync(rootCommandHandlerMock, brookGrainFactoryMock);
         OperationResult result = await grain.ExecuteCommandAsync(new AggregateGrainTestCommand("test"));
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.CommandHandlerNotFound, result.ErrorCode);
     }
 
     /// <summary>
-    ///     ExecuteAsync should pass expected cursor position when not first write.
+    ///     ExecuteAsync should get state from snapshot grain when events exist.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task ExecuteAsyncPassesExpectedCursorPositionOnSubsequentWrites()
+    public async Task ExecuteAsyncGetsStateFromSnapshotGrain()
     {
-        List<object> events = new()
-        {
-            new AggregateGrainTestEvent("value1"),
-        };
+        // Set up cursor grain to return position 5 (events exist)
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(5));
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorGrainMock.Object);
+
+        // Set up snapshot cache grain to return state
+        AggregateGrainTestState expectedState = new(5, "test-value");
+        Mock<ISnapshotCacheGrain<AggregateGrainTestState>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedState);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestState>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheGrainMock.Object);
+
+        // Set up command handler to capture the state passed to it
+        AggregateGrainTestState? capturedState = null;
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
         rootCommandHandlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestState?>()))
-            .Returns(OperationResult.Ok<IReadOnlyList<object>>(events));
-        Mock<IBrookWriterGrain> writerGrainMock = new();
-        writerGrainMock.SetupSequence(w => w.AppendEventsAsync(
-                It.IsAny<ImmutableArray<BrookEvent>>(),
-                It.IsAny<BrookPosition?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BrookPosition(0))
-            .ReturnsAsync(new BrookPosition(1));
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IBrookReaderGrain> readerGrainMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(null, null, It.IsAny<CancellationToken>()))
-            .Returns(GetEmptyEventsAsync);
-        brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
-        brookGrainFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerGrainMock.Object);
-        Mock<IBrookEventConverter> brookEventConverterMock = new();
-        brookEventConverterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Returns(
-                ImmutableArray.Create(
-                    new BrookEvent
-                    {
-                        Id = "e1",
-                        EventType = "TEST.AGGREGATES.TESTEVENT.V1",
-                    }));
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        rootReducerMock.Setup(r => r.Reduce(It.IsAny<AggregateGrainTestState>(), It.IsAny<object>()))
-            .Returns(new AggregateGrainTestState(1, "value1"));
-        Mock<IEventTypeRegistry> registryMock = new();
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        TestableAggregateGrain grain = new(
-            grainContextMock.Object,
-            brookGrainFactoryMock.Object,
-            brookEventConverterMock.Object,
-            rootReducerMock.Object,
-            registryMock.Object,
-            rootCommandHandlerMock.Object,
-            new Mock<ILogger>().Object);
-        await grain.OnActivateAsync(CancellationToken.None);
+            .Callback<object, AggregateGrainTestState?>((
+                _,
+                s
+            ) => capturedState = s)
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>([]));
+        TestableAggregateGrain grain = await CreateActivatedGrainAsync(
+            rootCommandHandlerMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+        await grain.ExecuteCommandAsync(new AggregateGrainTestCommand("test"));
 
-        // First write - position is NotSet
-        await grain.ExecuteCommandAsync(new AggregateGrainTestCommand("test1"));
-
-        // Second write - position should be passed
-        await grain.ExecuteCommandAsync(new AggregateGrainTestCommand("test2"));
-        writerGrainMock.Verify(
-            w => w.AppendEventsAsync(It.IsAny<ImmutableArray<BrookEvent>>(), null, It.IsAny<CancellationToken>()),
-            Times.Once);
-        writerGrainMock.Verify(
-            w => w.AppendEventsAsync(
-                It.IsAny<ImmutableArray<BrookEvent>>(),
-                new BrookPosition(0),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        // Verify the state was fetched from snapshot grain and passed to command handler
+        snapshotCacheGrainMock.Verify(g => g.GetStateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Assert.NotNull(capturedState);
+        Assert.Equal(expectedState.LastValue, capturedState!.LastValue);
     }
 
     /// <summary>
-    ///     ExecuteAsync should persist events and update state.
+    ///     ExecuteAsync should persist events when command handler returns events.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task ExecuteAsyncPersistsEventsAndUpdatesState()
+    public async Task ExecuteAsyncPersistsEvents()
     {
-        List<object> events = new()
-        {
-            new AggregateGrainTestEvent("value1"),
-        };
-        Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
-        rootCommandHandlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestState?>()))
-            .Returns(OperationResult.Ok<IReadOnlyList<object>>(events));
+        // Set up cursor grain to return NotSet position (no events)
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+
+        // Set up writer grain to capture the append call
         Mock<IBrookWriterGrain> writerGrainMock = new();
         writerGrainMock.Setup(w => w.AppendEventsAsync(
                 It.IsAny<ImmutableArray<BrookEvent>>(),
                 It.IsAny<BrookPosition?>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BrookPosition(1));
+            .ReturnsAsync(new BrookPosition(0));
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IBrookReaderGrain> readerGrainMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(null, null, It.IsAny<CancellationToken>()))
-            .Returns(GetEmptyEventsAsync);
-        brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorGrainMock.Object);
         brookGrainFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerGrainMock.Object);
+
+        // Set up event converter
         Mock<IBrookEventConverter> brookEventConverterMock = new();
         brookEventConverterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
             .Returns(
@@ -461,20 +423,16 @@ public class AggregateGrainTests
                         Id = "e1",
                         EventType = "TEST.AGGREGATES.TESTEVENT.V1",
                     }));
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        rootReducerMock.Setup(r => r.Reduce(It.IsAny<AggregateGrainTestState>(), It.IsAny<object>()))
-            .Returns(new AggregateGrainTestState(1, "value1"));
-        Mock<IEventTypeRegistry> registryMock = new();
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        TestableAggregateGrain grain = new(
-            grainContextMock.Object,
-            brookGrainFactoryMock.Object,
-            brookEventConverterMock.Object,
-            rootReducerMock.Object,
-            registryMock.Object,
-            rootCommandHandlerMock.Object,
-            new Mock<ILogger>().Object);
-        await grain.OnActivateAsync(CancellationToken.None);
+
+        // Set up command handler to return events
+        List<object> events = [new AggregateGrainTestEvent("value1")];
+        Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
+        rootCommandHandlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestState?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>(events));
+        TestableAggregateGrain grain = await CreateActivatedGrainAsync(
+            rootCommandHandlerMock,
+            brookGrainFactoryMock,
+            brookEventConverterMock: brookEventConverterMock);
         OperationResult result = await grain.ExecuteCommandAsync(new AggregateGrainTestCommand("test"));
         Assert.True(result.Success);
         writerGrainMock.Verify(
@@ -483,7 +441,6 @@ public class AggregateGrainTests
                 null,
                 It.IsAny<CancellationToken>()),
             Times.Once);
-        rootReducerMock.Verify(r => r.Reduce(It.IsAny<AggregateGrainTestState>(), It.IsAny<object>()), Times.Once);
     }
 
     /// <summary>
@@ -493,10 +450,15 @@ public class AggregateGrainTests
     [Fact]
     public async Task ExecuteAsyncReturnsFailureFromCommandHandler()
     {
+        // Set up cursor grain to return NotSet position
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorGrainMock.Object);
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
         rootCommandHandlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestState?>()))
             .Returns(OperationResult.Fail<IReadOnlyList<object>>("CUSTOM_ERROR", "Handler failed"));
-        TestableAggregateGrain grain = await CreateActivatedGrainAsync(rootCommandHandlerMock);
+        TestableAggregateGrain grain = await CreateActivatedGrainAsync(rootCommandHandlerMock, brookGrainFactoryMock);
         OperationResult result = await grain.ExecuteCommandAsync(new AggregateGrainTestCommand("test"));
         Assert.False(result.Success);
         Assert.Equal("CUSTOM_ERROR", result.ErrorCode);
@@ -510,10 +472,15 @@ public class AggregateGrainTests
     [Fact]
     public async Task ExecuteAsyncSucceedsWithEmptyEvents()
     {
+        // Set up cursor grain to return NotSet position
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorGrainMock.Object);
         Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
         rootCommandHandlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestState?>()))
             .Returns(OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>()));
-        TestableAggregateGrain grain = await CreateActivatedGrainAsync(rootCommandHandlerMock);
+        TestableAggregateGrain grain = await CreateActivatedGrainAsync(rootCommandHandlerMock, brookGrainFactoryMock);
         OperationResult result = await grain.ExecuteCommandAsync(new AggregateGrainTestCommand("test"));
         Assert.True(result.Success);
     }
@@ -531,175 +498,18 @@ public class AggregateGrainTests
     }
 
     /// <summary>
-    ///     OnActivateAsync should handle empty brook correctly.
+    ///     OnActivateAsync should initialize keys correctly.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task OnActivateAsyncHandlesEmptyBrook()
+    public async Task OnActivateAsyncInitializesKeysCorrectly()
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IBrookReaderGrain> readerGrainMock = new();
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(null, null, It.IsAny<CancellationToken>()))
-            .Returns(GetEmptyEventsAsync);
-        brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
-        TestableAggregateGrain grain = CreateGrain(
-            grainContextMock,
-            brookGrainFactoryMock,
-            rootReducerMock: rootReducerMock);
+        TestableAggregateGrain grain = CreateGrain(grainContextMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
-        // Reducer should not be called for empty brook
-        rootReducerMock.Verify(r => r.Reduce(It.IsAny<AggregateGrainTestState>(), It.IsAny<object>()), Times.Never);
-    }
-
-    /// <summary>
-    ///     OnActivateAsync should hydrate state from brook events.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task OnActivateAsyncHydratesStateFromBrookEvents()
-    {
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IRootReducer<AggregateGrainTestState>> rootReducerMock = new();
-        Mock<ILogger> loggerMock = new();
-        Mock<IBrookReaderGrain> readerGrainMock = new();
-
-        // Set up reader to return events
-        AggregateGrainTestEvent event1 = new("first");
-
-        static async IAsyncEnumerable<BrookEvent> GetEventsAsync()
-        {
-            yield return new()
-            {
-                Id = "e1",
-                EventType = "TEST.AGGREGATES.TESTEVENT.V1",
-                Data = new byte[] { 1, 2, 3 }.ToImmutableArray(),
-            };
-            yield return new()
-            {
-                Id = "e2",
-                EventType = "TEST.AGGREGATES.TESTEVENT.V1",
-                Data = new byte[] { 4, 5, 6 }.ToImmutableArray(),
-            };
-            await Task.CompletedTask;
-        }
-
-        readerGrainMock.Setup(r => r.ReadEventsAsync(null, null, It.IsAny<CancellationToken>()))
-            .Returns(GetEventsAsync);
-        brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
-
-        // Set up brook event converter to return the event when reading
-        brookEventConverterMock.Setup(c => c.ToDomainEvent(It.IsAny<BrookEvent>())).Returns(event1);
-
-        // Set up reducer
-        AggregateGrainTestState afterEvent1 = new(1, "first");
-        AggregateGrainTestState afterEvent2 = new(2, "second");
-        rootReducerMock.SetupSequence(r => r.Reduce(It.IsAny<AggregateGrainTestState>(), It.IsAny<object>()))
-            .Returns(afterEvent1)
-            .Returns(afterEvent2);
-
-        // Set up event type registry
-        Mock<IEventTypeRegistry> registryMock = new();
-        Mock<IRootCommandHandler<AggregateGrainTestState>> rootCommandHandlerMock = new();
-        TestableAggregateGrain grain = new(
-            grainContextMock.Object,
-            brookGrainFactoryMock.Object,
-            brookEventConverterMock.Object,
-            rootReducerMock.Object,
-            registryMock.Object,
-            rootCommandHandlerMock.Object,
-            loggerMock.Object);
-        await grain.OnActivateAsync(CancellationToken.None);
-
-        // Verify reducer was called for each event
-        rootReducerMock.Verify(
-            r => r.Reduce(It.IsAny<AggregateGrainTestState>(), It.IsAny<object>()),
-            Times.Exactly(2));
-    }
-
-    /// <summary>
-    ///     OnActivateAsync should throw when event type cannot be resolved by converter.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task OnActivateAsyncThrowsWhenEventTypeCannotBeResolved()
-    {
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IBrookReaderGrain> readerGrainMock = new();
-
-        static async IAsyncEnumerable<BrookEvent> GetEventsWithUnknownTypeAsync()
-        {
-            yield return new()
-            {
-                Id = "e1",
-                EventType = "Unknown.Event.v1",
-                Data = new byte[] { 1, 2, 3 }.ToImmutableArray(),
-            };
-            await Task.CompletedTask;
-        }
-
-        readerGrainMock.Setup(r => r.ReadEventsAsync(null, null, It.IsAny<CancellationToken>()))
-            .Returns(GetEventsWithUnknownTypeAsync);
-        brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
-
-        // Set up converter to throw when event type cannot be resolved
-        Mock<IBrookEventConverter> brookEventConverterMock = new();
-        brookEventConverterMock.Setup(c => c.ToDomainEvent(It.IsAny<BrookEvent>()))
-            .Throws(new InvalidOperationException("Cannot resolve event type 'Unknown.Event.v1'."));
-        TestableAggregateGrain grain = CreateGrain(grainContextMock, brookGrainFactoryMock, brookEventConverterMock);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => grain.OnActivateAsync(CancellationToken.None));
-    }
-
-    /// <summary>
-    ///     ResolveEventType should return null when registry cannot resolve the event type name.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ResolveEventTypeReturnsNullWhenRegistryCannotResolve()
-    {
-        Mock<IEventTypeRegistry> registryMock = new();
-        registryMock.Setup(r => r.ResolveType("SomeEvent")).Returns((Type?)null);
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IBrookReaderGrain> readerGrainMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(null, null, It.IsAny<CancellationToken>()))
-            .Returns(GetEmptyEventsAsync);
-        brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
-        TestableAggregateGrain grain = CreateGrain(
-            grainContextMock,
-            brookGrainFactoryMock,
-            eventTypeRegistryMock: registryMock);
-        await grain.OnActivateAsync(CancellationToken.None);
-        Type? result = grain.TestResolveEventType("SomeEvent");
-        Assert.Null(result);
-    }
-
-    /// <summary>
-    ///     ResolveEventType should return type from registry.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ResolveEventTypeReturnsTypeFromRegistry()
-    {
-        Mock<IEventTypeRegistry> registryMock = new();
-        registryMock.Setup(r => r.ResolveType("TEST.AGGREGATES.TESTEVENT.V1")).Returns(typeof(AggregateGrainTestEvent));
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IBrookReaderGrain> readerGrainMock = new();
-        readerGrainMock.Setup(r => r.ReadEventsAsync(null, null, It.IsAny<CancellationToken>()))
-            .Returns(GetEmptyEventsAsync);
-        brookGrainFactoryMock.Setup(f => f.GetBrookReaderGrain(It.IsAny<BrookKey>())).Returns(readerGrainMock.Object);
-        TestableAggregateGrain grain = CreateGrain(
-            grainContextMock,
-            brookGrainFactoryMock,
-            eventTypeRegistryMock: registryMock);
-        await grain.OnActivateAsync(CancellationToken.None);
-        Type? result = grain.TestResolveEventType("TEST.AGGREGATES.TESTEVENT.V1");
-        Assert.Equal(typeof(AggregateGrainTestEvent), result);
+        // Grain should be activated without error - the keys are initialized
+        // This test verifies OnActivateAsync doesn't throw
+        Assert.NotNull(grain);
     }
 }

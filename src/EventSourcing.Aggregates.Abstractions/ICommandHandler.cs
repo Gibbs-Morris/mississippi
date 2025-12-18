@@ -6,7 +6,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 /// <summary>
 ///     Defines a command handler that attempts to process a command against aggregate state.
 /// </summary>
-/// <typeparam name="TState">The aggregate state type used for validation.</typeparam>
+/// <typeparam name="TSnapshot">The aggregate state type used for validation.</typeparam>
 /// <remarks>
 ///     <para>
 ///         This non-generic base interface enables collection-based handler dispatch,
@@ -15,11 +15,11 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         if a handler can process a given command.
 ///     </para>
 ///     <para>
-///         Implementations should inherit from <see cref="CommandHandler{TCommand, TState}" />
+///         Implementations should inherit from <see cref="CommandHandler{TCommand, TSnapshot}" />
 ///         rather than implementing this interface directly.
 ///     </para>
 /// </remarks>
-public interface ICommandHandler<in TState>
+public interface ICommandHandler<in TSnapshot>
 {
     /// <summary>
     ///     Attempts to handle a command by validating it against current state and producing domain events.
@@ -35,7 +35,7 @@ public interface ICommandHandler<in TState>
     /// </returns>
     bool TryHandle(
         object command,
-        TState? state,
+        TSnapshot? state,
         out OperationResult<IReadOnlyList<object>> result
     );
 }
@@ -44,7 +44,7 @@ public interface ICommandHandler<in TState>
 ///     Defines a handler that processes a command against aggregate state and produces domain events.
 /// </summary>
 /// <typeparam name="TCommand">The command type to handle.</typeparam>
-/// <typeparam name="TState">The aggregate state type used for validation.</typeparam>
+/// <typeparam name="TSnapshot">The aggregate state type used for validation.</typeparam>
 /// <remarks>
 ///     <para>
 ///         Command handlers contain the business logic for validating commands and deciding
@@ -52,12 +52,12 @@ public interface ICommandHandler<in TState>
 ///         for new aggregates) and return either a success result with events or a failure result.
 ///     </para>
 ///     <para>
-///         Handlers should be stateless and inherit from <see cref="CommandHandler{TCommand, TState}" />
+///         Handlers should be stateless and inherit from <see cref="CommandHandler{TCommand, TSnapshot}" />
 ///         rather than implementing this interface directly. Register handlers in the DI container
-///         as <see cref="ICommandHandler{TState}" /> to enable collection-based dispatch.
+///         as <see cref="ICommandHandler{TSnapshot}" /> to enable collection-based dispatch.
 ///     </para>
 /// </remarks>
-public interface ICommandHandler<in TCommand, in TState> : ICommandHandler<TState>
+public interface ICommandHandler<in TCommand, in TSnapshot> : ICommandHandler<TSnapshot>
 {
     /// <summary>
     ///     Handles the command by validating it against current state and producing domain events.
@@ -70,6 +70,6 @@ public interface ICommandHandler<in TCommand, in TState> : ICommandHandler<TStat
     /// </returns>
     OperationResult<IReadOnlyList<object>> Handle(
         TCommand command,
-        TState? state
+        TSnapshot? state
     );
 }

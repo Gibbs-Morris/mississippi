@@ -9,7 +9,7 @@ using Mississippi.EventSourcing.Aggregates.Abstractions;
 namespace Mississippi.EventSourcing.Aggregates.Tests;
 
 /// <summary>
-///     Tests for <see cref="RootCommandHandler{TState}" />.
+///     Tests for <see cref="RootCommandHandler{TSnapshot}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Aggregates")]

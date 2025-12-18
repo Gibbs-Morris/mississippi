@@ -60,16 +60,21 @@ public static class BrookStorageProviderRegistrations
         // Ensure Cosmos DB resources are created asynchronously on host start
         services.AddHostedService<CosmosContainerInitializer>();
 
-        // Configure Cosmos DB Container factory (synchronous, no blocking waits)
-        services.AddSingleton<Container>(provider =>
-        {
-            CosmosClient cosmosClient = provider.GetRequiredService<CosmosClient>();
-            BrookStorageOptions options = provider.GetRequiredService<IOptions<BrookStorageOptions>>().Value;
+        // Configure Cosmos DB Container factory using keyed service to avoid conflicts with other Cosmos providers
+        services.AddKeyedSingleton<Container>(
+            CosmosContainerKeys.Brooks,
+            (
+                provider,
+                _
+            ) =>
+            {
+                CosmosClient cosmosClient = provider.GetRequiredService<CosmosClient>();
+                BrookStorageOptions options = provider.GetRequiredService<IOptions<BrookStorageOptions>>().Value;
 
-            // Return a handle; CosmosContainerInitializer will ensure existence on startup
-            Database database = cosmosClient.GetDatabase(options.DatabaseId);
-            return database.GetContainer(options.ContainerId);
-        });
+                // Return a handle; CosmosContainerInitializer will ensure existence on startup
+                Database database = cosmosClient.GetDatabase(options.DatabaseId);
+                return database.GetContainer(options.ContainerId);
+            });
         return services;
     }
 

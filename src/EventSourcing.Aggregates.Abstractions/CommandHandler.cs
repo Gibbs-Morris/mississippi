@@ -8,7 +8,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///     Provides a base class for command handlers that process commands against aggregate state.
 /// </summary>
 /// <typeparam name="TCommand">The command type to handle.</typeparam>
-/// <typeparam name="TState">The aggregate state type used for validation.</typeparam>
+/// <typeparam name="TSnapshot">The aggregate state type used for validation.</typeparam>
 /// <remarks>
 ///     <para>
 ///         This base class provides the <see cref="TryHandle" /> implementation that enables
@@ -20,12 +20,12 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         They are discovered at aggregate activation time.
 ///     </para>
 /// </remarks>
-public abstract class CommandHandler<TCommand, TState> : ICommandHandler<TCommand, TState>
+public abstract class CommandHandler<TCommand, TSnapshot> : ICommandHandler<TCommand, TSnapshot>
 {
     /// <inheritdoc />
     public OperationResult<IReadOnlyList<object>> Handle(
         TCommand command,
-        TState? state
+        TSnapshot? state
     )
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -35,7 +35,7 @@ public abstract class CommandHandler<TCommand, TState> : ICommandHandler<TComman
     /// <inheritdoc />
     public bool TryHandle(
         object command,
-        TState? state,
+        TSnapshot? state,
         out OperationResult<IReadOnlyList<object>> result
     )
     {
@@ -61,6 +61,6 @@ public abstract class CommandHandler<TCommand, TState> : ICommandHandler<TComman
     /// </returns>
     protected abstract OperationResult<IReadOnlyList<object>> HandleCore(
         TCommand command,
-        TState? state
+        TSnapshot? state
     );
 }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Cosmos.Retry;
@@ -45,6 +46,7 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
     /// <param name="options">The snapshot storage options.</param>
     /// <param name="retryPolicy">Retry policy for transient Cosmos errors.</param>
     public SnapshotContainerOperations(
+        [FromKeyedServices(CosmosContainerKeys.Snapshots)]
         Container container,
         IOptions<SnapshotStorageOptions> options,
         IRetryPolicy retryPolicy

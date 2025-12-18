@@ -9,6 +9,17 @@ namespace Mississippi.EventSourcing.Aggregates;
 internal static partial class AggregateGrainLoggerExtensions
 {
     /// <summary>
+    ///     Logs when the aggregate grain is activated.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(0, LogLevel.Debug, "Aggregate grain activated: {AggregateKey}")]
+    public static partial void Activated(
+        this ILogger logger,
+        string aggregateKey
+    );
+
+    /// <summary>
     ///     Logs when a command has been successfully executed.
     /// </summary>
     /// <param name="logger">The logger.</param>
@@ -68,5 +79,76 @@ internal static partial class AggregateGrainLoggerExtensions
         this ILogger logger,
         string aggregateKey,
         long position
+    );
+
+    /// <summary>
+    ///     Logs when no snapshot is available and state will be built from scratch.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(5, LogLevel.Debug, "No snapshot available for aggregate {AggregateKey}, building from scratch")]
+    public static partial void NoSnapshotAvailable(
+        this ILogger logger,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when reducer hash does not match the snapshot, requiring a rebuild.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="snapshotHash">The hash from the snapshot.</param>
+    /// <param name="currentHash">The current reducer hash.</param>
+    [LoggerMessage(
+        6,
+        LogLevel.Information,
+        "Reducer hash mismatch for aggregate {AggregateKey}: snapshot has {SnapshotHash}, current is {CurrentHash}")]
+    public static partial void ReducerHashMismatch(
+        this ILogger logger,
+        string aggregateKey,
+        string snapshotHash,
+        string currentHash
+    );
+
+    /// <summary>
+    ///     Logs when requesting background snapshot persistence.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="version">The snapshot version.</param>
+    [LoggerMessage(
+        7,
+        LogLevel.Debug,
+        "Requesting background snapshot persistence for aggregate {AggregateKey} at version {Version}")]
+    public static partial void RequestingSnapshotPersistence(
+        this ILogger logger,
+        string aggregateKey,
+        long version
+    );
+
+    /// <summary>
+    ///     Logs when a snapshot is successfully loaded.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="version">The snapshot version.</param>
+    [LoggerMessage(8, LogLevel.Debug, "Loaded snapshot for aggregate {AggregateKey} at version {Version}")]
+    public static partial void SnapshotLoaded(
+        this ILogger logger,
+        string aggregateKey,
+        long version
+    );
+
+    /// <summary>
+    ///     Logs when state hydration completes.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="finalPosition">The final position after hydration.</param>
+    [LoggerMessage(9, LogLevel.Debug, "State hydrated for aggregate {AggregateKey} at position {FinalPosition}")]
+    public static partial void StateHydrated(
+        this ILogger logger,
+        string aggregateKey,
+        long finalPosition
     );
 }
