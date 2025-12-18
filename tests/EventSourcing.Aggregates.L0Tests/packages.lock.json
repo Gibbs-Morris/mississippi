@@ -678,7 +678,8 @@
           "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
           "Mississippi.EventSourcing.Serialization": "[1.0.0, )",
-          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
+          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )",
+          "Mississippi.Observability": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.Aggregates.Abstractions": {
@@ -694,7 +695,8 @@
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.11, )",
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Observability": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.Brooks.Abstractions": {
@@ -712,7 +714,8 @@
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.1, )",
-          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )"
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
+          "Mississippi.Observability": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.Reducers.Abstractions": {
@@ -737,6 +740,13 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Observability": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "System.Diagnostics.DiagnosticSource": "[9.0.1, )"
         }
       },
       "CloudNative.CloudEvents": {
@@ -957,6 +967,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Diagnostics.DiagnosticSource": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.1, )",
+        "resolved": "9.0.1",
+        "contentHash": "yOcDWx4P/s1I83+7gQlgQLmhny2eNcU0cfo1NBWi+en4EAI38Jau+/neT85gUW6w1s7+FUJc2qNOmmwGLIREqA=="
       }
     }
   }
