@@ -248,6 +248,101 @@ internal static partial class ConsoleAppLoggerExtensions
     );
 
     /// <summary>
+    ///     Log that an E2E scenario has failed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="scenarioName">The name of the scenario.</param>
+    /// <param name="reason">The reason for failure.</param>
+    [LoggerMessage(144, LogLevel.Error, "Run {RunId} [E2E:{ScenarioName}]: ✗ FAILED - {Reason}")]
+    public static partial void E2EScenarioFailed(
+        this ILogger logger,
+        string runId,
+        string scenarioName,
+        string reason
+    );
+
+    /// <summary>
+    ///     Log that an E2E scenario has passed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="scenarioName">The name of the scenario.</param>
+    [LoggerMessage(143, LogLevel.Information, "Run {RunId} [E2E:{ScenarioName}]: ✓ PASSED")]
+    public static partial void E2EScenarioPassed(
+        this ILogger logger,
+        string runId,
+        string scenarioName
+    );
+
+    /// <summary>
+    ///     Log that an E2E scenario has started.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="scenarioName">The name of the scenario.</param>
+    [LoggerMessage(142, LogLevel.Information, "Run {RunId} [E2E:{ScenarioName}]: Starting")]
+    public static partial void E2EScenarioStart(
+        this ILogger logger,
+        string runId,
+        string scenarioName
+    );
+
+    /// <summary>
+    ///     Log that a step within an E2E scenario has failed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="scenarioName">The name of the scenario.</param>
+    /// <param name="stepName">The name of the step that failed.</param>
+    /// <param name="reason">The reason for failure.</param>
+    [LoggerMessage(145, LogLevel.Warning, "Run {RunId} [E2E:{ScenarioName}]: Step '{StepName}' failed - {Reason}")]
+    public static partial void E2EStepFailed(
+        this ILogger logger,
+        string runId,
+        string scenarioName,
+        string stepName,
+        string reason
+    );
+
+    /// <summary>
+    ///     Log that the comprehensive E2E test suite has completed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="passed">Number of scenarios that passed.</param>
+    /// <param name="failed">Number of scenarios that failed.</param>
+    /// <param name="total">Total number of scenarios.</param>
+    /// <param name="ms">The elapsed time in milliseconds.</param>
+    [LoggerMessage(
+        141,
+        LogLevel.Information,
+        "Run {RunId} [E2E Suite]: Complete - Passed={Passed}, Failed={Failed}, Total={Total} in {Ms} ms")]
+    public static partial void E2ESuiteComplete(
+        this ILogger logger,
+        string runId,
+        int passed,
+        int failed,
+        int total,
+        long ms
+    );
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Comprehensive E2E Scenario Logging (IDs 140-149)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    ///     Log that the comprehensive E2E test suite has started.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    [LoggerMessage(140, LogLevel.Information, "Run {RunId} [E2E Suite]: Starting comprehensive E2E scenario suite")]
+    public static partial void E2ESuiteStart(
+        this ILogger logger,
+        string runId
+    );
+
+    /// <summary>
     ///     Log the banner for the explicit cache flush and readback scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
@@ -534,6 +629,34 @@ internal static partial class ConsoleAppLoggerExtensions
     );
 
     /// <summary>
+    ///     Log that a scenario has completed successfully.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="scenarioName">The name of the scenario.</param>
+    /// <param name="elapsedMs">Elapsed time in milliseconds.</param>
+    /// <param name="message">Completion message.</param>
+    [LoggerMessage(300, LogLevel.Information, "[{ScenarioName}]: Complete in {ElapsedMs} ms - {Message}")]
+    public static partial void ScenarioComplete(
+        this ILogger logger,
+        string scenarioName,
+        long elapsedMs,
+        string message
+    );
+
+    /// <summary>
+    ///     Log that a scenario has failed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="scenarioName">The name of the scenario.</param>
+    /// <param name="message">Failure message.</param>
+    [LoggerMessage(301, LogLevel.Error, "[{ScenarioName}]: FAILED - {Message}")]
+    public static partial void ScenarioFailed(
+        this ILogger logger,
+        string scenarioName,
+        string message
+    );
+
+    /// <summary>
     ///     Log the banner for the interleaved read/write scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
@@ -579,11 +702,43 @@ internal static partial class ConsoleAppLoggerExtensions
     );
 
     /// <summary>
+    ///     Log that the simple UX projection scenario is about to run.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    [LoggerMessage(209, LogLevel.Information, "=== Scenario: Simple UX Projection (fresh ID each run) ===")]
+    public static partial void ScenarioSimpleUxProjection(
+        this ILogger logger
+    );
+
+    /// <summary>
     ///     Log the banner for the SmallBatch_10x1KB scenario.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
     [LoggerMessage(10, LogLevel.Information, "=== Scenario: SmallBatch_10x1KB ===")]
     public static partial void ScenarioSmallBatch10x1KB(
+        this ILogger logger
+    );
+
+    /// <summary>
+    ///     Log the banner for the UX projection end-to-end scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    [LoggerMessage(
+        133,
+        LogLevel.Information,
+        "=== Scenario: UX Projection End-to-End (Aggregate → Projection → Snapshot) === RunId={RunId}")]
+    public static partial void ScenarioUxProjectionEndToEnd(
+        this ILogger logger,
+        string runId
+    );
+
+    /// <summary>
+    ///     Log that Scenario 15 (UX projection verification) is starting.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    [LoggerMessage(132, LogLevel.Information, "Scenario 15: UX projection end-to-end verification")]
+    public static partial void ScenarioUxProjectionVerification(
         this ILogger logger
     );
 
@@ -597,6 +752,164 @@ internal static partial class ConsoleAppLoggerExtensions
         "=== Scenario: End-to-End Verification (Aggregate → Events → Snapshot) ===")]
     public static partial void ScenarioVerificationEndToEnd(
         this ILogger logger
+    );
+
+    /// <summary>
+    ///     Log that a command was executed in the simple UX scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="commandDescription">Description of the command executed.</param>
+    [LoggerMessage(202, LogLevel.Debug, "Run {RunId} [SimpleUx]: Command executed: {CommandDescription}")]
+    public static partial void SimpleUxCommandExecuted(
+        this ILogger logger,
+        string runId,
+        string commandDescription
+    );
+
+    /// <summary>
+    ///     Log that a step failed in the simple UX scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="operation">The operation that failed.</param>
+    /// <param name="errorMessage">The error message.</param>
+    [LoggerMessage(204, LogLevel.Error, "Run {RunId} [SimpleUx]: FAILED at {Operation}: {ErrorMessage}")]
+    public static partial void SimpleUxFailed(
+        this ILogger logger,
+        string runId,
+        string operation,
+        string errorMessage
+    );
+
+    /// <summary>
+    ///     Log that a projection was received.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="currentCount">The current count from the projection.</param>
+    /// <param name="totalOperations">The total operations from the projection.</param>
+    [LoggerMessage(
+        205,
+        LogLevel.Information,
+        "Run {RunId} [SimpleUx]: Projection received - Count={CurrentCount}, TotalOperations={TotalOperations}")]
+    public static partial void SimpleUxProjectionReceived(
+        this ILogger logger,
+        string runId,
+        int currentCount,
+        int totalOperations
+    );
+
+    /// <summary>
+    ///     Log that the simple UX scenario has completed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="counterId">The counter identifier.</param>
+    /// <param name="result">The result (PASSED or FAILED).</param>
+    [LoggerMessage(
+        208,
+        LogLevel.Information,
+        "Run {RunId} [SimpleUx]: Scenario complete for counterId={CounterId} - {Result}")]
+    public static partial void SimpleUxScenarioComplete(
+        this ILogger logger,
+        string runId,
+        string counterId,
+        string result
+    );
+
+    // =========================================================================
+    // Simple UX Projection Scenario Logging
+    // =========================================================================
+
+    /// <summary>
+    ///     Log that the simple UX projection scenario has started.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="counterId">The counter identifier (fresh ID each run).</param>
+    [LoggerMessage(
+        200,
+        LogLevel.Information,
+        "Run {RunId} [SimpleUx]: Starting scenario with fresh counterId={CounterId}")]
+    public static partial void SimpleUxScenarioStart(
+        this ILogger logger,
+        string runId,
+        string counterId
+    );
+
+    /// <summary>
+    ///     Log a step in the simple UX scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="description">The step description.</param>
+    [LoggerMessage(201, LogLevel.Information, "Run {RunId} [SimpleUx]: Step {StepNumber}: {Description}")]
+    public static partial void SimpleUxStep(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string description
+    );
+
+    /// <summary>
+    ///     Log that a step completed in the simple UX scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="result">The step result summary.</param>
+    [LoggerMessage(203, LogLevel.Information, "Run {RunId} [SimpleUx]: Step {StepNumber} complete: {Result}")]
+    public static partial void SimpleUxStepComplete(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string result
+    );
+
+    /// <summary>
+    ///     Log that verification failed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="expectedCount">The expected count.</param>
+    /// <param name="actualCount">The actual count.</param>
+    /// <param name="expectedOps">The expected operations.</param>
+    /// <param name="actualOps">The actual operations.</param>
+    [LoggerMessage(
+        207,
+        LogLevel.Error,
+        "Run {RunId} [SimpleUx]: Verification FAILED - Count: expected={ExpectedCount} actual={ActualCount}, Ops: expected={ExpectedOps} actual={ActualOps}")]
+    public static partial void SimpleUxVerificationFailed(
+        this ILogger logger,
+        string runId,
+        int expectedCount,
+        int actualCount,
+        int expectedOps,
+        int actualOps
+    );
+
+    /// <summary>
+    ///     Log that verification passed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="expectedCount">The expected count.</param>
+    /// <param name="actualCount">The actual count.</param>
+    /// <param name="expectedOps">The expected operations.</param>
+    /// <param name="actualOps">The actual operations.</param>
+    [LoggerMessage(
+        206,
+        LogLevel.Information,
+        "Run {RunId} [SimpleUx]: Verification PASSED - Count: expected={ExpectedCount} actual={ActualCount}, Ops: expected={ExpectedOps} actual={ActualOps}")]
+    public static partial void SimpleUxVerificationPassed(
+        this ILogger logger,
+        string runId,
+        int expectedCount,
+        int actualCount,
+        int expectedOps,
+        int actualOps
     );
 
     /// <summary>
@@ -645,6 +958,231 @@ internal static partial class ConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         Exception ex
+    );
+
+    /// <summary>
+    ///     Log that a command was executed during UX projection verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="commandName">The command that was executed.</param>
+    [LoggerMessage(125, LogLevel.Debug, "Run {RunId} [UxProjection]: Executed {CommandName}")]
+    public static partial void UxProjectionCommandExecuted(
+        this ILogger logger,
+        string runId,
+        string commandName
+    );
+
+    /// <summary>
+    ///     Log details about the UX projection state.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="currentCount">The current count value.</param>
+    /// <param name="totalOperations">The total number of operations.</param>
+    /// <param name="displayLabel">The display label.</param>
+    /// <param name="isPositive">Whether the counter is positive.</param>
+    [LoggerMessage(
+        128,
+        LogLevel.Debug,
+        "Run {RunId} [UxProjection]: Projection details - CurrentCount={CurrentCount} TotalOperations={TotalOperations} DisplayLabel={DisplayLabel} IsPositive={IsPositive}")]
+    public static partial void UxProjectionDetails(
+        this ILogger logger,
+        string runId,
+        int currentCount,
+        int totalOperations,
+        string displayLabel,
+        bool isPositive
+    );
+
+    /// <summary>
+    ///     Log that a UX projection was found.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="projectionType">The type of the projection.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <param name="currentCount">The current count value in the projection.</param>
+    [LoggerMessage(
+        126,
+        LogLevel.Information,
+        "Run {RunId} [UxProjection]: Projection FOUND - Type={ProjectionType} EntityId={EntityId} CurrentCount={CurrentCount}")]
+    public static partial void UxProjectionFound(
+        this ILogger logger,
+        string runId,
+        string projectionType,
+        string entityId,
+        int currentCount
+    );
+
+    /// <summary>
+    ///     Log that a UX projection was not found.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="projectionType">The type of the projection.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    [LoggerMessage(
+        127,
+        LogLevel.Warning,
+        "Run {RunId} [UxProjection]: Projection NOT FOUND - Type={ProjectionType} EntityId={EntityId}")]
+    public static partial void UxProjectionNotFound(
+        this ILogger logger,
+        string runId,
+        string projectionType,
+        string entityId
+    );
+
+    /// <summary>
+    ///     Log the completion of a UX projection verification scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="entityId">The entity identifier that was verified.</param>
+    /// <param name="elapsedMs">The elapsed time in milliseconds.</param>
+    /// <param name="result">The verification result.</param>
+    [LoggerMessage(
+        121,
+        LogLevel.Information,
+        "Run {RunId} [UxProjection]: Verification complete for entity {EntityId} in {ElapsedMs}ms - {Result}")]
+    public static partial void UxProjectionScenarioComplete(
+        this ILogger logger,
+        string runId,
+        string entityId,
+        int elapsedMs,
+        string result
+    );
+
+    // ============================================================================
+    // UX Projection Scenario Logging (IDs 120-139)
+    // ============================================================================
+
+    /// <summary>
+    ///     Log the start of a UX projection verification scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="entityId">The entity identifier being verified.</param>
+    [LoggerMessage(
+        120,
+        LogLevel.Information,
+        "Run {RunId} [UxProjection]: Starting UX projection verification for entity {EntityId}")]
+    public static partial void UxProjectionScenarioStart(
+        this ILogger logger,
+        string runId,
+        string entityId
+    );
+
+    /// <summary>
+    ///     Log details about the UX projection snapshot.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="contentType">The content type of the snapshot.</param>
+    /// <param name="reducerHash">The reducer hash of the snapshot.</param>
+    /// <param name="dataPreview">A preview of the snapshot data.</param>
+    [LoggerMessage(
+        131,
+        LogLevel.Debug,
+        "Run {RunId} [UxProjection]: Snapshot details - ContentType={ContentType} ReducerHash={ReducerHash} Data={DataPreview}")]
+    public static partial void UxProjectionSnapshotDetails(
+        this ILogger logger,
+        string runId,
+        string contentType,
+        string reducerHash,
+        string dataPreview
+    );
+
+    /// <summary>
+    ///     Log that a UX projection snapshot was found in Cosmos.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="projectionType">The type of the projection.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <param name="version">The snapshot version.</param>
+    /// <param name="dataLength">The length of the snapshot data.</param>
+    [LoggerMessage(
+        129,
+        LogLevel.Information,
+        "Run {RunId} [UxProjection]: Snapshot FOUND - Type={ProjectionType} EntityId={EntityId} Version={Version} DataLength={DataLength}")]
+    public static partial void UxProjectionSnapshotFound(
+        this ILogger logger,
+        string runId,
+        string projectionType,
+        string entityId,
+        long version,
+        int dataLength
+    );
+
+    /// <summary>
+    ///     Log that a UX projection snapshot was not found in Cosmos.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="projectionType">The type of the projection.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <param name="version">The expected snapshot version.</param>
+    [LoggerMessage(
+        130,
+        LogLevel.Warning,
+        "Run {RunId} [UxProjection]: Snapshot NOT FOUND - Type={ProjectionType} EntityId={EntityId} Version={Version}")]
+    public static partial void UxProjectionSnapshotNotFound(
+        this ILogger logger,
+        string runId,
+        string projectionType,
+        string entityId,
+        long version
+    );
+
+    /// <summary>
+    ///     Log a UX projection verification step.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="description">The step description.</param>
+    [LoggerMessage(122, LogLevel.Information, "Run {RunId} [UxProjection]: Step {StepNumber}: {Description}")]
+    public static partial void UxProjectionStep(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string description
+    );
+
+    /// <summary>
+    ///     Log that a UX projection verification step has completed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="result">The step result.</param>
+    [LoggerMessage(123, LogLevel.Information, "Run {RunId} [UxProjection]: Step {StepNumber} complete: {Result}")]
+    public static partial void UxProjectionStepComplete(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string result
+    );
+
+    /// <summary>
+    ///     Log that a UX projection verification step has failed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="expectation">What was expected.</param>
+    /// <param name="actual">What was actually found.</param>
+    [LoggerMessage(
+        124,
+        LogLevel.Error,
+        "Run {RunId} [UxProjection]: Step {StepNumber} FAILED - Expected: {Expectation}, Actual: {Actual}")]
+    public static partial void UxProjectionStepFailed(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string expectation,
+        string actual
     );
 
     /// <summary>

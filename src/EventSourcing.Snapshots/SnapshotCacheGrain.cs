@@ -242,7 +242,7 @@ public abstract class SnapshotCacheGrain<TSnapshot, TBrook>
             // No base snapshot available, rebuild from the beginning
             Logger.NoBaseSnapshotAvailable(keyString);
             state = CreateInitialState();
-            readFrom = new();
+            readFrom = new(0);
         }
 
         long eventCount = 0;
