@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Reader;
 
@@ -31,12 +32,14 @@ public sealed class UxProjectionCursorGrainUnitTests
     )
     {
         (UxProjectionCursorGrain sut, Mock<IGrainContext> _, Mock<ILogger<UxProjectionCursorGrain>> _,
-            IOptions<BrookProviderOptions> _, Mock<IStreamIdFactory> _) = CreateGrainWithMocks(primaryKey);
+                IOptions<BrookProviderOptions> _, Mock<IStreamIdFactory> _, Mock<IBrookStorageReader> _) =
+            CreateGrainWithMocks(primaryKey);
         return sut;
     }
 
     private static (UxProjectionCursorGrain Grain, Mock<IGrainContext> Context, Mock<ILogger<UxProjectionCursorGrain>>
-        Logger, IOptions<BrookProviderOptions> Options, Mock<IStreamIdFactory> StreamIdFactory) CreateGrainWithMocks(
+        Logger, IOptions<BrookProviderOptions> Options, Mock<IStreamIdFactory> StreamIdFactory,
+        Mock<IBrookStorageReader> BrookStorageReader) CreateGrainWithMocks(
             string primaryKey
         )
     {
@@ -44,10 +47,18 @@ public sealed class UxProjectionCursorGrainUnitTests
         Mock<ILogger<UxProjectionCursorGrain>> logger = new();
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
+        Mock<IBrookStorageReader> brookStorageReader = new();
         GrainId grainId = GrainId.Create("ux-projection-cursor", primaryKey);
         context.SetupGet(c => c.GrainId).Returns(grainId);
-        UxProjectionCursorGrain sut = new(context.Object, options, streamIdFactory.Object, logger.Object);
-        return (sut, context, logger, options, streamIdFactory);
+        brookStorageReader.Setup(r => r.ReadCursorPositionAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(-1));
+        UxProjectionCursorGrain sut = new(
+            context.Object,
+            options,
+            streamIdFactory.Object,
+            brookStorageReader.Object,
+            logger.Object);
+        return (sut, context, logger, options, streamIdFactory, brookStorageReader);
     }
 
     private const string InvalidPrimaryKey = "invalid-key-without-pipe";
@@ -64,6 +75,7 @@ public sealed class UxProjectionCursorGrainUnitTests
         // Arrange
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
+        Mock<IBrookStorageReader> brookStorageReader = new();
         Mock<ILogger<UxProjectionCursorGrain>> logger = new();
 
         // Act & Assert
@@ -71,6 +83,7 @@ public sealed class UxProjectionCursorGrainUnitTests
             null!,
             options,
             streamIdFactory.Object,
+            brookStorageReader.Object,
             logger.Object));
     }
 
@@ -85,12 +98,14 @@ public sealed class UxProjectionCursorGrainUnitTests
         Mock<IGrainContext> context = new();
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
+        Mock<IBrookStorageReader> brookStorageReader = new();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new UxProjectionCursorGrain(
             context.Object,
             options,
             streamIdFactory.Object,
+            brookStorageReader.Object,
             null!));
     }
 
@@ -104,6 +119,7 @@ public sealed class UxProjectionCursorGrainUnitTests
         // Arrange
         Mock<IGrainContext> context = new();
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
+        Mock<IBrookStorageReader> brookStorageReader = new();
         Mock<ILogger<UxProjectionCursorGrain>> logger = new();
 
         // Act & Assert
@@ -111,6 +127,7 @@ public sealed class UxProjectionCursorGrainUnitTests
             context.Object,
             options,
             null!,
+            brookStorageReader.Object,
             logger.Object));
     }
 
@@ -124,6 +141,7 @@ public sealed class UxProjectionCursorGrainUnitTests
         // Arrange
         Mock<IGrainContext> context = new();
         Mock<IStreamIdFactory> streamIdFactory = new();
+        Mock<IBrookStorageReader> brookStorageReader = new();
         Mock<ILogger<UxProjectionCursorGrain>> logger = new();
 
         // Act & Assert
@@ -131,6 +149,7 @@ public sealed class UxProjectionCursorGrainUnitTests
             context.Object,
             null!,
             streamIdFactory.Object,
+            brookStorageReader.Object,
             logger.Object));
     }
 
@@ -180,7 +199,8 @@ public sealed class UxProjectionCursorGrainUnitTests
     {
         // Arrange
         (UxProjectionCursorGrain sut, Mock<IGrainContext> contextMock, Mock<ILogger<UxProjectionCursorGrain>> _,
-            IOptions<BrookProviderOptions> _, Mock<IStreamIdFactory> _) = CreateGrainWithMocks(ValidPrimaryKey);
+                IOptions<BrookProviderOptions> _, Mock<IStreamIdFactory> _, Mock<IBrookStorageReader> _) =
+            CreateGrainWithMocks(ValidPrimaryKey);
 
         // Act
         IGrainContext context = sut.GrainContext;
@@ -203,9 +223,15 @@ public sealed class UxProjectionCursorGrainUnitTests
         logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
+        Mock<IBrookStorageReader> brookStorageReader = new();
         GrainId grainId = GrainId.Create("ux-projection-cursor", InvalidPrimaryKey);
         context.SetupGet(c => c.GrainId).Returns(grainId);
-        UxProjectionCursorGrain sut = new(context.Object, options, streamIdFactory.Object, logger.Object);
+        UxProjectionCursorGrain sut = new(
+            context.Object,
+            options,
+            streamIdFactory.Object,
+            brookStorageReader.Object,
+            logger.Object);
 
         // Act
         try
@@ -247,9 +273,15 @@ public sealed class UxProjectionCursorGrainUnitTests
         logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
+        Mock<IBrookStorageReader> brookStorageReader = new();
         GrainId grainId = GrainId.Create("ux-projection-cursor", InvalidPrimaryKey);
         context.SetupGet(c => c.GrainId).Returns(grainId);
-        UxProjectionCursorGrain sut = new(context.Object, options, streamIdFactory.Object, logger.Object);
+        UxProjectionCursorGrain sut = new(
+            context.Object,
+            options,
+            streamIdFactory.Object,
+            brookStorageReader.Object,
+            logger.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<FormatException>(() => sut.OnActivateAsync(CancellationToken.None));
@@ -265,7 +297,8 @@ public sealed class UxProjectionCursorGrainUnitTests
     {
         // Arrange
         (UxProjectionCursorGrain sut, Mock<IGrainContext> _, Mock<ILogger<UxProjectionCursorGrain>> loggerMock,
-            IOptions<BrookProviderOptions> _, Mock<IStreamIdFactory> _) = CreateGrainWithMocks(ValidPrimaryKey);
+                IOptions<BrookProviderOptions> _, Mock<IStreamIdFactory> _, Mock<IBrookStorageReader> _) =
+            CreateGrainWithMocks(ValidPrimaryKey);
         loggerMock.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
 
         // Act
@@ -311,7 +344,8 @@ public sealed class UxProjectionCursorGrainUnitTests
     {
         // Arrange
         (UxProjectionCursorGrain sut, Mock<IGrainContext> _, Mock<ILogger<UxProjectionCursorGrain>> loggerMock,
-            IOptions<BrookProviderOptions> _, Mock<IStreamIdFactory> _) = CreateGrainWithMocks(ValidPrimaryKey);
+                IOptions<BrookProviderOptions> _, Mock<IStreamIdFactory> _, Mock<IBrookStorageReader> _) =
+            CreateGrainWithMocks(ValidPrimaryKey);
         loggerMock.Setup(l => l.IsEnabled(LogLevel.Warning)).Returns(true);
         InvalidOperationException testException = new("Test stream error");
 

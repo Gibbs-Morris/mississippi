@@ -149,53 +149,58 @@ else
 
 // Scenario 1: Small batch append (10 small events)
 logger.ScenarioSmallBatch10x1KB();
-await AppendScenarioRunner.RunAsync(
+ScenarioResult appendResult1 = await AppendScenario.RunAsync(
     logger,
     runId,
     brookFactory,
     brookKey,
     "SmallBatch_10x1KB",
     () => SampleEventFactory.CreateFixedSizeEvents(10, 1024, "application/json"));
+LogScenarioResult(logger, appendResult1);
 
 // Scenario 2: Bulk 100 mixed-size events
 logger.ScenarioBulk100Mixed();
-await AppendScenarioRunner.RunAsync(
+ScenarioResult appendResult2 = await AppendScenario.RunAsync(
     logger,
     runId,
     brookFactory,
     brookKey,
     "Bulk_100_Mixed",
     () => SampleEventFactory.CreateRangeSizeEvents(100, 512, 4096));
+LogScenarioResult(logger, appendResult2);
 
 // Scenario 3: Large single event (~200KB)
 logger.ScenarioLargeSingle200KB();
-await AppendScenarioRunner.RunAsync(
+ScenarioResult appendResult3 = await AppendScenario.RunAsync(
     logger,
     runId,
     brookFactory,
     brookKey,
     "LargeSingle_200KB",
     () => SampleEventFactory.CreateFixedSizeEvents(1, 200 * 1024));
+LogScenarioResult(logger, appendResult3);
 
 // Scenario 4: Large batch near request limit (sized to push batching logic)
 logger.ScenarioLargeBatch200x5KB();
-await AppendScenarioRunner.RunAsync(
+ScenarioResult appendResult4 = await AppendScenario.RunAsync(
     logger,
     runId,
     brookFactory,
     brookKey,
     "LargeBatch_200x5KB",
     () => SampleEventFactory.CreateFixedSizeEvents(200, 5 * 1024));
+LogScenarioResult(logger, appendResult4);
 
 // Scenario 5: Max-op constrained (exactly 100 ops across batches)
 logger.ScenarioOpsLimit100Mixed();
-await AppendScenarioRunner.RunAsync(
+ScenarioResult appendResult5 = await AppendScenario.RunAsync(
     logger,
     runId,
     brookFactory,
     brookKey,
     "OpsLimit_100_Mixed",
     () => SampleEventFactory.CreateRangeSizeEvents(100, 1024, 4096));
+LogScenarioResult(logger, appendResult5);
 
 // Read back and log
 logger.ReadbackAfterInitialAppends();
@@ -203,11 +208,14 @@ await ReadHelpers.LogStreamReadAsync(logger, runId, brookFactory, brookKey);
 
 // Scenario 6: Interleaved read/write on same stream
 logger.ScenarioInterleaved();
-await InterleavedScenario.RunAsync(logger, runId, brookFactory, brookKey);
+ScenarioResult interleavedResult = await InterleavedScenario.RunAsync(logger, runId, brookFactory, brookKey);
+LogScenarioResult(logger, interleavedResult);
 
 // Scenario 7: Multi-stream interleaved workload
 logger.ScenarioMultiStream();
-List<StreamState> multiStates = await MultiStreamScenario.RunAsync(logger, runId, brookFactory);
+ScenarioResult multiStreamResult = await MultiStreamScenario.RunAsync(logger, runId, brookFactory);
+LogScenarioResult(logger, multiStreamResult);
+IReadOnlyList<StreamState> multiStates = MultiStreamScenario.GetStreamStates(multiStreamResult);
 
 // Persist multi-stream cursors
 foreach (StreamState s in multiStates)
@@ -227,31 +235,39 @@ IGrainFactory grainFactory = host.Services.GetRequiredService<IGrainFactory>();
 
 // Scenario 9: Basic aggregate lifecycle (init → increment → decrement → reset)
 logger.ScenarioAggregateBasicLifecycle();
-await AggregateScenarioRunner.RunBasicLifecycleAsync(logger, runId, grainFactory, $"counter-{Guid.NewGuid():N}");
+ScenarioResult aggLifecycleResult = await AggregateScenario.RunBasicLifecycleAsync(
+    logger,
+    runId,
+    grainFactory,
+    $"counter-{Guid.NewGuid():N}");
+LogScenarioResult(logger, aggLifecycleResult);
 
 // Scenario 10: Validation error scenarios
 logger.ScenarioAggregateValidation();
-await AggregateScenarioRunner.RunValidationScenarioAsync(
+ScenarioResult aggValidationResult = await AggregateScenario.RunValidationScenarioAsync(
     logger,
     runId,
     grainFactory,
     $"counter-validation-{Guid.NewGuid():N}");
+LogScenarioResult(logger, aggValidationResult);
 
 // Scenario 11: Concurrency/version tracking
 logger.ScenarioAggregateConcurrency();
-await AggregateScenarioRunner.RunConcurrencyScenarioAsync(
+ScenarioResult aggConcurrencyResult = await AggregateScenario.RunConcurrencyScenarioAsync(
     logger,
     runId,
     grainFactory,
     $"counter-concurrency-{Guid.NewGuid():N}");
+LogScenarioResult(logger, aggConcurrencyResult);
 
 // Scenario 12: Throughput test (100 rapid operations)
 logger.ScenarioAggregateThroughput();
-await AggregateScenarioRunner.RunThroughputScenarioAsync(
+ScenarioResult aggThroughputResult = await AggregateScenario.RunThroughputScenarioAsync(
     logger,
     runId,
     grainFactory,
     $"counter-throughput-{Guid.NewGuid():N}");
+LogScenarioResult(logger, aggThroughputResult);
 
 // ============================================================================
 // End-to-End Verification Scenario - Validates event stream persistence
@@ -264,7 +280,7 @@ ISnapshotStorageProvider snapshotStorageProvider = host.Services.GetRequiredServ
 ISnapshotStateConverter<CounterState> snapshotStateConverter =
     host.Services.GetRequiredService<ISnapshotStateConverter<CounterState>>();
 IRootReducer<CounterState> counterRootReducer = host.Services.GetRequiredService<IRootReducer<CounterState>>();
-await VerificationScenarioRunner.RunEndToEndVerificationAsync(
+ScenarioResult verificationResult = await VerificationScenario.RunEndToEndVerificationAsync(
     logger,
     runId,
     grainFactory,
@@ -273,19 +289,33 @@ await VerificationScenarioRunner.RunEndToEndVerificationAsync(
     snapshotStateConverter,
     counterRootReducer,
     $"counter-verify-{Guid.NewGuid():N}");
+LogScenarioResult(logger, verificationResult);
+
+// ============================================================================
+// Simple UX Projection Scenario - Basic end-to-end flow validation
+// ============================================================================
+
+// Scenario 14: Simple UX projection (fresh ID each run: aggregate → events → projection)
+logger.ScenarioSimpleUxProjection();
+IUxProjectionGrainFactory uxProjectionGrainFactory = host.Services.GetRequiredService<IUxProjectionGrainFactory>();
+ScenarioResult simpleUxResult = await SimpleUxProjectionScenario.RunAsync(
+    logger,
+    runId,
+    grainFactory,
+    uxProjectionGrainFactory);
+LogScenarioResult(logger, simpleUxResult);
 
 // ============================================================================
 // UX Projection Scenario - Validates projection snapshot persistence
 // ============================================================================
 
-// Scenario 14: UX projection end-to-end (aggregate → projection → snapshot in Cosmos)
+// Scenario 15: UX projection end-to-end (aggregate → projection → snapshot in Cosmos)
 logger.ScenarioUxProjectionEndToEnd(runId);
 ISnapshotStateConverter<CounterSummaryProjection> summarySnapshotStateConverter =
     host.Services.GetRequiredService<ISnapshotStateConverter<CounterSummaryProjection>>();
 IRootReducer<CounterSummaryProjection> summaryRootReducer =
     host.Services.GetRequiredService<IRootReducer<CounterSummaryProjection>>();
-IUxProjectionGrainFactory uxProjectionGrainFactory = host.Services.GetRequiredService<IUxProjectionGrainFactory>();
-await UxProjectionScenarioRunner.RunEndToEndUxProjectionAsync(
+ScenarioResult uxProjectionResult = await UxProjectionScenario.RunEndToEndUxProjectionAsync(
     logger,
     runId,
     grainFactory,
@@ -294,8 +324,32 @@ await UxProjectionScenarioRunner.RunEndToEndUxProjectionAsync(
     summarySnapshotStateConverter,
     summaryRootReducer,
     $"counter-ux-proj-{Guid.NewGuid():N}");
+LogScenarioResult(logger, uxProjectionResult);
 
-// Scenario 15: Cold start resume: stop host, build a new host, start again, then read
+// ============================================================================
+// Comprehensive E2E Test Suite - Multiple scenarios validating full pipeline
+// ============================================================================
+
+// Scenario 16: Comprehensive E2E test suite
+ScenarioResult e2eSuiteResult = await ComprehensiveE2EScenarios.RunAllAsync(
+    logger,
+    runId,
+    grainFactory,
+    uxProjectionGrainFactory);
+LogScenarioResult(logger, e2eSuiteResult);
+(int e2ePassed, int e2eFailed, int e2eTotal) = ComprehensiveE2EScenarios.GetCounts(e2eSuiteResult);
+if (e2eFailed > 0)
+{
+    logger.SimpleUxFailed(runId, "ComprehensiveE2E", $"{e2eFailed}/{e2eTotal} scenarios failed");
+}
+
+logger.E2ESuiteComplete(runId, e2ePassed, e2eFailed, e2eTotal, 0);
+
+// ============================================================================
+// Cold Restart - Validates persistence across host restart
+// ============================================================================
+
+// Scenario 17: Cold start resume: stop host, build a new host, start again, then read
 logger.PerformingColdRestartOfHost(runId);
 await host.StopAsync();
 using IHost host2 = HostFactory.BuildColdStartHost();
@@ -317,3 +371,19 @@ runState.UpsertStream(brookKey.Type, brookKey.Id, confirmed.Value);
 await RunStateStore.SaveAsync(runState, logger);
 await host2.StopAsync();
 await host.StopAsync();
+return;
+
+static void LogScenarioResult(
+    ILogger scenarioLogger,
+    ScenarioResult result
+)
+{
+    if (result.Passed)
+    {
+        scenarioLogger.ScenarioComplete(result.ScenarioName, result.ElapsedMs, result.Message ?? string.Empty);
+    }
+    else
+    {
+        scenarioLogger.ScenarioFailed(result.ScenarioName, result.Message ?? "Unknown error");
+    }
+}

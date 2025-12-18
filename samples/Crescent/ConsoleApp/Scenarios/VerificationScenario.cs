@@ -20,8 +20,10 @@ namespace Crescent.ConsoleApp.Scenarios;
 /// <summary>
 ///     Runs end-to-end verification scenarios that validate event stream persistence.
 /// </summary>
-internal static class VerificationScenarioRunner
+internal static class VerificationScenario
 {
+    private const string ScenarioName = "EndToEndVerification";
+
     /// <summary>
     ///     Runs an end-to-end verification scenario that:
     ///     1. Creates an aggregate and writes events via commands
@@ -37,8 +39,8 @@ internal static class VerificationScenarioRunner
     /// <param name="rootReducer">Root reducer for getting the reducer hash.</param>
     /// <param name="counterId">The counter entity identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>True if verification passed, false otherwise.</returns>
-    public static async Task<bool> RunEndToEndVerificationAsync(
+    /// <returns>A scenario result indicating success or failure.</returns>
+    public static async Task<ScenarioResult> RunEndToEndVerificationAsync(
         ILogger logger,
         string runId,
         IGrainFactory grainFactory,
@@ -64,7 +66,11 @@ internal static class VerificationScenarioRunner
         if (!initResult.Success)
         {
             logger.VerificationStepFailed(runId, 1, "Initialize failed", initResult.ErrorMessage ?? "Unknown");
-            return false;
+            sw.Stop();
+            return ScenarioResult.Failure(
+                ScenarioName,
+                initResult.ErrorMessage ?? "Initialize failed",
+                (int)sw.ElapsedMilliseconds);
         }
 
         logger.VerificationCommandExecuted(runId, "Initialize(10)");
@@ -80,7 +86,11 @@ internal static class VerificationScenarioRunner
                     1,
                     $"Increment[{i + 1}] failed",
                     incResult.ErrorMessage ?? "Unknown");
-                return false;
+                sw.Stop();
+                return ScenarioResult.Failure(
+                    ScenarioName,
+                    incResult.ErrorMessage ?? $"Increment[{i + 1}] failed",
+                    (int)sw.ElapsedMilliseconds);
             }
         }
 
@@ -97,7 +107,11 @@ internal static class VerificationScenarioRunner
                     1,
                     $"Decrement[{i + 1}] failed",
                     decResult.ErrorMessage ?? "Unknown");
-                return false;
+                sw.Stop();
+                return ScenarioResult.Failure(
+                    ScenarioName,
+                    decResult.ErrorMessage ?? $"Decrement[{i + 1}] failed",
+                    (int)sw.ElapsedMilliseconds);
             }
         }
 
@@ -195,12 +209,13 @@ internal static class VerificationScenarioRunner
         if (allPassed)
         {
             logger.VerificationScenarioComplete(runId, counterId, (int)sw.ElapsedMilliseconds, "PASSED");
-        }
-        else
-        {
-            logger.VerificationScenarioComplete(runId, counterId, (int)sw.ElapsedMilliseconds, "FAILED");
+            return ScenarioResult.Success(ScenarioName, (int)sw.ElapsedMilliseconds, "All verification steps passed");
         }
 
-        return allPassed;
+        logger.VerificationScenarioComplete(runId, counterId, (int)sw.ElapsedMilliseconds, "FAILED");
+        return ScenarioResult.Failure(
+            ScenarioName,
+            "One or more verification steps failed",
+            (int)sw.ElapsedMilliseconds);
     }
 }

@@ -54,8 +54,13 @@ internal sealed class InMemoryBrookStorage
         CancellationToken cancellationToken = default
     )
     {
-        _ = cursors.TryGetValue(brookId, out long v);
-        return Task.FromResult(new BrookPosition(v));
+        if (cursors.TryGetValue(brookId, out long v))
+        {
+            return Task.FromResult(new BrookPosition(v));
+        }
+
+        // Return -1 (NotSet) for streams that don't exist yet
+        return Task.FromResult(new BrookPosition(-1));
     }
 
     /// <inheritdoc />

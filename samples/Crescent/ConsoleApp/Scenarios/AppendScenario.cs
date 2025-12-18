@@ -16,7 +16,7 @@ namespace Crescent.ConsoleApp.Scenarios;
 /// <summary>
 ///     Runs append scenarios against a specific brook.
 /// </summary>
-internal static class AppendScenarioRunner
+internal static class AppendScenario
 {
     /// <summary>
     ///     Runs an append scenario and logs throughput and results.
@@ -29,8 +29,8 @@ internal static class AppendScenarioRunner
     /// <param name="eventFactory">Factory to create the events to append.</param>
     /// <param name="expectedCursor">Optional expected cursor for optimistic concurrency.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The task representing the asynchronous operation.</returns>
-    public static async Task RunAsync(
+    /// <returns>A scenario result indicating success or failure.</returns>
+    public static async Task<ScenarioResult> RunAsync(
         ILogger logger,
         string runId,
         IBrookGrainFactory brookGrainFactory,
@@ -50,19 +50,32 @@ internal static class AppendScenarioRunner
         {
             BrookPosition newCursor = await writer.AppendEventsAsync(events, expectedCursor, cancellationToken);
             TimeSpan elapsed = DateTimeOffset.UtcNow - started;
+            int elapsedMs = (int)elapsed.TotalMilliseconds;
             logger.AppendComplete(
                 runId,
                 scenarioName,
                 newCursor.Value,
-                (int)elapsed.TotalMilliseconds,
+                elapsedMs,
                 events.Length / Math.Max(0.001, elapsed.TotalSeconds),
                 totalBytes / 1_000_000.0 / Math.Max(0.001, elapsed.TotalSeconds));
+            return ScenarioResult.Success(
+                scenarioName,
+                elapsedMs,
+                $"Appended {events.Length} events, cursor={newCursor.Value}");
         }
-        catch (Exception ex)
+        catch (OperationCanceledException ex)
         {
             TimeSpan elapsed = DateTimeOffset.UtcNow - started;
-            logger.AppendFailed(runId, scenarioName, (int)elapsed.TotalMilliseconds, events.Length, totalBytes, ex);
-            throw;
+            int elapsedMs = (int)elapsed.TotalMilliseconds;
+            logger.AppendFailed(runId, scenarioName, elapsedMs, events.Length, totalBytes, ex);
+            return ScenarioResult.Failure(scenarioName, $"Operation cancelled: {ex.Message}", elapsedMs);
+        }
+        catch (InvalidOperationException ex)
+        {
+            TimeSpan elapsed = DateTimeOffset.UtcNow - started;
+            int elapsedMs = (int)elapsed.TotalMilliseconds;
+            logger.AppendFailed(runId, scenarioName, elapsedMs, events.Length, totalBytes, ex);
+            return ScenarioResult.Failure(scenarioName, ex.Message, elapsedMs);
         }
     }
 }

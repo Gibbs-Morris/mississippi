@@ -21,8 +21,10 @@ namespace Crescent.ConsoleApp.Scenarios;
 /// <summary>
 ///     Runs end-to-end UX projection scenarios that validate projection snapshot persistence.
 /// </summary>
-internal static class UxProjectionScenarioRunner
+internal static class UxProjectionScenario
 {
+    private const string ScenarioName = "UxProjectionEndToEnd";
+
     /// <summary>
     ///     Runs an end-to-end UX projection scenario that:
     ///     1. Creates an aggregate and writes events via commands
@@ -38,8 +40,8 @@ internal static class UxProjectionScenarioRunner
     /// <param name="rootReducer">Root reducer for getting the reducer hash.</param>
     /// <param name="counterId">The counter entity identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>True if verification passed, false otherwise.</returns>
-    public static async Task<bool> RunEndToEndUxProjectionAsync(
+    /// <returns>A scenario result indicating success or failure.</returns>
+    public static async Task<ScenarioResult> RunEndToEndUxProjectionAsync(
         ILogger logger,
         string runId,
         IGrainFactory grainFactory,
@@ -65,7 +67,11 @@ internal static class UxProjectionScenarioRunner
         if (!initResult.Success)
         {
             logger.UxProjectionStepFailed(runId, 1, "Initialize failed", initResult.ErrorMessage ?? "Unknown");
-            return false;
+            sw.Stop();
+            return ScenarioResult.Failure(
+                ScenarioName,
+                initResult.ErrorMessage ?? "Initialize failed",
+                (int)sw.ElapsedMilliseconds);
         }
 
         logger.UxProjectionCommandExecuted(runId, "Initialize(25)");
@@ -81,7 +87,11 @@ internal static class UxProjectionScenarioRunner
                     1,
                     $"Increment[{i + 1}] failed",
                     incResult.ErrorMessage ?? "Unknown");
-                return false;
+                sw.Stop();
+                return ScenarioResult.Failure(
+                    ScenarioName,
+                    incResult.ErrorMessage ?? $"Increment[{i + 1}] failed",
+                    (int)sw.ElapsedMilliseconds);
             }
         }
 
@@ -98,7 +108,11 @@ internal static class UxProjectionScenarioRunner
                     1,
                     $"Decrement[{i + 1}] failed",
                     decResult.ErrorMessage ?? "Unknown");
-                return false;
+                sw.Stop();
+                return ScenarioResult.Failure(
+                    ScenarioName,
+                    decResult.ErrorMessage ?? $"Decrement[{i + 1}] failed",
+                    (int)sw.ElapsedMilliseconds);
             }
         }
 
@@ -208,12 +222,13 @@ internal static class UxProjectionScenarioRunner
         if (allPassed)
         {
             logger.UxProjectionScenarioComplete(runId, counterId, (int)sw.ElapsedMilliseconds, "PASSED");
-        }
-        else
-        {
-            logger.UxProjectionScenarioComplete(runId, counterId, (int)sw.ElapsedMilliseconds, "FAILED");
+            return ScenarioResult.Success(ScenarioName, (int)sw.ElapsedMilliseconds, "All verification steps passed");
         }
 
-        return allPassed;
+        logger.UxProjectionScenarioComplete(runId, counterId, (int)sw.ElapsedMilliseconds, "FAILED");
+        return ScenarioResult.Failure(
+            ScenarioName,
+            "One or more verification steps failed",
+            (int)sw.ElapsedMilliseconds);
     }
 }

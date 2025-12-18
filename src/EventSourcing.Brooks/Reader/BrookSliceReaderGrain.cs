@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Factory;
 
 using Orleans;
@@ -80,14 +79,17 @@ internal class BrookSliceReaderGrain
     )
     {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
-        IBrookCursorGrain cursor = BrookGrainFactory.GetBrookCursorGrain(brookRangeKey.ToBrookCompositeKey());
-        BrookPosition lastPositionOfBrook = await cursor.GetLatestPositionAsync();
         BrookPosition lastPositionOfSlice = brookRangeKey.End;
         long lastPositionOfCacheValue = Cache.Length == 0
             ? brookRangeKey.Start.Value - 1
             : (brookRangeKey.Start.Value + Cache.Length) - 1;
         BrookPosition lastPositionOfCache = BrookPosition.FromLong(lastPositionOfCacheValue);
-        if ((lastPositionOfCache < lastPositionOfSlice) && (lastPositionOfCache < lastPositionOfBrook))
+
+        // Populate cache if:
+        // 1. Cache doesn't cover the entire slice yet, AND
+        // 2. The requested range extends beyond what's currently cached
+        // This avoids relying on the cursor grain which may have stale position data.
+        if ((lastPositionOfCache < lastPositionOfSlice) && (lastPositionOfCache < maxReadTo))
         {
             await PopulateCacheFromBrookAsync(brookRangeKey);
         }

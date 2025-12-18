@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -49,22 +50,27 @@ internal sealed class UxProjectionCursorGrain
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     /// <param name="streamProviderOptions">Configuration options for the Orleans stream provider.</param>
     /// <param name="streamIdFactory">Factory for creating Orleans stream identifiers.</param>
+    /// <param name="brookStorageReader">Brook storage reader for fetching initial cursor position.</param>
     /// <param name="logger">Logger instance for logging cursor grain operations.</param>
     public UxProjectionCursorGrain(
         IGrainContext grainContext,
         IOptions<BrookProviderOptions> streamProviderOptions,
         IStreamIdFactory streamIdFactory,
+        IBrookStorageReader brookStorageReader,
         ILogger<UxProjectionCursorGrain> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
         StreamProviderOptions = streamProviderOptions ?? throw new ArgumentNullException(nameof(streamProviderOptions));
         StreamIdFactory = streamIdFactory ?? throw new ArgumentNullException(nameof(streamIdFactory));
+        BrookStorageReader = brookStorageReader ?? throw new ArgumentNullException(nameof(brookStorageReader));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
+
+    private IBrookStorageReader BrookStorageReader { get; }
 
     private ILogger<UxProjectionCursorGrain> Logger { get; }
 
@@ -101,6 +107,9 @@ internal sealed class UxProjectionCursorGrain
             Logger.CursorGrainInvalidPrimaryKey(primaryKey, ex);
             throw;
         }
+
+        // Read initial cursor position from storage before subscribing to the stream
+        trackedCursorPosition = await BrookStorageReader.ReadCursorPositionAsync(projectionKey.BrookKey, token);
 
         // Subscribe to brook cursor updates using the brook key extracted from the projection key
         StreamId streamId = StreamIdFactory.Create(projectionKey.BrookKey);

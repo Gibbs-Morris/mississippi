@@ -45,6 +45,12 @@ public abstract class AggregateGrain<TSnapshot, TBrook>
 {
     private BrookKey brookKey;
 
+    /// <summary>
+    ///     Tracks the last known position after the aggregate has written events.
+    ///     <c>null</c> means the aggregate hasn't written yet and should query the cursor grain.
+    /// </summary>
+    private BrookPosition? lastKnownPosition;
+
     private SnapshotStreamKey snapshotStreamKey;
 
     /// <summary>
@@ -158,8 +164,17 @@ public abstract class AggregateGrain<TSnapshot, TBrook>
         string aggregateKey = brookKey;
         Logger.CommandReceived(commandTypeName, aggregateKey);
 
-        // Get the latest brook position
-        BrookPosition currentPosition = await BrookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionAsync();
+        // Get the latest brook position - use local cache if available to avoid race conditions
+        BrookPosition currentPosition;
+        if (lastKnownPosition.HasValue)
+        {
+            currentPosition = lastKnownPosition.Value;
+        }
+        else
+        {
+            currentPosition = await BrookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionAsync();
+            lastKnownPosition = currentPosition;
+        }
 
         // Check optimistic concurrency
         if (expectedVersion.HasValue && (expectedVersion.Value != currentPosition))
@@ -202,6 +217,9 @@ public abstract class AggregateGrain<TSnapshot, TBrook>
             BrookPosition? expectedCursorPosition = currentPosition.NotSet ? null : currentPosition;
             await BrookGrainFactory.GetBrookWriterGrain(brookKey)
                 .AppendEventsAsync(brookEvents, expectedCursorPosition, cancellationToken);
+
+            // Update local position to avoid race conditions with cursor grain stream updates
+            lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
         }
 
         Logger.CommandExecuted(commandTypeName, aggregateKey);

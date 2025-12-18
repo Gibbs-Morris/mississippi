@@ -108,7 +108,8 @@ internal class BrookCursorGrain
     }
 
     /// <summary>
-    ///     Subscribes the grain as an observer to the cursor update stream on activation.
+    ///     Subscribes the grain as an observer to the cursor update stream on activation
+    ///     and reads the current cursor position from storage.
     /// </summary>
     /// <param name="token">Cancellation token for activation.</param>
     /// <returns>A task representing the asynchronous activation operation.</returns>
@@ -127,6 +128,10 @@ internal class BrookCursorGrain
             throw;
         }
 
+        // Read current cursor position from storage to ensure we have the latest state
+        // before stream events start arriving. This prevents race conditions where
+        // the grain is queried before stream delivery completes.
+        TrackedCursorPosition = await BrookReaderProvider.ReadCursorPositionAsync(BrookId, token);
         StreamId key = StreamIdFactory.Create(BrookId);
         Stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookCursorMovedEvent>(key);
