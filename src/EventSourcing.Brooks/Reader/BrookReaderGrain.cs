@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Factory;
+using Mississippi.Observability;
 
 using Orleans;
 using Orleans.Concurrency;
@@ -155,12 +157,38 @@ internal class BrookReaderGrain
         CancellationToken cancellationToken = default
     )
     {
-        List<BrookEvent> events = new();
-        await foreach (BrookEvent ev in ReadEventsAsync(readFrom, readTo, cancellationToken))
-        {
-            events.Add(ev);
-        }
+        BrookKey brookId = this.GetPrimaryKeyString();
 
-        return [..events];
+        using Activity? activity = BrooksTelemetry.Source.StartActivity(
+            "ReadEvents",
+            ActivityKind.Internal);
+
+        activity?.SetTagSafe("mississippi.brook.name", brookId.ToString());
+
+        long startTimestamp = Stopwatch.GetTimestamp();
+
+        try
+        {
+            List<BrookEvent> events = new();
+            await foreach (BrookEvent ev in ReadEventsAsync(readFrom, readTo, cancellationToken))
+            {
+                events.Add(ev);
+            }
+
+            double elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
+            BrooksMetrics.EventsRead.Add(events.Count);
+            BrooksMetrics.ReadDuration.Record(elapsedMs, new KeyValuePair<string, object?>("status", "success"));
+            activity?.SetTagSafe("mississippi.events.count", events.Count)
+                .SetSuccessStatus();
+
+            return [..events];
+        }
+        catch (Exception ex)
+        {
+            double elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
+            BrooksMetrics.ReadDuration.Record(elapsedMs, new KeyValuePair<string, object?>("status", "failed"));
+            activity?.RecordExceptionSafe(ex);
+            throw;
+        }
     }
 }

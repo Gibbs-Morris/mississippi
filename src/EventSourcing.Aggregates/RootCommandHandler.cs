@@ -2,12 +2,14 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.Observability;
 
 
 namespace Mississippi.EventSourcing.Aggregates;
@@ -133,34 +135,80 @@ public sealed class RootCommandHandler<TSnapshot> : IRootCommandHandler<TSnapsho
         string stateType = StateType.Name;
         Type commandRuntimeType = command.GetType();
         string commandType = commandRuntimeType.Name;
+
+        using Activity? activity = AggregatesTelemetry.Source.StartActivity(
+            "ExecuteCommand",
+            ActivityKind.Internal);
+
+        activity?.SetTagSafe("mississippi.aggregate.type", stateType)
+            .SetTagSafe("mississippi.command.type", commandType);
+
+        long startTimestamp = Stopwatch.GetTimestamp();
         Logger.RootCommandHandlerHandling(commandType, stateType);
 
-        // Fast path: look up handlers registered for this exact command type.
-        if (handlerIndex.TryGetValue(commandRuntimeType, out ImmutableArray<ICommandHandler<TSnapshot>> indexed))
+        try
         {
-            foreach (ICommandHandler<TSnapshot> handler in indexed)
+            // Fast path: look up handlers registered for this exact command type.
+            if (handlerIndex.TryGetValue(commandRuntimeType, out ImmutableArray<ICommandHandler<TSnapshot>> indexed))
+            {
+                foreach (ICommandHandler<TSnapshot> handler in indexed)
+                {
+                    if (handler.TryHandle(command, state, out OperationResult<IReadOnlyList<object>> result))
+                    {
+                        Logger.RootCommandHandlerHandlerMatched(handler.GetType().Name, commandType);
+                        RecordMetrics(startTimestamp, commandType, result.Success);
+                        activity?.SetTagSafe("mississippi.operation.status", result.Success ? "success" : "failed");
+                        return result;
+                    }
+                }
+            }
+
+            // Slow path: iterate fallback handlers whose command type could not be determined at construction.
+            foreach (ICommandHandler<TSnapshot> handler in fallbackHandlers)
             {
                 if (handler.TryHandle(command, state, out OperationResult<IReadOnlyList<object>> result))
                 {
                     Logger.RootCommandHandlerHandlerMatched(handler.GetType().Name, commandType);
+                    RecordMetrics(startTimestamp, commandType, result.Success);
+                    activity?.SetTagSafe("mississippi.operation.status", result.Success ? "success" : "failed");
                     return result;
                 }
             }
-        }
 
-        // Slow path: iterate fallback handlers whose command type could not be determined at construction.
-        foreach (ICommandHandler<TSnapshot> handler in fallbackHandlers)
+            Logger.RootCommandHandlerNoHandlerMatched(stateType, commandType);
+            RecordMetrics(startTimestamp, commandType, isSuccess: false);
+            activity?.SetErrorStatus("No handler found");
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.CommandHandlerNotFound,
+                $"No command handler registered for command type {commandType}.");
+        }
+        catch (Exception ex)
         {
-            if (handler.TryHandle(command, state, out OperationResult<IReadOnlyList<object>> result))
-            {
-                Logger.RootCommandHandlerHandlerMatched(handler.GetType().Name, commandType);
-                return result;
-            }
+            RecordMetrics(startTimestamp, commandType, isSuccess: false);
+            activity?.RecordExceptionSafe(ex);
+            throw;
         }
+    }
 
-        Logger.RootCommandHandlerNoHandlerMatched(stateType, commandType);
-        return OperationResult.Fail<IReadOnlyList<object>>(
-            AggregateErrorCodes.CommandHandlerNotFound,
-            $"No command handler registered for command type {commandType}.");
+    private static void RecordMetrics(
+        long startTimestamp,
+        string commandType,
+        bool isSuccess
+    )
+    {
+        double elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
+        KeyValuePair<string, object?> commandTag = new("command.type", commandType);
+        KeyValuePair<string, object?> statusTag = new("status", isSuccess ? "success" : "failed");
+
+        AggregatesMetrics.CommandDuration.Record(elapsedMs, commandTag, statusTag);
+
+        if (isSuccess)
+        {
+            AggregatesMetrics.CommandsExecuted.Add(1, commandTag);
+        }
+        else
+        {
+            AggregatesMetrics.CommandFailures.Add(1, commandTag);
+        }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.Observability;
 
 
 namespace Mississippi.EventSourcing.Reducers;
@@ -147,29 +149,67 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
         string projectionType = ProjectionType.Name;
         Type eventRuntimeType = eventData.GetType();
         string eventType = eventRuntimeType.Name;
+
+        using Activity? activity = ReducersTelemetry.Source.StartActivity(
+            "Reduce",
+            ActivityKind.Internal);
+
+        activity?.SetTagSafe("mississippi.projection.type", projectionType)
+            .SetTagSafe("mississippi.event.type", eventType);
+
+        long startTimestamp = Stopwatch.GetTimestamp();
         Logger.RootReducerReducing(projectionType, eventType);
 
-        // Fast path: look up reducers registered for this exact event type.
-        if (reducerIndex.TryGetValue(eventRuntimeType, out ImmutableArray<IReducer<TProjection>> indexed) &&
-            TryApplyReducers(indexed, state, eventData, projectionType, eventType, out TProjection result))
+        try
         {
-            return result;
-        }
+            // Fast path: look up reducers registered for this exact event type.
+            if (reducerIndex.TryGetValue(eventRuntimeType, out ImmutableArray<IReducer<TProjection>> indexed) &&
+                TryApplyReducers(indexed, state, eventData, projectionType, eventType, out TProjection result))
+            {
+                RecordMetrics(startTimestamp, eventType, isSuccess: true);
+                activity?.SetSuccessStatus();
+                return result;
+            }
 
-        // Slow path: iterate fallback reducers whose event type could not be determined at construction.
-        if (TryApplyReducers(
-                fallbackReducers,
-                state,
-                eventData,
-                projectionType,
-                eventType,
-                out TProjection fallbackResult))
+            // Slow path: iterate fallback reducers whose event type could not be determined at construction.
+            if (TryApplyReducers(
+                    fallbackReducers,
+                    state,
+                    eventData,
+                    projectionType,
+                    eventType,
+                    out TProjection fallbackResult))
+            {
+                RecordMetrics(startTimestamp, eventType, isSuccess: true);
+                activity?.SetSuccessStatus();
+                return fallbackResult;
+            }
+
+            Logger.RootReducerNoReducerMatched(projectionType, eventType);
+            RecordMetrics(startTimestamp, eventType, isSuccess: true);
+            activity?.SetTagSafe("mississippi.reducer.matched", false);
+            return state;
+        }
+        catch (Exception ex)
         {
-            return fallbackResult;
+            RecordMetrics(startTimestamp, eventType, isSuccess: false);
+            activity?.RecordExceptionSafe(ex);
+            throw;
         }
+    }
 
-        Logger.RootReducerNoReducerMatched(projectionType, eventType);
-        return state;
+    private static void RecordMetrics(
+        long startTimestamp,
+        string eventType,
+        bool isSuccess
+    )
+    {
+        double elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
+        KeyValuePair<string, object?> eventTag = new("event.type", eventType);
+        KeyValuePair<string, object?> statusTag = new("status", isSuccess ? "success" : "failed");
+
+        ReducersMetrics.ReduceDuration.Record(elapsedMs, eventTag, statusTag);
+        ReducersMetrics.EventsReduced.Add(1, eventTag);
     }
 
     /// <summary>
