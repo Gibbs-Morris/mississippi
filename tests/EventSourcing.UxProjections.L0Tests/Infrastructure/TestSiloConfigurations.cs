@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Abstractions.Storage;
+using Mississippi.Testing.Utilities.Storage;
 
 using Orleans.Hosting;
 using Orleans.TestingHost;
@@ -23,7 +24,8 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         {
             services.AddUxProjections();
             services.AddSingleton<IStreamIdFactory, StreamIdFactory>();
-            services.AddSingleton<IBrookStorageReader, InMemoryBrookStorageReader>();
+            services.AddSingleton<InMemoryBrookStorage>();
+            services.AddSingleton<IBrookStorageReader>(sp => sp.GetRequiredService<InMemoryBrookStorage>());
         });
 
         // Required for memory streams pub/sub validation

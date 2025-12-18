@@ -1,15 +1,17 @@
+using System;
+
 using Microsoft.Extensions.Configuration;
 
 using Orleans.Hosting;
 using Orleans.TestingHost;
 
 
-namespace Mississippi.EventSourcing.Tests.Infrastructure;
+namespace Mississippi.Testing.Utilities.Orleans;
 
 /// <summary>
-///     Client configuration for the Orleans test cluster.
+///     Default client configurator that adds memory streams for the MississippiBrookStreamProvider.
 /// </summary>
-internal sealed class TestClientConfigurations : IClientBuilderConfigurator
+public sealed class DefaultClientConfigurator : IClientBuilderConfigurator
 {
     /// <inheritdoc />
     public void Configure(
@@ -17,6 +19,7 @@ internal sealed class TestClientConfigurations : IClientBuilderConfigurator
         IClientBuilder clientBuilder
     )
     {
+        ArgumentNullException.ThrowIfNull(clientBuilder);
         clientBuilder.AddMemoryStreams("MississippiBrookStreamProvider");
     }
 }

@@ -6,5 +6,6 @@
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+      <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
     </ItemGroup>
 </Project>
