@@ -33,12 +33,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 /// </remarks>
 internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
 {
-    private readonly Container container;
-
-    private readonly SnapshotStorageOptions options;
-
-    private readonly IRetryPolicy retryPolicy;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="SnapshotContainerOperations" /> class.
     /// </summary>
@@ -52,10 +46,16 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
         IRetryPolicy retryPolicy
     )
     {
-        this.container = container ?? throw new ArgumentNullException(nameof(container));
-        this.retryPolicy = retryPolicy ?? throw new ArgumentNullException(nameof(retryPolicy));
-        this.options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        CosmosContainer = container ?? throw new ArgumentNullException(nameof(container));
+        RetryPolicy = retryPolicy ?? throw new ArgumentNullException(nameof(retryPolicy));
+        Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
+
+    private Container CosmosContainer { get; }
+
+    private SnapshotStorageOptions Options { get; }
+
+    private IRetryPolicy RetryPolicy { get; }
 
     /// <inheritdoc />
     public async Task<bool> DeleteDocumentAsync(
@@ -66,8 +66,8 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
     {
         try
         {
-            await retryPolicy.ExecuteAsync(
-                    () => container.DeleteItemAsync<SnapshotDocument>(
+            await RetryPolicy.ExecuteAsync(
+                    () => CosmosContainer.DeleteItemAsync<SnapshotDocument>(
                         documentId,
                         new(partitionKey),
                         cancellationToken: cancellationToken),
@@ -91,16 +91,16 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
             new QueryDefinition("SELECT c.id, c.version FROM c WHERE c.snapshotPartitionKey = @pk").WithParameter(
                 "@pk",
                 partitionKey);
-        using FeedIterator<SnapshotIdVersionDto> iterator = container.GetItemQueryIterator<SnapshotIdVersionDto>(
+        using FeedIterator<SnapshotIdVersionDto> iterator = CosmosContainer.GetItemQueryIterator<SnapshotIdVersionDto>(
             query,
             requestOptions: new()
             {
                 PartitionKey = new PartitionKey(partitionKey),
-                MaxItemCount = options.QueryBatchSize,
+                MaxItemCount = Options.QueryBatchSize,
             });
         while (iterator.HasMoreResults)
         {
-            FeedResponse<SnapshotIdVersionDto> page = await retryPolicy.ExecuteAsync(
+            FeedResponse<SnapshotIdVersionDto> page = await RetryPolicy.ExecuteAsync(
                     () => iterator.ReadNextAsync(cancellationToken),
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -120,8 +120,8 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
     {
         try
         {
-            ItemResponse<SnapshotDocument> response = await retryPolicy.ExecuteAsync(
-                    () => container.ReadItemAsync<SnapshotDocument>(
+            ItemResponse<SnapshotDocument> response = await RetryPolicy.ExecuteAsync(
+                    () => CosmosContainer.ReadItemAsync<SnapshotDocument>(
                         documentId,
                         new(partitionKey),
                         cancellationToken: cancellationToken),
@@ -143,8 +143,8 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
     )
     {
         ArgumentNullException.ThrowIfNull(document);
-        await retryPolicy.ExecuteAsync(
-                () => container.UpsertItemAsync(
+        await RetryPolicy.ExecuteAsync(
+                () => CosmosContainer.UpsertItemAsync(
                     document,
                     new PartitionKey(partitionKey),
                     cancellationToken: cancellationToken),

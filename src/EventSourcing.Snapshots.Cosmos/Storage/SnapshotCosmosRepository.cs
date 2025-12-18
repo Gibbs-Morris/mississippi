@@ -28,16 +28,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 /// </remarks>
 internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
 {
-    private readonly ISnapshotContainerOperations containerOperations;
-
-    private readonly IMapper<SnapshotDocument, SnapshotStorageModel> documentToStorageMapper;
-
-    private readonly IMapper<SnapshotStorageModel, SnapshotDocument> storageToDocumentMapper;
-
-    private readonly IMapper<SnapshotStorageModel, SnapshotEnvelope> storageToEnvelopeMapper;
-
-    private readonly IMapper<SnapshotWriteModel, SnapshotStorageModel> writeModelToStorageMapper;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="SnapshotCosmosRepository" /> class.
     /// </summary>
@@ -54,16 +44,26 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         IMapper<SnapshotStorageModel, SnapshotDocument> storageToDocumentMapper
     )
     {
-        this.containerOperations = containerOperations ?? throw new ArgumentNullException(nameof(containerOperations));
-        this.documentToStorageMapper =
+        ContainerOperations = containerOperations ?? throw new ArgumentNullException(nameof(containerOperations));
+        DocumentToStorageMapper =
             documentToStorageMapper ?? throw new ArgumentNullException(nameof(documentToStorageMapper));
-        this.storageToEnvelopeMapper =
+        StorageToEnvelopeMapper =
             storageToEnvelopeMapper ?? throw new ArgumentNullException(nameof(storageToEnvelopeMapper));
-        this.writeModelToStorageMapper = writeModelToStorageMapper ??
+        WriteModelToStorageMapper = writeModelToStorageMapper ??
                                          throw new ArgumentNullException(nameof(writeModelToStorageMapper));
-        this.storageToDocumentMapper =
+        StorageToDocumentMapper =
             storageToDocumentMapper ?? throw new ArgumentNullException(nameof(storageToDocumentMapper));
     }
+
+    private ISnapshotContainerOperations ContainerOperations { get; }
+
+    private IMapper<SnapshotDocument, SnapshotStorageModel> DocumentToStorageMapper { get; }
+
+    private IMapper<SnapshotStorageModel, SnapshotDocument> StorageToDocumentMapper { get; }
+
+    private IMapper<SnapshotStorageModel, SnapshotEnvelope> StorageToEnvelopeMapper { get; }
+
+    private IMapper<SnapshotWriteModel, SnapshotStorageModel> WriteModelToStorageMapper { get; }
 
     private static string ToDocumentId(
         long version
@@ -82,11 +82,11 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     )
     {
         string partitionKey = ToPartitionKey(streamKey);
-        await foreach (SnapshotIdVersion item in containerOperations.QuerySnapshotIdsAsync(
+        await foreach (SnapshotIdVersion item in ContainerOperations.QuerySnapshotIdsAsync(
                            partitionKey,
                            cancellationToken))
         {
-            await containerOperations.DeleteDocumentAsync(partitionKey, item.Id, cancellationToken)
+            await ContainerOperations.DeleteDocumentAsync(partitionKey, item.Id, cancellationToken)
                 .ConfigureAwait(false);
         }
     }
@@ -96,7 +96,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
     ) =>
-        await containerOperations.DeleteDocumentAsync(
+        await ContainerOperations.DeleteDocumentAsync(
                 ToPartitionKey(snapshotKey.Stream),
                 ToDocumentId(snapshotKey.Version),
                 cancellationToken)
@@ -111,7 +111,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     {
         string partitionKey = ToPartitionKey(streamKey);
         List<SnapshotIdVersion> ids = new();
-        await foreach (SnapshotIdVersion item in containerOperations.QuerySnapshotIdsAsync(
+        await foreach (SnapshotIdVersion item in ContainerOperations.QuerySnapshotIdsAsync(
                            partitionKey,
                            cancellationToken))
         {
@@ -135,7 +135,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
                 continue;
             }
 
-            await containerOperations.DeleteDocumentAsync(partitionKey, item.Id, cancellationToken)
+            await ContainerOperations.DeleteDocumentAsync(partitionKey, item.Id, cancellationToken)
                 .ConfigureAwait(false);
         }
     }
@@ -146,7 +146,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         CancellationToken cancellationToken = default
     )
     {
-        SnapshotDocument? doc = await containerOperations.ReadDocumentAsync(
+        SnapshotDocument? doc = await ContainerOperations.ReadDocumentAsync(
                 ToPartitionKey(snapshotKey.Stream),
                 ToDocumentId(snapshotKey.Version),
                 cancellationToken)
@@ -156,8 +156,8 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
             return null;
         }
 
-        SnapshotStorageModel storage = documentToStorageMapper.Map(doc);
-        return storageToEnvelopeMapper.Map(storage);
+        SnapshotStorageModel storage = DocumentToStorageMapper.Map(doc);
+        return StorageToEnvelopeMapper.Map(storage);
     }
 
     /// <inheritdoc />
@@ -168,9 +168,9 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     )
     {
         SnapshotWriteModel writeModel = new(snapshotKey, snapshot);
-        SnapshotStorageModel storageModel = writeModelToStorageMapper.Map(writeModel);
-        SnapshotDocument document = storageToDocumentMapper.Map(storageModel);
-        await containerOperations.UpsertDocumentAsync(ToPartitionKey(snapshotKey.Stream), document, cancellationToken)
+        SnapshotStorageModel storageModel = WriteModelToStorageMapper.Map(writeModel);
+        SnapshotDocument document = StorageToDocumentMapper.Map(storageModel);
+        await ContainerOperations.UpsertDocumentAsync(ToPartitionKey(snapshotKey.Stream), document, cancellationToken)
             .ConfigureAwait(false);
     }
 }
