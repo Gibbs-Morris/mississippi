@@ -165,10 +165,6 @@ public static class BrookStorageProviderRegistrations
     // Performs asynchronous Cosmos resource initialization without synchronous waits in DI
     private sealed class CosmosContainerInitializer : IHostedService
     {
-        private readonly CosmosClient cosmosClient;
-
-        private readonly IOptions<BrookStorageOptions> options;
-
         [SuppressMessage(
             "Major Code Smell",
             "S1144:Unused private members should be removed",
@@ -178,18 +174,22 @@ public static class BrookStorageProviderRegistrations
             IOptions<BrookStorageOptions> options
         )
         {
-            this.cosmosClient = cosmosClient;
-            this.options = options;
+            CosmosClient = cosmosClient;
+            Options = options;
         }
+
+        private CosmosClient CosmosClient { get; }
+
+        private IOptions<BrookStorageOptions> Options { get; }
 
         public async Task StartAsync(
             CancellationToken cancellationToken
         )
         {
-            BrookStorageOptions o = options.Value;
+            BrookStorageOptions o = Options.Value;
 
             // Ensure database exists
-            DatabaseResponse dbResponse = await cosmosClient.CreateDatabaseIfNotExistsAsync(
+            DatabaseResponse dbResponse = await CosmosClient.CreateDatabaseIfNotExistsAsync(
                 o.DatabaseId,
                 cancellationToken: cancellationToken);
             Database database = dbResponse.Database;
