@@ -40,9 +40,13 @@
         <Project Path="src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj"/>
         <Project Path="src\EventSourcing.Serialization\EventSourcing.Serialization.csproj"/>
         <Project Path="src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj"/>
+        <Project Path="src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj"/>
+        <Project Path="src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj"/>
     </Folder>
 
     <Folder Name="/Tests/">
+        <Project Path="tests\EventSourcing.UxProjections.Abstractions.L0Tests\EventSourcing.UxProjections.Abstractions.L0Tests.csproj"/>
+        <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj"/>
         <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj"/>
         <Project Path="tests\AspNetCore.Orleans.L0Tests\AspNetCore.Orleans.L0Tests.csproj"/>
         <Project Path="tests\Core.L0Tests\Core.L0Tests.csproj"/>
