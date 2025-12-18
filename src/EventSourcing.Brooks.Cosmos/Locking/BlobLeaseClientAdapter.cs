@@ -15,8 +15,6 @@ namespace Mississippi.EventSourcing.Cosmos.Locking;
 /// </summary>
 internal sealed class BlobLeaseClientAdapter : IBlobLeaseClient
 {
-    private readonly BlobLeaseClient inner;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="BlobLeaseClientAdapter" /> class.
     /// </summary>
@@ -24,10 +22,12 @@ internal sealed class BlobLeaseClientAdapter : IBlobLeaseClient
     public BlobLeaseClientAdapter(
         BlobLeaseClient inner
     ) =>
-        this.inner = inner;
+        Inner = inner;
 
     /// <inheritdoc />
-    public string LeaseId => inner.LeaseId;
+    public string LeaseId => Inner.LeaseId;
+
+    private BlobLeaseClient Inner { get; }
 
     /// <inheritdoc />
     public Task<Response<BlobLease>> AcquireAsync(
@@ -35,19 +35,19 @@ internal sealed class BlobLeaseClientAdapter : IBlobLeaseClient
         RequestConditions? conditions = null,
         CancellationToken cancellationToken = default
     ) =>
-        inner.AcquireAsync(duration, conditions, cancellationToken);
+        Inner.AcquireAsync(duration, conditions, cancellationToken);
 
     /// <inheritdoc />
     public Task<Response<ReleasedObjectInfo>> ReleaseAsync(
         RequestConditions? conditions = null,
         CancellationToken cancellationToken = default
     ) =>
-        inner.ReleaseAsync(conditions, cancellationToken);
+        Inner.ReleaseAsync(conditions, cancellationToken);
 
     /// <inheritdoc />
     public Task<Response<BlobLease>> RenewAsync(
         RequestConditions? conditions = null,
         CancellationToken cancellationToken = default
     ) =>
-        inner.RenewAsync(conditions, cancellationToken);
+        Inner.RenewAsync(conditions, cancellationToken);
 }
