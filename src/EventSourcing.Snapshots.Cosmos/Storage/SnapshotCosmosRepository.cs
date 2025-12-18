@@ -50,7 +50,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
         StorageToEnvelopeMapper =
             storageToEnvelopeMapper ?? throw new ArgumentNullException(nameof(storageToEnvelopeMapper));
         WriteModelToStorageMapper = writeModelToStorageMapper ??
-                                         throw new ArgumentNullException(nameof(writeModelToStorageMapper));
+                                    throw new ArgumentNullException(nameof(writeModelToStorageMapper));
         StorageToDocumentMapper =
             storageToDocumentMapper ?? throw new ArgumentNullException(nameof(storageToDocumentMapper));
     }
