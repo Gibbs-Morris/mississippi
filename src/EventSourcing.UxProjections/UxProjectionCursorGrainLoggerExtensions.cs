@@ -16,7 +16,8 @@ internal static partial class UxProjectionCursorGrainLoggerExtensions
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Debug,
-        Message = "UX projection cursor grain activated with key '{PrimaryKey}' for projection '{ProjectionTypeName}' on brook '{BrookKey}'")]
+        Message =
+            "UX projection cursor grain activated with key '{PrimaryKey}' for projection '{ProjectionTypeName}' on brook '{BrookKey}'")]
     public static partial void CursorGrainActivated(
         this ILogger logger,
         string primaryKey,
@@ -45,6 +46,15 @@ internal static partial class UxProjectionCursorGrainLoggerExtensions
     );
 
     [LoggerMessage(
+        EventId = 5,
+        Level = LogLevel.Debug,
+        Message = "Stream completed for UX projection cursor '{ProjectionKey}'")]
+    public static partial void StreamCompleted(
+        this ILogger logger,
+        UxProjectionKey projectionKey
+    );
+
+    [LoggerMessage(
         EventId = 4,
         Level = LogLevel.Warning,
         Message = "Stream error occurred for UX projection cursor '{ProjectionKey}'")]
@@ -52,14 +62,5 @@ internal static partial class UxProjectionCursorGrainLoggerExtensions
         this ILogger logger,
         UxProjectionKey projectionKey,
         Exception exception
-    );
-
-    [LoggerMessage(
-        EventId = 5,
-        Level = LogLevel.Debug,
-        Message = "Stream completed for UX projection cursor '{ProjectionKey}'")]
-    public static partial void StreamCompleted(
-        this ILogger logger,
-        UxProjectionKey projectionKey
     );
 }

@@ -871,4 +871,250 @@ internal static partial class ConsoleAppLoggerExtensions
         string brookId,
         long cursor
     );
+
+    // ============================================================================
+    // UX Projection Scenario Logging (IDs 120-139)
+    // ============================================================================
+
+    /// <summary>
+    ///     Log the start of a UX projection verification scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="entityId">The entity identifier being verified.</param>
+    [LoggerMessage(
+        120,
+        LogLevel.Information,
+        "Run {RunId} [UxProjection]: Starting UX projection verification for entity {EntityId}")]
+    public static partial void UxProjectionScenarioStart(
+        this ILogger logger,
+        string runId,
+        string entityId
+    );
+
+    /// <summary>
+    ///     Log the completion of a UX projection verification scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="entityId">The entity identifier that was verified.</param>
+    /// <param name="elapsedMs">The elapsed time in milliseconds.</param>
+    /// <param name="result">The verification result.</param>
+    [LoggerMessage(
+        121,
+        LogLevel.Information,
+        "Run {RunId} [UxProjection]: Verification complete for entity {EntityId} in {ElapsedMs}ms - {Result}")]
+    public static partial void UxProjectionScenarioComplete(
+        this ILogger logger,
+        string runId,
+        string entityId,
+        int elapsedMs,
+        string result
+    );
+
+    /// <summary>
+    ///     Log a UX projection verification step.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="description">The step description.</param>
+    [LoggerMessage(122, LogLevel.Information, "Run {RunId} [UxProjection]: Step {StepNumber}: {Description}")]
+    public static partial void UxProjectionStep(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string description
+    );
+
+    /// <summary>
+    ///     Log that a UX projection verification step has completed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="result">The step result.</param>
+    [LoggerMessage(123, LogLevel.Information, "Run {RunId} [UxProjection]: Step {StepNumber} complete: {Result}")]
+    public static partial void UxProjectionStepComplete(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string result
+    );
+
+    /// <summary>
+    ///     Log that a UX projection verification step has failed.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="stepNumber">The step number.</param>
+    /// <param name="expectation">What was expected.</param>
+    /// <param name="actual">What was actually found.</param>
+    [LoggerMessage(
+        124,
+        LogLevel.Error,
+        "Run {RunId} [UxProjection]: Step {StepNumber} FAILED - Expected: {Expectation}, Actual: {Actual}")]
+    public static partial void UxProjectionStepFailed(
+        this ILogger logger,
+        string runId,
+        int stepNumber,
+        string expectation,
+        string actual
+    );
+
+    /// <summary>
+    ///     Log that a command was executed during UX projection verification.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="commandName">The command that was executed.</param>
+    [LoggerMessage(125, LogLevel.Debug, "Run {RunId} [UxProjection]: Executed {CommandName}")]
+    public static partial void UxProjectionCommandExecuted(
+        this ILogger logger,
+        string runId,
+        string commandName
+    );
+
+    /// <summary>
+    ///     Log that a UX projection was found.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="projectionType">The type of the projection.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <param name="currentCount">The current count value in the projection.</param>
+    [LoggerMessage(
+        126,
+        LogLevel.Information,
+        "Run {RunId} [UxProjection]: Projection FOUND - Type={ProjectionType} EntityId={EntityId} CurrentCount={CurrentCount}")]
+    public static partial void UxProjectionFound(
+        this ILogger logger,
+        string runId,
+        string projectionType,
+        string entityId,
+        int currentCount
+    );
+
+    /// <summary>
+    ///     Log that a UX projection was not found.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="projectionType">The type of the projection.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    [LoggerMessage(
+        127,
+        LogLevel.Warning,
+        "Run {RunId} [UxProjection]: Projection NOT FOUND - Type={ProjectionType} EntityId={EntityId}")]
+    public static partial void UxProjectionNotFound(
+        this ILogger logger,
+        string runId,
+        string projectionType,
+        string entityId
+    );
+
+    /// <summary>
+    ///     Log details about the UX projection state.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="currentCount">The current count value.</param>
+    /// <param name="totalOperations">The total number of operations.</param>
+    /// <param name="displayLabel">The display label.</param>
+    /// <param name="isPositive">Whether the counter is positive.</param>
+    [LoggerMessage(
+        128,
+        LogLevel.Debug,
+        "Run {RunId} [UxProjection]: Projection details - CurrentCount={CurrentCount} TotalOperations={TotalOperations} DisplayLabel={DisplayLabel} IsPositive={IsPositive}")]
+    public static partial void UxProjectionDetails(
+        this ILogger logger,
+        string runId,
+        int currentCount,
+        int totalOperations,
+        string displayLabel,
+        bool isPositive
+    );
+
+    /// <summary>
+    ///     Log that a UX projection snapshot was found in Cosmos.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="projectionType">The type of the projection.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <param name="version">The snapshot version.</param>
+    /// <param name="dataLength">The length of the snapshot data.</param>
+    [LoggerMessage(
+        129,
+        LogLevel.Information,
+        "Run {RunId} [UxProjection]: Snapshot FOUND - Type={ProjectionType} EntityId={EntityId} Version={Version} DataLength={DataLength}")]
+    public static partial void UxProjectionSnapshotFound(
+        this ILogger logger,
+        string runId,
+        string projectionType,
+        string entityId,
+        long version,
+        int dataLength
+    );
+
+    /// <summary>
+    ///     Log that a UX projection snapshot was not found in Cosmos.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="projectionType">The type of the projection.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <param name="version">The expected snapshot version.</param>
+    [LoggerMessage(
+        130,
+        LogLevel.Warning,
+        "Run {RunId} [UxProjection]: Snapshot NOT FOUND - Type={ProjectionType} EntityId={EntityId} Version={Version}")]
+    public static partial void UxProjectionSnapshotNotFound(
+        this ILogger logger,
+        string runId,
+        string projectionType,
+        string entityId,
+        long version
+    );
+
+    /// <summary>
+    ///     Log details about the UX projection snapshot.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="contentType">The content type of the snapshot.</param>
+    /// <param name="reducerHash">The reducer hash of the snapshot.</param>
+    /// <param name="dataPreview">A preview of the snapshot data.</param>
+    [LoggerMessage(
+        131,
+        LogLevel.Debug,
+        "Run {RunId} [UxProjection]: Snapshot details - ContentType={ContentType} ReducerHash={ReducerHash} Data={DataPreview}")]
+    public static partial void UxProjectionSnapshotDetails(
+        this ILogger logger,
+        string runId,
+        string contentType,
+        string reducerHash,
+        string dataPreview
+    );
+
+    /// <summary>
+    ///     Log that Scenario 15 (UX projection verification) is starting.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    [LoggerMessage(132, LogLevel.Information, "Scenario 15: UX projection end-to-end verification")]
+    public static partial void ScenarioUxProjectionVerification(this ILogger logger);
+
+    /// <summary>
+    ///     Log the banner for the UX projection end-to-end scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    [LoggerMessage(
+        133,
+        LogLevel.Information,
+        "=== Scenario: UX Projection End-to-End (Aggregate → Projection → Snapshot) === RunId={RunId}")]
+    public static partial void ScenarioUxProjectionEndToEnd(
+        this ILogger logger,
+        string runId
+    );
 }

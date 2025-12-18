@@ -14,27 +14,6 @@ namespace Mississippi.EventSourcing.UxProjections;
 internal static partial class UxProjectionGrainLoggerExtensions
 {
     [LoggerMessage(
-        EventId = 1,
-        Level = LogLevel.Debug,
-        Message = "UX projection grain activated with key '{PrimaryKey}' for projection '{ProjectionTypeName}' on brook '{BrookKey}'")]
-    public static partial void ProjectionGrainActivated(
-        this ILogger logger,
-        string primaryKey,
-        string projectionTypeName,
-        BrookKey brookKey
-    );
-
-    [LoggerMessage(
-        EventId = 2,
-        Level = LogLevel.Error,
-        Message = "Invalid primary key format for projection grain: '{PrimaryKey}'")]
-    public static partial void ProjectionGrainInvalidPrimaryKey(
-        this ILogger logger,
-        string primaryKey,
-        Exception exception
-    );
-
-    [LoggerMessage(
         EventId = 3,
         Level = LogLevel.Debug,
         Message = "Cache hit for UX projection '{ProjectionKey}' at version {CachedVersion}")]
@@ -47,7 +26,8 @@ internal static partial class UxProjectionGrainLoggerExtensions
     [LoggerMessage(
         EventId = 4,
         Level = LogLevel.Debug,
-        Message = "Cache miss for UX projection '{ProjectionKey}': cached version {CachedVersion}, current version {CurrentVersion}")]
+        Message =
+            "Cache miss for UX projection '{ProjectionKey}': cached version {CachedVersion}, current version {CurrentVersion}")]
     public static partial void CacheMiss(
         this ILogger logger,
         UxProjectionKey projectionKey,
@@ -65,12 +45,31 @@ internal static partial class UxProjectionGrainLoggerExtensions
         BrookPosition newVersion
     );
 
-    [LoggerMessage(
-        EventId = 6,
-        Level = LogLevel.Debug,
-        Message = "No events yet for UX projection '{ProjectionKey}'")]
+    [LoggerMessage(EventId = 6, Level = LogLevel.Debug, Message = "No events yet for UX projection '{ProjectionKey}'")]
     public static partial void NoEventsYet(
         this ILogger logger,
         UxProjectionKey projectionKey
+    );
+
+    [LoggerMessage(
+        EventId = 1,
+        Level = LogLevel.Debug,
+        Message =
+            "UX projection grain activated with key '{PrimaryKey}' for projection '{ProjectionTypeName}' on brook '{BrookKey}'")]
+    public static partial void ProjectionGrainActivated(
+        this ILogger logger,
+        string primaryKey,
+        string projectionTypeName,
+        BrookKey brookKey
+    );
+
+    [LoggerMessage(
+        EventId = 2,
+        Level = LogLevel.Error,
+        Message = "Invalid primary key format for projection grain: '{PrimaryKey}'")]
+    public static partial void ProjectionGrainInvalidPrimaryKey(
+        this ILogger logger,
+        string primaryKey,
+        Exception exception
     );
 }

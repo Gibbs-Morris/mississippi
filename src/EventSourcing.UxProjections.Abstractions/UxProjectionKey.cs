@@ -79,16 +79,6 @@ public readonly record struct UxProjectionKey
         new(typeof(TProjection).Name, BrookKey.For<TBrook>(entityId));
 
     /// <summary>
-    ///     Converts a UX projection key to its string representation.
-    /// </summary>
-    /// <param name="key">The UX projection key to convert.</param>
-    /// <returns>A string representation of the key in the format "projectionTypeName|brookType|brookId".</returns>
-    public static string FromUxProjectionKey(
-        UxProjectionKey key
-    ) =>
-        key;
-
-    /// <summary>
     ///     Creates a UX projection key from its string representation.
     /// </summary>
     /// <param name="value">The string value to convert.</param>
@@ -112,9 +102,18 @@ public readonly record struct UxProjectionKey
 
         // Parse the brook key from the remaining part
         BrookKey brookKey = BrookKey.FromString(brookKeyPart);
-
         return new(projectionTypeName, brookKey);
     }
+
+    /// <summary>
+    ///     Converts a UX projection key to its string representation.
+    /// </summary>
+    /// <param name="key">The UX projection key to convert.</param>
+    /// <returns>A string representation of the key in the format "projectionTypeName|brookType|brookId".</returns>
+    public static string FromUxProjectionKey(
+        UxProjectionKey key
+    ) =>
+        key;
 
     /// <summary>
     ///     Implicitly converts a <see cref="UxProjectionKey" /> to its string representation.
@@ -138,18 +137,11 @@ public readonly record struct UxProjectionKey
     ) =>
         FromString(value);
 
-    /// <summary>
-    ///     Returns the string representation of this UX projection key.
-    /// </summary>
-    /// <returns>A string representation in the format "projectionTypeName|brookType|brookId".</returns>
-    public override string ToString() => this;
-
     private static void ValidateProjectionTypeName(
         string value
     )
     {
         ArgumentNullException.ThrowIfNull(value);
-
         if (value.Contains(Separator, StringComparison.Ordinal))
         {
             throw new ArgumentException(
@@ -157,4 +149,10 @@ public readonly record struct UxProjectionKey
                 nameof(value));
         }
     }
+
+    /// <summary>
+    ///     Returns the string representation of this UX projection key.
+    /// </summary>
+    /// <returns>A string representation in the format "projectionTypeName|brookType|brookId".</returns>
+    public override string ToString() => this;
 }

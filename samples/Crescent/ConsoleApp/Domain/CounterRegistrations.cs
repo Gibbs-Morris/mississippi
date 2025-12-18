@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Reducers;
+using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.UxProjections;
 
 
@@ -41,6 +42,18 @@ internal static class CounterRegistrations
         services.AddReducer<CounterIncremented, CounterState, CounterIncrementedReducer>();
         services.AddReducer<CounterDecremented, CounterState, CounterDecrementedReducer>();
         services.AddReducer<CounterReset, CounterState, CounterResetReducer>();
+
+        // Add snapshot state converter for CounterState (required for aggregate snapshots)
+        services.AddSnapshotStateConverter<CounterState>();
+
+        // Register reducers for CounterSummaryProjection (UX projection)
+        services.AddReducer<CounterInitialized, CounterSummaryProjection, CounterSummaryInitializedReducer>();
+        services.AddReducer<CounterIncremented, CounterSummaryProjection, CounterSummaryIncrementedReducer>();
+        services.AddReducer<CounterDecremented, CounterSummaryProjection, CounterSummaryDecrementedReducer>();
+        services.AddReducer<CounterReset, CounterSummaryProjection, CounterSummaryResetReducer>();
+
+        // Add snapshot state converter for CounterSummaryProjection (required for projection verification)
+        services.AddSnapshotStateConverter<CounterSummaryProjection>();
 
         // Add UX projections infrastructure for read-optimized views.
         // This enables the CounterSummaryProjectionGrain to serve cached projections.

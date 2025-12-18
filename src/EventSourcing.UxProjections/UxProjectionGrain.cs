@@ -58,7 +58,7 @@ public abstract class UxProjectionGrain<TProjection, TBrook>
     ///     Initializes a new instance of the <see cref="UxProjectionGrain{TProjection, TBrook}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
-    /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains.</param>
+    /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains and cursors.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="reducersHash">The hash of the reducers for snapshot key construction.</param>
     /// <param name="logger">Logger instance.</param>
@@ -71,8 +71,8 @@ public abstract class UxProjectionGrain<TProjection, TBrook>
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
-        UxProjectionGrainFactory =
-            uxProjectionGrainFactory ?? throw new ArgumentNullException(nameof(uxProjectionGrainFactory));
+        UxProjectionGrainFactory = uxProjectionGrainFactory ??
+                                   throw new ArgumentNullException(nameof(uxProjectionGrainFactory));
         SnapshotGrainFactory = snapshotGrainFactory ?? throw new ArgumentNullException(nameof(snapshotGrainFactory));
         ReducersHash = reducersHash ?? throw new ArgumentNullException(nameof(reducersHash));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -102,7 +102,7 @@ public abstract class UxProjectionGrain<TProjection, TBrook>
     protected ISnapshotGrainFactory SnapshotGrainFactory { get; }
 
     /// <summary>
-    ///     Gets the factory for resolving UX projection grains.
+    ///     Gets the factory for resolving UX projection grains and cursors.
     /// </summary>
     protected IUxProjectionGrainFactory UxProjectionGrainFactory { get; }
 
@@ -111,7 +111,7 @@ public abstract class UxProjectionGrain<TProjection, TBrook>
         CancellationToken cancellationToken = default
     )
     {
-        // Get current brook position from cursor grain
+        // Get current brook position from the projection cursor grain (subscribes to brook updates)
         IUxProjectionCursorGrain cursorGrain = UxProjectionGrainFactory.GetUxProjectionCursorGrain(projectionKey);
         BrookPosition currentPosition = await cursorGrain.GetPositionAsync();
 
@@ -138,12 +138,10 @@ public abstract class UxProjectionGrain<TProjection, TBrook>
             projectionKey.BrookKey.Id,
             ReducersHash);
         SnapshotKey snapshotKey = new(snapshotStreamKey, currentPosition.Value);
-
         ISnapshotCacheGrain<TProjection> snapshotCacheGrain =
             SnapshotGrainFactory.GetSnapshotCacheGrain<TProjection>(snapshotKey);
         cachedProjection = await snapshotCacheGrain.GetStateAsync(cancellationToken);
         cachedVersion = currentPosition;
-
         Logger.CacheUpdated(projectionKey, cachedVersion);
         return cachedProjection;
     }

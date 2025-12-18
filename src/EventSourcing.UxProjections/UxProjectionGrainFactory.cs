@@ -34,25 +34,6 @@ internal sealed class UxProjectionGrainFactory : IUxProjectionGrainFactory
     private ILogger<UxProjectionGrainFactory> Logger { get; }
 
     /// <inheritdoc />
-    public IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection, TBrook>(
-        string entityId
-    )
-        where TBrook : IBrookDefinition
-    {
-        UxProjectionKey key = UxProjectionKey.For<TProjection, TBrook>(entityId);
-        return GetUxProjectionGrain<TProjection>(key);
-    }
-
-    /// <inheritdoc />
-    public IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection>(
-        UxProjectionKey key
-    )
-    {
-        Logger.ResolvingProjectionGrain(nameof(IUxProjectionGrain<TProjection>), key);
-        return GrainFactory.GetGrain<IUxProjectionGrain<TProjection>>(key);
-    }
-
-    /// <inheritdoc />
     public IUxProjectionCursorGrain GetUxProjectionCursorGrain<TProjection, TBrook>(
         string entityId
     )
@@ -69,5 +50,24 @@ internal sealed class UxProjectionGrainFactory : IUxProjectionGrainFactory
     {
         Logger.ResolvingCursorGrain(nameof(IUxProjectionCursorGrain), key);
         return GrainFactory.GetGrain<IUxProjectionCursorGrain>(key);
+    }
+
+    /// <inheritdoc />
+    public IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection, TBrook>(
+        string entityId
+    )
+        where TBrook : IBrookDefinition
+    {
+        UxProjectionKey key = UxProjectionKey.For<TProjection, TBrook>(entityId);
+        return GetUxProjectionGrain<TProjection>(key);
+    }
+
+    /// <inheritdoc />
+    public IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection>(
+        UxProjectionKey key
+    )
+    {
+        Logger.ResolvingProjectionGrain(nameof(IUxProjectionGrain<TProjection>), key);
+        return GrainFactory.GetGrain<IUxProjectionGrain<TProjection>>(key);
     }
 }

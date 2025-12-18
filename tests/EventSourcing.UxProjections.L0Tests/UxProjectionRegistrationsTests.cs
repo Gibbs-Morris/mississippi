@@ -19,6 +19,24 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 public sealed class UxProjectionRegistrationsTests
 {
     /// <summary>
+    ///     AddUxProjections should not register duplicate when called multiple times.
+    /// </summary>
+    [Fact]
+    public void AddUxProjectionsDoesNotDuplicateRegistration()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddUxProjections();
+        services.AddUxProjections();
+
+        // Assert
+        int factoryCount = services.Count(sd => sd.ServiceType == typeof(IUxProjectionGrainFactory));
+        Assert.Equal(1, factoryCount);
+    }
+
+    /// <summary>
     ///     AddUxProjections should register IUxProjectionGrainFactory.
     /// </summary>
     [Fact]
@@ -39,19 +57,6 @@ public sealed class UxProjectionRegistrationsTests
     }
 
     /// <summary>
-    ///     AddUxProjections should throw when services is null.
-    /// </summary>
-    [Fact]
-    public void AddUxProjectionsThrowsWhenServicesIsNull()
-    {
-        // Arrange
-        IServiceCollection? services = null;
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddUxProjections());
-    }
-
-    /// <summary>
     ///     AddUxProjections should return service collection for chaining.
     /// </summary>
     [Fact]
@@ -68,20 +73,15 @@ public sealed class UxProjectionRegistrationsTests
     }
 
     /// <summary>
-    ///     AddUxProjections should not register duplicate when called multiple times.
+    ///     AddUxProjections should throw when services is null.
     /// </summary>
     [Fact]
-    public void AddUxProjectionsDoesNotDuplicateRegistration()
+    public void AddUxProjectionsThrowsWhenServicesIsNull()
     {
         // Arrange
-        ServiceCollection services = new();
+        IServiceCollection? services = null;
 
-        // Act
-        services.AddUxProjections();
-        services.AddUxProjections();
-
-        // Assert
-        int factoryCount = services.Count(sd => sd.ServiceType == typeof(IUxProjectionGrainFactory));
-        Assert.Equal(1, factoryCount);
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => services!.AddUxProjections());
     }
 }

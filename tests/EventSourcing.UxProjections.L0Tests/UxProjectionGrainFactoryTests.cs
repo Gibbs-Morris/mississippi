@@ -35,13 +35,16 @@ public sealed class UxProjectionGrainFactoryTests
         UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
 
         // Act
-        IUxProjectionGrain<TestProjection> resolved = sut.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(entityId);
+        IUxProjectionGrain<TestProjection> resolved =
+            sut.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(entityId);
 
         // Assert
         Assert.Same(projectionGrain.Object, resolved);
         UxProjectionKey expectedKey = UxProjectionKey.For<TestProjection, TestBrookDefinition>(entityId);
         string expectedKeyString = expectedKey.ToString();
-        grainFactory.Verify(g => g.GetGrain<IUxProjectionGrain<TestProjection>>(expectedKeyString, It.IsAny<string?>()), Times.Once);
+        grainFactory.Verify(
+            g => g.GetGrain<IUxProjectionGrain<TestProjection>>(expectedKeyString, It.IsAny<string?>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -56,12 +59,10 @@ public sealed class UxProjectionGrainFactoryTests
         Mock<IGrainFactory> grainFactory = new(MockBehavior.Strict);
         string? capturedKey = null;
         grainFactory.Setup(g => g.GetGrain<IUxProjectionGrain<TestProjection>>(It.IsAny<string>(), It.IsAny<string?>()))
-            .Callback<string, string?>(
-                (
-                    key,
-                    _
-                ) =>
-                    capturedKey = key)
+            .Callback<string, string?>((
+                key,
+                _
+            ) => capturedKey = key)
             .Returns(projectionGrain.Object);
         Mock<ILogger<UxProjectionGrainFactory>> logger = new();
         UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);

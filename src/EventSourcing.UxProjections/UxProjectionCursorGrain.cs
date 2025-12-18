@@ -32,17 +32,16 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///         to subscribe to the correct cursor update stream.
 ///     </para>
 /// </remarks>
-[ImplicitStreamSubscription(EventSourcingOrleansStreamNames.CursorUpdateStreamName)]
 internal sealed class UxProjectionCursorGrain
     : IUxProjectionCursorGrain,
       IAsyncObserver<BrookCursorMovedEvent>,
       IGrainBase
 {
+    private StreamSequenceToken? lastToken;
+
     private UxProjectionKey projectionKey;
 
     private BrookPosition trackedCursorPosition = -1;
-
-    private StreamSequenceToken? lastToken;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="UxProjectionCursorGrain" /> class.
@@ -81,8 +80,7 @@ internal sealed class UxProjectionCursorGrain
     }
 
     /// <inheritdoc />
-    public Task<BrookPosition> GetPositionAsync() =>
-        Task.FromResult(trackedCursorPosition);
+    public Task<BrookPosition> GetPositionAsync() => Task.FromResult(trackedCursorPosition);
 
     /// <summary>
     ///     Subscribes the grain as an observer to the cursor update stream on activation.
@@ -106,11 +104,21 @@ internal sealed class UxProjectionCursorGrain
 
         // Subscribe to brook cursor updates using the brook key extracted from the projection key
         StreamId streamId = StreamIdFactory.Create(projectionKey.BrookKey);
-        IAsyncStream<BrookCursorMovedEvent> stream = this.GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
+        IAsyncStream<BrookCursorMovedEvent> stream = this
+            .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookCursorMovedEvent>(streamId);
         await stream.SubscribeAsync(this);
-
         Logger.CursorGrainActivated(primaryKey, projectionKey.ProjectionTypeName, projectionKey.BrookKey);
+    }
+
+    /// <summary>
+    ///     Handles stream completion.
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    public Task OnCompletedAsync()
+    {
+        Logger.StreamCompleted(projectionKey);
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -151,16 +159,6 @@ internal sealed class UxProjectionCursorGrain
             Logger.PositionUpdated(projectionKey, trackedCursorPosition);
         }
 
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    ///     Handles stream completion.
-    /// </summary>
-    /// <returns>A completed task.</returns>
-    public Task OnCompletedAsync()
-    {
-        Logger.StreamCompleted(projectionKey);
         return Task.CompletedTask;
     }
 }

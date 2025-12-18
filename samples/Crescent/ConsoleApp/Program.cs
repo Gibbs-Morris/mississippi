@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 
 using Crescent.ConsoleApp;
-using Crescent.ConsoleApp.Domain;
+using Crescent.ConsoleApp.Counter;
+using Crescent.ConsoleApp.CounterSummary;
+using Crescent.ConsoleApp.Infrastructure;
+using Crescent.ConsoleApp.Scenarios;
+using Crescent.ConsoleApp.Shared;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,6 +24,7 @@ using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
+using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Orleans;
 using Orleans.Configuration;
@@ -269,7 +274,29 @@ await VerificationScenarioRunner.RunEndToEndVerificationAsync(
     counterRootReducer,
     $"counter-verify-{Guid.NewGuid():N}");
 
-// Scenario 14: Cold start resume: stop host, build a new host, start again, then read
+// ============================================================================
+// UX Projection Scenario - Validates projection snapshot persistence
+// ============================================================================
+
+// Scenario 14: UX projection end-to-end (aggregate → projection → snapshot in Cosmos)
+logger.ScenarioUxProjectionEndToEnd(runId);
+ISnapshotStateConverter<CounterSummaryProjection> summarySnapshotStateConverter =
+    host.Services.GetRequiredService<ISnapshotStateConverter<CounterSummaryProjection>>();
+IRootReducer<CounterSummaryProjection> summaryRootReducer =
+    host.Services.GetRequiredService<IRootReducer<CounterSummaryProjection>>();
+IUxProjectionGrainFactory uxProjectionGrainFactory =
+    host.Services.GetRequiredService<IUxProjectionGrainFactory>();
+await UxProjectionScenarioRunner.RunEndToEndUxProjectionAsync(
+    logger,
+    runId,
+    grainFactory,
+    uxProjectionGrainFactory,
+    snapshotStorageProvider,
+    summarySnapshotStateConverter,
+    summaryRootReducer,
+    $"counter-ux-proj-{Guid.NewGuid():N}");
+
+// Scenario 15: Cold start resume: stop host, build a new host, start again, then read
 logger.PerformingColdRestartOfHost(runId);
 await host.StopAsync();
 using IHost host2 = HostFactory.BuildColdStartHost();

@@ -1,3 +1,6 @@
+using Mississippi.EventSourcing.Abstractions.Attributes;
+
+
 namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 
 /// <summary>
@@ -8,4 +11,5 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 ///     This type is internal but accessible to Moq via the InternalsVisibleTo attribute
 ///     for DynamicProxyGenAssembly2 configured in Directory.Build.props.
 /// </remarks>
+[SnapshotName("TEST", "UXPROJECTIONS", "TESTPROJECTION")]
 internal sealed record TestProjection(int Value);

@@ -26,6 +26,13 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 public interface IUxProjectionCursorGrain : IGrainWithStringKey
 {
     /// <summary>
+    ///     Deactivates the grain, releasing resources and unsubscribing from streams.
+    /// </summary>
+    /// <returns>A task representing the deactivation operation.</returns>
+    [Alias("DeactivateAsync")]
+    Task DeactivateAsync();
+
+    /// <summary>
     ///     Gets the latest known brook position for this projection.
     /// </summary>
     /// <returns>
@@ -39,11 +46,4 @@ public interface IUxProjectionCursorGrain : IGrainWithStringKey
     [ReadOnly]
     [Alias("GetPositionAsync")]
     Task<BrookPosition> GetPositionAsync();
-
-    /// <summary>
-    ///     Deactivates the grain, releasing resources and unsubscribing from streams.
-    /// </summary>
-    /// <returns>A task representing the deactivation operation.</returns>
-    [Alias("DeactivateAsync")]
-    Task DeactivateAsync();
 }
