@@ -37,6 +37,39 @@ public sealed class UxProjectionCursorGrainTests
     }
 
     /// <summary>
+    ///     Verifies that BrookCursorMovedEvent stores position correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Event Model")]
+    public void BrookCursorMovedEventStoresPositionCorrectly()
+    {
+        // Arrange
+        BrookPosition position = new(100);
+
+        // Act
+        BrookCursorMovedEvent cursorEvent = new(position);
+
+        // Assert
+        Assert.Equal(100, cursorEvent.NewPosition.Value);
+        Assert.False(cursorEvent.NewPosition.NotSet);
+    }
+
+    /// <summary>
+    ///     Verifies that BrookCursorMovedEvent with negative position represents not set.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Event Model")]
+    public void BrookCursorMovedEventWithNegativePositionRepresentsNotSet()
+    {
+        // Arrange & Act
+        BrookCursorMovedEvent cursorEvent = new(new(-1));
+
+        // Assert
+        Assert.True(cursorEvent.NewPosition.NotSet);
+        Assert.Equal(-1, cursorEvent.NewPosition.Value);
+    }
+
+    /// <summary>
     ///     Verifies that BrookPosition equality works correctly.
     /// </summary>
     [Fact]
@@ -54,6 +87,53 @@ public sealed class UxProjectionCursorGrainTests
     }
 
     /// <summary>
+    ///     Verifies that BrookPosition hash codes are equal for equal values.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Position Equality")]
+    public void BrookPositionHashCodesAreEqualForEqualValues()
+    {
+        // Arrange
+        BrookPosition position1 = new(100);
+        BrookPosition position2 = new(100);
+
+        // Assert
+        Assert.Equal(position1.GetHashCode(), position2.GetHashCode());
+    }
+
+    /// <summary>
+    ///     Verifies that BrookPosition implicit conversion from int works.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Position Conversion")]
+    public void BrookPositionImplicitConversionFromIntWorks()
+    {
+        // Arrange & Act
+        BrookPosition position = 42;
+
+        // Assert
+        Assert.Equal(42, position.Value);
+    }
+
+    /// <summary>
+    ///     Verifies that BrookPosition comparison handles negative values correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Position Comparison")]
+    public void BrookPositionIsNewerThanHandlesNegativeValues()
+    {
+        // Arrange
+        BrookPosition negative = new(-1);
+        BrookPosition zero = new(0);
+        BrookPosition positive = new(5);
+
+        // Assert
+        Assert.True(zero.IsNewerThan(negative));
+        Assert.True(positive.IsNewerThan(negative));
+        Assert.True(positive.IsNewerThan(zero));
+    }
+
+    /// <summary>
     ///     Verifies that BrookPosition IsNewerThan returns correct comparison.
     /// </summary>
     [Fact]
@@ -68,6 +148,22 @@ public sealed class UxProjectionCursorGrainTests
         Assert.True(newer.IsNewerThan(older));
         Assert.False(older.IsNewerThan(newer));
         Assert.False(older.IsNewerThan(older));
+    }
+
+    /// <summary>
+    ///     Verifies that BrookPosition comparison handles equal values correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Position Comparison")]
+    public void BrookPositionIsNewerThanReturnsFalseForEqualValues()
+    {
+        // Arrange
+        BrookPosition position1 = new(50);
+        BrookPosition position2 = new(50);
+
+        // Assert
+        Assert.False(position1.IsNewerThan(position2));
+        Assert.False(position2.IsNewerThan(position1));
     }
 
     /// <summary>
@@ -98,6 +194,21 @@ public sealed class UxProjectionCursorGrainTests
         // Assert
         Assert.True(notSet.NotSet);
         Assert.False(set.NotSet);
+    }
+
+    /// <summary>
+    ///     Verifies that BrookPosition with value zero is considered set.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Position State")]
+    public void BrookPositionZeroIsConsideredSet()
+    {
+        // Arrange
+        BrookPosition zero = new(0);
+
+        // Assert
+        Assert.Equal(0, zero.Value);
+        Assert.False(zero.NotSet);
     }
 
     /// <summary>
@@ -137,6 +248,51 @@ public sealed class UxProjectionCursorGrainTests
     }
 
     /// <summary>
+    ///     Verifies that cursor grain interface SetPositionAsync can be mocked.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Interface Contract")]
+    public async Task IUxProjectionCursorGrainSetPositionAsyncCanBeMocked()
+    {
+        // Arrange
+        Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
+        BrookPosition expectedPosition = new(75);
+        cursorGrainMock.Setup(g => g.GetPositionAsync()).ReturnsAsync(expectedPosition);
+
+        // Act
+        BrookPosition position = await cursorGrainMock.Object.GetPositionAsync();
+
+        // Assert
+        Assert.Equal(75, position.Value);
+        cursorGrainMock.Verify(g => g.GetPositionAsync(), Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies that multiple cursor grain instances can track different positions.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Interface Contract")]
+    public async Task MultipleCursorGrainsTrackDifferentPositions()
+    {
+        // Arrange
+        Mock<IUxProjectionCursorGrain> grain1Mock = new();
+        Mock<IUxProjectionCursorGrain> grain2Mock = new();
+        grain1Mock.Setup(g => g.GetPositionAsync()).ReturnsAsync(new BrookPosition(10));
+        grain2Mock.Setup(g => g.GetPositionAsync()).ReturnsAsync(new BrookPosition(20));
+
+        // Act
+        BrookPosition position1 = await grain1Mock.Object.GetPositionAsync();
+        BrookPosition position2 = await grain2Mock.Object.GetPositionAsync();
+
+        // Assert
+        Assert.Equal(10, position1.Value);
+        Assert.Equal(20, position2.Value);
+        Assert.NotEqual(position1, position2);
+    }
+
+    /// <summary>
     ///     Verifies that cursor grain factory resolves cursor grains correctly.
     /// </summary>
     [Fact]
@@ -157,6 +313,22 @@ public sealed class UxProjectionCursorGrainTests
     }
 
     /// <summary>
+    ///     Verifies that UxProjectionKey For method creates correct key.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Key Creation")]
+    public void UxProjectionKeyForMethodCreatesCorrectKey()
+    {
+        // Act
+        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("my-entity");
+
+        // Assert
+        Assert.Equal("TestProjection", key.ProjectionTypeName);
+        Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.Type);
+        Assert.Equal("my-entity", key.BrookKey.Id);
+    }
+
+    /// <summary>
     ///     Verifies that UxProjectionKey correctly parses the primary key format.
     /// </summary>
     [Fact]
@@ -173,6 +345,20 @@ public sealed class UxProjectionCursorGrainTests
     }
 
     /// <summary>
+    ///     Verifies that UxProjectionKey FromString throws for empty string.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Key Parsing")]
+    public void UxProjectionKeyFromStringThrowsForEmptyString()
+    {
+        // Arrange
+        const string emptyKey = "";
+
+        // Act & Assert
+        Assert.Throws<FormatException>(() => UxProjectionKey.FromString(emptyKey));
+    }
+
+    /// <summary>
     ///     Verifies that UxProjectionKey throws when given an invalid key format.
     /// </summary>
     [Fact]
@@ -184,6 +370,40 @@ public sealed class UxProjectionCursorGrainTests
 
         // Act & Assert
         Assert.Throws<FormatException>(() => UxProjectionKey.FromString(invalidKey));
+    }
+
+    /// <summary>
+    ///     Verifies that UxProjectionKey FromString throws for key with only one segment.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Key Parsing")]
+    public void UxProjectionKeyFromStringThrowsForSingleSegment()
+    {
+        // Arrange
+        const string singleSegmentKey = "OnlyOneSegment";
+
+        // Act & Assert
+        Assert.Throws<FormatException>(() => UxProjectionKey.FromString(singleSegmentKey));
+    }
+
+    /// <summary>
+    ///     Verifies that UxProjectionKey roundtrips through ToString and FromString.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Key Serialization")]
+    public void UxProjectionKeyRoundtripsThroughSerialization()
+    {
+        // Arrange
+        UxProjectionKey original = UxProjectionKey.For<TestProjection, TestBrookDefinition>("test-id");
+
+        // Act
+        string serialized = original.ToString();
+        UxProjectionKey deserialized = UxProjectionKey.FromString(serialized);
+
+        // Assert
+        Assert.Equal(original.ProjectionTypeName, deserialized.ProjectionTypeName);
+        Assert.Equal(original.BrookKey.Type, deserialized.BrookKey.Type);
+        Assert.Equal(original.BrookKey.Id, deserialized.BrookKey.Id);
     }
 
     /// <summary>
