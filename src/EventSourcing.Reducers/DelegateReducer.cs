@@ -15,8 +15,6 @@ namespace Mississippi.EventSourcing.Reducers;
 /// <typeparam name="TProjection">The projection type produced by the reducer.</typeparam>
 public sealed class DelegateReducer<TEvent, TProjection> : Reducer<TEvent, TProjection>
 {
-    private readonly Func<TProjection, TEvent, TProjection> reduce;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="DelegateReducer{TEvent, TProjection}" /> class.
     /// </summary>
@@ -27,11 +25,13 @@ public sealed class DelegateReducer<TEvent, TProjection> : Reducer<TEvent, TProj
         ILogger<DelegateReducer<TEvent, TProjection>>? logger = null
     )
     {
-        this.reduce = reduce ?? throw new ArgumentNullException(nameof(reduce));
+        ReduceDelegate = reduce ?? throw new ArgumentNullException(nameof(reduce));
         Logger = logger ?? NullLogger<DelegateReducer<TEvent, TProjection>>.Instance;
     }
 
     private ILogger<DelegateReducer<TEvent, TProjection>> Logger { get; }
+
+    private Func<TProjection, TEvent, TProjection> ReduceDelegate { get; }
 
     /// <inheritdoc />
     protected override TProjection ReduceCore(
@@ -42,7 +42,7 @@ public sealed class DelegateReducer<TEvent, TProjection> : Reducer<TEvent, TProj
         string projectionType = typeof(TProjection).Name;
         string eventType = typeof(TEvent).Name;
         Logger.DelegateReducerReducing(projectionType, eventType);
-        TProjection projection = reduce(state, eventData);
+        TProjection projection = ReduceDelegate(state, eventData);
         if (!typeof(TProjection).IsValueType && state is not null && ReferenceEquals(state, projection))
         {
             Logger.DelegateReducerProjectionInstanceReused(projectionType, eventType);
