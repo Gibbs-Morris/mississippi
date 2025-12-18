@@ -597,6 +597,13 @@
           "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
+      "Mississippi.Observability": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "System.Diagnostics.DiagnosticSource": "[9.0.1, )"
+        }
+      },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",
         "requested": "[2.8.0, )",
@@ -730,6 +737,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.3",
         "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
+      },
+      "System.Diagnostics.DiagnosticSource": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.1, )",
+        "resolved": "9.0.1",
+        "contentHash": "yOcDWx4P/s1I83+7gQlgQLmhny2eNcU0cfo1NBWi+en4EAI38Jau+/neT85gUW6w1s7+FUJc2qNOmmwGLIREqA=="
       }
     }
   }

@@ -20,15 +20,6 @@
         "resolved": "9.0.11",
         "contentHash": "+ZxxZzcVU+IEzq12GItUzf/V3mEc5nSLiXijwvDc4zyhbjvSZZ043giSZqGnhakrjwRWjkerIHPrRwm9okEIpw=="
       },
-      "Microsoft.Extensions.Logging.Abstractions": {
-        "type": "Direct",
-        "requested": "[9.0.1, )",
-        "resolved": "9.0.1",
-        "contentHash": "w2gUqXN/jNIuvqYwX3lbXagsizVNXYyt6LlF57+tMve4JYCEgCMMAjRce6uKcDASJgpMbErRT1PfHy2OhbkqEA==",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.1"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -57,6 +48,12 @@
         "resolved": "1.2.0.556",
         "contentHash": "zvn9Mqs/ox/83cpYPignI8hJEM2A93s2HkHs8HYMOAQW0PkampyoErAiIyKxgTLqbbad29HX/shv/6LGSjPJNQ=="
       },
+      "System.Diagnostics.DiagnosticSource": {
+        "type": "Direct",
+        "requested": "[9.0.1, )",
+        "resolved": "9.0.1",
+        "contentHash": "yOcDWx4P/s1I83+7gQlgQLmhny2eNcU0cfo1NBWi+en4EAI38Jau+/neT85gUW6w1s7+FUJc2qNOmmwGLIREqA=="
+      },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -66,22 +63,6 @@
         "type": "Transitive",
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
-      },
-      "Mississippi.EventSourcing.Reducers.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.Observability": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
-          "System.Diagnostics.DiagnosticSource": "[9.0.1, )"
-        }
-      },
-      "System.Diagnostics.DiagnosticSource": {
-        "type": "CentralTransitive",
-        "requested": "[9.0.1, )",
-        "resolved": "9.0.1",
-        "contentHash": "yOcDWx4P/s1I83+7gQlgQLmhny2eNcU0cfo1NBWi+en4EAI38Jau+/neT85gUW6w1s7+FUJc2qNOmmwGLIREqA=="
       }
     }
   }

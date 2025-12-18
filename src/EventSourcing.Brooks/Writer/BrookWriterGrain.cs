@@ -1,4 +1,7 @@
-﻿using System.Collections.Immutable;
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,6 +12,7 @@ using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Reader;
+using Mississippi.Observability;
 
 using Orleans;
 using Orleans.Runtime;
@@ -74,16 +78,43 @@ internal sealed class BrookWriterGrain
     )
     {
         BrookKey key = this.GetPrimaryKeyString();
-        BrookPosition newPosition = await BrookWriterService.AppendEventsAsync(
-            key,
-            events,
-            expectedCursorPosition,
-            cancellationToken);
-        IAsyncStream<BrookCursorMovedEvent> stream = this
-            .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
-            .GetStream<BrookCursorMovedEvent>(
-                StreamId.Create(EventSourcingOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
-        await stream.OnNextAsync(new(newPosition));
-        return newPosition;
+
+        using Activity? activity = BrooksTelemetry.Source.StartActivity(
+            "AppendEvents",
+            ActivityKind.Internal);
+
+        activity?.SetTagSafe("mississippi.brook.name", key.ToString())
+            .SetTagSafe("mississippi.events.count", events.Length);
+
+        long startTimestamp = Stopwatch.GetTimestamp();
+
+        try
+        {
+            BrookPosition newPosition = await BrookWriterService.AppendEventsAsync(
+                key,
+                events,
+                expectedCursorPosition,
+                cancellationToken);
+            IAsyncStream<BrookCursorMovedEvent> stream = this
+                .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
+                .GetStream<BrookCursorMovedEvent>(
+                    StreamId.Create(EventSourcingOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
+            await stream.OnNextAsync(new(newPosition));
+
+            double elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
+            BrooksMetrics.EventsAppended.Add(events.Length);
+            BrooksMetrics.AppendDuration.Record(elapsedMs, new KeyValuePair<string, object?>("status", "success"));
+            activity?.SetSuccessStatus();
+
+            return newPosition;
+        }
+        catch (Exception ex)
+        {
+            double elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
+            BrooksMetrics.AppendFailures.Add(1);
+            BrooksMetrics.AppendDuration.Record(elapsedMs, new KeyValuePair<string, object?>("status", "failed"));
+            activity?.RecordExceptionSafe(ex);
+            throw;
+        }
     }
 }

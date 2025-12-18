@@ -136,11 +136,6 @@
           "System.Security.Permissions": "6.0.0"
         }
       },
-      "System.Diagnostics.DiagnosticSource": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "vaoWjvkG1aenR2XdjaVivlCV9fADfgyhW5bZtXT23qaEea0lWiUljdQuze4E31vKM7ZWJaSUsbYIKE3rnzfZUg=="
-      },
       "System.Drawing.Common": {
         "type": "Transitive",
         "resolved": "6.0.0",
@@ -225,6 +220,12 @@
         "dependencies": {
           "System.Drawing.Common": "6.0.0"
         }
+      },
+      "System.Diagnostics.DiagnosticSource": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.1, )",
+        "resolved": "8.0.1",
+        "contentHash": "vaoWjvkG1aenR2XdjaVivlCV9fADfgyhW5bZtXT23qaEea0lWiUljdQuze4E31vKM7ZWJaSUsbYIKE3rnzfZUg=="
       }
     }
   }
