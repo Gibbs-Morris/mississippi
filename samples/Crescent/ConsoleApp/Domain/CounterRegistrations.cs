@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Reducers;
+using Mississippi.EventSourcing.UxProjections;
 
 
 namespace Crescent.ConsoleApp.Domain;
@@ -40,6 +41,12 @@ internal static class CounterRegistrations
         services.AddReducer<CounterIncremented, CounterState, CounterIncrementedReducer>();
         services.AddReducer<CounterDecremented, CounterState, CounterDecrementedReducer>();
         services.AddReducer<CounterReset, CounterState, CounterResetReducer>();
+
+        // Add UX projections infrastructure for read-optimized views.
+        // This enables the CounterSummaryProjectionGrain to serve cached projections.
+        // Multiple projection types (like CounterSummaryProjection) can consume the same
+        // CounterBrook event stream, each with their own key and cache.
+        services.AddUxProjections();
         return services;
     }
 }
