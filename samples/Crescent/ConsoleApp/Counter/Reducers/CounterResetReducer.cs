@@ -10,8 +10,7 @@ namespace Crescent.ConsoleApp.Counter.Reducers;
 /// <summary>
 ///     Reducer for <see cref="CounterReset" /> events.
 /// </summary>
-internal sealed class CounterResetReducer
-    : Reducer<CounterReset, CounterState>
+internal sealed class CounterResetReducer : Reducer<CounterReset, CounterState>
 {
     /// <inheritdoc />
     protected override CounterState ReduceCore(
@@ -20,7 +19,6 @@ internal sealed class CounterResetReducer
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         return (state ?? new()) with
         {
             Count = @event.NewValue,

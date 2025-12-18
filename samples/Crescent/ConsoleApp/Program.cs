@@ -284,8 +284,7 @@ ISnapshotStateConverter<CounterSummaryProjection> summarySnapshotStateConverter 
     host.Services.GetRequiredService<ISnapshotStateConverter<CounterSummaryProjection>>();
 IRootReducer<CounterSummaryProjection> summaryRootReducer =
     host.Services.GetRequiredService<IRootReducer<CounterSummaryProjection>>();
-IUxProjectionGrainFactory uxProjectionGrainFactory =
-    host.Services.GetRequiredService<IUxProjectionGrainFactory>();
+IUxProjectionGrainFactory uxProjectionGrainFactory = host.Services.GetRequiredService<IUxProjectionGrainFactory>();
 await UxProjectionScenarioRunner.RunEndToEndUxProjectionAsync(
     logger,
     runId,

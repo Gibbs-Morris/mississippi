@@ -1,5 +1,3 @@
-using Crescent.ConsoleApp.Counter;
-
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 

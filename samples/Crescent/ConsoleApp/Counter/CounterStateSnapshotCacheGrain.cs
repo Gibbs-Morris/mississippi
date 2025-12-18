@@ -27,8 +27,7 @@ namespace Crescent.ConsoleApp.Counter;
 ///         brook ID, reducers hash, and version.
 ///     </para>
 /// </remarks>
-internal sealed class CounterStateSnapshotCacheGrain
-    : SnapshotCacheGrain<CounterState, CounterBrook>
+internal sealed class CounterStateSnapshotCacheGrain : SnapshotCacheGrain<CounterState, CounterBrook>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="CounterStateSnapshotCacheGrain" /> class.
@@ -61,10 +60,8 @@ internal sealed class CounterStateSnapshotCacheGrain
             snapshotStateConverter,
             snapshotGrainFactory,
             retentionOptions,
-            logger)
-    {
+            logger) =>
         BrookEventConverter = brookEventConverter;
-    }
 
     private IBrookEventConverter BrookEventConverter { get; }
 
@@ -80,6 +77,8 @@ internal sealed class CounterStateSnapshotCacheGrain
         };
 
     /// <inheritdoc />
-    protected override object DeserializeEvent(BrookEvent brookEvent) =>
+    protected override object DeserializeEvent(
+        BrookEvent brookEvent
+    ) =>
         BrookEventConverter.ToDomainEvent(brookEvent);
 }

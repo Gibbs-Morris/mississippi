@@ -11,8 +11,7 @@ namespace Crescent.ConsoleApp.Counter.Handlers;
 /// <summary>
 ///     Command handler for decrementing a counter.
 /// </summary>
-internal sealed class DecrementCounterHandler
-    : CommandHandler<DecrementCounter, CounterState>
+internal sealed class DecrementCounterHandler : CommandHandler<DecrementCounter, CounterState>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

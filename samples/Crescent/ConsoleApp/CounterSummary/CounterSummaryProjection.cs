@@ -42,12 +42,6 @@ internal sealed record CounterSummaryProjection
     public int CurrentCount { get; init; }
 
     /// <summary>
-    ///     Gets the total number of operations performed on the counter.
-    /// </summary>
-    [Id(1)]
-    public int TotalOperations { get; init; }
-
-    /// <summary>
     ///     Gets a user-friendly display label summarizing the counter state.
     /// </summary>
     [Id(2)]
@@ -58,4 +52,10 @@ internal sealed record CounterSummaryProjection
     /// </summary>
     [Id(3)]
     public bool IsPositive { get; init; }
+
+    /// <summary>
+    ///     Gets the total number of operations performed on the counter.
+    /// </summary>
+    [Id(1)]
+    public int TotalOperations { get; init; }
 }

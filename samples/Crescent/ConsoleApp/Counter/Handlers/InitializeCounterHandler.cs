@@ -11,8 +11,7 @@ namespace Crescent.ConsoleApp.Counter.Handlers;
 /// <summary>
 ///     Command handler for initializing a counter.
 /// </summary>
-internal sealed class InitializeCounterHandler
-    : CommandHandler<InitializeCounter, CounterState>
+internal sealed class InitializeCounterHandler : CommandHandler<InitializeCounter, CounterState>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

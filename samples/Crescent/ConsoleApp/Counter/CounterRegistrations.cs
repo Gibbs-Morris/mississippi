@@ -1,4 +1,4 @@
-using Crescent.ConsoleApp.Counter;
+using Crescent.ConsoleApp.Counter.Commands;
 using Crescent.ConsoleApp.Counter.Events;
 using Crescent.ConsoleApp.Counter.Handlers;
 using Crescent.ConsoleApp.Counter.Reducers;
@@ -39,10 +39,10 @@ internal static class CounterRegistrations
         services.AddEventType<CounterReset>();
 
         // Register command handlers
-        services.AddCommandHandler<Commands.InitializeCounter, CounterState, InitializeCounterHandler>();
-        services.AddCommandHandler<Commands.IncrementCounter, CounterState, IncrementCounterHandler>();
-        services.AddCommandHandler<Commands.DecrementCounter, CounterState, DecrementCounterHandler>();
-        services.AddCommandHandler<Commands.ResetCounter, CounterState, ResetCounterHandler>();
+        services.AddCommandHandler<InitializeCounter, CounterState, InitializeCounterHandler>();
+        services.AddCommandHandler<IncrementCounter, CounterState, IncrementCounterHandler>();
+        services.AddCommandHandler<DecrementCounter, CounterState, DecrementCounterHandler>();
+        services.AddCommandHandler<ResetCounter, CounterState, ResetCounterHandler>();
 
         // Register reducers for state computation
         services.AddReducer<CounterInitialized, CounterState, CounterInitializedReducer>();

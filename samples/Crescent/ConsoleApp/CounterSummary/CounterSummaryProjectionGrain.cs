@@ -28,8 +28,7 @@ namespace Crescent.ConsoleApp.CounterSummary;
 ///         a new snapshot if the brook has advanced since the last read.
 ///     </para>
 /// </remarks>
-internal sealed class CounterSummaryProjectionGrain
-    : UxProjectionGrain<CounterSummaryProjection, CounterBrook>
+internal sealed class CounterSummaryProjectionGrain : UxProjectionGrain<CounterSummaryProjection, CounterBrook>
 {
     /// <summary>
     ///     Hash of the reducers used for snapshot key construction.
@@ -50,12 +49,7 @@ internal sealed class CounterSummaryProjectionGrain
         ISnapshotGrainFactory snapshotGrainFactory,
         ILogger<CounterSummaryProjectionGrain> logger
     )
-        : base(
-            grainContext,
-            uxProjectionGrainFactory,
-            snapshotGrainFactory,
-            CounterReducersHash,
-            logger)
+        : base(grainContext, uxProjectionGrainFactory, snapshotGrainFactory, CounterReducersHash, logger)
     {
     }
 }

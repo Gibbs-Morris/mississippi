@@ -22,7 +22,7 @@ internal sealed class CounterSummaryResetReducer : Reducer<CounterReset, Counter
         ArgumentNullException.ThrowIfNull(@event);
         int newCount = @event.NewValue;
         int operations = (state?.TotalOperations ?? 0) + 1;
-        return new CounterSummaryProjection
+        return new()
         {
             CurrentCount = newCount,
             TotalOperations = operations,

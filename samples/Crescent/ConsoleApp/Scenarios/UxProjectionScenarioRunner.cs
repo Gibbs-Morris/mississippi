@@ -8,7 +8,6 @@ using Crescent.ConsoleApp.CounterSummary;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Abstractions.Storage;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -110,7 +109,6 @@ internal static class UxProjectionScenarioRunner
         logger.UxProjectionStep(runId, 2, "Query UX projection grain for cached projection state");
         IUxProjectionGrain<CounterSummaryProjection> projectionGrain =
             uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
-
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -125,7 +123,7 @@ internal static class UxProjectionScenarioRunner
             // Expected final value: 25 (init) + 10 (increments) - 3 (decrements) = 32
             int expectedValue = 32;
             int expectedOperations = 14;
-            if (projection.CurrentCount == expectedValue && projection.TotalOperations == expectedOperations)
+            if ((projection.CurrentCount == expectedValue) && (projection.TotalOperations == expectedOperations))
             {
                 logger.UxProjectionStepComplete(
                     runId,
@@ -161,7 +159,6 @@ internal static class UxProjectionScenarioRunner
         // First, let's try to read at version that matches expected event count (14)
         SnapshotKey snapshotKey = new(streamKey, 14);
         SnapshotEnvelope? envelope = await snapshotStorageProvider.ReadAsync(snapshotKey, cancellationToken);
-
         if (envelope == null)
         {
             // Try reading without specific version - the snapshot might be at a different position
@@ -189,7 +186,7 @@ internal static class UxProjectionScenarioRunner
             // Verify snapshot matches expected values
             int expectedValue = 32;
             int expectedOperations = 14;
-            if (snapshotState.CurrentCount == expectedValue && snapshotState.TotalOperations == expectedOperations)
+            if ((snapshotState.CurrentCount == expectedValue) && (snapshotState.TotalOperations == expectedOperations))
             {
                 logger.UxProjectionStepComplete(
                     runId,

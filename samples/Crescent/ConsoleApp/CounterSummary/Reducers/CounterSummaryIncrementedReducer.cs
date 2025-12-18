@@ -23,7 +23,7 @@ internal sealed class CounterSummaryIncrementedReducer : Reducer<CounterIncremen
         int currentCount = state?.CurrentCount ?? 0;
         int newCount = currentCount + @event.Amount;
         int operations = (state?.TotalOperations ?? 0) + 1;
-        return new CounterSummaryProjection
+        return new()
         {
             CurrentCount = newCount,
             TotalOperations = operations,

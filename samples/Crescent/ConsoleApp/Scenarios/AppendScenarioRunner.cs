@@ -4,8 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Crescent.ConsoleApp.Shared;
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
