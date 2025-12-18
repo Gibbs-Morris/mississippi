@@ -13,8 +13,6 @@ namespace Mississippi.EventSourcing.Aggregates;
 /// <typeparam name="TSnapshot">The aggregate state type.</typeparam>
 internal sealed class DelegateCommandHandler<TCommand, TSnapshot> : ICommandHandler<TCommand, TSnapshot>
 {
-    private readonly Func<TCommand, TSnapshot?, OperationResult<IReadOnlyList<object>>> handler;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="DelegateCommandHandler{TCommand, TSnapshot}" /> class.
     /// </summary>
@@ -22,14 +20,16 @@ internal sealed class DelegateCommandHandler<TCommand, TSnapshot> : ICommandHand
     public DelegateCommandHandler(
         Func<TCommand, TSnapshot?, OperationResult<IReadOnlyList<object>>> handler
     ) =>
-        this.handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        Handler = handler ?? throw new ArgumentNullException(nameof(handler));
+
+    private Func<TCommand, TSnapshot?, OperationResult<IReadOnlyList<object>>> Handler { get; }
 
     /// <inheritdoc />
     public OperationResult<IReadOnlyList<object>> Handle(
         TCommand command,
         TSnapshot? state
     ) =>
-        handler(command, state);
+        Handler(command, state);
 
     /// <inheritdoc />
     public bool TryHandle(
