@@ -802,6 +802,16 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Testing.Utilities": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection": "[9.0.11, )",
+          "Microsoft.Orleans.TestingHost": "[9.2.1, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
+          "Moq": "[4.20.72, )",
+          "xunit": "[2.9.3, )"
+        }
+      },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",
         "requested": "[2.8.0, )",

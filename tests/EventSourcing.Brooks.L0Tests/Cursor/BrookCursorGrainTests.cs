@@ -6,6 +6,7 @@ using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Tests.Infrastructure;
 using Mississippi.EventSourcing.Writer;
+using Mississippi.Testing.Utilities.Orleans;
 
 using Orleans.TestingHost;
 
