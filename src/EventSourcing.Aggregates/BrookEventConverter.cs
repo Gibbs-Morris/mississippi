@@ -16,10 +16,6 @@ namespace Mississippi.EventSourcing.Aggregates;
 /// </summary>
 internal sealed class BrookEventConverter : IBrookEventConverter
 {
-    private readonly IEventTypeRegistry eventTypeRegistry;
-
-    private readonly ISerializationProvider serializationProvider;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookEventConverter" /> class.
     /// </summary>
@@ -30,10 +26,13 @@ internal sealed class BrookEventConverter : IBrookEventConverter
         IEventTypeRegistry eventTypeRegistry
     )
     {
-        this.serializationProvider =
-            serializationProvider ?? throw new ArgumentNullException(nameof(serializationProvider));
-        this.eventTypeRegistry = eventTypeRegistry ?? throw new ArgumentNullException(nameof(eventTypeRegistry));
+        SerializationProvider = serializationProvider ?? throw new ArgumentNullException(nameof(serializationProvider));
+        EventTypeRegistry = eventTypeRegistry ?? throw new ArgumentNullException(nameof(eventTypeRegistry));
     }
+
+    private IEventTypeRegistry EventTypeRegistry { get; }
+
+    private ISerializationProvider SerializationProvider { get; }
 
     /// <inheritdoc />
     public object ToDomainEvent(
@@ -41,7 +40,7 @@ internal sealed class BrookEventConverter : IBrookEventConverter
     )
     {
         ArgumentNullException.ThrowIfNull(brookEvent);
-        Type? eventType = eventTypeRegistry.ResolveType(brookEvent.EventType);
+        Type? eventType = EventTypeRegistry.ResolveType(brookEvent.EventType);
         if (eventType is null)
         {
             throw new InvalidOperationException(
@@ -49,7 +48,7 @@ internal sealed class BrookEventConverter : IBrookEventConverter
                 "Ensure the event type is registered in the event type registry.");
         }
 
-        return serializationProvider.Deserialize(eventType, brookEvent.Data.AsMemory());
+        return SerializationProvider.Deserialize(eventType, brookEvent.Data.AsMemory());
     }
 
     /// <inheritdoc />
@@ -63,7 +62,7 @@ internal sealed class BrookEventConverter : IBrookEventConverter
         foreach (object eventData in domainEvents)
         {
             Type eventType = eventData.GetType();
-            string? eventTypeName = eventTypeRegistry.ResolveName(eventType);
+            string? eventTypeName = EventTypeRegistry.ResolveName(eventType);
             if (eventTypeName is null)
             {
                 throw new InvalidOperationException(
@@ -71,7 +70,7 @@ internal sealed class BrookEventConverter : IBrookEventConverter
                     "Ensure the event type is registered in the event type registry.");
             }
 
-            ReadOnlyMemory<byte> data = serializationProvider.Serialize(eventData);
+            ReadOnlyMemory<byte> data = SerializationProvider.Serialize(eventData);
             builder.Add(
                 new()
                 {
@@ -79,7 +78,7 @@ internal sealed class BrookEventConverter : IBrookEventConverter
                     EventType = eventTypeName,
                     Source = source,
                     Data = data.ToArray().ToImmutableArray(),
-                    DataContentType = serializationProvider.Format,
+                    DataContentType = SerializationProvider.Format,
                 });
         }
 

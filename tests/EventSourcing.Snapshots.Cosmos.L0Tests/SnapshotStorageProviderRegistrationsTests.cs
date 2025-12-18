@@ -1,10 +1,16 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Abstractions.Mapping;
@@ -112,5 +118,242 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         using ServiceProvider provider = services.BuildServiceProvider();
         SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
         Assert.Equal("db2", options.DatabaseId);
+    }
+
+    /// <summary>
+    ///     CosmosContainerInitializer should create container when it does not exist (NotFound exception).
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task CosmosContainerInitializerShouldCreateContainerWhenNotFound()
+    {
+        // Arrange
+        Mock<ContainerResponse> containerResponseMock = new();
+        containerResponseMock.Setup(r => r.Resource)
+            .Returns(
+                new ContainerProperties
+                {
+                    PartitionKeyPath = "/snapshotPartitionKey",
+                });
+        Mock<Container> containerMock = new();
+        containerMock
+            .Setup(c => c.ReadContainerAsync(It.IsAny<ContainerRequestOptions>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new CosmosException("Not found", HttpStatusCode.NotFound, 0, string.Empty, 0));
+        Mock<Database> databaseMock = new();
+        databaseMock.Setup(d => d.GetContainer("new-container")).Returns(containerMock.Object);
+        databaseMock.Setup(d => d.CreateContainerIfNotExistsAsync(
+                "new-container",
+                "/snapshotPartitionKey",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containerResponseMock.Object);
+        Mock<DatabaseResponse> databaseResponseMock = new();
+        databaseResponseMock.Setup(r => r.Database).Returns(databaseMock.Object);
+        Mock<CosmosClient> cosmosClientMock = new();
+        cosmosClientMock.Setup(c => c.CreateDatabaseIfNotExistsAsync(
+                "new-db",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(databaseResponseMock.Object);
+        ServiceCollection services = new();
+        services.AddSingleton(cosmosClientMock.Object);
+        services.Configure<SnapshotStorageOptions>(o =>
+        {
+            o.DatabaseId = "new-db";
+            o.ContainerId = "new-container";
+        });
+        services.AddCosmosSnapshotStorageProvider();
+        await using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Act
+        IHostedService hostedService = provider.GetServices<IHostedService>()
+            .First(s => s.GetType().Name == "CosmosContainerInitializer");
+        await hostedService.StartAsync(CancellationToken.None);
+
+        // Assert
+        databaseMock.Verify(
+            d => d.CreateContainerIfNotExistsAsync(
+                "new-container",
+                "/snapshotPartitionKey",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     CosmosContainerInitializer should throw when existing container has wrong partition key path.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task CosmosContainerInitializerShouldThrowWhenPartitionKeyMismatch()
+    {
+        // Arrange
+        Mock<ContainerResponse> containerResponseMock = new();
+        containerResponseMock.Setup(r => r.Resource)
+            .Returns(
+                new ContainerProperties
+                {
+                    PartitionKeyPath = "/wrongPartitionKey",
+                });
+        Mock<Container> containerMock = new();
+        containerMock
+            .Setup(c => c.ReadContainerAsync(It.IsAny<ContainerRequestOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containerResponseMock.Object);
+        Mock<Database> databaseMock = new();
+        databaseMock.Setup(d => d.GetContainer("existing-container")).Returns(containerMock.Object);
+        Mock<DatabaseResponse> databaseResponseMock = new();
+        databaseResponseMock.Setup(r => r.Database).Returns(databaseMock.Object);
+        Mock<CosmosClient> cosmosClientMock = new();
+        cosmosClientMock.Setup(c => c.CreateDatabaseIfNotExistsAsync(
+                "existing-db",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(databaseResponseMock.Object);
+        ServiceCollection services = new();
+        services.AddSingleton(cosmosClientMock.Object);
+        services.Configure<SnapshotStorageOptions>(o =>
+        {
+            o.DatabaseId = "existing-db";
+            o.ContainerId = "existing-container";
+        });
+        services.AddCosmosSnapshotStorageProvider();
+        await using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Act
+        IHostedService hostedService = provider.GetServices<IHostedService>()
+            .First(s => s.GetType().Name == "CosmosContainerInitializer");
+        InvalidOperationException ex =
+            await Assert.ThrowsAsync<InvalidOperationException>(() => hostedService.StartAsync(CancellationToken.None));
+
+        // Assert
+        Assert.Contains("/wrongPartitionKey", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("/snapshotPartitionKey", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     CosmosContainerInitializer StartAsync should create database and container.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task CosmosContainerInitializerStartAsyncShouldCreateDatabaseAndContainer()
+    {
+        // Arrange
+        Mock<ContainerResponse> containerResponseMock = new();
+        containerResponseMock.Setup(r => r.Resource)
+            .Returns(
+                new ContainerProperties
+                {
+                    PartitionKeyPath = "/snapshotPartitionKey",
+                });
+        Mock<Container> containerMock = new();
+        containerMock
+            .Setup(c => c.ReadContainerAsync(It.IsAny<ContainerRequestOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containerResponseMock.Object);
+        Mock<Database> databaseMock = new();
+        databaseMock.Setup(d => d.GetContainer("test-container")).Returns(containerMock.Object);
+        databaseMock.Setup(d => d.CreateContainerIfNotExistsAsync(
+                "test-container",
+                "/snapshotPartitionKey",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containerResponseMock.Object);
+        Mock<DatabaseResponse> databaseResponseMock = new();
+        databaseResponseMock.Setup(r => r.Database).Returns(databaseMock.Object);
+        Mock<CosmosClient> cosmosClientMock = new();
+        cosmosClientMock.Setup(c => c.CreateDatabaseIfNotExistsAsync(
+                "test-db",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(databaseResponseMock.Object);
+        ServiceCollection services = new();
+        services.AddSingleton(cosmosClientMock.Object);
+        services.Configure<SnapshotStorageOptions>(o =>
+        {
+            o.DatabaseId = "test-db";
+            o.ContainerId = "test-container";
+        });
+        services.AddCosmosSnapshotStorageProvider();
+        await using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Act
+        IHostedService hostedService = provider.GetServices<IHostedService>()
+            .First(s => s.GetType().Name == "CosmosContainerInitializer");
+        await hostedService.StartAsync(CancellationToken.None);
+
+        // Assert
+        cosmosClientMock.Verify(
+            c => c.CreateDatabaseIfNotExistsAsync(
+                "test-db",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        databaseMock.Verify(
+            d => d.CreateContainerIfNotExistsAsync(
+                "test-container",
+                "/snapshotPartitionKey",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     CosmosContainerInitializer StopAsync should complete successfully.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task CosmosContainerInitializerStopAsyncShouldComplete()
+    {
+        // Arrange
+        Mock<ContainerResponse> containerResponseMock = new();
+        containerResponseMock.Setup(r => r.Resource)
+            .Returns(
+                new ContainerProperties
+                {
+                    PartitionKeyPath = "/snapshotPartitionKey",
+                });
+        Mock<Container> containerMock = new();
+        containerMock
+            .Setup(c => c.ReadContainerAsync(It.IsAny<ContainerRequestOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containerResponseMock.Object);
+        Mock<Database> databaseMock = new();
+        databaseMock.Setup(d => d.GetContainer("snapshots")).Returns(containerMock.Object);
+        databaseMock.Setup(d => d.CreateContainerIfNotExistsAsync(
+                "snapshots",
+                "/snapshotPartitionKey",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containerResponseMock.Object);
+        Mock<DatabaseResponse> databaseResponseMock = new();
+        databaseResponseMock.Setup(r => r.Database).Returns(databaseMock.Object);
+        Mock<CosmosClient> cosmosClientMock = new();
+        cosmosClientMock.Setup(c => c.CreateDatabaseIfNotExistsAsync(
+                "db",
+                It.IsAny<int?>(),
+                It.IsAny<RequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(databaseResponseMock.Object);
+        ServiceCollection services = new();
+        services.AddSingleton(cosmosClientMock.Object);
+        services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
+        services.AddCosmosSnapshotStorageProvider();
+        await using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Act
+        IHostedService hostedService = provider.GetServices<IHostedService>()
+            .First(s => s.GetType().Name == "CosmosContainerInitializer");
+        await hostedService.StartAsync(CancellationToken.None);
+        await hostedService.StopAsync(CancellationToken.None);
+
+        // Assert - StopAsync completes without throwing
+        Assert.True(true, "StopAsync completed successfully without throwing.");
     }
 }

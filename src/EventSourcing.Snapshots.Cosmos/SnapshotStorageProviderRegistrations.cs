@@ -124,26 +124,26 @@ public static class SnapshotStorageProviderRegistrations
     {
         private const string PartitionKeyPath = "/snapshotPartitionKey";
 
-        private readonly CosmosClient cosmosClient;
-
-        private readonly IOptions<SnapshotStorageOptions> options;
-
         [SuppressMessage("Major Code Smell", "S1144", Justification = "Used by DI")]
         public CosmosContainerInitializer(
             CosmosClient cosmosClient,
             IOptions<SnapshotStorageOptions> options
         )
         {
-            this.cosmosClient = cosmosClient;
-            this.options = options;
+            CosmosClient = cosmosClient;
+            Options = options;
         }
+
+        private CosmosClient CosmosClient { get; }
+
+        private IOptions<SnapshotStorageOptions> Options { get; }
 
         public async Task StartAsync(
             CancellationToken cancellationToken
         )
         {
-            SnapshotStorageOptions o = options.Value;
-            DatabaseResponse db = await cosmosClient.CreateDatabaseIfNotExistsAsync(
+            SnapshotStorageOptions o = Options.Value;
+            DatabaseResponse db = await CosmosClient.CreateDatabaseIfNotExistsAsync(
                 o.DatabaseId,
                 cancellationToken: cancellationToken);
             Database database = db.Database;

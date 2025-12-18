@@ -14,8 +14,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos;
 /// </summary>
 internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
 {
-    private readonly ISnapshotCosmosRepository repository;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="SnapshotStorageProvider" /> class.
     /// </summary>
@@ -23,24 +21,26 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
     public SnapshotStorageProvider(
         ISnapshotCosmosRepository repository
     ) =>
-        this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        Repository = repository ?? throw new ArgumentNullException(nameof(repository));
 
     /// <inheritdoc />
     public string Format => "cosmos-db";
+
+    private ISnapshotCosmosRepository Repository { get; }
 
     /// <inheritdoc />
     public Task DeleteAllAsync(
         SnapshotStreamKey streamKey,
         CancellationToken cancellationToken = default
     ) =>
-        repository.DeleteAllAsync(streamKey, cancellationToken);
+        Repository.DeleteAllAsync(streamKey, cancellationToken);
 
     /// <inheritdoc />
     public Task DeleteAsync(
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
     ) =>
-        repository.DeleteAsync(snapshotKey, cancellationToken);
+        Repository.DeleteAsync(snapshotKey, cancellationToken);
 
     /// <inheritdoc />
     public async Task PruneAsync(
@@ -50,7 +50,7 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
     )
     {
         ArgumentNullException.ThrowIfNull(retainModuli);
-        await repository.PruneAsync(streamKey, retainModuli, cancellationToken).ConfigureAwait(false);
+        await Repository.PruneAsync(streamKey, retainModuli, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -58,7 +58,7 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
     ) =>
-        repository.ReadAsync(snapshotKey, cancellationToken);
+        Repository.ReadAsync(snapshotKey, cancellationToken);
 
     /// <inheritdoc />
     public Task WriteAsync(
@@ -66,5 +66,5 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
         SnapshotEnvelope snapshot,
         CancellationToken cancellationToken = default
     ) =>
-        repository.WriteAsync(snapshotKey, snapshot, cancellationToken);
+        Repository.WriteAsync(snapshotKey, snapshot, cancellationToken);
 }
