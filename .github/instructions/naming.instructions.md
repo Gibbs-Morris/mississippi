@@ -94,13 +94,23 @@ This document establishes comprehensive naming conventions and XML documentation
 
 ## 2. Type-Naming Rules
 
-| ID  | Element                         | Rule                                                                                                                                                                                                                                                                                                                         |
-| --- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T-1 | **Classes / records / structs** | PascalCase noun or noun phrase that expresses core responsibility (`InvoicePaymentProcessor`).                                                                                                                                                                                                                               |
-| T-2 | **Approved suffixes**           | Apply when the pattern demands: `…Exception`, `…EventArgs`, `…Attribute`, `…Options`, `…Provider`, `…Handler`, `…Middleware`, `…Controller`, `…Dto`, `…Record`, `…Base`.                                                                                                                                                     |
-| T-3 | **Abstract base classes**       | Do **not** suffix with "Base" for general abstract classes. **Exception:** Abstract classes that inherit from `IGrainBase` **MUST** end with "Base" (e.g., `SampleBase : IGrainBase`). This distinguishes Orleans abstract base grains meant for inheritance from concrete implementations.                                  |
-| T-4 | **Interfaces**                  | Prefix **`I`** + capability adjective/noun (`ILogger`, `IDisposable`, `IHasher`).                                                                                                                                                                                                                                            |
-| T-5 | **Enums**                       | Type name singular PascalCase; members PascalCase. Use `[Flags]` and powers of two when bitwise.                                                                                                                                                                                                                             |
+| ID  | Element                         | Rule                                                                                                |
+| --- | ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| T-1 | **Classes / records / structs** | PascalCase noun or noun phrase that expresses core responsibility (`InvoicePaymentProcessor`).      |
+| T-2 | **Approved suffixes**           | Apply when the pattern demands: `…Exception`, `…EventArgs`, `…Attribute`, `…Options`, `…Provider`, `…Handler`, `…Middleware`, `…Controller`, `…Dto`, `…Record`, `…Base`. |
+| T-3 | **Abstract base classes**       | Do **not** suffix with "Base" for general abstract classes. See subsection below for Orleans exception. |
+| T-4 | **Interfaces**                  | Prefix **`I`** + capability adjective/noun (`ILogger`, `IDisposable`, `IHasher`).                  |
+| T-5 | **Enums**                       | Type name singular PascalCase; members PascalCase. Use `[Flags]` and powers of two when bitwise.   |
+
+### T-3 Exception: Orleans Abstract Base Classes
+
+**General rule:** Abstract base classes should NOT be suffixed with "Base" to avoid verbosity when inheritance isn't the primary purpose.
+
+**Orleans exception:** Abstract classes that inherit from `IGrainBase` **MUST** end with "Base" suffix (e.g., `SampleBase : IGrainBase`, `AggregateGrainBase<TSnapshot, TBrook>`).
+
+**Why:** This distinguishes Orleans abstract base grains meant for inheritance from concrete grain implementations, making the inheritance intent explicit in the type name.
+
+**Migration:** Legacy Orleans abstract base classes not following this pattern should be updated when touched. New or modified abstract grain base classes must follow this convention.
 
 ## 3. Member-Naming Rules
 

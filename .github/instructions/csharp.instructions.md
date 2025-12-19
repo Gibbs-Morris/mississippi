@@ -555,14 +555,17 @@ The Mississippi Framework follows a strict **internal-by-default** approach to m
 | Type Category | Default Visibility | Public When |
 | ------------- | ------------------ | ----------- |
 | **Interfaces** | `internal` | Part of public API in `.Abstractions` project |
-| **Abstract base classes** | `internal` | Meant for external inheritance (rare; document justification) |
+| **Abstract base classes (non-Orleans)** | `internal` | Meant for external inheritance (rare; document justification; place in `.Abstractions`) |
 | **Concrete implementations** | `internal` | Never (implementations stay internal) |
 | **DTOs / Records** | `internal` | Public API contracts in `.Abstractions` |
 | **Options classes** | `internal` preferred, `public` acceptable | Configuration surface for consumers |
 | **ServiceRegistration** | `internal` preferred, `public` acceptable | Entry point for DI registration |
 | **Grain interfaces** | `public` | Consumed by external clients |
-| **Grain implementations** | `internal` | Orleans grains should never be `public` |
+| **Grain implementations (concrete)** | `internal` | Never (Orleans grains should never be `public`) |
+| **Grain implementations (abstract base)** | `internal` | Never (including abstract base grains like `AggregateGrainBase`; see Orleans note below) |
 | **Exception types** | `internal` | Part of public API contract |
+
+> **Orleans visibility note:** Abstract grain base classes that inherit from `IGrainBase` (e.g., `AggregateGrainBase`, `SnapshotCacheGrainBase`) are treated as implementations and **MUST** remain `internal`. When external consumers need to inherit from an abstraction, define a `public` interface or abstract base type without Orleans dependencies in a `.Abstractions` project. The internal grain (including any abstract base grain) should then implement or compose that contract, rather than exposing the grain itself as `public`. This separation keeps Orleans infrastructure concerns isolated from public contracts.
 
 ### Examples
 
@@ -641,16 +644,31 @@ internal sealed class EventStore : IEventStore
 ```csharp
 namespace Mississippi.EventSourcing.Aggregates;
 
-// ❌ WRONG - Grain implementations should never be public
+// ❌ WRONG - Grain implementations (including abstract base grains) should never be public
 public abstract class AggregateGrain<TSnapshot, TBrook> : IGrainBase
 {
-    // Consumers should only depend on grain interfaces, not implementations
+    // Even though designed for inheritance, exposing Orleans infrastructure is incorrect
 }
 
-// ✅ CORRECT - Keep grain implementations internal
+// ✅ CORRECT - Keep grain implementations internal, even abstract base classes
 internal abstract class AggregateGrainBase<TSnapshot, TBrook> : IGrainBase
 {
     // Implementation details remain internal
+    // Consumers inherit from this within the same assembly or project
+}
+
+// ✅ BEST - For external extensibility, use a public abstraction without Orleans dependencies
+// In Mississippi.EventSourcing.Abstractions:
+public interface IAggregateGrain<TSnapshot> : IGrainWithStringKey
+{
+    Task<TSnapshot> GetSnapshotAsync();
+    Task ApplyEventAsync(DomainEvent @event);
+}
+
+// In Mississippi.EventSourcing:
+internal abstract class AggregateGrainBase<TSnapshot, TBrook> : IGrainBase, IAggregateGrain<TSnapshot>
+{
+    // Internal implementation that external consumers can use via the interface
 }
 ```
 
