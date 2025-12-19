@@ -3,178 +3,41 @@ description: "DDD and .NET architecture guidelines"
 applyTo: '**/*.cs,**/*.csproj,**/Program.cs,**/*.razor'
 ---
 
-# DDD Systems & .NET Guidelines
+# DDD and Architecture Checklist
 
-Governing thought: Keep every Mississippi change rooted in clear Domain-Driven Design analysis, SOLID architecture, and repository-wide .NET quality practices.
+Governing thought: Start every domain change with explicit DDD/SOLID analysis, keep logic in the right layer, and verify tests/observability before shipping.
+
+> Drift check: When citing scripts or configs (build/test/logging), open the referenced files first; they remain authoritative.
 
 ## Rules (RFC 2119)
 
-- Agents **MUST** begin every DDD-sensitive task with an explicit written analysis that lists applicable DDD/SOLID patterns, the affected layer(s), ubiquitous-language terms, and any security or compliance implications before proposing code.  
-  Why: Prevents ad-hoc solutions and ensures reviewers can trace design intent.
-- Agents **MUST** plan domain work by naming the aggregates, value objects, domain services, and domain events that will change, along with the tests that will cover them, prior to editing files.  
-  Why: Keeps ubiquitous language, contracts, and verification aligned.
-- Domain logic **MUST** reside inside aggregates, value objects, or domain services; application services **MUST** stay orchestration-focused, and infrastructure concerns **MUST** be isolated per `.github/instructions/service-registration.instructions.md`.  
-  Why: Preserves clean layering, SOLID design, and replaceable infrastructure.
-- Agents **MUST** align test strategy with `.github/instructions/testing.instructions.md`: use PascalCase verb phrase test names per `naming.instructions.md` (no underscores), target 100 % coverage on touched code (maintaining ≥ 80 % overall and aiming for ≥ 95 % on domain/application layers), and keep Mississippi projects mutation-clean.  
-  Why: Ensures consistent verification quality across the solution.
-- Monetary calculations and other financial rules **MUST** use decimal-based value objects, precise rounding, and recorded domain events to satisfy audit requirements from `.github/instructions/csharp.instructions.md` and `.github/instructions/logging-rules.instructions.md`.  
-  Why: Protects financial integrity and compliance obligations.
-- After implementation, Agents **MUST** confirm the quality checklist in this document, ensuring SOLID adherence, event publication, security boundaries, and documentation updates before declaring the work complete.  
-  Why: Creates a deterministic exit gate for reviewers and automation.
+- Domain-sensitive work **MUST** start with a written analysis listing bounded context, aggregates/value objects/services/events, applicable patterns, and security/compliance impacts. Why: Prevents ad-hoc design.
+- Before coding, agents **MUST** plan which aggregates/value objects/domain services/events and tests will change. Why: Aligns ubiquitous language and verification.
+- Domain logic **MUST** stay inside aggregates/value objects/domain services; application services **MUST** remain orchestration; infrastructure concerns **MUST** stay isolated per service-registration guidance. Why: Preserves clean layering.
+- Test strategy **MUST** follow testing instructions (PascalCase test names, L0-first, coverage >=80% overall/target 95-100% where feasible, 100% on touched code, Mississippi mutation gate). Why: Ensures consistent verification.
+- Financial rules **MUST** use decimal-based value objects with explicit rounding and recorded domain events. Why: Protects audit/compliance.
+- After implementation, agents **MUST** confirm SOLID adherence, event publication, security boundaries, and documentation/tasks before marking done. Why: Enforces exit criteria.
 
 ## Scope and Audience
 
-Applies to engineers and AI agents designing or modifying Mississippi domain code (domain, application, infrastructure, and UI shells) whenever DDD or SOLID concerns influence the change.
+Engineers modifying domain/application/infrastructure/UI shells where DDD or SOLID choices matter.
 
 ## At-a-Glance Quick-Start
 
-- Map the bounded context, aggregates, and ubiquitous language for the request.
-- Enumerate affected layers, dependencies, logging/service-registration impacts, and financial/security rules.
-- Outline implementation and test plans, including domain events and verification strategy.
-- Implement using Mississippi coding standards (logging, DI property pattern, Orleans POCO grains, etc.).
-- Run the full verification loop (`pwsh ./go.ps1`) plus targeted scripts as needed.
+- Map bounded context, aggregates, value objects, services, events, and invariants.
+- Identify impacted layers and dependencies (logging, DI, serialization, options).
+- Plan tests and observability updates alongside code changes.
+- Implement with clean layering; validate with `pwsh ./go.ps1` plus targeted scripts.
 
-> **Drift check:** When referencing repository automation (for example `pwsh ./go.ps1`, `pwsh ./eng/src/agent-scripts/test-project-quality.ps1`, or `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1`), open the script under `eng/src/agent-scripts/` first; scripts stay authoritative for parameters and ordering.
+## Core Principles
 
-## Core Principles and Rationale
+- Ubiquitous language + bounded contexts reduce coupling.
+- Composition/DI beats inheritance; keep options/config external.
+- Observability (logging/events) and testing are part of design, not afterthoughts.
 
-### Domain-Driven Design
+## References
 
-- Ubiquitous language keeps code and collaboration synchronized with business vocabulary.
-- Bounded contexts prevent accidental coupling and keep aggregates small enough for transactional integrity.
-- Domain events encode business truth, enable audit, and decouple downstream reactions.
-
-### SOLID Architecture
-
-- SRP and ISP enforce narrow responsibilities; DIP and OCP simplify extensions.
-- Composition beats inheritance (especially with Orleans POCO grains) and keeps contracts mockable.
-
-### .NET Good Practices
-
-- Prefer async flows, DI property pattern, records/value objects, and logger extensions.
-- Use LINQ and guard clauses for clarity, paired with logging/telemetry that follows `.github/instructions/logging-rules.instructions.md`.
-
-### Security, Compliance, and Observability
-
-- Protect aggregates with authorization checks, policy validation, and structured logs/correlation IDs.
-- Retain audit data by emitting domain events plus structured logging statements.
-
-### Performance and Scalability
-
-- Keep aggregates lean, avoid blocking calls, and use caching cautiously.
-- Validate data-access strategies (indexes, concurrency control, partitioning) during design.
-
-## Procedures
-
-### Step 1: Domain Analysis
-
-Document domain concepts, aggregate boundaries, invariants, ubiquitous-language terms, and compliance constraints. Identify financial values, concurrency limits, and events that describe meaningful changes.
-
-### Step 2: Architecture Review
-
-Evaluate layer assignments, SOLID adherence, DI/service-registration impacts, and dependencies. Confirm domain logic stays inside aggregates or domain services, application services orchestrate, and infrastructure remains replaceable.
-
-### Step 3: Implementation Planning
-
-List files to touch, highlight new interfaces/contracts, detail domain events and persistence decisions, and specify test classes with PascalCase verb phrase names per `naming.instructions.md`. Note telemetry/logging additions per logging rules.
-
-### Step 4: Implementation Execution
-
-Implement or refactor with DDD-first focus: update domain types, adjust DTOs/mappers, wire service registration, and keep asynchronous boundaries clean. Maintain immutable value objects, emit events, and respect Orleans POCO + DI property guidelines.
-
-### Step 5: Post-Implementation Review
-
-Verify coverage/mutation metrics, re-read applicable instruction files, confirm domain events/logging, run `pwsh ./go.ps1`, and update docs or scratchpad tasks for any deferred items.
-
-## Domain Architecture Reference
-
-### Domain Layer
-
-- Aggregates: define transaction boundaries and expose intent-driven methods; enforce invariants internally.
-- Value Objects: immutable types with equality semantics for currencies, identifiers, or calculation inputs.
-- Domain Services: stateless orchestrators for logic spanning multiple aggregates; rely on abstractions.
-
-### Application Layer
-
-- Application services handle command/query coordination, input validation, mapping, and domain event dispatch.
-- DTOs translate between transport schemas and domain objects; keep validation near the boundary.
-- Tests focus on orchestration and integration seams.
-
-### Infrastructure Layer
-
-- Repositories and adapters implement interfaces defined in the domain layer; use service-registration patterns for DI wiring.
-- Event bus implementations publish domain events; keep serialization aligned with `.github/instructions/orleans-serialization.instructions.md`.
-- External services follow adapter/port patterns for resilience.
-
-### Domain Events and Audit
-
-- Capture significant state transitions; include correlation identifiers and financial context.
-- Persist or publish events as required for CQRS projections, audit trails, or integration.
-
-## Implementation Guidance
-
-### DDD-First Development
-
-- Start with ubiquitous language conversations; trace requests to aggregate operations.
-- Keep command side (write) separate from query side (read/projections) when CQRS is useful.
-
-### Aggregates and Value Objects
-
-- Favor records for immutable types and `decimal` for money.
-- Hide setters; expose behavior-driven methods returning results or events.
-
-### Domain Services
-
-- Use interfaces for swappable implementations; inject dependencies with private get-only properties.
-
-### Application Services and DTOs
-
-- Validate inputs early; translate to domain commands; handle cross-cutting concerns like retries, logging, and metrics.
-
-### Infrastructure Boundaries
-
-- Use repositories with explicit transactions; isolate data-mapper logic; guard external API calls with resilience policies.
-
-### Event-First Design
-
-- Sketch flows as domain events; align projections and integrations to these events.
-- Document event contracts and versioning strategy.
-
-### Error Handling and Observability
-
-- Use typed results or exceptions for domain violations; log through LoggerExtensions.
-- Correlate logs with domain events and HTTP/Orleans context.
-
-### Async, DI, and Orleans Practices
-
-- Avoid blocking calls; use Task-based APIs.
-- Grains implement `IGrainBase` with property-injected dependencies.
-- Service registration stays synchronous; async initialization occurs in `IHostedService` or Orleans lifecycle participants.
-
-### Security and Performance
-
-- Encode authorization decisions per aggregate or command.
-- Validate throughput requirements, caching, indexing, and concurrency strategies.
-
-## Testing Guidelines
-
-- Follow `.github/instructions/testing.instructions.md`: default to L0 tests for domain logic, keep deterministic behavior, and extend to L1/L2+ only when infra is required.
-- Use PascalCase verb phrase test names per `naming.instructions.md` (no underscores); cover success, edge, and failure paths.
-- Aim for 100 % coverage on touched files, keep overall ≥ 80 %, and push ≥ 95 % for domain/application layers. Mississippi projects must maintain or raise mutation scores via Stryker.
-- Validate domain events, invariants, concurrency boundaries, and mapping logic in tests; prefer value-object builders or fixtures for readability.
-- Use `.scratchpad/` tasks (generated via summarize scripts) for outstanding coverage/mutation gaps rather than leaving TODOs in code.
-
-## Financial Domain Considerations
-
-- Monetary precision: use `decimal`, currency-aware value objects, and standard rounding.
-- Transaction processing: coordinate aggregates through sagas or domain services; publish events for eventual consistency.
-- Audit trail: emit domain events for every financial state change; ensure logs include correlation IDs.
-- Compliance: enforce PCI-DSS, SOX, and LGPD policies through validation, masking, and retention rules.
-
-## Quality Checklist
-
-- Domain model reflects current ubiquitous language and bounded contexts.
-- Aggregates, domain services, and events encapsulate business rules without leaking to infrastructure.
-- Tests follow repository naming, coverage, and mutation expectations with deterministic execution.
-- Logging, security, and financial precision align with repository logging and C# guidelines.
-- Documentation or ADRs capture key design choices; scratchpad tasks record deferred follow-ups.
+- C#: `.github/instructions/csharp.instructions.md`
+- Service registration: `.github/instructions/service-registration.instructions.md`
+- Testing/mutation: `.github/instructions/testing.instructions.md`
+- Logging: `.github/instructions/logging-rules.instructions.md`
