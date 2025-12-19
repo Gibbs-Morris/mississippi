@@ -48,6 +48,14 @@ Governing thought: Apply SOLID principles, dependency injection, immutable patte
   Why: Reduces breaking changes (widening is easier than narrowing).
 - Authors **SHOULD** follow hierarchical feature-based service registration using extension methods.  
   Why: Maintains consistency with repository service registration patterns.
+- All classes, interfaces, and types **MUST** default to `internal` visibility unless there is documented justification for `public` access.  
+  Why: Minimizes public API surface area and maintains encapsulation by default.
+- Implementation types in core/project code **MUST** be `internal` unless they are part of the public API contract.  
+  Why: Separates public contracts from implementation details, enabling internal refactoring without breaking consumers.
+- `Options` classes and `ServiceRegistration` classes **MAY** be `public` when they are part of the configuration surface for consumers.  
+  Why: These types typically need to be accessible for DI configuration, but `internal` is still preferred when feasible.
+- Types intended for public consumption **SHOULD** reside in `.Abstractions` projects rather than making implementation projects public.  
+  Why: Centralizes public contracts, keeps implementation details private, and enables loose coupling between consumers and implementations.
 
 ## Scope and Audience
 
@@ -71,8 +79,10 @@ This document establishes baseline engineering expectations for C# development e
 - Think like a grain when using Orleans
 - Never use `Parallel.ForEach` in Orleans contexts
 - Classes are sealed by default; prefer composition over inheritance
+- **Everything is internal by default: types, classes, interfaces, and implementations**
 - Members are private by default; apply principle of least privilege
-- Interfaces are internal by default
+- Public visibility requires documented justification
+- Public contracts belong in `.Abstractions` projects
 - Use Options pattern for all configuration
 - Follow cloud-native twelve-factor principles
 
@@ -514,6 +524,163 @@ public class DatabaseSettings
 builder.Services.Configure<DatabaseSettings>(
     builder.Configuration.GetSection("Database"));
 ```
+
+## Visibility and Access Control Guidelines
+
+### Default Visibility Strategy
+
+The Mississippi Framework follows a strict **internal-by-default** approach to minimize public API surface area and maintain encapsulation:
+
+- **Everything is internal by default**: Classes, interfaces, records, structs, and implementations
+- **Public visibility requires explicit justification**: Document why a type needs to be public
+- **Public contracts belong in `.Abstractions` projects**: Separate API contracts from implementations
+- **Options and ServiceRegistration MAY be public**: But internal is still preferred when feasible
+
+### Visibility Decision Tree
+
+1. **Is this type part of the public API contract consumed by external assemblies?**
+   - **Yes** → Place in `.Abstractions` project as `public`
+   - **No** → Continue to step 2
+
+2. **Is this an Options or ServiceRegistration class needed for DI configuration?**
+   - **Yes** → `public` is acceptable (but prefer `internal` if consumers don't need it directly)
+   - **No** → Continue to step 3
+
+3. **Is this type consumed only within the current assembly?**
+   - **Yes** → Mark as `internal`
+   - **No** → Re-evaluate if it should be in `.Abstractions`
+
+### Visibility by Type Category
+
+| Type Category | Default Visibility | Public When |
+|--------------|-------------------|-------------|
+| **Interfaces** | `internal` | Part of public API in `.Abstractions` project |
+| **Abstract base classes** | `internal` | Meant for external inheritance (rare; document justification) |
+| **Concrete implementations** | `internal` | Never (implementations stay internal) |
+| **DTOs / Records** | `internal` | Public API contracts in `.Abstractions` |
+| **Options classes** | `internal` preferred, `public` acceptable | Configuration surface for consumers |
+| **ServiceRegistration** | `internal` preferred, `public` acceptable | Entry point for DI registration |
+| **Grain interfaces** | `public` | Consumed by external clients |
+| **Grain implementations** | `internal` | Orleans grains should never be `public` |
+| **Exception types** | `internal` | Part of public API contract |
+
+### Examples
+
+#### ✅ Correct: Internal by Default
+
+```csharp
+namespace Mississippi.EventSourcing.Snapshots;
+
+// Internal implementation - not part of public API
+internal sealed class SnapshotRetentionStrategy
+{
+    private ILogger<SnapshotRetentionStrategy> Logger { get; }
+    
+    internal SnapshotRetentionStrategy(ILogger<SnapshotRetentionStrategy> logger)
+    {
+        Logger = logger;
+    }
+    
+    internal int CalculateRetentionVersion(int currentVersion, int modulus)
+    {
+        return (currentVersion / modulus) * modulus;
+    }
+}
+```
+
+#### ✅ Correct: Public API in Abstractions
+
+```csharp
+namespace Mississippi.EventSourcing.Abstractions;
+
+// Public interface in .Abstractions project
+public interface IEventStore
+{
+    Task AppendAsync(string streamId, IReadOnlyList<DomainEvent> events);
+    Task<IReadOnlyList<DomainEvent>> ReadAsync(string streamId, long fromVersion);
+}
+
+// Public DTO in .Abstractions project
+public record DomainEvent(string EventType, string Data, long Version);
+```
+
+#### ✅ Correct: Options Class (Public Acceptable)
+
+```csharp
+namespace Mississippi.EventSourcing.Cosmos;
+
+// Public options for configuration - acceptable as configuration surface
+public sealed class BrookStorageOptions
+{
+    public string DatabaseName { get; set; } = "EventStore";
+    public string EventsContainer { get; set; } = "Events";
+    public int MaxBatchSize { get; set; } = 100;
+}
+```
+
+#### ❌ Wrong: Public Implementation
+
+```csharp
+namespace Mississippi.EventSourcing;
+
+// ❌ WRONG - Implementation should be internal
+public sealed class EventStore : IEventStore
+{
+    // This exposes implementation details to consumers
+}
+
+// ✅ CORRECT - Keep implementation internal
+internal sealed class EventStore : IEventStore
+{
+    // Implementation details remain private
+}
+```
+
+#### ❌ Wrong: Public Grain Implementation
+
+```csharp
+namespace Mississippi.EventSourcing.Aggregates;
+
+// ❌ WRONG - Grain implementations should never be public
+public abstract class AggregateGrain<TSnapshot, TBrook> : IGrainBase
+{
+    // Consumers should only depend on grain interfaces, not implementations
+}
+
+// ✅ CORRECT - Keep grain implementations internal
+internal abstract class AggregateGrainBase<TSnapshot, TBrook> : IGrainBase
+{
+    // Implementation details remain internal
+}
+```
+
+### Justifying Public Visibility
+
+When making a type `public`, include XML documentation that explains:
+
+```csharp
+/// <summary>
+/// Provides event storage operations for domain events.
+/// </summary>
+/// <remarks>
+/// This interface is public because it represents the primary contract for event storage
+/// consumed by multiple assemblies and external services. Implementations reside in
+/// provider-specific projects (e.g., Mississippi.EventSourcing.Cosmos).
+/// </remarks>
+public interface IEventStore
+{
+    // ...
+}
+```
+
+### Migration Path for Existing Public Types
+
+If you discover a type that is `public` but should be `internal`:
+
+1. Verify it's not consumed outside the assembly (search for external references)
+2. If truly internal, change to `internal` and document the change
+3. If consumed externally, consider if it belongs in an `.Abstractions` project
+4. Document the decision in code review
 
 ## Code Quality Standards
 

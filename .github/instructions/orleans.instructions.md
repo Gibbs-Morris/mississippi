@@ -28,6 +28,10 @@ Governing thought: Use POCO grain pattern with `IGrainBase`, dependency injectio
   Why: Tracks technical debt and ensures systematic migration to modern patterns.
 - When converting from `Grain<TState>`, developers **SHOULD** inject `IPersistentState<TState>` instead.  
   Why: POCO pattern uses dependency injection for state management instead of inheritance.
+- Abstract classes that inherit from `IGrainBase` **MUST** have names ending with 'Base' (e.g., `SampleBase : IGrainBase`).  
+  Why: Clearly identifies abstract base classes meant for inheritance and distinguishes them from concrete grain implementations.
+- Concrete grain implementations **MUST** be `sealed` unless documented justification exists for inheritance.  
+  Why: Prevents unintended extension points and aligns with composition-over-inheritance principles.
 
 ## Scope and Audience
 
