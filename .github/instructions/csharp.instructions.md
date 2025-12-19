@@ -553,7 +553,7 @@ The Mississippi Framework follows a strict **internal-by-default** approach to m
 ### Visibility by Type Category
 
 | Type Category | Default Visibility | Public When |
-|--------------|-------------------|-------------|
+| ------------- | ------------------ | ----------- |
 | **Interfaces** | `internal` | Part of public API in `.Abstractions` project |
 | **Abstract base classes** | `internal` | Meant for external inheritance (rare; document justification) |
 | **Concrete implementations** | `internal` | Never (implementations stay internal) |
