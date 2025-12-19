@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
+    </ItemGroup>
+
+</Project>
