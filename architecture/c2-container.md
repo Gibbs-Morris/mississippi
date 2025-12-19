@@ -3,80 +3,85 @@
 This diagram shows the major containers (deployable units) within the Mississippi Framework and how they interact.
 
 ```mermaid
-C4Container
-    title Container diagram for Mississippi Framework
-
-    Person(developer, "Application Developer", "Builds applications using Mississippi")
-
-    Container_Boundary(framework, "Mississippi Framework") {
-        Container(core, "Core", "C# / .NET 9.0", "Core abstractions and utilities including mapping, logging, and common patterns")
-        Container(hosting, "Hosting", "C# / .NET 9.0", "Application hosting infrastructure and dependency injection setup")
-        Container(aspnet, "AspNetCore.Orleans", "C# / ASP.NET Core", "Orleans integration for web applications")
+graph TB
+    Developer["👤 Application Developer"]
+    
+    subgraph Mississippi["Mississippi Framework"]
+        subgraph Core["Core Infrastructure"]
+            CoreLib["<b>Core</b><br/>[Container: C# / .NET 9.0]<br/><br/>Core abstractions and utilities"]
+            Hosting["<b>Hosting</b><br/>[Container: C# / .NET 9.0]<br/><br/>Application hosting and DI"]
+            AspNet["<b>AspNetCore.Orleans</b><br/>[Container: ASP.NET Core]<br/><br/>Orleans web integration"]
+        end
         
-        Container_Boundary(eventsourcing, "Event Sourcing") {
-            Container(brooks, "Brooks", "C# / Orleans", "Event stream storage and retrieval using brook pattern")
-            Container(aggregates, "Aggregates", "C# / Orleans", "DDD aggregate management with event sourcing")
-            Container(projections, "Projections", "C# / Orleans", "Read model projections from event streams")
-            Container(snapshots, "Snapshots", "C# / Orleans", "Aggregate state snapshot management")
-            Container(reducers, "Reducers", "C# / .NET", "State reduction from event sequences")
-            Container(effects, "Effects", "C# / .NET", "Side effect handling and execution")
-            Container(serialization, "Serialization", "C# / .NET", "Event and state serialization (JSON)")
-            Container(uxprojections, "UX Projections", "C# / Orleans", "User experience optimized projections")
-        }
+        subgraph EventSourcing["Event Sourcing Subsystem"]
+            Brooks["<b>Brooks</b><br/>[Container: Orleans]<br/><br/>Event stream storage"]
+            Aggregates["<b>Aggregates</b><br/>[Container: Orleans]<br/><br/>DDD aggregate management"]
+            Projections["<b>Projections</b><br/>[Container: Orleans]<br/><br/>Read model projections"]
+            Snapshots["<b>Snapshots</b><br/>[Container: Orleans]<br/><br/>Aggregate snapshots"]
+            Reducers["<b>Reducers</b><br/>[Container: .NET]<br/><br/>State reduction"]
+            Effects["<b>Effects</b><br/>[Container: .NET]<br/><br/>Side effect handling"]
+            Serialization["<b>Serialization</b><br/>[Container: .NET]<br/><br/>Event serialization"]
+            UxProjections["<b>UX Projections</b><br/>[Container: Orleans]<br/><br/>UI projections"]
+        end
         
-        Container_Boundary(storage, "Storage Providers") {
-            Container(brooksCosmos, "Brooks.Cosmos", "C# / Cosmos SDK", "Cosmos DB storage for event streams")
-            Container(snapshotsCosmos, "Snapshots.Cosmos", "C# / Cosmos SDK", "Cosmos DB storage for snapshots")
-            Container(coreCosmos, "Core.Cosmos", "C# / Cosmos SDK", "Common Cosmos DB utilities")
-        }
-    }
-
-    Container_Boundary(samples, "Sample Applications") {
-        Container(apiApp, "Crescent API App", "C# / ASP.NET Core", "Sample REST API application")
-        Container(consoleApp, "Crescent Console App", "C# / .NET", "Sample console application")
-        Container(webApp, "Crescent Web App", "C# / Blazor", "Sample web application")
-    }
-
-    System_Ext(orleans, "Microsoft Orleans", "Distributed actor framework")
-    System_Ext(cosmos, "Azure Cosmos DB", "NoSQL database")
-
-    Rel(developer, core, "Uses")
-    Rel(developer, hosting, "Uses")
-    Rel(developer, aspnet, "Uses")
-    Rel(developer, eventsourcing, "Uses")
+        subgraph Storage["Storage Providers"]
+            BrooksCosmos["<b>Brooks.Cosmos</b><br/>[Container: Cosmos SDK]<br/><br/>Event stream storage"]
+            SnapshotsCosmos["<b>Snapshots.Cosmos</b><br/>[Container: Cosmos SDK]<br/><br/>Snapshot storage"]
+            CoreCosmos["<b>Core.Cosmos</b><br/>[Container: Cosmos SDK]<br/><br/>Cosmos utilities"]
+        end
+    end
     
-    Rel(apiApp, hosting, "Uses")
-    Rel(apiApp, aspnet, "Uses")
-    Rel(apiApp, aggregates, "Uses")
-    Rel(consoleApp, hosting, "Uses")
-    Rel(consoleApp, aggregates, "Uses")
-    Rel(webApp, aspnet, "Uses")
-    Rel(webApp, uxprojections, "Uses")
-
-    Rel(hosting, core, "Uses")
-    Rel(aspnet, orleans, "Integrates with")
+    subgraph Samples["Sample Applications"]
+        ApiApp["<b>Crescent API App</b><br/>[ASP.NET Core]"]
+        ConsoleApp["<b>Crescent Console App</b><br/>[.NET]"]
+        WebApp["<b>Crescent Web App</b><br/>[Blazor]"]
+    end
     
-    Rel(aggregates, brooks, "Uses")
-    Rel(aggregates, reducers, "Uses")
-    Rel(aggregates, snapshots, "Uses")
-    Rel(aggregates, serialization, "Uses")
+    Orleans["<b>Microsoft Orleans</b><br/>[External System]"]
+    Cosmos["<b>Azure Cosmos DB</b><br/>[External Database]"]
     
-    Rel(projections, brooks, "Reads from")
-    Rel(projections, effects, "Uses")
+    Developer -->|Uses| CoreLib
+    Developer -->|Uses| Hosting
+    Developer -->|Uses| AspNet
     
-    Rel(uxprojections, brooks, "Reads from")
-    Rel(uxprojections, snapshots, "Uses")
+    ApiApp -->|Uses| Hosting
+    ApiApp -->|Uses| AspNet
+    ApiApp -->|Uses| Aggregates
+    ConsoleApp -->|Uses| Hosting
+    ConsoleApp -->|Uses| Aggregates
+    WebApp -->|Uses| AspNet
+    WebApp -->|Uses| UxProjections
     
-    Rel(brooks, serialization, "Uses")
-    Rel(brooks, brooksCosmos, "Persists via")
-    Rel(snapshots, snapshotsCosmos, "Persists via")
+    Hosting -->|Uses| CoreLib
+    AspNet -->|Integrates with| Orleans
     
-    Rel(brooksCosmos, coreCosmos, "Uses")
-    Rel(snapshotsCosmos, coreCosmos, "Uses")
-    Rel(brooksCosmos, cosmos, "Writes to")
-    Rel(snapshotsCosmos, cosmos, "Writes to")
-
-    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
+    Aggregates -->|Uses| Brooks
+    Aggregates -->|Uses| Reducers
+    Aggregates -->|Uses| Snapshots
+    Aggregates -->|Uses| Serialization
+    
+    Projections -->|Reads from| Brooks
+    Projections -->|Uses| Effects
+    
+    UxProjections -->|Reads from| Brooks
+    UxProjections -->|Uses| Snapshots
+    
+    Brooks -->|Uses| Serialization
+    Brooks -->|Persists via| BrooksCosmos
+    Snapshots -->|Persists via| SnapshotsCosmos
+    
+    BrooksCosmos -->|Uses| CoreCosmos
+    SnapshotsCosmos -->|Uses| CoreCosmos
+    BrooksCosmos -->|Writes to| Cosmos
+    SnapshotsCosmos -->|Writes to| Cosmos
+    
+    classDef person fill:#08427B,stroke:#052E56,color:#fff
+    classDef container fill:#1168BD,stroke:#0B4884,color:#fff
+    classDef external fill:#999,stroke:#666,color:#fff
+    
+    class Developer person
+    class CoreLib,Hosting,AspNet,Brooks,Aggregates,Projections,Snapshots,Reducers,Effects,Serialization,UxProjections,BrooksCosmos,SnapshotsCosmos,CoreCosmos,ApiApp,ConsoleApp,WebApp container
+    class Orleans,Cosmos external
 ```
 
 ## Key Containers

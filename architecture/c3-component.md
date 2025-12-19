@@ -3,100 +3,101 @@
 This diagram shows the internal components of the Event Sourcing subsystem within the Mississippi Framework.
 
 ```mermaid
-C4Component
-    title Component diagram for Event Sourcing Subsystem
-
-    Container_Boundary(aggregates, "Aggregates Container") {
-        Component(aggGrain, "IAggregateGrain", "Orleans Grain Interface", "Aggregate root grain interface for command handling")
-        Component(commandHandler, "Command Handlers", "C# Classes", "Process commands and produce events")
-        Component(eventRegistry, "Event Type Registry", "C# Service", "Maps event types to names for serialization")
-        Component(snapshotRegistry, "Snapshot Type Registry", "C# Service", "Maps snapshot types to names for serialization")
-        Component(aggFactory, "Aggregate Factory", "C# Service", "Creates and configures aggregate instances")
-        
-        Rel(aggGrain, commandHandler, "Delegates to")
-        Rel(commandHandler, eventRegistry, "Uses")
-        Rel(aggGrain, aggFactory, "Created by")
-        Rel(aggGrain, snapshotRegistry, "Uses")
-    }
-
-    Container_Boundary(brooks, "Brooks Container") {
-        Component(brookDef, "Brook Definition", "C# Interface", "Defines event stream structure and keys")
-        Component(brookEvent, "Brook Event", "C# Record", "Immutable event with position and metadata")
-        Component(brookPosition, "Brook Position", "C# Value Object", "Position in event stream")
-        Component(brookStorage, "Brook Storage Provider", "C# Interface", "Abstract storage operations")
-        
-        Rel(brookEvent, brookPosition, "Contains")
-        Rel(brookStorage, brookDef, "Uses")
-        Rel(brookStorage, brookEvent, "Stores/Retrieves")
-    }
-
-    Container_Boundary(reducers, "Reducers Container") {
-        Component(reducer, "IReducer", "C# Interface", "Reduces events to state")
-        Component(reducerEngine, "Reducer Engine", "C# Service", "Orchestrates state reduction")
-        Component(foldFunc, "Fold Functions", "C# Functions", "Pure state transformation functions")
-        
-        Rel(reducerEngine, reducer, "Executes")
-        Rel(reducer, foldFunc, "Implements with")
-    }
-
-    Container_Boundary(snapshots, "Snapshots Container") {
-        Component(snapshotGrain, "Snapshot Grain", "Orleans Grain", "Manages aggregate snapshots")
-        Component(snapshotStore, "Snapshot Storage", "C# Interface", "Abstract snapshot persistence")
-        Component(snapshotStrategy, "Snapshot Strategy", "C# Service", "Determines when to snapshot")
-        
-        Rel(snapshotGrain, snapshotStore, "Persists via")
-        Rel(snapshotGrain, snapshotStrategy, "Uses")
-    }
-
-    Container_Boundary(projections, "Projections Container") {
-        Component(projectionGrain, "Projection Grain", "Orleans Grain", "Processes events into read models")
-        Component(projectionHandler, "Event Handlers", "C# Classes", "Transform events to projections")
-        Component(projectionStore, "Projection Storage", "C# Interface", "Stores read models")
-        
-        Rel(projectionGrain, projectionHandler, "Delegates to")
-        Rel(projectionHandler, projectionStore, "Updates")
-    }
-
-    Container_Boundary(effects, "Effects Container") {
-        Component(effect, "IEffect", "C# Interface", "Side effect definition")
-        Component(effectRunner, "Effect Runner", "C# Service", "Executes side effects")
-        Component(effectHandler, "Effect Handlers", "C# Classes", "Implement specific effects")
-        
-        Rel(effectRunner, effect, "Executes")
-        Rel(effect, effectHandler, "Implemented by")
-    }
-
-    Container_Boundary(serialization, "Serialization Container") {
-        Component(serializer, "Event Serializer", "C# Service", "Serializes/deserializes events")
-        Component(jsonProvider, "JSON Provider", "C# Service", "System.Text.Json implementation")
-        Component(typeMapping, "Type Mapping", "C# Service", "Maps CLR types to storage names")
-        
-        Rel(serializer, jsonProvider, "Uses")
-        Rel(serializer, typeMapping, "Uses")
-    }
-
-    Container_Boundary(uxprojections, "UX Projections Container") {
-        Component(uxGrain, "UX Projection Grain", "Orleans Grain", "UI-optimized projections")
-        Component(uxHandler, "UX Event Handlers", "C# Classes", "Transform events for UI")
-        Component(uxStore, "UX Projection Store", "C# Interface", "Stores UI projections")
-        
-        Rel(uxGrain, uxHandler, "Delegates to")
-        Rel(uxHandler, uxStore, "Updates")
-    }
-
-    ' Cross-container relationships
-    Rel(commandHandler, brookStorage, "Appends events to")
-    Rel(aggGrain, reducerEngine, "Reduces state with")
-    Rel(aggGrain, snapshotGrain, "Loads/saves via")
-    Rel(reducerEngine, serializer, "Deserializes with")
+graph TB
+    subgraph Aggregates["Aggregates Container"]
+        AggGrain["<b>IAggregateGrain</b><br/>[Orleans Interface]<br/><br/>Aggregate root grain<br/>for command handling"]
+        CmdHandler["<b>Command Handlers</b><br/>[C# Classes]<br/><br/>Process commands<br/>and produce events"]
+        EventReg["<b>Event Type Registry</b><br/>[C# Service]<br/><br/>Maps event types<br/>to names"]
+        SnapReg["<b>Snapshot Type Registry</b><br/>[C# Service]<br/><br/>Maps snapshot types<br/>to names"]
+        AggFactory["<b>Aggregate Factory</b><br/>[C# Service]<br/><br/>Creates aggregate<br/>instances"]
+    end
     
-    Rel(projectionGrain, brookStorage, "Reads events from")
-    Rel(projectionHandler, effectRunner, "Triggers")
+    subgraph Brooks["Brooks Container"]
+        BrookDef["<b>Brook Definition</b><br/>[C# Interface]<br/><br/>Defines stream<br/>structure"]
+        BrookEvent["<b>Brook Event</b><br/>[C# Record]<br/><br/>Immutable event<br/>with metadata"]
+        BrookPos["<b>Brook Position</b><br/>[Value Object]<br/><br/>Position in stream"]
+        BrookStorage["<b>Brook Storage Provider</b><br/>[C# Interface]<br/><br/>Abstract storage<br/>operations"]
+    end
     
-    Rel(uxGrain, brookStorage, "Reads events from")
-    Rel(uxGrain, snapshotStore, "May use")
-
-    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
+    subgraph Reducers["Reducers Container"]
+        Reducer["<b>IReducer</b><br/>[C# Interface]<br/><br/>Reduces events<br/>to state"]
+        ReducerEngine["<b>Reducer Engine</b><br/>[C# Service]<br/><br/>Orchestrates<br/>state reduction"]
+        FoldFunc["<b>Fold Functions</b><br/>[C# Functions]<br/><br/>Pure state<br/>transformations"]
+    end
+    
+    subgraph Snapshots["Snapshots Container"]
+        SnapGrain["<b>Snapshot Grain</b><br/>[Orleans Grain]<br/><br/>Manages aggregate<br/>snapshots"]
+        SnapStore["<b>Snapshot Storage</b><br/>[C# Interface]<br/><br/>Abstract snapshot<br/>persistence"]
+        SnapStrategy["<b>Snapshot Strategy</b><br/>[C# Service]<br/><br/>Determines when<br/>to snapshot"]
+    end
+    
+    subgraph Projections["Projections Container"]
+        ProjGrain["<b>Projection Grain</b><br/>[Orleans Grain]<br/><br/>Processes events<br/>into read models"]
+        ProjHandler["<b>Event Handlers</b><br/>[C# Classes]<br/><br/>Transform events<br/>to projections"]
+        ProjStore["<b>Projection Storage</b><br/>[C# Interface]<br/><br/>Stores read models"]
+    end
+    
+    subgraph Effects["Effects Container"]
+        Effect["<b>IEffect</b><br/>[C# Interface]<br/><br/>Side effect<br/>definition"]
+        EffectRunner["<b>Effect Runner</b><br/>[C# Service]<br/><br/>Executes<br/>side effects"]
+        EffectHandler["<b>Effect Handlers</b><br/>[C# Classes]<br/><br/>Implement specific<br/>effects"]
+    end
+    
+    subgraph Serialization["Serialization Container"]
+        Serializer["<b>Event Serializer</b><br/>[C# Service]<br/><br/>Serializes/deserializes<br/>events"]
+        JsonProvider["<b>JSON Provider</b><br/>[C# Service]<br/><br/>System.Text.Json<br/>implementation"]
+        TypeMapping["<b>Type Mapping</b><br/>[C# Service]<br/><br/>Maps CLR types<br/>to storage names"]
+    end
+    
+    subgraph UxProj["UX Projections Container"]
+        UxGrain["<b>UX Projection Grain</b><br/>[Orleans Grain]<br/><br/>UI-optimized<br/>projections"]
+        UxHandler["<b>UX Event Handlers</b><br/>[C# Classes]<br/><br/>Transform events<br/>for UI"]
+        UxStore["<b>UX Projection Store</b><br/>[C# Interface]<br/><br/>Stores UI<br/>projections"]
+    end
+    
+    %% Internal relationships
+    AggGrain -->|Delegates to| CmdHandler
+    CmdHandler -->|Uses| EventReg
+    AggFactory -->|Creates| AggGrain
+    AggGrain -->|Uses| SnapReg
+    
+    BrookEvent -->|Contains| BrookPos
+    BrookStorage -->|Uses| BrookDef
+    BrookStorage -->|Stores/Retrieves| BrookEvent
+    
+    ReducerEngine -->|Executes| Reducer
+    Reducer -->|Implements with| FoldFunc
+    
+    SnapGrain -->|Persists via| SnapStore
+    SnapGrain -->|Uses| SnapStrategy
+    
+    ProjGrain -->|Delegates to| ProjHandler
+    ProjHandler -->|Updates| ProjStore
+    
+    EffectRunner -->|Executes| Effect
+    EffectHandler -->|Implements| Effect
+    
+    Serializer -->|Uses| JsonProvider
+    Serializer -->|Uses| TypeMapping
+    
+    UxGrain -->|Delegates to| UxHandler
+    UxHandler -->|Updates| UxStore
+    
+    %% Cross-container relationships
+    CmdHandler -->|Appends events to| BrookStorage
+    AggGrain -->|Reduces state with| ReducerEngine
+    AggGrain -->|Loads/saves via| SnapGrain
+    ReducerEngine -->|Deserializes with| Serializer
+    
+    ProjGrain -->|Reads events from| BrookStorage
+    ProjHandler -->|Triggers| EffectRunner
+    
+    UxGrain -->|Reads events from| BrookStorage
+    UxGrain -->|May use| SnapStore
+    
+    classDef component fill:#85BBF0,stroke:#5D82A8,color:#000
+    
+    class AggGrain,CmdHandler,EventReg,SnapReg,AggFactory,BrookDef,BrookEvent,BrookPos,BrookStorage,Reducer,ReducerEngine,FoldFunc,SnapGrain,SnapStore,SnapStrategy,ProjGrain,ProjHandler,ProjStore,Effect,EffectRunner,EffectHandler,Serializer,JsonProvider,TypeMapping,UxGrain,UxHandler,UxStore component
 ```
 
 ## Key Components

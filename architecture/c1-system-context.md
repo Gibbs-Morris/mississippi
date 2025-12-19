@@ -3,25 +3,33 @@
 This diagram shows the Mississippi Framework and how it interacts with external systems and users.
 
 ```mermaid
-C4Context
-    title System Context diagram for Mississippi Framework
-
-    Person(developer, "Application Developer", "Builds distributed applications using Mississippi Framework")
-    Person(endUser, "End User", "Uses applications built with Mississippi Framework")
+graph TB
+    subgraph Users
+        Developer["👤 Application Developer<br/>Builds distributed applications<br/>using Mississippi Framework"]
+        EndUser["👤 End User<br/>Uses applications built<br/>with Mississippi Framework"]
+    end
     
-    System(mississippi, "Mississippi Framework", "Event sourcing and distributed computing framework for .NET applications using Orleans and event-driven architecture")
+    Mississippi["<b>Mississippi Framework</b><br/>[.NET System]<br/><br/>Event sourcing and distributed<br/>computing framework for .NET<br/>applications using Orleans"]
     
-    System_Ext(orleans, "Microsoft Orleans", "Distributed virtual actor framework")
-    System_Ext(cosmos, "Azure Cosmos DB", "Cloud-native NoSQL database for event and snapshot storage")
-    System_Ext(dotnet, ".NET 9.0 Runtime", "Application runtime platform")
+    subgraph "External Systems"
+        Orleans["<b>Microsoft Orleans</b><br/>[Distributed Framework]<br/><br/>Distributed virtual actor framework"]
+        Cosmos["<b>Azure Cosmos DB</b><br/>[Database]<br/><br/>Cloud-native NoSQL database<br/>for event and snapshot storage"]
+        DotNet["<b>.NET 9.0 Runtime</b><br/>[Platform]<br/><br/>Application runtime platform"]
+    end
     
-    Rel(developer, mississippi, "Uses", "NuGet packages")
-    Rel(mississippi, orleans, "Built on", "Orleans SDK")
-    Rel(mississippi, cosmos, "Stores data in", "Cosmos DB SDK")
-    Rel(mississippi, dotnet, "Runs on", ".NET 9.0")
-    Rel(endUser, mississippi, "Interacts with applications built on")
+    Developer -->|Uses via<br/>NuGet packages| Mississippi
+    EndUser -->|Interacts with<br/>applications built on| Mississippi
+    Mississippi -->|Built on<br/>Orleans SDK| Orleans
+    Mississippi -->|Stores data in<br/>Cosmos DB SDK| Cosmos
+    Mississippi -->|Runs on| DotNet
     
-    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+    classDef person fill:#08427B,stroke:#052E56,color:#fff
+    classDef system fill:#1168BD,stroke:#0B4884,color:#fff
+    classDef external fill:#999,stroke:#666,color:#fff
+    
+    class Developer,EndUser person
+    class Mississippi system
+    class Orleans,Cosmos,DotNet external
 ```
 
 ## Key Elements
