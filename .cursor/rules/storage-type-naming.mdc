@@ -1,6 +1,11 @@
 ---
-applyTo: '**/*.cs'
+description: Storage Type Naming with Attributes
+globs: ["**/*.cs"]
+alwaysApply: false
 ---
+# Storage Type Naming with Attributes
+**Source:** .github/instructions/storage-type-naming.instructions.md
+
 
 # Storage Type Naming with Attributes
 
