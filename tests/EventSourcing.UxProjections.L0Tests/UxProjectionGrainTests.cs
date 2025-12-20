@@ -7,7 +7,6 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Moq;
@@ -37,25 +36,18 @@ public sealed class UxProjectionGrainTests
     private static TestableUxProjectionGrain CreateGrain(
         Mock<IGrainContext>? grainContextMock = null,
         Mock<IUxProjectionGrainFactory>? uxProjectionGrainFactoryMock = null,
-        Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null,
-        string reducersHash = ReducersHash,
         Mock<ILogger>? loggerMock = null,
         string primaryKey = ValidPrimaryKey
     )
     {
         grainContextMock ??= CreateDefaultGrainContext(primaryKey);
         uxProjectionGrainFactoryMock ??= new();
-        snapshotGrainFactoryMock ??= new();
         loggerMock ??= new();
         return new(
             grainContextMock.Object,
             uxProjectionGrainFactoryMock.Object,
-            snapshotGrainFactoryMock.Object,
-            reducersHash,
             loggerMock.Object);
     }
-
-    private const string ReducersHash = "test-hash";
 
     private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123";
 
@@ -70,17 +62,13 @@ public sealed class UxProjectionGrainTests
         /// </summary>
         /// <param name="grainContext">The Orleans grain context.</param>
         /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains and cursors.</param>
-        /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
-        /// <param name="reducersHash">The hash of the reducers for snapshot key construction.</param>
         /// <param name="logger">Logger instance.</param>
         public TestableUxProjectionGrain(
             IGrainContext grainContext,
             IUxProjectionGrainFactory uxProjectionGrainFactory,
-            ISnapshotGrainFactory snapshotGrainFactory,
-            string reducersHash,
             ILogger logger
         )
-            : base(grainContext, uxProjectionGrainFactory, snapshotGrainFactory, reducersHash, logger)
+            : base(grainContext, uxProjectionGrainFactory, logger)
         {
         }
     }
@@ -94,15 +82,12 @@ public sealed class UxProjectionGrainTests
     {
         // Arrange
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Mock<ILogger> loggerMock = new();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionGrain(
             null!,
             uxProjectionGrainFactoryMock.Object,
-            snapshotGrainFactoryMock.Object,
-            ReducersHash,
             loggerMock.Object));
     }
 
@@ -116,58 +101,12 @@ public sealed class UxProjectionGrainTests
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionGrain(
             grainContextMock.Object,
             uxProjectionGrainFactoryMock.Object,
-            snapshotGrainFactoryMock.Object,
-            ReducersHash,
             null!));
-    }
-
-    /// <summary>
-    ///     Verifies that constructor throws when reducersHash is null.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenReducersHashIsNull()
-    {
-        // Arrange
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        Mock<ILogger> loggerMock = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionGrain(
-            grainContextMock.Object,
-            uxProjectionGrainFactoryMock.Object,
-            snapshotGrainFactoryMock.Object,
-            null!,
-            loggerMock.Object));
-    }
-
-    /// <summary>
-    ///     Verifies that constructor throws when snapshotGrainFactory is null.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
-    {
-        // Arrange
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        Mock<ILogger> loggerMock = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionGrain(
-            grainContextMock.Object,
-            uxProjectionGrainFactoryMock.Object,
-            null!,
-            ReducersHash,
-            loggerMock.Object));
     }
 
     /// <summary>
@@ -179,25 +118,56 @@ public sealed class UxProjectionGrainTests
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Mock<ILogger> loggerMock = new();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionGrain(
             grainContextMock.Object,
             null!,
-            snapshotGrainFactoryMock.Object,
-            ReducersHash,
             loggerMock.Object));
     }
 
     /// <summary>
-    ///     Verifies that GetAsync fetches from snapshot when cursor position advances.
+    ///     Verifies that GetAsync delegates to versioned cache grain when cursor has position.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Cache Miss")]
-    public async Task GetAsyncFetchesFromSnapshotWhenPositionAdvances()
+    [AllureFeature("Delegation")]
+    public async Task GetAsyncDelegatesToVersionedCacheGrain()
+    {
+        // Arrange
+        TestProjection expectedProjection = new(42);
+        Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetPositionAsync()).ReturnsAsync(new BrookPosition(5));
+        Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrainMock = new();
+        versionedCacheGrainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedProjection);
+        Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
+            .Returns(cursorGrainMock.Object);
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(
+                It.IsAny<UxProjectionVersionedKey>()))
+            .Returns(versionedCacheGrainMock.Object);
+        TestableUxProjectionGrain grain = CreateGrain(
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        await grain.OnActivateAsync(CancellationToken.None);
+
+        // Act
+        TestProjection? result = await grain.GetAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(42, result.Value);
+        versionedCacheGrainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync fetches new version when cursor position advances.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Version Changes")]
+    public async Task GetAsyncFetchesNewVersionWhenPositionAdvances()
     {
         // Arrange
         TestProjection projection1 = new(42);
@@ -205,66 +175,66 @@ public sealed class UxProjectionGrainTests
         int callCount = 0;
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
         cursorGrainMock.Setup(g => g.GetPositionAsync()).ReturnsAsync(() => new(5 + callCount++));
-        Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
-        snapshotCacheGrainMock.SetupSequence(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(projection1)
+        Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrainMock1 = new();
+        versionedCacheGrainMock1.Setup(g => g.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(projection1);
+        Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrainMock2 = new();
+        versionedCacheGrainMock2.Setup(g => g.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(projection2);
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
         uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
             .Returns(cursorGrainMock.Object);
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
-            .Returns(snapshotCacheGrainMock.Object);
+        uxProjectionGrainFactoryMock.SetupSequence(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(
+                It.IsAny<UxProjectionVersionedKey>()))
+            .Returns(versionedCacheGrainMock1.Object)
+            .Returns(versionedCacheGrainMock2.Object);
         TestableUxProjectionGrain grain = CreateGrain(
-            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock,
-            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act - call GetAsync twice with advancing cursor
         TestProjection? result1 = await grain.GetAsync();
         TestProjection? result2 = await grain.GetAsync();
 
-        // Assert - both calls should fetch from snapshot since cursor advanced
+        // Assert - both calls should fetch from versioned cache since cursor advanced
         Assert.NotNull(result1);
         Assert.NotNull(result2);
         Assert.Equal(42, result1.Value);
         Assert.Equal(100, result2.Value);
-        snapshotCacheGrainMock.Verify(g => g.GetStateAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     /// <summary>
-    ///     Verifies that GetAsync returns cached projection when cursor position unchanged.
+    ///     Verifies that GetAtVersionAsync uses versioned cache grain for specific version.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Cache Hit")]
-    public async Task GetAsyncReturnsCachedProjectionWhenPositionUnchanged()
+    [AllureFeature("Versioned Access")]
+    public async Task GetAtVersionAsyncUsesVersionedCacheGrain()
     {
         // Arrange
+        BrookPosition requestedVersion = new(10);
         TestProjection expectedProjection = new(42);
-        Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
-        cursorGrainMock.Setup(g => g.GetPositionAsync()).ReturnsAsync(new BrookPosition(5));
-        Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
-        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
+        UxProjectionVersionedKey? capturedKey = null;
+        Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrainMock = new();
+        versionedCacheGrainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedProjection);
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
-            .Returns(cursorGrainMock.Object);
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
-            .Returns(snapshotCacheGrainMock.Object);
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(
+                It.IsAny<UxProjectionVersionedKey>()))
+            .Callback<UxProjectionVersionedKey>(key => capturedKey = key)
+            .Returns(versionedCacheGrainMock.Object);
         TestableUxProjectionGrain grain = CreateGrain(
-            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock,
-            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
-        // Act - call GetAsync twice
-        TestProjection? result1 = await grain.GetAsync();
-        TestProjection? result2 = await grain.GetAsync();
+        // Act
+        TestProjection? result = await grain.GetAtVersionAsync(requestedVersion);
 
-        // Assert - second call should return cached value, snapshot only fetched once
-        Assert.Same(result1, result2);
-        snapshotCacheGrainMock.Verify(g => g.GetStateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(42, result.Value);
+        Assert.NotNull(capturedKey);
+        Assert.Equal(10, capturedKey.Value.Version.Value);
     }
 
     /// <summary>
@@ -281,10 +251,8 @@ public sealed class UxProjectionGrainTests
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
         uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
             .Returns(cursorGrainMock.Object);
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         TestableUxProjectionGrain grain = CreateGrain(
-            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock,
-            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -292,38 +260,62 @@ public sealed class UxProjectionGrainTests
 
         // Assert
         Assert.Null(result);
-        snapshotGrainFactoryMock.Verify(
-            f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()),
+        uxProjectionGrainFactoryMock.Verify(
+            f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(
+                It.IsAny<UxProjectionVersionedKey>()),
             Times.Never);
     }
 
     /// <summary>
-    ///     Verifies that GetAsync uses correct snapshot key with reducers hash.
+    ///     Verifies that GetLatestVersionAsync returns position from cursor grain.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Snapshot Key")]
-    public async Task GetAsyncUsesCorrectSnapshotKeyWithReducersHash()
+    [AllureFeature("Latest Version")]
+    public async Task GetLatestVersionAsyncReturnsPositionFromCursor()
     {
         // Arrange
-        const string customReducersHash = "custom-hash-123";
-        SnapshotKey? capturedKey = null;
+        BrookPosition expectedPosition = new(42);
+        Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetPositionAsync()).ReturnsAsync(expectedPosition);
+        Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
+            .Returns(cursorGrainMock.Object);
+        TestableUxProjectionGrain grain = CreateGrain(
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        await grain.OnActivateAsync(CancellationToken.None);
+
+        // Act
+        BrookPosition result = await grain.GetLatestVersionAsync();
+
+        // Assert
+        Assert.Equal(42, result.Value);
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync passes correct UxProjectionKey to factory.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Key Construction")]
+    public async Task GetAsyncPassesCorrectVersionedKeyToFactory()
+    {
+        // Arrange
+        UxProjectionVersionedKey? capturedKey = null;
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
         cursorGrainMock.Setup(g => g.GetPositionAsync()).ReturnsAsync(new BrookPosition(10));
-        Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
-        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
+        Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrainMock = new();
+        versionedCacheGrainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TestProjection(1));
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
         uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
             .Returns(cursorGrainMock.Object);
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
-            .Callback<SnapshotKey>(key => capturedKey = key)
-            .Returns(snapshotCacheGrainMock.Object);
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(
+                It.IsAny<UxProjectionVersionedKey>()))
+            .Callback<UxProjectionVersionedKey>(key => capturedKey = key)
+            .Returns(versionedCacheGrainMock.Object);
         TestableUxProjectionGrain grain = CreateGrain(
-            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock,
-            snapshotGrainFactoryMock: snapshotGrainFactoryMock,
-            reducersHash: customReducersHash);
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -331,9 +323,8 @@ public sealed class UxProjectionGrainTests
 
         // Assert
         Assert.NotNull(capturedKey);
-        Assert.Equal(customReducersHash, capturedKey.Value.Stream.ReducersHash);
-        Assert.Equal(10, capturedKey.Value.Version);
-        Assert.Equal("entity-123", capturedKey.Value.Stream.ProjectionId);
+        Assert.Equal(10, capturedKey.Value.Version.Value);
+        Assert.Equal("entity-123", capturedKey.Value.ProjectionKey.BrookKey.Id);
     }
 
     /// <summary>

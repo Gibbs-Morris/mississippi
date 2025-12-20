@@ -16,36 +16,24 @@ internal static partial class UxProjectionGrainLoggerExtensions
     [LoggerMessage(
         EventId = 3,
         Level = LogLevel.Debug,
-        Message = "Cache hit for UX projection '{ProjectionKey}' at version {CachedVersion}")]
-    public static partial void CacheHit(
+        Message = "GetAsync delegating to versioned cache for UX projection '{ProjectionKey}' at version {Version}")]
+    public static partial void GetAsyncDelegatingToVersion(
         this ILogger logger,
         UxProjectionKey projectionKey,
-        BrookPosition cachedVersion
+        BrookPosition version
     );
 
     [LoggerMessage(
         EventId = 4,
         Level = LogLevel.Debug,
-        Message =
-            "Cache miss for UX projection '{ProjectionKey}': cached version {CachedVersion}, current version {CurrentVersion}")]
-    public static partial void CacheMiss(
+        Message = "Latest version retrieved for UX projection '{ProjectionKey}': {Version}")]
+    public static partial void LatestVersionRetrieved(
         this ILogger logger,
         UxProjectionKey projectionKey,
-        BrookPosition cachedVersion,
-        BrookPosition currentVersion
+        BrookPosition version
     );
 
-    [LoggerMessage(
-        EventId = 5,
-        Level = LogLevel.Debug,
-        Message = "Cache updated for UX projection '{ProjectionKey}' to version {NewVersion}")]
-    public static partial void CacheUpdated(
-        this ILogger logger,
-        UxProjectionKey projectionKey,
-        BrookPosition newVersion
-    );
-
-    [LoggerMessage(EventId = 6, Level = LogLevel.Debug, Message = "No events yet for UX projection '{ProjectionKey}'")]
+    [LoggerMessage(EventId = 5, Level = LogLevel.Debug, Message = "No events yet for UX projection '{ProjectionKey}'")]
     public static partial void NoEventsYet(
         this ILogger logger,
         UxProjectionKey projectionKey
@@ -71,5 +59,35 @@ internal static partial class UxProjectionGrainLoggerExtensions
         this ILogger logger,
         string primaryKey,
         Exception exception
+    );
+
+    [LoggerMessage(
+        EventId = 6,
+        Level = LogLevel.Debug,
+        Message = "Versioned request completed for UX projection '{ProjectionKey}' at version {Version}")]
+    public static partial void VersionedRequestCompleted(
+        this ILogger logger,
+        UxProjectionKey projectionKey,
+        BrookPosition version
+    );
+
+    [LoggerMessage(
+        EventId = 7,
+        Level = LogLevel.Warning,
+        Message = "Versioned request for UX projection '{ProjectionKey}' has invalid version {Version}")]
+    public static partial void VersionedRequestInvalidVersion(
+        this ILogger logger,
+        UxProjectionKey projectionKey,
+        BrookPosition version
+    );
+
+    [LoggerMessage(
+        EventId = 8,
+        Level = LogLevel.Debug,
+        Message = "Routing versioned request for UX projection '{ProjectionKey}' to version {Version}")]
+    public static partial void VersionedRequestRouting(
+        this ILogger logger,
+        UxProjectionKey projectionKey,
+        BrookPosition version
     );
 }

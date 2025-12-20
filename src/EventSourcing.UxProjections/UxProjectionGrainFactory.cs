@@ -70,4 +70,24 @@ internal sealed class UxProjectionGrainFactory : IUxProjectionGrainFactory
         Logger.ResolvingProjectionGrain(nameof(IUxProjectionGrain<TProjection>), key);
         return GrainFactory.GetGrain<IUxProjectionGrain<TProjection>>(key);
     }
+
+    /// <inheritdoc />
+    public IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrain<TProjection, TBrook>(
+        string entityId,
+        BrookPosition version
+    )
+        where TBrook : IBrookDefinition
+    {
+        UxProjectionVersionedKey key = UxProjectionVersionedKey.For<TProjection, TBrook>(entityId, version);
+        return GetUxProjectionVersionedCacheGrain<TProjection>(key);
+    }
+
+    /// <inheritdoc />
+    public IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrain<TProjection>(
+        UxProjectionVersionedKey key
+    )
+    {
+        Logger.ResolvingVersionedCacheGrain(nameof(IUxProjectionVersionedCacheGrain<TProjection>), key);
+        return GrainFactory.GetGrain<IUxProjectionVersionedCacheGrain<TProjection>>(key);
+    }
 }

@@ -56,4 +56,28 @@ public interface IUxProjectionGrainFactory
     IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection>(
         UxProjectionKey key
     );
+
+    /// <summary>
+    ///     Gets a versioned UX projection cache grain for the specified projection type, brook, and version.
+    /// </summary>
+    /// <typeparam name="TProjection">The projection state type.</typeparam>
+    /// <typeparam name="TBrook">The brook definition type.</typeparam>
+    /// <param name="entityId">The entity identifier within the brook.</param>
+    /// <param name="version">The specific version to retrieve.</param>
+    /// <returns>A grain reference for the versioned UX projection cache.</returns>
+    IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrain<TProjection, TBrook>(
+        string entityId,
+        BrookPosition version
+    )
+        where TBrook : IBrookDefinition;
+
+    /// <summary>
+    ///     Gets a versioned UX projection cache grain for the specified key.
+    /// </summary>
+    /// <typeparam name="TProjection">The projection state type.</typeparam>
+    /// <param name="key">The versioned UX projection key.</param>
+    /// <returns>A grain reference for the versioned UX projection cache.</returns>
+    IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrain<TProjection>(
+        UxProjectionVersionedKey key
+    );
 }
