@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,7 +25,7 @@ namespace Mississippi.EventSourcing.UxProjections.Api;
 ///         Example usage:
 ///         <code>
 ///             [Route("api/users/{entityId}")]
-///             public class UserProjectionController : UxProjectionController&lt;UserProjection, UserBrook&gt;
+///             public class UserProjectionController : UxProjectionControllerBase&lt;UserProjection, UserBrook&gt;
 ///             {
 ///                 public UserProjectionController(IUxProjectionGrainFactory factory) : base(factory) { }
 ///             }
@@ -40,21 +41,19 @@ namespace Mississippi.EventSourcing.UxProjections.Api;
 ///     </para>
 /// </remarks>
 [ApiController]
-public abstract class UxProjectionController<TProjection, TBrook> : ControllerBase
+public abstract class UxProjectionControllerBase<TProjection, TBrook> : ControllerBase
     where TProjection : class
     where TBrook : IBrookDefinition
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="UxProjectionController{TProjection, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="UxProjectionControllerBase{TProjection, TBrook}" /> class.
     /// </summary>
     /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains.</param>
-    protected UxProjectionController(
+    protected UxProjectionControllerBase(
         IUxProjectionGrainFactory uxProjectionGrainFactory
-    )
-    {
+    ) =>
         UxProjectionGrainFactory = uxProjectionGrainFactory ??
-                                   throw new System.ArgumentNullException(nameof(uxProjectionGrainFactory));
-    }
+                                   throw new ArgumentNullException(nameof(uxProjectionGrainFactory));
 
     /// <summary>
     ///     Gets the factory for resolving UX projection grains.

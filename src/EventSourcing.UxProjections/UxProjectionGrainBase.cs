@@ -50,7 +50,7 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///     </para>
 /// </remarks>
 [StatelessWorker]
-public abstract class UxProjectionGrain<TProjection, TBrook>
+public abstract class UxProjectionGrainBase<TProjection, TBrook>
     : IUxProjectionGrain<TProjection>,
       IGrainBase
     where TProjection : class
@@ -59,12 +59,12 @@ public abstract class UxProjectionGrain<TProjection, TBrook>
     private UxProjectionKey projectionKey;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="UxProjectionGrain{TProjection, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="UxProjectionGrainBase{TProjection, TBrook}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains and cursors.</param>
     /// <param name="logger">Logger instance.</param>
-    protected UxProjectionGrain(
+    protected UxProjectionGrainBase(
         IGrainContext grainContext,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         ILogger logger

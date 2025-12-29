@@ -111,14 +111,13 @@ public readonly record struct UxProjectionVersionedKey
 
         string projectionKeyPart = value[..lastSeparator];
         string versionPart = value[(lastSeparator + 1)..];
-
         if (!long.TryParse(versionPart, NumberStyles.None, CultureInfo.InvariantCulture, out long versionValue))
         {
             throw new FormatException($"Version '{versionPart}' is not a valid non-negative integer.");
         }
 
         UxProjectionKey projectionKey = UxProjectionKey.FromString(projectionKeyPart);
-        return new(projectionKey, new BrookPosition(versionValue));
+        return new(projectionKey, new(versionValue));
     }
 
     /// <summary>

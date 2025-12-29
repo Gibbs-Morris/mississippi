@@ -39,7 +39,6 @@ public interface IBrookCursorGrain : IGrainWithStringKey
     ///     Use when a strongly confirmed position is required.
     /// </summary>
     /// <returns>The highest persisted version of the brook from storage.</returns>
-    [ReadOnly]
     [Alias("GetLatestPositionConfirmedAsync")]
     Task<BrookPosition> GetLatestPositionConfirmedAsync();
 }

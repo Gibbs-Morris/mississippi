@@ -9,16 +9,15 @@ using Mississippi.EventSourcing.UxProjections.Abstractions;
 namespace Mississippi.EventSourcing.UxProjections;
 
 /// <summary>
-///     Logger extensions for <see cref="UxProjectionVersionedCacheGrain{TProjection, TBrook}" />.
+///     Logger extensions for <see cref="UxProjectionVersionedCacheGrainBase{TProjection, TBrook}" />.
 /// </summary>
 internal static partial class UxProjectionVersionedCacheGrainLoggerExtensions
 {
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Debug,
-        Message =
-            "Versioned UX projection cache grain activated with key '{PrimaryKey}' for projection " +
-            "'{ProjectionTypeName}' on brook '{BrookKey}' at version {Version}")]
+        Message = "Versioned UX projection cache grain activated with key '{PrimaryKey}' for projection " +
+                  "'{ProjectionTypeName}' on brook '{BrookKey}' at version {Version}")]
     public static partial void VersionedCacheGrainActivated(
         this ILogger logger,
         string primaryKey,

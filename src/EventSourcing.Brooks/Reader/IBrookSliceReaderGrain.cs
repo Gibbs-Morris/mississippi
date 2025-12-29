@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Mississippi.EventSourcing.Abstractions;
 
 using Orleans;
-using Orleans.Concurrency;
 
 
 namespace Mississippi.EventSourcing.Reader;
@@ -34,7 +33,6 @@ public interface IBrookSliceReaderGrain : IGrainWithStringKey
     /// <param name="maxReadTo">The maximum position to read to within this slice.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>An asynchronous enumerable of brook events within the specified range.</returns>
-    [ReadOnly]
     [Alias("ReadAsync")]
     IAsyncEnumerable<BrookEvent> ReadAsync(
         BrookPosition minReadFrom,
@@ -50,7 +48,6 @@ public interface IBrookSliceReaderGrain : IGrainWithStringKey
     /// <param name="maxReadTo">The maximum position to read to within this slice.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>An immutable array containing brook events within the specified range.</returns>
-    [ReadOnly]
     [Alias("ReadBatchAsync")]
     Task<ImmutableArray<BrookEvent>> ReadBatchAsync(
         BrookPosition minReadFrom,

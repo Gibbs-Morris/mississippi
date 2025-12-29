@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 using Microsoft.Extensions.Options;
 
@@ -11,40 +10,40 @@ using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Factory;
 
 using Orleans;
-using Orleans.Concurrency;
 using Orleans.Runtime;
 
 
 namespace Mississippi.EventSourcing.Reader;
 
 /// <summary>
-///     Orleans grain implementation for reading events from a Mississippi brook (event stream).
-///     Serves as the main entry point for batch brook reading operations and delegates to slice readers.
+///     Orleans grain implementation for reading events from a brook using asynchronous streaming.
+///     Each instance is uniquely identified and relies on Orleans' idle deactivation policy for cleanup.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This grain is a <c>[StatelessWorker]</c> for parallel batch read distribution.
-///         For streaming reads using <c>IAsyncEnumerable</c>, use <see cref="BrookAsyncReaderGrain" /> instead.
+///         This grain is NOT a <c>[StatelessWorker]</c> because Orleans' IAsyncEnumerable implementation
+///         stores enumerator state in a per-activation <c>AsyncEnumerableGrainExtension</c>. With StatelessWorker,
+///         <c>MoveNextAsync()</c> calls could route to different activations, causing
+///         <c>EnumerationAbortedException</c>.
 ///     </para>
 ///     <para>
-///         The async reader variant exists because Orleans' <c>IAsyncEnumerable</c> implementation
-///         stores enumerator state in a per-activation <c>AsyncEnumerableGrainExtension</c>, which is
-///         incompatible with <c>[StatelessWorker]</c> routing (MoveNext calls can route to wrong activation).
+///         To achieve parallelism, the <see cref="IBrookGrainFactory" /> creates unique grain keys
+///         with random suffixes for each streaming request. After streaming completes, the grain
+///         is eventually garbage-collected by Orleans' idle deactivation policy.
 ///     </para>
 /// </remarks>
-[StatelessWorker]
-internal class BrookReaderGrain
-    : IBrookReaderGrain,
+internal class BrookAsyncReaderGrain
+    : IBrookAsyncReaderGrain,
       IGrainBase
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="BrookReaderGrain" /> class.
+    ///     Initializes a new instance of the <see cref="BrookAsyncReaderGrain" /> class.
     ///     Sets up the grain with required dependencies for brook reading operations.
     /// </summary>
     /// <param name="brookGrainFactory">Factory for creating related brook grains.</param>
     /// <param name="options">Configuration options for brook reader behavior.</param>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
-    public BrookReaderGrain(
+    public BrookAsyncReaderGrain(
         IBrookGrainFactory brookGrainFactory,
         IOptions<BrookReaderOptions> options,
         IGrainContext grainContext
@@ -93,30 +92,29 @@ internal class BrookReaderGrain
     }
 
     /// <summary>
-    ///     Deactivate the stateless reader grain.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous deactivation operation.</returns>
-    public Task DeactivateAsync()
-    {
-        this.DeactivateOnIdle();
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    ///     Reads events from the brook as a batch within the specified position range.
-    ///     Returns all matching events as an immutable array for batch processing scenarios.
+    ///     Reads events from the brook as an asynchronous stream within the specified position range.
+    ///     The grain deactivates itself after enumeration completes or is cancelled.
     /// </summary>
     /// <param name="readFrom">Optional starting position for reading events. Reads from beginning if null.</param>
     /// <param name="readTo">Optional ending position for reading events. Reads to end if null.</param>
-    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
-    /// <returns>An immutable array containing all brook events within the specified range.</returns>
-    public async Task<ImmutableArray<BrookEvent>> ReadEventsBatchAsync(
+    /// <param name="cancellationToken">Cancellation token for the asynchronous enumeration.</param>
+    /// <returns>An asynchronous enumerable of brook events within the specified range.</returns>
+    /// <remarks>
+    ///     This grain uses unique keys (via <see cref="BrookAsyncReaderKey" />) to ensure single-use semantics.
+    ///     After enumeration completes, the grain will eventually be garbage-collected by Orleans'
+    ///     idle deactivation policy. We do not call <c>DeactivateOnIdle()</c> here because async
+    ///     iterators with <c>yield return</c> can pause between <c>MoveNextAsync</c> calls, causing
+    ///     premature deactivation.
+    /// </remarks>
+    public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
         BrookPosition? readFrom = null,
         BrookPosition? readTo = null,
-        CancellationToken cancellationToken = default
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
-        BrookKey brookId = this.GetPrimaryKeyString();
+        // Parse the brook key from the grain's primary key (strips the instance suffix)
+        BrookAsyncReaderKey asyncReaderKey = this.GetPrimaryKeyString();
+        BrookKey brookId = asyncReaderKey.BrookKey;
         BrookPosition start = readFrom ?? new BrookPosition(0);
         BrookPosition end;
         if (!readTo.HasValue)
@@ -132,31 +130,22 @@ internal class BrookReaderGrain
         // If the brook is empty (cursor returns -1) or end < start, there's nothing to read
         if ((end.Value < 0) || (end.Value < start.Value))
         {
-            return ImmutableArray<BrookEvent>.Empty;
+            yield break;
         }
 
         long sliceSize = Options.Value.BrookSliceSize;
         List<(long BucketId, long First, long Last)> baseIndexes = GetSliceReads(start.Value, end.Value, sliceSize);
-
-        // Fan-out: kick off all slice batch reads in parallel
-        List<Task<ImmutableArray<BrookEvent>>> sliceTasks = new(baseIndexes.Count);
         foreach ((long BucketId, long First, long Last) l in baseIndexes)
         {
+            // Construct slice key using the actual slice start and an inclusive end via Count=(Last-First)
             long sliceStart = l.First;
-            long sliceCount = (l.Last - l.First) + 1;
+            long sliceCount = (l.Last - l.First) + 1; // Count is inclusive so Start + Count - 1 == l.Last
             IBrookSliceReaderGrain sliceGrain = BrookGrainFactory.GetBrookSliceReaderGrain(
                 BrookRangeKey.FromBrookCompositeKey(brookId, sliceStart, sliceCount));
-            sliceTasks.Add(sliceGrain.ReadBatchAsync(l.First, l.Last, cancellationToken));
+            await foreach (BrookEvent mississippiEvent in sliceGrain.ReadAsync(l.First, l.Last, cancellationToken))
+            {
+                yield return mississippiEvent;
+            }
         }
-
-        // Await all slices and concatenate in order
-        ImmutableArray<BrookEvent>[] sliceResults = await Task.WhenAll(sliceTasks);
-        List<BrookEvent> allEvents = new();
-        foreach (ImmutableArray<BrookEvent> sliceEvents in sliceResults)
-        {
-            allEvents.AddRange(sliceEvents);
-        }
-
-        return [..allEvents];
     }
 }

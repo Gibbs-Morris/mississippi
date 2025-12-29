@@ -9,7 +9,7 @@ using Mississippi.EventSourcing.UxProjections.Abstractions;
 namespace Mississippi.EventSourcing.UxProjections;
 
 /// <summary>
-///     Logger extensions for <see cref="UxProjectionGrain{TProjection, TBrook}" />.
+///     Logger extensions for <see cref="UxProjectionGrainBase{TProjection, TBrook}" />.
 /// </summary>
 internal static partial class UxProjectionGrainLoggerExtensions
 {

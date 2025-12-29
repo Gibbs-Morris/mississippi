@@ -42,7 +42,7 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///     </para>
 /// </remarks>
 [StatelessWorker]
-public abstract class UxProjectionVersionedCacheGrain<TProjection, TBrook>
+public abstract class UxProjectionVersionedCacheGrainBase<TProjection, TBrook>
     : IUxProjectionVersionedCacheGrain<TProjection>,
       IGrainBase
     where TProjection : class
@@ -55,13 +55,13 @@ public abstract class UxProjectionVersionedCacheGrain<TProjection, TBrook>
     private UxProjectionVersionedKey versionedKey;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="UxProjectionVersionedCacheGrain{TProjection, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="UxProjectionVersionedCacheGrainBase{TProjection, TBrook}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="reducersHash">The hash of the reducers for snapshot key construction.</param>
     /// <param name="logger">Logger instance.</param>
-    protected UxProjectionVersionedCacheGrain(
+    protected UxProjectionVersionedCacheGrainBase(
         IGrainContext grainContext,
         ISnapshotGrainFactory snapshotGrainFactory,
         string reducersHash,
