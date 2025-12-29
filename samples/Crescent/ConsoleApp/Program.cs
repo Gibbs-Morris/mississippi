@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 
 using Crescent.ConsoleApp;
 using Crescent.ConsoleApp.Counter;
@@ -128,6 +129,22 @@ catch (InvalidOperationException ex)
     logger.UnableToResolveBrookStorageOptions(runId, ex);
 }
 
+// Test Cosmos DB connectivity before running scenarios
+Uri cosmosEmulatorUri = new("https://localhost:8081/");
+logger.TestingCosmosConnectivity(runId, cosmosEmulatorUri);
+try
+{
+    using HttpClient httpClient = new();
+    httpClient.Timeout = TimeSpan.FromSeconds(5);
+    HttpResponseMessage response = await httpClient.GetAsync(cosmosEmulatorUri);
+    logger.CosmosConnectivitySuccess(runId, (int)response.StatusCode);
+}
+catch (HttpRequestException ex)
+{
+    logger.CosmosConnectivityFailed(runId, ex);
+    logger.CosmosEmulatorNotRunning(runId, cosmosEmulatorUri);
+}
+
 // Load persisted run state and decide mode (fresh or reuse)
 string mode = Environment.GetEnvironmentVariable("CRESCENT_MODE") ?? builder.Configuration["mode"] ?? "fresh";
 RunState runState = await RunStateStore.LoadAsync(logger);
@@ -149,6 +166,7 @@ else
 
 // Scenario 1: Small batch append (10 small events)
 logger.ScenarioSmallBatch10x1KB();
+logger.AboutToWriteToCosmosDb(runId);
 ScenarioResult appendResult1 = await AppendScenario.RunAsync(
     logger,
     runId,

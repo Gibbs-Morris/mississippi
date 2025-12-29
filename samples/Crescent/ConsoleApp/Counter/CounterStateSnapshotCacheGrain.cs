@@ -27,7 +27,7 @@ namespace Crescent.ConsoleApp.Counter;
 ///         brook ID, reducers hash, and version.
 ///     </para>
 /// </remarks>
-internal sealed class CounterStateSnapshotCacheGrain : SnapshotCacheGrain<CounterState, CounterBrook>
+internal sealed class CounterStateSnapshotCacheGrain : SnapshotCacheGrainBase<CounterState, CounterBrook>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="CounterStateSnapshotCacheGrain" /> class.

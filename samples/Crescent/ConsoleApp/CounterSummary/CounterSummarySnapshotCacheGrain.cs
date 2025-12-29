@@ -29,7 +29,7 @@ namespace Crescent.ConsoleApp.CounterSummary;
 ///         from the nearest retained base snapshot plus a minimal delta of events.
 ///     </para>
 /// </remarks>
-internal sealed class CounterSummarySnapshotCacheGrain : SnapshotCacheGrain<CounterSummaryProjection, CounterBrook>
+internal sealed class CounterSummarySnapshotCacheGrain : SnapshotCacheGrainBase<CounterSummaryProjection, CounterBrook>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="CounterSummarySnapshotCacheGrain" /> class.

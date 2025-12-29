@@ -19,7 +19,7 @@ namespace Crescent.ConsoleApp.Counter;
 ///     Aggregate grain implementation for the counter domain.
 /// </summary>
 internal sealed class CounterAggregateGrain
-    : AggregateGrain<CounterState, CounterBrook>,
+    : AggregateGrainBase<CounterState, CounterBrook>,
       ICounterAggregateGrain
 {
     /// <summary>
