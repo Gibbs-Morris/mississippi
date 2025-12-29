@@ -15,19 +15,27 @@ using Moq;
 namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="UxProjectionController{TProjection, TBrook}" />.
+///     Tests for <see cref="UxProjectionControllerBase{TProjection, TBrook}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections API")]
-[AllureSubSuite("UxProjectionController")]
+[AllureSubSuite("UxProjectionControllerBase")]
 public sealed class UxProjectionControllerTests
 {
+    private static TestableController CreateController(
+        Mock<IUxProjectionGrainFactory>? factoryMock = null
+    )
+    {
+        factoryMock ??= new();
+        return new(factoryMock.Object);
+    }
+
     private const string TestEntityId = "entity-123";
 
     /// <summary>
-    ///     A testable implementation of <see cref="UxProjectionController{TProjection, TBrook}" />.
+    ///     A testable implementation of <see cref="UxProjectionControllerBase{TProjection, TBrook}" />.
     /// </summary>
-    private sealed class TestableController : UxProjectionController<TestProjection, TestBrookDefinition>
+    private sealed class TestableController : UxProjectionControllerBase<TestProjection, TestBrookDefinition>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TestableController" /> class.
@@ -41,12 +49,24 @@ public sealed class UxProjectionControllerTests
         }
     }
 
-    private static TestableController CreateController(
-        Mock<IUxProjectionGrainFactory>? factoryMock = null
-    )
+    /// <summary>
+    ///     Verifies that constructor accepts valid factory.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorAcceptsValidFactory()
     {
-        factoryMock ??= new();
-        return new(factoryMock.Object);
+        // Arrange
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+
+        // Act
+        TestableController controller = CreateController(factoryMock);
+
+        // Assert - Controller was created successfully, verify no grain calls yet
+        factoryMock.Verify(
+            f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(It.IsAny<string>()),
+            Times.Never);
+        Assert.NotNull(controller);
     }
 
     /// <summary>
@@ -61,33 +81,6 @@ public sealed class UxProjectionControllerTests
     }
 
     /// <summary>
-    ///     Verifies that GetAsync returns Ok with projection when found.
-    /// </summary>
-    /// <returns>Asynchronous test task.</returns>
-    [Fact]
-    [AllureFeature("GetAsync")]
-    public async Task GetAsyncReturnsOkWhenProjectionFound()
-    {
-        // Arrange
-        TestProjection expectedProjection = new(42);
-        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedProjection);
-        Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
-        TestableController controller = CreateController(factoryMock);
-
-        // Act
-        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
-
-        // Assert
-        OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-        TestProjection projection = Assert.IsType<TestProjection>(okResult.Value);
-        Assert.Equal(42, projection.Value);
-    }
-
-    /// <summary>
     ///     Verifies that GetAsync returns NotFound when projection is null.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
@@ -97,8 +90,7 @@ public sealed class UxProjectionControllerTests
     {
         // Arrange
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TestProjection?)null);
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync((TestProjection?)null);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
             .Returns(grainMock.Object);
@@ -112,35 +104,29 @@ public sealed class UxProjectionControllerTests
     }
 
     /// <summary>
-    ///     Verifies that GetAtVersionAsync returns Ok with projection when found.
+    ///     Verifies that GetAsync returns Ok with projection when found.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAtVersionAsync")]
-    public async Task GetAtVersionAsyncReturnsOkWhenProjectionFound()
+    [AllureFeature("GetAsync")]
+    public async Task GetAsyncReturnsOkWhenProjectionFound()
     {
         // Arrange
-        const long version = 10;
         TestProjection expectedProjection = new(42);
-        BrookPosition? capturedVersion = null;
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
-            .Callback<BrookPosition, CancellationToken>((v, _) => capturedVersion = v)
-            .ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
             .Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<TestProjection> result = await controller.GetAtVersionAsync(TestEntityId, version);
+        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
         TestProjection projection = Assert.IsType<TestProjection>(okResult.Value);
         Assert.Equal(42, projection.Value);
-        Assert.NotNull(capturedVersion);
-        Assert.Equal(10, capturedVersion.Value.Value);
     }
 
     /// <summary>
@@ -168,30 +154,38 @@ public sealed class UxProjectionControllerTests
     }
 
     /// <summary>
-    ///     Verifies that GetLatestVersionAsync returns Ok with version when found.
+    ///     Verifies that GetAtVersionAsync returns Ok with projection when found.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetLatestVersionAsync")]
-    public async Task GetLatestVersionAsyncReturnsOkWhenVersionFound()
+    [AllureFeature("GetAtVersionAsync")]
+    public async Task GetAtVersionAsyncReturnsOkWhenProjectionFound()
     {
         // Arrange
-        BrookPosition expectedPosition = new(42);
+        const long version = 10;
+        TestProjection expectedProjection = new(42);
+        BrookPosition? capturedVersion = null;
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedPosition);
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+            .Callback<BrookPosition, CancellationToken>((
+                v,
+                _
+            ) => capturedVersion = v)
+            .ReturnsAsync(expectedProjection);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
             .Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<BrookPosition> result = await controller.GetLatestVersionAsync(TestEntityId);
+        ActionResult<TestProjection> result = await controller.GetAtVersionAsync(TestEntityId, version);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-        BrookPosition position = Assert.IsType<BrookPosition>(okResult.Value);
-        Assert.Equal(42, position.Value);
+        TestProjection projection = Assert.IsType<TestProjection>(okResult.Value);
+        Assert.Equal(42, projection.Value);
+        Assert.NotNull(capturedVersion);
+        Assert.Equal(10, capturedVersion.Value.Value);
     }
 
     /// <summary>
@@ -205,8 +199,7 @@ public sealed class UxProjectionControllerTests
         // Arrange
         BrookPosition notSetPosition = new(-1);
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(notSetPosition);
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(notSetPosition);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
             .Returns(grainMock.Object);
@@ -220,20 +213,28 @@ public sealed class UxProjectionControllerTests
     }
 
     /// <summary>
-    ///     Verifies that constructor accepts valid factory.
+    ///     Verifies that GetLatestVersionAsync returns Ok with version when found.
     /// </summary>
+    /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorAcceptsValidFactory()
+    [AllureFeature("GetLatestVersionAsync")]
+    public async Task GetLatestVersionAsyncReturnsOkWhenVersionFound()
     {
         // Arrange
+        BrookPosition expectedPosition = new(42);
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedPosition);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-
-        // Act
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
+            .Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
-        // Assert - Controller was created successfully, verify no grain calls yet
-        factoryMock.Verify(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(It.IsAny<string>()), Times.Never);
-        Assert.NotNull(controller);
+        // Act
+        ActionResult<BrookPosition> result = await controller.GetLatestVersionAsync(TestEntityId);
+
+        // Assert
+        OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+        BrookPosition position = Assert.IsType<BrookPosition>(okResult.Value);
+        Assert.Equal(42, position.Value);
     }
 }

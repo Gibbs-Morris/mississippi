@@ -17,7 +17,7 @@ namespace Mississippi.EventSourcing.Snapshots.Tests;
 ///     Testable snapshot cache grain that exposes protected methods.
 /// </summary>
 internal sealed class TestableSnapshotCacheGrain
-    : SnapshotCacheGrain<SnapshotCacheGrainTestState, SnapshotCacheGrainTestBrook>
+    : SnapshotCacheGrainBase<SnapshotCacheGrainTestState, SnapshotCacheGrainTestBrook>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="TestableSnapshotCacheGrain" /> class.
