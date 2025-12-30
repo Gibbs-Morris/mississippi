@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.Testing.Utilities.Mocks;
 
 using Moq;
 
@@ -35,8 +36,10 @@ public sealed class BrookReaderGrainUnitTests
         // Arrange
         Mock<IBrookGrainFactory> factory = new();
         IOptions<BrookReaderOptions> options = Options.Create(new BrookReaderOptions());
-        Mock<IGrainContext> context = new();
-        BrookReaderGrain sut = new(factory.Object, options, context.Object, NullLogger<BrookReaderGrain>.Instance);
+        IGrainContext context = GrainContextMockBuilder.Create()
+            .WithBrookGrainKey("TEST.BROOK", "test-entity-id")
+            .BuildObject();
+        BrookReaderGrain sut = new(factory.Object, options, context, NullLogger<BrookReaderGrain>.Instance);
 
         // Act
         await sut.DeactivateAsync();
