@@ -37,7 +37,7 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///         for brook identity, ensuring projections can reference the same brook type.
 ///     </para>
 /// </remarks>
-public abstract class AggregateGrain<TSnapshot, TBrook>
+public abstract class AggregateGrainBase<TSnapshot, TBrook>
     : IAggregateGrain,
       IGrainBase
     where TSnapshot : class
@@ -54,7 +54,7 @@ public abstract class AggregateGrain<TSnapshot, TBrook>
     private SnapshotStreamKey snapshotStreamKey;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="AggregateGrain{TSnapshot, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="AggregateGrainBase{TSnapshot, TBrook}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="brookGrainFactory">Factory for resolving brook grains.</param>
@@ -63,7 +63,7 @@ public abstract class AggregateGrain<TSnapshot, TBrook>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="reducersHash">The hash of the reducers for snapshot versioning.</param>
     /// <param name="logger">Logger instance.</param>
-    protected AggregateGrain(
+    protected AggregateGrainBase(
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
         IBrookEventConverter brookEventConverter,

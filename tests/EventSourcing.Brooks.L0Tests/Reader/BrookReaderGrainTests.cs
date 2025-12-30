@@ -19,7 +19,7 @@ using Orleans.TestingHost;
 namespace Mississippi.EventSourcing.Tests.Reader;
 
 /// <summary>
-///     Integration tests for <see cref="IBrookReaderGrain" />.
+///     Integration tests for <see cref="IBrookReaderGrain" /> and <see cref="IBrookAsyncReaderGrain" />.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
 [AllureParentSuite("Event Sourcing")]
@@ -30,7 +30,7 @@ public sealed class BrookReaderGrainTests
     private readonly TestCluster cluster = TestClusterAccess.Cluster;
 
     /// <summary>
-    ///     Verifies range slicing and full enumeration via ReadEventsAsync.
+    ///     Verifies range slicing and full enumeration via async reader grain's ReadEventsAsync.
     /// </summary>
     /// <returns>
     ///     A task that represents the asynchronous test operation.
@@ -53,9 +53,12 @@ public sealed class BrookReaderGrainTests
         // Ensure cursor cache has advanced before full reader walk
         IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
         await cursor.GetLatestPositionConfirmedAsync();
-        IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);
+
+        // Use the async reader grain for streaming (create unique instance key)
+        BrookAsyncReaderKey asyncReaderKey = BrookAsyncReaderKey.Create(key);
+        IBrookAsyncReaderGrain asyncReader = cluster.GrainFactory.GetGrain<IBrookAsyncReaderGrain>(asyncReaderKey);
         List<BrookEvent> got = new();
-        await foreach (BrookEvent e in reader.ReadEventsAsync(0, 4))
+        await foreach (BrookEvent e in asyncReader.ReadEventsAsync(0, 4))
         {
             got.Add(e);
         }

@@ -17,6 +17,12 @@ namespace Mississippi.EventSourcing.Factory;
 /// </summary>
 internal class BrookGrainFactory : IBrookGrainFactory
 {
+    private static readonly Action<ILogger, string, BrookAsyncReaderKey, Exception?> LogResolvingAsyncReaderGrain =
+        LoggerMessage.Define<string, BrookAsyncReaderKey>(
+            LogLevel.Debug,
+            new(5, nameof(GetBrookAsyncReaderGrain)),
+            "Resolving {GrainType} for Brook {BrookAsyncReaderKey}");
+
     private static readonly Action<ILogger, string, BrookKey, Exception?> LogResolvingCursorGrain =
         LoggerMessage.Define<string, BrookKey>(
             LogLevel.Debug,
@@ -59,6 +65,21 @@ internal class BrookGrainFactory : IBrookGrainFactory
     private IGrainFactory GrainFactory { get; }
 
     private ILogger<BrookGrainFactory> Logger { get; }
+
+    /// <summary>
+    ///     Retrieves an <see cref="IBrookAsyncReaderGrain" /> for the specified brook.
+    ///     Each call returns a unique grain instance with a random suffix in the key.
+    /// </summary>
+    /// <param name="brookKey">The key identifying the brook.</param>
+    /// <returns>An <see cref="IBrookAsyncReaderGrain" /> instance for streaming reads.</returns>
+    public IBrookAsyncReaderGrain GetBrookAsyncReaderGrain(
+        BrookKey brookKey
+    )
+    {
+        BrookAsyncReaderKey asyncReaderKey = BrookAsyncReaderKey.Create(brookKey);
+        LogResolvingAsyncReaderGrain(Logger, nameof(IBrookAsyncReaderGrain), asyncReaderKey, null);
+        return GrainFactory.GetGrain<IBrookAsyncReaderGrain>(asyncReaderKey);
+    }
 
     /// <summary>
     ///     Retrieves an <see cref="IBrookCursorGrain" /> for the specified Brook composite key.

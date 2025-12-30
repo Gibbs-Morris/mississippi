@@ -2,7 +2,6 @@ using Crescent.ConsoleApp.Counter;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.UxProjections;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
@@ -28,28 +27,20 @@ namespace Crescent.ConsoleApp.CounterSummary;
 ///         a new snapshot if the brook has advanced since the last read.
 ///     </para>
 /// </remarks>
-internal sealed class CounterSummaryProjectionGrain : UxProjectionGrain<CounterSummaryProjection, CounterBrook>
+internal sealed class CounterSummaryProjectionGrain : UxProjectionGrainBase<CounterSummaryProjection, CounterBrook>
 {
-    /// <summary>
-    ///     Hash of the reducers used for snapshot key construction.
-    ///     In production, this would be computed from the actual reducer configuration.
-    /// </summary>
-    private const string CounterReducersHash = "counter-summary-v1";
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="CounterSummaryProjectionGrain" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains and cursors.</param>
-    /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="logger">Logger instance.</param>
     public CounterSummaryProjectionGrain(
         IGrainContext grainContext,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
-        ISnapshotGrainFactory snapshotGrainFactory,
         ILogger<CounterSummaryProjectionGrain> logger
     )
-        : base(grainContext, uxProjectionGrainFactory, snapshotGrainFactory, CounterReducersHash, logger)
+        : base(grainContext, uxProjectionGrainFactory, logger)
     {
     }
 }

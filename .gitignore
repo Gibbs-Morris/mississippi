@@ -418,3 +418,10 @@ resharper-report.xml
 *.sln
 
 *.sarif
+__blobstorage__/9fd403e8-e9c1-41d0-8b9f-3c5486c26f7c
+AzuriteConfig
+__azurite_db_blob__.json
+__azurite_db_blob_extent__.json
+__azurite_db_queue__.json
+__azurite_db_queue_extent__.json
+__azurite_db_table__.json

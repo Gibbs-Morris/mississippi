@@ -12,13 +12,13 @@ using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.Writer;
 
-using Orleans.Runtime;
-
 
 namespace Crescent.ConsoleApp.Scenarios;
 
 /// <summary>
 ///     Runs a single-stream interleaved read/write scenario.
+///     Uses <see cref="IBrookAsyncReaderGrain" /> for streaming reads, which provides
+///     unique grain instances per call to avoid the StatelessWorker + IAsyncEnumerable issue.
 /// </summary>
 internal static class InterleavedScenario
 {
@@ -44,7 +44,7 @@ internal static class InterleavedScenario
         Stopwatch sw = Stopwatch.StartNew();
         logger.InterleaveStart(runId);
         IBrookWriterGrain writer = brookGrainFactory.GetBrookWriterGrain(brookKey);
-        IBrookReaderGrain reader = brookGrainFactory.GetBrookReaderGrain(brookKey);
+        logger.InterleaveGrainsResolved(runId, brookKey);
         try
         {
             // Write a small batch
@@ -54,13 +54,11 @@ internal static class InterleavedScenario
                 cancellationToken);
             logger.CursorAfterWrite1(runId, cursor1.Value);
 
-            // Read a tail subset
+            // Read a tail subset using the async reader grain (unique instance per call)
             int tailCount = 0;
             long tailStart = Math.Max(1, cursor1.Value - Math.Min(4, cursor1.Value));
-            await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(
-                               new(tailStart),
-                               cursor1,
-                               cancellationToken))
+            IBrookAsyncReaderGrain tailReader = brookGrainFactory.GetBrookAsyncReaderGrain(brookKey);
+            await foreach (BrookEvent ev in tailReader.ReadEventsAsync(new(tailStart), cursor1, cancellationToken))
             {
                 tailCount++;
             }
@@ -74,31 +72,20 @@ internal static class InterleavedScenario
                 cancellationToken);
             logger.CursorAfterWrite2(runId, cursor2.Value);
 
-            // Verify continuous read from 1..cursor2
-            int attempts = 0;
-            while (true)
+            // Verify continuous read from 1..cursor2 using async reader grain
+            int count = 0;
+            logger.InterleaveFullRangeReadStart(runId, 0, 1, cursor2.Value);
+            IBrookAsyncReaderGrain fullRangeReader = brookGrainFactory.GetBrookAsyncReaderGrain(brookKey);
+            await foreach (BrookEvent ev in fullRangeReader.ReadEventsAsync(new(1), cursor2, cancellationToken))
             {
-                try
+                count++;
+                if ((count <= 5) || ((count % 50) == 0))
                 {
-                    int count = 0;
-                    await foreach (BrookEvent ignoredEvent in reader.ReadEventsAsync(
-                                       new(1),
-                                       cursor2,
-                                       cancellationToken))
-                    {
-                        count++;
-                    }
-
-                    logger.FullRangeReadCount(runId, count);
-                    break;
-                }
-                catch (EnumerationAbortedException ex) when (attempts == 0)
-                {
-                    attempts++;
-                    logger.InterleaveEnumerationAbortedRetry(runId, ex);
+                    logger.InterleaveReadProgress(runId, count, ev.Id);
                 }
             }
 
+            logger.FullRangeReadCount(runId, count);
             sw.Stop();
             return ScenarioResult.Success(
                 ScenarioName,

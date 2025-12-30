@@ -29,4 +29,14 @@ internal static partial class UxProjectionGrainFactoryLoggerExtensions
         string grainType,
         UxProjectionKey projectionKey
     );
+
+    [LoggerMessage(
+        EventId = 3,
+        Level = LogLevel.Debug,
+        Message = "Resolving {GrainType} for versioned UX projection '{VersionedKey}'")]
+    public static partial void ResolvingVersionedCacheGrain(
+        this ILogger logger,
+        string grainType,
+        UxProjectionVersionedKey versionedKey
+    );
 }

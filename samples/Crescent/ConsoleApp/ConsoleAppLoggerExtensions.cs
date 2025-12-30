@@ -13,6 +13,20 @@ namespace Crescent.ConsoleApp;
 internal static partial class ConsoleAppLoggerExtensions
 {
     /// <summary>
+    ///     Log that Cosmos DB write is about to be called.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    [LoggerMessage(
+        116,
+        LogLevel.Information,
+        "Run {RunId}: About to call BrookWriterGrain.AppendEventsAsync - this will write to Cosmos DB...")]
+    public static partial void AboutToWriteToCosmosDb(
+        this ILogger logger,
+        string runId
+    );
+
+    /// <summary>
     ///     Log that an aggregate command failed.
     /// </summary>
     /// <param name="logger">The logger used to write the message.</param>
@@ -180,6 +194,48 @@ internal static partial class ConsoleAppLoggerExtensions
         string scenario,
         int count,
         long bytes
+    );
+
+    /// <summary>
+    ///     Log a Cosmos DB emulator connection failure.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="ex">The exception that occurred.</param>
+    [LoggerMessage(114, LogLevel.Error, "Run {RunId}: Failed to connect to Cosmos DB emulator")]
+    public static partial void CosmosConnectivityFailed(
+        this ILogger logger,
+        string runId,
+        Exception ex
+    );
+
+    /// <summary>
+    ///     Log the Cosmos DB emulator connectivity status.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="statusCode">The HTTP status code returned by the emulator.</param>
+    [LoggerMessage(113, LogLevel.Information, "Run {RunId}: Cosmos DB emulator responded with status: {StatusCode}")]
+    public static partial void CosmosConnectivitySuccess(
+        this ILogger logger,
+        string runId,
+        int statusCode
+    );
+
+    /// <summary>
+    ///     Log a warning about the Cosmos DB emulator not running.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="emulatorUri">The Cosmos DB emulator URI.</param>
+    [LoggerMessage(
+        115,
+        LogLevel.Warning,
+        "Run {RunId}: The Cosmos DB emulator may not be running or not fully initialized. Please check {EmulatorUri}")]
+    public static partial void CosmosEmulatorNotRunning(
+        this ILogger logger,
+        string runId,
+        Uri emulatorUri
     );
 
     /// <summary>
@@ -386,6 +442,79 @@ internal static partial class ConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         Exception ex
+    );
+
+    /// <summary>
+    ///     Log that enumeration failed with details about the exception.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="attempt">The attempt number (0-based).</param>
+    /// <param name="count">The count of events read before failure.</param>
+    /// <param name="exceptionType">The type of exception.</param>
+    /// <param name="message">The exception message.</param>
+    [LoggerMessage(
+        58,
+        LogLevel.Warning,
+        "Run {RunId} [Interleave]: Enumeration failed on attempt={Attempt} after reading count={Count} events. Exception: {ExceptionType} - {Message}")]
+    public static partial void InterleaveEnumerationFailed(
+        this ILogger logger,
+        string runId,
+        int attempt,
+        int count,
+        string exceptionType,
+        string message
+    );
+
+    /// <summary>
+    ///     Log starting a full range read attempt in the interleaved scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="attempt">The attempt number (0-based).</param>
+    /// <param name="startPos">The start position for the read.</param>
+    /// <param name="endPos">The end position for the read.</param>
+    [LoggerMessage(
+        56,
+        LogLevel.Information,
+        "Run {RunId} [Interleave]: Starting full range read attempt={Attempt} from={StartPos} to={EndPos}")]
+    public static partial void InterleaveFullRangeReadStart(
+        this ILogger logger,
+        string runId,
+        int attempt,
+        long startPos,
+        long endPos
+    );
+
+    /// <summary>
+    ///     Log that the interleaved scenario has resolved grains.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="brookKey">The brook key being used.</param>
+    [LoggerMessage(
+        59,
+        LogLevel.Debug,
+        "Run {RunId} [Interleave]: Resolved writer and reader grains for brook={BrookKey}")]
+    public static partial void InterleaveGrainsResolved(
+        this ILogger logger,
+        string runId,
+        BrookKey brookKey
+    );
+
+    /// <summary>
+    ///     Log progress during the full range read in the interleaved scenario.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="count">The current count of events read.</param>
+    /// <param name="eventId">The event ID just read.</param>
+    [LoggerMessage(57, LogLevel.Debug, "Run {RunId} [Interleave]: Read progress count={Count} eventId={EventId}")]
+    public static partial void InterleaveReadProgress(
+        this ILogger logger,
+        string runId,
+        int count,
+        string eventId
     );
 
     /// <summary>
@@ -945,6 +1074,22 @@ internal static partial class ConsoleAppLoggerExtensions
         this ILogger logger,
         string runId,
         int count
+    );
+
+    /// <summary>
+    ///     Log that Cosmos DB emulator connectivity is being tested.
+    /// </summary>
+    /// <param name="logger">The logger used to write the message.</param>
+    /// <param name="runId">The run identifier associated with this execution.</param>
+    /// <param name="emulatorUri">The Cosmos DB emulator URI.</param>
+    [LoggerMessage(
+        112,
+        LogLevel.Information,
+        "Run {RunId}: Testing Cosmos DB emulator connectivity at {EmulatorUri}...")]
+    public static partial void TestingCosmosConnectivity(
+        this ILogger logger,
+        string runId,
+        Uri emulatorUri
     );
 
     /// <summary>

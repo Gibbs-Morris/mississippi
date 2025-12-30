@@ -23,7 +23,7 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.Aggregates.Tests;
 
 /// <summary>
-///     Tests for <see cref="AggregateGrain{TSnapshot, TBrook}" />.
+///     Tests for <see cref="AggregateGrainBase{TSnapshot, TBrook}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Aggregates")]
@@ -87,7 +87,7 @@ public class AggregateGrainTests
     /// <summary>
     ///     Testable aggregate grain that exposes protected methods.
     /// </summary>
-    private sealed class TestableAggregateGrain : AggregateGrain<AggregateGrainTestState, AggregateGrainTestBrook>
+    private sealed class TestableAggregateGrain : AggregateGrainBase<AggregateGrainTestState, AggregateGrainTestBrook>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TestableAggregateGrain" /> class.

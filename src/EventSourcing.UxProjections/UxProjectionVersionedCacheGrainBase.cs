@@ -17,62 +17,58 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.UxProjections;
 
 /// <summary>
-///     Base class for UX projection grains that provide cached, read-optimized access to projection state.
+///     Base class for versioned UX projection cache grains that provide cached access
+///     to a specific version of a projection.
 /// </summary>
 /// <typeparam name="TProjection">The projection state type.</typeparam>
 /// <typeparam name="TBrook">The brook definition type that identifies the event stream.</typeparam>
 /// <remarks>
 ///     <para>
-///         UX projection grains are stateless workers that cache the last returned projection in memory.
-///         On each request, they check the cursor position and only fetch a new snapshot if the brook
-///         has advanced since the last read.
+///         Versioned cache grains are stateless workers that cache a specific version
+///         of a projection in memory. They complement the main UX projection grain
+///         by handling requests for historical versions.
 ///     </para>
 ///     <para>
-///         The grain is keyed by <see cref="UxProjectionKey" /> in the format
-///         "projectionTypeName|brookType|brookId".
+///         The grain is keyed by <see cref="UxProjectionVersionedKey" /> in the format
+///         "projectionTypeName|brookType|brookId|version".
 ///     </para>
 ///     <para>
 ///         Read path:
 ///         <list type="number">
-///             <item>Get current brook position from <see cref="IUxProjectionCursorGrain" />.</item>
-///             <item>If position matches cached version, return cached projection (fast path).</item>
-///             <item>If position is newer, fetch from <see cref="ISnapshotCacheGrain{TSnapshot}" /> (slow path).</item>
-///             <item>Update cache and return.</item>
+///             <item>If cached, return cached projection (fast path).</item>
+///             <item>Otherwise, fetch from <see cref="ISnapshotCacheGrain{TSnapshot}" /> (slow path).</item>
+///             <item>Cache and return.</item>
 ///         </list>
 ///     </para>
 /// </remarks>
 [StatelessWorker]
-public abstract class UxProjectionGrain<TProjection, TBrook>
-    : IUxProjectionGrain<TProjection>,
+public abstract class UxProjectionVersionedCacheGrainBase<TProjection, TBrook>
+    : IUxProjectionVersionedCacheGrain<TProjection>,
       IGrainBase
     where TProjection : class
     where TBrook : IBrookDefinition
 {
     private TProjection? cachedProjection;
 
-    private BrookPosition cachedVersion = -1;
+    private bool isLoaded;
 
-    private UxProjectionKey projectionKey;
+    private UxProjectionVersionedKey versionedKey;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="UxProjectionGrain{TProjection, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="UxProjectionVersionedCacheGrainBase{TProjection, TBrook}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
-    /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains and cursors.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="reducersHash">The hash of the reducers for snapshot key construction.</param>
     /// <param name="logger">Logger instance.</param>
-    protected UxProjectionGrain(
+    protected UxProjectionVersionedCacheGrainBase(
         IGrainContext grainContext,
-        IUxProjectionGrainFactory uxProjectionGrainFactory,
         ISnapshotGrainFactory snapshotGrainFactory,
         string reducersHash,
         ILogger logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
-        UxProjectionGrainFactory = uxProjectionGrainFactory ??
-                                   throw new ArgumentNullException(nameof(uxProjectionGrainFactory));
         SnapshotGrainFactory = snapshotGrainFactory ?? throw new ArgumentNullException(nameof(snapshotGrainFactory));
         ReducersHash = reducersHash ?? throw new ArgumentNullException(nameof(reducersHash));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -101,53 +97,35 @@ public abstract class UxProjectionGrain<TProjection, TBrook>
     /// </summary>
     protected ISnapshotGrainFactory SnapshotGrainFactory { get; }
 
-    /// <summary>
-    ///     Gets the factory for resolving UX projection grains and cursors.
-    /// </summary>
-    protected IUxProjectionGrainFactory UxProjectionGrainFactory { get; }
-
     /// <inheritdoc />
     public async ValueTask<TProjection?> GetAsync(
         CancellationToken cancellationToken = default
     )
     {
-        // Get current brook position from the projection cursor grain (subscribes to brook updates)
-        IUxProjectionCursorGrain cursorGrain = UxProjectionGrainFactory.GetUxProjectionCursorGrain(projectionKey);
-        BrookPosition currentPosition = await cursorGrain.GetPositionAsync();
-
-        // Fast path: return cached projection if still current
-        if (!currentPosition.IsNewerThan(cachedVersion))
+        // Fast path: return cached projection if already loaded
+        if (isLoaded)
         {
-            Logger.CacheHit(projectionKey, cachedVersion);
-            return cachedProjection;
-        }
-
-        // Handle case where brook has no events yet
-        if (currentPosition.NotSet)
-        {
-            Logger.NoEventsYet(projectionKey);
-            cachedProjection = default;
-            cachedVersion = currentPosition;
+            Logger.VersionedCacheHit(versionedKey);
             return cachedProjection;
         }
 
         // Slow path: fetch from snapshot cache grain
-        Logger.CacheMiss(projectionKey, cachedVersion, currentPosition);
+        Logger.VersionedCacheMiss(versionedKey);
         SnapshotStreamKey snapshotStreamKey = new(
             SnapshotNameHelper.GetSnapshotName<TProjection>(),
-            projectionKey.BrookKey.Id,
+            versionedKey.ProjectionKey.BrookKey.Id,
             ReducersHash);
-        SnapshotKey snapshotKey = new(snapshotStreamKey, currentPosition.Value);
+        SnapshotKey snapshotKey = new(snapshotStreamKey, versionedKey.Version.Value);
         ISnapshotCacheGrain<TProjection> snapshotCacheGrain =
             SnapshotGrainFactory.GetSnapshotCacheGrain<TProjection>(snapshotKey);
         cachedProjection = await snapshotCacheGrain.GetStateAsync(cancellationToken);
-        cachedVersion = currentPosition;
-        Logger.CacheUpdated(projectionKey, cachedVersion);
+        isLoaded = true;
+        Logger.VersionedCacheLoaded(versionedKey);
         return cachedProjection;
     }
 
     /// <summary>
-    ///     Called when the grain is activated. Initializes the projection key.
+    ///     Called when the grain is activated. Initializes the versioned key.
     /// </summary>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the activation operation.</returns>
@@ -158,15 +136,19 @@ public abstract class UxProjectionGrain<TProjection, TBrook>
         string primaryKey = this.GetPrimaryKeyString();
         try
         {
-            projectionKey = UxProjectionKey.FromString(primaryKey);
+            versionedKey = UxProjectionVersionedKey.FromString(primaryKey);
         }
         catch (Exception ex) when (ex is ArgumentException or FormatException)
         {
-            Logger.ProjectionGrainInvalidPrimaryKey(primaryKey, ex);
+            Logger.VersionedCacheGrainInvalidPrimaryKey(primaryKey, ex);
             throw;
         }
 
-        Logger.ProjectionGrainActivated(primaryKey, projectionKey.ProjectionTypeName, projectionKey.BrookKey);
+        Logger.VersionedCacheGrainActivated(
+            primaryKey,
+            versionedKey.ProjectionKey.ProjectionTypeName,
+            versionedKey.ProjectionKey.BrookKey,
+            versionedKey.Version);
         return Task.CompletedTask;
     }
 }

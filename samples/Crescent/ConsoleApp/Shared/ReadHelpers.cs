@@ -8,13 +8,12 @@ using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Reader;
 
-using Orleans.Runtime;
-
 
 namespace Crescent.ConsoleApp.Shared;
 
 /// <summary>
 ///     Helpers for logging readback operations on a brook.
+///     Uses <see cref="IBrookAsyncReaderGrain" /> for streaming reads.
 /// </summary>
 internal static class ReadHelpers
 {
@@ -37,7 +36,6 @@ internal static class ReadHelpers
         CancellationToken cancellationToken = default
     )
     {
-        IBrookReaderGrain reader = brookGrainFactory.GetBrookReaderGrain(brookKey);
         BrookPosition latest = useConfirmedCursor
             ? await brookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionConfirmedAsync()
             : await brookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionAsync();
@@ -48,46 +46,34 @@ internal static class ReadHelpers
             return;
         }
 
-        int attempt = 0;
-        while (true)
-        {
-            int readCount = 0;
-            long totalBytes = 0;
-            DateTimeOffset started = DateTimeOffset.UtcNow;
-            try
-            {
-                await foreach (BrookEvent mississippiEvent in reader.ReadEventsAsync(new(1), latest, cancellationToken))
-                {
-                    readCount++;
-                    totalBytes += mississippiEvent.Data.Length;
-                    if ((readCount <= 5) || ((readCount % 50) == 0))
-                    {
-                        logger.ReadIdxEvent(
-                            runId,
-                            readCount,
-                            mississippiEvent.Id,
-                            mississippiEvent.EventType,
-                            mississippiEvent.Data.Length);
-                    }
-                }
+        int readCount = 0;
+        long totalBytes = 0;
+        DateTimeOffset started = DateTimeOffset.UtcNow;
 
-                TimeSpan elapsed = DateTimeOffset.UtcNow - started;
-                logger.ReadbackComplete(
+        // Use async reader grain for streaming - each call gets a unique instance
+        IBrookAsyncReaderGrain reader = brookGrainFactory.GetBrookAsyncReaderGrain(brookKey);
+        await foreach (BrookEvent mississippiEvent in reader.ReadEventsAsync(new(1), latest, cancellationToken))
+        {
+            readCount++;
+            totalBytes += mississippiEvent.Data.Length;
+            if ((readCount <= 5) || ((readCount % 50) == 0))
+            {
+                logger.ReadIdxEvent(
                     runId,
                     readCount,
-                    totalBytes,
-                    (int)elapsed.TotalMilliseconds,
-                    readCount / Math.Max(0.001, elapsed.TotalSeconds),
-                    totalBytes / 1_000_000.0 / Math.Max(0.001, elapsed.TotalSeconds));
-                break;
-            }
-            catch (EnumerationAbortedException ex) when (attempt == 0)
-            {
-                attempt++;
-                logger.ReadEnumerationAbortedRetry(runId, ex);
-
-                // loop and retry full read once
+                    mississippiEvent.Id,
+                    mississippiEvent.EventType,
+                    mississippiEvent.Data.Length);
             }
         }
+
+        TimeSpan elapsed = DateTimeOffset.UtcNow - started;
+        logger.ReadbackComplete(
+            runId,
+            readCount,
+            totalBytes,
+            (int)elapsed.TotalMilliseconds,
+            readCount / Math.Max(0.001, elapsed.TotalSeconds),
+            totalBytes / 1_000_000.0 / Math.Max(0.001, elapsed.TotalSeconds));
     }
 }

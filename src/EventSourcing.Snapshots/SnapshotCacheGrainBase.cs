@@ -52,7 +52,7 @@ namespace Mississippi.EventSourcing.Snapshots;
 ///         was rebuilt.
 ///     </para>
 /// </remarks>
-public abstract class SnapshotCacheGrain<TSnapshot, TBrook>
+public abstract class SnapshotCacheGrainBase<TSnapshot, TBrook>
     : ISnapshotCacheGrain<TSnapshot>,
       IGrainBase
     where TBrook : IBrookDefinition
@@ -62,7 +62,7 @@ public abstract class SnapshotCacheGrain<TSnapshot, TBrook>
     private TSnapshot? state;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="SnapshotCacheGrain{TSnapshot, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="SnapshotCacheGrainBase{TSnapshot, TBrook}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="snapshotStorageReader">Reader for loading snapshots from storage.</param>
@@ -72,7 +72,7 @@ public abstract class SnapshotCacheGrain<TSnapshot, TBrook>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="retentionOptions">Options controlling snapshot retention and replay strategy.</param>
     /// <param name="logger">Logger instance.</param>
-    protected SnapshotCacheGrain(
+    protected SnapshotCacheGrainBase(
         IGrainContext grainContext,
         ISnapshotStorageReader snapshotStorageReader,
         IBrookGrainFactory brookGrainFactory,
@@ -247,9 +247,10 @@ public abstract class SnapshotCacheGrain<TSnapshot, TBrook>
 
         long eventCount = 0;
 
-        // Read events up to the snapshot version
+        // Read events up to the snapshot version using the async reader grain
+        // (which is designed for streaming and auto-deactivates after use)
         BrookPosition readTo = new(targetVersion);
-        IBrookReaderGrain readerGrain = BrookGrainFactory.GetBrookReaderGrain(brookKey);
+        IBrookAsyncReaderGrain readerGrain = BrookGrainFactory.GetBrookAsyncReaderGrain(brookKey);
         await foreach (BrookEvent brookEvent in readerGrain.ReadEventsAsync(readFrom, readTo, token)
                            .WithCancellation(token))
         {

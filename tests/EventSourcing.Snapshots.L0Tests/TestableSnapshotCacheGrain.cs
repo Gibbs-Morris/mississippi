@@ -17,7 +17,7 @@ namespace Mississippi.EventSourcing.Snapshots.Tests;
 ///     Testable snapshot cache grain that exposes protected methods.
 /// </summary>
 internal sealed class TestableSnapshotCacheGrain
-    : SnapshotCacheGrain<SnapshotCacheGrainTestState, SnapshotCacheGrainTestBrook>
+    : SnapshotCacheGrainBase<SnapshotCacheGrainTestState, SnapshotCacheGrainTestBrook>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="TestableSnapshotCacheGrain" /> class.
@@ -51,6 +51,12 @@ internal sealed class TestableSnapshotCacheGrain
             logger)
     {
     }
+
+    /// <summary>
+    ///     Gets the brook name from the brook definition for testing.
+    /// </summary>
+    /// <returns>The brook name.</returns>
+    public static string GetBrookName() => BrookName;
 
     /// <inheritdoc />
     protected override SnapshotCacheGrainTestState CreateInitialState() =>

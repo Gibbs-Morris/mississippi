@@ -13,13 +13,12 @@ using Mississippi.EventSourcing.Factory;
 using Mississippi.EventSourcing.Reader;
 using Mississippi.EventSourcing.Writer;
 
-using Orleans.Runtime;
-
 
 namespace Crescent.ConsoleApp.Scenarios;
 
 /// <summary>
 ///     Runs a multi-stream interleaved workload and reports cursors and counts.
+///     Uses <see cref="IBrookAsyncReaderGrain" /> for streaming reads.
 /// </summary>
 internal static class MultiStreamScenario
 {
@@ -72,40 +71,14 @@ internal static class MultiStreamScenario
             BrookPosition cB = await brookGrainFactory.GetBrookCursorGrain(keyB).GetLatestPositionConfirmedAsync();
             logger.CursorsAB(runId, cA.Value, cB.Value);
 
-            // Read a portion from each
-            IBrookReaderGrain rA = brookGrainFactory.GetBrookReaderGrain(keyA);
-            IBrookReaderGrain rB = brookGrainFactory.GetBrookReaderGrain(keyB);
+            // Read from each stream using async reader grains (unique instance per call)
             int ca = 0, cb = 0;
             if (cA.Value >= 1)
             {
-                int attemptsA = 0;
-                while (true)
+                IBrookAsyncReaderGrain rA = brookGrainFactory.GetBrookAsyncReaderGrain(keyA);
+                await foreach (BrookEvent ev in rA.ReadEventsAsync(new(1), cA))
                 {
-                    try
-                    {
-                        ca = 0;
-                        await foreach (BrookEvent ignoredEvent in rA.ReadEventsAsync(new(1), cA))
-                        {
-                            ca++;
-                        }
-
-                        break;
-                    }
-                    catch (EnumerationAbortedException ex)
-                    {
-                        if (attemptsA == 0)
-                        {
-                            attemptsA++;
-                            logger.ReadEnumerationAbortedRetry(runId, ex);
-
-                            // retry once
-                        }
-                        else
-                        {
-                            // second failure: swallow to avoid crashing the scenario
-                            break;
-                        }
-                    }
+                    ca++;
                 }
             }
             else
@@ -115,34 +88,10 @@ internal static class MultiStreamScenario
 
             if (cB.Value >= 1)
             {
-                int attemptsB = 0;
-                while (true)
+                IBrookAsyncReaderGrain rB = brookGrainFactory.GetBrookAsyncReaderGrain(keyB);
+                await foreach (BrookEvent ev in rB.ReadEventsAsync(new(1), cB))
                 {
-                    try
-                    {
-                        cb = 0;
-                        await foreach (BrookEvent ignoredEvent in rB.ReadEventsAsync(new(1), cB))
-                        {
-                            cb++;
-                        }
-
-                        break;
-                    }
-                    catch (EnumerationAbortedException ex)
-                    {
-                        if (attemptsB == 0)
-                        {
-                            attemptsB++;
-                            logger.ReadEnumerationAbortedRetry(runId, ex);
-
-                            // retry once
-                        }
-                        else
-                        {
-                            // second failure: swallow to avoid crashing the scenario
-                            break;
-                        }
-                    }
+                    cb++;
                 }
             }
             else
