@@ -27,7 +27,7 @@ via `AsyncEnumerableGrainExtension` to manage streaming across network calls.
 ### Key Findings
 
 | Aspect | Original Design | Current Design |
-|--------|-----------------|----------------|
+| ------ | --------------- | -------------- |
 | `BrookReaderGrain` | `[StatelessWorker]` - multiple activations | Single activation per key |
 | `BrookSliceReaderGrain.ReadAsync` | `[ReadOnly]` - interleaved calls | Serialized (no `[ReadOnly]`) |
 | Slice iteration | Sequential `foreach` | Sequential `foreach` |
@@ -290,7 +290,7 @@ flowchart TB
 ### Changes Made
 
 | Component | Change | Reason |
-|-----------|--------|--------|
+| --------- | ------ | ------ |
 | `BrookReaderGrain` | Removed `[StatelessWorker]` | IAsyncEnumerable requires stable activation |
 | `IBrookSliceReaderGrain.ReadAsync` | Removed `[ReadOnly]` | Method mutates `Cache` property |
 | `IBrookSliceReaderGrain.ReadBatchAsync` | Removed `[ReadOnly]` | Method mutates `Cache` property |
@@ -337,7 +337,7 @@ flowchart TB
 
 **Impact Severity**: **MEDIUM-HIGH** for high-throughput read scenarios
 
-```
+```text
 Before: 10 concurrent readers → 10x parallel throughput
 After:  10 concurrent readers → serialized, 1x throughput
 ```
@@ -419,11 +419,13 @@ public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(
 ```
 
 **Pros**:
+
 - Slice reads happen in parallel
 - No need for `[StatelessWorker]` on reader grain
 - Streaming still works (enumerator stays in one activation)
 
 **Cons**:
+
 - Batches must fit in memory
 - Ordering must be maintained (slices complete in any order)
 
@@ -463,11 +465,13 @@ flowchart TB
 ```
 
 **Pros**:
+
 - Clear separation of concerns
 - Workers can use `[StatelessWorker]` safely (batch API only)
 - Streaming grain stays single-activation
 
 **Cons**:
+
 - Additional grain type
 - More complex architecture
 
@@ -497,10 +501,12 @@ public interface IBrookSliceReaderGrain : IGrainWithStringKey
 ```
 
 **Pros**:
+
 - Restores `[ReadOnly]` interleaving on slice reads
 - Cache warming can be parallel
 
 **Cons**:
+
 - Two-phase read (warm then read)
 - Complexity in cache validity tracking
 
@@ -540,10 +546,12 @@ public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(...)
 ```
 
 **Pros**:
+
 - True streaming with parallel fetch
 - Backpressure via bounded channel
 
 **Cons**:
+
 - Ordering is lost (events arrive out of slice order)
 - Complex error handling
 
@@ -580,6 +588,7 @@ public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(...)
 ```
 
 **Why**:
+
 - Minimal code change
 - Immediate performance gain
 - No new grain types needed
@@ -588,6 +597,7 @@ public async IAsyncEnumerable<BrookEvent> ReadEventsAsync(...)
 ### Medium Term: Consider Option 2
 
 If read throughput becomes critical:
+
 1. Introduce `BrookBatchReaderGrain` with `[StatelessWorker]` for parallel batch reads
 2. Keep `BrookReaderGrain` as streaming orchestrator
 3. Slice grains focus purely on caching
@@ -597,7 +607,7 @@ If read throughput becomes critical:
 ## Summary
 
 | Issue | Root Cause | Fix | Performance Impact |
-|-------|-----------|-----|-------------------|
+| ----- | ---------- | --- | ------------------ |
 | `EnumerationAbortedException` | Orleans stores `IAsyncEnumerator` in activation-specific extension; `[StatelessWorker]` routes `MoveNext` to wrong activation | Removed `[StatelessWorker]` | Fixed streaming, serialized readers |
 | Incorrect `[ReadOnly]` | `Cache` mutation in `ReadAsync` violates contract | Removed `[ReadOnly]` | Serialized slice reads |
 | Lost parallelism | Single activation + serialized methods | Use batch API with parallel fan-out | Restore parallel performance |

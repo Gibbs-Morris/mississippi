@@ -52,7 +52,8 @@ flowchart LR
   classDef stateless stroke-dasharray: 4 2, stroke:#0b7, color:#0b7;
 ```
 
-Notes:
+## Notes
+
 - Snapshot cache grains can call other snapshot cache grains to reuse base snapshots when rebuilding state.
 - Dashed edges represent stream-driven notifications rather than direct method calls.
 - Nodes with dashed teal borders are marked `[StatelessWorker]` in code.

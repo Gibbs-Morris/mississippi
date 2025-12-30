@@ -7,7 +7,7 @@ This document visualizes the read and write paths through the grain architecture
 ### Legend
 
 | Style | Meaning |
-|-------|---------|
+| ----- | ------- |
 | **Green solid arrow** | `[ReadOnly]` method call – allows interleaving with other `[ReadOnly]` calls |
 | **Red solid arrow** | Non-`[ReadOnly]` method call – serialized, potential bottleneck |
 | **Orange dashed arrow** | Mutates local grain state (cache population, etc.) |
@@ -99,7 +99,7 @@ flowchart LR
 ### Identified Bottlenecks (No `[ReadOnly]`)
 
 | Grain | Method | Impact | Why Not ReadOnly |
-|-------|--------|--------|------------------|
+| ----- | ------ | ------ | ---------------- |
 | **BrookSliceReaderGrain** | `ReadAsync`, `ReadBatchAsync` | 🔴 High | Mutates `Cache` property on first read |
 | **UxProjectionVersionedCacheGrain** | `GetAsync` | 🔴 High | Mutates `cachedProjection` and `isLoaded` |
 | **BrookCursorGrain** | `GetLatestPositionConfirmedAsync` | 🟡 Medium | Updates `TrackedCursorPosition` from storage |
@@ -107,7 +107,7 @@ flowchart LR
 ### Safe ReadOnly Paths (No Bottleneck)
 
 | Grain | Method | Notes |
-|-------|--------|-------|
+| ----- | ------ | ----- |
 | **UxProjectionGrain** | All 3 methods | Delegates to other grains, no local state |
 | **UxProjectionCursorGrain** | `GetPositionAsync` | Returns cached value only |
 | **SnapshotCacheGrain** | `GetStateAsync` | State hydrated on activation, getter is pure |
@@ -119,7 +119,7 @@ flowchart LR
 
 ### Hot Read Path (API → Projection)
 
-```
+```text
 UxApi
   │
   ▼ GetAsync [delegates]
@@ -149,7 +149,7 @@ BrookSliceReaderGrain ───────────────────�
 
 ### Write Path Flow
 
-```
+```text
 Command (external)
   │
   ▼
@@ -172,6 +172,7 @@ BrookWriterGrain ─────────────────────
 ### Option 1: Accept Current Design
 
 The bottlenecks occur on **first access only**:
+
 - `BrookSliceReaderGrain`: Cache populated once, then all reads are fast
 - `UxProjectionVersionedCacheGrain`: Projection loaded once, then cached
 
@@ -180,6 +181,7 @@ For workloads where the same version is read multiple times, the initial seriali
 ### Option 2: Eager Cache Population
 
 Move cache population to `OnActivateAsync`:
+
 - Grain activates → populates cache → all methods become pure reads
 - Then `[ReadOnly]` can be safely added
 - Trade-off: Slower activation, but faster subsequent reads
@@ -187,6 +189,7 @@ Move cache population to `OnActivateAsync`:
 ### Option 3: Load-Through Pattern with Locks
 
 Use a lightweight async lock pattern:
+
 ```csharp
 private readonly SemaphoreSlim cacheLock = new(1, 1);
 private TProjection? cachedProjection;
@@ -214,12 +217,14 @@ public async ValueTask<TProjection?> GetAsync(...)
 ### Option 4: Separate Read/Write Interfaces
 
 Split grains into read-only and write-capable versions:
+
 - `IBrookSliceReaderGrain` → read-only, `[ReadOnly]` safe
 - `IBrookSliceCacheGrain` → handles cache population separately
 
 ### Option 5: `[StatelessWorker]` Where Compatible
 
 For grains that don't use `IAsyncEnumerable`:
+
 - `UxProjectionVersionedCacheGrain` could potentially use `[StatelessWorker]`
 - Multiple activations would naturally distribute load
 - Each activation maintains its own cache (memory trade-off)
@@ -227,7 +232,7 @@ For grains that don't use `IAsyncEnumerable`:
 ## Performance Impact Summary
 
 | Scenario | Current Behavior | Potential Issue |
-|----------|------------------|-----------------|
+| -------- | ---------------- | --------------- |
 | First read of a version | Serialized cache population | High latency spike |
 | Subsequent reads of same version | Fast cached reads | None |
 | Many concurrent first reads | Queue behind each other | Latency amplification |
@@ -253,12 +258,14 @@ The original conflict between `[StatelessWorker]` and `IAsyncEnumerable` has bee
 the reader grain into two specialized grains:
 
 ### BrookReaderGrain (Batch Reads)
+
 - **`[StatelessWorker]`**: Multiple activations for parallel distribution
 - **`ReadEventsBatchAsync`**: Returns `ImmutableArray<BrookEvent>` (no streaming)
 - Uses `Task.WhenAll` for parallel fan-out across slice readers
 - Ideal for loading snapshots or bulk data retrieval
 
 ### BrookAsyncReaderGrain (Streaming Reads)
+
 - **NOT a StatelessWorker**: Each activation is sticky to preserve enumerator state
 - **`ReadEventsAsync`**: Returns `IAsyncEnumerable<BrookEvent>` for streaming
 - Uses `BrookAsyncReaderKey` with random GUID suffix for unique instances per call
@@ -266,6 +273,7 @@ the reader grain into two specialized grains:
 - Factory method `IBrookGrainFactory.GetBrookAsyncReaderGrain(brookKey)` generates unique keys automatically
 
 ### Why This Works
+
 - **Batch path**: `[StatelessWorker]` distributes load, no enumerator state needed
 - **Streaming path**: Unique keys ensure each `IAsyncEnumerable` gets its own dedicated activation
 - **No `EnumerationAbortedException`**: Enumerator state stays on the same activation throughout iteration
