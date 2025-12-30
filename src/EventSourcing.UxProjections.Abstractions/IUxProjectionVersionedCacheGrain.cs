@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Orleans;
+using Orleans.Concurrency;
 
 
 namespace Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -40,6 +41,7 @@ public interface IUxProjectionVersionedCacheGrain<TProjection> : IGrainWithStrin
     ///     The projection is loaded from the snapshot cache grain on first access
     ///     and cached in memory for subsequent requests.
     /// </remarks>
+    [ReadOnly]
     [Alias("GetAsync")]
     ValueTask<TProjection?> GetAsync(
         CancellationToken cancellationToken = default

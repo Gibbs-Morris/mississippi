@@ -330,7 +330,7 @@ flowchart TB
 | `IBrookSliceReaderGrain.ReadBatchAsync` | Restored `[ReadOnly]` | Cache no longer mutates on read (loaded on activation) |
 | `BrookSliceReaderGrain.ReadAsync` | Throws `InvalidOperationException` | If requested position exceeds cached range |
 | `IBrookCursorGrain.GetLatestPositionConfirmedAsync` | Removed `[ReadOnly]` | Method updates `TrackedCursorPosition` |
-| `IUxProjectionVersionedCacheGrain.GetAsync` | Removed `[ReadOnly]` | Method updates `cachedProjection` |
+| `IUxProjectionVersionedCacheGrain.GetAsync` | Restored `[ReadOnly]` | Cache loads on activation (versioned = immutable) |
 
 ### Current Flow
 
