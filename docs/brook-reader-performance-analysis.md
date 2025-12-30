@@ -17,6 +17,16 @@
 
 ---
 
+## Namespace Map
+
+- Mississippi.EventSourcing.Brooks.Reader: `BrookReaderGrain`, `BrookAsyncReaderGrain`, `BrookSliceReaderGrain`
+- Mississippi.EventSourcing.Brooks.Cursor: `BrookCursorGrain`
+- Mississippi.EventSourcing.Brooks.Writer: `BrookWriterGrain`
+- Mississippi.EventSourcing.Brooks.Abstractions: keys and definitions shared by the reader/writer grains
+- Mississippi.EventSourcing.Brooks.Factory: grain factory used by cache and projection layers
+
+---
+
 ## Executive Summary
 
 The `EnumerationAbortedException` was caused by a fundamental incompatibility between Orleans'
@@ -28,7 +38,7 @@ via `AsyncEnumerableGrainExtension` to manage streaming across network calls.
 
 | Aspect | Original Design | Current Design |
 | ------ | --------------- | -------------- |
-| `BrookReaderGrain` | `[StatelessWorker]` - multiple activations | Single activation per key |
+| `BrookReaderGrain` | `[StatelessWorker]` - multiple activations | `[StatelessWorker]` batch reader; streaming handled by `BrookAsyncReaderGrain` (unique key per call, non-StatelessWorker) |
 | `BrookSliceReaderGrain.ReadAsync` | Lazy cache, no `[ReadOnly]` | Eager cache on activation, `[ReadOnly]` restored |
 | `BrookSliceReaderGrain` cache | Populated on first read (mutation) | Populated on `OnActivateAsync` (no read mutation) |
 | Slice read behavior | Silent cache miss handling | Throws `InvalidOperationException` if position > cache |
@@ -324,7 +334,8 @@ flowchart TB
 
 | Component | Change | Reason |
 | --------- | ------ | ------ |
-| `BrookReaderGrain` | Removed `[StatelessWorker]` | IAsyncEnumerable requires stable activation |
+| `BrookReaderGrain` | Retained `[StatelessWorker]` for batch reads | Parallel fan-out for batch loads while keeping streaming separate |
+| `BrookAsyncReaderGrain` | Non-`[StatelessWorker]` streaming reader with unique keys | Keeps `IAsyncEnumerable` enumerators on a single activation |
 | `BrookSliceReaderGrain` | Cache loads on `OnActivateAsync` | Eager population enables `[ReadOnly]` on reads |
 | `IBrookSliceReaderGrain.ReadAsync` | Restored `[ReadOnly]` | Cache no longer mutates on read (loaded on activation) |
 | `IBrookSliceReaderGrain.ReadBatchAsync` | Restored `[ReadOnly]` | Cache no longer mutates on read (loaded on activation) |
@@ -336,12 +347,15 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    subgraph "Single BrookReaderGrain Activation"
-        BR[BrookReaderGrain]
-        EXT["AsyncEnumerableGrainExtension<br/>_enumerators: stable"]
+    subgraph "Batch path (StatelessWorker)"
+        BR["BrookReaderGrain<br/>[StatelessWorker]<br/>batch fan-out"]
     end
 
-    subgraph "Slice Readers (one per range, cache on activation)"
+    subgraph "Streaming path (unique key per call)"
+        BAR["BrookAsyncReaderGrain<br/>single activation per call key"]
+    end
+
+    subgraph "Slice Readers (cache on activation)"
         SR0["SliceReaderGrain[brook:0:100]<br/>Cache: events 0-99 [ReadOnly]"]
         SR1["SliceReaderGrain[brook:100:100]<br/>Cache: events 100-199 [ReadOnly]"]
         SR2["SliceReaderGrain[brook:200:50]<br/>Cache: events 200-249 [ReadOnly]"]
@@ -349,13 +363,18 @@ flowchart TB
 
     Client[Client]
 
-    Client -->|"All calls route here"| BR
-    BR -->|"Interleavable [ReadOnly]"| SR0
-    BR -->|"Interleavable [ReadOnly]"| SR1
-    BR -->|"Interleavable [ReadOnly]"| SR2
+    Client -->|"Batch read"| BR
+    BR -->|"ReadBatchAsync [ReadOnly]"| SR0
+    BR -->|"ReadBatchAsync [ReadOnly]"| SR1
+    BR -->|"ReadBatchAsync [ReadOnly]"| SR2
 
-    style BR fill:#8f8,stroke:#333
-    style EXT fill:#8f8,stroke:#333
+    Client -.->|"Streaming read"| BAR
+    BAR -->|"ReadAsync [ReadOnly]"| SR0
+    BAR -->|"ReadAsync [ReadOnly]"| SR1
+    BAR -->|"ReadAsync [ReadOnly]"| SR2
+
+    style BR stroke:#0b7,stroke-dasharray:4 2
+    style BAR stroke:#333
 ```
 
 ---
@@ -368,14 +387,9 @@ flowchart TB
 
 **Before**: Multiple concurrent readers could exist per silo, each processing different read requests.
 
-**After**: Single activation per brook key. All concurrent reads to the same brook serialize.
+**After**: `[StatelessWorker]` kept for batch reads; streaming uses `BrookAsyncReaderGrain` with a unique key per call so `MoveNextAsync` always hits the same activation.
 
-**Impact Severity**: **MEDIUM-HIGH** for high-throughput read scenarios
-
-```text
-Before: 10 concurrent readers → 10x parallel throughput
-After:  10 concurrent readers → serialized, 1x throughput
-```
+**Impact Severity**: **BALANCED** – batch throughput restored via StatelessWorkers, streaming stability preserved via per-call activations.
 
 #### 2. [ReadOnly] on BrookSliceReaderGrain.ReadAsync - RESTORED
 
@@ -404,20 +418,24 @@ flowchart LR
     end
 
     subgraph "Current (WORKING)"
-        C4[Client 1] --> BR[BrookReader]
-        C5[Client 2] --> BR
-        C6[Client 3] --> BR
-        BR --> SR0[Slice 0]
-        note2[/"1 activation<br/>serialized"\]
+        C4[Client 1] --> BAR1[BrookAsyncReader #A]
+        C5[Client 2] --> BAR2[BrookAsyncReader #B]
+        C6[Client 3] --> BAR3[BrookAsyncReader #C]
+        BAR1 --> SR0[Slice 0]
+        BAR2 --> SR0
+        BAR3 --> SR0
+        note2[/"unique activation<br/>per call key"\]
     end
 
     style BRA fill:#8f8
     style BRB fill:#8f8
     style BRC fill:#8f8
-    style BR fill:#ff8
+    style BAR1 fill:#8f8
+    style BAR2 fill:#8f8
+    style BAR3 fill:#8f8
 
     style note1 fill:#9f9,stroke:none
-    style note2 fill:#ff9,stroke:none
+    style note2 fill:#9f9,stroke:none
 ```
 
 ---

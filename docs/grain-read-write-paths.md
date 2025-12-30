@@ -4,6 +4,14 @@ This document visualizes the read and write paths through the grain architecture
 
 ## Understanding the Diagram
 
+## Namespace Map
+
+- API: Mississippi.EventSourcing.UxProjections.Api
+- UX projections: Mississippi.EventSourcing.UxProjections
+- Snapshots: Mississippi.EventSourcing.Snapshots
+- Brooks: Mississippi.EventSourcing.Brooks
+- Aggregates: Mississippi.EventSourcing.Aggregates
+
 ### Legend
 
 | Style | Meaning |
@@ -26,22 +34,22 @@ This document visualizes the read and write paths through the grain architecture
 
 ```mermaid
 flowchart LR
-  subgraph API["API Layer"]
+  subgraph API["Mississippi.EventSourcing.UxProjections.Api"]
     UxApi["UxProjectionControllerBase"]
   end
 
-  subgraph UX["UX Projections"]
+  subgraph UX["Mississippi.EventSourcing.UxProjections"]
     UxProjection["UxProjectionGrainBase<br/>━━━━━━━━━━━━━━━<br/>✅ GetAsync [ReadOnly]<br/>✅ GetAtVersionAsync [ReadOnly]<br/>✅ GetLatestVersionAsync [ReadOnly]"]
     UxCursor["UxProjectionCursorGrain<br/>━━━━━━━━━━━━━━━<br/>✅ GetPositionAsync [ReadOnly]<br/>⚪ DeactivateAsync"]
     UxCache["UxProjectionVersionedCacheGrainBase<br/>━━━━━━━━━━━━━━━<br/>✅ GetAsync [ReadOnly]<br/>📦 Cache loads on activation"]
   end
 
-  subgraph Snapshots["Snapshot Layer"]
+  subgraph Snapshots["Mississippi.EventSourcing.Snapshots"]
     SnapshotCache["SnapshotCacheGrainBase<br/>━━━━━━━━━━━━━━━<br/>✅ GetStateAsync [ReadOnly]"]
     SnapshotPersister["SnapshotPersisterGrain<br/>━━━━━━━━━━━━━━━<br/>🔥 PersistAsync [OneWay]"]
   end
 
-  subgraph Brooks["Brook Layer"]
+  subgraph Brooks["Mississippi.EventSourcing.Brooks"]
     BrookWriter["BrookWriterGrain<br/>━━━━━━━━━━━━━━━<br/>🔴 AppendEventsAsync"]
     BrookCursor["BrookCursorGrain<br/>━━━━━━━━━━━━━━━<br/>✅ GetLatestPositionAsync [ReadOnly]<br/>⚠️ GetLatestPositionConfirmedAsync"]
     BrookReader["BrookReaderGrain<br/>━━━━━━━━━━━━━━━<br/>✅ ReadEventsBatchAsync [ReadOnly]<br/>⚡ [StatelessWorker]"]
@@ -49,7 +57,7 @@ flowchart LR
     BrookSlice["BrookSliceReaderGrain<br/>━━━━━━━━━━━━━━━<br/>✅ ReadAsync [ReadOnly]<br/>✅ ReadBatchAsync [ReadOnly]<br/>📦 Cache loads on activation"]
   end
 
-  subgraph Aggregates["Command Layer"]
+  subgraph Aggregates["Mississippi.EventSourcing.Aggregates"]
     Aggregate["AggregateGrainBase<br/>━━━━━━━━━━━━━━━<br/>🔴 Command methods"]
   end
 
