@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
+
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Abstractions.Storage;
 
@@ -28,13 +30,16 @@ internal sealed class BrookSliceReaderGrain
     /// </summary>
     /// <param name="brookStorageReader">The brook storage reader service for accessing persisted events.</param>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="logger">Logger for diagnostic output.</param>
     public BrookSliceReaderGrain(
         IBrookStorageReader brookStorageReader,
-        IGrainContext grainContext
+        IGrainContext grainContext,
+        ILogger<BrookSliceReaderGrain> logger
     )
     {
         BrookStorageReader = brookStorageReader;
         GrainContext = grainContext;
+        Logger = logger;
     }
 
     /// <summary>
@@ -45,6 +50,8 @@ internal sealed class BrookSliceReaderGrain
     public IGrainContext GrainContext { get; }
 
     private IBrookStorageReader BrookStorageReader { get; }
+
+    private ILogger<BrookSliceReaderGrain> Logger { get; }
 
     private ImmutableArray<BrookEvent> Cache { get; set; } = ImmutableArray<BrookEvent>.Empty;
 
@@ -69,7 +76,9 @@ internal sealed class BrookSliceReaderGrain
     )
     {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
+        Logger.SliceGrainActivating(brookRangeKey);
         await PopulateCacheFromBrookAsync(brookRangeKey, token);
+        Logger.SliceCachePopulated(brookRangeKey, Cache.Length);
     }
 
     /// <summary>

@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.Extensions.Logging;
+
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Abstractions.Storage;
 using Mississippi.EventSourcing.Reader;
@@ -33,8 +35,9 @@ public sealed class BrookSliceReaderGrainUnitTests
     {
         Mock<IBrookStorageReader> storage = new();
         Mock<IGrainContext> context = new();
+        Mock<ILogger<BrookSliceReaderGrain>> logger = new();
         context.Setup(c => c.GrainId).Returns(GrainId.Create("slicereader", TestRangeKey.ToString()));
-        BrookSliceReaderGrain grain = new(storage.Object, context.Object);
+        BrookSliceReaderGrain grain = new(storage.Object, context.Object, logger.Object);
         return (grain, storage, context);
     }
 
@@ -191,6 +194,7 @@ public sealed class BrookSliceReaderGrainUnitTests
         {
             await foreach (BrookEvent unused in sut.ReadAsync(0, 2, cts.Token))
             {
+                _ = unused;
                 count++;
                 if (count == 1)
                 {
@@ -320,7 +324,7 @@ public sealed class BrookSliceReaderGrainUnitTests
         {
             await foreach (BrookEvent unused in sut.ReadAsync(0, 5))
             {
-                // Should not reach here
+                _ = unused;
             }
         });
         Assert.Contains("exceeds cached range", ex.Message, StringComparison.Ordinal);
@@ -357,7 +361,7 @@ public sealed class BrookSliceReaderGrainUnitTests
         {
             await foreach (BrookEvent unused in sut.ReadAsync(0, 5))
             {
-                // Should not reach here
+                _ = unused;
             }
         });
         Assert.Contains("exceeds cached range", ex.Message, StringComparison.Ordinal);

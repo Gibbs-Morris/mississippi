@@ -38,8 +38,8 @@ public interface IUxProjectionVersionedCacheGrain<TProjection> : IGrainWithStrin
     ///     The projection state at the specified version, or <c>default</c> if not found.
     /// </returns>
     /// <remarks>
-    ///     The projection is loaded from the snapshot cache grain on first access
-    ///     and cached in memory for subsequent requests.
+    ///     The projection is loaded from the snapshot cache grain during activation
+    ///     and cached in memory for all subsequent <see cref="GetAsync" /> requests.
     /// </remarks>
     [ReadOnly]
     [Alias("GetAsync")]
