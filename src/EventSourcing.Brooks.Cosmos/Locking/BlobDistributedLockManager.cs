@@ -7,6 +7,7 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 
@@ -23,21 +24,26 @@ internal class BlobDistributedLockManager : IDistributedLockManager
     /// <param name="blobServiceClient">The blob service client for accessing Azure Blob Storage.</param>
     /// <param name="options">The configuration options for brook storage.</param>
     /// <param name="leaseClientFactory">Factory used to create blob lease clients.</param>
+    /// <param name="logger">The logger for diagnostic output.</param>
     /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
     public BlobDistributedLockManager(
         BlobServiceClient blobServiceClient,
         IOptions<BrookStorageOptions> options,
-        IBlobLeaseClientFactory leaseClientFactory
+        IBlobLeaseClientFactory leaseClientFactory,
+        ILogger<BlobDistributedLockManager> logger
     )
     {
         BlobServiceClient = blobServiceClient ?? throw new ArgumentNullException(nameof(blobServiceClient));
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         LeaseClientFactory = leaseClientFactory ?? throw new ArgumentNullException(nameof(leaseClientFactory));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private BlobServiceClient BlobServiceClient { get; }
 
     private IBlobLeaseClientFactory LeaseClientFactory { get; }
+
+    private ILogger<BlobDistributedLockManager> Logger { get; }
 
     private BrookStorageOptions Options { get; }
 
@@ -55,11 +61,13 @@ internal class BlobDistributedLockManager : IDistributedLockManager
         CancellationToken cancellationToken = default
     )
     {
+        Logger.AcquiringLock(lockKey, duration.TotalSeconds);
         BlobContainerClient? containerClient = BlobServiceClient.GetBlobContainerClient(Options.LockContainerName);
         await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
         BlobClient? blobClient = containerClient.GetBlobClient($"locks/{lockKey}");
         if (!await blobClient.ExistsAsync(cancellationToken))
         {
+            Logger.CreatingLockBlob(lockKey);
             await blobClient.UploadAsync(new BinaryData("lock"), cancellationToken);
         }
 
@@ -73,6 +81,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
             try
             {
                 lease = await leaseClient.AcquireAsync(duration, cancellationToken: cancellationToken);
+                Logger.LockAcquired(lockKey, lease.Value.LeaseId, attempt);
                 break;
             }
             catch (RequestFailedException ex) when (ex.Status == 409)
@@ -82,6 +91,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
                 {
                     int backoffMs = (int)Math.Min(2000, Math.Pow(2, attempt) * 100);
                     int jitter = RandomNumberGenerator.GetInt32(0, 100);
+                    Logger.LockConflict(lockKey, attempt, backoffMs + jitter);
                     await Task.Delay(backoffMs + jitter, cancellationToken);
                 }
             }
@@ -89,6 +99,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
 
         if (lease is null)
         {
+            Logger.LockAcquisitionFailed(lockKey, maxAcquireAttempts);
             throw new InvalidOperationException("Failed to acquire blob lease for distributed lock after retries.");
         }
 

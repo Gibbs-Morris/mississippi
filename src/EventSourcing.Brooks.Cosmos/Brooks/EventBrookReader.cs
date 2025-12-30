@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Abstractions.Mapping;
@@ -26,20 +27,25 @@ internal class EventBrookReader : IEventBrookReader
     /// <param name="retryPolicy">The retry policy for handling transient failures.</param>
     /// <param name="options">The configuration options for brook storage.</param>
     /// <param name="eventMapper">The mapper for converting storage models to events.</param>
+    /// <param name="logger">The logger for diagnostic output.</param>
     public EventBrookReader(
         ICosmosRepository repository,
         IRetryPolicy retryPolicy,
         IOptions<BrookStorageOptions> options,
-        IMapper<EventStorageModel, BrookEvent> eventMapper
+        IMapper<EventStorageModel, BrookEvent> eventMapper,
+        ILogger<EventBrookReader> logger
     )
     {
         Repository = repository;
         RetryPolicy = retryPolicy;
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         EventMapper = eventMapper;
+        Logger = logger;
     }
 
     private IMapper<EventStorageModel, BrookEvent> EventMapper { get; }
+
+    private ILogger<EventBrookReader> Logger { get; }
 
     private BrookStorageOptions Options { get; }
 
@@ -58,12 +64,18 @@ internal class EventBrookReader : IEventBrookReader
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
+        Logger.ReadingEvents(brookRange);
+        int eventCount = 0;
         await foreach (EventStorageModel eventStorageModel in Repository.QueryEventsAsync(
                            brookRange,
                            Options.QueryBatchSize,
                            cancellationToken))
         {
-            yield return EventMapper.Map(eventStorageModel);
+            BrookEvent brookEvent = EventMapper.Map(eventStorageModel);
+            eventCount++;
+            yield return brookEvent;
         }
+
+        Logger.ReadCompleted(brookRange, eventCount);
     }
 }

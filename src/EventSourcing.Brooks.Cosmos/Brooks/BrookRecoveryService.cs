@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using Azure;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
@@ -28,20 +29,25 @@ internal class BrookRecoveryService : IBrookRecoveryService
     /// <param name="retryPolicy">The retry policy for handling transient failures.</param>
     /// <param name="lockManager">The distributed lock manager for concurrency control.</param>
     /// <param name="options">The configuration options for brook storage.</param>
+    /// <param name="logger">The logger for diagnostic output.</param>
     public BrookRecoveryService(
         ICosmosRepository repository,
         IRetryPolicy retryPolicy,
         IDistributedLockManager lockManager,
-        IOptions<BrookStorageOptions> options
+        IOptions<BrookStorageOptions> options,
+        ILogger<BrookRecoveryService> logger
     )
     {
         Repository = repository;
         RetryPolicy = retryPolicy;
         LockManager = lockManager;
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        Logger = logger;
     }
 
     private IDistributedLockManager LockManager { get; }
+
+    private ILogger<BrookRecoveryService> Logger { get; }
 
     private BrookStorageOptions Options { get; }
 
@@ -60,6 +66,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
         CancellationToken cancellationToken = default
     )
     {
+        Logger.GettingOrRecoveringCursor(brookId);
         CursorStorageModel? cursorDocument = await RetryPolicy.ExecuteAsync(
             async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
             cancellationToken);
@@ -70,8 +77,13 @@ internal class BrookRecoveryService : IBrookRecoveryService
                 cancellationToken);
             if (pendingCursor != null)
             {
+                long originalPos = pendingCursor.OriginalPosition?.Value ?? -1;
+                long targetPos = pendingCursor.Position.Value;
+                Logger.PendingCursorDetected(brookId, originalPos, targetPos);
+
                 // Use a shorter timeout for recovery lock to prevent deadlocks
                 TimeSpan recoveryTimeout = TimeSpan.FromSeconds(Math.Min(Options.LeaseDurationSeconds, 30));
+                Logger.AcquiringRecoveryLock(brookId, recoveryTimeout.TotalSeconds);
                 try
                 {
                     await using IDistributedLock recoveryLock = await LockManager.AcquireLockAsync(
@@ -83,8 +95,10 @@ internal class BrookRecoveryService : IBrookRecoveryService
                         async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
                         cancellationToken);
                 }
-                catch (RequestFailedException)
+                catch (RequestFailedException ex)
                 {
+                    Logger.RecoveryLockFailed(ex, brookId);
+
                     // If we can't acquire the recovery lock, assume another process is handling recovery
                     // Wait a bit and try to read the cursor again
                     await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
@@ -95,15 +109,19 @@ internal class BrookRecoveryService : IBrookRecoveryService
                     // If the cursor is still null after waiting, we have a problem
                     if (cursorDocument == null)
                     {
-                        throw new InvalidOperationException(
+                        InvalidOperationException invalidOperationException = new(
                             $"Unable to recover cursor position for brook {brookId}. " +
                             "Another recovery operation may be in progress or has failed.");
+                        Logger.RecoveryFailed(invalidOperationException, brookId);
+                        throw invalidOperationException;
                     }
                 }
             }
         }
 
-        return cursorDocument?.Position ?? new BrookPosition(-1);
+        BrookPosition position = cursorDocument?.Position ?? new BrookPosition(-1);
+        Logger.CursorPositionReturned(brookId, position.Value);
+        return position;
     }
 
     private async Task<bool> CheckAllEventsExistAsync(
@@ -113,6 +131,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
         CancellationToken cancellationToken
     )
     {
+        Logger.CheckingEventsExist(brookId, originalPosition, targetPosition);
         if ((targetPosition - originalPosition) > 10)
         {
             ISet<long> existingPositions = await Repository.GetExistingEventPositionsAsync(
@@ -150,6 +169,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
             cancellationToken);
         if (allEventsExist)
         {
+            Logger.RecoveryCommitting(brookId, targetPosition);
             await Repository.CommitCursorPositionAsync(brookId, targetPosition, cancellationToken);
         }
         else
@@ -165,8 +185,11 @@ internal class BrookRecoveryService : IBrookRecoveryService
         CancellationToken cancellationToken
     )
     {
+        Logger.RollingBack(brookId, originalPosition, targetPosition);
+        long eventsDeleted = 0;
         for (long pos = originalPosition + 1; pos <= targetPosition; pos++)
         {
+            Logger.DeletingOrphanedEvent(brookId, pos);
             await RetryPolicy.ExecuteAsync(
                 async () =>
                 {
@@ -174,6 +197,7 @@ internal class BrookRecoveryService : IBrookRecoveryService
                     return true;
                 },
                 cancellationToken);
+            eventsDeleted++;
         }
 
         await RetryPolicy.ExecuteAsync(
@@ -183,5 +207,6 @@ internal class BrookRecoveryService : IBrookRecoveryService
                 return true;
             },
             cancellationToken);
+        Logger.RollbackCompleted(brookId, eventsDeleted);
     }
 }

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -27,7 +28,9 @@ namespace Mississippi.EventSourcing.UxProjections.Api;
 ///             [Route("api/users/{entityId}")]
 ///             public class UserProjectionController : UxProjectionControllerBase&lt;UserProjection, UserBrook&gt;
 ///             {
-///                 public UserProjectionController(IUxProjectionGrainFactory factory) : base(factory) { }
+///                 public UserProjectionController(
+///                     IUxProjectionGrainFactory factory,
+///                     ILogger&lt;UxProjectionControllerBase&lt;UserProjection, UserBrook&gt;&gt; logger) : base(factory, logger) { }
 ///             }
 ///         </code>
 ///     </para>
@@ -45,15 +48,28 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
     where TProjection : class
     where TBrook : IBrookDefinition
 {
+    private static readonly string ProjectionTypeName = typeof(TProjection).Name;
+
     /// <summary>
-    ///     Initializes a new instance of the <see cref="UxProjectionControllerBase{TProjection, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="UxProjectionControllerBase{TProjection, TBrook}" />
+    ///     class.
     /// </summary>
     /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains.</param>
+    /// <param name="logger">The logger for diagnostic output.</param>
     protected UxProjectionControllerBase(
-        IUxProjectionGrainFactory uxProjectionGrainFactory
-    ) =>
+        IUxProjectionGrainFactory uxProjectionGrainFactory,
+        ILogger<UxProjectionControllerBase<TProjection, TBrook>> logger
+    )
+    {
         UxProjectionGrainFactory = uxProjectionGrainFactory ??
                                    throw new ArgumentNullException(nameof(uxProjectionGrainFactory));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    ///     Gets the logger for diagnostic output.
+    /// </summary>
+    protected ILogger<UxProjectionControllerBase<TProjection, TBrook>> Logger { get; }
 
     /// <summary>
     ///     Gets the factory for resolving UX projection grains.
@@ -75,14 +91,17 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
         CancellationToken cancellationToken = default
     )
     {
+        Logger.GettingLatestProjection(entityId, ProjectionTypeName);
         IUxProjectionGrain<TProjection> grain =
             UxProjectionGrainFactory.GetUxProjectionGrain<TProjection, TBrook>(entityId);
         TProjection? projection = await grain.GetAsync(cancellationToken);
         if (projection is null)
         {
+            Logger.ProjectionNotFound(entityId, ProjectionTypeName);
             return NotFound();
         }
 
+        Logger.ProjectionRetrieved(entityId, ProjectionTypeName);
         return Ok(projection);
     }
 
@@ -103,15 +122,18 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
         CancellationToken cancellationToken = default
     )
     {
+        Logger.GettingProjectionAtVersion(entityId, version, ProjectionTypeName);
         IUxProjectionGrain<TProjection> grain =
             UxProjectionGrainFactory.GetUxProjectionGrain<TProjection, TBrook>(entityId);
         BrookPosition brookPosition = new(version);
         TProjection? projection = await grain.GetAtVersionAsync(brookPosition, cancellationToken);
         if (projection is null)
         {
+            Logger.ProjectionAtVersionNotFound(entityId, version, ProjectionTypeName);
             return NotFound();
         }
 
+        Logger.ProjectionAtVersionRetrieved(entityId, version, ProjectionTypeName);
         return Ok(projection);
     }
 
@@ -130,14 +152,17 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
         CancellationToken cancellationToken = default
     )
     {
+        Logger.GettingLatestVersion(entityId, ProjectionTypeName);
         IUxProjectionGrain<TProjection> grain =
             UxProjectionGrainFactory.GetUxProjectionGrain<TProjection, TBrook>(entityId);
         BrookPosition position = await grain.GetLatestVersionAsync(cancellationToken);
         if (position.NotSet)
         {
+            Logger.NoVersionFound(entityId, ProjectionTypeName);
             return NotFound();
         }
 
+        Logger.LatestVersionRetrieved(entityId, position.Value, ProjectionTypeName);
         return Ok(position);
     }
 }

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Cosmos.Retry;
@@ -39,19 +40,24 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
     /// <param name="container">The Cosmos container for snapshot storage.</param>
     /// <param name="options">The snapshot storage options.</param>
     /// <param name="retryPolicy">Retry policy for transient Cosmos errors.</param>
+    /// <param name="logger">The logger for diagnostic output.</param>
     public SnapshotContainerOperations(
         [FromKeyedServices(CosmosContainerKeys.Snapshots)]
         Container container,
         IOptions<SnapshotStorageOptions> options,
-        IRetryPolicy retryPolicy
+        IRetryPolicy retryPolicy,
+        ILogger<SnapshotContainerOperations> logger
     )
     {
         CosmosContainer = container ?? throw new ArgumentNullException(nameof(container));
         RetryPolicy = retryPolicy ?? throw new ArgumentNullException(nameof(retryPolicy));
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private Container CosmosContainer { get; }
+
+    private ILogger<SnapshotContainerOperations> Logger { get; }
 
     private SnapshotStorageOptions Options { get; }
 
@@ -64,6 +70,7 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
         CancellationToken cancellationToken = default
     )
     {
+        Logger.DeletingDocument(partitionKey, documentId);
         try
         {
             await RetryPolicy.ExecuteAsync(
@@ -73,10 +80,12 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
                         cancellationToken: cancellationToken),
                     cancellationToken)
                 .ConfigureAwait(false);
+            Logger.DocumentDeleted(partitionKey, documentId);
             return true;
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
+            Logger.DocumentNotFoundForDeletion(partitionKey, documentId);
             return false;
         }
     }
@@ -87,6 +96,7 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
+        Logger.QueryingSnapshotIds(partitionKey);
         QueryDefinition query =
             new QueryDefinition("SELECT c.id, c.version FROM c WHERE c.snapshotPartitionKey = @pk").WithParameter(
                 "@pk",
@@ -104,6 +114,7 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
                     () => iterator.ReadNextAsync(cancellationToken),
                     cancellationToken)
                 .ConfigureAwait(false);
+            Logger.SnapshotIdsPageRetrieved(partitionKey, page.Count);
             foreach (SnapshotIdVersionDto item in page)
             {
                 yield return new(item.Id, item.Version);
@@ -118,6 +129,7 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
         CancellationToken cancellationToken = default
     )
     {
+        Logger.ReadingDocument(partitionKey, documentId);
         try
         {
             ItemResponse<SnapshotDocument> response = await RetryPolicy.ExecuteAsync(
@@ -127,10 +139,12 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
                         cancellationToken: cancellationToken),
                     cancellationToken)
                 .ConfigureAwait(false);
+            Logger.DocumentFound(partitionKey, documentId);
             return response.Resource;
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
+            Logger.DocumentNotFound(partitionKey, documentId);
             return null;
         }
     }
@@ -143,6 +157,7 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
     )
     {
         ArgumentNullException.ThrowIfNull(document);
+        Logger.UpsertingDocument(partitionKey);
         await RetryPolicy.ExecuteAsync(
                 () => CosmosContainer.UpsertItemAsync(
                     document,
@@ -150,6 +165,7 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
                     cancellationToken: cancellationToken),
                 cancellationToken)
             .ConfigureAwait(false);
+        Logger.DocumentUpserted(partitionKey);
     }
 
     /// <summary>

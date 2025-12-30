@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.Extensions.Logging.Abstractions;
+
 using Mississippi.Core.Abstractions.Mapping;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
@@ -51,7 +53,8 @@ public sealed class SnapshotCosmosRepositoryTests
             documentToStorageMapper,
             storageToEnvelopeMapper,
             writeModelToStorageMapper,
-            storageToDocumentMapper);
+            storageToDocumentMapper,
+            NullLogger<SnapshotCosmosRepository>.Instance);
     }
 
     private static async IAsyncEnumerable<SnapshotIdVersion> ToAsyncEnumerableAsync(
@@ -94,7 +97,8 @@ public sealed class SnapshotCosmosRepositoryTests
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
-            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new())));
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            NullLogger<SnapshotCosmosRepository>.Instance));
     }
 
     /// <summary>
@@ -109,7 +113,8 @@ public sealed class SnapshotCosmosRepositoryTests
             null!,
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
-            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new())));
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            NullLogger<SnapshotCosmosRepository>.Instance));
     }
 
     /// <summary>
@@ -124,7 +129,8 @@ public sealed class SnapshotCosmosRepositoryTests
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
-            null!));
+            null!,
+            NullLogger<SnapshotCosmosRepository>.Instance));
     }
 
     /// <summary>
@@ -139,7 +145,8 @@ public sealed class SnapshotCosmosRepositoryTests
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
             null!,
             new StubMapper<SnapshotWriteModel, SnapshotStorageModel>(new()),
-            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new())));
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            NullLogger<SnapshotCosmosRepository>.Instance));
     }
 
     /// <summary>
@@ -154,7 +161,8 @@ public sealed class SnapshotCosmosRepositoryTests
             new StubMapper<SnapshotDocument, SnapshotStorageModel>(new()),
             new StubMapper<SnapshotStorageModel, SnapshotEnvelope>(new()),
             null!,
-            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new())));
+            new StubMapper<SnapshotStorageModel, SnapshotDocument>(new()),
+            NullLogger<SnapshotCosmosRepository>.Instance));
     }
 
     /// <summary>

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
@@ -44,15 +46,18 @@ internal class BrookReaderGrain
     /// <param name="brookGrainFactory">Factory for creating related brook grains.</param>
     /// <param name="options">Configuration options for brook reader behavior.</param>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="logger">Logger instance for logging reader operations.</param>
     public BrookReaderGrain(
         IBrookGrainFactory brookGrainFactory,
         IOptions<BrookReaderOptions> options,
-        IGrainContext grainContext
+        IGrainContext grainContext,
+        ILogger<BrookReaderGrain> logger
     )
     {
         BrookGrainFactory = brookGrainFactory;
         Options = options;
         GrainContext = grainContext;
+        Logger = logger;
     }
 
     /// <summary>
@@ -63,6 +68,8 @@ internal class BrookReaderGrain
     public IGrainContext GrainContext { get; }
 
     private IBrookGrainFactory BrookGrainFactory { get; }
+
+    private ILogger<BrookReaderGrain> Logger { get; }
 
     private IOptions<BrookReaderOptions> Options { get; }
 
@@ -98,7 +105,23 @@ internal class BrookReaderGrain
     /// <returns>A task that represents the asynchronous deactivation operation.</returns>
     public Task DeactivateAsync()
     {
+        BrookKey brookId = this.GetPrimaryKeyString();
+        Logger.Deactivating(brookId);
         this.DeactivateOnIdle();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Called when the grain is activated.
+    /// </summary>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A task representing the activation operation.</returns>
+    public Task OnActivateAsync(
+        CancellationToken token
+    )
+    {
+        BrookKey brookId = this.GetPrimaryKeyString();
+        Logger.Activated(brookId);
         return Task.CompletedTask;
     }
 
@@ -117,6 +140,8 @@ internal class BrookReaderGrain
     )
     {
         BrookKey brookId = this.GetPrimaryKeyString();
+        Logger.ReadingEventsBatch(brookId, readFrom?.Value, readTo?.Value);
+        Stopwatch sw = Stopwatch.StartNew();
         BrookPosition start = readFrom ?? new BrookPosition(0);
         BrookPosition end;
         if (!readTo.HasValue)
@@ -132,6 +157,7 @@ internal class BrookReaderGrain
         // If the brook is empty (cursor returns -1) or end < start, there's nothing to read
         if ((end.Value < 0) || (end.Value < start.Value))
         {
+            Logger.BrookEmpty(brookId);
             return ImmutableArray<BrookEvent>.Empty;
         }
 
@@ -157,6 +183,8 @@ internal class BrookReaderGrain
             allEvents.AddRange(sliceEvents);
         }
 
+        sw.Stop();
+        Logger.EventsBatchRead(brookId, allEvents.Count, baseIndexes.Count, sw.ElapsedMilliseconds);
         return [..allEvents];
     }
 }

@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
+
 using Mississippi.Core.Abstractions.Mapping;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
@@ -36,12 +38,14 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     /// <param name="storageToEnvelopeMapper">Maps storage models to snapshot envelopes.</param>
     /// <param name="writeModelToStorageMapper">Maps snapshot write models to storage models.</param>
     /// <param name="storageToDocumentMapper">Maps storage models to Cosmos documents.</param>
+    /// <param name="logger">The logger for diagnostic output.</param>
     public SnapshotCosmosRepository(
         ISnapshotContainerOperations containerOperations,
         IMapper<SnapshotDocument, SnapshotStorageModel> documentToStorageMapper,
         IMapper<SnapshotStorageModel, SnapshotEnvelope> storageToEnvelopeMapper,
         IMapper<SnapshotWriteModel, SnapshotStorageModel> writeModelToStorageMapper,
-        IMapper<SnapshotStorageModel, SnapshotDocument> storageToDocumentMapper
+        IMapper<SnapshotStorageModel, SnapshotDocument> storageToDocumentMapper,
+        ILogger<SnapshotCosmosRepository> logger
     )
     {
         ContainerOperations = containerOperations ?? throw new ArgumentNullException(nameof(containerOperations));
@@ -53,11 +57,14 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
                                     throw new ArgumentNullException(nameof(writeModelToStorageMapper));
         StorageToDocumentMapper =
             storageToDocumentMapper ?? throw new ArgumentNullException(nameof(storageToDocumentMapper));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private ISnapshotContainerOperations ContainerOperations { get; }
 
     private IMapper<SnapshotDocument, SnapshotStorageModel> DocumentToStorageMapper { get; }
+
+    private ILogger<SnapshotCosmosRepository> Logger { get; }
 
     private IMapper<SnapshotStorageModel, SnapshotDocument> StorageToDocumentMapper { get; }
 
@@ -82,13 +89,18 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     )
     {
         string partitionKey = ToPartitionKey(streamKey);
+        Logger.DeletingAllSnapshots(partitionKey);
+        int count = 0;
         await foreach (SnapshotIdVersion item in ContainerOperations.QuerySnapshotIdsAsync(
                            partitionKey,
                            cancellationToken))
         {
             await ContainerOperations.DeleteDocumentAsync(partitionKey, item.Id, cancellationToken)
                 .ConfigureAwait(false);
+            count++;
         }
+
+        Logger.DeletedAllSnapshots(partitionKey, count);
     }
 
     /// <inheritdoc />
@@ -110,6 +122,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
     )
     {
         string partitionKey = ToPartitionKey(streamKey);
+        Logger.PruningSnapshots(partitionKey, retainModuli.Count);
         List<SnapshotIdVersion> ids = new();
         await foreach (SnapshotIdVersion item in ContainerOperations.QuerySnapshotIdsAsync(
                            partitionKey,
@@ -120,6 +133,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
 
         if (ids.Count == 0)
         {
+            Logger.NoSnapshotsToPrune(partitionKey);
             return;
         }
 
@@ -128,6 +142,7 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
             ids.Where(item => retainModuli.Any(modulus => (modulus != 0) && ((item.Version % modulus) == 0)))
                 .Select(item => item.Version));
         retainVersions.Add(maxVersion);
+        int deletedCount = 0;
         foreach (SnapshotIdVersion item in ids)
         {
             if (retainVersions.Contains(item.Version))
@@ -137,7 +152,10 @@ internal sealed class SnapshotCosmosRepository : ISnapshotCosmosRepository
 
             await ContainerOperations.DeleteDocumentAsync(partitionKey, item.Id, cancellationToken)
                 .ConfigureAwait(false);
+            deletedCount++;
         }
+
+        Logger.PrunedSnapshots(partitionKey, deletedCount, retainVersions.Count, maxVersion);
     }
 
     /// <inheritdoc />

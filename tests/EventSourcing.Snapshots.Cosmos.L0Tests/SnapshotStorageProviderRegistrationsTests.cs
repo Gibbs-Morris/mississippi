@@ -44,6 +44,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         Mock<CosmosClient> cosmosClient = new();
         cosmosClient.Setup(c => c.GetDatabase("db")).Returns(database.Object);
         ServiceCollection services = new();
+        services.AddLogging();
         services.AddSingleton(cosmosClient.Object);
         services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
         services.AddCosmosSnapshotStorageProvider();
@@ -79,6 +80,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
                 })
             .Build();
         ServiceCollection services = new();
+        services.AddLogging();
         services.AddSingleton(cosmosClient.Object);
         services.AddCosmosSnapshotStorageProvider(configuration);
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -99,6 +101,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         Mock<CosmosClient> cosmosClient = new();
         cosmosClient.Setup(c => c.GetDatabase("custom-db")).Returns(database.Object);
         ServiceCollection services = new();
+        services.AddLogging();
         services.AddSingleton(cosmosClient.Object);
         services.AddCosmosSnapshotStorageProvider(o => o.DatabaseId = "custom-db");
         using ServiceProvider provider = services.BuildServiceProvider();
