@@ -697,6 +697,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Azure.Cosmos": "[3.54.1, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.1, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
       },
