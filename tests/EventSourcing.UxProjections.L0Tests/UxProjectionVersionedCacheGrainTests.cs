@@ -184,12 +184,12 @@ public sealed class UxProjectionVersionedCacheGrainTests
     }
 
     /// <summary>
-    ///     GetAsync should fetch from snapshot cache grain on first call.
+    ///     GetAsync should return the projection loaded during activation.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
     [AllureFeature("State Access")]
-    public async Task GetAsyncFetchesFromSnapshotCacheGrainOnFirstCall()
+    public async Task GetAsyncReturnsProjectionLoadedOnActivation()
     {
         // Arrange
         TestProjection expectedProjection = new(123);
@@ -208,18 +208,43 @@ public sealed class UxProjectionVersionedCacheGrainTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(123, result.Value);
-        snapshotGrainFactoryMock.Verify(
-            f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()),
-            Times.Once);
+        snapshotCacheGrainMock.Verify(g => g.GetStateAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
-    ///     GetAsync should return cached projection on subsequent calls.
+    ///     GetAsync should return the projection value loaded during activation.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("State Access")]
+    public async Task GetAsyncReturnsProjectionValueFromActivation()
+    {
+        // Arrange
+        TestProjection expectedProjection = new(42);
+        Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedProjection);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheGrainMock.Object);
+        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        await grain.OnActivateAsync(CancellationToken.None);
+
+        // Act
+        TestProjection? result = await grain.GetAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(42, result.Value);
+    }
+
+    /// <summary>
+    ///     GetAsync should return same cached projection on subsequent calls without reloading.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
     [AllureFeature("Caching")]
-    public async Task GetAsyncReturnsCachedProjectionOnSubsequentCalls()
+    public async Task GetAsyncReturnsSameProjectionOnSubsequentCalls()
     {
         // Arrange
         TestProjection expectedProjection = new(99);
@@ -236,41 +261,9 @@ public sealed class UxProjectionVersionedCacheGrainTests
         TestProjection? result1 = await grain.GetAsync();
         TestProjection? result2 = await grain.GetAsync();
 
-        // Assert - should return same cached result, only one call to snapshot grain
+        // Assert - should return same cached result, only loaded once during activation
         Assert.Same(result1, result2);
         snapshotCacheGrainMock.Verify(g => g.GetStateAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    /// <summary>
-    ///     GetAsync should use correct snapshot key format.
-    /// </summary>
-    /// <returns>Asynchronous test task.</returns>
-    [Fact]
-    [AllureFeature("Key Construction")]
-    public async Task GetAsyncUsesCorrectSnapshotKeyFormat()
-    {
-        // Arrange
-        SnapshotKey? capturedKey = null;
-        Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
-        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new TestProjection(1));
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
-            .Callback<SnapshotKey>(key => capturedKey = key)
-            .Returns(snapshotCacheGrainMock.Object);
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(
-            snapshotGrainFactoryMock: snapshotGrainFactoryMock,
-            reducersHash: "my-reducer-hash");
-        await grain.OnActivateAsync(CancellationToken.None);
-
-        // Act
-        await grain.GetAsync();
-
-        // Assert
-        Assert.NotNull(capturedKey);
-        Assert.Equal("entity-123", capturedKey.Value.Stream.ProjectionId);
-        Assert.Equal("my-reducer-hash", capturedKey.Value.Stream.ReducersHash);
-        Assert.Equal(42, capturedKey.Value.Version);
     }
 
     /// <summary>
@@ -282,13 +275,53 @@ public sealed class UxProjectionVersionedCacheGrainTests
     public async Task OnActivateAsyncParsesVersionedKeyCorrectly()
     {
         // Arrange
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain();
+        TestProjection testProjection = new(0);
+        Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(testProjection);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheGrainMock.Object);
+        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(snapshotGrainFactoryMock: snapshotGrainFactoryMock);
 
         // Act
         Exception? exception = await Record.ExceptionAsync(() => grain.OnActivateAsync(CancellationToken.None));
 
         // Assert
         Assert.Null(exception);
+    }
+
+    /// <summary>
+    ///     OnActivateAsync should pass cancellation token to snapshot cache grain.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Activation")]
+    public async Task OnActivateAsyncPassesCancellationTokenToSnapshotGrain()
+    {
+        // Arrange
+        using CancellationTokenSource cts = new();
+        CancellationToken expectedToken = cts.Token;
+        CancellationToken capturedToken = default;
+        TestProjection testProjection = new(0);
+        Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
+            .Returns((
+                CancellationToken ct
+            ) =>
+            {
+                capturedToken = ct;
+                return new(testProjection);
+            });
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheGrainMock.Object);
+        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+
+        // Act
+        await grain.OnActivateAsync(expectedToken);
+
+        // Assert
+        Assert.Equal(expectedToken, capturedToken);
     }
 
     /// <summary>
@@ -304,5 +337,36 @@ public sealed class UxProjectionVersionedCacheGrainTests
 
         // Act & Assert
         await Assert.ThrowsAsync<FormatException>(() => grain.OnActivateAsync(CancellationToken.None));
+    }
+
+    /// <summary>
+    ///     OnActivateAsync should use correct snapshot key format when loading.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Key Construction")]
+    public async Task OnActivateAsyncUsesCorrectSnapshotKeyFormat()
+    {
+        // Arrange
+        SnapshotKey? capturedKey = null;
+        Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TestProjection(1));
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
+            .Callback<SnapshotKey>(key => capturedKey = key)
+            .Returns(snapshotCacheGrainMock.Object);
+        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock,
+            reducersHash: "my-reducer-hash");
+
+        // Act
+        await grain.OnActivateAsync(CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(capturedKey);
+        Assert.Equal("entity-123", capturedKey.Value.Stream.ProjectionId);
+        Assert.Equal("my-reducer-hash", capturedKey.Value.Stream.ReducersHash);
+        Assert.Equal(42, capturedKey.Value.Version);
     }
 }

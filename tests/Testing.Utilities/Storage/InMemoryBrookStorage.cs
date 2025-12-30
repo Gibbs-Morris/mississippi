@@ -46,7 +46,8 @@ public class InMemoryBrookStorage
                 eventsByKey[key] = list;
             }
 
-            long cursor = cursors.TryGetValue(key, out long v) ? v : 0;
+            // Cursor represents last written position (-1 for empty brook)
+            long cursor = cursors.TryGetValue(key, out long v) ? v : -1;
             if (expectedVersion.HasValue && (expectedVersion.Value.Value != cursor))
             {
                 throw new InvalidOperationException(
@@ -54,6 +55,8 @@ public class InMemoryBrookStorage
             }
 
             list.AddRange(events);
+
+            // After appending, cursor is the position of the last event written
             cursor += events.Count;
             cursors[key] = cursor;
             return Task.FromResult(new BrookPosition(cursor));

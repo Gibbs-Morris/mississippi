@@ -33,7 +33,7 @@ flowchart LR
   subgraph UX["UX Projections"]
     UxProjection["UxProjectionGrainBase<br/>━━━━━━━━━━━━━━━<br/>✅ GetAsync [ReadOnly]<br/>✅ GetAtVersionAsync [ReadOnly]<br/>✅ GetLatestVersionAsync [ReadOnly]"]
     UxCursor["UxProjectionCursorGrain<br/>━━━━━━━━━━━━━━━<br/>✅ GetPositionAsync [ReadOnly]<br/>⚪ DeactivateAsync"]
-    UxCache["UxProjectionVersionedCacheGrainBase<br/>━━━━━━━━━━━━━━━<br/>⚠️ GetAsync (mutates cache)"]
+    UxCache["UxProjectionVersionedCacheGrainBase<br/>━━━━━━━━━━━━━━━<br/>✅ GetAsync [ReadOnly]<br/>📦 Cache loads on activation"]
   end
 
   subgraph Snapshots["Snapshot Layer"]
@@ -46,7 +46,7 @@ flowchart LR
     BrookCursor["BrookCursorGrain<br/>━━━━━━━━━━━━━━━<br/>✅ GetLatestPositionAsync [ReadOnly]<br/>⚠️ GetLatestPositionConfirmedAsync"]
     BrookReader["BrookReaderGrain<br/>━━━━━━━━━━━━━━━<br/>✅ ReadEventsBatchAsync [ReadOnly]<br/>⚡ [StatelessWorker]"]
     BrookAsyncReader["BrookAsyncReaderGrain<br/>━━━━━━━━━━━━━━━<br/>✅ ReadEventsAsync [ReadOnly]<br/>🔑 Unique key per call"]
-    BrookSlice["BrookSliceReaderGrain<br/>━━━━━━━━━━━━━━━<br/>⚠️ ReadAsync (mutates cache)<br/>⚠️ ReadBatchAsync (mutates cache)"]
+    BrookSlice["BrookSliceReaderGrain<br/>━━━━━━━━━━━━━━━<br/>✅ ReadAsync [ReadOnly]<br/>✅ ReadBatchAsync [ReadOnly]<br/>📦 Cache loads on activation"]
   end
 
   subgraph Aggregates["Command Layer"]
@@ -58,7 +58,7 @@ flowchart LR
 
   %% UX internal reads
   UxProjection -->|"GetPositionAsync ✅"| UxCursor
-  UxProjection -->|"GetAsync ⚠️"| UxCache
+  UxProjection -->|"GetAsync ✅"| UxCache
   UxCache -->|"GetStateAsync ✅"| SnapshotCache
 
   %% Snapshot to Brook reads
@@ -66,11 +66,11 @@ flowchart LR
   SnapshotCache -.->|"PersistAsync 🔥"| SnapshotPersister
 
   %% Brook reader chain (batch path via StatelessWorker)
-  BrookReader -->|"ReadAsync ⚠️"| BrookSlice
+  BrookReader -->|"ReadAsync ✅"| BrookSlice
 
   %% Brook async reader chain (streaming path via unique keys)
   BrookAsyncReader -->|"GetLatestPositionAsync ✅"| BrookCursor
-  BrookAsyncReader -->|"ReadAsync ⚠️"| BrookSlice
+  BrookAsyncReader -->|"ReadAsync ✅"| BrookSlice
 
   %% Write path
   Aggregate -->|"GetLatestPositionAsync ✅"| BrookCursor
@@ -84,8 +84,8 @@ flowchart LR
   %% Styling
   class UxProjection,UxCache stateless
   class BrookReader stateless
-  class UxProjection,UxCursor,SnapshotCache,BrookReader,BrookAsyncReader readonly
-  class BrookSlice,UxCache,BrookCursor bottleneck
+  class UxProjection,UxCache,UxCursor,SnapshotCache,BrookReader,BrookAsyncReader,BrookSlice readonly
+  class BrookCursor bottleneck
   class BrookWriter,Aggregate write
 
   classDef stateless stroke-dasharray: 4 2, stroke:#0b7, color:#0b7;
@@ -100,8 +100,6 @@ flowchart LR
 
 | Grain | Method | Impact | Why Not ReadOnly |
 | ----- | ------ | ------ | ---------------- |
-| **BrookSliceReaderGrain** | `ReadAsync`, `ReadBatchAsync` | 🔴 High | Mutates `Cache` property on first read |
-| **UxProjectionVersionedCacheGrain** | `GetAsync` | 🔴 High | Mutates `cachedProjection` and `isLoaded` |
 | **BrookCursorGrain** | `GetLatestPositionConfirmedAsync` | 🟡 Medium | Updates `TrackedCursorPosition` from storage |
 
 ### Safe ReadOnly Paths (No Bottleneck)
@@ -110,9 +108,11 @@ flowchart LR
 | ----- | ------ | ----- |
 | **UxProjectionGrain** | All 3 methods | Delegates to other grains, no local state |
 | **UxProjectionCursorGrain** | `GetPositionAsync` | Returns cached value only |
+| **UxProjectionVersionedCacheGrain** | `GetAsync` | Cache loaded on activation, getter is pure read (versioned projections are immutable) |
 | **SnapshotCacheGrain** | `GetStateAsync` | State hydrated on activation, getter is pure |
 | **BrookReaderGrain** | `ReadEventsBatchAsync` | `[StatelessWorker]` + delegates to slice readers, parallel fan-out |
 | **BrookAsyncReaderGrain** | `ReadEventsAsync` | Unique key per call, delegates to slice readers |
+| **BrookSliceReaderGrain** | `ReadAsync`, `ReadBatchAsync` | Cache loaded on activation; throws `InvalidOperationException` if position exceeds cache |
 | **BrookCursorGrain** | `GetLatestPositionAsync` | Returns cached value only |
 
 ## Read Path Flow Analysis
@@ -129,11 +129,11 @@ UxProjectionGrain ────────────────────�
   │                                              Returns cached position
   │
   ▼ GetAsync [to versioned cache]
-UxProjectionVersionedCacheGrain ──────────── ⚠️ NOT [ReadOnly] - BOTTLENECK
-  │                                              First call mutates cache
-  │                                              Subsequent calls queue behind first
+UxProjectionVersionedCacheGrain ──────────── ✅ [ReadOnly] + [StatelessWorker]
+  │                                              Cache loaded on activation
+  │                                              Versioned = immutable, pure read
   │
-  ▼ GetStateAsync
+  ▼ GetStateAsync (on activation)
 SnapshotCacheGrain ───────────────────────── ✅ [ReadOnly]
   │                                              State already hydrated
   │
@@ -143,8 +143,9 @@ BrookAsyncReaderGrain ───────────────────�
   │                                              (via BrookAsyncReaderKey with GUID)
   │
   ▼ ReadAsync
-BrookSliceReaderGrain ────────────────────── ⚠️ NOT [ReadOnly] - BOTTLENECK
-                                                 Populates cache on first read
+BrookSliceReaderGrain ────────────────────── ✅ [ReadOnly]
+                                                 Cache loaded on activation
+                                                 Throws if position > cache
 ```
 
 ### Write Path Flow
@@ -169,24 +170,29 @@ BrookWriterGrain ─────────────────────
 
 ## Mitigation Strategies
 
-### Option 1: Accept Current Design
+### ✅ Implemented: Eager Cache Population (Option 2)
 
-The bottlenecks occur on **first access only**:
+Cache population has been moved to `OnActivateAsync` for high-traffic grains:
 
-- `BrookSliceReaderGrain`: Cache populated once, then all reads are fast
-- `UxProjectionVersionedCacheGrain`: Projection loaded once, then cached
+- **BrookSliceReaderGrain**: Cache loaded on activation, `[ReadOnly]` on all methods
+- **UxProjectionVersionedCacheGrainBase**: Projection loaded on activation, `[ReadOnly]` on `GetAsync`
 
-For workloads where the same version is read multiple times, the initial serialization is acceptable.
+This pattern works especially well for versioned/immutable data:
 
-### Option 2: Eager Cache Population
-
-Move cache population to `OnActivateAsync`:
-
-- Grain activates → populates cache → all methods become pure reads
-- Then `[ReadOnly]` can be safely added
+- Grain activates → populates cache → all subsequent methods are pure reads
+- `[ReadOnly]` allows concurrent interleavable access
+- Combined with `[StatelessWorker]`, provides maximum parallelism
 - Trade-off: Slower activation, but faster subsequent reads
 
-### Option 3: Load-Through Pattern with Locks
+### Remaining Options for Other Grains
+
+#### Option 1: Accept Current Design
+
+The remaining bottleneck (`BrookCursorGrain.GetLatestPositionConfirmedAsync`) occurs on **first access only**:
+
+- For workloads where the cursor is read multiple times, the initial serialization is acceptable.
+
+#### Option 3: Load-Through Pattern with Locks
 
 Use a lightweight async lock pattern:
 
@@ -221,28 +227,20 @@ Split grains into read-only and write-capable versions:
 - `IBrookSliceReaderGrain` → read-only, `[ReadOnly]` safe
 - `IBrookSliceCacheGrain` → handles cache population separately
 
-### Option 5: `[StatelessWorker]` Where Compatible
-
-For grains that don't use `IAsyncEnumerable`:
-
-- `UxProjectionVersionedCacheGrain` could potentially use `[StatelessWorker]`
-- Multiple activations would naturally distribute load
-- Each activation maintains its own cache (memory trade-off)
-
 ## Performance Impact Summary
 
 | Scenario | Current Behavior | Potential Issue |
 | -------- | ---------------- | --------------- |
-| First read of a version | Serialized cache population | High latency spike |
-| Subsequent reads of same version | Fast cached reads | None |
-| Many concurrent first reads | Queue behind each other | Latency amplification |
-| Mixed read/write workload | Reads queue behind writes | Head-of-line blocking |
+| First read of a version | Cache populated during activation | Activation latency (acceptable) |
+| Subsequent reads of same version | Fast cached reads with `[ReadOnly]` | None |
+| Many concurrent reads of same version | `[ReadOnly]` + `[StatelessWorker]` allows parallel access | None |
+| Mixed read/write workload | Reads are `[ReadOnly]`, writes queue separately | Minimal impact |
 
 ## Recommendations
 
 1. **Monitor** activation times and cache miss rates to quantify actual impact
-2. **Consider Option 2** (eager activation) for high-traffic grains
-3. **Consider Option 5** (`[StatelessWorker]`) for `UxProjectionVersionedCacheGrain` if memory permits
+2. **Eager activation pattern** has been implemented for high-traffic grains (`BrookSliceReaderGrain`, `UxProjectionVersionedCacheGrainBase`)
+3. **`[StatelessWorker]` + `[ReadOnly]`** is now used for `UxProjectionVersionedCacheGrain` for maximum parallelism
 4. **Use `BrookReaderGrain`** for batch reads (parallel via `[StatelessWorker]`)
 5. **Use `BrookAsyncReaderGrain`** for streaming reads (unique key per call avoids enumeration issues)
 

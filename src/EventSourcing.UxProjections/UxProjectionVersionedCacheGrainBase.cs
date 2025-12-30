@@ -50,8 +50,6 @@ public abstract class UxProjectionVersionedCacheGrainBase<TProjection, TBrook>
 {
     private TProjection? cachedProjection;
 
-    private bool isLoaded;
-
     private UxProjectionVersionedKey versionedKey;
 
     /// <summary>
@@ -98,38 +96,21 @@ public abstract class UxProjectionVersionedCacheGrainBase<TProjection, TBrook>
     protected ISnapshotGrainFactory SnapshotGrainFactory { get; }
 
     /// <inheritdoc />
-    public async ValueTask<TProjection?> GetAsync(
+    public ValueTask<TProjection?> GetAsync(
         CancellationToken cancellationToken = default
     )
     {
-        // Fast path: return cached projection if already loaded
-        if (isLoaded)
-        {
-            Logger.VersionedCacheHit(versionedKey);
-            return cachedProjection;
-        }
-
-        // Slow path: fetch from snapshot cache grain
-        Logger.VersionedCacheMiss(versionedKey);
-        SnapshotStreamKey snapshotStreamKey = new(
-            SnapshotNameHelper.GetSnapshotName<TProjection>(),
-            versionedKey.ProjectionKey.BrookKey.Id,
-            ReducersHash);
-        SnapshotKey snapshotKey = new(snapshotStreamKey, versionedKey.Version.Value);
-        ISnapshotCacheGrain<TProjection> snapshotCacheGrain =
-            SnapshotGrainFactory.GetSnapshotCacheGrain<TProjection>(snapshotKey);
-        cachedProjection = await snapshotCacheGrain.GetStateAsync(cancellationToken);
-        isLoaded = true;
-        Logger.VersionedCacheLoaded(versionedKey);
-        return cachedProjection;
+        // Cache is populated on activation; this is now a pure read
+        Logger.VersionedCacheHit(versionedKey);
+        return new(cachedProjection);
     }
 
     /// <summary>
-    ///     Called when the grain is activated. Initializes the versioned key.
+    ///     Called when the grain is activated. Initializes the versioned key and loads the projection from snapshot.
     /// </summary>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the activation operation.</returns>
-    public virtual Task OnActivateAsync(
+    public virtual async Task OnActivateAsync(
         CancellationToken token
     )
     {
@@ -149,6 +130,16 @@ public abstract class UxProjectionVersionedCacheGrainBase<TProjection, TBrook>
             versionedKey.ProjectionKey.ProjectionTypeName,
             versionedKey.ProjectionKey.BrookKey,
             versionedKey.Version);
-        return Task.CompletedTask;
+
+        // Load projection from snapshot cache on activation (versioned = immutable)
+        SnapshotStreamKey snapshotStreamKey = new(
+            SnapshotNameHelper.GetSnapshotName<TProjection>(),
+            versionedKey.ProjectionKey.BrookKey.Id,
+            ReducersHash);
+        SnapshotKey snapshotKey = new(snapshotStreamKey, versionedKey.Version.Value);
+        ISnapshotCacheGrain<TProjection> snapshotCacheGrain =
+            SnapshotGrainFactory.GetSnapshotCacheGrain<TProjection>(snapshotKey);
+        cachedProjection = await snapshotCacheGrain.GetStateAsync(token);
+        Logger.VersionedCacheLoaded(versionedKey);
     }
 }

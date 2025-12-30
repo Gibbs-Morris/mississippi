@@ -72,9 +72,11 @@ public sealed class BrookCursorGrainTests
         ]);
         IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
         BrookPosition confirmed = await cursor.GetLatestPositionConfirmedAsync();
-        Assert.Equal(5, confirmed.Value);
+
+        // 5 events at positions 0-4, cursor is last written position = 4
+        Assert.Equal(4, confirmed.Value);
         BrookPosition cached = await cursor.GetLatestPositionAsync();
-        Assert.Equal(5, cached.Value);
+        Assert.Equal(4, cached.Value);
     }
 
     /// <summary>
