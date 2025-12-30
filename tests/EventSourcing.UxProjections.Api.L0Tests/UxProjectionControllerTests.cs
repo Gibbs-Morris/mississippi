@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -27,7 +29,7 @@ public sealed class UxProjectionControllerTests
     )
     {
         factoryMock ??= new();
-        return new(factoryMock.Object);
+        return new(factoryMock.Object, NullLogger<TestableController>.Instance);
     }
 
     private const string TestEntityId = "entity-123";
@@ -41,10 +43,12 @@ public sealed class UxProjectionControllerTests
         ///     Initializes a new instance of the <see cref="TestableController" /> class.
         /// </summary>
         /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains.</param>
+        /// <param name="logger">The logger for diagnostic output.</param>
         public TestableController(
-            IUxProjectionGrainFactory uxProjectionGrainFactory
+            IUxProjectionGrainFactory uxProjectionGrainFactory,
+            ILogger<TestableController> logger
         )
-            : base(uxProjectionGrainFactory)
+            : base(uxProjectionGrainFactory, logger)
         {
         }
     }
@@ -77,7 +81,9 @@ public sealed class UxProjectionControllerTests
     public void ConstructorThrowsWhenFactoryIsNull()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableController(null!));
+        Assert.Throws<ArgumentNullException>(() => new TestableController(
+            null!,
+            NullLogger<TestableController>.Instance));
     }
 
     /// <summary>
