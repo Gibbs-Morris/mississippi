@@ -220,7 +220,10 @@ function Resolve-TestProjectPath {
     param([string]$ProjectName)
     if ([string]::IsNullOrWhiteSpace($ProjectName)) { return $null }
     if (-not (Test-Path $testsRoot)) { return $null }
-    $candidates = Get-ChildItem -Path $testsRoot -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "$ProjectName*.Tests" -or $_.Name -eq "$ProjectName.Tests" -or $_.Name -like "$ProjectName.*Tests" }
+    $candidates = @(
+        Get-ChildItem -Path $testsRoot -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -like "$ProjectName*.Tests" -or $_.Name -eq "$ProjectName.Tests" -or $_.Name -like "$ProjectName.*Tests" }
+    )
     if ($candidates.Count -gt 0) { return $candidates[0].FullName }
     return $null
 }
@@ -380,6 +383,8 @@ else
     Write-Host 'No mutation-report.json found; skipping detailed survivor extraction.' -ForegroundColor Yellow
 }
 
+$reportSurvivors = @($reportSurvivors | Where-Object { $_ })
+
 $reportMap = @{}
 foreach ($reportEntry in $reportSurvivors)
 {
@@ -461,13 +466,13 @@ $normalized = $normalizedList.ToArray()
 
 # --- Scoring & Ranking (Phase 1) -----------------------------------------------------------
 
-$fileGroups = $normalized | Group-Object File
+$fileGroups = @($normalized | Group-Object File)
 $maxFileCount = if ($fileGroups.Count -gt 0) { ($fileGroups | Measure-Object Count -Maximum).Maximum } else { 0 }
 
 $rankWorking = New-Object System.Collections.Generic.List[object]
 
 foreach ($entry in $normalized) {
-    $fileCount = ($fileGroups | Where-Object { $_.Name -eq $entry.File }).Count
+    $fileCount = ($fileGroups | Where-Object { $_.Name -eq $entry.File } | Measure-Object).Count
     $base = 1
     $mutatorWeight = if ($ScoringMode -eq 'Weighted') { Get-MutatorWeight -Mutator $entry.Mutator } else { 0 }
     $densityWeight = if ($ScoringMode -eq 'Weighted' -and $maxFileCount -gt 0) { [Math]::Round(($fileCount / $maxFileCount) * 2,2) } else { 0 }
@@ -658,12 +663,14 @@ if ($totalCount -gt 0)
         }
         if ($entry.CoveredBy)
         {
-            $coveredDisplay = ($entry.CoveredBy -join ', ')
+            $coveredDisplay = (@($entry.CoveredBy) -join ', ')
             [void]$markdown.AppendLine("  **Covered By:** $coveredDisplay  ")
         }
-        if ($entry.KilledBy -and $entry.KilledBy.Count -gt 0)
+        $killedBy = @($entry.KilledBy) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        $killedBy = @($killedBy)
+        if ($killedBy.Count -gt 0)
         {
-            $killedDisplay = ($entry.KilledBy -join ', ')
+            $killedDisplay = ($killedBy -join ', ')
             [void]$markdown.AppendLine("  **Killed By:** $killedDisplay  ")
         }
         if ($entry.ReportId)
@@ -725,7 +732,9 @@ if ($GenerateTasks) {
     Write-Host "Tasks file generated: $TasksPath" -ForegroundColor Cyan
 }
 
-if ($focusSelection -and $focusSelection.Count -gt 0) {
+$focusSelection = @($focusSelection | Where-Object { $_ })
+
+if ($focusSelection.Count -gt 0) {
     $taskItems = @()
     foreach ($survivor in $focusSelection) {
         $taskItems += ConvertTo-MutationTaskItem -Survivor $survivor
