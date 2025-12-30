@@ -51,9 +51,9 @@ internal sealed class BrookSliceReaderGrain
 
     private IBrookStorageReader BrookStorageReader { get; }
 
-    private ILogger<BrookSliceReaderGrain> Logger { get; }
-
     private ImmutableArray<BrookEvent> Cache { get; set; } = ImmutableArray<BrookEvent>.Empty;
+
+    private ILogger<BrookSliceReaderGrain> Logger { get; }
 
     /// <summary>
     ///     Deactivate and clear slice cache.
