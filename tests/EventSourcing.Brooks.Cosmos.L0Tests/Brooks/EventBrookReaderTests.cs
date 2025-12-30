@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Abstractions.Mapping;
@@ -41,7 +42,7 @@ public sealed class EventBrookReaderTests
         IMapper<EventStorageModel, BrookEvent> mapper =
             new Mock<IMapper<EventStorageModel, BrookEvent>>(MockBehavior.Strict).Object;
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() =>
-            new EventBrookReader(repository, retryPolicy, null!, mapper));
+            new EventBrookReader(repository, retryPolicy, null!, mapper, NullLogger<EventBrookReader>.Instance));
         Assert.Equal("options", exception.ParamName);
     }
 
@@ -132,7 +133,12 @@ public sealed class EventBrookReaderTests
                     DataContentType = e3.DataContentType ?? string.Empty,
                     Time = e3.Time,
                 });
-        EventBrookReader reader = new(repositoryMock.Object, retryPolicy, Options.Create(options), mapperMock.Object);
+        EventBrookReader reader = new(
+            repositoryMock.Object,
+            retryPolicy,
+            Options.Create(options),
+            mapperMock.Object,
+            NullLogger<EventBrookReader>.Instance);
         List<BrookEvent> results = new();
 
         // Act
@@ -213,7 +219,12 @@ public sealed class EventBrookReaderTests
                     Id = e2.EventId,
                     EventType = e2.EventType,
                 });
-        EventBrookReader reader = new(repositoryMock.Object, retryPolicy, Options.Create(options), mapperMock.Object);
+        EventBrookReader reader = new(
+            repositoryMock.Object,
+            retryPolicy,
+            Options.Create(options),
+            mapperMock.Object,
+            NullLogger<EventBrookReader>.Instance);
         using CancellationTokenSource cts = new();
         List<BrookEvent> results = new();
 

@@ -6,6 +6,7 @@ using Allure.Xunit.Attributes;
 
 using Azure;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
@@ -54,8 +55,8 @@ public sealed class BrookRecoveryServiceTests
         ICosmosRepository repo = new Mock<ICosmosRepository>(MockBehavior.Strict).Object;
         IRetryPolicy retry = new Mock<IRetryPolicy>(MockBehavior.Strict).Object;
         IDistributedLockManager lockMgr = new Mock<IDistributedLockManager>(MockBehavior.Strict).Object;
-        ArgumentNullException ex =
-            Assert.Throws<ArgumentNullException>(() => new BrookRecoveryService(repo, retry, lockMgr, null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
+            new BrookRecoveryService(repo, retry, lockMgr, null!, NullLogger<BrookRecoveryService>.Instance));
         Assert.Equal("options", ex.ParamName);
     }
 
@@ -104,7 +105,8 @@ public sealed class BrookRecoveryServiceTests
                 new BrookStorageOptions
                 {
                     LeaseDurationSeconds = 5,
-                }));
+                }),
+            NullLogger<BrookRecoveryService>.Instance);
         BrookPosition result = await service.GetOrRecoverCursorPositionAsync(brookId);
         Assert.Equal(3, result.Value);
         repo.Verify(r => r.CommitCursorPositionAsync(brookId, 3, It.IsAny<CancellationToken>()), Times.Once);
@@ -130,7 +132,8 @@ public sealed class BrookRecoveryServiceTests
             repo.Object,
             new TestRetryPolicy(),
             lockMgr.Object,
-            Options.Create(new BrookStorageOptions()));
+            Options.Create(new BrookStorageOptions()),
+            NullLogger<BrookRecoveryService>.Instance);
         BrookPosition result = await service.GetOrRecoverCursorPositionAsync(new("t", "i"));
         Assert.Equal(-1, result.Value);
         repo.Verify(
@@ -180,7 +183,8 @@ public sealed class BrookRecoveryServiceTests
                 new BrookStorageOptions
                 {
                     LeaseDurationSeconds = 5,
-                }));
+                }),
+            NullLogger<BrookRecoveryService>.Instance);
         BrookPosition result = await service.GetOrRecoverCursorPositionAsync(brookId);
 
         // After rollback there is no cursor document, so expect -1
@@ -223,7 +227,8 @@ public sealed class BrookRecoveryServiceTests
                 new BrookStorageOptions
                 {
                     LeaseDurationSeconds = 1,
-                }));
+                }),
+            NullLogger<BrookRecoveryService>.Instance);
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await service.GetOrRecoverCursorPositionAsync(brookId));
     }
@@ -266,7 +271,8 @@ public sealed class BrookRecoveryServiceTests
                 new BrookStorageOptions
                 {
                     LeaseDurationSeconds = 1,
-                }));
+                }),
+            NullLogger<BrookRecoveryService>.Instance);
         BrookPosition result = await service.GetOrRecoverCursorPositionAsync(brookId);
         Assert.Equal(7, result.Value);
     }

@@ -9,6 +9,7 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Cosmos;
@@ -65,7 +66,11 @@ public sealed class BlobDistributedLockManagerTests
                     BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-1"),
                     Mock.Of<Response>()))
             .Verifiable();
-        BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
+        BlobDistributedLockManager sut = new(
+            svc.Object,
+            Options.Create(opts),
+            factory.Object,
+            NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act
         await using IDistributedLock l = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
@@ -118,7 +123,11 @@ public sealed class BlobDistributedLockManagerTests
                 Response.FromValue(
                     BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-3"),
                     Mock.Of<Response>()));
-        BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
+        BlobDistributedLockManager sut = new(
+            svc.Object,
+            Options.Create(opts),
+            factory.Object,
+            NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act
         await using IDistributedLock lockHandle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(13));
@@ -171,7 +180,11 @@ public sealed class BlobDistributedLockManagerTests
                     BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-2"),
                     Mock.Of<Response>());
             });
-        BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
+        BlobDistributedLockManager sut = new(
+            svc.Object,
+            Options.Create(opts),
+            factory.Object,
+            NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act
         await using IDistributedLock l = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
@@ -216,7 +229,11 @@ public sealed class BlobDistributedLockManagerTests
                     BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-first"),
                     Mock.Of<Response>()))
             .Verifiable();
-        BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
+        BlobDistributedLockManager sut = new(
+            svc.Object,
+            Options.Create(opts),
+            factory.Object,
+            NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act
         await using IDistributedLock handle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
@@ -261,7 +278,11 @@ public sealed class BlobDistributedLockManagerTests
                 It.IsAny<RequestConditions?>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new RequestFailedException(409, "conflict"));
-        BlobDistributedLockManager sut = new(svc.Object, Options.Create(opts), factory.Object);
+        BlobDistributedLockManager sut = new(
+            svc.Object,
+            Options.Create(opts),
+            factory.Object,
+            NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15)));
