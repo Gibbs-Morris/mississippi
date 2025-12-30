@@ -46,7 +46,7 @@ flowchart LR
     BrookCursor["BrookCursorGrain<br/>━━━━━━━━━━━━━━━<br/>✅ GetLatestPositionAsync [ReadOnly]<br/>⚠️ GetLatestPositionConfirmedAsync"]
     BrookReader["BrookReaderGrain<br/>━━━━━━━━━━━━━━━<br/>✅ ReadEventsBatchAsync [ReadOnly]<br/>⚡ [StatelessWorker]"]
     BrookAsyncReader["BrookAsyncReaderGrain<br/>━━━━━━━━━━━━━━━<br/>✅ ReadEventsAsync [ReadOnly]<br/>🔑 Unique key per call"]
-    BrookSlice["BrookSliceReaderGrain<br/>━━━━━━━━━━━━━━━<br/>⚠️ ReadAsync (mutates cache)<br/>⚠️ ReadBatchAsync (mutates cache)"]
+    BrookSlice["BrookSliceReaderGrain<br/>━━━━━━━━━━━━━━━<br/>✅ ReadAsync [ReadOnly]<br/>✅ ReadBatchAsync [ReadOnly]<br/>📦 Cache loads on activation"]
   end
 
   subgraph Aggregates["Command Layer"]
@@ -66,11 +66,11 @@ flowchart LR
   SnapshotCache -.->|"PersistAsync 🔥"| SnapshotPersister
 
   %% Brook reader chain (batch path via StatelessWorker)
-  BrookReader -->|"ReadAsync ⚠️"| BrookSlice
+  BrookReader -->|"ReadAsync ✅"| BrookSlice
 
   %% Brook async reader chain (streaming path via unique keys)
   BrookAsyncReader -->|"GetLatestPositionAsync ✅"| BrookCursor
-  BrookAsyncReader -->|"ReadAsync ⚠️"| BrookSlice
+  BrookAsyncReader -->|"ReadAsync ✅"| BrookSlice
 
   %% Write path
   Aggregate -->|"GetLatestPositionAsync ✅"| BrookCursor
@@ -84,8 +84,8 @@ flowchart LR
   %% Styling
   class UxProjection,UxCache stateless
   class BrookReader stateless
-  class UxProjection,UxCursor,SnapshotCache,BrookReader,BrookAsyncReader readonly
-  class BrookSlice,UxCache,BrookCursor bottleneck
+  class UxProjection,UxCursor,SnapshotCache,BrookReader,BrookAsyncReader,BrookSlice readonly
+  class UxCache,BrookCursor bottleneck
   class BrookWriter,Aggregate write
 
   classDef stateless stroke-dasharray: 4 2, stroke:#0b7, color:#0b7;
@@ -100,7 +100,6 @@ flowchart LR
 
 | Grain | Method | Impact | Why Not ReadOnly |
 | ----- | ------ | ------ | ---------------- |
-| **BrookSliceReaderGrain** | `ReadAsync`, `ReadBatchAsync` | 🔴 High | Mutates `Cache` property on first read |
 | **UxProjectionVersionedCacheGrain** | `GetAsync` | 🔴 High | Mutates `cachedProjection` and `isLoaded` |
 | **BrookCursorGrain** | `GetLatestPositionConfirmedAsync` | 🟡 Medium | Updates `TrackedCursorPosition` from storage |
 
@@ -113,6 +112,7 @@ flowchart LR
 | **SnapshotCacheGrain** | `GetStateAsync` | State hydrated on activation, getter is pure |
 | **BrookReaderGrain** | `ReadEventsBatchAsync` | `[StatelessWorker]` + delegates to slice readers, parallel fan-out |
 | **BrookAsyncReaderGrain** | `ReadEventsAsync` | Unique key per call, delegates to slice readers |
+| **BrookSliceReaderGrain** | `ReadAsync`, `ReadBatchAsync` | Cache loaded on activation; throws `InvalidOperationException` if position exceeds cache |
 | **BrookCursorGrain** | `GetLatestPositionAsync` | Returns cached value only |
 
 ## Read Path Flow Analysis
@@ -143,8 +143,9 @@ BrookAsyncReaderGrain ───────────────────�
   │                                              (via BrookAsyncReaderKey with GUID)
   │
   ▼ ReadAsync
-BrookSliceReaderGrain ────────────────────── ⚠️ NOT [ReadOnly] - BOTTLENECK
-                                                 Populates cache on first read
+BrookSliceReaderGrain ────────────────────── ✅ [ReadOnly]
+                                                 Cache loaded on activation
+                                                 Throws if position > cache
 ```
 
 ### Write Path Flow

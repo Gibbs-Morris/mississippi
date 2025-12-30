@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -75,7 +76,7 @@ public sealed class BrookReaderGrainTests
     [Fact]
     public async Task ReadEventsBatchAsyncReturnsImmutableArray()
     {
-        BrookKey key = new("t", "reader2");
+        BrookKey key = new("t", $"reader2-{Guid.NewGuid():N}");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
         await writer.AppendEventsAsync(
         [

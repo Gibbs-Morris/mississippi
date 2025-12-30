@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -6,7 +7,6 @@ using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Abstractions.Storage;
-using Mississippi.EventSourcing.Factory;
 
 using Orleans;
 using Orleans.Runtime;
@@ -18,7 +18,7 @@ namespace Mississippi.EventSourcing.Reader;
 ///     Orleans grain implementation for reading a specific slice of a Mississippi brook (event stream).
 ///     Manages a portion of the brook's events in memory for efficient streaming and access.
 /// </summary>
-internal class BrookSliceReaderGrain
+internal sealed class BrookSliceReaderGrain
     : IBrookSliceReaderGrain,
       IGrainBase
 {
@@ -28,16 +28,13 @@ internal class BrookSliceReaderGrain
     /// </summary>
     /// <param name="brookStorageReader">The brook storage reader service for accessing persisted events.</param>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
-    /// <param name="brookGrainFactory">Factory for creating related brook grains.</param>
     public BrookSliceReaderGrain(
         IBrookStorageReader brookStorageReader,
-        IGrainContext grainContext,
-        IBrookGrainFactory brookGrainFactory
+        IGrainContext grainContext
     )
     {
         BrookStorageReader = brookStorageReader;
         GrainContext = grainContext;
-        BrookGrainFactory = brookGrainFactory;
     }
 
     /// <summary>
@@ -46,8 +43,6 @@ internal class BrookSliceReaderGrain
     /// </summary>
     /// <value>The grain context instance.</value>
     public IGrainContext GrainContext { get; }
-
-    private IBrookGrainFactory BrookGrainFactory { get; }
 
     private IBrookStorageReader BrookStorageReader { get; }
 
@@ -65,6 +60,19 @@ internal class BrookSliceReaderGrain
     }
 
     /// <summary>
+    ///     Called when the grain is activated. Populates the cache from storage.
+    /// </summary>
+    /// <param name="token">Cancellation token for the activation operation.</param>
+    /// <returns>A task representing the asynchronous activation operation.</returns>
+    public async Task OnActivateAsync(
+        CancellationToken token
+    )
+    {
+        BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
+        await PopulateCacheFromBrookAsync(brookRangeKey, token);
+    }
+
+    /// <summary>
     ///     Reads events from this brook slice as an asynchronous stream within the specified position range.
     ///     Efficiently handles caching and streams events from the slice's managed range.
     /// </summary>
@@ -79,21 +87,22 @@ internal class BrookSliceReaderGrain
     )
     {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
-        BrookPosition lastPositionOfSlice = brookRangeKey.End;
         long lastPositionOfCacheValue = Cache.Length == 0
             ? brookRangeKey.Start.Value - 1
             : (brookRangeKey.Start.Value + Cache.Length) - 1;
         BrookPosition lastPositionOfCache = BrookPosition.FromLong(lastPositionOfCacheValue);
 
-        // Populate cache if:
-        // 1. Cache doesn't cover the entire slice yet, AND
-        // 2. The requested range extends beyond what's currently cached
-        // This avoids relying on the cursor grain which may have stale position data.
-        if ((lastPositionOfCache < lastPositionOfSlice) && (lastPositionOfCache < maxReadTo))
+        // Validate that the requested range is covered by the cache.
+        // The cache is populated on activation, so any request outside the cache is an error.
+        if (maxReadTo > lastPositionOfCache)
         {
-            await PopulateCacheFromBrookAsync(brookRangeKey);
+            throw new InvalidOperationException(
+                $"Requested position {maxReadTo} exceeds cached range. " +
+                $"Cache covers up to position {lastPositionOfCache} for slice {brookRangeKey}.");
         }
 
+        // Yield control to ensure async semantics for the iterator.
+        await Task.CompletedTask;
         for (int i = 0; i < Cache.Length; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -136,15 +145,16 @@ internal class BrookSliceReaderGrain
     }
 
     private async Task PopulateCacheFromBrookAsync(
-        BrookRangeKey brookRangeKey
+        BrookRangeKey brookRangeKey,
+        CancellationToken cancellationToken
     )
     {
         List<BrookEvent> l = new();
-        await foreach (BrookEvent ev in BrookStorageReader.ReadEventsAsync(brookRangeKey))
+        await foreach (BrookEvent ev in BrookStorageReader.ReadEventsAsync(brookRangeKey, cancellationToken))
         {
             l.Add(ev);
         }
 
-        Cache = l.ToImmutableArray();
+        Cache = [.. l];
     }
 }

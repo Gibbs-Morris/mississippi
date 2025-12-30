@@ -1,7 +1,7 @@
 # Brook Reader Performance Analysis
 
-> Deep analysis of the `[StatelessWorker]` and `[ReadOnly]` removal from brook reader grains,
-> understanding what was happening under the hood, and proposing designs to restore parallel performance.
+> Deep analysis of the `[StatelessWorker]` and `[ReadOnly]` interactions with brook reader grains,
+> understanding what was happening under the hood, and documenting the eager cache design.
 
 ## Table of Contents
 
@@ -29,8 +29,9 @@ via `AsyncEnumerableGrainExtension` to manage streaming across network calls.
 | Aspect | Original Design | Current Design |
 | ------ | --------------- | -------------- |
 | `BrookReaderGrain` | `[StatelessWorker]` - multiple activations | Single activation per key |
-| `BrookSliceReaderGrain.ReadAsync` | `[ReadOnly]` - interleaved calls | Serialized (no `[ReadOnly]`) |
-| Slice iteration | Sequential `foreach` | Sequential `foreach` |
+| `BrookSliceReaderGrain.ReadAsync` | Lazy cache, no `[ReadOnly]` | Eager cache on activation, `[ReadOnly]` restored |
+| `BrookSliceReaderGrain` cache | Populated on first read (mutation) | Populated on `OnActivateAsync` (no read mutation) |
+| Slice read behavior | Silent cache miss handling | Throws `InvalidOperationException` if position > cache |
 | Enumerator state | Stored in random activation | Stored in owning activation |
 | Streaming | **BROKEN** - `EnumerationAbortedException` | **WORKS** |
 
@@ -58,21 +59,53 @@ internal class BrookReaderGrain : IBrookReaderGrain, IGrainBase
 }
 ```
 
-### Original `BrookSliceReaderGrain` Behavior
+### Original `BrookSliceReaderGrain` Behavior (Before Eager Cache)
 
 ```csharp
 internal class BrookSliceReaderGrain : IBrookSliceReaderGrain, IGrainBase
 {
     private ImmutableArray<BrookEvent> Cache { get; set; } = ImmutableArray<BrookEvent>.Empty;
 
-    [ReadOnly]  // <-- REMOVED because Cache mutation
+    // [ReadOnly] was NOT possible because Cache mutation happened on read
     public async IAsyncEnumerable<BrookEvent> ReadAsync(...)
     {
         if (cacheStale)
         {
-            Cache = await LoadFromStorage();  // MUTATION! Violates [ReadOnly]
+            Cache = await LoadFromStorage();  // MUTATION! Violated [ReadOnly]
         }
         foreach (var ev in Cache)
+        {
+            yield return ev;
+        }
+    }
+}
+```
+
+### Current `BrookSliceReaderGrain` Behavior (Eager Cache on Activation)
+
+```csharp
+internal sealed class BrookSliceReaderGrain : IBrookSliceReaderGrain, IGrainBase
+{
+    private ImmutableArray<BrookEvent> Cache { get; set; } = ImmutableArray<BrookEvent>.Empty;
+
+    public async Task OnActivateAsync(CancellationToken token)
+    {
+        // Cache loads ONCE on activation - no mutation during reads
+        Cache = await LoadFromStorage(token);
+    }
+
+    [ReadOnly]  // Now safe - reads are pure
+    public async IAsyncEnumerable<BrookEvent> ReadAsync(
+        BrookPosition minReadFrom, BrookPosition maxReadTo, ...)
+    {
+        // Validate requested range is within cache
+        if (maxReadTo > lastPositionOfCache)
+        {
+            throw new InvalidOperationException(
+                $"Requested position {maxReadTo} exceeds cached range.");
+        }
+        
+        foreach (var ev in Cache.Where(inRange))
         {
             yield return ev;
         }
@@ -292,8 +325,10 @@ flowchart TB
 | Component | Change | Reason |
 | --------- | ------ | ------ |
 | `BrookReaderGrain` | Removed `[StatelessWorker]` | IAsyncEnumerable requires stable activation |
-| `IBrookSliceReaderGrain.ReadAsync` | Removed `[ReadOnly]` | Method mutates `Cache` property |
-| `IBrookSliceReaderGrain.ReadBatchAsync` | Removed `[ReadOnly]` | Method mutates `Cache` property |
+| `BrookSliceReaderGrain` | Cache loads on `OnActivateAsync` | Eager population enables `[ReadOnly]` on reads |
+| `IBrookSliceReaderGrain.ReadAsync` | Restored `[ReadOnly]` | Cache no longer mutates on read (loaded on activation) |
+| `IBrookSliceReaderGrain.ReadBatchAsync` | Restored `[ReadOnly]` | Cache no longer mutates on read (loaded on activation) |
+| `BrookSliceReaderGrain.ReadAsync` | Throws `InvalidOperationException` | If requested position exceeds cached range |
 | `IBrookCursorGrain.GetLatestPositionConfirmedAsync` | Removed `[ReadOnly]` | Method updates `TrackedCursorPosition` |
 | `IUxProjectionVersionedCacheGrain.GetAsync` | Removed `[ReadOnly]` | Method updates `cachedProjection` |
 
@@ -306,18 +341,18 @@ flowchart TB
         EXT["AsyncEnumerableGrainExtension<br/>_enumerators: stable"]
     end
 
-    subgraph "Slice Readers (one per range)"
-        SR0["SliceReaderGrain[brook:0:100]<br/>Cache: events 0-99"]
-        SR1["SliceReaderGrain[brook:100:100]<br/>Cache: events 100-199"]
-        SR2["SliceReaderGrain[brook:200:50]<br/>Cache: events 200-249"]
+    subgraph "Slice Readers (one per range, cache on activation)"
+        SR0["SliceReaderGrain[brook:0:100]<br/>Cache: events 0-99 [ReadOnly]"]
+        SR1["SliceReaderGrain[brook:100:100]<br/>Cache: events 100-199 [ReadOnly]"]
+        SR2["SliceReaderGrain[brook:200:50]<br/>Cache: events 200-249 [ReadOnly]"]
     end
 
     Client[Client]
 
     Client -->|"All calls route here"| BR
-    BR -->|"Sequential"| SR0
-    BR -->|"Sequential"| SR1
-    BR -->|"Sequential"| SR2
+    BR -->|"Interleavable [ReadOnly]"| SR0
+    BR -->|"Interleavable [ReadOnly]"| SR1
+    BR -->|"Interleavable [ReadOnly]"| SR2
 
     style BR fill:#8f8,stroke:#333
     style EXT fill:#8f8,stroke:#333
@@ -327,7 +362,7 @@ flowchart TB
 
 ## Performance Impact Analysis
 
-### What We Lost
+### What We Changed
 
 #### 1. StatelessWorker on BrookReaderGrain
 
@@ -342,16 +377,17 @@ Before: 10 concurrent readers → 10x parallel throughput
 After:  10 concurrent readers → serialized, 1x throughput
 ```
 
-#### 2. [ReadOnly] on BrookSliceReaderGrain.ReadAsync
+#### 2. [ReadOnly] on BrookSliceReaderGrain.ReadAsync - RESTORED
 
-**Before**: Multiple concurrent `ReadAsync` calls could interleave on the same slice grain.
+**Original Problem**: Cache mutation on first read disqualified `[ReadOnly]`.
 
-**After**: Calls serialize (one-at-a-time) on each slice grain.
+**Solution**: Cache now loads eagerly on `OnActivateAsync`. All subsequent reads are pure.
 
-**Impact Severity**: **LOW-MEDIUM**
+**Current**: `[ReadOnly]` is restored. Multiple concurrent `ReadAsync` calls can interleave.
 
-Why "low": Each slice grain is keyed by its range, so different ranges already parallelize.
-The serialization only affects multiple readers targeting the **same** slice simultaneously.
+**Tradeoff**: If a read requests a position beyond the cached range, an `InvalidOperationException` is thrown. Callers must ensure they request positions within the slice's known range.
+
+**Impact Severity**: **RESOLVED** - no longer a bottleneck
 
 ### Bottleneck Comparison
 
@@ -608,9 +644,13 @@ If read throughput becomes critical:
 
 | Issue | Root Cause | Fix | Performance Impact |
 | ----- | ---------- | --- | ------------------ |
-| `EnumerationAbortedException` | Orleans stores `IAsyncEnumerator` in activation-specific extension; `[StatelessWorker]` routes `MoveNext` to wrong activation | Removed `[StatelessWorker]` | Fixed streaming, serialized readers |
-| Incorrect `[ReadOnly]` | `Cache` mutation in `ReadAsync` violates contract | Removed `[ReadOnly]` | Serialized slice reads |
-| Lost parallelism | Single activation + serialized methods | Use batch API with parallel fan-out | Restore parallel performance |
+| `EnumerationAbortedException` | Orleans stores `IAsyncEnumerator` in activation-specific extension; `[StatelessWorker]` routes `MoveNext` to wrong activation | Removed `[StatelessWorker]` from `BrookReaderGrain` | Fixed streaming, serialized readers |
+| `[ReadOnly]` violation | Lazy cache population in `ReadAsync` mutated state | Moved cache to `OnActivateAsync`; restored `[ReadOnly]` | Slice reads now interleavable |
+| Cache miss handling | Silent fallback to storage on miss | Throws `InvalidOperationException` if position > cache | Explicit failure; callers must respect slice boundaries |
+| Lost parallelism at reader level | Single activation + serialized methods | Use batch API with parallel fan-out | Restore parallel performance |
 
 The core insight: **IAsyncEnumerable in Orleans requires stable activation because the enumerator
 is stored in an activation-scoped grain extension, not in the grain's business state**.
+
+The slice reader optimization: **Eager cache loading on activation enables `[ReadOnly]` on all
+read methods, allowing concurrent reads to interleave within a slice grain**.
