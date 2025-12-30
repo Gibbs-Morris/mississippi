@@ -29,7 +29,9 @@ public sealed class UxProjectionControllerTests
     )
     {
         factoryMock ??= new();
-        return new(factoryMock.Object, NullLogger<TestableController>.Instance);
+        return new(
+            factoryMock.Object,
+            NullLogger<UxProjectionControllerBase<TestProjection, TestBrookDefinition>>.Instance);
     }
 
     private const string TestEntityId = "entity-123";
@@ -46,7 +48,7 @@ public sealed class UxProjectionControllerTests
         /// <param name="logger">The logger for diagnostic output.</param>
         public TestableController(
             IUxProjectionGrainFactory uxProjectionGrainFactory,
-            ILogger<TestableController> logger
+            ILogger<UxProjectionControllerBase<TestProjection, TestBrookDefinition>> logger
         )
             : base(uxProjectionGrainFactory, logger)
         {
@@ -83,7 +85,7 @@ public sealed class UxProjectionControllerTests
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new TestableController(
             null!,
-            NullLogger<TestableController>.Instance));
+            NullLogger<UxProjectionControllerBase<TestProjection, TestBrookDefinition>>.Instance));
     }
 
     /// <summary>

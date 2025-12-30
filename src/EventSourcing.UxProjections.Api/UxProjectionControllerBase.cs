@@ -30,7 +30,7 @@ namespace Mississippi.EventSourcing.UxProjections.Api;
 ///             {
 ///                 public UserProjectionController(
 ///                     IUxProjectionGrainFactory factory,
-///                     ILogger&lt;UserProjectionController&gt; logger) : base(factory, logger) { }
+///                     ILogger&lt;UxProjectionControllerBase&lt;UserProjection, UserBrook&gt;&gt; logger) : base(factory, logger) { }
 ///             }
 ///         </code>
 ///     </para>
@@ -51,13 +51,14 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
     private static readonly string ProjectionTypeName = typeof(TProjection).Name;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="UxProjectionControllerBase{TProjection, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="UxProjectionControllerBase{TProjection, TBrook}" />
+    ///     class.
     /// </summary>
     /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains.</param>
     /// <param name="logger">The logger for diagnostic output.</param>
     protected UxProjectionControllerBase(
         IUxProjectionGrainFactory uxProjectionGrainFactory,
-        ILogger logger
+        ILogger<UxProjectionControllerBase<TProjection, TBrook>> logger
     )
     {
         UxProjectionGrainFactory = uxProjectionGrainFactory ??
@@ -68,7 +69,7 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
     /// <summary>
     ///     Gets the logger for diagnostic output.
     /// </summary>
-    protected ILogger Logger { get; }
+    protected ILogger<UxProjectionControllerBase<TProjection, TBrook>> Logger { get; }
 
     /// <summary>
     ///     Gets the factory for resolving UX projection grains.

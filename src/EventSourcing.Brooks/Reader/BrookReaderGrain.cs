@@ -112,6 +112,20 @@ internal class BrookReaderGrain
     }
 
     /// <summary>
+    ///     Called when the grain is activated.
+    /// </summary>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A task representing the activation operation.</returns>
+    public Task OnActivateAsync(
+        CancellationToken token
+    )
+    {
+        BrookKey brookId = this.GetPrimaryKeyString();
+        Logger.Activated(brookId);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
     ///     Reads events from the brook as a batch within the specified position range.
     ///     Returns all matching events as an immutable array for batch processing scenarios.
     /// </summary>

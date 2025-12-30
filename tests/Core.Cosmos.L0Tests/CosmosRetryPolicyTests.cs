@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Core.Cosmos.Retry;
 
@@ -64,7 +65,7 @@ public sealed class CosmosRetryPolicyTests
     [Fact]
     public async Task ExecuteAsyncHonorsCancellationAsync()
     {
-        CosmosRetryPolicy policy = new();
+        CosmosRetryPolicy policy = new(NullLogger<CosmosRetryPolicy>.Instance);
         using CancellationTokenSource cts = new();
         await cts.CancelAsync();
         await Assert.ThrowsAsync<OperationCanceledException>(() => policy.ExecuteAsync(
@@ -79,7 +80,7 @@ public sealed class CosmosRetryPolicyTests
     [Fact]
     public async Task ExecuteAsyncPassesThroughNotFoundAsync()
     {
-        CosmosRetryPolicy policy = new();
+        CosmosRetryPolicy policy = new(NullLogger<CosmosRetryPolicy>.Instance);
         await Assert.ThrowsAsync<CosmosException>(() =>
             policy.ExecuteAsync(() => Task.FromException<int>(CreateCosmosException(HttpStatusCode.NotFound))));
     }
@@ -91,7 +92,7 @@ public sealed class CosmosRetryPolicyTests
     [Fact]
     public async Task ExecuteAsyncRetriesOnTransientAsync()
     {
-        CosmosRetryPolicy policy = new();
+        CosmosRetryPolicy policy = new(NullLogger<CosmosRetryPolicy>.Instance);
         int attempts = 0;
         await policy.ExecuteAsync(() =>
         {
@@ -113,7 +114,7 @@ public sealed class CosmosRetryPolicyTests
     [Fact]
     public async Task ExecuteAsyncThrowsAfterExhaustingRetriesAsync()
     {
-        CosmosRetryPolicy policy = new();
+        CosmosRetryPolicy policy = new(NullLogger<CosmosRetryPolicy>.Instance);
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             policy.ExecuteAsync(() => Task.FromException<int>(CreateCosmosException(HttpStatusCode.TooManyRequests))));
     }
@@ -125,7 +126,7 @@ public sealed class CosmosRetryPolicyTests
     [Fact]
     public async Task ExecuteAsyncThrowsForRequestTooLargeAsync()
     {
-        CosmosRetryPolicy policy = new();
+        CosmosRetryPolicy policy = new(NullLogger<CosmosRetryPolicy>.Instance);
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             policy.ExecuteAsync(() =>
                 Task.FromException<int>(CreateCosmosException(HttpStatusCode.RequestEntityTooLarge))));

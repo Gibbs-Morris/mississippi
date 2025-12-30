@@ -17,18 +17,19 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
     /// <summary>
     ///     Initializes a new instance of the <see cref="CosmosRetryPolicy" /> class with a configurable retry count.
     /// </summary>
-    /// <param name="maxRetries">Maximum number of retry attempts for transient failures.</param>
     /// <param name="logger">Logger instance for logging retry operations.</param>
+    /// <param name="maxRetries">Maximum number of retry attempts for transient failures.</param>
     public CosmosRetryPolicy(
-        int maxRetries = 3,
-        ILogger<CosmosRetryPolicy>? logger = null
+        ILogger<CosmosRetryPolicy> logger,
+        int maxRetries = 3
     )
     {
+        ArgumentNullException.ThrowIfNull(logger);
         MaxRetries = maxRetries;
         Logger = logger;
     }
 
-    private ILogger<CosmosRetryPolicy>? Logger { get; }
+    private ILogger<CosmosRetryPolicy> Logger { get; }
 
     private int MaxRetries { get; }
 
@@ -63,7 +64,7 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
     )
     {
         ArgumentNullException.ThrowIfNull(operation);
-        Logger?.StartingOperation();
+        Logger.StartingOperation();
         Exception? lastException = null;
         for (int attempt = 0; attempt <= MaxRetries; attempt++)
         {
@@ -71,7 +72,7 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
             try
             {
                 T result = await operation().ConfigureAwait(false);
-                Logger?.OperationSucceeded(attempt);
+                Logger.OperationSucceeded(attempt);
                 return result;
             }
             catch (CosmosException ex)
@@ -86,12 +87,12 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
                     }
                 }
 
-                Logger?.NonTransientError(ex, (int)ex.StatusCode);
+                Logger.NonTransientError(ex, (int)ex.StatusCode);
                 throw new InvalidOperationException($"Cosmos operation failed with status {ex.StatusCode}", ex);
             }
             catch (TaskCanceledException ex)
             {
-                Logger?.OperationCancelled(ex, cancellationToken.IsCancellationRequested);
+                Logger.OperationCancelled(ex, cancellationToken.IsCancellationRequested);
                 throw new OperationCanceledException(
                     cancellationToken.IsCancellationRequested
                         ? "Cosmos operation canceled"
@@ -101,7 +102,7 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
             }
         }
 
-        Logger?.AllRetriesExhausted(MaxRetries);
+        Logger.AllRetriesExhausted(MaxRetries);
         throw new InvalidOperationException($"Operation failed after {MaxRetries + 1} attempts", lastException);
     }
 
@@ -117,7 +118,7 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
         }
 
         TimeSpan delay = exception.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-        Logger?.RetryingAfterTransientError(attempt, (int)exception.StatusCode, delay.TotalMilliseconds);
+        Logger.RetryingAfterTransientError(attempt, (int)exception.StatusCode, delay.TotalMilliseconds);
         await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
         return true;
     }

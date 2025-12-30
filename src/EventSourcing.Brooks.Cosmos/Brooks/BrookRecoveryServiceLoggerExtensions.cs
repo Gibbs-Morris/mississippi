@@ -156,6 +156,22 @@ internal static partial class BrookRecoveryServiceLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when recovery lock acquisition failed with exception details.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="exception">The exception that occurred.</param>
+    /// <param name="brookId">The brook identifier.</param>
+    [LoggerMessage(
+        EventId = 12,
+        Level = LogLevel.Information,
+        Message = "Could not acquire recovery lock for brook '{BrookId}', another process may be handling recovery")]
+    public static partial void RecoveryLockFailed(
+        this ILogger logger,
+        Exception exception,
+        BrookKey brookId
+    );
+
+    /// <summary>
     ///     Logs when rollback completes successfully.
     /// </summary>
     /// <param name="logger">The logger instance.</param>

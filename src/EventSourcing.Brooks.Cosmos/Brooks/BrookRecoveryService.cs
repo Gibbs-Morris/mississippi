@@ -95,9 +95,9 @@ internal class BrookRecoveryService : IBrookRecoveryService
                         async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
                         cancellationToken);
                 }
-                catch (RequestFailedException)
+                catch (RequestFailedException ex)
                 {
-                    Logger.RecoveryLockFailed(brookId);
+                    Logger.RecoveryLockFailed(ex, brookId);
 
                     // If we can't acquire the recovery lock, assume another process is handling recovery
                     // Wait a bit and try to read the cursor again
@@ -109,11 +109,11 @@ internal class BrookRecoveryService : IBrookRecoveryService
                     // If the cursor is still null after waiting, we have a problem
                     if (cursorDocument == null)
                     {
-                        InvalidOperationException ex = new(
+                        InvalidOperationException invalidOperationException = new(
                             $"Unable to recover cursor position for brook {brookId}. " +
                             "Another recovery operation may be in progress or has failed.");
-                        Logger.RecoveryFailed(ex, brookId);
-                        throw ex;
+                        Logger.RecoveryFailed(invalidOperationException, brookId);
+                        throw invalidOperationException;
                     }
                 }
             }
