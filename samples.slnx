@@ -64,6 +64,6 @@
         <Project Path="tests\EventSourcing.Serialization.L0Tests\EventSourcing.Serialization.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.Serialization.Abstractions.L0Tests\EventSourcing.Serialization.Abstractions.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.Serialization.Json.L0Tests\EventSourcing.Serialization.Json.L0Tests.csproj" />
-    </Folder>
-
+    <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
+   </Folder>
 </Solution>
