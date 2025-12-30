@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Cosmos.Retry;
@@ -40,7 +41,11 @@ public sealed class SnapshotContainerOperationsTests
     {
         retryPolicy ??= new PassThroughRetryPolicy();
         options ??= new();
-        return new(container.Object, Options.Create(options), retryPolicy);
+        return new(
+            container.Object,
+            Options.Create(options),
+            retryPolicy,
+            NullLogger<SnapshotContainerOperations>.Instance);
     }
 
     private const string TestDocumentId = "test-doc-id";
@@ -65,7 +70,8 @@ public sealed class SnapshotContainerOperationsTests
         Assert.Throws<ArgumentNullException>(() => new SnapshotContainerOperations(
             null!,
             Options.Create(new SnapshotStorageOptions()),
-            new PassThroughRetryPolicy()));
+            new PassThroughRetryPolicy(),
+            NullLogger<SnapshotContainerOperations>.Instance));
     }
 
     /// <summary>
@@ -78,7 +84,8 @@ public sealed class SnapshotContainerOperationsTests
         Assert.Throws<ArgumentNullException>(() => new SnapshotContainerOperations(
             container.Object,
             null!,
-            new PassThroughRetryPolicy()));
+            new PassThroughRetryPolicy(),
+            NullLogger<SnapshotContainerOperations>.Instance));
     }
 
     /// <summary>
@@ -91,7 +98,8 @@ public sealed class SnapshotContainerOperationsTests
         Assert.Throws<ArgumentNullException>(() => new SnapshotContainerOperations(
             container.Object,
             Options.Create(new SnapshotStorageOptions()),
-            null!));
+            null!,
+            NullLogger<SnapshotContainerOperations>.Instance));
     }
 
     /// <summary>

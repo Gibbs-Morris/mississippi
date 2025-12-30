@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Factory;
@@ -35,7 +36,7 @@ public sealed class BrookReaderGrainUnitTests
         Mock<IBrookGrainFactory> factory = new();
         IOptions<BrookReaderOptions> options = Options.Create(new BrookReaderOptions());
         Mock<IGrainContext> context = new();
-        BrookReaderGrain sut = new(factory.Object, options, context.Object);
+        BrookReaderGrain sut = new(factory.Object, options, context.Object, NullLogger<BrookReaderGrain>.Instance);
 
         // Act
         await sut.DeactivateAsync();

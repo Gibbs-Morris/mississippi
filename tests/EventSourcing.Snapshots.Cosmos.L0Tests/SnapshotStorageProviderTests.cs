@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.Extensions.Logging.Abstractions;
+
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 
@@ -31,7 +33,9 @@ public sealed class SnapshotStorageProviderTests
     [Fact]
     public void ConstructorShouldThrowWhenRepositoryIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new SnapshotStorageProvider(null!));
+        Assert.Throws<ArgumentNullException>(() => new SnapshotStorageProvider(
+            null!,
+            NullLogger<SnapshotStorageProvider>.Instance));
     }
 
     /// <summary>
@@ -42,7 +46,7 @@ public sealed class SnapshotStorageProviderTests
     public async Task DeleteAllAsyncShouldDelegate()
     {
         Mock<ISnapshotCosmosRepository> repo = new();
-        SnapshotStorageProvider provider = new(repo.Object);
+        SnapshotStorageProvider provider = new(repo.Object, NullLogger<SnapshotStorageProvider>.Instance);
         await provider.DeleteAllAsync(StreamKey, CancellationToken.None);
         repo.Verify(r => r.DeleteAllAsync(StreamKey, CancellationToken.None), Times.Once);
     }
@@ -55,7 +59,7 @@ public sealed class SnapshotStorageProviderTests
     public async Task DeleteAsyncShouldDelegate()
     {
         Mock<ISnapshotCosmosRepository> repo = new();
-        SnapshotStorageProvider provider = new(repo.Object);
+        SnapshotStorageProvider provider = new(repo.Object, NullLogger<SnapshotStorageProvider>.Instance);
         await provider.DeleteAsync(SnapshotKey, CancellationToken.None);
         repo.Verify(r => r.DeleteAsync(SnapshotKey, CancellationToken.None), Times.Once);
     }
@@ -66,7 +70,9 @@ public sealed class SnapshotStorageProviderTests
     [Fact]
     public void FormatShouldReturnCosmosDb()
     {
-        SnapshotStorageProvider provider = new(Mock.Of<ISnapshotCosmosRepository>());
+        SnapshotStorageProvider provider = new(
+            Mock.Of<ISnapshotCosmosRepository>(),
+            NullLogger<SnapshotStorageProvider>.Instance);
         Assert.Equal("cosmos-db", provider.Format);
     }
 
@@ -78,7 +84,7 @@ public sealed class SnapshotStorageProviderTests
     public async Task PruneAsyncShouldDelegate()
     {
         Mock<ISnapshotCosmosRepository> repo = new();
-        SnapshotStorageProvider provider = new(repo.Object);
+        SnapshotStorageProvider provider = new(repo.Object, NullLogger<SnapshotStorageProvider>.Instance);
         List<int> retain = new()
         {
             2,
@@ -94,7 +100,9 @@ public sealed class SnapshotStorageProviderTests
     [Fact]
     public async Task PruneAsyncShouldThrowWhenRetainModuliNull()
     {
-        SnapshotStorageProvider provider = new(Mock.Of<ISnapshotCosmosRepository>());
+        SnapshotStorageProvider provider = new(
+            Mock.Of<ISnapshotCosmosRepository>(),
+            NullLogger<SnapshotStorageProvider>.Instance);
         await Assert.ThrowsAsync<ArgumentNullException>(() => provider.PruneAsync(
             StreamKey,
             null!,
@@ -111,7 +119,7 @@ public sealed class SnapshotStorageProviderTests
         SnapshotEnvelope envelope = new();
         Mock<ISnapshotCosmosRepository> repo = new();
         repo.Setup(r => r.ReadAsync(SnapshotKey, CancellationToken.None)).ReturnsAsync(envelope);
-        SnapshotStorageProvider provider = new(repo.Object);
+        SnapshotStorageProvider provider = new(repo.Object, NullLogger<SnapshotStorageProvider>.Instance);
         SnapshotEnvelope? result = await provider.ReadAsync(SnapshotKey, CancellationToken.None);
         Assert.Same(envelope, result);
         repo.Verify(r => r.ReadAsync(SnapshotKey, CancellationToken.None), Times.Once);
@@ -126,7 +134,7 @@ public sealed class SnapshotStorageProviderTests
     {
         SnapshotEnvelope envelope = new();
         Mock<ISnapshotCosmosRepository> repo = new();
-        SnapshotStorageProvider provider = new(repo.Object);
+        SnapshotStorageProvider provider = new(repo.Object, NullLogger<SnapshotStorageProvider>.Instance);
         await provider.WriteAsync(SnapshotKey, envelope, CancellationToken.None);
         repo.Verify(r => r.WriteAsync(SnapshotKey, envelope, CancellationToken.None), Times.Once);
     }
