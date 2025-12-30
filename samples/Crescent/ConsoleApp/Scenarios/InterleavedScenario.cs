@@ -58,7 +58,7 @@ internal static class InterleavedScenario
             int tailCount = 0;
             long tailStart = Math.Max(1, cursor1.Value - Math.Min(4, cursor1.Value));
             IBrookAsyncReaderGrain tailReader = brookGrainFactory.GetBrookAsyncReaderGrain(brookKey);
-            await foreach (BrookEvent ignoredEvent in tailReader.ReadEventsAsync(
+            await foreach (BrookEvent ev in tailReader.ReadEventsAsync(
                                new(tailStart),
                                cursor1,
                                cancellationToken))

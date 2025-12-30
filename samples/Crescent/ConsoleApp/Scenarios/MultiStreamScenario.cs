@@ -76,7 +76,7 @@ internal static class MultiStreamScenario
             if (cA.Value >= 1)
             {
                 IBrookAsyncReaderGrain rA = brookGrainFactory.GetBrookAsyncReaderGrain(keyA);
-                await foreach (BrookEvent ignoredEvent in rA.ReadEventsAsync(new(1), cA))
+                await foreach (BrookEvent ev in rA.ReadEventsAsync(new(1), cA))
                 {
                     ca++;
                 }
@@ -89,7 +89,7 @@ internal static class MultiStreamScenario
             if (cB.Value >= 1)
             {
                 IBrookAsyncReaderGrain rB = brookGrainFactory.GetBrookAsyncReaderGrain(keyB);
-                await foreach (BrookEvent ignoredEvent in rB.ReadEventsAsync(new(1), cB))
+                await foreach (BrookEvent ev in rB.ReadEventsAsync(new(1), cB))
                 {
                     cb++;
                 }
