@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -74,16 +75,35 @@ internal sealed class BrookWriterGrain
     )
     {
         BrookKey key = this.GetPrimaryKeyString();
+        Logger.AppendingEvents(key, events.Length, expectedCursorPosition?.Value);
+        Stopwatch sw = Stopwatch.StartNew();
         BrookPosition newPosition = await BrookWriterService.AppendEventsAsync(
             key,
             events,
             expectedCursorPosition,
             cancellationToken);
+        sw.Stop();
+        Logger.EventsAppended(key, events.Length, newPosition.Value, sw.ElapsedMilliseconds);
+        Logger.PublishingCursorMoved(key, newPosition.Value);
         IAsyncStream<BrookCursorMovedEvent> stream = this
             .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookCursorMovedEvent>(
                 StreamId.Create(EventSourcingOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
         await stream.OnNextAsync(new(newPosition));
         return newPosition;
+    }
+
+    /// <summary>
+    ///     Called when the grain is activated.
+    /// </summary>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A task representing the activation operation.</returns>
+    public Task OnActivateAsync(
+        CancellationToken token
+    )
+    {
+        BrookKey key = this.GetPrimaryKeyString();
+        Logger.Activated(key);
+        return Task.CompletedTask;
     }
 }
