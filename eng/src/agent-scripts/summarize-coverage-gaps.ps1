@@ -98,16 +98,16 @@ function Get-CoverageReportData {
     foreach ($kvp in $fileMap.GetEnumerator()) {
         $fileName = $kvp.Key
         $info = $kvp.Value
-    $lineEntries = @($info.Lines.GetEnumerator() | ForEach-Object { $_ })
-    $lineCount = ($lineEntries | Measure-Object).Count
-    if ($lineCount -eq 0) { continue }
+        $lineEntries = @($info.Lines.GetEnumerator() | ForEach-Object { $_ })
+        $lineCount = ($lineEntries | Measure-Object).Count
+        if ($lineCount -eq 0) { continue }
 
-    $total = $lineCount
-    $covered = ($lineEntries | Where-Object { $_.Value -gt 0 } | Measure-Object).Count
+        $total = $lineCount
+        $covered = ($lineEntries | Where-Object { $_.Value -gt 0 } | Measure-Object).Count
         $coveragePercent = if ($total -gt 0) { [Math]::Round(($covered / $total) * 100, 2) } else { 100 }
 
-    $uncovered = $lineEntries | Where-Object { $_.Value -eq 0 } | ForEach-Object { [int]$_.Key } | Sort-Object
-        $preview = if ($UncoveredLinePreview -gt 0) { $uncovered | Select-Object -First $UncoveredLinePreview } else { @() }
+        $uncovered = @($lineEntries | Where-Object { $_.Value -eq 0 } | ForEach-Object { [int]$_.Key } | Sort-Object)
+        $preview = if ($UncoveredLinePreview -gt 0) { @($uncovered | Select-Object -First $UncoveredLinePreview) } else { @() }
 
         $fullPath = $null
         if (Test-Path -LiteralPath $fileName) {
@@ -173,14 +173,15 @@ if (-not (Test-Path -LiteralPath $CoverageReportPath -PathType Leaf)) {
 Write-Host "Using coverage report: $CoverageReportPath" -ForegroundColor Cyan
 Write-Host "Coverage threshold: $Threshold%" -ForegroundColor Cyan
 
-    $coverageItems = Get-CoverageReportData -ReportPath $CoverageReportPath -RepoRoot $effectiveRepoRoot -ExcludePaths $ExcludePaths -UncoveredLinePreview $UncoveredLinePreview
+$coverageItems = @(Get-CoverageReportData -ReportPath $CoverageReportPath -RepoRoot $effectiveRepoRoot -ExcludePaths $ExcludePaths -UncoveredLinePreview $UncoveredLinePreview)
+$coverageItems = @($coverageItems | Where-Object { $_ })
 
 if (-not $coverageItems -or $coverageItems.Count -eq 0) {
     Write-Host 'No coverage data found in report.' -ForegroundColor Yellow
     return
 }
 
-$belowThreshold = $coverageItems | Where-Object { $_.CoveragePercent -lt $Threshold } | Sort-Object CoveragePercent
+$belowThreshold = @($coverageItems | Where-Object { $_.CoveragePercent -lt $Threshold } | Sort-Object CoveragePercent)
 
 if ($belowThreshold.Count -eq 0) {
     Write-Host 'All files meet or exceed the coverage threshold.' -ForegroundColor Green
@@ -220,8 +221,9 @@ if ($EmitTasks -and $belowThreshold.Count -gt 0) {
         $projectName = Resolve-ProjectNameFromPath -RelativePath $item.RelativePath
         $uniqueKey = "coverage|$($item.RelativePath)"
         $notes = "Coverage $($item.CoveragePercent)% (threshold $Threshold%)."
-        if ($item.PreviewLines -and $item.PreviewLines.Count -gt 0) {
-            $previewText = ($item.PreviewLines -join ', ')
+        $previewLines = @($item.PreviewLines)
+        if ($previewLines.Count -gt 0) {
+            $previewText = ($previewLines -join ', ')
             $notes += " Uncovered lines: $previewText."
         }
 
