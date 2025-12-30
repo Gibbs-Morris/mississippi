@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.EventSourcing.Abstractions.Storage;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 
 /// <summary>
 ///     Provides read access to brooks.

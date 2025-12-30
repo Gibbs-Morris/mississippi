@@ -10,12 +10,12 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Core.Abstractions.Mapping;
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Retry;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Storage;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 /// <summary>
 ///     Repository implementation for Cosmos DB operations on brooks and events.

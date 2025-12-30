@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Abstractions;
+namespace Mississippi.EventSourcing.Brooks.Abstractions;
 
 /// <summary>
 ///     Represents a unique key for identifying a brook async reader grain instance.

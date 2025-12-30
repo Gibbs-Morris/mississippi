@@ -1,10 +1,10 @@
 using System;
 using System.Reflection;
 
-using Mississippi.EventSourcing.Abstractions.Attributes;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Abstractions;
+namespace Mississippi.EventSourcing.Brooks.Abstractions;
 
 /// <summary>
 ///     Provides helper methods for working with <see cref="IBrookDefinition" /> types.

@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Factory;
-using Mississippi.EventSourcing.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Factory;
+using Mississippi.EventSourcing.Brooks.Reader;
 
 
 namespace Crescent.ConsoleApp.Shared;

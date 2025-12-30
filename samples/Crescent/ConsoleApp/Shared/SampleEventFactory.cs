@@ -2,7 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Security.Cryptography;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
 namespace Crescent.ConsoleApp.Shared;

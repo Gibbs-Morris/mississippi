@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Retry;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 
 /// <summary>
 ///     Retry policy implementation for Cosmos DB operations.

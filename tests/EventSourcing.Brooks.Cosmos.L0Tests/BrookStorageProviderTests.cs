@@ -7,8 +7,9 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cosmos;
+using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 
 using Moq;
 

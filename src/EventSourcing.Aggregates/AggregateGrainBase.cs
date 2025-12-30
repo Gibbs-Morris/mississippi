@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Abstractions.Attributes;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Factory;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 
 using Orleans;

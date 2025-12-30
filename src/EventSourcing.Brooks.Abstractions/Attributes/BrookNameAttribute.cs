@@ -2,7 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 
 
-namespace Mississippi.EventSourcing.Abstractions.Attributes;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 /// <summary>
 ///     Attribute that specifies the hierarchical naming convention for a brook (event stream).

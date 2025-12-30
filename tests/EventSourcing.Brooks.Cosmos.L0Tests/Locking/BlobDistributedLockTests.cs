@@ -8,7 +8,7 @@ using Allure.Xunit.Attributes;
 using Azure;
 using Azure.Storage.Blobs.Models;
 
-using Mississippi.EventSourcing.Cosmos.Locking;
+using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 
 using Moq;
 

@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Abstractions.Storage;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 
 /// <summary>
 ///     This is what someone needs to implement to write the event somewhere.

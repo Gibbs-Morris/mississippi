@@ -1,5 +1,7 @@
 using Allure.Xunit.Attributes;
 
+using Mississippi.EventSourcing.Brooks.Cosmos;
+
 
 namespace Mississippi.EventSourcing.Cosmos.Tests;
 

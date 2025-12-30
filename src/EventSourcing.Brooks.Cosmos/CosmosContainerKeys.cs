@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Cosmos;
+namespace Mississippi.EventSourcing.Brooks.Cosmos;
 
 /// <summary>
 ///     Keys for keyed service registration of Cosmos DB containers.

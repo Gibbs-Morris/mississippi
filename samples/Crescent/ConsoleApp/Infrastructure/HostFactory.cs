@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing;
-using Mississippi.EventSourcing.Cosmos;
+using Mississippi.EventSourcing.Brooks;
+using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 
 using Orleans.Configuration;

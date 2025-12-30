@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Reader;
+using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.EventSourcing.Brooks.Writer;
 using Mississippi.EventSourcing.Tests.Infrastructure;
-using Mississippi.EventSourcing.Writer;
 using Mississippi.Testing.Utilities.Orleans;
 
 using Orleans.TestingHost;

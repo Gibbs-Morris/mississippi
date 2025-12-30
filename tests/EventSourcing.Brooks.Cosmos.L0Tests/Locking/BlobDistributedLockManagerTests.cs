@@ -11,7 +11,8 @@ using Azure.Storage.Blobs.Models;
 
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Cosmos.Locking;
+using Mississippi.EventSourcing.Brooks.Cosmos;
+using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 
 using Moq;
 

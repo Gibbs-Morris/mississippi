@@ -2,7 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 
 
-namespace Mississippi.EventSourcing.Abstractions.Attributes;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 /// <summary>
 ///     Attribute used to define the name and version of an event in the event sourcing system.

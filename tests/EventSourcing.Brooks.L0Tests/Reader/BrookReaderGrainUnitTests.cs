@@ -4,8 +4,8 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Factory;
-using Mississippi.EventSourcing.Reader;
+using Mississippi.EventSourcing.Brooks.Factory;
+using Mississippi.EventSourcing.Brooks.Reader;
 
 using Moq;
 

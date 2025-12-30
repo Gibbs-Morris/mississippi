@@ -3,7 +3,7 @@
 using Newtonsoft.Json;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Storage;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 /// <summary>
 ///     Document model for storing events in Cosmos DB.

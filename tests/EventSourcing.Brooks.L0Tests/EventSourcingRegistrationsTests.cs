@@ -7,8 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Factory;
-using Mississippi.EventSourcing.Reader;
+using Mississippi.EventSourcing.Brooks;
+using Mississippi.EventSourcing.Brooks.Factory;
+using Mississippi.EventSourcing.Brooks.Reader;
 
 
 namespace Mississippi.EventSourcing.Tests;

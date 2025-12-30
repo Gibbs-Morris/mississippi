@@ -8,12 +8,12 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Factory;
+using Mississippi.EventSourcing.Brooks.Factory;
+using Mississippi.EventSourcing.Brooks.Writer;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Writer;
 
 using Moq;
 

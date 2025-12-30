@@ -3,13 +3,13 @@ using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.Reader;
+namespace Mississippi.EventSourcing.Brooks.Reader;
 
 /// <summary>
 ///     Internal grain that manages a slice of a brook (event stream) for memory-efficient reading.

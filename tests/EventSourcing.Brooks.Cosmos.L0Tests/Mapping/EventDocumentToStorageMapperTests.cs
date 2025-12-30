@@ -2,8 +2,8 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Cosmos.Mapping;
-using Mississippi.EventSourcing.Cosmos.Storage;
+using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
+using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;

@@ -1,4 +1,4 @@
-﻿namespace Mississippi.EventSourcing.Cosmos;
+﻿namespace Mississippi.EventSourcing.Brooks.Cosmos;
 
 /// <summary>
 ///     Configuration options for the Cosmos DB brook storage provider.

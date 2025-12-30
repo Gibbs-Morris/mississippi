@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Abstractions;
+namespace Mississippi.EventSourcing.Brooks.Abstractions;
 
 /// <summary>
 ///     Represents an event used by the Mississippi event-sourcing subsystem.

@@ -8,12 +8,13 @@ using Azure;
 
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Brooks;
-using Mississippi.EventSourcing.Cosmos.Locking;
-using Mississippi.EventSourcing.Cosmos.Retry;
-using Mississippi.EventSourcing.Cosmos.Storage;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cosmos;
+using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
+using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
+using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
+using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 using Moq;
 

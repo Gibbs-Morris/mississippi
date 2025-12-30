@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.EventSourcing.UxProjections.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;

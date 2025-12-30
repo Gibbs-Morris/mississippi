@@ -2,6 +2,8 @@ using System;
 
 using Allure.Xunit.Attributes;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+
 
 namespace Mississippi.EventSourcing.Abstractions.Attributes.Tests;
 

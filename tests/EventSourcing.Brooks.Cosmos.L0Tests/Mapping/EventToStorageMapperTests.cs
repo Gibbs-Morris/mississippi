@@ -4,9 +4,9 @@ using System.Linq;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Mapping;
-using Mississippi.EventSourcing.Cosmos.Storage;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
+using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;

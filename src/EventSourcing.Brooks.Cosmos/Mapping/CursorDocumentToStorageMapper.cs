@@ -1,9 +1,9 @@
 using Mississippi.Core.Abstractions.Mapping;
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Storage;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Mapping;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 
 /// <summary>
 ///     Maps cursor documents to cursor storage models.

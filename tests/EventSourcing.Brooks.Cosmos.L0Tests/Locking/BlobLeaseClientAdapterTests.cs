@@ -8,7 +8,7 @@ using Azure;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 
-using Mississippi.EventSourcing.Cosmos.Locking;
+using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 
 using Moq;
 

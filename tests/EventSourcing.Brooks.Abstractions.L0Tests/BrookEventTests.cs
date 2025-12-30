@@ -3,6 +3,8 @@ using System.Collections.Immutable;
 
 using Allure.Xunit.Attributes;
 
+using Mississippi.EventSourcing.Brooks.Abstractions;
+
 
 namespace Mississippi.EventSourcing.Abstractions.Tests;
 

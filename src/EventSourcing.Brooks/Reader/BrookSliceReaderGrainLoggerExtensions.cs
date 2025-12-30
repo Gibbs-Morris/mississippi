@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Reader;
+namespace Mississippi.EventSourcing.Brooks.Reader;
 
 /// <summary>
 ///     High-performance logging extensions for <see cref="BrookSliceReaderGrain" />.

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Retry;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 
 /// <summary>
 ///     Provides retry functionality for operations that may fail due to transient errors.

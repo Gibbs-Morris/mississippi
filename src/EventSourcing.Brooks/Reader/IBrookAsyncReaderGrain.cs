@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using System.Threading;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Reader;
+namespace Mississippi.EventSourcing.Brooks.Reader;
 
 /// <summary>
 ///     Grain interface for reading events from a brook using asynchronous streaming.

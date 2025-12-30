@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 using Orleans;
 

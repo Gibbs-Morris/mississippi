@@ -2,7 +2,7 @@ using System;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
 namespace Crescent.ConsoleApp;

@@ -4,11 +4,11 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Factory;
-using Mississippi.EventSourcing.Reader;
-using Mississippi.EventSourcing.Writer;
+using Mississippi.EventSourcing.Brooks.Factory;
+using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.EventSourcing.Brooks.Writer;
 
 using Moq;
 
