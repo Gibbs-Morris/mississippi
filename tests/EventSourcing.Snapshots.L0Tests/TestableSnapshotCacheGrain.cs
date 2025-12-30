@@ -52,6 +52,12 @@ internal sealed class TestableSnapshotCacheGrain
     {
     }
 
+    /// <summary>
+    ///     Gets the brook name from the brook definition for testing.
+    /// </summary>
+    /// <returns>The brook name.</returns>
+    public static string GetBrookName() => BrookName;
+
     /// <inheritdoc />
     protected override SnapshotCacheGrainTestState CreateInitialState() =>
         new()

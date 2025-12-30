@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -70,6 +71,244 @@ public sealed class SnapshotCacheGrainTests
 #pragma warning restore CS1998
     {
         yield break;
+    }
+
+    /// <summary>
+    ///     Verifies that BrookName returns value from brook definition.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Grain Properties")]
+    public void BrookNameReturnsValueFromBrookDefinition()
+    {
+        // Act
+        string brookName = TestableSnapshotCacheGrain.GetBrookName();
+
+        // Assert
+        Assert.Equal("TEST.SNAPSHOTS.TestBrook", brookName);
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when brookGrainFactory is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenBrookGrainFactoryIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
+        Mock<ILogger> loggerMock = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new TestableSnapshotCacheGrain(
+            grainContextMock.Object,
+            storageReaderMock.Object,
+            null!,
+            rootReducerMock.Object,
+            converterMock.Object,
+            snapshotGrainFactoryMock.Object,
+            options,
+            loggerMock.Object));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when grainContext is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenGrainContextIsNull()
+    {
+        // Arrange
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
+        Mock<ILogger> loggerMock = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new TestableSnapshotCacheGrain(
+            null!,
+            storageReaderMock.Object,
+            brookGrainFactoryMock.Object,
+            rootReducerMock.Object,
+            converterMock.Object,
+            snapshotGrainFactoryMock.Object,
+            options,
+            loggerMock.Object));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when logger is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenLoggerIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new TestableSnapshotCacheGrain(
+            grainContextMock.Object,
+            storageReaderMock.Object,
+            brookGrainFactoryMock.Object,
+            rootReducerMock.Object,
+            converterMock.Object,
+            snapshotGrainFactoryMock.Object,
+            options,
+            null!));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when retentionOptions is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenRetentionOptionsIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        Mock<ILogger> loggerMock = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new TestableSnapshotCacheGrain(
+            grainContextMock.Object,
+            storageReaderMock.Object,
+            brookGrainFactoryMock.Object,
+            rootReducerMock.Object,
+            converterMock.Object,
+            snapshotGrainFactoryMock.Object,
+            null!,
+            loggerMock.Object));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when rootReducer is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenRootReducerIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
+        Mock<ILogger> loggerMock = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new TestableSnapshotCacheGrain(
+            grainContextMock.Object,
+            storageReaderMock.Object,
+            brookGrainFactoryMock.Object,
+            null!,
+            converterMock.Object,
+            snapshotGrainFactoryMock.Object,
+            options,
+            loggerMock.Object));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when snapshotGrainFactory is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
+        Mock<ILogger> loggerMock = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new TestableSnapshotCacheGrain(
+            grainContextMock.Object,
+            storageReaderMock.Object,
+            brookGrainFactoryMock.Object,
+            rootReducerMock.Object,
+            converterMock.Object,
+            null!,
+            options,
+            loggerMock.Object));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when snapshotStateConverter is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenSnapshotStateConverterIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
+        Mock<ILogger> loggerMock = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new TestableSnapshotCacheGrain(
+            grainContextMock.Object,
+            storageReaderMock.Object,
+            brookGrainFactoryMock.Object,
+            rootReducerMock.Object,
+            null!,
+            snapshotGrainFactoryMock.Object,
+            options,
+            loggerMock.Object));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when snapshotStorageReader is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenSnapshotStorageReaderIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
+        Mock<ILogger> loggerMock = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new TestableSnapshotCacheGrain(
+            grainContextMock.Object,
+            null!,
+            brookGrainFactoryMock.Object,
+            rootReducerMock.Object,
+            converterMock.Object,
+            snapshotGrainFactoryMock.Object,
+            options,
+            loggerMock.Object));
     }
 
     /// <summary>

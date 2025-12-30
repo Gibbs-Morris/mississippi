@@ -258,6 +258,30 @@ public sealed class UxProjectionGrainTests
     }
 
     /// <summary>
+    ///     Verifies that GetAtVersionAsync returns null when version is NotSet.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Versioned Access")]
+    public async Task GetAtVersionAsyncReturnsNullWhenVersionIsNotSet()
+    {
+        // Arrange
+        BrookPosition notSetVersion = new(-1);
+        Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
+        TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        await grain.OnActivateAsync(CancellationToken.None);
+
+        // Act
+        TestProjection? result = await grain.GetAtVersionAsync(notSetVersion);
+
+        // Assert
+        Assert.Null(result);
+        uxProjectionGrainFactoryMock.Verify(
+            f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedKey>()),
+            Times.Never);
+    }
+
+    /// <summary>
     ///     Verifies that GetAtVersionAsync uses versioned cache grain for specific version.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
@@ -345,5 +369,35 @@ public sealed class UxProjectionGrainTests
 
         // Assert
         Assert.Null(exception);
+    }
+
+    /// <summary>
+    ///     Verifies that OnActivateAsync throws when primary key is invalid format.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Activation")]
+    public async Task OnActivateAsyncThrowsWhenPrimaryKeyIsInvalid()
+    {
+        // Arrange
+        TestableUxProjectionGrain grain = CreateGrain(primaryKey: "invalid-key-format");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FormatException>(() => grain.OnActivateAsync(CancellationToken.None));
+    }
+
+    /// <summary>
+    ///     Verifies that OnActivateAsync throws when primary key is missing separators.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Activation")]
+    public async Task OnActivateAsyncThrowsWhenPrimaryKeyMissingSeparators()
+    {
+        // Arrange
+        TestableUxProjectionGrain grain = CreateGrain(primaryKey: "NoSeparatorsAtAll");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FormatException>(() => grain.OnActivateAsync(CancellationToken.None));
     }
 }
