@@ -9,13 +9,13 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Azure.Cosmos;
 
-using Mississippi.EventSourcing.Cosmos.Retry;
+using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Tests.Retry;
 
 /// <summary>
-///     Tests for <see cref="Mississippi.EventSourcing.Cosmos.Retry.CosmosRetryPolicy" />.
+///     Tests for <see cref="CosmosRetryPolicy" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Brooks Cosmos")]

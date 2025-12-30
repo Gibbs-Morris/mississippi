@@ -1,7 +1,7 @@
 ﻿using System;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Storage;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 /// <summary>
 ///     Storage model for event data.

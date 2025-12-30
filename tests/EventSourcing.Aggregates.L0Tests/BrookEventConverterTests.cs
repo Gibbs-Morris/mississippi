@@ -5,8 +5,8 @@ using System.Linq;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Serialization.Abstractions;
 
 using Moq;

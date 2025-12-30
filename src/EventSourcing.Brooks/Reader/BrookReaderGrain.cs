@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Factory;
+using Mississippi.EventSourcing.Brooks.Factory;
 
 using Orleans;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Reader;
+namespace Mississippi.EventSourcing.Brooks.Reader;
 
 /// <summary>
 ///     Orleans grain implementation for reading events from a Mississippi brook (event stream).

@@ -2,7 +2,7 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
 namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;

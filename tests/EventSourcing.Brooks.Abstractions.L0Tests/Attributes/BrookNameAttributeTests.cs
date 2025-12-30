@@ -2,7 +2,7 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions.Attributes;
+using BrookNameAttribute = Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute;
 
 
 namespace Mississippi.EventSourcing.Abstractions.Tests.Attributes;

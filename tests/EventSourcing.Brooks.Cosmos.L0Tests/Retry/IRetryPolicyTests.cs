@@ -8,7 +8,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Azure.Cosmos;
 
-using Mississippi.EventSourcing.Cosmos.Retry;
+using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 
 
 namespace Mississippi.EventSourcing.Cosmos.Tests.Retry;

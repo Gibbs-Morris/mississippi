@@ -4,7 +4,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Moq;

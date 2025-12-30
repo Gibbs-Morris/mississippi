@@ -9,7 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Abstractions.Storage;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 
 
 namespace Mississippi.EventSourcing.Abstractions.Tests;

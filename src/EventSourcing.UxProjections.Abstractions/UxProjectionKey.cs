@@ -1,6 +1,6 @@
 using System;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 using Orleans;
 

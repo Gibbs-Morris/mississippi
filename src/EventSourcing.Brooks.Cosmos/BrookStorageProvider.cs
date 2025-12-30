@@ -4,12 +4,12 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Abstractions.Storage;
-using Mississippi.EventSourcing.Cosmos.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Cosmos;
+namespace Mississippi.EventSourcing.Brooks.Cosmos;
 
 /// <summary>
 ///     Cosmos DB implementation of the Brook storage provider for event sourcing.

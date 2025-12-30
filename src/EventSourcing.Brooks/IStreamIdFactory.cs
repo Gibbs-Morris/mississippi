@@ -1,9 +1,9 @@
-﻿using Mississippi.EventSourcing.Abstractions;
+﻿using Mississippi.EventSourcing.Brooks.Abstractions;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing;
+namespace Mississippi.EventSourcing.Brooks;
 
 /// <summary>
 ///     Factory interface for creating Orleans stream identifiers from brook keys.

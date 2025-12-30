@@ -1,4 +1,4 @@
-using Mississippi.EventSourcing.Abstractions.Attributes;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 

@@ -6,7 +6,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.Mvc;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Moq;

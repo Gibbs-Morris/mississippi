@@ -1,4 +1,4 @@
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Aggregates.Abstractions;

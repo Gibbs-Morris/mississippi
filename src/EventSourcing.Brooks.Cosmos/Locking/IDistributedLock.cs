@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Locking;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 
 /// <summary>
 ///     Represents a distributed lock for coordinating access to shared resources across multiple instances.

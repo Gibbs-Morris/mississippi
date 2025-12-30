@@ -13,18 +13,18 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Core.Abstractions.Mapping;
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Abstractions.Storage;
-using Mississippi.EventSourcing.Cosmos.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Batching;
-using Mississippi.EventSourcing.Cosmos.Brooks;
-using Mississippi.EventSourcing.Cosmos.Locking;
-using Mississippi.EventSourcing.Cosmos.Mapping;
-using Mississippi.EventSourcing.Cosmos.Retry;
-using Mississippi.EventSourcing.Cosmos.Storage;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cosmos.Batching;
+using Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
+using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
+using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
+using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
+using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Cosmos;
+namespace Mississippi.EventSourcing.Brooks.Cosmos;
 
 /// <summary>
 ///     Extension methods for registering Cosmos DB brook storage provider services.

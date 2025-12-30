@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using Mississippi.EventSourcing.Abstractions.Attributes;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
 namespace Mississippi.EventSourcing.Snapshots.Abstractions;

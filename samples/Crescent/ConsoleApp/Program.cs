@@ -14,11 +14,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing;
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Abstractions.Storage;
-using Mississippi.EventSourcing.Cosmos;
-using Mississippi.EventSourcing.Factory;
+using Mississippi.EventSourcing.Brooks;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+using Mississippi.EventSourcing.Brooks.Cosmos;
+using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Serialization.Abstractions;
 using Mississippi.EventSourcing.Serialization.Json;

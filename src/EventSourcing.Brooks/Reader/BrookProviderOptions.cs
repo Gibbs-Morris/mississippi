@@ -1,4 +1,4 @@
-﻿namespace Mississippi.EventSourcing.Reader;
+﻿namespace Mississippi.EventSourcing.Brooks.Reader;
 
 /// <summary>
 ///     Configuration options for the brook provider that interfaces with Orleans streams.

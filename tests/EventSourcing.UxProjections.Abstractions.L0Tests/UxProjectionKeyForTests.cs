@@ -1,7 +1,7 @@
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Abstractions.Attributes;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
 namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;

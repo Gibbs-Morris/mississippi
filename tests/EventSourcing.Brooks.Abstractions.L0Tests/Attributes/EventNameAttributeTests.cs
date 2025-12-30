@@ -2,7 +2,7 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions.Attributes;
+using EventNameAttribute = Mississippi.EventSourcing.Brooks.Abstractions.Attributes.EventNameAttribute;
 
 
 namespace Mississippi.EventSourcing.Abstractions.Tests.Attributes;

@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Abstractions;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 
 /// <summary>
 ///     Provides functionality for reading events from Cosmos DB event brooks.

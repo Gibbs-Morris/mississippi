@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-using Mississippi.EventSourcing.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Aggregates.Abstractions;

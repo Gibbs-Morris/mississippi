@@ -10,7 +10,7 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Options;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Locking;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 
 /// <summary>
 ///     Distributed lock manager implementation using Azure Blob Storage.

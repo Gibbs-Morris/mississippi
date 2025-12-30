@@ -9,9 +9,9 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Abstractions.Storage;
-using Mississippi.EventSourcing.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+using Mississippi.EventSourcing.Brooks.Reader;
 
 using Moq;
 

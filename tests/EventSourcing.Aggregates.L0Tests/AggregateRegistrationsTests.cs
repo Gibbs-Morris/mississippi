@@ -5,8 +5,8 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.EventSourcing.Abstractions.Attributes;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
 namespace Mississippi.EventSourcing.Aggregates.Tests;

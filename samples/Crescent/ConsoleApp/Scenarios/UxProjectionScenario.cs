@@ -7,8 +7,8 @@ using Crescent.ConsoleApp.CounterSummary;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;

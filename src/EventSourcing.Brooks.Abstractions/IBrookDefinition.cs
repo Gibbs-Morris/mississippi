@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Abstractions;
+namespace Mississippi.EventSourcing.Brooks.Abstractions;
 
 /// <summary>
 ///     Marker interface for types that define a brook (event stream) identity.

@@ -4,7 +4,7 @@ using System.Globalization;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Abstractions;
+namespace Mississippi.EventSourcing.Brooks.Abstractions;
 
 /// <summary>
 ///     Represents a range key for querying brooks, consisting of type, id, start position, and count components.

@@ -7,9 +7,9 @@ using System.Text;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Abstractions;
-using Mississippi.EventSourcing.Cosmos.Batching;
-using Mississippi.EventSourcing.Cosmos.Storage;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Cosmos.Batching;
+using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 using Newtonsoft.Json;
 
