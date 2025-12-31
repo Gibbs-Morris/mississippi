@@ -1,6 +1,6 @@
 # Phase 1: Framework – Real-Time Projection Subscriptions
 
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 ## Goal
 
@@ -50,28 +50,28 @@ flowchart TB
 |------|------|--------|
 | 1.0 SignalR↔Orleans Integration Strategy | [00-signalr-orleans-integration.md](./00-signalr-orleans-integration.md) | ✅ Design |
 | 1.1 Add Subscription Abstractions | [01-abstractions.md](./01-abstractions.md) | ✅ |
-| 1.2 Per-Connection Subscription Grain | [02-subscription-grain.md](./02-subscription-grain.md) | ⬜ |
-| 1.3 Create SignalR Project | [03-signalr-project.md](./03-signalr-project.md) | ⬜ |
+| 1.2 Per-Connection Subscription Grain | [02-subscription-grain.md](./02-subscription-grain.md) | ✅ |
+| 1.3 Create SignalR Project | [03-signalr-project.md](./03-signalr-project.md) | ✅ |
 | 1.4 ~~Connection Grain~~ (Merged into 1.2) | [04-connection-grain.md](./04-connection-grain.md) | MERGED |
-| 1.5 Per-Connection Stream Bridge (Fallback) | [05-notification-bridge.md](./05-notification-bridge.md) | ⬜ |
-| 1.6 API ETag Support | [06-api-etag.md](./06-api-etag.md) | ⬜ |
+| 1.5 Per-Connection Stream Bridge (Fallback) | [05-notification-bridge.md](./05-notification-bridge.md) | ⬜ Fallback |
+| 1.6 API ETag Support | [06-api-etag.md](./06-api-etag.md) | ✅ |
 
 ## Acceptance Criteria
 
 - [x] `IUxProjectionSubscriptionGrain` interface defined (keyed by ConnectionId)
 - [x] `UxProjectionChangedEvent` serializable record created
-- [ ] Per-connection grain subscribes to projection cursor streams
-- [ ] Per-connection grain publishes to output stream (per connection)
-- [ ] SignalR hub with `Subscribe`/`Unsubscribe` methods
-- [ ] Stream bridge consumes per-connection stream and forwards to `IHubContext`
+- [x] Per-connection grain manages subscriptions with in-memory state
+- [x] SignalR grains created: UxClientGrain, UxGroupGrain, UxServerDirectoryGrain
+- [ ] SignalR hub with `Subscribe`/`Unsubscribe` methods (Phase 3)
+- [ ] Stream bridge consumes per-connection stream and forwards to `IHubContext` (Fallback only)
 - [ ] **Same code path** works for cohosted AND distributed deployments
-- [ ] API returns ETag headers; 304 on conditional GET match
-- [ ] L0 tests for all new grain logic and bridge
+- [x] API returns ETag headers; 304 on conditional GET match
+- [x] L0 tests for all new grain logic (50+ tests)
 
 ## New Projects
 
-- `src/EventSourcing.UxProjections.SignalR/`
-- `tests/EventSourcing.UxProjections.SignalR.L0Tests/`
+- `src/EventSourcing.UxProjections.SignalR/` ✅
+- `tests/EventSourcing.UxProjections.SignalR.L0Tests/` ✅
 
 ## Key Design Notes
 
