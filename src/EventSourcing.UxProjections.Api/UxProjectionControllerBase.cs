@@ -83,8 +83,27 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>
     ///     An <see cref="ActionResult{TProjection}" /> containing the projection state,
-    ///     or <see cref="NotFoundResult" /> if no events exist for the entity.
+    ///     or <see cref="NotFoundResult" /> if no events exist for the entity,
+    ///     or <see cref="StatusCodeResult" /> with status 304 if the ETag matches.
     /// </returns>
+    /// <remarks>
+    ///     <para>
+    ///         This endpoint supports HTTP caching via ETag headers:
+    ///     </para>
+    ///     <list type="bullet">
+    ///         <item>
+    ///             The response includes an <c>ETag</c> header containing the projection version.
+    ///         </item>
+    ///         <item>
+    ///             Clients can send an <c>If-None-Match</c> header to receive a 304 Not Modified
+    ///             response if the projection has not changed.
+    ///         </item>
+    ///         <item>
+    ///             The <c>Cache-Control</c> header is set to <c>private, must-revalidate</c>
+    ///             to ensure clients always validate with the server.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
     [HttpGet]
     public virtual async Task<ActionResult<TProjection>> GetAsync(
         [FromRoute] string entityId,
@@ -94,12 +113,36 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
         Logger.GettingLatestProjection(entityId, ProjectionTypeName);
         IUxProjectionGrain<TProjection> grain =
             UxProjectionGrainFactory.GetUxProjectionGrain<TProjection, TBrook>(entityId);
+
+        // Get the latest version first for ETag support
+        BrookPosition position = await grain.GetLatestVersionAsync(cancellationToken);
+        if (position.NotSet)
+        {
+            Logger.ProjectionNotFound(entityId, ProjectionTypeName);
+            return NotFound();
+        }
+
+        string currentETag = $"\"{position.Value}\"";
+
+        // Check If-None-Match header for conditional GET
+        string? ifNoneMatch = Request.Headers.IfNoneMatch.ToString();
+        if (!string.IsNullOrEmpty(ifNoneMatch) && ifNoneMatch == currentETag)
+        {
+            Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
+            return StatusCode(304);
+        }
+
+        // Fetch the projection data
         TProjection? projection = await grain.GetAsync(cancellationToken);
         if (projection is null)
         {
             Logger.ProjectionNotFound(entityId, ProjectionTypeName);
             return NotFound();
         }
+
+        // Set caching headers
+        Response.Headers.ETag = currentETag;
+        Response.Headers.CacheControl = "private, must-revalidate";
 
         Logger.ProjectionRetrieved(entityId, ProjectionTypeName);
         return Ok(projection);
