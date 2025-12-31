@@ -1,0 +1,30 @@
+// <copyright file="DisplayNameUpdatedProjectionReducer.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
+// </copyright>
+
+using System;
+
+using Cascade.Domain.User.Events;
+
+using Mississippi.EventSourcing.Reducers.Abstractions;
+
+
+namespace Cascade.Domain.Projections.UserProfile.Reducers;
+
+/// <summary>
+///     Reduces the <see cref="DisplayNameUpdated" /> event to update the display name
+///     in the <see cref="UserProfileProjection" />.
+/// </summary>
+internal sealed class DisplayNameUpdatedProjectionReducer : Reducer<DisplayNameUpdated, UserProfileProjection>
+{
+    /// <inheritdoc />
+    protected override UserProfileProjection ReduceCore(
+        UserProfileProjection state,
+        DisplayNameUpdated eventData
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(eventData);
+        return state with { DisplayName = eventData.NewDisplayName };
+    }
+}

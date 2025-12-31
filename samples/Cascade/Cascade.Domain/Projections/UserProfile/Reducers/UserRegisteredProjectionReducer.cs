@@ -1,0 +1,37 @@
+// <copyright file="UserRegisteredProjectionReducer.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
+// </copyright>
+
+using System;
+
+using Cascade.Domain.User.Events;
+
+using Mississippi.EventSourcing.Reducers.Abstractions;
+
+
+namespace Cascade.Domain.Projections.UserProfile.Reducers;
+
+/// <summary>
+///     Reduces the <see cref="UserRegistered" /> event to produce an initial
+///     <see cref="UserProfileProjection" />.
+/// </summary>
+internal sealed class UserRegisteredProjectionReducer : Reducer<UserRegistered, UserProfileProjection>
+{
+    /// <inheritdoc />
+    protected override UserProfileProjection ReduceCore(
+        UserProfileProjection state,
+        UserRegistered eventData
+    )
+    {
+        ArgumentNullException.ThrowIfNull(eventData);
+        return new UserProfileProjection
+        {
+            UserId = eventData.UserId,
+            DisplayName = eventData.DisplayName,
+            IsOnline = false,
+            RegisteredAt = eventData.RegisteredAt,
+            LastOnlineAt = null,
+            ChannelCount = 0,
+        };
+    }
+}

@@ -1,0 +1,23 @@
+// <copyright file="MemberAddedReducer.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
+// </copyright>
+
+using Cascade.Domain.Channel.Events;
+
+using Mississippi.EventSourcing.Reducers.Abstractions;
+
+
+namespace Cascade.Domain.Channel.Reducers;
+
+/// <summary>
+///     Reduces the <see cref="MemberAdded" /> event to produce a new <see cref="ChannelState" />.
+/// </summary>
+internal sealed class MemberAddedReducer : Reducer<MemberAdded, ChannelState>
+{
+    /// <inheritdoc />
+    protected override ChannelState ReduceCore(
+        ChannelState state,
+        MemberAdded eventData
+    ) =>
+        state with { MemberIds = state.MemberIds.Add(eventData.UserId) };
+}

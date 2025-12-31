@@ -9,11 +9,13 @@
         <Project Path="samples\Crescent\ConsoleApp\ConsoleApp.csproj" />
         <Project Path="samples\Crescent\WebApp\WebApp.Client\WebApp.Client.csproj" />
         <Project Path="samples\Crescent\WebApp\WebApp\WebApp.csproj" />
+        <Project Path="samples\Cascade\Cascade.Domain\Cascade.Domain.csproj" />
     </Folder>
     <Folder Name="/Sample Tests/">
         <Project Path="samples\Crescent\ApiApp.L0Tests\ApiApp.L0Tests.csproj" />
         <Project Path="samples\Crescent\ConsoleApp.L0Tests\ConsoleApp.L0Tests.csproj" />
         <Project Path="samples\Crescent\WebApp.L0Tests\WebApp.L0Tests.csproj" />
+        <Project Path="samples\Cascade\Cascade.Domain.L0Tests\Cascade.Domain.L0Tests.csproj" />
     </Folder>
 
     <Folder Name="/Framework/">
