@@ -18,7 +18,6 @@ using Moq;
 
 using Orleans;
 using Orleans.Runtime;
-using Orleans.Streams;
 
 
 namespace Mississippi.EventSourcing.UxProjections.L0Tests.Subscriptions;
@@ -202,14 +201,12 @@ public sealed class UxProjectionSubscriptionGrainTests
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
         Mock<ILogger<UxProjectionSubscriptionGrain>> logger = new();
-        Mock<IPersistentState<UxProjectionSubscriptionState>> state = new();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new UxProjectionSubscriptionGrain(
             null!,
             options,
             streamIdFactory.Object,
-            state.Object,
             logger.Object));
     }
 
@@ -223,14 +220,12 @@ public sealed class UxProjectionSubscriptionGrainTests
         Mock<IGrainContext> context = new();
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
-        Mock<IPersistentState<UxProjectionSubscriptionState>> state = new();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new UxProjectionSubscriptionGrain(
             context.Object,
             options,
             streamIdFactory.Object,
-            state.Object,
             null!));
     }
 
@@ -242,22 +237,14 @@ public sealed class UxProjectionSubscriptionGrainTests
         Mock<ILogger<UxProjectionSubscriptionGrain>> logger = new();
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
         Mock<IStreamIdFactory> streamIdFactory = new();
-        Mock<IPersistentState<UxProjectionSubscriptionState>> stateMock = new();
 
         GrainId grainId = GrainId.Create("ux-projection-subscription", connectionId);
         context.SetupGet(c => c.GrainId).Returns(grainId);
-
-        // Set up state mock to return a real state object
-        UxProjectionSubscriptionState stateValue = new();
-        stateMock.SetupGet(s => s.State).Returns(stateValue);
-        stateMock.Setup(s => s.WriteStateAsync()).Returns(Task.CompletedTask);
-        stateMock.Setup(s => s.ClearStateAsync()).Returns(Task.CompletedTask);
 
         return new UxProjectionSubscriptionGrain(
             context.Object,
             options,
             streamIdFactory.Object,
-            stateMock.Object,
             logger.Object);
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -31,34 +32,33 @@ namespace Mississippi.EventSourcing.UxProjections.Subscriptions;
 ///         output stream.
 ///     </para>
 ///     <para>
-///         Stream subscription handles are not serializable and are rehydrated on grain activation
-///         by re-subscribing to the projection streams from persisted state.
+///         State is maintained in-memory for the lifetime of the connection. When the connection
+///         disconnects, the grain is deactivated and state is lost. This is intentional as
+///         subscription state is ephemeral and tied to the active connection.
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.EventSourcing.UxProjections.UxProjectionSubscriptionGrain")]
 internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionGrain, IGrainBase
 {
+    private readonly Dictionary<string, ActiveSubscription> subscriptions = [];
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="UxProjectionSubscriptionGrain" /> class.
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     /// <param name="streamProviderOptions">Configuration options for the Orleans stream provider.</param>
     /// <param name="streamIdFactory">Factory for creating Orleans stream identifiers.</param>
-    /// <param name="state">Persistent state for storing active subscriptions.</param>
     /// <param name="logger">Logger instance for logging subscription grain operations.</param>
     public UxProjectionSubscriptionGrain(
         IGrainContext grainContext,
         IOptions<BrookProviderOptions> streamProviderOptions,
         IStreamIdFactory streamIdFactory,
-        [PersistentState("subscriptions", "UxProjectionStore")]
-        IPersistentState<UxProjectionSubscriptionState> state,
         ILogger<UxProjectionSubscriptionGrain> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
         StreamProviderOptions = streamProviderOptions ?? throw new ArgumentNullException(nameof(streamProviderOptions));
         StreamIdFactory = streamIdFactory ?? throw new ArgumentNullException(nameof(streamIdFactory));
-        State = state ?? throw new ArgumentNullException(nameof(state));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -66,8 +66,6 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
     public IGrainContext GrainContext { get; }
 
     private ILogger<UxProjectionSubscriptionGrain> Logger { get; }
-
-    private IPersistentState<UxProjectionSubscriptionState> State { get; }
 
     private IStreamIdFactory StreamIdFactory { get; }
 
@@ -77,16 +75,15 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
     public async Task ClearAllAsync()
     {
         string connectionId = this.GetPrimaryKeyString();
-        Logger.ClearingAllSubscriptions(connectionId, State.State.Subscriptions.Count);
+        Logger.ClearingAllSubscriptions(connectionId, subscriptions.Count);
 
-        foreach (ActiveSubscription subscription in State.State.Subscriptions.Values
+        foreach (ActiveSubscription subscription in subscriptions.Values
             .Where(s => s.StreamHandle is not null))
         {
             await subscription.StreamHandle!.UnsubscribeAsync();
         }
 
-        State.State.Subscriptions.Clear();
-        await State.WriteStateAsync();
+        subscriptions.Clear();
 
         Logger.AllSubscriptionsCleared(connectionId);
 
@@ -96,7 +93,7 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
     /// <inheritdoc />
     public Task<ImmutableList<UxProjectionSubscriptionRequest>> GetSubscriptionsAsync()
     {
-        ImmutableList<UxProjectionSubscriptionRequest> requests = State.State.Subscriptions.Values
+        ImmutableList<UxProjectionSubscriptionRequest> requests = subscriptions.Values
             .Select(s => s.Request)
             .ToImmutableList();
 
@@ -114,7 +111,7 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
     }
 
     /// <inheritdoc />
-    public async Task<string> SubscribeAsync(UxProjectionSubscriptionRequest request)
+    public Task<string> SubscribeAsync(UxProjectionSubscriptionRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -132,12 +129,11 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
             StreamHandle = null,
         };
 
-        State.State.Subscriptions[subscriptionId] = subscription;
-        await State.WriteStateAsync();
+        subscriptions[subscriptionId] = subscription;
 
         Logger.SubscribedToProjection(connectionId, subscriptionId, projectionKey);
 
-        return subscriptionId;
+        return Task.FromResult(subscriptionId);
     }
 
     /// <inheritdoc />
@@ -147,7 +143,7 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
 
         string connectionId = this.GetPrimaryKeyString();
 
-        if (!State.State.Subscriptions.TryGetValue(subscriptionId, out ActiveSubscription? subscription))
+        if (!subscriptions.TryGetValue(subscriptionId, out ActiveSubscription? subscription))
         {
             Logger.SubscriptionNotFound(connectionId, subscriptionId);
             return;
@@ -160,8 +156,7 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
             await subscription.StreamHandle.UnsubscribeAsync();
         }
 
-        State.State.Subscriptions.Remove(subscriptionId);
-        await State.WriteStateAsync();
+        subscriptions.Remove(subscriptionId);
 
         Logger.UnsubscribedFromProjection(connectionId, subscriptionId, subscription.ProjectionKey);
     }

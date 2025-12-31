@@ -16,27 +16,32 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.Grains;
 ///     Orleans grain implementation that tracks a single SignalR connection.
 /// </summary>
 /// <remarks>
-///     This grain is keyed by "{HubName}:{ConnectionId}" and persists connection
-///     metadata to support failure recovery and message routing.
+///     <para>
+///         This grain is keyed by "{HubName}:{ConnectionId}" and maintains connection
+///         metadata for message routing.
+///     </para>
+///     <para>
+///         State is maintained in-memory for the lifetime of the connection. When the
+///         connection disconnects, the grain is deactivated and state is lost. This is
+///         intentional as connection state is ephemeral.
+///     </para>
 /// </remarks>
 [Alias("Mississippi.EventSourcing.UxProjections.SignalR.UxClientGrain")]
 internal sealed class UxClientGrain : IUxClientGrain, IGrainBase
 {
+    private UxClientState state = new();
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="UxClientGrain" /> class.
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
-    /// <param name="state">Persistent state for storing client information.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
     public UxClientGrain(
         IGrainContext grainContext,
-        [PersistentState("client", "UxSignalRStore")]
-        IPersistentState<UxClientState> state,
         ILogger<UxClientGrain> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
-        State = state ?? throw new ArgumentNullException(nameof(state));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -45,10 +50,8 @@ internal sealed class UxClientGrain : IUxClientGrain, IGrainBase
 
     private ILogger<UxClientGrain> Logger { get; }
 
-    private IPersistentState<UxClientState> State { get; }
-
     /// <inheritdoc />
-    public async Task ConnectAsync(string hubName, string serverId)
+    public Task ConnectAsync(string hubName, string serverId)
     {
         ArgumentException.ThrowIfNullOrEmpty(hubName);
         ArgumentException.ThrowIfNullOrEmpty(serverId);
@@ -56,7 +59,7 @@ internal sealed class UxClientGrain : IUxClientGrain, IGrainBase
         string connectionId = ExtractConnectionId();
         Logger.ClientConnecting(connectionId, hubName, serverId);
 
-        State.State = new UxClientState
+        state = new UxClientState
         {
             ConnectionId = connectionId,
             HubName = hubName,
@@ -64,30 +67,32 @@ internal sealed class UxClientGrain : IUxClientGrain, IGrainBase
             ConnectedAt = DateTimeOffset.UtcNow,
         };
 
-        await State.WriteStateAsync();
-
         Logger.ClientConnected(connectionId, hubName, serverId);
+
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public async Task DisconnectAsync()
+    public Task DisconnectAsync()
     {
         string connectionId = ExtractConnectionId();
         Logger.ClientDisconnecting(connectionId);
 
-        await State.ClearStateAsync();
+        state = new UxClientState();
 
         Logger.ClientDisconnected(connectionId);
 
         this.DeactivateOnIdle();
+
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task<string?> GetServerIdAsync()
     {
-        string? serverId = string.IsNullOrEmpty(State.State.ServerId)
+        string? serverId = string.IsNullOrEmpty(state.ServerId)
             ? null
-            : State.State.ServerId;
+            : state.ServerId;
         return Task.FromResult(serverId);
     }
 
