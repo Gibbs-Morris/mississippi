@@ -1,6 +1,6 @@
 # Phase 1: Framework – Real-Time Projection Subscriptions
 
-**Status**: ⬜ Not Started
+**Status**: 🔄 In Progress
 
 ## Goal
 
@@ -49,7 +49,7 @@ flowchart TB
 | Task | File | Status |
 |------|------|--------|
 | 1.0 SignalR↔Orleans Integration Strategy | [00-signalr-orleans-integration.md](./00-signalr-orleans-integration.md) | ✅ Design |
-| 1.1 Add Subscription Abstractions | [01-abstractions.md](./01-abstractions.md) | ⬜ |
+| 1.1 Add Subscription Abstractions | [01-abstractions.md](./01-abstractions.md) | ✅ |
 | 1.2 Per-Connection Subscription Grain | [02-subscription-grain.md](./02-subscription-grain.md) | ⬜ |
 | 1.3 Create SignalR Project | [03-signalr-project.md](./03-signalr-project.md) | ⬜ |
 | 1.4 ~~Connection Grain~~ (Merged into 1.2) | [04-connection-grain.md](./04-connection-grain.md) | MERGED |
@@ -58,8 +58,8 @@ flowchart TB
 
 ## Acceptance Criteria
 
-- [ ] `IUxProjectionSubscriptionGrain` interface defined (keyed by ConnectionId)
-- [ ] `UxProjectionChangedEvent` serializable record created
+- [x] `IUxProjectionSubscriptionGrain` interface defined (keyed by ConnectionId)
+- [x] `UxProjectionChangedEvent` serializable record created
 - [ ] Per-connection grain subscribes to projection cursor streams
 - [ ] Per-connection grain publishes to output stream (per connection)
 - [ ] SignalR hub with `Subscribe`/`Unsubscribe` methods

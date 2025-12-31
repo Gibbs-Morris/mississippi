@@ -6,7 +6,7 @@
 
 | Phase | Focus | Status |
 |-------|-------|--------|
-| [Phase 1](./phase-1-framework/README.md) | Framework – Real-Time Projection Subscriptions | ⬜ Not Started |
+| [Phase 1](./phase-1-framework/README.md) | Framework – Real-Time Projection Subscriptions | 🔄 In Progress |
 | [Phase 2](./phase-2-domain/README.md) | Domain – Cascade Chat Aggregates | ⬜ Not Started |
 | [Phase 3](./phase-3-infrastructure/README.md) | Infrastructure – Aspire & Blazor Host | ⬜ Not Started |
 | [Phase 4](./phase-4-ux/README.md) | UX – Blazor Components | ⬜ Not Started |

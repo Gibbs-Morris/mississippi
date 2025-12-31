@@ -1,6 +1,6 @@
 # Task 1.1: Add Subscription Abstractions
 
-**Status**: ⬜ Not Started  
+**Status**: ✅ Complete  
 **Depends On**: None
 
 ## Goal
@@ -9,11 +9,11 @@ Define the core interfaces and types for the real-time projection subscription s
 
 ## Acceptance Criteria
 
-- [ ] `IUxProjectionSubscriptionGrain` interface defined (keyed by **ConnectionId**)
-- [ ] `UxProjectionChangedEvent` record with Orleans serialization attributes
-- [ ] `UxProjectionSubscriptionRequest` record for subscription payloads
-- [ ] All types follow Mississippi naming conventions and Orleans serialization patterns
-- [ ] L0 tests verify serialization round-trip for new types
+- [x] `IUxProjectionSubscriptionGrain` interface defined (keyed by **ConnectionId**)
+- [x] `UxProjectionChangedEvent` record with Orleans serialization attributes
+- [x] `UxProjectionSubscriptionRequest` record for subscription payloads
+- [x] All types follow Mississippi naming conventions and Orleans serialization patterns
+- [x] L0 tests verify record semantics and equality for new types
 
 ## Types to Create
 
