@@ -363,7 +363,8 @@ public class AggregateGrainTests
         Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> snapshotCacheGrainMock = new();
         snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedState);
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
+        snapshotGrainFactoryMock
+            .Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
             .Returns(snapshotCacheGrainMock.Object);
 
         // Set up command handler to capture the state passed to it
