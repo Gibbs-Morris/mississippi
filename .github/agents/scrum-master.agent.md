@@ -5,35 +5,35 @@ tools: ['read', 'search', 'web', 'microsoft.docs.mcp/*', 'agent', 'todo']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "🏗️ Start Architecture (C1)"
+  - label: "🏗️ Design System Context"
     agent: "Squad: C1 Context Architect"
     prompt: Create a C1 Context diagram for the system based on the requirements above.
     send: true
-  - label: "🏗️ Design Containers (C2)"
+  - label: "🏗️ Design Containers"
     agent: "Squad: C2 Container Architect"
     prompt: Create/update C2 Container architecture. Context above.
     send: true
-  - label: "🏗️ Design Components (C3)"
+  - label: "🏗️ Design Components"
     agent: "Squad: C3 Component Architect"
     prompt: Create/update C3 Component architecture. Context above.
     send: true
-  - label: "🏗️ Design Code (C4)"
+  - label: "🏗️ Design Code Structure"
     agent: "Squad: C4 Code Architect"
     prompt: Create/update C4 Code architecture. Context above.
     send: true
-  - label: "📦 Break Down Work"
+  - label: "📦 Create Work Items"
     agent: "Squad: Work Breakdown"
     prompt: Break down the architecture into vertical slice work items.
     send: true
-  - label: "🛠️ Assign Work Item"
+  - label: "🛠️ Implement Work Item"
     agent: "Squad: TDD Developer"
     prompt: Implement the specified work item using TDD. Report back when complete or blocked.
     send: true
-  - label: "🧹 Run Cleanup Phase"
+  - label: "🧹 Process Cleanup Backlog"
     agent: "Squad: Cleanup Agent"
     prompt: Process the cleanup backlog at docs/cleanup-backlog.md. All parallel work has been merged.
     send: true
-  - label: "📋 Pick Up Cleanup Item"
+  - label: "📋 Process Next Cleanup Item"
     agent: "Squad: Cleanup Agent"
     prompt: |
       Read docs/cleanup-backlog.md and process the TOP item from the Pending section.

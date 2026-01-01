@@ -5,23 +5,23 @@ tools: ['read', 'search', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "🔧 Request Fixes"
+  - label: "🔧 Fix Violations"
     agent: "Squad: TDD Developer"
     prompt: Fix the violations identified in the code review above. Re-submit for review when complete.
     send: true
-  - label: "✅ Approved - Continue Reviews"
+  - label: "✅ Analyze Test Coverage"
     agent: "Squad: QA Engineer"
     prompt: Code review passed. Proceed with QA coverage analysis.
     send: true
-  - label: "✅ Approved - Principal Review"
+  - label: "✅ Review Maintainability"
     agent: "Squad: Principal Engineer"
     prompt: Code review passed. Proceed with maintainability review.
     send: true
-  - label: "✅ All Reviews Complete"
+  - label: "✅ Complete Work Item"
     agent: "Squad: TDD Developer"
     prompt: Code review passed. All quality gates complete. Mark work item done.
     send: true
-  - label: "🚨 Escalate to Scrum Master"
+  - label: "🚨 Escalate Issue"
     agent: "Squad: Scrum Master"
     prompt: Escalating issue that requires Scrum Master decision. See details above.
     send: true

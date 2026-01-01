@@ -5,23 +5,23 @@ tools: ['read', 'search', 'edit', 'execute', 'microsoft.docs.mcp/*', 'todo', 'ag
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "🔍 Code Review"
+  - label: "🔍 Perform Code Review"
     agent: "Squad: Code Reviewer"
     prompt: Review the refactoring changes above for compliance with project rules.
     send: true
-  - label: "🧪 QA Verification"
+  - label: "🧪 Verify Test Coverage"
     agent: "Squad: QA Engineer"
     prompt: Verify all tests still pass after the refactoring above.
     send: true
-  - label: "🛠️ Needs New Code"
+  - label: "🛠️ Implement New Code"
     agent: "Squad: TDD Developer"
     prompt: Cleanup revealed need for new tests/implementation. See details above.
     send: true
-  - label: "✅ Cleanup Complete"
+  - label: "✅ Report Cleanup Complete"
     agent: "Squad: Scrum Master"
     prompt: Cleanup phase complete. All backlog items processed.
     send: true
-  - label: "🚨 Escalate to Scrum Master"
+  - label: "🚨 Escalate Issue"
     agent: "Squad: Scrum Master"
     prompt: Cleanup blocked. Need Scrum Master decision. See details above.
     send: true

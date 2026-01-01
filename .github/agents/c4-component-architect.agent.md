@@ -5,19 +5,19 @@ tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent'
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "➡️ Continue to Code (C4)"
+  - label: "➡️ Design Code Structure"
     agent: "Squad: C4 Code Architect"
     prompt: Based on the C3 components above, design the C4 code-level architecture.
     send: true
-  - label: "📦 Break Down Work"
+  - label: "📦 Create Work Items"
     agent: "Squad: Work Breakdown"
     prompt: Create vertical slice work items from these components.
     send: true
-  - label: "⬅️ Revise Containers (C2)"
+  - label: "⬅️ Revise Container Design"
     agent: "Squad: C2 Container Architect"
     prompt: Review container boundaries based on component analysis.
     send: true
-  - label: "🚨 Escalate to Scrum Master"
+  - label: "🚨 Escalate Issue"
     agent: "Squad: Scrum Master"
     prompt: Architecture issue requiring Scrum Master decision. See details above.
     send: true

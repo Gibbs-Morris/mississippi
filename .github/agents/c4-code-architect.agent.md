@@ -5,23 +5,23 @@ tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent'
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "📦 Break Down Work"
+  - label: "📦 Create Work Items"
     agent: "Squad: Work Breakdown"
     prompt: Create vertical slice work items based on the code architecture above.
     send: true
-  - label: "🛠️ Start Implementation"
+  - label: "🛠️ Implement Design"
     agent: "Squad: TDD Developer"
     prompt: Implement the interfaces and classes designed above using TDD.
     send: true
-  - label: "👀 Principal Review"
+  - label: "👀 Review Maintainability"
     agent: "Squad: Principal Engineer"
     prompt: Review this architecture for maintainability and junior-friendliness.
     send: true
-  - label: "⬅️ Revise Components (C3)"
+  - label: "⬅️ Revise Component Design"
     agent: "Squad: C3 Component Architect"
     prompt: Refine component boundaries based on code-level analysis.
     send: true
-  - label: "🚨 Escalate to Scrum Master"
+  - label: "🚨 Escalate Issue"
     agent: "Squad: Scrum Master"
     prompt: Architecture issue requiring Scrum Master decision. See details above.
     send: true

@@ -5,11 +5,11 @@ tools: ['read', 'search', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "🔄 Request Refactor"
+  - label: "🔄 Apply Refactoring"
     agent: "Squad: TDD Developer"
     prompt: Refactor based on the maintainability feedback above. Re-submit for review when complete.
     send: true
-  - label: "✅ Approved - All Reviews Complete"
+  - label: "✅ Complete Work Item"
     agent: "Squad: TDD Developer"
     prompt: All quality gates passed (Code Review, QA, Principal). Mark work item complete.
     send: true
@@ -17,7 +17,7 @@ handoffs:
     agent: "Squad: C3 Component Architect"
     prompt: Architecture revision needed based on maintainability concerns above.
     send: true
-  - label: "🚨 Escalate to Scrum Master"
+  - label: "🚨 Escalate Issue"
     agent: "Squad: Scrum Master"
     prompt: Escalating design/architecture issue that requires Scrum Master decision. See details above.
     send: true

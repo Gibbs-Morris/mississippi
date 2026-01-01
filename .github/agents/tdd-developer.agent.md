@@ -5,7 +5,7 @@ tools: ['read', 'search', 'edit', 'execute', 'web', 'microsoft.docs.mcp/*', 'tod
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "⚡ Quality Gate (Parallel Review)"
+  - label: "⚡ Run Quality Gates"
     agent: "Squad: Code Reviewer"
     prompt: |
       Review the implementation. After your review, also trigger in parallel:
@@ -13,23 +13,23 @@ handoffs:
       - Principal Engineer (maintainability)
       Consolidate all feedback, then return to TDD Developer for fixes if needed.
     send: true
-  - label: Code Review
+  - label: "🔍 Perform Code Review"
     agent: "Squad: Code Reviewer"
     prompt: Review the implementation for compliance with project rules.
     send: true
-  - label: QA Review
+  - label: "🧪 Analyze Test Coverage"
     agent: "Squad: QA Engineer"
     prompt: Analyze test coverage and identify gaps.
     send: true
-  - label: Principal Review
+  - label: "👀 Review Maintainability"
     agent: "Squad: Principal Engineer"
     prompt: Review for maintainability and junior-friendliness.
     send: true
-  - label: "✅ Work Item Complete"
+  - label: "✅ Report Work Complete"
     agent: "Squad: Scrum Master"
     prompt: Work item complete. All quality gates passed (Code Review, QA, Principal). Ready for merge.
     send: true
-  - label: "🚧 Blocked - Need Decision"
+  - label: "🚧 Report Blocked"
     agent: "Squad: Scrum Master"
     prompt: Work item blocked. Need Scrum Master decision on the issue described above.
     send: true

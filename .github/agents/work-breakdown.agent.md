@@ -5,23 +5,23 @@ tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent'
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "🛠️ Start Implementation"
+  - label: "🛠️ Implement Work Item"
     agent: "Squad: TDD Developer"
     prompt: Implement the first work item above using TDD.
     send: true
-  - label: "🏗️ Needs C3 Design"
+  - label: "🏗️ Design Components"
     agent: "Squad: C3 Component Architect"
     prompt: Missing component design needed before work breakdown. See gaps identified above.
     send: true
-  - label: "🏗️ Needs C4 Design"
+  - label: "🏗️ Design Code Structure"
     agent: "Squad: C4 Code Architect"
     prompt: Missing code-level design needed before work breakdown. See gaps identified above.
     send: true
-  - label: "✅ Work Items Ready"
+  - label: "✅ Report Work Items Ready"
     agent: "Squad: Scrum Master"
     prompt: Work breakdown complete. Work items defined and ready for assignment.
     send: true
-  - label: "🚨 Escalate to Scrum Master"
+  - label: "🚨 Escalate Issue"
     agent: "Squad: Scrum Master"
     prompt: Work breakdown blocked. Need Scrum Master decision. See details above.
     send: true

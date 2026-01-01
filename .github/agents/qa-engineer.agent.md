@@ -5,23 +5,23 @@ tools: ['read', 'search', 'execute', 'web', 'microsoft.docs.mcp/*', 'todo', 'age
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "🧪 Request Missing Tests"
+  - label: "🧪 Add Missing Tests"
     agent: "Squad: TDD Developer"
     prompt: Add the missing test scenarios identified above. Re-submit for QA review when complete.
     send: true
-  - label: "✅ Approved - Continue Reviews"
+  - label: "✅ Review Maintainability"
     agent: "Squad: Principal Engineer"
     prompt: QA coverage approved. Proceed with maintainability review.
     send: true
-  - label: "✅ Approved - Back to Developer"
+  - label: "✅ Continue Development"
     agent: "Squad: TDD Developer"
     prompt: QA review passed. Coverage is adequate. Proceed with remaining reviews or mark complete.
     send: true
-  - label: "✅ All Reviews Complete"
+  - label: "✅ Complete Work Item"
     agent: "Squad: TDD Developer"
     prompt: QA review passed. All quality gates complete. Mark work item done.
     send: true
-  - label: "🚨 Escalate to Scrum Master"
+  - label: "🚨 Escalate Issue"
     agent: "Squad: Scrum Master"
     prompt: Escalating QA/testing issue that requires Scrum Master attention. See details above.
     send: true

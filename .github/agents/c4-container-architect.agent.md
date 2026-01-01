@@ -5,15 +5,15 @@ tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent'
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "➡️ Continue to Components (C3)"
+  - label: "➡️ Design Components"
     agent: "Squad: C3 Component Architect"
     prompt: Based on the C2 containers above, design the C3 component architecture.
     send: true
-  - label: "⬅️ Revise Context (C1)"
+  - label: "⬅️ Revise Context Design"
     agent: "Squad: C1 Context Architect"
     prompt: Review and update the C1 context based on container insights.
     send: true
-  - label: "🚨 Escalate to Scrum Master"
+  - label: "🚨 Escalate Issue"
     agent: "Squad: Scrum Master"
     prompt: Architecture issue requiring Scrum Master decision. See details above.
     send: true
