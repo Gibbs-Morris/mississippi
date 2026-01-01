@@ -21,13 +21,13 @@ public sealed class SnapshotStreamKeyTests
     {
         // Sum of lengths plus three separators must not exceed 2048; exceed by one to trigger.
         const string brookName = "brook";
-        string projectionType = new('a', 1024);
-        string projectionId = new('b', 1024);
+        string snapshotStorageName = new('a', 1024);
+        string entityId = new('b', 1024);
         const string reducersHash = "h";
         Assert.Throws<ArgumentException>(() => new SnapshotStreamKey(
             brookName,
-            projectionType,
-            projectionId,
+            snapshotStorageName,
+            entityId,
             reducersHash));
     }
 
@@ -35,8 +35,8 @@ public sealed class SnapshotStreamKeyTests
     ///     Ensures null components are rejected.
     /// </summary>
     /// <param name="brookName">Brook name identifier.</param>
-    /// <param name="projectionType">Projection type identifier.</param>
-    /// <param name="projectionId">Projection instance identifier.</param>
+    /// <param name="snapshotStorageName">Snapshot storage name identifier.</param>
+    /// <param name="entityId">Entity instance identifier.</param>
     /// <param name="reducersHash">Reducers hash value.</param>
     [Theory]
     [InlineData(null, "proj", "id", "h")]
@@ -45,15 +45,15 @@ public sealed class SnapshotStreamKeyTests
     [InlineData("brook", "proj", "id", null)]
     public void ConstructorNullThrows(
         string? brookName,
-        string? projectionType,
-        string? projectionId,
+        string? snapshotStorageName,
+        string? entityId,
         string? reducersHash
     )
     {
         Assert.Throws<ArgumentNullException>(() => new SnapshotStreamKey(
             brookName!,
-            projectionType!,
-            projectionId!,
+            snapshotStorageName!,
+            entityId!,
             reducersHash!));
     }
 
@@ -77,8 +77,8 @@ public sealed class SnapshotStreamKeyTests
     {
         SnapshotStreamKey key = new("TEST.BROOK", "proj", "id", "hash");
         Assert.Equal("TEST.BROOK", key.BrookName);
-        Assert.Equal("proj", key.ProjectionType);
-        Assert.Equal("id", key.ProjectionId);
+        Assert.Equal("proj", key.SnapshotStorageName);
+        Assert.Equal("id", key.EntityId);
         Assert.Equal("hash", key.ReducersHash);
         Assert.Equal("TEST.BROOK|proj|id|hash", key.ToString());
     }
@@ -121,8 +121,8 @@ public sealed class SnapshotStreamKeyTests
     {
         SnapshotStreamKey key = SnapshotStreamKey.FromString("brook|type|id|hash");
         Assert.Equal("brook", key.BrookName);
-        Assert.Equal("type", key.ProjectionType);
-        Assert.Equal("id", key.ProjectionId);
+        Assert.Equal("type", key.SnapshotStorageName);
+        Assert.Equal("id", key.EntityId);
         Assert.Equal("hash", key.ReducersHash);
     }
 

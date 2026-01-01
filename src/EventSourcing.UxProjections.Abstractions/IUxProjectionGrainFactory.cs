@@ -17,10 +17,10 @@ public interface IUxProjectionGrainFactory
     /// <summary>
     ///     Gets a UX projection cursor grain for the specified key.
     /// </summary>
-    /// <param name="key">The UX projection key.</param>
+    /// <param name="key">The UX projection cursor key.</param>
     /// <returns>A grain reference for the UX projection cursor.</returns>
     IUxProjectionCursorGrain GetUxProjectionCursorGrain(
-        UxProjectionKey key
+        UxProjectionCursorKey key
     );
 
     /// <summary>
@@ -39,38 +39,28 @@ public interface IUxProjectionGrainFactory
         where TGrain : class;
 
     /// <summary>
-    ///     Gets a UX projection grain for the specified key.
+    ///     Gets a UX projection grain for the specified entity ID.
     /// </summary>
     /// <typeparam name="TProjection">The projection state type.</typeparam>
-    /// <param name="key">The UX projection key.</param>
+    /// <param name="entityId">The entity identifier.</param>
     /// <returns>A grain reference for the UX projection.</returns>
+    /// <remarks>
+    ///     The grain is keyed by just the entity ID. The brook name is obtained from
+    ///     the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+    ///     on the concrete grain class, and the projection type is known from <typeparamref name="TProjection" />.
+    /// </remarks>
     IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection>(
-        UxProjectionKey key
-    );
-
-    /// <summary>
-    ///     Gets a UX projection grain for the specified projection type and grain with a brook name attribute.
-    /// </summary>
-    /// <typeparam name="TProjection">The projection state type.</typeparam>
-    /// <typeparam name="TGrain">
-    ///     The grain type decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
-    /// </typeparam>
-    /// <param name="entityId">The entity identifier within the brook.</param>
-    /// <returns>A grain reference for the UX projection.</returns>
-    IUxProjectionGrain<TProjection> GetUxProjectionGrainForGrain<TProjection, TGrain>(
         string entityId
-    )
-        where TGrain : class;
+    );
 
     /// <summary>
     ///     Gets a versioned UX projection cache grain for the specified key.
     /// </summary>
     /// <typeparam name="TProjection">The projection state type.</typeparam>
-    /// <param name="key">The versioned UX projection key.</param>
+    /// <param name="key">The versioned UX projection cache key.</param>
     /// <returns>A grain reference for the versioned UX projection cache.</returns>
     IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrain<TProjection>(
-        UxProjectionVersionedKey key
+        UxProjectionVersionedCacheKey key
     );
 
     /// <summary>

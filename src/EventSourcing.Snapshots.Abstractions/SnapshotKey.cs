@@ -55,7 +55,7 @@ public readonly record struct SnapshotKey
     /// </summary>
     /// <param name="key">The snapshot key to convert.</param>
     /// <returns>
-    ///     The string representation in the format "brookName|projectionType|projectionId|reducersHash|version".
+    ///     The string representation in the format "brookName|entityId|version|snapshotStorageName|reducersHash".
     /// </returns>
     public static string FromSnapshotKey(
         SnapshotKey key
@@ -82,20 +82,20 @@ public readonly record struct SnapshotKey
         if ((first < 0) || (second < 0) || (third < 0) || (fourth < 0) || (fifth >= 0))
         {
             throw new FormatException(
-                $"Composite key must be in the form '<brookName>{Separator}<projectionType>{Separator}<projectionId>{Separator}<reducersHash>{Separator}<version>'.");
+                $"Composite key must be in the form '<brookName>{Separator}<entityId>{Separator}<version>{Separator}<snapshotStorageName>{Separator}<reducersHash>'.");
         }
 
         string brookName = value[..first];
-        string projectionType = value[(first + 1)..second];
-        string projectionId = value[(second + 1)..third];
-        string reducersHash = value[(third + 1)..fourth];
-        ReadOnlySpan<char> versionSpan = value.AsSpan(fourth + 1);
+        string entityId = value[(first + 1)..second];
+        ReadOnlySpan<char> versionSpan = value.AsSpan(second + 1, third - second - 1);
         if (!long.TryParse(versionSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out long version))
         {
             throw new FormatException($"Could not parse '{versionSpan}' as a {nameof(Version)} (long).");
         }
 
-        return new(new(brookName, projectionType, projectionId, reducersHash), version);
+        string snapshotStorageName = value[(third + 1)..fourth];
+        string reducersHash = value[(fourth + 1)..];
+        return new(new(brookName, snapshotStorageName, entityId, reducersHash), version);
     }
 
     /// <summary>
@@ -103,12 +103,12 @@ public readonly record struct SnapshotKey
     /// </summary>
     /// <param name="key">The snapshot key to convert.</param>
     /// <returns>
-    ///     The string representation in the format "brookName|projectionType|projectionId|reducersHash|version".
+    ///     The string representation in the format "brookName|entityId|version|snapshotStorageName|reducersHash".
     /// </returns>
     public static implicit operator string(
         SnapshotKey key
     ) =>
-        $"{key.Stream.BrookName}{Separator}{key.Stream.ProjectionType}{Separator}{key.Stream.ProjectionId}{Separator}{key.Stream.ReducersHash}{Separator}{key.Version}";
+        $"{key.Stream.BrookName}{Separator}{key.Stream.EntityId}{Separator}{key.Version}{Separator}{key.Stream.SnapshotStorageName}{Separator}{key.Stream.ReducersHash}";
 
     /// <summary>
     ///     Implicitly converts a composite string value to a <see cref="SnapshotKey" />.
@@ -124,7 +124,7 @@ public readonly record struct SnapshotKey
     ///     Returns the composite string representation of this snapshot key.
     /// </summary>
     /// <returns>
-    ///     The string representation in the format "brookName|projectionType|projectionId|reducersHash|version".
+    ///     The string representation in the format "brookName|entityId|version|snapshotStorageName|reducersHash".
     /// </returns>
     public override string ToString() => this;
 }

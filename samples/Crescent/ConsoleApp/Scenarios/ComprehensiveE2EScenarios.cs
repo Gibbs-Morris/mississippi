@@ -202,7 +202,7 @@ internal static class ComprehensiveE2EScenarios
 
         // Verify projection shows negative
         IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -309,7 +309,7 @@ internal static class ComprehensiveE2EScenarios
 
         // Verify projection
         IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -374,9 +374,9 @@ internal static class ComprehensiveE2EScenarios
 
         // Verify projections are isolated
         IUxProjectionGrain<CounterSummaryProjection> proj1 = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId1);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId1);
         IUxProjectionGrain<CounterSummaryProjection> proj2 = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId2);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId2);
         CounterSummaryProjection? projection1 = await proj1.GetAsync(cancellationToken);
         CounterSummaryProjection? projection2 = await proj2.GetAsync(cancellationToken);
         if ((projection1 == null) || (projection2 == null))
@@ -437,7 +437,7 @@ internal static class ComprehensiveE2EScenarios
 
         // Verify projection
         IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -484,7 +484,7 @@ internal static class ComprehensiveE2EScenarios
 
         // First read
         IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? beforeDeactivation = await projGrain.GetAsync(cancellationToken);
         if (beforeDeactivation == null)
         {
@@ -565,7 +565,7 @@ internal static class ComprehensiveE2EScenarios
 
         // Read projection multiple times
         IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? first = await projGrain.GetAsync(cancellationToken);
         CounterSummaryProjection? second = await projGrain.GetAsync(cancellationToken);
         CounterSummaryProjection? third = await projGrain.GetAsync(cancellationToken);
@@ -651,7 +651,7 @@ internal static class ComprehensiveE2EScenarios
 
         // Verify
         IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -712,7 +712,7 @@ internal static class ComprehensiveE2EScenarios
 
         // Verify projection
         IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {

@@ -33,7 +33,7 @@ public sealed class SnapshotKeyTests
         SnapshotKey key = new(stream, 42);
         Assert.Equal(stream, key.Stream);
         Assert.Equal(42, key.Version);
-        Assert.Equal("TEST.BROOK|proj|id|hash|42", key.ToString());
+        Assert.Equal("TEST.BROOK|id|42|proj|hash", key.ToString());
     }
 
     /// <summary>
@@ -45,7 +45,7 @@ public sealed class SnapshotKeyTests
         SnapshotStreamKey stream = new("TEST.BROOK", "type", "id", "hash");
         SnapshotKey key = new(stream, 9);
         string composite = SnapshotKey.FromSnapshotKey(key);
-        Assert.Equal("TEST.BROOK|type|id|hash|9", composite);
+        Assert.Equal("TEST.BROOK|id|9|type|hash", composite);
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ public sealed class SnapshotKeyTests
     public void FromStringBadFormatThrows()
     {
         Assert.Throws<FormatException>(() => SnapshotKey.FromString("too|few|parts|four"));
-        Assert.Throws<FormatException>(() => SnapshotKey.FromString("brook|type|id|hash|notanumber"));
+        Assert.Throws<FormatException>(() => SnapshotKey.FromString("brook|id|notanumber|type|hash"));
     }
 
     /// <summary>
@@ -73,10 +73,10 @@ public sealed class SnapshotKeyTests
     [Fact]
     public void FromStringParsesComposite()
     {
-        SnapshotKey key = SnapshotKey.FromString("brook|type|id|hash|7");
+        SnapshotKey key = SnapshotKey.FromString("brook|id|7|type|hash");
         Assert.Equal("brook", key.Stream.BrookName);
-        Assert.Equal("type", key.Stream.ProjectionType);
-        Assert.Equal("id", key.Stream.ProjectionId);
+        Assert.Equal("type", key.Stream.SnapshotStorageName);
+        Assert.Equal("id", key.Stream.EntityId);
         Assert.Equal("hash", key.Stream.ReducersHash);
         Assert.Equal(7, key.Version);
     }
@@ -87,7 +87,7 @@ public sealed class SnapshotKeyTests
     [Fact]
     public void FromStringTooManyPartsThrows()
     {
-        Assert.Throws<FormatException>(() => SnapshotKey.FromString("brook|type|id|hash|1|extra"));
+        Assert.Throws<FormatException>(() => SnapshotKey.FromString("brook|id|1|type|hash|extra"));
     }
 
     /// <summary>
@@ -99,8 +99,8 @@ public sealed class SnapshotKeyTests
         SnapshotStreamKey stream = new("TEST.BROOK", "type", "id", "hash");
         SnapshotKey key = new(stream, 5);
         string composite = key;
-        Assert.Equal("TEST.BROOK|type|id|hash|5", composite);
-        SnapshotKey parsed = "TEST.BROOK|type|id|hash|5";
+        Assert.Equal("TEST.BROOK|id|5|type|hash", composite);
+        SnapshotKey parsed = "TEST.BROOK|id|5|type|hash";
         Assert.Equal(key, parsed);
     }
 }

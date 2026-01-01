@@ -113,7 +113,7 @@ internal static class SimpleUxProjectionScenario
         // ==============================================================
         logger.SimpleUxStep(runId, 2, "Query UX projection for the same entity ID");
         IUxProjectionGrain<CounterSummaryProjection> projectionGrain = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(cancellationToken);
         if (projection == null)
         {

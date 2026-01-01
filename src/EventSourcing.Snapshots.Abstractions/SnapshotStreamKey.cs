@@ -6,7 +6,7 @@ using Orleans;
 namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 
 /// <summary>
-///     Identifies a logical stream of projection snapshots by brook name, projection type, projection id, and reducers
+///     Identifies a logical stream of projection snapshots by brook name, snapshot storage name, entity id, and reducers
 ///     hash.
 ///     This key is used for operations that target all versions of a projection snapshot stream.
 /// </summary>
@@ -26,8 +26,8 @@ public readonly record struct SnapshotStreamKey
     /// <param name="brookName">
     ///     The brook name identifying the event stream (e.g., "CRESCENT.NEWMODEL.CHAT").
     /// </param>
-    /// <param name="projectionType">The projection type identifier.</param>
-    /// <param name="projectionId">The projection instance identifier.</param>
+    /// <param name="snapshotStorageName">The snapshot storage name identifier.</param>
+    /// <param name="entityId">The entity instance identifier.</param>
     /// <param name="reducersHash">A hash representing the active reducers set for this projection.</param>
     /// <exception cref="ArgumentNullException">Thrown when any required argument is null.</exception>
     /// <exception cref="ArgumentException">
@@ -35,23 +35,23 @@ public readonly record struct SnapshotStreamKey
     /// </exception>
     public SnapshotStreamKey(
         string brookName,
-        string projectionType,
-        string projectionId,
+        string snapshotStorageName,
+        string entityId,
         string reducersHash
     )
     {
         ValidateComponent(brookName, nameof(brookName));
-        ValidateComponent(projectionType, nameof(projectionType));
-        ValidateComponent(projectionId, nameof(projectionId));
+        ValidateComponent(snapshotStorageName, nameof(snapshotStorageName));
+        ValidateComponent(entityId, nameof(entityId));
         ValidateComponent(reducersHash, nameof(reducersHash));
-        if ((brookName.Length + projectionType.Length + projectionId.Length + reducersHash.Length + 3) > MaxLength)
+        if ((brookName.Length + snapshotStorageName.Length + entityId.Length + reducersHash.Length + 3) > MaxLength)
         {
             throw new ArgumentException($"Composite key exceeds the {MaxLength}-character limit.");
         }
 
         BrookName = brookName;
-        ProjectionType = projectionType;
-        ProjectionId = projectionId;
+        SnapshotStorageName = snapshotStorageName;
+        EntityId = entityId;
         ReducersHash = reducersHash;
     }
 
@@ -62,16 +62,10 @@ public readonly record struct SnapshotStreamKey
     public string BrookName { get; }
 
     /// <summary>
-    ///     Gets the projection instance identifier.
+    ///     Gets the entity instance identifier.
     /// </summary>
     [Id(2)]
-    public string ProjectionId { get; }
-
-    /// <summary>
-    ///     Gets the projection type identifier.
-    /// </summary>
-    [Id(1)]
-    public string ProjectionType { get; }
+    public string EntityId { get; }
 
     /// <summary>
     ///     Gets the reducers hash that scopes compatibility for this projection stream.
@@ -80,10 +74,16 @@ public readonly record struct SnapshotStreamKey
     public string ReducersHash { get; }
 
     /// <summary>
+    ///     Gets the snapshot storage name identifier.
+    /// </summary>
+    [Id(1)]
+    public string SnapshotStorageName { get; }
+
+    /// <summary>
     ///     Converts the stream key to its composite string representation.
     /// </summary>
     /// <param name="key">The stream key to convert.</param>
-    /// <returns>The string representation in the format "brookName|projectionType|projectionId|reducersHash".</returns>
+    /// <returns>The string representation in the format "brookName|snapshotStorageName|entityId|reducersHash".</returns>
     public static string FromStreamKey(
         SnapshotStreamKey key
     ) =>
@@ -108,25 +108,25 @@ public readonly record struct SnapshotStreamKey
         if ((first < 0) || (second < 0) || (third < 0) || (fourth >= 0))
         {
             throw new FormatException(
-                $"Composite key must be in the form '<brookName>{Separator}<projectionType>{Separator}<projectionId>{Separator}<reducersHash>'.");
+                $"Composite key must be in the form '<brookName>{Separator}<snapshotStorageName>{Separator}<entityId>{Separator}<reducersHash>'.");
         }
 
         string brookName = value[..first];
-        string projectionType = value[(first + 1)..second];
-        string projectionId = value[(second + 1)..third];
+        string snapshotStorageName = value[(first + 1)..second];
+        string entityId = value[(second + 1)..third];
         string reducersHash = value[(third + 1)..];
-        return new(brookName, projectionType, projectionId, reducersHash);
+        return new(brookName, snapshotStorageName, entityId, reducersHash);
     }
 
     /// <summary>
     ///     Implicitly converts a <see cref="SnapshotStreamKey" /> to its composite string representation.
     /// </summary>
     /// <param name="key">The stream key to convert.</param>
-    /// <returns>The string representation in the format "brookName|projectionType|projectionId|reducersHash".</returns>
+    /// <returns>The string representation in the format "brookName|snapshotStorageName|entityId|reducersHash".</returns>
     public static implicit operator string(
         SnapshotStreamKey key
     ) =>
-        $"{key.BrookName}{Separator}{key.ProjectionType}{Separator}{key.ProjectionId}{Separator}{key.ReducersHash}";
+        $"{key.BrookName}{Separator}{key.SnapshotStorageName}{Separator}{key.EntityId}{Separator}{key.ReducersHash}";
 
     /// <summary>
     ///     Implicitly converts a composite string representation to a <see cref="SnapshotStreamKey" />.
@@ -157,6 +157,6 @@ public readonly record struct SnapshotStreamKey
     /// <summary>
     ///     Returns the composite string representation of this stream key.
     /// </summary>
-    /// <returns>The string representation in the format "projectionType|projectionId|reducersHash".</returns>
+    /// <returns>The string representation in the format "brookName|snapshotStorageName|entityId|reducersHash".</returns>
     public override string ToString() => this;
 }

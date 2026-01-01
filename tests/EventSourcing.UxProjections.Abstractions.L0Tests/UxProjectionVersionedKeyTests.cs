@@ -103,8 +103,8 @@ public sealed class UxProjectionVersionedKeyTests
         UxProjectionVersionedKey key =
             UxProjectionVersionedKey.ForGrain<TestProjectionType, TestGrain>("entity-1", version);
         Assert.Equal("TestProjectionType", key.ProjectionKey.ProjectionTypeName);
-        Assert.Equal("TEST.VERSIONED.BROOK", key.ProjectionKey.BrookKey.Type);
-        Assert.Equal("entity-1", key.ProjectionKey.BrookKey.Id);
+        Assert.Equal("TEST.VERSIONED.BROOK", key.ProjectionKey.BrookKey.BrookName);
+        Assert.Equal("entity-1", key.ProjectionKey.BrookKey.EntityId);
         Assert.Equal(100, key.Version.Value);
     }
 
@@ -116,8 +116,8 @@ public sealed class UxProjectionVersionedKeyTests
     {
         UxProjectionVersionedKey key = UxProjectionVersionedKey.FromString("ProjectionName|brookType|entityId|42");
         Assert.Equal("ProjectionName", key.ProjectionKey.ProjectionTypeName);
-        Assert.Equal("brookType", key.ProjectionKey.BrookKey.Type);
-        Assert.Equal("entityId", key.ProjectionKey.BrookKey.Id);
+        Assert.Equal("brookType", key.ProjectionKey.BrookKey.BrookName);
+        Assert.Equal("entityId", key.ProjectionKey.BrookKey.EntityId);
         Assert.Equal(42, key.Version.Value);
     }
 
@@ -215,8 +215,8 @@ public sealed class UxProjectionVersionedKeyTests
     {
         UxProjectionVersionedKey key = "ProjectionName|brookType|entityId|42";
         Assert.Equal("ProjectionName", key.ProjectionKey.ProjectionTypeName);
-        Assert.Equal("brookType", key.ProjectionKey.BrookKey.Type);
-        Assert.Equal("entityId", key.ProjectionKey.BrookKey.Id);
+        Assert.Equal("brookType", key.ProjectionKey.BrookKey.BrookName);
+        Assert.Equal("entityId", key.ProjectionKey.BrookKey.EntityId);
         Assert.Equal(42, key.Version.Value);
     }
 

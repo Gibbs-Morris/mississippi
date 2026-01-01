@@ -120,13 +120,13 @@ internal sealed class UxProjectionVersionedCacheGrain<TProjection>
             versionedKey.Version);
 
         // Load projection from snapshot cache on activation (versioned = immutable)
-        // Brook name is extracted from the key (brookKey.Type contains the brook name)
-        string brookName = versionedKey.ProjectionKey.BrookKey.Type;
+        // Brook name is extracted from the key (brookKey.BrookName contains the brook name)
+        string brookName = versionedKey.ProjectionKey.BrookKey.BrookName;
         string reducersHash = RootReducer.GetReducerHash();
         SnapshotStreamKey snapshotStreamKey = new(
             brookName,
             SnapshotStorageNameHelper.GetStorageName<TProjection>(),
-            versionedKey.ProjectionKey.BrookKey.Id,
+            versionedKey.ProjectionKey.BrookKey.EntityId,
             reducersHash);
         SnapshotKey snapshotKey = new(snapshotStreamKey, versionedKey.Version.Value);
         ISnapshotCacheGrain<TProjection> snapshotCacheGrain =

@@ -47,7 +47,7 @@ public sealed class UxProjectionGrainTests
         return new(grainContextMock.Object, uxProjectionGrainFactoryMock.Object, loggerMock.Object);
     }
 
-    private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123";
+    private const string ValidPrimaryKey = "entity-123";
 
     /// <summary>
     ///     A testable implementation of <see cref="UxProjectionGrainBase{TProjection}" />
@@ -141,10 +141,10 @@ public sealed class UxProjectionGrainTests
         Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrainMock = new();
         versionedCacheGrainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionCursorKey>()))
             .Returns(cursorGrainMock.Object);
         uxProjectionGrainFactoryMock
-            .Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedKey>()))
+            .Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()))
             .Returns(versionedCacheGrainMock.Object);
         TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
@@ -177,11 +177,11 @@ public sealed class UxProjectionGrainTests
         Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrainMock2 = new();
         versionedCacheGrainMock2.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(projection2);
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionCursorKey>()))
             .Returns(cursorGrainMock.Object);
         uxProjectionGrainFactoryMock
             .SetupSequence(f =>
-                f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedKey>()))
+                f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()))
             .Returns(versionedCacheGrainMock1.Object)
             .Returns(versionedCacheGrainMock2.Object);
         TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
@@ -207,18 +207,18 @@ public sealed class UxProjectionGrainTests
     public async Task GetAsyncPassesCorrectVersionedKeyToFactory()
     {
         // Arrange
-        UxProjectionVersionedKey? capturedKey = null;
+        UxProjectionVersionedCacheKey? capturedKey = null;
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
         cursorGrainMock.Setup(g => g.GetPositionAsync()).ReturnsAsync(new BrookPosition(10));
         Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrainMock = new();
         versionedCacheGrainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TestProjection(1));
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionCursorKey>()))
             .Returns(cursorGrainMock.Object);
         uxProjectionGrainFactoryMock
-            .Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedKey>()))
-            .Callback<UxProjectionVersionedKey>(key => capturedKey = key)
+            .Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()))
+            .Callback<UxProjectionVersionedCacheKey>(key => capturedKey = key)
             .Returns(versionedCacheGrainMock.Object);
         TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
@@ -229,7 +229,7 @@ public sealed class UxProjectionGrainTests
         // Assert
         Assert.NotNull(capturedKey);
         Assert.Equal(10, capturedKey.Value.Version.Value);
-        Assert.Equal("entity-123", capturedKey.Value.ProjectionKey.BrookKey.Id);
+        Assert.Equal("entity-123", capturedKey.Value.EntityId);
     }
 
     /// <summary>
@@ -244,7 +244,7 @@ public sealed class UxProjectionGrainTests
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
         cursorGrainMock.Setup(g => g.GetPositionAsync()).ReturnsAsync(new BrookPosition(-1));
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionCursorKey>()))
             .Returns(cursorGrainMock.Object);
         TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
@@ -255,7 +255,7 @@ public sealed class UxProjectionGrainTests
         // Assert
         Assert.Null(result);
         uxProjectionGrainFactoryMock.Verify(
-            f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedKey>()),
+            f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()),
             Times.Never);
     }
 
@@ -279,7 +279,7 @@ public sealed class UxProjectionGrainTests
         // Assert
         Assert.Null(result);
         uxProjectionGrainFactoryMock.Verify(
-            f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedKey>()),
+            f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()),
             Times.Never);
     }
 
@@ -294,13 +294,13 @@ public sealed class UxProjectionGrainTests
         // Arrange
         BrookPosition requestedVersion = new(10);
         TestProjection expectedProjection = new(42);
-        UxProjectionVersionedKey? capturedKey = null;
+        UxProjectionVersionedCacheKey? capturedKey = null;
         Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrainMock = new();
         versionedCacheGrainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
         uxProjectionGrainFactoryMock
-            .Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedKey>()))
-            .Callback<UxProjectionVersionedKey>(key => capturedKey = key)
+            .Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()))
+            .Callback<UxProjectionVersionedCacheKey>(key => capturedKey = key)
             .Returns(versionedCacheGrainMock.Object);
         TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
@@ -328,7 +328,7 @@ public sealed class UxProjectionGrainTests
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
         cursorGrainMock.Setup(g => g.GetPositionAsync()).ReturnsAsync(expectedPosition);
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionKey>()))
+        uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionCursorKey>()))
             .Returns(cursorGrainMock.Object);
         TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
@@ -356,6 +356,24 @@ public sealed class UxProjectionGrainTests
     }
 
     /// <summary>
+    ///     Verifies that OnActivateAsync completes successfully with any entity ID format.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Activation")]
+    public async Task OnActivateAsyncCompletesSuccessfullyWithAnyEntityIdFormat()
+    {
+        // Arrange - any string is now a valid entity ID
+        TestableUxProjectionGrain grain = CreateGrain(primaryKey: "any-valid-entity-id");
+
+        // Act
+        Exception? exception = await Record.ExceptionAsync(() => grain.OnActivateAsync(CancellationToken.None));
+
+        // Assert
+        Assert.Null(exception);
+    }
+
+    /// <summary>
     ///     Verifies that OnActivateAsync completes successfully with valid primary key.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
@@ -371,35 +389,5 @@ public sealed class UxProjectionGrainTests
 
         // Assert
         Assert.Null(exception);
-    }
-
-    /// <summary>
-    ///     Verifies that OnActivateAsync throws when primary key is invalid format.
-    /// </summary>
-    /// <returns>Asynchronous test task.</returns>
-    [Fact]
-    [AllureFeature("Activation")]
-    public async Task OnActivateAsyncThrowsWhenPrimaryKeyIsInvalid()
-    {
-        // Arrange
-        TestableUxProjectionGrain grain = CreateGrain(primaryKey: "invalid-key-format");
-
-        // Act & Assert
-        await Assert.ThrowsAsync<FormatException>(() => grain.OnActivateAsync(CancellationToken.None));
-    }
-
-    /// <summary>
-    ///     Verifies that OnActivateAsync throws when primary key is missing separators.
-    /// </summary>
-    /// <returns>Asynchronous test task.</returns>
-    [Fact]
-    [AllureFeature("Activation")]
-    public async Task OnActivateAsyncThrowsWhenPrimaryKeyMissingSeparators()
-    {
-        // Arrange
-        TestableUxProjectionGrain grain = CreateGrain(primaryKey: "NoSeparatorsAtAll");
-
-        // Act & Assert
-        await Assert.ThrowsAsync<FormatException>(() => grain.OnActivateAsync(CancellationToken.None));
     }
 }

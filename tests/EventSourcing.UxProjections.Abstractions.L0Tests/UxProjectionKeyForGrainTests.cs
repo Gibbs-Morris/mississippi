@@ -43,7 +43,7 @@ public sealed class UxProjectionKeyForGrainTests
         UxProjectionKey key2 = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity2");
         Assert.NotEqual(key1, key2);
         Assert.Equal(key1.ProjectionTypeName, key2.ProjectionTypeName);
-        Assert.NotEqual(key1.BrookKey.Id, key2.BrookKey.Id);
+        Assert.NotEqual(key1.BrookKey.EntityId, key2.BrookKey.EntityId);
     }
 
     /// <summary>
@@ -77,8 +77,8 @@ public sealed class UxProjectionKeyForGrainTests
     public void ForGrainCreatesKeyWithBrookKeyFromGrainAttribute()
     {
         UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity123");
-        Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.Type);
-        Assert.Equal("entity123", key.BrookKey.Id);
+        Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.BrookName);
+        Assert.Equal("entity123", key.BrookKey.EntityId);
     }
 
     /// <summary>

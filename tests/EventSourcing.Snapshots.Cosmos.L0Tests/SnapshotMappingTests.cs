@@ -47,8 +47,8 @@ public sealed class SnapshotMappingTests
             Data = new byte[] { 3 },
             DataContentType = "json",
             BrookName = StreamKey.BrookName,
-            ProjectionType = StreamKey.ProjectionType,
-            ProjectionId = StreamKey.ProjectionId,
+            ProjectionType = StreamKey.SnapshotStorageName,
+            ProjectionId = StreamKey.EntityId,
             ReducersHash = StreamKey.ReducersHash,
             Version = 5,
         };
@@ -77,8 +77,8 @@ public sealed class SnapshotMappingTests
         Assert.Equal("snapshot", document.Type);
         Assert.Equal(StreamKey.ToString(), document.SnapshotPartitionKey);
         Assert.Equal(StreamKey.BrookName, document.BrookName);
-        Assert.Equal(StreamKey.ProjectionType, document.ProjectionType);
-        Assert.Equal(StreamKey.ProjectionId, document.ProjectionId);
+        Assert.Equal(StreamKey.SnapshotStorageName, document.ProjectionType);
+        Assert.Equal(StreamKey.EntityId, document.ProjectionId);
         Assert.Equal(StreamKey.ReducersHash, document.ReducersHash);
         Assert.Equal(storage.Data, document.Data);
         Assert.Equal(storage.DataContentType, document.DataContentType);
@@ -119,8 +119,8 @@ public sealed class SnapshotMappingTests
         SnapshotDocument document = new SnapshotWriteModelToDocumentMapper().Map(writeModel);
         Assert.Equal("11", document.Id);
         Assert.Equal(StreamKey.ToString(), document.SnapshotPartitionKey);
-        Assert.Equal(StreamKey.ProjectionType, document.ProjectionType);
-        Assert.Equal(StreamKey.ProjectionId, document.ProjectionId);
+        Assert.Equal(StreamKey.SnapshotStorageName, document.ProjectionType);
+        Assert.Equal(StreamKey.EntityId, document.ProjectionId);
         Assert.Equal(StreamKey.ReducersHash, document.ReducersHash);
         Assert.Equal(11, document.Version);
         Assert.Equal(new byte[] { 7 }, document.Data);

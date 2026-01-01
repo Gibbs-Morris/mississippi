@@ -35,7 +35,7 @@ internal sealed class UxProjectionGrainFactory : IUxProjectionGrainFactory
 
     /// <inheritdoc />
     public IUxProjectionCursorGrain GetUxProjectionCursorGrain(
-        UxProjectionKey key
+        UxProjectionCursorKey key
     )
     {
         Logger.ResolvingCursorGrain(nameof(IUxProjectionCursorGrain), key);
@@ -48,32 +48,23 @@ internal sealed class UxProjectionGrainFactory : IUxProjectionGrainFactory
     )
         where TGrain : class
     {
-        UxProjectionKey key = UxProjectionKey.ForGrain<TProjection, TGrain>(entityId);
+        string brookName = BrookNameHelper.GetBrookName<TGrain>();
+        UxProjectionCursorKey key = new(brookName, entityId);
         return GetUxProjectionCursorGrain(key);
     }
 
     /// <inheritdoc />
     public IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection>(
-        UxProjectionKey key
-    )
-    {
-        Logger.ResolvingProjectionGrain(nameof(IUxProjectionGrain<TProjection>), key);
-        return GrainFactory.GetGrain<IUxProjectionGrain<TProjection>>(key);
-    }
-
-    /// <inheritdoc />
-    public IUxProjectionGrain<TProjection> GetUxProjectionGrainForGrain<TProjection, TGrain>(
         string entityId
     )
-        where TGrain : class
     {
-        UxProjectionKey key = UxProjectionKey.ForGrain<TProjection, TGrain>(entityId);
-        return GetUxProjectionGrain<TProjection>(key);
+        Logger.ResolvingProjectionGrain(nameof(IUxProjectionGrain<TProjection>), entityId);
+        return GrainFactory.GetGrain<IUxProjectionGrain<TProjection>>(entityId);
     }
 
     /// <inheritdoc />
     public IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrain<TProjection>(
-        UxProjectionVersionedKey key
+        UxProjectionVersionedCacheKey key
     )
     {
         Logger.ResolvingVersionedCacheGrain(nameof(IUxProjectionVersionedCacheGrain<TProjection>), key);
@@ -88,7 +79,8 @@ internal sealed class UxProjectionGrainFactory : IUxProjectionGrainFactory
         )
         where TGrain : class
     {
-        UxProjectionVersionedKey key = UxProjectionVersionedKey.ForGrain<TProjection, TGrain>(entityId, version);
+        string brookName = BrookNameHelper.GetBrookName<TGrain>();
+        UxProjectionVersionedCacheKey key = new(brookName, entityId, version);
         return GetUxProjectionVersionedCacheGrain<TProjection>(key);
     }
 }

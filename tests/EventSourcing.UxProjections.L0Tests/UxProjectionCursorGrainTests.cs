@@ -303,7 +303,7 @@ public sealed class UxProjectionCursorGrainTests
         // Arrange
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity-123");
+        UxProjectionCursorKey key = new("TEST.MODULE.STREAM", "entity-123");
         factoryMock.Setup(f => f.GetUxProjectionCursorGrain(key)).Returns(cursorGrainMock.Object);
 
         // Act
@@ -325,8 +325,8 @@ public sealed class UxProjectionCursorGrainTests
 
         // Assert
         Assert.Equal("TestProjection", key.ProjectionTypeName);
-        Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.Type);
-        Assert.Equal("my-entity", key.BrookKey.Id);
+        Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.BrookName);
+        Assert.Equal("my-entity", key.BrookKey.EntityId);
     }
 
     /// <summary>
@@ -341,8 +341,8 @@ public sealed class UxProjectionCursorGrainTests
 
         // Assert
         Assert.Equal("TestProjection", key.ProjectionTypeName);
-        Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.Type);
-        Assert.Equal("entity-123", key.BrookKey.Id);
+        Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.BrookName);
+        Assert.Equal("entity-123", key.BrookKey.EntityId);
     }
 
     /// <summary>
@@ -403,8 +403,8 @@ public sealed class UxProjectionCursorGrainTests
 
         // Assert
         Assert.Equal(original.ProjectionTypeName, deserialized.ProjectionTypeName);
-        Assert.Equal(original.BrookKey.Type, deserialized.BrookKey.Type);
-        Assert.Equal(original.BrookKey.Id, deserialized.BrookKey.Id);
+        Assert.Equal(original.BrookKey.BrookName, deserialized.BrookKey.BrookName);
+        Assert.Equal(original.BrookKey.EntityId, deserialized.BrookKey.EntityId);
     }
 
     /// <summary>

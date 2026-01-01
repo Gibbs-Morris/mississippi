@@ -26,9 +26,9 @@ public sealed class SnapshotPersisterGrainTests
     {
         Mock<IGrainContext> mock = new();
 
-        // Key format: brookName|projectionType|projectionId|reducersHash|version
+        // Key format: brookName|entityId|version|snapshotStorageName|reducersHash
         mock.Setup(c => c.GrainId)
-            .Returns(GrainId.Create("test", "TEST.BROOK|TEST.SNAPSHOTS.TestBrook|entity-1|abc123|5"));
+            .Returns(GrainId.Create("test", "TEST.BROOK|entity-1|5|TEST.SNAPSHOTS.TestBrook|abc123"));
         return mock;
     }
 
@@ -55,9 +55,9 @@ public sealed class SnapshotPersisterGrainTests
         // Arrange
         Mock<IGrainContext> grainContextMock = new();
 
-        // Key format: brookName|projectionType|projectionId|reducersHash|version
+        // Key format: brookName|entityId|version|snapshotStorageName|reducersHash
         grainContextMock.Setup(c => c.GrainId)
-            .Returns(GrainId.Create("test", "TEST.BROOK|MyProjection|entity-123|hashValue|42"));
+            .Returns(GrainId.Create("test", "TEST.BROOK|entity-123|42|MyProjection|hashValue"));
         SnapshotPersisterGrain grain = CreateGrain(grainContextMock);
 
         // Act - should not throw

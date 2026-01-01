@@ -25,7 +25,7 @@ namespace Mississippi.EventSourcing.Snapshots;
 /// <remarks>
 ///     <para>
 ///         Snapshot cache grains are keyed by <see cref="SnapshotKey" /> in the format
-///         "brookName|projectionType|projectionId|reducersHash|version". Once activated and hydrated,
+///         "brookName|entityId|version|snapshotStorageName|reducersHash". Once activated and hydrated,
 ///         the state is immutable and cached in memory for fast read access.
 ///     </para>
 ///     <para>
@@ -175,7 +175,7 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
     {
         // Brook name is now in the key - use it directly
         string brookName = snapshotKey.Stream.BrookName;
-        string entityId = snapshotKey.Stream.ProjectionId;
+        string entityId = snapshotKey.Stream.EntityId;
 
         // Construct the brook key from the snapshot stream key
         BrookKey brookKey = new(brookName, entityId);

@@ -159,8 +159,8 @@ if (string.Equals(mode, "reuse", StringComparison.OrdinalIgnoreCase) &&
 else
 {
     brookKey = new($"test-brook-{Guid.NewGuid():N}", "sample-brook-001");
-    runState.PrimaryType = brookKey.Type;
-    runState.PrimaryId = brookKey.Id;
+    runState.PrimaryType = brookKey.BrookName;
+    runState.PrimaryId = brookKey.EntityId;
     logger.ModeFreshUsingNewBrookKey(runId, brookKey, RunStateStore.FilePath);
 }
 
@@ -385,7 +385,7 @@ BrookPosition confirmed = await host2.Services.GetRequiredService<IBrookGrainFac
     .GetBrookCursorGrain(brookKey)
     .GetLatestPositionConfirmedAsync();
 runState.PrimaryCursor = confirmed.Value;
-runState.UpsertStream(brookKey.Type, brookKey.Id, confirmed.Value);
+runState.UpsertStream(brookKey.BrookName, brookKey.EntityId, confirmed.Value);
 await RunStateStore.SaveAsync(runState, logger);
 await host2.StopAsync();
 await host.StopAsync();

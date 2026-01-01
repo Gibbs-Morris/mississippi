@@ -34,9 +34,9 @@ public sealed class SnapshotCacheGrainTests
     {
         Mock<IGrainContext> mock = new();
 
-        // Key format: brookName|projectionType|projectionId|reducersHash|version
+        // Key format: brookName|entityId|version|snapshotStorageName|reducersHash
         mock.Setup(c => c.GrainId)
-            .Returns(GrainId.Create("test", "TEST.SNAPSHOTS.TESTBROOK|TestProjection|entity-1|abc123|5"));
+            .Returns(GrainId.Create("test", "TEST.SNAPSHOTS.TESTBROOK|entity-1|5|TestProjection|abc123"));
         return mock;
     }
 

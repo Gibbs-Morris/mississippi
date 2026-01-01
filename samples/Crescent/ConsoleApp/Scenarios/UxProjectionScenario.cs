@@ -123,7 +123,7 @@ internal static class UxProjectionScenario
         // Step 2: Query the UX projection grain
         logger.UxProjectionStep(runId, 2, "Query UX projection grain for cached projection state");
         IUxProjectionGrain<CounterSummaryProjection> projectionGrain = uxProjectionGrainFactory
-            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(cancellationToken);
         if (projection == null)
         {

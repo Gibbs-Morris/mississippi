@@ -24,7 +24,7 @@ namespace Mississippi.EventSourcing.Snapshots;
 ///     </para>
 ///     <para>
 ///         The grain is keyed by <see cref="SnapshotKey" /> in the format
-///         "brookName|projectionType|projectionId|reducersHash|version",
+///         "brookName|entityId|version|snapshotStorageName|reducersHash",
 ///         matching the cache grain's key for one-to-one correspondence.
 ///     </para>
 /// </remarks>

@@ -29,8 +29,8 @@ public class BrookKeyForTests
     public void ForGrainCreatesKeyWithBrookName()
     {
         BrookKey key = BrookKey.ForGrain<TestGrain>("entity-123");
-        Assert.Equal("TEST.MODULE.STREAM", key.Type);
-        Assert.Equal("entity-123", key.Id);
+        Assert.Equal("TEST.MODULE.STREAM", key.BrookName);
+        Assert.Equal("entity-123", key.EntityId);
     }
 
     /// <summary>

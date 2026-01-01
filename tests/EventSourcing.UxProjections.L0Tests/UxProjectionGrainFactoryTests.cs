@@ -56,7 +56,7 @@ public sealed class UxProjectionGrainFactoryTests
     public void GetUxProjectionCursorGrainWithKeyResolvesAndReturnsInstance()
     {
         // Arrange
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("cursor-entity");
+        UxProjectionCursorKey key = new("TEST.MODULE.STREAM", "cursor-entity");
         Mock<IUxProjectionCursorGrain> cursorGrain = new();
         Mock<IGrainFactory> grainFactory = new(MockBehavior.Strict);
         grainFactory.Setup(g => g.GetGrain<IUxProjectionCursorGrain>(It.IsAny<string>(), It.IsAny<string?>()))
@@ -109,20 +109,17 @@ public sealed class UxProjectionGrainFactoryTests
         UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
 
         // Act
-        IUxProjectionGrain<TestProjection> resolved =
-            sut.GetUxProjectionGrainForGrain<TestProjection, TestGrain>(entityId);
+        IUxProjectionGrain<TestProjection> resolved = sut.GetUxProjectionGrain<TestProjection>(entityId);
 
         // Assert
         Assert.Same(projectionGrain.Object, resolved);
-        UxProjectionKey expectedKey = UxProjectionKey.ForGrain<TestProjection, TestGrain>(entityId);
-        string expectedKeyString = expectedKey.ToString();
         grainFactory.Verify(
-            g => g.GetGrain<IUxProjectionGrain<TestProjection>>(expectedKeyString, It.IsAny<string?>()),
+            g => g.GetGrain<IUxProjectionGrain<TestProjection>>(entityId, It.IsAny<string?>()),
             Times.Once);
     }
 
     /// <summary>
-    ///     Factory uses correct projection key format for different projection types.
+    ///     Factory uses correct entity ID as key.
     /// </summary>
     [Fact]
     public void GetUxProjectionGrainUsesCorrectKeyFormat()
@@ -142,21 +139,21 @@ public sealed class UxProjectionGrainFactoryTests
         UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
 
         // Act
-        sut.GetUxProjectionGrainForGrain<TestProjection, TestGrain>(entityId);
+        sut.GetUxProjectionGrain<TestProjection>(entityId);
 
         // Assert
         Assert.NotNull(capturedKey);
-        Assert.Equal("TestProjection|TEST.MODULE.STREAM|entity456", capturedKey);
+        Assert.Equal("entity456", capturedKey);
     }
 
     /// <summary>
-    ///     Resolves a UX projection grain via key and returns the instance.
+    ///     Resolves a UX projection grain with entity ID and returns the instance.
     /// </summary>
     [Fact]
-    public void GetUxProjectionGrainWithKeyResolvesAndReturnsInstance()
+    public void GetUxProjectionGrainWithEntityIdResolvesAndReturnsInstance()
     {
         // Arrange
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("projection-entity");
+        string entityId = "projection-entity";
         Mock<IUxProjectionGrain<TestProjection>> projectionGrain = new();
         Mock<IGrainFactory> grainFactory = new(MockBehavior.Strict);
         grainFactory.Setup(g => g.GetGrain<IUxProjectionGrain<TestProjection>>(It.IsAny<string>(), It.IsAny<string?>()))
@@ -165,7 +162,7 @@ public sealed class UxProjectionGrainFactoryTests
         UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
 
         // Act
-        IUxProjectionGrain<TestProjection> resolved = sut.GetUxProjectionGrain<TestProjection>(key);
+        IUxProjectionGrain<TestProjection> resolved = sut.GetUxProjectionGrain<TestProjection>(entityId);
 
         // Assert
         Assert.Same(projectionGrain.Object, resolved);
@@ -200,7 +197,7 @@ public sealed class UxProjectionGrainFactoryTests
 
         // Assert
         Assert.NotNull(capturedKey);
-        Assert.Equal("TestProjection|TEST.MODULE.STREAM|versioned-entity|42", capturedKey);
+        Assert.Equal("TEST.MODULE.STREAM|versioned-entity|42", capturedKey);
     }
 
     /// <summary>
@@ -210,8 +207,7 @@ public sealed class UxProjectionGrainFactoryTests
     public void GetUxProjectionVersionedCacheGrainWithKeyResolvesAndReturnsInstance()
     {
         // Arrange
-        UxProjectionVersionedKey versionedKey =
-            UxProjectionVersionedKey.ForGrain<TestProjection, TestGrain>("versioned-entity", new(42));
+        UxProjectionVersionedCacheKey versionedCacheKey = new("TEST.MODULE.STREAM", "versioned-entity", new(42));
         Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrain = new();
         Mock<IGrainFactory> grainFactory = new(MockBehavior.Strict);
         grainFactory
@@ -224,7 +220,7 @@ public sealed class UxProjectionGrainFactoryTests
 
         // Act
         IUxProjectionVersionedCacheGrain<TestProjection> resolved =
-            sut.GetUxProjectionVersionedCacheGrain<TestProjection>(versionedKey);
+            sut.GetUxProjectionVersionedCacheGrain<TestProjection>(versionedCacheKey);
 
         // Assert
         Assert.Same(versionedCacheGrain.Object, resolved);

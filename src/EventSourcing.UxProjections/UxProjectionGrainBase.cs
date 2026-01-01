@@ -26,8 +26,8 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///         cache grains.
 ///     </para>
 ///     <para>
-///         The grain is keyed by <see cref="UxProjectionKey" /> in the format
-///         "projectionTypeName|brookType|brookId".
+///         The grain is keyed by just the entity ID. The brook name is obtained from
+///         the <see cref="BrookNameAttribute" /> on the concrete grain class.
 ///     </para>
 ///     <para>
 ///         Derived classes MUST be decorated with <see cref="BrookNameAttribute" />
@@ -60,7 +60,7 @@ public abstract class UxProjectionGrainBase<TProjection>
       IGrainBase
     where TProjection : class
 {
-    private UxProjectionKey projectionKey;
+    private string entityId = null!;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="UxProjectionGrainBase{TProjection}" /> class.
@@ -113,12 +113,12 @@ public abstract class UxProjectionGrainBase<TProjection>
         // Handle case where brook has no events yet
         if (latestVersion.NotSet)
         {
-            Logger.NoEventsYet(projectionKey);
+            Logger.NoEventsYet(entityId);
             return default;
         }
 
         // Delegate to versioned cache grain for single responsibility
-        Logger.GetAsyncDelegatingToVersion(projectionKey, latestVersion);
+        Logger.GetAsyncDelegatingToVersion(entityId, latestVersion);
         return await GetAtVersionAsync(latestVersion, cancellationToken);
     }
 
@@ -131,17 +131,17 @@ public abstract class UxProjectionGrainBase<TProjection>
         // Validate version
         if (version.NotSet)
         {
-            Logger.VersionedRequestInvalidVersion(projectionKey, version);
+            Logger.VersionedRequestInvalidVersion(entityId, version);
             return default;
         }
 
         // Route to versioned cache grain for the specific version
-        Logger.VersionedRequestRouting(projectionKey, version);
-        UxProjectionVersionedKey versionedKey = new(projectionKey, version);
+        Logger.VersionedRequestRouting(entityId, version);
+        UxProjectionVersionedCacheKey versionedCacheKey = new(BrookName, entityId, version);
         IUxProjectionVersionedCacheGrain<TProjection> versionedCacheGrain =
-            UxProjectionGrainFactory.GetUxProjectionVersionedCacheGrain<TProjection>(versionedKey);
+            UxProjectionGrainFactory.GetUxProjectionVersionedCacheGrain<TProjection>(versionedCacheKey);
         TProjection? result = await versionedCacheGrain.GetAsync(cancellationToken);
-        Logger.VersionedRequestCompleted(projectionKey, version);
+        Logger.VersionedRequestCompleted(entityId, version);
         return result;
     }
 
@@ -151,14 +151,15 @@ public abstract class UxProjectionGrainBase<TProjection>
     )
     {
         _ = cancellationToken; // Reserved for future use
-        IUxProjectionCursorGrain cursorGrain = UxProjectionGrainFactory.GetUxProjectionCursorGrain(projectionKey);
+        UxProjectionCursorKey cursorKey = new(BrookName, entityId);
+        IUxProjectionCursorGrain cursorGrain = UxProjectionGrainFactory.GetUxProjectionCursorGrain(cursorKey);
         BrookPosition position = await cursorGrain.GetPositionAsync();
-        Logger.LatestVersionRetrieved(projectionKey, position);
+        Logger.LatestVersionRetrieved(entityId, position);
         return position;
     }
 
     /// <summary>
-    ///     Called when the grain is activated. Validates the attribute and initializes the projection key.
+    ///     Called when the grain is activated. Validates the attribute and initializes the entity ID.
     /// </summary>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the activation operation.</returns>
@@ -172,18 +173,8 @@ public abstract class UxProjectionGrainBase<TProjection>
         // Validate that the attribute is present on the concrete grain type (fail-fast)
         // This call will throw InvalidOperationException if the attribute is missing
         _ = BrookNameHelper.GetDefinition(GetType());
-        string primaryKey = this.GetPrimaryKeyString();
-        try
-        {
-            projectionKey = UxProjectionKey.FromString(primaryKey);
-        }
-        catch (Exception ex) when (ex is ArgumentException or FormatException)
-        {
-            Logger.ProjectionGrainInvalidPrimaryKey(primaryKey, ex);
-            throw;
-        }
-
-        Logger.ProjectionGrainActivated(primaryKey, projectionKey.ProjectionTypeName, projectionKey.BrookKey);
+        entityId = this.GetPrimaryKeyString();
+        Logger.ProjectionGrainActivated(entityId, BrookName);
         return Task.CompletedTask;
     }
 }

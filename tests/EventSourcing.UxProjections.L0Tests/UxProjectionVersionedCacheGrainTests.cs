@@ -372,7 +372,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
 
         // Assert
         Assert.NotNull(capturedKey);
-        Assert.Equal("entity-123", capturedKey.Value.Stream.ProjectionId);
+        Assert.Equal("entity-123", capturedKey.Value.Stream.EntityId);
         Assert.Equal("my-reducer-hash", capturedKey.Value.Stream.ReducersHash);
         Assert.Equal(42, capturedKey.Value.Version);
     }

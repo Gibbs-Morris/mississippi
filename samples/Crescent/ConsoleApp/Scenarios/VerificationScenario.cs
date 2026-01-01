@@ -122,7 +122,7 @@ internal static class VerificationScenario
         // Step 2: Read events directly from Cosmos to verify stream persistence
         logger.VerificationStep(runId, 2, "Read stream data directly from Cosmos");
         BrookPosition currentPosition = await brookStorageProvider.ReadCursorPositionAsync(brookKey, cancellationToken);
-        logger.VerificationStreamCursor(runId, brookKey.Type, brookKey.Id, currentPosition.Value);
+        logger.VerificationStreamCursor(runId, brookKey.BrookName, brookKey.EntityId, currentPosition.Value);
 
         // Cursor is 0-indexed: if we have 8 events (positions 0-7), cursor value is 7
         // So cursor >= 7 means at least 8 events
@@ -139,7 +139,7 @@ internal static class VerificationScenario
         {
             // Read all events - start at position 0, count is cursor+1 (since cursor is 0-indexed)
             int eventCount = 0;
-            BrookRangeKey range = new(brookKey.Type, brookKey.Id, 0, currentPosition.Value + 1);
+            BrookRangeKey range = new(brookKey.BrookName, brookKey.EntityId, 0, currentPosition.Value + 1);
             await foreach (BrookEvent evt in brookStorageProvider.ReadEventsAsync(range, cancellationToken))
             {
                 eventCount++;
@@ -168,7 +168,7 @@ internal static class VerificationScenario
         // The version should match the current stream position
         string reducerHash = rootReducer.GetReducerHash();
         string projectionType = SnapshotStorageNameHelper.GetStorageName<CounterAggregate>();
-        SnapshotStreamKey streamKey = new(brookKey.Type, projectionType, counterId, reducerHash);
+        SnapshotStreamKey streamKey = new(brookKey.BrookName, projectionType, counterId, reducerHash);
 
         // Try to find the snapshot - it might be at a version less than currentPosition if persister hasn't caught up
         SnapshotEnvelope? envelope = null;
@@ -187,7 +187,7 @@ internal static class VerificationScenario
 
         if (envelope == null)
         {
-            logger.VerificationSnapshotNotFound(runId, streamKey.ProjectionType, streamKey.ProjectionId);
+            logger.VerificationSnapshotNotFound(runId, streamKey.SnapshotStorageName, streamKey.EntityId);
             logger.VerificationStepFailed(runId, 3, "Snapshot not found", "ReadAsync returned null for all versions");
             allPassed = false;
         }
@@ -195,8 +195,8 @@ internal static class VerificationScenario
         {
             logger.VerificationSnapshotFound(
                 runId,
-                streamKey.ProjectionType,
-                streamKey.ProjectionId,
+                streamKey.SnapshotStorageName,
+                streamKey.EntityId,
                 foundAtVersion,
                 envelope.Data.Length);
 
