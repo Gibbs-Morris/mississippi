@@ -21,7 +21,7 @@ namespace Cascade.Domain.Projections.UserProfile;
 ///         for display in UI components like member lists and profile cards.
 ///     </para>
 ///     <para>
-///         Subscribes to events from <see cref="User.UserBrook" />:
+///         Subscribes to events from the User aggregate:
 ///         UserRegistered, DisplayNameUpdated, UserWentOnline, UserWentOffline,
 ///         UserJoinedChannel, UserLeftChannel.
 ///     </para>

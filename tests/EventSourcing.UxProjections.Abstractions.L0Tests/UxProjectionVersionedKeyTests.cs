@@ -3,6 +3,7 @@ using System;
 using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
 namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
@@ -16,14 +17,11 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
 public sealed class UxProjectionVersionedKeyTests
 {
     /// <summary>
-    ///     A test brook definition for testing purposes.
+    ///     A test grain type for testing purposes.
     /// </summary>
-    private sealed class TestBrookDefinition : IBrookDefinition
+    [BrookName("TEST", "VERSIONED", "BROOK")]
+    private sealed class TestGrain
     {
-        /// <summary>
-        ///     Gets the brook name.
-        /// </summary>
-        public static string BrookName => "TEST.VERSIONED.BROOK";
     }
 
     /// <summary>
@@ -96,14 +94,14 @@ public sealed class UxProjectionVersionedKeyTests
     }
 
     /// <summary>
-    ///     For method should create key for specific projection type, brook, and version.
+    ///     ForGrain method should create key for specific projection type, grain, and version.
     /// </summary>
     [Fact]
-    public void ForCreatesKeyWithCorrectComponents()
+    public void ForGrainCreatesKeyWithCorrectComponents()
     {
         BrookPosition version = new(100);
         UxProjectionVersionedKey key =
-            UxProjectionVersionedKey.For<TestProjectionType, TestBrookDefinition>("entity-1", version);
+            UxProjectionVersionedKey.ForGrain<TestProjectionType, TestGrain>("entity-1", version);
         Assert.Equal("TestProjectionType", key.ProjectionKey.ProjectionTypeName);
         Assert.Equal("TEST.VERSIONED.BROOK", key.ProjectionKey.BrookKey.Type);
         Assert.Equal("entity-1", key.ProjectionKey.BrookKey.Id);

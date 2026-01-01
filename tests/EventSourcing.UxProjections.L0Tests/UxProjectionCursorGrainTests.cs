@@ -18,6 +18,7 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections")]
 [AllureSubSuite("UxProjectionCursorGrain")]
+#pragma warning disable CS0618 // Type or member is obsolete - testing legacy IBrookDefinition-based methods
 public sealed class UxProjectionCursorGrainTests
 {
     private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123";
@@ -302,7 +303,7 @@ public sealed class UxProjectionCursorGrainTests
         // Arrange
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity-123");
+        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity-123");
         factoryMock.Setup(f => f.GetUxProjectionCursorGrain(key)).Returns(cursorGrainMock.Object);
 
         // Act
@@ -320,7 +321,7 @@ public sealed class UxProjectionCursorGrainTests
     public void UxProjectionKeyForMethodCreatesCorrectKey()
     {
         // Act
-        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("my-entity");
+        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("my-entity");
 
         // Assert
         Assert.Equal("TestProjection", key.ProjectionTypeName);
@@ -394,7 +395,7 @@ public sealed class UxProjectionCursorGrainTests
     public void UxProjectionKeyRoundtripsThroughSerialization()
     {
         // Arrange
-        UxProjectionKey original = UxProjectionKey.For<TestProjection, TestBrookDefinition>("test-id");
+        UxProjectionKey original = UxProjectionKey.ForGrain<TestProjection, TestGrain>("test-id");
 
         // Act
         string serialized = original.ToString();
@@ -414,7 +415,7 @@ public sealed class UxProjectionCursorGrainTests
     public void UxProjectionKeyToStringReturnsCorrectFormat()
     {
         // Arrange
-        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity-123");
+        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity-123");
 
         // Act
         string result = key.ToString();

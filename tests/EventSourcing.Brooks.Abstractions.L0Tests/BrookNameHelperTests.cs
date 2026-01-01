@@ -9,12 +9,12 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 namespace Mississippi.EventSourcing.Abstractions.Tests;
 
 /// <summary>
-///     Tests for <see cref="BrookDefinitionHelper" /> functionality.
+///     Tests for <see cref="BrookNameHelper" /> functionality.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Brook Definition Helper")]
-public class BrookDefinitionHelperTests
+[AllureSubSuite("Brook Name Helper")]
+public class BrookNameHelperTests
 {
     /// <summary>
     ///     Test fixture decorated with BrookName attribute.
@@ -59,7 +59,7 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void GetBrookNameReturnsAttributeValue()
     {
-        string brookName = BrookDefinitionHelper.GetBrookName<DecoratedType>();
+        string brookName = BrookNameHelper.GetBrookName<DecoratedType>();
         Assert.Equal("APP.MODULE.STREAM", brookName);
     }
 
@@ -69,7 +69,7 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void GetBrookNameThrowsWhenAttributeMissing()
     {
-        Assert.Throws<InvalidOperationException>(() => BrookDefinitionHelper.GetBrookName<UndecoratedType>());
+        Assert.Throws<InvalidOperationException>(() => BrookNameHelper.GetBrookName<UndecoratedType>());
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void GetBrookNameWithTypeReturnsAttributeValue()
     {
-        string brookName = BrookDefinitionHelper.GetBrookName(DecoratedType.AsType);
+        string brookName = BrookNameHelper.GetBrookName(DecoratedType.AsType);
         Assert.Equal("APP.MODULE.STREAM", brookName);
     }
 
@@ -88,7 +88,7 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void GetBrookNameWithTypeThrowsWhenAttributeMissing()
     {
-        Assert.Throws<InvalidOperationException>(() => BrookDefinitionHelper.GetBrookName(UndecoratedType.AsType));
+        Assert.Throws<InvalidOperationException>(() => BrookNameHelper.GetBrookName(UndecoratedType.AsType));
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void GetBrookNameWithTypeThrowsWhenNull()
     {
-        Assert.Throws<ArgumentNullException>(() => BrookDefinitionHelper.GetBrookName(null!));
+        Assert.Throws<ArgumentNullException>(() => BrookNameHelper.GetBrookName(null!));
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void TryGetBrookNameReturnsFalseWhenAttributeMissing()
     {
-        bool result = BrookDefinitionHelper.TryGetBrookName<UndecoratedType>(out string? brookName);
+        bool result = BrookNameHelper.TryGetBrookName<UndecoratedType>(out string? brookName);
         Assert.False(result);
         Assert.Null(brookName);
     }
@@ -117,7 +117,7 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void TryGetBrookNameReturnsTrueWhenAttributeExists()
     {
-        bool result = BrookDefinitionHelper.TryGetBrookName<DecoratedType>(out string? brookName);
+        bool result = BrookNameHelper.TryGetBrookName<DecoratedType>(out string? brookName);
         Assert.True(result);
         Assert.Equal("APP.MODULE.STREAM", brookName);
     }
@@ -128,7 +128,7 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void TryGetBrookNameWithTypeReturnsFalseWhenAttributeMissing()
     {
-        bool result = BrookDefinitionHelper.TryGetBrookName(UndecoratedType.AsType, out string? brookName);
+        bool result = BrookNameHelper.TryGetBrookName(UndecoratedType.AsType, out string? brookName);
         Assert.False(result);
         Assert.Null(brookName);
     }
@@ -139,7 +139,7 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void TryGetBrookNameWithTypeReturnsTrueWhenAttributeExists()
     {
-        bool result = BrookDefinitionHelper.TryGetBrookName(DecoratedType.AsType, out string? brookName);
+        bool result = BrookNameHelper.TryGetBrookName(DecoratedType.AsType, out string? brookName);
         Assert.True(result);
         Assert.Equal("APP.MODULE.STREAM", brookName);
     }
@@ -150,6 +150,6 @@ public class BrookDefinitionHelperTests
     [Fact]
     public void TryGetBrookNameWithTypeThrowsWhenNull()
     {
-        Assert.Throws<ArgumentNullException>(() => BrookDefinitionHelper.TryGetBrookName(null!, out string? _));
+        Assert.Throws<ArgumentNullException>(() => BrookNameHelper.TryGetBrookName(null!, out string? _));
     }
 }

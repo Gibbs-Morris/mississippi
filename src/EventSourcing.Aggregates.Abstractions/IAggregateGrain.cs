@@ -1,4 +1,4 @@
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
@@ -16,8 +16,8 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         to a brook. The internal state is never exposed; use projections for read queries.
 ///     </para>
 ///     <para>
-///         Each aggregate instance is identified by a composite key consisting of the brook type
-///         (from <see cref="IBrookDefinition" />) and an entity-specific identifier.
+///         Each aggregate instance is identified by a composite key consisting of the brook name
+///         (from <see cref="BrookNameAttribute" />) and an entity-specific identifier.
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.EventSourcing.Aggregates.IAggregateGrain")]

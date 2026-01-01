@@ -15,18 +15,6 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 public interface IUxProjectionGrainFactory
 {
     /// <summary>
-    ///     Gets a UX projection cursor grain for the specified projection type and brook.
-    /// </summary>
-    /// <typeparam name="TProjection">The projection state type.</typeparam>
-    /// <typeparam name="TBrook">The brook definition type.</typeparam>
-    /// <param name="entityId">The entity identifier within the brook.</param>
-    /// <returns>A grain reference for the UX projection cursor.</returns>
-    IUxProjectionCursorGrain GetUxProjectionCursorGrain<TProjection, TBrook>(
-        string entityId
-    )
-        where TBrook : IBrookDefinition;
-
-    /// <summary>
     ///     Gets a UX projection cursor grain for the specified key.
     /// </summary>
     /// <param name="key">The UX projection key.</param>
@@ -36,16 +24,19 @@ public interface IUxProjectionGrainFactory
     );
 
     /// <summary>
-    ///     Gets a UX projection grain for the specified projection type and brook.
+    ///     Gets a UX projection cursor grain for the specified projection type and grain with a brook name attribute.
     /// </summary>
     /// <typeparam name="TProjection">The projection state type.</typeparam>
-    /// <typeparam name="TBrook">The brook definition type.</typeparam>
+    /// <typeparam name="TGrain">
+    ///     The grain type decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </typeparam>
     /// <param name="entityId">The entity identifier within the brook.</param>
-    /// <returns>A grain reference for the UX projection.</returns>
-    IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection, TBrook>(
+    /// <returns>A grain reference for the UX projection cursor.</returns>
+    IUxProjectionCursorGrain GetUxProjectionCursorGrainForGrain<TProjection, TGrain>(
         string entityId
     )
-        where TBrook : IBrookDefinition;
+        where TGrain : class;
 
     /// <summary>
     ///     Gets a UX projection grain for the specified key.
@@ -58,18 +49,19 @@ public interface IUxProjectionGrainFactory
     );
 
     /// <summary>
-    ///     Gets a versioned UX projection cache grain for the specified projection type, brook, and version.
+    ///     Gets a UX projection grain for the specified projection type and grain with a brook name attribute.
     /// </summary>
     /// <typeparam name="TProjection">The projection state type.</typeparam>
-    /// <typeparam name="TBrook">The brook definition type.</typeparam>
+    /// <typeparam name="TGrain">
+    ///     The grain type decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </typeparam>
     /// <param name="entityId">The entity identifier within the brook.</param>
-    /// <param name="version">The specific version to retrieve.</param>
-    /// <returns>A grain reference for the versioned UX projection cache.</returns>
-    IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrain<TProjection, TBrook>(
-        string entityId,
-        BrookPosition version
+    /// <returns>A grain reference for the UX projection.</returns>
+    IUxProjectionGrain<TProjection> GetUxProjectionGrainForGrain<TProjection, TGrain>(
+        string entityId
     )
-        where TBrook : IBrookDefinition;
+        where TGrain : class;
 
     /// <summary>
     ///     Gets a versioned UX projection cache grain for the specified key.
@@ -80,4 +72,21 @@ public interface IUxProjectionGrainFactory
     IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrain<TProjection>(
         UxProjectionVersionedKey key
     );
+
+    /// <summary>
+    ///     Gets a versioned UX projection cache grain for the specified projection type, grain, and version.
+    /// </summary>
+    /// <typeparam name="TProjection">The projection state type.</typeparam>
+    /// <typeparam name="TGrain">
+    ///     The grain type decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </typeparam>
+    /// <param name="entityId">The entity identifier within the brook.</param>
+    /// <param name="version">The specific version to retrieve.</param>
+    /// <returns>A grain reference for the versioned UX projection cache.</returns>
+    IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrainForGrain<TProjection, TGrain>(
+        string entityId,
+        BrookPosition version
+    )
+        where TGrain : class;
 }

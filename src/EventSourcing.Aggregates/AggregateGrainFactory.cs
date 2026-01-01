@@ -11,7 +11,7 @@ using Orleans;
 namespace Mississippi.EventSourcing.Aggregates;
 
 /// <summary>
-///     Factory for resolving aggregate grains by their brook definition and entity identifier.
+///     Factory for resolving aggregate grains by their brook key.
 /// </summary>
 internal sealed class AggregateGrainFactory : IAggregateGrainFactory
 {
@@ -38,17 +38,6 @@ internal sealed class AggregateGrainFactory : IAggregateGrainFactory
     private IGrainFactory GrainFactory { get; }
 
     private ILogger<AggregateGrainFactory> Logger { get; }
-
-    /// <inheritdoc />
-    public TGrain GetAggregate<TGrain, TBrook>(
-        string entityId
-    )
-        where TGrain : IAggregateGrain
-        where TBrook : IBrookDefinition
-    {
-        BrookKey brookKey = BrookKey.For<TBrook>(entityId);
-        return GetAggregate<TGrain>(brookKey);
-    }
 
     /// <inheritdoc />
     public TGrain GetAggregate<TGrain>(

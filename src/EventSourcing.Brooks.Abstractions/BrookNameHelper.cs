@@ -7,10 +7,9 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 namespace Mississippi.EventSourcing.Brooks.Abstractions;
 
 /// <summary>
-///     Provides helper methods for working with <see cref="IBrookDefinition" /> types
-///     and types decorated with <see cref="BrookNameAttribute" />.
+///     Provides helper methods for working with types decorated with <see cref="BrookNameAttribute" />.
 /// </summary>
-public static class BrookDefinitionHelper
+public static class BrookNameHelper
 {
     /// <summary>
     ///     Gets the brook name from a type decorated with <see cref="BrookNameAttribute" />.

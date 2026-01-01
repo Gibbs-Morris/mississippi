@@ -1,18 +1,17 @@
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
 namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="UxProjectionKey.For{TProjection,TBrook}" /> functionality.
+///     Tests for <see cref="UxProjectionKey.ForGrain{TProjection,TGrain}" /> functionality.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections Abstractions")]
-[AllureSubSuite("UxProjectionKey For")]
-public sealed class UxProjectionKeyForTests
+[AllureSubSuite("UxProjectionKey ForGrain")]
+public sealed class UxProjectionKeyForGrainTests
 {
     /// <summary>
     ///     Another projection class for testing multiple projections per brook.
@@ -21,13 +20,11 @@ public sealed class UxProjectionKeyForTests
     private sealed record AnotherTestProjection(string? Name);
 
     /// <summary>
-    ///     Test brook definition for testing purposes.
+    ///     Test grain type for testing purposes.
     /// </summary>
     [BrookName("TEST", "MODULE", "STREAM")]
-    private sealed class TestBrookDefinition : IBrookDefinition
+    private sealed class TestGrain
     {
-        /// <inheritdoc />
-        public static string BrookName => "TEST.MODULE.STREAM";
     }
 
     /// <summary>
@@ -42,8 +39,8 @@ public sealed class UxProjectionKeyForTests
     [Fact]
     public void DifferentEntityIdsProduceDifferentKeys()
     {
-        UxProjectionKey key1 = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity1");
-        UxProjectionKey key2 = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity2");
+        UxProjectionKey key1 = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity1");
+        UxProjectionKey key2 = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity2");
         Assert.NotEqual(key1, key2);
         Assert.Equal(key1.ProjectionTypeName, key2.ProjectionTypeName);
         Assert.NotEqual(key1.BrookKey.Id, key2.BrookKey.Id);
@@ -55,8 +52,8 @@ public sealed class UxProjectionKeyForTests
     [Fact]
     public void DifferentProjectionTypesProduceDifferentKeys()
     {
-        UxProjectionKey key1 = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity123");
-        UxProjectionKey key2 = UxProjectionKey.For<AnotherTestProjection, TestBrookDefinition>("entity123");
+        UxProjectionKey key1 = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity123");
+        UxProjectionKey key2 = UxProjectionKey.ForGrain<AnotherTestProjection, TestGrain>("entity123");
         Assert.NotEqual(key1, key2);
         Assert.Equal("TestProjection", key1.ProjectionTypeName);
         Assert.Equal("AnotherTestProjection", key2.ProjectionTypeName);
@@ -64,33 +61,33 @@ public sealed class UxProjectionKeyForTests
     }
 
     /// <summary>
-    ///     For should create correct string representation.
+    ///     ForGrain should create correct string representation.
     /// </summary>
     [Fact]
-    public void ForCreatesCorrectStringRepresentation()
+    public void ForGrainCreatesCorrectStringRepresentation()
     {
-        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity123");
+        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity123");
         Assert.Equal("TestProjection|TEST.MODULE.STREAM|entity123", key.ToString());
     }
 
     /// <summary>
-    ///     For should create a key with the brook key from the definition.
+    ///     ForGrain should create a key with the brook key from the grain's attribute.
     /// </summary>
     [Fact]
-    public void ForCreatesKeyWithBrookKeyFromDefinition()
+    public void ForGrainCreatesKeyWithBrookKeyFromGrainAttribute()
     {
-        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity123");
+        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity123");
         Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.Type);
         Assert.Equal("entity123", key.BrookKey.Id);
     }
 
     /// <summary>
-    ///     For should create a key with the projection type name.
+    ///     ForGrain should create a key with the projection type name.
     /// </summary>
     [Fact]
-    public void ForCreatesKeyWithProjectionTypeName()
+    public void ForGrainCreatesKeyWithProjectionTypeName()
     {
-        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity123");
+        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity123");
         Assert.Equal("TestProjection", key.ProjectionTypeName);
     }
 }

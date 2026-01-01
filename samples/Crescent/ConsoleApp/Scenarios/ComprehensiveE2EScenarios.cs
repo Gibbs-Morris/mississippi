@@ -188,7 +188,7 @@ internal static class ComprehensiveE2EScenarios
     )
     {
         string counterId = $"boundary-{Guid.NewGuid():N}";
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Initialize with 0
@@ -201,8 +201,8 @@ internal static class ComprehensiveE2EScenarios
         }
 
         // Verify projection shows negative
-        IUxProjectionGrain<CounterSummaryProjection> projGrain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
+        IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -266,7 +266,7 @@ internal static class ComprehensiveE2EScenarios
     )
     {
         string counterId = $"concurrent-{Guid.NewGuid():N}";
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Initialize
@@ -308,8 +308,8 @@ internal static class ComprehensiveE2EScenarios
         }
 
         // Verify projection
-        IUxProjectionGrain<CounterSummaryProjection> projGrain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
+        IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -346,8 +346,8 @@ internal static class ComprehensiveE2EScenarios
         // Create two independent counters
         string counterId1 = $"isolated-1-{Guid.NewGuid():N}";
         string counterId2 = $"isolated-2-{Guid.NewGuid():N}";
-        BrookKey brookKey1 = BrookKey.For<CounterBrook>(counterId1);
-        BrookKey brookKey2 = BrookKey.For<CounterBrook>(counterId2);
+        BrookKey brookKey1 = new(BrookNames.Counter, counterId1);
+        BrookKey brookKey2 = new(BrookNames.Counter, counterId2);
         ICounterAggregateGrain counter1 = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey1);
         ICounterAggregateGrain counter2 = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey2);
 
@@ -373,10 +373,10 @@ internal static class ComprehensiveE2EScenarios
         }
 
         // Verify projections are isolated
-        IUxProjectionGrain<CounterSummaryProjection> proj1 =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId1);
-        IUxProjectionGrain<CounterSummaryProjection> proj2 =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId2);
+        IUxProjectionGrain<CounterSummaryProjection> proj1 = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId1);
+        IUxProjectionGrain<CounterSummaryProjection> proj2 = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId2);
         CounterSummaryProjection? projection1 = await proj1.GetAsync(cancellationToken);
         CounterSummaryProjection? projection2 = await proj2.GetAsync(cancellationToken);
         if ((projection1 == null) || (projection2 == null))
@@ -413,7 +413,7 @@ internal static class ComprehensiveE2EScenarios
     )
     {
         string counterId = $"large-seq-{Guid.NewGuid():N}";
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Initialize
@@ -436,8 +436,8 @@ internal static class ComprehensiveE2EScenarios
         }
 
         // Verify projection
-        IUxProjectionGrain<CounterSummaryProjection> projGrain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
+        IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -472,7 +472,7 @@ internal static class ComprehensiveE2EScenarios
     )
     {
         string counterId = $"deactivate-{Guid.NewGuid():N}";
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Setup: Initialize and perform operations
@@ -483,8 +483,8 @@ internal static class ComprehensiveE2EScenarios
         }
 
         // First read
-        IUxProjectionGrain<CounterSummaryProjection> projGrain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
+        IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
         CounterSummaryProjection? beforeDeactivation = await projGrain.GetAsync(cancellationToken);
         if (beforeDeactivation == null)
         {
@@ -553,7 +553,7 @@ internal static class ComprehensiveE2EScenarios
     )
     {
         string counterId = $"reread-{Guid.NewGuid():N}";
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Setup: Initialize and perform some operations
@@ -564,8 +564,8 @@ internal static class ComprehensiveE2EScenarios
         }
 
         // Read projection multiple times
-        IUxProjectionGrain<CounterSummaryProjection> projGrain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
+        IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
         CounterSummaryProjection? first = await projGrain.GetAsync(cancellationToken);
         CounterSummaryProjection? second = await projGrain.GetAsync(cancellationToken);
         CounterSummaryProjection? third = await projGrain.GetAsync(cancellationToken);
@@ -621,7 +621,7 @@ internal static class ComprehensiveE2EScenarios
     )
     {
         string counterId = $"rapid-{Guid.NewGuid():N}";
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Initialize
@@ -650,8 +650,8 @@ internal static class ComprehensiveE2EScenarios
         }
 
         // Verify
-        IUxProjectionGrain<CounterSummaryProjection> projGrain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
+        IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -686,7 +686,7 @@ internal static class ComprehensiveE2EScenarios
     )
     {
         string counterId = $"reset-{Guid.NewGuid():N}";
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Initialize and increment
@@ -711,8 +711,8 @@ internal static class ComprehensiveE2EScenarios
         }
 
         // Verify projection
-        IUxProjectionGrain<CounterSummaryProjection> projGrain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
+        IUxProjectionGrain<CounterSummaryProjection> projGrain = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(cancellationToken);
         if (projection == null)
         {

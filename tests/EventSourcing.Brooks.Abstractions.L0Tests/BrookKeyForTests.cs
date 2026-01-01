@@ -7,7 +7,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 namespace Mississippi.EventSourcing.Abstractions.Tests;
 
 /// <summary>
-///     Tests for <see cref="BrookKey.For{TBrook}" /> functionality.
+///     Tests for <see cref="BrookKey.ForGrain{TGrain}" /> functionality.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Brooks Abstractions")]
@@ -15,33 +15,31 @@ namespace Mississippi.EventSourcing.Abstractions.Tests;
 public class BrookKeyForTests
 {
     /// <summary>
-    ///     Test brook definition for testing purposes.
+    ///     Test grain type for testing BrookKey.ForGrain functionality.
     /// </summary>
     [BrookName("TEST", "MODULE", "STREAM")]
-    private sealed class TestBrookDefinition : IBrookDefinition
+    private sealed class TestGrain
     {
-        /// <inheritdoc />
-        public static string BrookName => "TEST.MODULE.STREAM";
     }
 
     /// <summary>
-    ///     For should create a key using the brook definition's name.
+    ///     ForGrain should create a key using the grain's brook name attribute.
     /// </summary>
     [Fact]
-    public void ForCreatesKeyWithBrookName()
+    public void ForGrainCreatesKeyWithBrookName()
     {
-        BrookKey key = BrookKey.For<TestBrookDefinition>("entity-123");
+        BrookKey key = BrookKey.ForGrain<TestGrain>("entity-123");
         Assert.Equal("TEST.MODULE.STREAM", key.Type);
         Assert.Equal("entity-123", key.Id);
     }
 
     /// <summary>
-    ///     For should create keys that convert to correct string format.
+    ///     ForGrain should create keys that convert to correct string format.
     /// </summary>
     [Fact]
-    public void ForCreatesKeyWithCorrectStringFormat()
+    public void ForGrainCreatesKeyWithCorrectStringFormat()
     {
-        BrookKey key = BrookKey.For<TestBrookDefinition>("order-456");
+        BrookKey key = BrookKey.ForGrain<TestGrain>("order-456");
         string stringKey = key;
         Assert.Equal("TEST.MODULE.STREAM|order-456", stringKey);
     }

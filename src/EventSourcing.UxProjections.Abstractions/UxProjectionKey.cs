@@ -66,17 +66,24 @@ public readonly record struct UxProjectionKey
     public string ProjectionTypeName { get; }
 
     /// <summary>
-    ///     Creates a UX projection key for a specific projection type and brook.
+    ///     Creates a UX projection key for a specific projection type and grain with a brook name attribute.
     /// </summary>
     /// <typeparam name="TProjection">The projection type.</typeparam>
-    /// <typeparam name="TBrook">The brook definition type.</typeparam>
+    /// <typeparam name="TGrain">
+    ///     The grain type decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </typeparam>
     /// <param name="entityId">The entity identifier within the brook.</param>
-    /// <returns>A UX projection key for the specified projection and brook.</returns>
-    public static UxProjectionKey For<TProjection, TBrook>(
+    /// <returns>A UX projection key for the specified projection and grain's brook.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when <typeparamref name="TGrain" /> is not decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </exception>
+    public static UxProjectionKey ForGrain<TProjection, TGrain>(
         string entityId
     )
-        where TBrook : IBrookDefinition =>
-        new(typeof(TProjection).Name, BrookKey.For<TBrook>(entityId));
+        where TGrain : class =>
+        new(typeof(TProjection).Name, BrookKey.ForGrain<TGrain>(entityId));
 
     /// <summary>
     ///     Creates a UX projection key from its string representation.

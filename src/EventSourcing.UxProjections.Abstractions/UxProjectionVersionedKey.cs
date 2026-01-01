@@ -73,19 +73,26 @@ public readonly record struct UxProjectionVersionedKey
     public BrookPosition Version { get; }
 
     /// <summary>
-    ///     Creates a versioned UX projection key for a specific projection type, brook, and version.
+    ///     Creates a versioned UX projection key for a specific projection type, grain, and version.
     /// </summary>
     /// <typeparam name="TProjection">The projection type.</typeparam>
-    /// <typeparam name="TBrook">The brook definition type.</typeparam>
+    /// <typeparam name="TGrain">
+    ///     The grain type decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </typeparam>
     /// <param name="entityId">The entity identifier within the brook.</param>
     /// <param name="version">The specific version.</param>
-    /// <returns>A versioned UX projection key.</returns>
-    public static UxProjectionVersionedKey For<TProjection, TBrook>(
+    /// <returns>A versioned UX projection key for the specified projection, grain's brook, and version.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when <typeparamref name="TGrain" /> is not decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </exception>
+    public static UxProjectionVersionedKey ForGrain<TProjection, TGrain>(
         string entityId,
         BrookPosition version
     )
-        where TBrook : IBrookDefinition =>
-        new(UxProjectionKey.For<TProjection, TBrook>(entityId), version);
+        where TGrain : class =>
+        new(UxProjectionKey.ForGrain<TProjection, TGrain>(entityId), version);
 
     /// <summary>
     ///     Creates a versioned UX projection key from its string representation.

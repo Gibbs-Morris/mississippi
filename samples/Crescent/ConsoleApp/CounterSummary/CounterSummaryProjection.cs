@@ -12,7 +12,7 @@ namespace Crescent.ConsoleApp.CounterSummary;
 ///     <para>
 ///         This projection demonstrates the "multiple projections per brook" pattern.
 ///         Both <see cref="Counter.CounterAggregate" /> (the aggregate state) and this projection
-///         derive from the same <see cref="Counter.CounterBrook" /> event stream, but serve
+///         derive from the same event stream (identified by <see cref="BrookNameAttribute" />), but serve
 ///         different purposes:
 ///     </para>
 ///     <list type="bullet">

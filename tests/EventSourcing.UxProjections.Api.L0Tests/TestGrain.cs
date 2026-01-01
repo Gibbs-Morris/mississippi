@@ -1,19 +1,16 @@
-using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
 namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
 
 /// <summary>
-///     Test brook definition for testing purposes.
+///     Test grain type for testing purposes.
 /// </summary>
 /// <remarks>
 ///     This type is internal but accessible to Moq via the InternalsVisibleTo attribute
 ///     for DynamicProxyGenAssembly2 configured in Directory.Build.props.
 /// </remarks>
 [BrookName("TEST", "MODULE", "STREAM")]
-internal sealed class TestBrookDefinition : IBrookDefinition
+internal sealed class TestGrain
 {
-    /// <inheritdoc />
-    public static string BrookName => "TEST.MODULE.STREAM";
 }

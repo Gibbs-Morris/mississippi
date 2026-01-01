@@ -101,7 +101,7 @@ public abstract class AggregateGrainBase<TSnapshot>
     ///     This property reads the attribute from the concrete grain type at runtime.
     ///     If the attribute is missing, an <see cref="InvalidOperationException" /> is thrown.
     /// </remarks>
-    protected string BrookName => BrookDefinitionHelper.GetBrookNameFromGrain(GetType());
+    protected string BrookName => BrookNameHelper.GetBrookNameFromGrain(GetType());
 
     /// <summary>
     ///     Gets the logger instance.
@@ -137,7 +137,7 @@ public abstract class AggregateGrainBase<TSnapshot>
     {
         // Validate that the attribute is present on the concrete grain type (fail-fast)
         // This call will throw InvalidOperationException if the attribute is missing
-        _ = BrookDefinitionHelper.GetDefinition(GetType());
+        _ = BrookNameHelper.GetDefinition(GetType());
         string primaryKey = this.GetPrimaryKeyString();
         brookKey = BrookKey.FromString(primaryKey);
         snapshotStreamKey = new(

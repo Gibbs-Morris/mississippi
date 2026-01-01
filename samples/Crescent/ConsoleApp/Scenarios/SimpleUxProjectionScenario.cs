@@ -50,7 +50,7 @@ internal static class SimpleUxProjectionScenario
 
         // Create a fresh ID for this run to ensure we're working with an empty stream
         string counterId = $"simple-ux-{Guid.NewGuid():N}";
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         logger.SimpleUxScenarioStart(runId, counterId);
 
         // ==============================================================
@@ -112,8 +112,8 @@ internal static class SimpleUxProjectionScenario
         // Step 2: Read the UX projection for the same entity ID
         // ==============================================================
         logger.SimpleUxStep(runId, 2, "Query UX projection for the same entity ID");
-        IUxProjectionGrain<CounterSummaryProjection> projectionGrain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
+        IUxProjectionGrain<CounterSummaryProjection> projectionGrain = uxProjectionGrainFactory
+            .GetUxProjectionGrainForGrain<CounterSummaryProjection, CounterSummaryProjectionGrain>(counterId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(cancellationToken);
         if (projection == null)
         {

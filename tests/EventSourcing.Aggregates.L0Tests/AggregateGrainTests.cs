@@ -136,7 +136,7 @@ public class AggregateGrainTests
     [Fact]
     public void BrookNameReturnsValueFromBrookDefinitionAttribute()
     {
-        string brookName = BrookDefinitionHelper.GetBrookNameFromGrain(typeof(TestableAggregateGrain));
+        string brookName = BrookNameHelper.GetBrookNameFromGrain(typeof(TestableAggregateGrain));
         Assert.Equal("TEST.AGGREGATES.TESTBROOK", brookName);
     }
 
