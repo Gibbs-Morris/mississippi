@@ -8,11 +8,7 @@ handoffs:
     agent: "Squad: C2 Container Architect"
     prompt: Based on the C1 context above, design the C2 container architecture.
     send: true
-  - label: "📝 Create ADR"
-    agent: "Squad: C1 Context Architect"
-    prompt: Create an Architecture Decision Record for the key decisions made.
-    send: true
-  - label: "🚨 Escalate Issue"
+  - label: " Escalate Issue"
     agent: "Squad: Scrum Master"
     prompt: Architecture issue requiring Scrum Master decision. See details above.
     send: true

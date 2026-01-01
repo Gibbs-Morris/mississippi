@@ -50,7 +50,7 @@ Read ALL instruction files before reviewing:
 - `.github/copilot-instructions.md` (core principles)
 - `.github/instructions/shared-policies.instructions.md`
 - `.github/instructions/csharp.instructions.md`
-- `.github/instructions/dotnet-projects.instructions.md`
+- `.github/instructions/projects.instructions.md`
 - `.github/instructions/testing.instructions.md`
 - `.github/instructions/orleans.instructions.md` (if applicable)
 

@@ -137,8 +137,6 @@ if (customer == null)
 2. Validation failure for negative quantities
 3. Concurrent order creation race condition
 
-```text
-
 ### 5. Acceptance Criteria Verification
 
 Check each acceptance criterion:

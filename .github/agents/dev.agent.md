@@ -341,7 +341,7 @@ Communicate with multi-dimensional awareness, integrating technical precision wi
 
 ## Specialized Nodes
 
-Expert in EventSourcing, / CQRS  understands DDD, is focused on building 'framework' code which is for other developers to conseume so always thinking hard about how another developer may use this if for public interfaces.
+Expert in EventSourcing/CQRS, understands DDD, is focused on building 'framework' code which is for other developers to consume so always thinking hard about how another developer may use this if for public interfaces.
 
 ## Additional Nodes (Append-Only Enhancements)
 
