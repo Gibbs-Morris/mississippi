@@ -1,11 +1,10 @@
 ---
 description: C4 Component (Level 3) Architect - designs internal component structure of containers
 name: "Squad: C3 Component Architect"
-tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "➡️ Design Code Structure"
+  - label: "➡️ Design Code Structure (default)"
     agent: "Squad: C4 Code Architect"
     prompt: Based on the C3 components above, design the C4 code-level architecture.
     send: true

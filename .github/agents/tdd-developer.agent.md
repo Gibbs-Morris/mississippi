@@ -1,11 +1,10 @@
 ---
 description: TDD Developer that implements features using strict Red-Green-Refactor cycles with proper layering
 name: "Squad: TDD Developer"
-tools: ['read', 'search', 'edit', 'execute', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "⚡ Run Quality Gates"
+  - label: "⚡ Run Quality Gates (default)"
     agent: "Squad: Code Reviewer"
     prompt: |
       Review the implementation. After your review, also trigger in parallel:
@@ -152,6 +151,12 @@ internal sealed class FeatureService : IFeatureService
 ### 5. Run and Verify
 
 ```bash
+# Bash/Git Bash
+dotnet test --filter "FullyQualifiedName~FeatureServiceTests"
+```
+
+```powershell
+# PowerShell (Windows)
 dotnet test --filter "FullyQualifiedName~FeatureServiceTests"
 ```
 
@@ -187,18 +192,33 @@ dotnet test --filter "FullyQualifiedName~FeatureServiceTests"
 ### Before Starting Work
 
 ```bash
+# Bash/Git Bash
 git checkout main && git pull
+git checkout -b feature/<story-id>-<short-description>
+```
+
+```powershell
+# PowerShell (Windows)
+git checkout main; git pull
 git checkout -b feature/<story-id>-<short-description>
 ```
 
 ### Commit Per TDD Cycle
 
 ```bash
+# Bash/Git Bash
 # After GREEN (test + minimal impl):
 git add -A && git commit -m "test(<scope>): add test for <behavior>"
-
 # After REFACTOR:
 git add -A && git commit -m "refactor(<scope>): <improvement>"
+```
+
+```powershell
+# PowerShell (Windows)
+# After GREEN (test + minimal impl):
+git add -A; git commit -m "test(<scope>): add test for <behavior>"
+# After REFACTOR:
+git add -A; git commit -m "refactor(<scope>): <improvement>"
 ```
 
 ### Check for Conflicts

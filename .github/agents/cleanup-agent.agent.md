@@ -1,11 +1,10 @@
 ---
 description: Sequential cleanup agent that processes cross-cutting refactors after parallel work merges
 name: "Squad: Cleanup Agent"
-tools: ['read', 'search', 'edit', 'execute', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "🔍 Perform Code Review"
+  - label: "🔍 Perform Code Review (default)"
     agent: "Squad: Code Reviewer"
     prompt: Review the refactoring changes above for compliance with project rules.
     send: true
@@ -90,8 +89,14 @@ Review all items and prioritize:
 For each item (highest priority first):
 
 ```bash
-# Create cleanup branch
+# Bash/Git Bash
 git checkout main && git pull
+git checkout -b cleanup/CB-XXX-description
+```
+
+```powershell
+# PowerShell (Windows)
+git checkout main; git pull
 git checkout -b cleanup/CB-XXX-description
 ```
 
@@ -100,7 +105,15 @@ git checkout -b cleanup/CB-XXX-description
 #### Renames (Classes, Methods, Properties)
 
 ```bash
-# Use IDE refactoring when possible
+# Bash/Git Bash - Use IDE refactoring when possible
+# Verify all usages with #usages tool
+# Update all references
+# Run tests to verify
+dotnet test
+```
+
+```powershell
+# PowerShell (Windows) - Use IDE refactoring when possible
 # Verify all usages with #usages tool
 # Update all references
 # Run tests to verify
@@ -126,14 +139,20 @@ dotnet test
 ### 4. Verify & Commit
 
 ```bash
-# Run full test suite
+# Bash/Git Bash
 dotnet test
-
-# Commit with cleanup type
 git add -A
 git commit -m "refactor(CB-XXX): [description]"
+git checkout main
+git merge cleanup/CB-XXX-description
+git branch -d cleanup/CB-XXX-description
+```
 
-# Merge to main
+```powershell
+# PowerShell (Windows)
+dotnet test
+git add -A
+git commit -m "refactor(CB-XXX): [description]"
 git checkout main
 git merge cleanup/CB-XXX-description
 git branch -d cleanup/CB-XXX-description

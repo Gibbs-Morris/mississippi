@@ -1,11 +1,10 @@
 ---
 description: Principal Engineer focused on readability, maintainability, and patterns that junior engineers can easily understand
 name: "Squad: Principal Engineer"
-tools: ['read', 'search', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "🔄 Apply Refactoring"
+  - label: "🔄 Apply Refactoring (default)"
     agent: "Squad: TDD Developer"
     prompt: Refactor based on the maintainability feedback above. Re-submit for review when complete.
     send: true

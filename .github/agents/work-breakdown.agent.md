@@ -1,7 +1,6 @@
 ---
 description: Work Breakdown Agent - splits architectural designs into vertical slice work items
 name: "Squad: Work Breakdown"
-tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
@@ -17,7 +16,7 @@ handoffs:
     agent: "Squad: C4 Code Architect"
     prompt: Missing code-level design needed before work breakdown. See gaps identified above.
     send: true
-  - label: "✅ Report Work Items Ready"
+  - label: "✅ Report Work Items Ready (default)"
     agent: "Squad: Scrum Master"
     prompt: Work breakdown complete. Work items defined and ready for assignment.
     send: true
@@ -243,10 +242,17 @@ Items can run in parallel if:
 ### 2. Create Worktrees
 
 ```bash
-# Create worktrees for parallel development
+# Bash/Git Bash
 git worktree add ../project-<context-a> feature/WI-001
 git worktree add ../project-<context-b> feature/WI-002
 git worktree add ../project-<context-c> feature/WI-003
+```
+
+```powershell
+# PowerShell (Windows)
+git worktree add ..\project-<context-a> feature/WI-001
+git worktree add ..\project-<context-b> feature/WI-002
+git worktree add ..\project-<context-c> feature/WI-003
 ```
 
 ### 3. Assign to Parallel Sessions
@@ -270,7 +276,7 @@ Each window: Start **TDD Developer** agent with the work item.
 After parallel work completes:
 
 ```bash
-# Merge in dependency order
+# Bash/Git Bash - Merge in dependency order
 git checkout main && git merge feature/WI-001
 git checkout main && git merge feature/WI-002  
 git checkout main && git merge feature/WI-003
@@ -279,4 +285,16 @@ git checkout main && git merge feature/WI-003
 git worktree remove ../project-orders
 git worktree remove ../project-inventory
 git worktree remove ../project-shipping
+```
+
+```powershell
+# PowerShell (Windows) - Merge in dependency order
+git checkout main; git merge feature/WI-001
+git checkout main; git merge feature/WI-002  
+git checkout main; git merge feature/WI-003
+
+# Cleanup
+git worktree remove ..\project-orders
+git worktree remove ..\project-inventory
+git worktree remove ..\project-shipping
 ```

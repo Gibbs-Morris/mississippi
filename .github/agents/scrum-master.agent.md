@@ -1,11 +1,10 @@
 ---
 description: Scrum Master that orchestrates the full development team workflow from requirements to delivery
 name: "Squad: Scrum Master"
-tools: ['read', 'search', 'web', 'microsoft.docs.mcp/*', 'agent', 'todo']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "🏗️ Design System Context"
+  - label: "🏗️ Design System Context (default)"
     agent: "Squad: C1 Context Architect"
     prompt: Create a C1 Context diagram for the system based on the requirements above.
     send: true
@@ -133,6 +132,114 @@ You coordinate these specialized agents:
 | `qa-engineer`            | Test Coverage               | Verifying test completeness       |
 | `principal-engineer`     | Maintainability             | Readability and simplicity        |
 | `cleanup-agent`          | Deferred Refactors          | Cross-cutting fixes after merge   |
+
+## Squad Workflow Diagram
+
+The following diagram shows the complete agent handoff flow:
+
+```mermaid
+flowchart TD
+    subgraph Orchestration["Orchestration Layer"]
+        SM["Scrum Master"]
+    end
+
+    subgraph Architecture["Architecture Phase (Sequential)"]
+        C1["C1 Context Architect"]
+        C2["C2 Container Architect"]
+        C3["C3 Component Architect"]
+        C4["C4 Code Architect"]
+    end
+
+    subgraph Planning["Planning Phase"]
+        WB["Work Breakdown"]
+    end
+
+    subgraph Implementation["Implementation Phase"]
+        TDD["TDD Developer"]
+    end
+
+    subgraph QualityGates["Quality Gates (Parallel)"]
+        CR["Code Reviewer"]
+        QA["QA Engineer"]
+        PE["Principal Engineer"]
+    end
+
+    subgraph Cleanup["Cleanup Phase (Sequential)"]
+        CA["Cleanup Agent"]
+    end
+
+    %% Main happy path (default flow)
+    SM -->|"1. Design Context (default)"| C1
+    C1 -->|"2. Design Containers (default)"| C2
+    C2 -->|"3. Design Components (default)"| C3
+    C3 -->|"4. Design Code (default)"| C4
+    C4 -->|"5. Create Work Items (default)"| WB
+    WB -->|"6. Report Ready (default)"| SM
+    SM -->|"7. Implement"| TDD
+    
+    %% Quality gate flow (TDD Developer owns this loop)
+    TDD -->|"8. Run Quality Gates (default)"| CR
+    CR -.->|"parallel"| QA
+    CR -.->|"parallel"| PE
+    CR -->|"Fix Violations"| TDD
+    QA -->|"Add Missing Tests"| TDD
+    PE -->|"Apply Refactoring"| TDD
+    
+    %% Completion flow
+    TDD -->|"9. Report Complete"| SM
+    TDD -->|"Report Blocked"| SM
+    
+    %% Cleanup flow (CA reviews its own refactoring before reporting)
+    SM -->|"10. Process Cleanup"| CA
+    CA -->|"11. Code Review (default)"| CR
+    CA -->|"Verify Tests"| QA
+    CA -.->|"Need New Code"| TDD
+    CA -->|"12. Report Complete"| SM
+    
+    %% Escalation paths (all agents can escalate)
+    C1 -.->|"Escalate"| SM
+    C2 -.->|"Escalate"| SM
+    C3 -.->|"Escalate"| SM
+    C4 -.->|"Escalate"| SM
+    WB -.->|"Escalate"| SM
+    CR -.->|"Escalate"| SM
+    QA -.->|"Escalate"| SM
+    PE -.->|"Escalate"| SM
+    CA -.->|"Escalate"| SM
+    
+    %% Revision paths
+    C2 -.->|"Revise Context"| C1
+    C3 -.->|"Revise Containers"| C2
+    C4 -.->|"Revise Components"| C3
+    PE -.->|"Revise Architecture"| C3
+    WB -.->|"Need Design"| C3
+    WB -.->|"Need Design"| C4
+
+    %% Styling
+    classDef orchestrator fill:#e1f5fe,stroke:#01579b
+    classDef architect fill:#fff3e0,stroke:#e65100
+    classDef planner fill:#f3e5f5,stroke:#7b1fa2
+    classDef developer fill:#e8f5e9,stroke:#2e7d32
+    classDef reviewer fill:#fce4ec,stroke:#c2185b
+    classDef cleanup fill:#efebe9,stroke:#5d4037
+    
+    class SM orchestrator
+    class C1,C2,C3,C4 architect
+    class WB planner
+    class TDD developer
+    class CR,QA,PE reviewer
+    class CA cleanup
+```
+
+### Workflow Summary
+
+| Phase             | Agents                              | Mode        |
+| ----------------- | ----------------------------------- | ----------- |
+| Architecture      | C1 → C2 → C3 → C4                   | Sequential  |
+| Planning          | Work Breakdown                      | Sequential  |
+| Implementation    | TDD Developer (per work item)       | Parallel    |
+| Quality Gates     | Code Reviewer + QA + Principal      | Parallel    |
+| Cleanup           | Cleanup Agent (after all merges)    | Sequential  |
 
 ## Workflow
 
@@ -264,6 +371,12 @@ When user says:
 Each work item gets its own feature branch:
 
 ```bash
+# Bash/Git Bash
+git checkout -b feature/<story-id>-<short-description>
+```
+
+```powershell
+# PowerShell (Windows)
 git checkout -b feature/<story-id>-<short-description>
 ```
 
@@ -272,9 +385,15 @@ git checkout -b feature/<story-id>-<short-description>
 For true parallel agent work, use git worktrees:
 
 ```bash
-# Create worktree for parallel feature
+# Bash/Git Bash
 git worktree add ../project-feature-a feature/story-1
 git worktree add ../project-feature-b feature/story-2
+```
+
+```powershell
+# PowerShell (Windows)
+git worktree add ..\project-feature-a feature/story-1
+git worktree add ..\project-feature-b feature/story-2
 ```
 
 Each worktree = isolated working directory = no conflicts.
@@ -355,7 +474,7 @@ All read-only, no conflicts possible.
 ### Setting Up Parallel Worktrees
 
 ```bash
-# From main repo, create worktrees for parallel work
+# Bash/Git Bash
 git worktree add ../project-orders feature/WI-001-create-order
 git worktree add ../project-inventory feature/WI-002-check-inventory
 git worktree add ../project-shipping feature/WI-003-ship-order
@@ -369,4 +488,21 @@ code ../project-shipping
 git worktree remove ../project-orders
 git worktree remove ../project-inventory
 git worktree remove ../project-shipping
+```
+
+```powershell
+# PowerShell (Windows)
+git worktree add ..\project-orders feature/WI-001-create-order
+git worktree add ..\project-inventory feature/WI-002-check-inventory
+git worktree add ..\project-shipping feature/WI-003-ship-order
+
+# Open each in separate VS Code window
+code ..\project-orders
+code ..\project-inventory
+code ..\project-shipping
+
+# After merge, cleanup
+git worktree remove ..\project-orders
+git worktree remove ..\project-inventory
+git worktree remove ..\project-shipping
 ```

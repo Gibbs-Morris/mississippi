@@ -1,11 +1,10 @@
 ---
 description: C4 Code (Level 4) Architect - designs class and interface level architecture
 name: "Squad: C4 Code Architect"
-tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
-  - label: "📦 Create Work Items"
+  - label: "📦 Create Work Items (default)"
     agent: "Squad: Work Breakdown"
     prompt: Create vertical slice work items based on the code architecture above.
     send: true
