@@ -152,10 +152,16 @@ For each major class/interface:
 
 **State Transitions:**
 
-```text
-Draft → Submitted → Confirmed → Shipped → Delivered
-           ↓           ↓
-        Cancelled   Cancelled
+```mermaid
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> Submitted
+    Submitted --> Confirmed
+    Confirmed --> Shipped
+    Shipped --> Delivered
+
+    Submitted --> Cancelled
+    Confirmed --> Cancelled
 ```
 
 **Events Published:**
@@ -234,13 +240,13 @@ public sealed record OrderDto(
 
 ## C# Standards (Per Instructions)
 
-Apply these strictly:
+Apply these strictly. See the referenced instruction files for details:
 
-1. **Immutability First** - Records, `with` expressions, immutable collections
-2. **Internal by Default** - Only interfaces public
-3. **DI Property Pattern** - `private Type Name { get; }`
-4. **Orleans POCO** - `IGrainBase`, `sealed`, explicit serialization
-5. **LoggerExtensions** - `[LoggerMessage]` for all logging
+1. **Immutability First** - Records, `with` expressions, immutable collections. See `.github/instructions/csharp.instructions.md`.
+2. **Internal by Default** - Only interfaces public. See `.github/instructions/csharp.instructions.md`.
+3. **DI Property Pattern** - `private Type Name { get; }`. See `.github/instructions/csharp.instructions.md`.
+4. **Orleans POCO** - `IGrainBase`, `sealed`, explicit serialization. See `.github/instructions/orleans.instructions.md`.
+5. **LoggerExtensions** - `[LoggerMessage]` for all logging. See `.github/instructions/logging-rules.instructions.md`.
 
 ## Validation Checklist
 

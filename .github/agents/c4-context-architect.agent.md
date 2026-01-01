@@ -79,7 +79,7 @@ For each significant decision, create an ADR in `docs/adr/`:
 ```markdown
 # ADR-NNNN: {Title}
 
-**Status**: Proposed | Accepted | Deprecated | Superseded by ADR-XXXX
+**Status**: [Select one: Proposed | Accepted | Deprecated | Superseded by ADR-XXXX]
 **Date**: YYYY-MM-DD
 
 ## Context

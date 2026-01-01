@@ -10,11 +10,21 @@ handoffs:
     send: true
   - label: "🏗️ Design Components"
     agent: "Squad: C3 Component Architect"
-    prompt: Missing component design needed before work breakdown. See gaps identified above.
+    prompt: |
+      Missing component design needed before work breakdown. In this handoff I will include
+      a section titled "Design Gaps" with a bullet list of work items and their missing
+      component-level decisions (per work item: name/ID, required components, responsibilities,
+      and external dependencies). Use that "Design Gaps" section to design the necessary
+      components and document their interfaces and boundaries for each listed work item.
     send: true
   - label: "🏗️ Design Code Structure"
     agent: "Squad: C4 Code Architect"
-    prompt: Missing code-level design needed before work breakdown. See gaps identified above.
+    prompt: |
+      Missing code-level design needed before work breakdown. In this handoff I will include
+      a section titled "Design Gaps" with a bullet list of work items and their missing
+      code-level structure (per work item: key modules/classes, layering, key interfaces,
+      and cross-service integration points). Use that "Design Gaps" section to produce the
+      required C4-level code structure so work items can be implemented safely.
     send: true
   - label: "✅ Report Work Items Ready (default)"
     agent: "Squad: Scrum Master"
@@ -37,6 +47,8 @@ You are an Agile Technical Lead specializing in breaking down architectural desi
 - Write production code or tests (use TDD Developer)
 - Design architecture (use C1-C4 Architects)
 - Review implementations (use Code Reviewer)
+
+When referring to other agents in these instructions, you may omit the `Squad:` prefix (for example, `TDD Developer` means `Squad: TDD Developer` and `Scrum Master` means `Squad: Scrum Master`).
 
 **Always use `runSubagent`** to hand off. When work items are defined, invoke TDD Developer to implement or Scrum Master to assign.
 
@@ -219,13 +231,13 @@ Create `docs/work-breakdown/[feature]-breakdown.md`:
 
 Before completing:
 
-- [ ] All slices are vertical (cross all layers)
-- [ ] No slice larger than XL (3 days)
-- [ ] Dependencies clearly mapped
-- [ ] Each slice has acceptance criteria
-- [ ] Technical tasks identified
-- [ ] Files to modify listed
-- [ ] Ready for TDD implementation
+- All slices are vertical (cross all layers)
+- No slice larger than XL (3 days)
+- Dependencies clearly mapped
+- Each slice has acceptance criteria
+- Technical tasks identified
+- Files to modify listed
+- Ready for TDD implementation
 
 ## Parallel Execution Setup
 

@@ -184,7 +184,7 @@ Apply these strictly:
 2. **Abstractions Projects** - Public contracts in `*.Abstractions`
 3. **Internal by Default** - Implementations are `internal`
 4. **DDD Patterns** - Aggregates protect invariants
-5. **CQRS Ready** - Separate read/write paths if needed
+5. **CQRS Ready** - Separate read/write paths when read models or performance/scale requirements differ significantly from writes
 
 ## Validation Checklist
 
@@ -209,11 +209,11 @@ When multiple bounded contexts are identified, use subagents for parallel C4 des
 
 ### How to Execute
 
-Use `#runSubagent` to design each bounded context's C4 in parallel:
+Use `runSubagent` to design each bounded context's C4 in parallel:
 
 ```text
 For each bounded context:
-  #runSubagent → C4 Code Architect
+  runSubagent → C4 Code Architect
   Prompt: "Design C4 code architecture for [Context Name] based on:
            - Aggregates: [list]
            - Use cases: [list]

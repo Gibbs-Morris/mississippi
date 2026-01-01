@@ -107,6 +107,8 @@ For violations found:
 
 ### Orleans Grains
 
+Apply these checks to files that implement grain interfaces (types implementing `IGrain`, `IGrainWithStringKey`, etc.) or are located in grain-related namespaces/folders:
+
 - [ ] POCO pattern (`IGrainBase`, not `Grain`)
 - [ ] `sealed` classes
 - [ ] Explicit serialization (`[GenerateSerializer]`, `[Id]`, `[Alias]`)

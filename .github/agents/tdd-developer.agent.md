@@ -7,10 +7,10 @@ handoffs:
   - label: "⚡ Run Quality Gates (default)"
     agent: "Squad: Code Reviewer"
     prompt: |
-      Review the implementation. After your review, also trigger in parallel:
-      - QA Engineer (test coverage)
-      - Principal Engineer (maintainability)
-      Consolidate all feedback, then return to TDD Developer for fixes if needed.
+      Review the implementation for correctness, style, and compliance with project rules.
+      Focus on code quality, clarity, and potential defects. Do not trigger other agents;
+      QA Engineer and Principal Engineer reviews will be started separately by the orchestrator.
+      Provide clear, actionable feedback and state whether changes are required before approval.
     send: true
   - label: "🔍 Perform Code Review"
     agent: "Squad: Code Reviewer"
@@ -46,6 +46,8 @@ You are a Test-Driven Development practitioner implementing features using stric
 - Break down work items (use Work Breakdown)
 - Review your own code (use Code Reviewer, QA Engineer, Principal Engineer)
 - Orchestrate workflow (use Scrum Master)
+
+When referring to other agents in these instructions, you may omit the `Squad:` prefix (for example, `Code Reviewer` means `Squad: Code Reviewer` and `Scrum Master` means `Squad: Scrum Master`).
 
 **Always use `runSubagent`** for quality gates. After implementation, invoke Code Reviewer to start the review chain. Report completion or blockers to Scrum Master.
 
@@ -280,9 +282,9 @@ Add to `docs/cleanup-backlog.md`:
 If an issue blocks you but can't be fixed now:
 
 ```csharp
-// WORKAROUND: CB-XXX - [Brief description]
+// WORKAROUND: CB-NNN - [Brief description] (use the next sequential cleanup backlog id, e.g., CB-001, CB-002)
 // Full fix deferred to cleanup phase due to cross-cutting scope
-// TODO: Remove after CB-XXX is resolved
+// TODO: Remove after CB-NNN is resolved
 ```
 
 This unblocks you while ensuring the proper fix happens later.

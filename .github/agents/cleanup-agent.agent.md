@@ -164,6 +164,8 @@ Move item from "Pending" to "Completed" with date.
 
 ## Refactoring Patterns
 
+Use these patterns when processing cleanup backlog items to keep refactors safe, incremental, and easy to review.
+
 ### Safe Rename Pattern
 
 1. Use `#usages` to find all references

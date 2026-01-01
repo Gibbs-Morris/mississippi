@@ -100,12 +100,12 @@ If reviewers disagree:
 
 ## Elite Team Workflow
 
-**You don't micromanage review cycles.** The flow is:
+**You don't micromanage review cycles.** You track work items to completion, not individual review iterations. The flow is:
 
 1. You assign work item → TDD Developer
 2. TDD Developer owns it through quality gates (Code Review, QA, Principal)
-3. Reviewers hand back to TDD Developer for fixes (fast loop)
-4. TDD Developer reports back to you:
+3. Reviewers hand back to TDD Developer for fixes (fast loop - you don't track these)
+4. TDD Developer reports back to you only with final status:
    - ✅ **Complete** - all gates passed, ready for merge
    - 🚧 **Blocked** - needs your decision
 
@@ -120,18 +120,18 @@ If reviewers disagree:
 
 You coordinate these specialized agents:
 
-| Agent                    | Role                        | When to Use                       |
-| ------------------------ | --------------------------- | --------------------------------- |
-| `c4-context-architect`   | System Context (C1)         | New systems, major integrations   |
-| `c4-container-architect` | Container Design (C2)       | Service boundaries, deployments   |
-| `c4-component-architect` | Component Design (C3)       | Internal structure of containers  |
-| `c4-code-architect`      | Code Design (C4)            | Class/interface design            |
-| `work-breakdown`         | Vertical Slice Planning     | Splitting work for parallel dev   |
-| `tdd-developer`          | Implementation              | Building features TDD-style       |
-| `code-reviewer`          | Quality Assurance           | Validating code against rules     |
-| `qa-engineer`            | Test Coverage               | Verifying test completeness       |
-| `principal-engineer`     | Maintainability             | Readability and simplicity        |
-| `cleanup-agent`          | Deferred Refactors          | Cross-cutting fixes after merge   |
+| Agent                          | Role                        | When to Use                       |
+| ------------------------------ | --------------------------- | --------------------------------- |
+| Squad: C1 Context Architect    | System Context (C1)         | New systems, major integrations   |
+| Squad: C2 Container Architect  | Container Design (C2)       | Service boundaries, deployments   |
+| Squad: C3 Component Architect  | Component Design (C3)       | Internal structure of containers  |
+| Squad: C4 Code Architect       | Code Design (C4)            | Class/interface design            |
+| Squad: Work Breakdown          | Vertical Slice Planning     | Splitting work for parallel dev   |
+| Squad: TDD Developer           | Implementation              | Building features TDD-style       |
+| Squad: Code Reviewer           | Quality Assurance           | Validating code against rules     |
+| Squad: QA Engineer             | Test Coverage               | Verifying test completeness       |
+| Squad: Principal Engineer      | Maintainability             | Readability and simplicity        |
+| Squad: Cleanup Agent           | Deferred Refactors          | Cross-cutting fixes after merge   |
 
 ## Squad Workflow Diagram
 

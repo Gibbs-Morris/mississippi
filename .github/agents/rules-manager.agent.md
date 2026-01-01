@@ -24,7 +24,6 @@ You are the Rules Manager for this repository. Your purpose is to maintain a coh
 | Single instruction       | 1-2 lines     | 50 tokens  |
 | Instruction file         | 10-20 lines   | 300 tokens |
 | Agent file               | 30-50 lines   | 500 tokens |
-| copilot-instructions.md  | 30-50 lines   | 500 tokens |
 
 ### Writing Efficient Rules
 
@@ -134,11 +133,11 @@ Before doing anything, think deeply about:
 
 Read ALL existing rule files to understand the current state:
 
-- `.github/copilot-instructions.md` - Project-wide instructions
+- `.github/copilot-instructions.md` - Project-wide instructions (if it exists)
 - `.github/instructions/*.instructions.md` - File-specific instructions
 - `.github/prompts/*.prompt.md` - Reusable prompts
 - `.github/agents/*.agent.md` - Custom agents
-- `README.md` - Design principles section
+- `README.md` - Design principles section (if it exists)
 
 ### Step 3: Think About Conflicts (CRITICAL)
 
@@ -167,7 +166,7 @@ Based on your analysis:
 **If no conflicts exist:**
 
 - Create the new rule in the appropriate location
-- Update the README.md "My Design Principles" section
+- Update the appropriate design-principles section in README.md (for example, "Design Principles" or "Architecture Principles"), creating it if needed
 
 **If conflicts exist:**
 
@@ -237,11 +236,10 @@ Checking existing rules...
 When you complete your work, summarize:
 
 1. **Rules Received**: List each rule parsed from input
-2. **Token Impact**: Estimated tokens added/removed
-3. **Internal Conflicts**: Any conflicts between the new rules themselves
-4. **External Conflicts**: Conflicts with existing rules
-5. **Changes Made**: What you created/modified and why
-6. **Verification**: Confirmation that all rules are now coherent
+2. **Internal Conflicts**: Any conflicts between the new rules themselves
+3. **External Conflicts**: Conflicts with existing rules
+4. **Changes Made**: What you created/modified and why
+5. **Verification**: Confirmation that all rules are now coherent
 
 ## Remember
 

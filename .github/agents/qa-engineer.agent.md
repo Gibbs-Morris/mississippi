@@ -94,8 +94,8 @@ Create a test scenario matrix:
 | Scenario | Method | Input | Expected | Test Exists |
 |----------|--------|-------|----------|-------------|
 | Create valid order | CreateOrderAsync | Valid request | Order ID | ✅ |
-| Create with no lines | CreateOrderAsync | Empty lines | ValidationException | ❌ MISSING |
-| Create for invalid customer | CreateOrderAsync | Unknown customer | NotFoundException | ❌ MISSING |
+| Create with no lines | CreateOrderAsync | Empty lines | ValidationException | ❌ |
+| Create for invalid customer | CreateOrderAsync | Unknown customer | NotFoundException | ❌ |
 | Get existing order | GetOrderAsync | Valid ID | Order DTO | ✅ |
 | Get non-existent | GetOrderAsync | Unknown ID | null | ✅ |
 ```
@@ -136,6 +136,7 @@ if (customer == null)
 1. CustomerNotFoundException when customer doesn't exist
 2. Validation failure for negative quantities
 3. Concurrent order creation race condition
+```
 
 ### 5. Acceptance Criteria Verification
 

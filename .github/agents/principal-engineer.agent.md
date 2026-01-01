@@ -78,7 +78,7 @@ Review implementation for:
 ### Complexity Red Flags 🚩
 
 ```markdown
-❌ Methods longer than 20 lines
+❌ Methods that are difficult to understand in one read or that mix multiple responsibilities
 ❌ Classes with more than 5 dependencies
 ❌ Inheritance deeper than 2 levels
 ❌ Clever one-liners that need comments

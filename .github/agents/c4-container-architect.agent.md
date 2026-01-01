@@ -158,7 +158,7 @@ Create ADRs in `docs/adr/` for:
 
 ## Technology Stack Alignment
 
-Prefer these technologies (per project standards):
+These technologies are preferred per project standards. Use RFC 2119 language: projects SHOULD use these technologies unless documented otherwise in an ADR.
 
 - **Web**: Blazor WebAssembly/Server
 - **API**: ASP.NET Core Minimal APIs
