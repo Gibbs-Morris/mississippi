@@ -68,7 +68,7 @@ All documentation MUST:
 ### Documentation Hierarchy
 
 | Symbol Type | Required | When |
-|-------------|----------|------|
+| ----------- | -------- | ---- |
 | Public types | Always | All public classes, interfaces, records, enums |
 | Public members | Always | All public methods, properties, events |
 | Internal types | When exposed | Via `InternalsVisibleTo` or non-trivial behavior |
@@ -401,7 +401,7 @@ public OrderId Id { get; }
 public async Task<List<Order>> GetOrdersAsync() // Too much HOW
 ```
 
-### ✅ Better
+### ✅ Better: Focus on What, Not How
 
 ```csharp
 /// <summary>
@@ -419,7 +419,7 @@ public async Task<IReadOnlyList<Order>> GetOrdersAsync()
 public Task CreateAsync() // Mentions unimplemented features
 ```
 
-### ✅ Better
+### ✅ Better: Be Specific and Factual
 
 ```csharp
 /// <summary>
@@ -437,7 +437,7 @@ public Task<OrderId> CreateAsync(CreateOrderRequest request)
 public Task CreateAsync() // Future tense, passive
 ```
 
-### ✅ Better
+### ✅ Better: Use Imperative Voice
 
 ```csharp
 /// <summary>
@@ -458,7 +458,7 @@ If the code is poorly named or structured, document the current behavior but:
 
 Example handoff:
 
-```
+```text
 Documentation complete, but `ProcessThing()` method name is unclear.
 Current docs describe it as "Validates order inventory", but name suggests generic processing.
 Recommend renaming to `ValidateOrderInventoryAsync()` for clarity.
