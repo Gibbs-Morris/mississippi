@@ -1,7 +1,7 @@
 ---
 description: TDD Developer that implements features using strict Red-Green-Refactor cycles with proper layering
 name: "Squad: TDD Developer"
-tools: ['read', 'search', 'edit', 'execute', 'web', 'todo', 'agent']
+tools: ['read', 'search', 'edit', 'execute', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:

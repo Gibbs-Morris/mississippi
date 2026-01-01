@@ -1,7 +1,7 @@
 ---
 description: Scrum Master that orchestrates the full development team workflow from requirements to delivery
 name: "Squad: Scrum Master"
-tools: ['read', 'search', 'web', 'todo', 'agent']
+tools: ['read', 'search', 'web', 'microsoft.docs.mcp/*', 'agent', 'todo']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:

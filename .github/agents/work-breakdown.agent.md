@@ -1,7 +1,7 @@
 ---
 description: Work Breakdown Agent - splits architectural designs into vertical slice work items
 name: "Squad: Work Breakdown"
-tools: ['read', 'search', 'edit', 'web', 'todo', 'agent']
+tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:

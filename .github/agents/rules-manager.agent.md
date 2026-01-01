@@ -1,7 +1,7 @@
 ---
 description: Manages Copilot rules - creates new rules, ensures consistency, resolves conflicts across all rule files
 name: Rules Manager
-tools: ['vscode', 'execute', 'read', 'agent', 'edit', 'search', 'web', 'todo']
+tools: ['vscode', 'execute', 'read', 'agent', 'edit', 'search', 'web', 'microsoft.docs.mcp/*', 'todo']
 model: "Claude Opus 4.5"
 ---
 

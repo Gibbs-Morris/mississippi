@@ -1,7 +1,7 @@
 ---
 description: QA Engineer that analyzes test coverage, verifies test paths, and identifies missing scenarios
 name: "Squad: QA Engineer"
-tools: ['read', 'search', 'execute', 'web', 'todo', 'agent']
+tools: ['read', 'search', 'execute', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:

@@ -1,7 +1,7 @@
 ---
 description: C4 Context (Level 1) Architect - designs system context showing users and external systems
 name: "Squad: C1 Context Architect"
-tools: ['read', 'search', 'edit', 'web', 'todo', 'agent']
+tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:

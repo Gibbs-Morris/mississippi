@@ -1,7 +1,7 @@
 ---
 description: C4 Container (Level 2) Architect - designs container architecture showing applications and data stores
 name: "Squad: C2 Container Architect"
-tools: ['read', 'search', 'edit', 'web', 'todo', 'agent']
+tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:

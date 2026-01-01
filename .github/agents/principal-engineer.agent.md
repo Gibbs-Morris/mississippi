@@ -1,7 +1,7 @@
 ---
 description: Principal Engineer focused on readability, maintainability, and patterns that junior engineers can easily understand
 name: "Squad: Principal Engineer"
-tools: ['read', 'search', 'web', 'todo', 'agent']
+tools: ['read', 'search', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:

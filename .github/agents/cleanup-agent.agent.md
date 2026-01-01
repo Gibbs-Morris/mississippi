@@ -1,7 +1,7 @@
 ---
 description: Sequential cleanup agent that processes cross-cutting refactors after parallel work merges
 name: "Squad: Cleanup Agent"
-tools: ['read', 'search', 'edit', 'execute', 'todo', 'agent']
+tools: ['read', 'search', 'edit', 'execute', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:

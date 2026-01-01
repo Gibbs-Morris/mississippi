@@ -1,7 +1,7 @@
 ---
 description: Systematic code reviewer that validates files against project rules and reports violations
 name: "Squad: Code Reviewer"
-tools: ['read', 'search', 'web', 'todo', 'agent']
+tools: ['read', 'search', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:

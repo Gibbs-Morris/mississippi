@@ -1,7 +1,7 @@
 ---
 description: C4 Code (Level 4) Architect - designs class and interface level architecture
 name: "Squad: C4 Code Architect"
-tools: ['read', 'search', 'edit', 'web', 'todo', 'agent']
+tools: ['read', 'search', 'edit', 'web', 'microsoft.docs.mcp/*', 'todo', 'agent']
 model: "Claude Opus 4.5"
 infer: true
 handoffs:
