@@ -136,7 +136,6 @@ if (customer == null)
 1. CustomerNotFoundException when customer doesn't exist
 2. Validation failure for negative quantities
 3. Concurrent order creation race condition
-```
 
 ### 5. Acceptance Criteria Verification
 
