@@ -10,7 +10,7 @@ namespace Crescent.NewModel.Chat.Events;
 /// <summary>
 ///     Event raised when a message is added to the chat.
 /// </summary>
-[EventName("CRESCENT", "NEWMODEL", "MESSAGEADDED")]
+[EventStorageName("CRESCENT", "NEWMODEL", "MESSAGEADDED")]
 [GenerateSerializer]
 [Alias("Crescent.NewModel.Chat.Events.MessageAdded")]
 internal sealed record MessageAdded

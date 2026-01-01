@@ -13,7 +13,7 @@ Implement UX projections optimized for read operations in the Blazor UI, followi
 - [ ] `ChannelMessagesProjection` - message history for a channel
 - [ ] `ChannelMemberListProjection` - current members of a channel with online status
 - [ ] `OnlineUsersProjection` - all currently online users (for presence indicators)
-- [ ] All projections have `[SnapshotName]` attributes
+- [ ] All projections have `[SnapshotStorageName]` attributes
 - [ ] All projection reducers registered
 - [ ] Projection grains accessible via standard UX projection interfaces
 - [ ] L0 tests for projection reducers
@@ -25,7 +25,7 @@ Implement UX projections optimized for read operations in the Blazor UI, followi
 Shows the sidebar of channels for a specific user.
 
 ```csharp
-[SnapshotName("CASCADE", "CHAT", "USERCHANNELLIST")]
+[SnapshotStorageName("CASCADE", "CHAT", "USERCHANNELLIST")]
 [GenerateSerializer]
 internal sealed record UserChannelListProjection
 {
@@ -50,7 +50,7 @@ internal sealed record ChannelSummary
 Shows message history for a channel (optimized for display).
 
 ```csharp
-[SnapshotName("CASCADE", "CHAT", "CHANNELMESSAGES")]
+[SnapshotStorageName("CASCADE", "CHAT", "CHANNELMESSAGES")]
 [GenerateSerializer]
 internal sealed record ChannelMessagesProjection
 {
@@ -80,7 +80,7 @@ internal sealed record MessageView
 Shows members of a channel with online status.
 
 ```csharp
-[SnapshotName("CASCADE", "CHAT", "CHANNELMEMBERLIST")]
+[SnapshotStorageName("CASCADE", "CHAT", "CHANNELMEMBERLIST")]
 [GenerateSerializer]
 internal sealed record ChannelMemberListProjection
 {
@@ -105,7 +105,7 @@ internal sealed record MemberView
 Global presence indicator (could be scoped to workspace in larger apps).
 
 ```csharp
-[SnapshotName("CASCADE", "CHAT", "ONLINEUSERS")]
+[SnapshotStorageName("CASCADE", "CHAT", "ONLINEUSERS")]
 [GenerateSerializer]
 internal sealed record OnlineUsersProjection
 {

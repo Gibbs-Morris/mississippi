@@ -8,7 +8,7 @@ namespace Crescent.NewModel.Chat.Events;
 /// <summary>
 ///     Event raised when a chat is created.
 /// </summary>
-[EventName("CRESCENT", "NEWMODEL", "CHATCREATED")]
+[EventStorageName("CRESCENT", "NEWMODEL", "CHATCREATED")]
 [GenerateSerializer]
 [Alias("Crescent.NewModel.Chat.Events.ChatCreated")]
 internal sealed record ChatCreated

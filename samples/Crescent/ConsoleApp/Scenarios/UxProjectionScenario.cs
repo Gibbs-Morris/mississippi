@@ -167,7 +167,7 @@ internal static class UxProjectionScenario
 
         // Build the snapshot key using the brook name, projection's snapshot name, and reducer hash
         string reducerHash = rootReducer.GetReducerHash();
-        string projectionType = SnapshotNameHelper.GetSnapshotName<CounterSummaryProjection>();
+        string projectionType = SnapshotStorageNameHelper.GetStorageName<CounterSummaryProjection>();
         SnapshotStreamKey streamKey = new(CounterBrook.BrookName, projectionType, counterId, reducerHash);
 
         // We need to find the snapshot version - read the latest available

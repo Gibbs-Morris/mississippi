@@ -2,18 +2,18 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using EventNameAttribute = Mississippi.EventSourcing.Brooks.Abstractions.Attributes.EventNameAttribute;
+using EventStorageNameAttribute = Mississippi.EventSourcing.Brooks.Abstractions.Attributes.EventStorageNameAttribute;
 
 
 namespace Mississippi.EventSourcing.Abstractions.Tests.Attributes;
 
 /// <summary>
-///     Contains unit tests that verify the behaviour of the <see cref="EventNameAttribute" /> class.
+///     Contains unit tests that verify the behaviour of the <see cref="EventStorageNameAttribute" /> class.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Event Name Attribute")]
-public sealed class EventNameAttributeTests
+[AllureSubSuite("Event Storage Name Attribute")]
+public sealed class EventStorageNameAttributeTests
 {
     /// <summary>
     ///     Confirms that component strings consisting solely of digits or prefixed by digits are still
@@ -33,8 +33,8 @@ public sealed class EventNameAttributeTests
         int version
     )
     {
-        EventNameAttribute sut = new(app, mod, evt, version);
-        Assert.Equal($"{app}.{mod}.{evt}.V{version}", sut.EventName);
+        EventStorageNameAttribute sut = new(app, mod, evt, version);
+        Assert.Equal($"{app}.{mod}.{evt}.V{version}", sut.StorageName);
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public sealed class EventNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new EventNameAttribute(badApp, "MODULE", "EVENT"));
+            Assert.Throws<ArgumentException>(() => new EventStorageNameAttribute(badApp, "MODULE", "EVENT"));
         Assert.Equal("appName", ex.ParamName);
     }
 
@@ -70,7 +70,7 @@ public sealed class EventNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new EventNameAttribute(appName, "MODULE", "EVENT"));
+            Assert.Throws<ArgumentException>(() => new EventStorageNameAttribute(appName, "MODULE", "EVENT"));
         Assert.Equal("appName", ex.ParamName);
     }
 
@@ -88,7 +88,7 @@ public sealed class EventNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new EventNameAttribute("APP", moduleName, "EVENT"));
+            Assert.Throws<ArgumentException>(() => new EventStorageNameAttribute("APP", moduleName, "EVENT"));
         Assert.Equal("moduleName", ex.ParamName);
     }
 
@@ -105,7 +105,8 @@ public sealed class EventNameAttributeTests
         string name
     )
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() => new EventNameAttribute("APP", "MODULE", name));
+        ArgumentException ex =
+            Assert.Throws<ArgumentException>(() => new EventStorageNameAttribute("APP", "MODULE", name));
         Assert.Equal("name", ex.ParamName);
     }
 
@@ -123,7 +124,7 @@ public sealed class EventNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new EventNameAttribute("APP", "MODULE", "EVENT", version));
+            Assert.Throws<ArgumentException>(() => new EventStorageNameAttribute("APP", "MODULE", "EVENT", version));
         Assert.Equal("version", ex.ParamName);
     }
 
@@ -146,7 +147,7 @@ public sealed class EventNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new EventNameAttribute(appName!, moduleName, name));
+            Assert.Throws<ArgumentException>(() => new EventStorageNameAttribute(appName!, moduleName, name));
         Assert.Equal("appName", ex.ParamName);
     }
 
@@ -169,7 +170,7 @@ public sealed class EventNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new EventNameAttribute(appName, moduleName!, name));
+            Assert.Throws<ArgumentException>(() => new EventStorageNameAttribute(appName, moduleName!, name));
         Assert.Equal("moduleName", ex.ParamName);
     }
 
@@ -192,7 +193,7 @@ public sealed class EventNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new EventNameAttribute(appName, moduleName, name!));
+            Assert.Throws<ArgumentException>(() => new EventStorageNameAttribute(appName, moduleName, name!));
         Assert.Equal("name", ex.ParamName);
     }
 
@@ -203,14 +204,14 @@ public sealed class EventNameAttributeTests
     [Fact]
     public void ConstructorOmittingOptionalVersionDefaultsToOne()
     {
-        EventNameAttribute sut = new("APP", "MODULE", "EVENT");
+        EventStorageNameAttribute sut = new("APP", "MODULE", "EVENT");
         Assert.Equal(1, sut.Version);
-        Assert.Equal("APP.MODULE.EVENT.V1", sut.EventName);
+        Assert.Equal("APP.MODULE.EVENT.V1", sut.StorageName);
     }
 
     /// <summary>
     ///     Verifies that alphanumeric values are accepted and correctly applied to the attribute
-    ///     properties and the generated event name.
+    ///     properties and the generated storage name.
     /// </summary>
     /// <param name="appName">The application name to test.</param>
     /// <param name="moduleName">The module name to test.</param>
@@ -227,12 +228,12 @@ public sealed class EventNameAttributeTests
         int version
     )
     {
-        EventNameAttribute sut = new(appName, moduleName, name, version);
+        EventStorageNameAttribute sut = new(appName, moduleName, name, version);
         Assert.Equal(appName, sut.AppName);
         Assert.Equal(moduleName, sut.ModuleName);
         Assert.Equal(name, sut.Name);
         Assert.Equal(version, sut.Version);
-        Assert.Equal($"{appName}.{moduleName}.{name}.V{version}", sut.EventName);
+        Assert.Equal($"{appName}.{moduleName}.{name}.V{version}", sut.StorageName);
     }
 
     /// <summary>
@@ -246,17 +247,18 @@ public sealed class EventNameAttributeTests
         const string moduleName = "MODULE";
         const string name = "EVENT";
         const int version = 3;
-        EventNameAttribute sut = new(appName, moduleName, name, version);
+        EventStorageNameAttribute sut = new(appName, moduleName, name, version);
         Assert.Equal(appName, sut.AppName);
         Assert.Equal(moduleName, sut.ModuleName);
         Assert.Equal(name, sut.Name);
         Assert.Equal(version, sut.Version);
-        Assert.Equal("APP.MODULE.EVENT.V3", sut.EventName);
+        Assert.Equal("APP.MODULE.EVENT.V3", sut.StorageName);
     }
 
     /// <summary>
     ///     Verifies that valid positive integer versions are accepted and reflected in the attribute's
-    ///     <see cref="EventNameAttribute.Version" /> property and the formatted <see cref="EventNameAttribute.EventName" />.
+    ///     <see cref="EventStorageNameAttribute.Version" /> property and the formatted
+    ///     <see cref="EventStorageNameAttribute.StorageName" />.
     /// </summary>
     /// <param name="version">A valid positive version number.</param>
     [Theory]
@@ -266,25 +268,25 @@ public sealed class EventNameAttributeTests
         int version
     )
     {
-        EventNameAttribute sut = new("APP", "MODULE", "EVENT", version);
+        EventStorageNameAttribute sut = new("APP", "MODULE", "EVENT", version);
         Assert.Equal(version, sut.Version);
-        Assert.Equal($"APP.MODULE.EVENT.V{version}", sut.EventName);
+        Assert.Equal($"APP.MODULE.EVENT.V{version}", sut.StorageName);
     }
 
     /// <summary>
-    ///     Verifies that <see cref="EventNameAttribute.EventName" /> returns the expected value based on
+    ///     Verifies that <see cref="EventStorageNameAttribute.StorageName" /> returns the expected value based on
     ///     valid constructor arguments.
     /// </summary>
     /// <param name="appName">The application component of the event name.</param>
     /// <param name="moduleName">The module component of the event name.</param>
     /// <param name="name">The event name component.</param>
     /// <param name="version">The version component.</param>
-    /// <param name="expected">The expected fully‑qualified event name.</param>
+    /// <param name="expected">The expected fully‑qualified storage name.</param>
     [Theory]
     [InlineData("APP", "MODULE", "EVENT", 1, "APP.MODULE.EVENT.V1")]
     [InlineData("APP", "MODULE", "EVENT", 2, "APP.MODULE.EVENT.V2")]
     [InlineData("TEST", "USER", "CREATED", 1, "TEST.USER.CREATED.V1")]
-    public void EventNameReturnsCorrectFormat(
+    public void StorageNameReturnsCorrectFormat(
         string appName,
         string moduleName,
         string name,
@@ -292,7 +294,7 @@ public sealed class EventNameAttributeTests
         string expected
     )
     {
-        EventNameAttribute sut = new(appName, moduleName, name, version);
-        Assert.Equal(expected, sut.EventName);
+        EventStorageNameAttribute sut = new(appName, moduleName, name, version);
+        Assert.Equal(expected, sut.StorageName);
     }
 }

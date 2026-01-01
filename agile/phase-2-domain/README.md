@@ -94,6 +94,6 @@ samples/Cascade/
 ## Key Patterns
 
 - Use `[BrookName("CASCADE", "CHAT", "XXX")]` attribute
-- Use `[EventName("CASCADE", "CHAT", "XXXEVENT")]` attribute
-- Use `[SnapshotName("CASCADE", "CHAT", "XXX")]` for projections
+- Use `[EventStorageName("CASCADE", "CHAT", "XXXEVENT")]` attribute
+- Use `[SnapshotStorageName("CASCADE", "CHAT", "XXX")]` for projections
 - Follow `CounterRegistrations` pattern for DI setup

@@ -141,7 +141,7 @@ public abstract class UxProjectionVersionedCacheGrainBase<TProjection>
         // Load projection from snapshot cache on activation (versioned = immutable)
         SnapshotStreamKey snapshotStreamKey = new(
             BrookName,
-            SnapshotNameHelper.GetSnapshotName<TProjection>(),
+            SnapshotStorageNameHelper.GetStorageName<TProjection>(),
             versionedKey.ProjectionKey.BrookKey.Id,
             ReducersHash);
         SnapshotKey snapshotKey = new(snapshotStreamKey, versionedKey.Version.Value);

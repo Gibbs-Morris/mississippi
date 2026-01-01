@@ -140,7 +140,11 @@ public abstract class AggregateGrainBase<TSnapshot>
         _ = BrookDefinitionHelper.GetDefinition(GetType());
         string primaryKey = this.GetPrimaryKeyString();
         brookKey = BrookKey.FromString(primaryKey);
-        snapshotStreamKey = new(BrookName, SnapshotNameHelper.GetSnapshotName<TSnapshot>(), brookKey.Id, ReducersHash);
+        snapshotStreamKey = new(
+            BrookName,
+            SnapshotStorageNameHelper.GetStorageName<TSnapshot>(),
+            brookKey.Id,
+            ReducersHash);
         Logger.Activated(primaryKey);
         return Task.CompletedTask;
     }

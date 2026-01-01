@@ -14,7 +14,7 @@ namespace Cascade.Domain.Conversation.Events;
 /// <summary>
 ///     Event raised when a message is edited.
 /// </summary>
-[EventName("CASCADE", "CHAT", "MESSAGEEDITED")]
+[EventStorageName("CASCADE", "CHAT", "MESSAGEEDITED")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Conversation.Events.MessageEdited")]
 internal sealed record MessageEdited

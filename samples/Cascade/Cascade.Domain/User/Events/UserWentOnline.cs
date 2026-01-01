@@ -14,7 +14,7 @@ namespace Cascade.Domain.User.Events;
 /// <summary>
 ///     Event raised when a user comes online.
 /// </summary>
-[EventName("CASCADE", "CHAT", "USERWENTONLINE")]
+[EventStorageName("CASCADE", "CHAT", "USERWENTONLINE")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.Events.UserWentOnline")]
 internal sealed record UserWentOnline

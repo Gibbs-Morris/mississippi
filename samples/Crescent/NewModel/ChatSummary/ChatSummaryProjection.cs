@@ -11,7 +11,7 @@ namespace Crescent.NewModel.ChatSummary;
 /// <summary>
 ///     Read-optimized projection of a chat for UX display.
 /// </summary>
-[SnapshotName("CRESCENT", "NEWMODEL", "CHATSUMMARY")]
+[SnapshotStorageName("CRESCENT", "NEWMODEL", "CHATSUMMARY")]
 [GenerateSerializer]
 [Alias("Crescent.NewModel.ChatSummary.ChatSummaryProjection")]
 internal sealed record ChatSummaryProjection

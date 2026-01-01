@@ -5,25 +5,35 @@ using System.Text.RegularExpressions;
 namespace Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 /// <summary>
-///     Attribute used to define the name and version of an event in the event sourcing system.
+///     Attribute used to define the storage name and version of a snapshot/state/projection in the event sourcing system.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This attribute provides a stable string identity for snapshot types that survives
+///         type renames and namespace changes. When persisting snapshots to storage, the
+///         <see cref="StorageName" /> is used instead of the CLR type name, enabling safe refactoring.
+///     </para>
+///     <para>
+///         The naming convention follows the pattern: {AppName}.{ModuleName}.{Name}.V{Version}.
+///     </para>
+/// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-public sealed partial class EventNameAttribute : Attribute
+public sealed partial class SnapshotStorageNameAttribute : Attribute
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="EventNameAttribute" /> class.
+    ///     Initializes a new instance of the <see cref="SnapshotStorageNameAttribute" /> class.
     /// </summary>
     /// <param name="appName">
-    ///     The application name component of the event name. Must contain only uppercase alphanumeric
+    ///     The application name component of the storage name. Must contain only uppercase alphanumeric
     ///     characters.
     /// </param>
     /// <param name="moduleName">
-    ///     The module name component of the event name. Must contain only uppercase alphanumeric
+    ///     The module name component of the storage name. Must contain only uppercase alphanumeric
     ///     characters.
     /// </param>
-    /// <param name="name">The specific name component of the event. Must contain only uppercase alphanumeric characters.</param>
-    /// <param name="version">The version number of the event. Must be a positive integer.</param>
-    public EventNameAttribute(
+    /// <param name="name">The specific name component of the snapshot. Must contain only uppercase alphanumeric characters.</param>
+    /// <param name="version">The version number of the snapshot schema. Must be a positive integer.</param>
+    public SnapshotStorageNameAttribute(
         string appName,
         string moduleName,
         string name,
@@ -41,27 +51,27 @@ public sealed partial class EventNameAttribute : Attribute
     }
 
     /// <summary>
-    ///     Gets the application name component of the event name.
+    ///     Gets the application name component of the storage name.
     /// </summary>
     public string AppName { get; }
 
     /// <summary>
-    ///     Gets the fully qualified event name in the format {AppName}.{ModuleName}.{Name}.V{Version}.
-    /// </summary>
-    public string EventName => $"{AppName}.{ModuleName}.{Name}.V{Version}";
-
-    /// <summary>
-    ///     Gets the module name component of the event name.
+    ///     Gets the module name component of the storage name.
     /// </summary>
     public string ModuleName { get; }
 
     /// <summary>
-    ///     Gets the specific name component of the event.
+    ///     Gets the specific name component of the snapshot.
     /// </summary>
     public string Name { get; }
 
     /// <summary>
-    ///     Gets the version number of the event.
+    ///     Gets the fully qualified storage name in the format {AppName}.{ModuleName}.{Name}.V{Version}.
+    /// </summary>
+    public string StorageName => $"{AppName}.{ModuleName}.{Name}.V{Version}";
+
+    /// <summary>
+    ///     Gets the version number of the snapshot schema.
     /// </summary>
     public int Version { get; }
 

@@ -14,7 +14,7 @@ namespace Cascade.Domain.Channel.Events;
 /// <summary>
 ///     Event raised when a member is removed from a channel.
 /// </summary>
-[EventName("CASCADE", "CHAT", "MEMBERREMOVED")]
+[EventStorageName("CASCADE", "CHAT", "MEMBERREMOVED")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.Events.MemberRemoved")]
 internal sealed record MemberRemoved

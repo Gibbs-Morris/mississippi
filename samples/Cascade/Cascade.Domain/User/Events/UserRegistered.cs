@@ -14,7 +14,7 @@ namespace Cascade.Domain.User.Events;
 /// <summary>
 ///     Event raised when a user is registered.
 /// </summary>
-[EventName("CASCADE", "CHAT", "USERREGISTERED")]
+[EventStorageName("CASCADE", "CHAT", "USERREGISTERED")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.Events.UserRegistered")]
 internal sealed record UserRegistered

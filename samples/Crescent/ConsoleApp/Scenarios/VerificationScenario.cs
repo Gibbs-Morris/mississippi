@@ -164,7 +164,7 @@ internal static class VerificationScenario
         // Build the snapshot key: we need the brook name, projection type, projection id, reducer hash, and version
         // The version should match the current stream position
         string reducerHash = rootReducer.GetReducerHash();
-        string projectionType = SnapshotNameHelper.GetSnapshotName<CounterState>();
+        string projectionType = SnapshotStorageNameHelper.GetStorageName<CounterState>();
         SnapshotStreamKey streamKey = new(brookKey.Type, projectionType, counterId, reducerHash);
         SnapshotKey snapshotKey = new(streamKey, currentPosition.Value);
         SnapshotEnvelope? envelope = await snapshotStorageProvider.ReadAsync(snapshotKey, cancellationToken);

@@ -14,7 +14,7 @@ namespace Cascade.Domain.Conversation.Events;
 /// <summary>
 ///     Event raised when a message is sent.
 /// </summary>
-[EventName("CASCADE", "CHAT", "MESSAGESENT")]
+[EventStorageName("CASCADE", "CHAT", "MESSAGESENT")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Conversation.Events.MessageSent")]
 internal sealed record MessageSent

@@ -121,17 +121,17 @@ Test Cases:
 
 ---
 
-### File: Attributes/EventNameAttribute.cs & BrookNameAttribute.cs
+### File: Attributes/EventStorageNameAttribute.cs & BrookNameAttribute.cs
 
 Attribute presence and retrieval.
 
-#### Types: EventNameAttribute / BrookNameAttribute
+#### Types: EventStorageNameAttribute / BrookNameAttribute
 
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Priority | Type |
 |----|----------|---------------------|----------|------|
-| ATTR1 | EventNameAttribute discovered | reflect sample annotated class -> attribute present | M | Unit |
+| ATTR1 | EventStorageNameAttribute discovered | reflect sample annotated class -> attribute present | M | Unit |
 | ATTR2 | BrookNameAttribute discovered | reflect sample annotated class -> attribute present | M | Unit |
 
 ---

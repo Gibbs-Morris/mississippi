@@ -2,18 +2,19 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using SnapshotNameAttribute = Mississippi.EventSourcing.Brooks.Abstractions.Attributes.SnapshotNameAttribute;
+using SnapshotStorageNameAttribute =
+    Mississippi.EventSourcing.Brooks.Abstractions.Attributes.SnapshotStorageNameAttribute;
 
 
 namespace Mississippi.EventSourcing.Abstractions.Tests.Attributes;
 
 /// <summary>
-///     Contains unit tests that verify the behaviour of the <see cref="SnapshotNameAttribute" /> class.
+///     Contains unit tests that verify the behaviour of the <see cref="SnapshotStorageNameAttribute" /> class.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Snapshot Name Attribute")]
-public sealed class SnapshotNameAttributeTests
+[AllureSubSuite("Snapshot Storage Name Attribute")]
+public sealed class SnapshotStorageNameAttributeTests
 {
     /// <summary>
     ///     Verifies that the default version is 1 when not explicitly specified.
@@ -21,7 +22,7 @@ public sealed class SnapshotNameAttributeTests
     [Fact]
     public void ConstructorDefaultsVersionToOne()
     {
-        SnapshotNameAttribute sut = new("APP", "MODULE", "STATE");
+        SnapshotStorageNameAttribute sut = new("APP", "MODULE", "STATE");
         Assert.Equal(1, sut.Version);
     }
 
@@ -43,8 +44,8 @@ public sealed class SnapshotNameAttributeTests
         int version
     )
     {
-        SnapshotNameAttribute sut = new(app, mod, snapshot, version);
-        Assert.Equal($"{app}.{mod}.{snapshot}.V{version}", sut.SnapshotName);
+        SnapshotStorageNameAttribute sut = new(app, mod, snapshot, version);
+        Assert.Equal($"{app}.{mod}.{snapshot}.V{version}", sut.StorageName);
     }
 
     /// <summary>
@@ -62,7 +63,7 @@ public sealed class SnapshotNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new SnapshotNameAttribute(badApp, "MODULE", "STATE"));
+            Assert.Throws<ArgumentException>(() => new SnapshotStorageNameAttribute(badApp, "MODULE", "STATE"));
         Assert.Equal("appName", ex.ParamName);
     }
 
@@ -80,7 +81,7 @@ public sealed class SnapshotNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new SnapshotNameAttribute(appName, "MODULE", "STATE"));
+            Assert.Throws<ArgumentException>(() => new SnapshotStorageNameAttribute(appName, "MODULE", "STATE"));
         Assert.Equal("appName", ex.ParamName);
     }
 
@@ -98,7 +99,7 @@ public sealed class SnapshotNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new SnapshotNameAttribute("APP", moduleName, "STATE"));
+            Assert.Throws<ArgumentException>(() => new SnapshotStorageNameAttribute("APP", moduleName, "STATE"));
         Assert.Equal("moduleName", ex.ParamName);
     }
 
@@ -115,7 +116,8 @@ public sealed class SnapshotNameAttributeTests
         string name
     )
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() => new SnapshotNameAttribute("APP", "MODULE", name));
+        ArgumentException ex =
+            Assert.Throws<ArgumentException>(() => new SnapshotStorageNameAttribute("APP", "MODULE", name));
         Assert.Equal("name", ex.ParamName);
     }
 
@@ -133,7 +135,7 @@ public sealed class SnapshotNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new SnapshotNameAttribute("APP", "MODULE", "STATE", version));
+            Assert.Throws<ArgumentException>(() => new SnapshotStorageNameAttribute("APP", "MODULE", "STATE", version));
         Assert.Equal("version", ex.ParamName);
     }
 
@@ -155,7 +157,7 @@ public sealed class SnapshotNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new SnapshotNameAttribute(appName!, moduleName, name));
+            Assert.Throws<ArgumentException>(() => new SnapshotStorageNameAttribute(appName!, moduleName, name));
         Assert.Equal("appName", ex.ParamName);
     }
 
@@ -177,7 +179,7 @@ public sealed class SnapshotNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new SnapshotNameAttribute(appName, moduleName!, name));
+            Assert.Throws<ArgumentException>(() => new SnapshotStorageNameAttribute(appName, moduleName!, name));
         Assert.Equal("moduleName", ex.ParamName);
     }
 
@@ -199,7 +201,7 @@ public sealed class SnapshotNameAttributeTests
     )
     {
         ArgumentException ex =
-            Assert.Throws<ArgumentException>(() => new SnapshotNameAttribute(appName, moduleName, name!));
+            Assert.Throws<ArgumentException>(() => new SnapshotStorageNameAttribute(appName, moduleName, name!));
         Assert.Equal("name", ex.ParamName);
     }
 
@@ -220,7 +222,7 @@ public sealed class SnapshotNameAttributeTests
         int version
     )
     {
-        SnapshotNameAttribute sut = new(appName, moduleName, name, version);
+        SnapshotStorageNameAttribute sut = new(appName, moduleName, name, version);
         Assert.Equal(appName, sut.AppName);
         Assert.Equal(moduleName, sut.ModuleName);
         Assert.Equal(name, sut.Name);
@@ -228,7 +230,7 @@ public sealed class SnapshotNameAttributeTests
     }
 
     /// <summary>
-    ///     Verifies that valid constructor arguments produce the expected snapshot name format.
+    ///     Verifies that valid constructor arguments produce the expected storage name format.
     /// </summary>
     /// <param name="appName">The application name component.</param>
     /// <param name="moduleName">The module name component.</param>
@@ -237,31 +239,31 @@ public sealed class SnapshotNameAttributeTests
     [Theory]
     [InlineData("APP", "MODULE", "STATE", 1)]
     [InlineData("MYAPP", "MYMODULE", "MYSTATE", 5)]
-    public void ConstructorSetsSnapshotNameProperty(
+    public void ConstructorSetsStorageNameProperty(
         string appName,
         string moduleName,
         string name,
         int version
     )
     {
-        SnapshotNameAttribute sut = new(appName, moduleName, name, version);
-        Assert.Equal($"{appName}.{moduleName}.{name}.V{version}", sut.SnapshotName);
+        SnapshotStorageNameAttribute sut = new(appName, moduleName, name, version);
+        Assert.Equal($"{appName}.{moduleName}.{name}.V{version}", sut.StorageName);
     }
 
     /// <summary>
-    ///     Verifies that <see cref="SnapshotNameAttribute.SnapshotName" /> returns the expected value based on
+    ///     Verifies that <see cref="SnapshotStorageNameAttribute.StorageName" /> returns the expected value based on
     ///     the constructor arguments.
     /// </summary>
     /// <param name="appName">The application name component.</param>
     /// <param name="moduleName">The module name component.</param>
     /// <param name="name">The snapshot name component.</param>
     /// <param name="version">The version number.</param>
-    /// <param name="expected">The expected snapshot name string.</param>
+    /// <param name="expected">The expected storage name string.</param>
     [Theory]
     [InlineData("APP", "MODULE", "STATE", 1, "APP.MODULE.STATE.V1")]
     [InlineData("MYAPP", "MYMODULE", "MYSTATE", 2, "MYAPP.MYMODULE.MYSTATE.V2")]
     [InlineData("A", "B", "C", 999, "A.B.C.V999")]
-    public void SnapshotNamePropertyReturnsFormattedString(
+    public void StorageNamePropertyReturnsFormattedString(
         string appName,
         string moduleName,
         string name,
@@ -269,13 +271,13 @@ public sealed class SnapshotNameAttributeTests
         string expected
     )
     {
-        SnapshotNameAttribute sut = new(appName, moduleName, name, version);
-        Assert.Equal(expected, sut.SnapshotName);
+        SnapshotStorageNameAttribute sut = new(appName, moduleName, name, version);
+        Assert.Equal(expected, sut.StorageName);
     }
 
     /// <summary>
-    ///     Verifies that <see cref="SnapshotNameAttribute.Version" /> property and the formatted
-    ///     <see cref="SnapshotNameAttribute.SnapshotName" /> correctly reflect positive integer versions.
+    ///     Verifies that <see cref="SnapshotStorageNameAttribute.Version" /> property and the formatted
+    ///     <see cref="SnapshotStorageNameAttribute.StorageName" /> correctly reflect positive integer versions.
     /// </summary>
     /// <param name="version">The version number to test.</param>
     [Theory]
@@ -286,8 +288,8 @@ public sealed class SnapshotNameAttributeTests
         int version
     )
     {
-        SnapshotNameAttribute sut = new("APP", "MODULE", "STATE", version);
+        SnapshotStorageNameAttribute sut = new("APP", "MODULE", "STATE", version);
         Assert.Equal(version, sut.Version);
-        Assert.EndsWith($".V{version}", sut.SnapshotName, StringComparison.Ordinal);
+        Assert.EndsWith($".V{version}", sut.StorageName, StringComparison.Ordinal);
     }
 }

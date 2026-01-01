@@ -14,7 +14,7 @@ namespace Cascade.Domain.Channel.Events;
 /// <summary>
 ///     Event raised when a member is added to a channel.
 /// </summary>
-[EventName("CASCADE", "CHAT", "MEMBERADDED")]
+[EventStorageName("CASCADE", "CHAT", "MEMBERADDED")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.Events.MemberAdded")]
 internal sealed record MemberAdded

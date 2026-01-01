@@ -8,7 +8,7 @@ namespace Crescent.NewModel.Chat.Events;
 /// <summary>
 ///     Event raised when a message is deleted from the chat.
 /// </summary>
-[EventName("CRESCENT", "NEWMODEL", "MESSAGEDELETED")]
+[EventStorageName("CRESCENT", "NEWMODEL", "MESSAGEDELETED")]
 [GenerateSerializer]
 [Alias("Crescent.NewModel.Chat.Events.MessageDeleted")]
 internal sealed record MessageDeleted

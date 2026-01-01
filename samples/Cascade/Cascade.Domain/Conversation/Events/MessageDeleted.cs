@@ -14,7 +14,7 @@ namespace Cascade.Domain.Conversation.Events;
 /// <summary>
 ///     Event raised when a message is deleted.
 /// </summary>
-[EventName("CASCADE", "CHAT", "MESSAGEDELETED")]
+[EventStorageName("CASCADE", "CHAT", "MESSAGEDELETED")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Conversation.Events.MessageDeleted")]
 internal sealed record MessageDeleted

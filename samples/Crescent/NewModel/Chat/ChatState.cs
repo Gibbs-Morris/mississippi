@@ -11,7 +11,7 @@ namespace Crescent.NewModel.Chat;
 ///     Internal state for the chat aggregate.
 ///     Maintains the last 50 messages in the chat.
 /// </summary>
-[SnapshotName("CRESCENT", "NEWMODEL", "CHATSTATE")]
+[SnapshotStorageName("CRESCENT", "NEWMODEL", "CHATSTATE")]
 [GenerateSerializer]
 [Alias("Crescent.NewModel.Chat.ChatState")]
 internal sealed record ChatState
