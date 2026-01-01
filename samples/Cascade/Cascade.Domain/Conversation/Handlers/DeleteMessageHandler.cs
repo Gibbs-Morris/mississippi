@@ -17,12 +17,12 @@ namespace Cascade.Domain.Conversation.Handlers;
 /// <summary>
 ///     Handles the <see cref="DeleteMessage" /> command.
 /// </summary>
-internal sealed class DeleteMessageHandler : CommandHandler<DeleteMessage, ConversationState>
+internal sealed class DeleteMessageHandler : CommandHandler<DeleteMessage, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         DeleteMessage command,
-        ConversationState? state
+        ConversationAggregate? state
     )
     {
         if (string.IsNullOrWhiteSpace(command.MessageId))

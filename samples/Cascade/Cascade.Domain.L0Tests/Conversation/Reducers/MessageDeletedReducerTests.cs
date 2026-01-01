@@ -45,7 +45,7 @@ public sealed class MessageDeletedReducerTests
             SentBy = "user-789",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -54,7 +54,7 @@ public sealed class MessageDeletedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.True(result.Messages[0].IsDeleted);
@@ -89,7 +89,7 @@ public sealed class MessageDeletedReducerTests
             SentBy = "user-222",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -98,7 +98,7 @@ public sealed class MessageDeletedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.False(result.Messages[0].IsDeleted);
@@ -130,7 +130,7 @@ public sealed class MessageDeletedReducerTests
             SentAt = sentAt,
             EditedAt = editedAt,
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -139,7 +139,7 @@ public sealed class MessageDeletedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.Equal("msg-001", result.Messages[0].MessageId);
@@ -164,7 +164,7 @@ public sealed class MessageDeletedReducerTests
             DeletedBy = "user-789",
             DeletedAt = DateTimeOffset.UtcNow,
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -173,7 +173,7 @@ public sealed class MessageDeletedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert - Reducers must return new instance, but values should be equivalent
         Assert.NotSame(existingState, result);

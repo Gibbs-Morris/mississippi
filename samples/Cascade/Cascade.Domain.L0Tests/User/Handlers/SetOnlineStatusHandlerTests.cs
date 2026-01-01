@@ -38,7 +38,7 @@ public sealed class SetOnlineStatusHandlerTests
         {
             IsOnline = true,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -89,7 +89,7 @@ public sealed class SetOnlineStatusHandlerTests
         {
             IsOnline = false,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -119,7 +119,7 @@ public sealed class SetOnlineStatusHandlerTests
         {
             IsOnline = true,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",

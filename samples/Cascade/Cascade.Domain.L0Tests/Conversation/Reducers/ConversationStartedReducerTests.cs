@@ -40,7 +40,7 @@ public sealed class ConversationStartedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(null!, evt);
+        ConversationAggregate result = reducer.Reduce(null!, evt);
 
         // Assert
         Assert.True(result.IsStarted);
@@ -66,7 +66,7 @@ public sealed class ConversationStartedReducerTests
             ChannelId = "channel-new",
             StartedAt = startedAt,
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-old",
@@ -74,7 +74,7 @@ public sealed class ConversationStartedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.Equal("conv-new", result.ConversationId);

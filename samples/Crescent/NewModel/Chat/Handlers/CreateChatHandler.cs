@@ -11,12 +11,12 @@ namespace Crescent.NewModel.Chat.Handlers;
 /// <summary>
 ///     Command handler for creating a chat.
 /// </summary>
-internal sealed class CreateChatHandler : CommandHandler<CreateChat, ChatState>
+internal sealed class CreateChatHandler : CommandHandler<CreateChat, ChatAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         CreateChat command,
-        ChatState? state
+        ChatAggregate? state
     )
     {
         // Prevent re-creation

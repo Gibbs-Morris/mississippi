@@ -7,4 +7,4 @@ namespace Mississippi.EventSourcing.Aggregates.Tests;
 ///     Test state for AggregateGrain tests.
 /// </summary>
 [SnapshotStorageName("MISSISSIPPI", "TESTS", "AGGREGATEGRAINTEST")]
-internal sealed record AggregateGrainTestState(int Count, string LastValue);
+internal sealed record AggregateGrainTestAggregate(int Count, string LastValue);

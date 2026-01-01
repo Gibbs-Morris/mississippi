@@ -16,12 +16,12 @@ namespace Cascade.Domain.Conversation.Handlers;
 /// <summary>
 ///     Handles the <see cref="SendMessage" /> command.
 /// </summary>
-internal sealed class SendMessageHandler : CommandHandler<SendMessage, ConversationState>
+internal sealed class SendMessageHandler : CommandHandler<SendMessage, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         SendMessage command,
-        ConversationState? state
+        ConversationAggregate? state
     )
     {
         if (string.IsNullOrWhiteSpace(command.MessageId))

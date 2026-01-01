@@ -39,7 +39,7 @@ public sealed class LeaveChannelHandlerTests
         {
             ChannelId = string.Empty,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -68,7 +68,7 @@ public sealed class LeaveChannelHandlerTests
         {
             ChannelId = "channel-1",
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -119,7 +119,7 @@ public sealed class LeaveChannelHandlerTests
         {
             ChannelId = "channel-1",
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",

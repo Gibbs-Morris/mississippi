@@ -37,7 +37,7 @@ public sealed class ChatCreatedReducerTests
         };
 
         // Act
-        ChatState result = reducer.Reduce(null!, @event);
+        ChatAggregate result = reducer.Reduce(null!, @event);
 
         // Assert
         Assert.True(result.IsCreated);

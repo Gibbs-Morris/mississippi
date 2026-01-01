@@ -11,12 +11,12 @@ namespace Crescent.ConsoleApp.Counter.Handlers;
 /// <summary>
 ///     Command handler for incrementing a counter.
 /// </summary>
-internal sealed class IncrementCounterHandler : CommandHandler<IncrementCounter, CounterState>
+internal sealed class IncrementCounterHandler : CommandHandler<IncrementCounter, CounterAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         IncrementCounter command,
-        CounterState? state
+        CounterAggregate? state
     )
     {
         if (state?.IsInitialized != true)

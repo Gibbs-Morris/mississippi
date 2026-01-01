@@ -21,7 +21,7 @@ namespace Crescent.NewModel.Chat;
 /// </summary>
 [BrookName("CRESCENT", "NEWMODEL", "CHAT")]
 internal sealed class ChatAggregateGrain
-    : AggregateGrainBase<ChatState>,
+    : AggregateGrainBase<ChatAggregate>,
       IChatAggregateGrain
 {
     /// <summary>
@@ -38,9 +38,9 @@ internal sealed class ChatAggregateGrain
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
         IBrookEventConverter brookEventConverter,
-        IRootCommandHandler<ChatState> rootCommandHandler,
+        IRootCommandHandler<ChatAggregate> rootCommandHandler,
         ISnapshotGrainFactory snapshotGrainFactory,
-        IRootReducer<ChatState> rootReducer,
+        IRootReducer<ChatAggregate> rootReducer,
         ILogger<ChatAggregateGrain> logger
     )
         : base(

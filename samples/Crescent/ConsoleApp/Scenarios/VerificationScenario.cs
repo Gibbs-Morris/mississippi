@@ -47,8 +47,8 @@ internal static class VerificationScenario
         IGrainFactory grainFactory,
         IBrookStorageProvider brookStorageProvider,
         ISnapshotStorageProvider snapshotStorageProvider,
-        ISnapshotStateConverter<CounterState> snapshotStateConverter,
-        IRootReducer<CounterState> rootReducer,
+        ISnapshotStateConverter<CounterAggregate> snapshotStateConverter,
+        IRootReducer<CounterAggregate> rootReducer,
         string counterId,
         CancellationToken cancellationToken = default
     )
@@ -164,7 +164,7 @@ internal static class VerificationScenario
         // Build the snapshot key: we need the brook name, projection type, projection id, reducer hash, and version
         // The version should match the current stream position
         string reducerHash = rootReducer.GetReducerHash();
-        string projectionType = SnapshotStorageNameHelper.GetStorageName<CounterState>();
+        string projectionType = SnapshotStorageNameHelper.GetStorageName<CounterAggregate>();
         SnapshotStreamKey streamKey = new(brookKey.Type, projectionType, counterId, reducerHash);
         SnapshotKey snapshotKey = new(streamKey, currentPosition.Value);
         SnapshotEnvelope? envelope = await snapshotStorageProvider.ReadAsync(snapshotKey, cancellationToken);
@@ -184,7 +184,7 @@ internal static class VerificationScenario
                 envelope.Data.Length);
 
             // Deserialize the snapshot data using the state converter
-            CounterState state = snapshotStateConverter.FromEnvelope(envelope);
+            CounterAggregate state = snapshotStateConverter.FromEnvelope(envelope);
             logger.VerificationSnapshotDetails(
                 runId,
                 envelope.DataContentType,

@@ -8,13 +8,13 @@ using Orleans;
 namespace Crescent.NewModel.Chat;
 
 /// <summary>
-///     Internal state for the chat aggregate.
+///     Internal aggregate state for the chat.
 ///     Maintains the last 50 messages in the chat.
 /// </summary>
 [SnapshotStorageName("CRESCENT", "NEWMODEL", "CHATSTATE")]
 [GenerateSerializer]
-[Alias("Crescent.NewModel.Chat.ChatState")]
-internal sealed record ChatState
+[Alias("Crescent.NewModel.Chat.ChatAggregate")]
+internal sealed record ChatAggregate
 {
     /// <summary>
     ///     The maximum number of messages to retain in state.

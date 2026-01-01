@@ -16,12 +16,12 @@ namespace Cascade.Domain.User.Handlers;
 /// <summary>
 ///     Command handler for recording that a user joined a channel.
 /// </summary>
-internal sealed class JoinChannelHandler : CommandHandler<JoinChannel, UserState>
+internal sealed class JoinChannelHandler : CommandHandler<JoinChannel, UserAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         JoinChannel command,
-        UserState? state
+        UserAggregate? state
     )
     {
         if (state?.IsRegistered != true)

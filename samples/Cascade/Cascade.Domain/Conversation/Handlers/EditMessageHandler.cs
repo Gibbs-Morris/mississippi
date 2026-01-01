@@ -17,12 +17,12 @@ namespace Cascade.Domain.Conversation.Handlers;
 /// <summary>
 ///     Handles the <see cref="EditMessage" /> command.
 /// </summary>
-internal sealed class EditMessageHandler : CommandHandler<EditMessage, ConversationState>
+internal sealed class EditMessageHandler : CommandHandler<EditMessage, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         EditMessage command,
-        ConversationState? state
+        ConversationAggregate? state
     )
     {
         if (string.IsNullOrWhiteSpace(command.MessageId))

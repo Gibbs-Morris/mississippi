@@ -16,12 +16,12 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="ArchiveChannel" /> command.
 /// </summary>
-internal sealed class ArchiveChannelHandler : CommandHandler<ArchiveChannel, ChannelState>
+internal sealed class ArchiveChannelHandler : CommandHandler<ArchiveChannel, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         ArchiveChannel command,
-        ChannelState? state
+        ChannelAggregate? state
     )
     {
         if (string.IsNullOrWhiteSpace(command.ArchivedBy))

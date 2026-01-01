@@ -21,7 +21,7 @@ namespace Crescent.ConsoleApp.Counter;
 /// </summary>
 [BrookName("CRESCENT", "SAMPLE", "COUNTER")]
 internal sealed class CounterAggregateGrain
-    : AggregateGrainBase<CounterState>,
+    : AggregateGrainBase<CounterAggregate>,
       ICounterAggregateGrain
 {
     /// <summary>
@@ -38,9 +38,9 @@ internal sealed class CounterAggregateGrain
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
         IBrookEventConverter brookEventConverter,
-        IRootCommandHandler<CounterState> rootCommandHandler,
+        IRootCommandHandler<CounterAggregate> rootCommandHandler,
         ISnapshotGrainFactory snapshotGrainFactory,
-        IRootReducer<CounterState> rootReducer,
+        IRootReducer<CounterAggregate> rootReducer,
         ILogger<CounterAggregateGrain> logger
     )
         : base(

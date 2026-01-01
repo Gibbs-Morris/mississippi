@@ -16,12 +16,12 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="CreateChannel" /> command.
 /// </summary>
-internal sealed class CreateChannelHandler : CommandHandler<CreateChannel, ChannelState>
+internal sealed class CreateChannelHandler : CommandHandler<CreateChannel, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         CreateChannel command,
-        ChannelState? state
+        ChannelAggregate? state
     )
     {
         if (string.IsNullOrWhiteSpace(command.ChannelId))

@@ -40,7 +40,7 @@ public sealed class RegisterUserHandlerTests
             UserId = "user-123",
             DisplayName = "John Doe",
         };
-        UserState existingState = new()
+        UserAggregate existingState = new()
         {
             IsRegistered = true,
             UserId = "user-123",

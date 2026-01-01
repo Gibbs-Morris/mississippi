@@ -38,7 +38,7 @@ public sealed class UpdateDisplayNameHandlerTests
         {
             NewDisplayName = "New Name",
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -68,7 +68,7 @@ public sealed class UpdateDisplayNameHandlerTests
         {
             NewDisplayName = string.Empty,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",

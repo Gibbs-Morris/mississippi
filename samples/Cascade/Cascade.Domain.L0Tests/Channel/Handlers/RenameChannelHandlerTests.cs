@@ -38,7 +38,7 @@ public sealed class RenameChannelHandlerTests
         {
             NewName = "New Name",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -69,7 +69,7 @@ public sealed class RenameChannelHandlerTests
         {
             NewName = "New Name",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -98,7 +98,7 @@ public sealed class RenameChannelHandlerTests
         {
             NewName = string.Empty,
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",

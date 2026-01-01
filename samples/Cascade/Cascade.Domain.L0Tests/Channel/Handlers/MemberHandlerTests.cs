@@ -40,7 +40,7 @@ public sealed class MemberHandlerTests
         {
             UserId = "user-123",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -69,7 +69,7 @@ public sealed class MemberHandlerTests
         {
             UserId = "user-456",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -120,7 +120,7 @@ public sealed class MemberHandlerTests
         {
             UserId = string.Empty,
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -148,7 +148,7 @@ public sealed class MemberHandlerTests
         {
             UserId = "user-456",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -180,7 +180,7 @@ public sealed class MemberHandlerTests
         {
             UserId = "user-123",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -210,7 +210,7 @@ public sealed class MemberHandlerTests
         {
             UserId = "user-789",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -239,7 +239,7 @@ public sealed class MemberHandlerTests
         {
             UserId = string.Empty,
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -268,7 +268,7 @@ public sealed class MemberHandlerTests
         {
             UserId = "user-123",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",

@@ -16,12 +16,12 @@ namespace Cascade.Domain.Conversation.Handlers;
 /// <summary>
 ///     Handles the <see cref="StartConversation" /> command.
 /// </summary>
-internal sealed class StartConversationHandler : CommandHandler<StartConversation, ConversationState>
+internal sealed class StartConversationHandler : CommandHandler<StartConversation, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         StartConversation command,
-        ConversationState? state
+        ConversationAggregate? state
     )
     {
         if (string.IsNullOrWhiteSpace(command.ConversationId))

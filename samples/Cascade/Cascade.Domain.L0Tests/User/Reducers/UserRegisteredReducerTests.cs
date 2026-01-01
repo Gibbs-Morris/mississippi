@@ -40,7 +40,7 @@ public sealed class UserRegisteredReducerTests
         };
 
         // Act
-        UserState result = reducer.Reduce(null!, evt);
+        UserAggregate result = reducer.Reduce(null!, evt);
 
         // Assert
         Assert.True(result.IsRegistered);
@@ -67,7 +67,7 @@ public sealed class UserRegisteredReducerTests
             DisplayName = "Jane Doe",
             RegisteredAt = registeredAt,
         };
-        UserState existingState = new()
+        UserAggregate existingState = new()
         {
             IsRegistered = true,
             UserId = "old-user",
@@ -75,7 +75,7 @@ public sealed class UserRegisteredReducerTests
         };
 
         // Act
-        UserState result = reducer.Reduce(existingState, evt);
+        UserAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.True(result.IsRegistered);

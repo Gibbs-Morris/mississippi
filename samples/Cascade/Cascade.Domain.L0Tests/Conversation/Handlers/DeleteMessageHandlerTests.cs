@@ -49,7 +49,7 @@ public sealed class DeleteMessageHandlerTests
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
             IsDeleted = true,
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -79,7 +79,7 @@ public sealed class DeleteMessageHandlerTests
             MessageId = string.Empty,
             DeletedBy = "user-789",
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -108,7 +108,7 @@ public sealed class DeleteMessageHandlerTests
             MessageId = "msg-nonexistent",
             DeletedBy = "user-789",
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -145,7 +145,7 @@ public sealed class DeleteMessageHandlerTests
             SentBy = "user-789",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",

@@ -10,13 +10,13 @@ using Mississippi.EventSourcing.Reducers.Abstractions;
 namespace Cascade.Domain.Channel.Reducers;
 
 /// <summary>
-///     Reduces the <see cref="MemberRemoved" /> event to produce a new <see cref="ChannelState" />.
+///     Reduces the <see cref="MemberRemoved" /> event to produce a new <see cref="ChannelAggregate" />.
 /// </summary>
-internal sealed class MemberRemovedReducer : Reducer<MemberRemoved, ChannelState>
+internal sealed class MemberRemovedReducer : Reducer<MemberRemoved, ChannelAggregate>
 {
     /// <inheritdoc />
-    protected override ChannelState ReduceCore(
-        ChannelState state,
+    protected override ChannelAggregate ReduceCore(
+        ChannelAggregate state,
         MemberRemoved eventData
     ) =>
         state with

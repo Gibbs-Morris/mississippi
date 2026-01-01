@@ -16,12 +16,12 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="RemoveMember" /> command.
 /// </summary>
-internal sealed class RemoveMemberHandler : CommandHandler<RemoveMember, ChannelState>
+internal sealed class RemoveMemberHandler : CommandHandler<RemoveMember, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         RemoveMember command,
-        ChannelState? state
+        ChannelAggregate? state
     )
     {
         if (string.IsNullOrWhiteSpace(command.UserId))

@@ -1,4 +1,4 @@
-// <copyright file="UserState.cs" company="Gibbs-Morris">
+// <copyright file="UserAggregate.cs" company="Gibbs-Morris">
 // Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
@@ -18,8 +18,8 @@ namespace Cascade.Domain.User;
 /// </summary>
 [SnapshotStorageName("CASCADE", "CHAT", "USERSTATE")]
 [GenerateSerializer]
-[Alias("Cascade.Domain.User.UserState")]
-internal sealed record UserState
+[Alias("Cascade.Domain.User.UserAggregate")]
+internal sealed record UserAggregate
 {
     /// <summary>
     ///     Gets the set of channel IDs the user has joined.

@@ -36,19 +36,19 @@ internal static class ChatRegistrations
         services.AddEventType<MessageDeleted>();
 
         // Register command handlers
-        services.AddCommandHandler<CreateChat, ChatState, CreateChatHandler>();
-        services.AddCommandHandler<AddMessage, ChatState, AddMessageHandler>();
-        services.AddCommandHandler<EditMessage, ChatState, EditMessageHandler>();
-        services.AddCommandHandler<DeleteMessage, ChatState, DeleteMessageHandler>();
+        services.AddCommandHandler<CreateChat, ChatAggregate, CreateChatHandler>();
+        services.AddCommandHandler<AddMessage, ChatAggregate, AddMessageHandler>();
+        services.AddCommandHandler<EditMessage, ChatAggregate, EditMessageHandler>();
+        services.AddCommandHandler<DeleteMessage, ChatAggregate, DeleteMessageHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<ChatCreated, ChatState, ChatCreatedReducer>();
-        services.AddReducer<MessageAdded, ChatState, MessageAddedReducer>();
-        services.AddReducer<MessageEdited, ChatState, MessageEditedReducer>();
-        services.AddReducer<MessageDeleted, ChatState, MessageDeletedReducer>();
+        services.AddReducer<ChatCreated, ChatAggregate, ChatCreatedReducer>();
+        services.AddReducer<MessageAdded, ChatAggregate, MessageAddedReducer>();
+        services.AddReducer<MessageEdited, ChatAggregate, MessageEditedReducer>();
+        services.AddReducer<MessageDeleted, ChatAggregate, MessageDeletedReducer>();
 
-        // Add snapshot state converter for ChatState
-        services.AddSnapshotStateConverter<ChatState>();
+        // Add snapshot state converter for ChatAggregate
+        services.AddSnapshotStateConverter<ChatAggregate>();
         return services;
     }
 }

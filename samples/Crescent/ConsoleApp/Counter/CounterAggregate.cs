@@ -6,13 +6,13 @@ using Orleans;
 namespace Crescent.ConsoleApp.Counter;
 
 /// <summary>
-///     Internal state for the counter aggregate.
+///     Internal aggregate state for the counter.
 ///     This is never exposed externally; use projections for read queries.
 /// </summary>
 [SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSTATE")]
 [GenerateSerializer]
-[Alias("Crescent.ConsoleApp.Counter.CounterState")]
-internal sealed record CounterState
+[Alias("Crescent.ConsoleApp.Counter.CounterAggregate")]
+internal sealed record CounterAggregate
 {
     /// <summary>
     ///     Gets the current count value.

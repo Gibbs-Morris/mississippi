@@ -12,16 +12,16 @@ namespace Crescent.NewModel.Chat.Reducers;
 ///     Reducer for <see cref="MessageAdded" /> events.
 ///     Maintains only the last 50 messages in state.
 /// </summary>
-internal sealed class MessageAddedReducer : Reducer<MessageAdded, ChatState>
+internal sealed class MessageAddedReducer : Reducer<MessageAdded, ChatAggregate>
 {
     /// <inheritdoc />
-    protected override ChatState ReduceCore(
-        ChatState state,
+    protected override ChatAggregate ReduceCore(
+        ChatAggregate state,
         MessageAdded @event
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-        ChatState currentState = state ?? new();
+        ChatAggregate currentState = state ?? new();
         ChatMessage newMessage = new()
         {
             MessageId = @event.MessageId,
@@ -32,9 +32,9 @@ internal sealed class MessageAddedReducer : Reducer<MessageAdded, ChatState>
 
         // Add the new message and keep only the last 50
         ImmutableList<ChatMessage> updatedMessages = currentState.Messages.Add(newMessage);
-        if (updatedMessages.Count > ChatState.MaxMessages)
+        if (updatedMessages.Count > ChatAggregate.MaxMessages)
         {
-            updatedMessages = updatedMessages.RemoveRange(0, updatedMessages.Count - ChatState.MaxMessages);
+            updatedMessages = updatedMessages.RemoveRange(0, updatedMessages.Count - ChatAggregate.MaxMessages);
         }
 
         return currentState with

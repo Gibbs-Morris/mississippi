@@ -10,13 +10,13 @@ using Mississippi.EventSourcing.Reducers.Abstractions;
 namespace Cascade.Domain.Conversation.Reducers;
 
 /// <summary>
-///     Reduces the <see cref="MessageEdited" /> event to produce a new <see cref="ConversationState" />.
+///     Reduces the <see cref="MessageEdited" /> event to produce a new <see cref="ConversationAggregate" />.
 /// </summary>
-internal sealed class MessageEditedReducer : Reducer<MessageEdited, ConversationState>
+internal sealed class MessageEditedReducer : Reducer<MessageEdited, ConversationAggregate>
 {
     /// <inheritdoc />
-    protected override ConversationState ReduceCore(
-        ConversationState state,
+    protected override ConversationAggregate ReduceCore(
+        ConversationAggregate state,
         MessageEdited eventData
     )
     {

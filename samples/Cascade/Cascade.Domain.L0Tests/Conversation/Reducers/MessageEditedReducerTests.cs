@@ -54,7 +54,7 @@ public sealed class MessageEditedReducerTests
             SentBy = "user-222",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -63,7 +63,7 @@ public sealed class MessageEditedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.Equal("First message", result.Messages[0].Content);
@@ -95,7 +95,7 @@ public sealed class MessageEditedReducerTests
             SentBy = "user-789",
             SentAt = sentAt,
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -104,7 +104,7 @@ public sealed class MessageEditedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.Equal("msg-001", result.Messages[0].MessageId);
@@ -129,7 +129,7 @@ public sealed class MessageEditedReducerTests
             EditedBy = "user-789",
             EditedAt = DateTimeOffset.UtcNow,
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -138,7 +138,7 @@ public sealed class MessageEditedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert - Reducers must return new instance, but values should be equivalent
         Assert.NotSame(existingState, result);
@@ -172,7 +172,7 @@ public sealed class MessageEditedReducerTests
             SentBy = "user-789",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -181,7 +181,7 @@ public sealed class MessageEditedReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.Equal("Updated content", result.Messages[0].Content);

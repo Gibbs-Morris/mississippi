@@ -61,7 +61,7 @@ public sealed class DeleteMessageHandlerTests
         {
             MessageId = "msg-999",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -98,7 +98,7 @@ public sealed class DeleteMessageHandlerTests
         {
             MessageId = string.Empty,
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -125,7 +125,7 @@ public sealed class DeleteMessageHandlerTests
         {
             MessageId = "msg-001",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",

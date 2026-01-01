@@ -81,21 +81,21 @@ public static class CascadeRegistrations
         services.AddEventType<MemberRemoved>();
 
         // Register command handlers
-        services.AddCommandHandler<CreateChannel, ChannelState, CreateChannelHandler>();
-        services.AddCommandHandler<RenameChannel, ChannelState, RenameChannelHandler>();
-        services.AddCommandHandler<ArchiveChannel, ChannelState, ArchiveChannelHandler>();
-        services.AddCommandHandler<AddMember, ChannelState, AddMemberHandler>();
-        services.AddCommandHandler<RemoveMember, ChannelState, RemoveMemberHandler>();
+        services.AddCommandHandler<CreateChannel, ChannelAggregate, CreateChannelHandler>();
+        services.AddCommandHandler<RenameChannel, ChannelAggregate, RenameChannelHandler>();
+        services.AddCommandHandler<ArchiveChannel, ChannelAggregate, ArchiveChannelHandler>();
+        services.AddCommandHandler<AddMember, ChannelAggregate, AddMemberHandler>();
+        services.AddCommandHandler<RemoveMember, ChannelAggregate, RemoveMemberHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<ChannelCreated, ChannelState, ChannelCreatedReducer>();
-        services.AddReducer<ChannelRenamed, ChannelState, ChannelRenamedReducer>();
-        services.AddReducer<ChannelArchived, ChannelState, ChannelArchivedReducer>();
-        services.AddReducer<MemberAdded, ChannelState, MemberAddedReducer>();
-        services.AddReducer<MemberRemoved, ChannelState, MemberRemovedReducer>();
+        services.AddReducer<ChannelCreated, ChannelAggregate, ChannelCreatedReducer>();
+        services.AddReducer<ChannelRenamed, ChannelAggregate, ChannelRenamedReducer>();
+        services.AddReducer<ChannelArchived, ChannelAggregate, ChannelArchivedReducer>();
+        services.AddReducer<MemberAdded, ChannelAggregate, MemberAddedReducer>();
+        services.AddReducer<MemberRemoved, ChannelAggregate, MemberRemovedReducer>();
 
-        // Add snapshot state converter for ChannelState
-        services.AddSnapshotStateConverter<ChannelState>();
+        // Add snapshot state converter for ChannelAggregate
+        services.AddSnapshotStateConverter<ChannelAggregate>();
         return services;
     }
 
@@ -115,19 +115,19 @@ public static class CascadeRegistrations
         services.AddEventType<MessageDeleted>();
 
         // Register command handlers
-        services.AddCommandHandler<StartConversation, ConversationState, StartConversationHandler>();
-        services.AddCommandHandler<SendMessage, ConversationState, SendMessageHandler>();
-        services.AddCommandHandler<EditMessage, ConversationState, EditMessageHandler>();
-        services.AddCommandHandler<DeleteMessage, ConversationState, DeleteMessageHandler>();
+        services.AddCommandHandler<StartConversation, ConversationAggregate, StartConversationHandler>();
+        services.AddCommandHandler<SendMessage, ConversationAggregate, SendMessageHandler>();
+        services.AddCommandHandler<EditMessage, ConversationAggregate, EditMessageHandler>();
+        services.AddCommandHandler<DeleteMessage, ConversationAggregate, DeleteMessageHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<ConversationStarted, ConversationState, ConversationStartedReducer>();
-        services.AddReducer<MessageSent, ConversationState, MessageSentReducer>();
-        services.AddReducer<MessageEdited, ConversationState, MessageEditedReducer>();
-        services.AddReducer<MessageDeleted, ConversationState, MessageDeletedReducer>();
+        services.AddReducer<ConversationStarted, ConversationAggregate, ConversationStartedReducer>();
+        services.AddReducer<MessageSent, ConversationAggregate, MessageSentReducer>();
+        services.AddReducer<MessageEdited, ConversationAggregate, MessageEditedReducer>();
+        services.AddReducer<MessageDeleted, ConversationAggregate, MessageDeletedReducer>();
 
-        // Add snapshot state converter for ConversationState
-        services.AddSnapshotStateConverter<ConversationState>();
+        // Add snapshot state converter for ConversationAggregate
+        services.AddSnapshotStateConverter<ConversationAggregate>();
         return services;
     }
 
@@ -149,22 +149,22 @@ public static class CascadeRegistrations
         services.AddEventType<UserLeftChannel>();
 
         // Register command handlers
-        services.AddCommandHandler<RegisterUser, UserState, RegisterUserHandler>();
-        services.AddCommandHandler<UpdateDisplayName, UserState, UpdateDisplayNameHandler>();
-        services.AddCommandHandler<SetOnlineStatus, UserState, SetOnlineStatusHandler>();
-        services.AddCommandHandler<JoinChannel, UserState, JoinChannelHandler>();
-        services.AddCommandHandler<LeaveChannel, UserState, LeaveChannelHandler>();
+        services.AddCommandHandler<RegisterUser, UserAggregate, RegisterUserHandler>();
+        services.AddCommandHandler<UpdateDisplayName, UserAggregate, UpdateDisplayNameHandler>();
+        services.AddCommandHandler<SetOnlineStatus, UserAggregate, SetOnlineStatusHandler>();
+        services.AddCommandHandler<JoinChannel, UserAggregate, JoinChannelHandler>();
+        services.AddCommandHandler<LeaveChannel, UserAggregate, LeaveChannelHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<UserRegistered, UserState, UserRegisteredReducer>();
-        services.AddReducer<DisplayNameUpdated, UserState, DisplayNameUpdatedReducer>();
-        services.AddReducer<UserWentOnline, UserState, UserWentOnlineReducer>();
-        services.AddReducer<UserWentOffline, UserState, UserWentOfflineReducer>();
-        services.AddReducer<UserJoinedChannel, UserState, UserJoinedChannelReducer>();
-        services.AddReducer<UserLeftChannel, UserState, UserLeftChannelReducer>();
+        services.AddReducer<UserRegistered, UserAggregate, UserRegisteredReducer>();
+        services.AddReducer<DisplayNameUpdated, UserAggregate, DisplayNameUpdatedReducer>();
+        services.AddReducer<UserWentOnline, UserAggregate, UserWentOnlineReducer>();
+        services.AddReducer<UserWentOffline, UserAggregate, UserWentOfflineReducer>();
+        services.AddReducer<UserJoinedChannel, UserAggregate, UserJoinedChannelReducer>();
+        services.AddReducer<UserLeftChannel, UserAggregate, UserLeftChannelReducer>();
 
-        // Add snapshot state converter for UserState
-        services.AddSnapshotStateConverter<UserState>();
+        // Add snapshot state converter for UserAggregate
+        services.AddSnapshotStateConverter<UserAggregate>();
         return services;
     }
 

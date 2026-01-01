@@ -49,7 +49,7 @@ public sealed class EditMessageHandlerTests
             SentBy = "user-789",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -88,7 +88,7 @@ public sealed class EditMessageHandlerTests
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
             IsDeleted = true,
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -119,7 +119,7 @@ public sealed class EditMessageHandlerTests
             NewContent = "Updated content",
             EditedBy = "user-789",
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -149,7 +149,7 @@ public sealed class EditMessageHandlerTests
             NewContent = "Updated content",
             EditedBy = "user-789",
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -180,7 +180,7 @@ public sealed class EditMessageHandlerTests
             NewContent = string.Empty,
             EditedBy = "user-789",
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -217,7 +217,7 @@ public sealed class EditMessageHandlerTests
             SentBy = "user-789",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",

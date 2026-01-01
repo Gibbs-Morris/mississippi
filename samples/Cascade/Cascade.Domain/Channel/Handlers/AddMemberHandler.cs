@@ -16,12 +16,12 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="AddMember" /> command.
 /// </summary>
-internal sealed class AddMemberHandler : CommandHandler<AddMember, ChannelState>
+internal sealed class AddMemberHandler : CommandHandler<AddMember, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         AddMember command,
-        ChannelState? state
+        ChannelAggregate? state
     )
     {
         if (string.IsNullOrWhiteSpace(command.UserId))

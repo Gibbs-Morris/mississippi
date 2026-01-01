@@ -11,12 +11,12 @@ namespace Crescent.ConsoleApp.Counter.Handlers;
 /// <summary>
 ///     Command handler for resetting a counter.
 /// </summary>
-internal sealed class ResetCounterHandler : CommandHandler<ResetCounter, CounterState>
+internal sealed class ResetCounterHandler : CommandHandler<ResetCounter, CounterAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         ResetCounter command,
-        CounterState? state
+        CounterAggregate? state
     )
     {
         if (state?.IsInitialized != true)

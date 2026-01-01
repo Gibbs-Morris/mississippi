@@ -38,7 +38,7 @@ public sealed class CreateChatHandlerTests
         {
             Name = "General",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "Existing Chat",

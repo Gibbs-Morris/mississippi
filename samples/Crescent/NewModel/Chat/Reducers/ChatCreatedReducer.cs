@@ -10,11 +10,11 @@ namespace Crescent.NewModel.Chat.Reducers;
 /// <summary>
 ///     Reducer for <see cref="ChatCreated" /> events.
 /// </summary>
-internal sealed class ChatCreatedReducer : Reducer<ChatCreated, ChatState>
+internal sealed class ChatCreatedReducer : Reducer<ChatCreated, ChatAggregate>
 {
     /// <inheritdoc />
-    protected override ChatState ReduceCore(
-        ChatState state,
+    protected override ChatAggregate ReduceCore(
+        ChatAggregate state,
         ChatCreated @event
     )
     {

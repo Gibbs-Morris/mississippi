@@ -1,4 +1,4 @@
-// <copyright file="ChannelState.cs" company="Gibbs-Morris">
+// <copyright file="ChannelAggregate.cs" company="Gibbs-Morris">
 // Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
@@ -17,8 +17,8 @@ namespace Cascade.Domain.Channel;
 /// </summary>
 [SnapshotStorageName("CASCADE", "CHAT", "CHANNELSTATE")]
 [GenerateSerializer]
-[Alias("Cascade.Domain.Channel.ChannelState")]
-internal sealed record ChannelState
+[Alias("Cascade.Domain.Channel.ChannelAggregate")]
+internal sealed record ChannelAggregate
 {
     /// <summary>
     ///     Gets the channel identifier.

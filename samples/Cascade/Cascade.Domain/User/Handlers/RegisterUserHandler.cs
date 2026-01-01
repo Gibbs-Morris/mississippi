@@ -16,12 +16,12 @@ namespace Cascade.Domain.User.Handlers;
 /// <summary>
 ///     Command handler for registering a new user.
 /// </summary>
-internal sealed class RegisterUserHandler : CommandHandler<RegisterUser, UserState>
+internal sealed class RegisterUserHandler : CommandHandler<RegisterUser, UserAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         RegisterUser command,
-        UserState? state
+        UserAggregate? state
     )
     {
         if (state?.IsRegistered == true)

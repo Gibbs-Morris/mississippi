@@ -34,7 +34,7 @@ public sealed class DisplayNameUpdatedReducerTests
             OldDisplayName = "Old Name",
             NewDisplayName = "New Name",
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -42,7 +42,7 @@ public sealed class DisplayNameUpdatedReducerTests
         };
 
         // Act
-        UserState result = reducer.Reduce(state, evt);
+        UserAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.Equal("New Name", result.DisplayName);

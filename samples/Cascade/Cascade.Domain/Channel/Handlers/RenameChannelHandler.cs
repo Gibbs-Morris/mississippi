@@ -15,12 +15,12 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="RenameChannel" /> command.
 /// </summary>
-internal sealed class RenameChannelHandler : CommandHandler<RenameChannel, ChannelState>
+internal sealed class RenameChannelHandler : CommandHandler<RenameChannel, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         RenameChannel command,
-        ChannelState? state
+        ChannelAggregate? state
     )
     {
         if (string.IsNullOrWhiteSpace(command.NewName))

@@ -37,7 +37,7 @@ public sealed class ChannelReducerTests
             ArchivedBy = "user-123",
             ArchivedAt = DateTimeOffset.UtcNow,
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -46,7 +46,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelState result = reducer.Reduce(state, evt);
+        ChannelAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.True(result.IsArchived);
@@ -72,7 +72,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelState result = reducer.Reduce(null!, evt);
+        ChannelAggregate result = reducer.Reduce(null!, evt);
 
         // Assert
         Assert.True(result.IsCreated);
@@ -97,7 +97,7 @@ public sealed class ChannelReducerTests
             OldName = "Old Name",
             NewName = "New Name",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -105,7 +105,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelState result = reducer.Reduce(state, evt);
+        ChannelAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.Equal("New Name", result.Name);
@@ -126,7 +126,7 @@ public sealed class ChannelReducerTests
             UserId = "user-456",
             AddedAt = DateTimeOffset.UtcNow,
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -135,7 +135,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelState result = reducer.Reduce(state, evt);
+        ChannelAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.Contains("user-123", result.MemberIds);
@@ -157,7 +157,7 @@ public sealed class ChannelReducerTests
             UserId = "user-123",
             RemovedAt = DateTimeOffset.UtcNow,
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -166,7 +166,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelState result = reducer.Reduce(state, evt);
+        ChannelAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.DoesNotContain("user-123", result.MemberIds);

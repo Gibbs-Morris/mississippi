@@ -40,7 +40,7 @@ public sealed class MessageEditedReducerTests
             NewContent = "Updated content",
             EditedAt = editedAt,
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -57,7 +57,7 @@ public sealed class MessageEditedReducerTests
         };
 
         // Act
-        ChatState result = reducer.Reduce(existingState, @event);
+        ChatAggregate result = reducer.Reduce(existingState, @event);
 
         // Assert
         Assert.Single(result.Messages);
@@ -84,7 +84,7 @@ public sealed class MessageEditedReducerTests
             NewContent = "Updated",
             EditedAt = DateTimeOffset.UtcNow,
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -101,7 +101,7 @@ public sealed class MessageEditedReducerTests
         };
 
         // Act
-        ChatState result = reducer.Reduce(existingState, @event);
+        ChatAggregate result = reducer.Reduce(existingState, @event);
 
         // Assert
         Assert.NotSame(existingState, result);
@@ -118,7 +118,7 @@ public sealed class MessageEditedReducerTests
     {
         // Arrange
         MessageEditedReducer reducer = new();
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",

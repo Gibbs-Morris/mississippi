@@ -11,16 +11,16 @@ namespace Crescent.NewModel.Chat.Reducers;
 /// <summary>
 ///     Reducer for <see cref="MessageEdited" /> events.
 /// </summary>
-internal sealed class MessageEditedReducer : Reducer<MessageEdited, ChatState>
+internal sealed class MessageEditedReducer : Reducer<MessageEdited, ChatAggregate>
 {
     /// <inheritdoc />
-    protected override ChatState ReduceCore(
-        ChatState state,
+    protected override ChatAggregate ReduceCore(
+        ChatAggregate state,
         MessageEdited @event
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-        ChatState currentState = state ?? new();
+        ChatAggregate currentState = state ?? new();
 
         // Find and update the message
         int messageIndex = currentState.Messages.FindIndex(m => m.MessageId == @event.MessageId);

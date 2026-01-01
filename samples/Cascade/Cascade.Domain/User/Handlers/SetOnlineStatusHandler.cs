@@ -16,12 +16,12 @@ namespace Cascade.Domain.User.Handlers;
 /// <summary>
 ///     Command handler for setting a user's online status.
 /// </summary>
-internal sealed class SetOnlineStatusHandler : CommandHandler<SetOnlineStatus, UserState>
+internal sealed class SetOnlineStatusHandler : CommandHandler<SetOnlineStatus, UserAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         SetOnlineStatus command,
-        UserState? state
+        UserAggregate? state
     )
     {
         if (state?.IsRegistered != true)

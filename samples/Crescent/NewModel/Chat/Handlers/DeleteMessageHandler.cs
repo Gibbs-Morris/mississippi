@@ -12,12 +12,12 @@ namespace Crescent.NewModel.Chat.Handlers;
 /// <summary>
 ///     Command handler for deleting a message from the chat.
 /// </summary>
-internal sealed class DeleteMessageHandler : CommandHandler<DeleteMessage, ChatState>
+internal sealed class DeleteMessageHandler : CommandHandler<DeleteMessage, ChatAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         DeleteMessage command,
-        ChatState? state
+        ChatAggregate? state
     )
     {
         // Ensure chat exists

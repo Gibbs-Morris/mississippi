@@ -64,7 +64,7 @@ public sealed class AddMessageHandlerTests
             Content = "Hello!",
             Author = string.Empty,
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -93,7 +93,7 @@ public sealed class AddMessageHandlerTests
             Content = string.Empty,
             Author = "user1",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -122,7 +122,7 @@ public sealed class AddMessageHandlerTests
             Content = "Hello!",
             Author = "user1",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -151,7 +151,7 @@ public sealed class AddMessageHandlerTests
             Content = "Hello, world!",
             Author = "user1",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",

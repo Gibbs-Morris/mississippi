@@ -70,7 +70,7 @@ public sealed class CreateChannelHandlerTests
             Name = "General",
             CreatedBy = "user-123",
         };
-        ChannelState existingState = new()
+        ChannelAggregate existingState = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",

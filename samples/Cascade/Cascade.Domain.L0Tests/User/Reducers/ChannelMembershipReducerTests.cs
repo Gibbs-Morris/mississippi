@@ -37,7 +37,7 @@ public sealed class ChannelMembershipReducerTests
             ChannelId = "channel-1",
             JoinedAt = DateTimeOffset.UtcNow,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -46,7 +46,7 @@ public sealed class ChannelMembershipReducerTests
         };
 
         // Act
-        UserState result = reducer.Reduce(state, evt);
+        UserAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.Contains("channel-1", result.ChannelIds);
@@ -67,7 +67,7 @@ public sealed class ChannelMembershipReducerTests
             ChannelId = "channel-2",
             JoinedAt = DateTimeOffset.UtcNow,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -76,7 +76,7 @@ public sealed class ChannelMembershipReducerTests
         };
 
         // Act
-        UserState result = reducer.Reduce(state, evt);
+        UserAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.Contains("channel-1", result.ChannelIds);
@@ -98,7 +98,7 @@ public sealed class ChannelMembershipReducerTests
             ChannelId = "channel-1",
             LeftAt = DateTimeOffset.UtcNow,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -107,7 +107,7 @@ public sealed class ChannelMembershipReducerTests
         };
 
         // Act
-        UserState result = reducer.Reduce(state, evt);
+        UserAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.Empty(result.ChannelIds);
@@ -127,7 +127,7 @@ public sealed class ChannelMembershipReducerTests
             ChannelId = "channel-1",
             LeftAt = DateTimeOffset.UtcNow,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -136,7 +136,7 @@ public sealed class ChannelMembershipReducerTests
         };
 
         // Act
-        UserState result = reducer.Reduce(state, evt);
+        UserAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.DoesNotContain("channel-1", result.ChannelIds);

@@ -63,7 +63,7 @@ public sealed class EditMessageHandlerTests
             MessageId = "msg-999",
             NewContent = "Updated content",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -101,7 +101,7 @@ public sealed class EditMessageHandlerTests
             MessageId = "msg-001",
             NewContent = string.Empty,
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -139,7 +139,7 @@ public sealed class EditMessageHandlerTests
             MessageId = "msg-001",
             NewContent = "Same content",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -178,7 +178,7 @@ public sealed class EditMessageHandlerTests
             MessageId = "msg-001",
             NewContent = "Updated content",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",

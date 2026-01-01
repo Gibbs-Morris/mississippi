@@ -35,7 +35,7 @@ public sealed class MessageDeletedReducerTests
         {
             MessageId = "msg-001",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -59,7 +59,7 @@ public sealed class MessageDeletedReducerTests
         };
 
         // Act
-        ChatState result = reducer.Reduce(existingState, @event);
+        ChatAggregate result = reducer.Reduce(existingState, @event);
 
         // Assert
         Assert.Single(result.Messages);
@@ -79,7 +79,7 @@ public sealed class MessageDeletedReducerTests
         {
             MessageId = "msg-999",
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -96,7 +96,7 @@ public sealed class MessageDeletedReducerTests
         };
 
         // Act
-        ChatState result = reducer.Reduce(existingState, @event);
+        ChatAggregate result = reducer.Reduce(existingState, @event);
 
         // Assert
         Assert.NotSame(existingState, result);
@@ -113,7 +113,7 @@ public sealed class MessageDeletedReducerTests
     {
         // Arrange
         MessageDeletedReducer reducer = new();
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",

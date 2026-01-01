@@ -40,14 +40,14 @@ public sealed class MessageAddedReducerTests
             Author = "user1",
             CreatedAt = createdAt,
         };
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
         };
 
         // Act
-        ChatState result = reducer.Reduce(existingState, @event);
+        ChatAggregate result = reducer.Reduce(existingState, @event);
 
         // Assert
         Assert.Single(result.Messages);
@@ -80,7 +80,7 @@ public sealed class MessageAddedReducerTests
                 });
         }
 
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",
@@ -96,7 +96,7 @@ public sealed class MessageAddedReducerTests
         };
 
         // Act
-        ChatState result = reducer.Reduce(existingState, @event);
+        ChatAggregate result = reducer.Reduce(existingState, @event);
 
         // Assert
         Assert.Equal(50, result.Messages.Count);
@@ -114,7 +114,7 @@ public sealed class MessageAddedReducerTests
     {
         // Arrange
         MessageAddedReducer reducer = new();
-        ChatState existingState = new()
+        ChatAggregate existingState = new()
         {
             IsCreated = true,
             Name = "General",

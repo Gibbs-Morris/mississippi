@@ -40,7 +40,7 @@ public sealed class MessageSentReducerTests
             SentBy = "user-789",
             SentAt = sentAt,
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -49,7 +49,7 @@ public sealed class MessageSentReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.Single(result.Messages);
@@ -85,7 +85,7 @@ public sealed class MessageSentReducerTests
             SentBy = "user-111",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -94,7 +94,7 @@ public sealed class MessageSentReducerTests
         };
 
         // Act
-        ConversationState result = reducer.Reduce(existingState, evt);
+        ConversationAggregate result = reducer.Reduce(existingState, evt);
 
         // Assert
         Assert.Equal(2, result.Messages.Count);

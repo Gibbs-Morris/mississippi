@@ -39,7 +39,7 @@ public sealed class JoinChannelHandlerTests
         {
             ChannelId = "channel-1",
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -68,7 +68,7 @@ public sealed class JoinChannelHandlerTests
         {
             ChannelId = string.Empty,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -118,7 +118,7 @@ public sealed class JoinChannelHandlerTests
         {
             ChannelId = "channel-1",
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",

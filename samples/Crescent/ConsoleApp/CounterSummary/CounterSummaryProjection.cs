@@ -11,14 +11,14 @@ namespace Crescent.ConsoleApp.CounterSummary;
 /// <remarks>
 ///     <para>
 ///         This projection demonstrates the "multiple projections per brook" pattern.
-///         Both <see cref="Counter.CounterState" /> (the aggregate state) and this projection
+///         Both <see cref="Counter.CounterAggregate" /> (the aggregate state) and this projection
 ///         derive from the same <see cref="Counter.CounterBrook" /> event stream, but serve
 ///         different purposes:
 ///     </para>
 ///     <list type="bullet">
 ///         <item>
 ///             <description>
-///                 <see cref="Counter.CounterState" /> is the write-side aggregate state used for
+///                 <see cref="Counter.CounterAggregate" /> is the write-side aggregate state used for
 ///                 command processing and consistency enforcement.
 ///             </description>
 ///         </item>

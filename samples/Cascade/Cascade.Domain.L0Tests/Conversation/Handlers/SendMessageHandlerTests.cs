@@ -40,7 +40,7 @@ public sealed class SendMessageHandlerTests
             Content = string.Empty,
             SentBy = "user-789",
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -94,7 +94,7 @@ public sealed class SendMessageHandlerTests
             Content = "Hello!",
             SentBy = "user-789",
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -124,7 +124,7 @@ public sealed class SendMessageHandlerTests
             Content = "Hello!",
             SentBy = string.Empty,
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
@@ -154,7 +154,7 @@ public sealed class SendMessageHandlerTests
             Content = "Hello, world!",
             SentBy = "user-789",
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",

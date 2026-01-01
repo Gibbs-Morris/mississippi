@@ -36,7 +36,7 @@ public sealed class OnlineStatusReducerTests
         {
             Timestamp = timestamp,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -45,7 +45,7 @@ public sealed class OnlineStatusReducerTests
         };
 
         // Act
-        UserState result = reducer.Reduce(state, evt);
+        UserAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.False(result.IsOnline);
@@ -67,7 +67,7 @@ public sealed class OnlineStatusReducerTests
         {
             Timestamp = timestamp,
         };
-        UserState state = new()
+        UserAggregate state = new()
         {
             IsRegistered = true,
             UserId = "user-123",
@@ -76,7 +76,7 @@ public sealed class OnlineStatusReducerTests
         };
 
         // Act
-        UserState result = reducer.Reduce(state, evt);
+        UserAggregate result = reducer.Reduce(state, evt);
 
         // Assert
         Assert.True(result.IsOnline);

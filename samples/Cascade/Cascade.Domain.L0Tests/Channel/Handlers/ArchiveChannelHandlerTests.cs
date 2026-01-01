@@ -39,7 +39,7 @@ public sealed class ArchiveChannelHandlerTests
         {
             ArchivedBy = "user-123",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -70,7 +70,7 @@ public sealed class ArchiveChannelHandlerTests
         {
             ArchivedBy = "user-123",
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",
@@ -99,7 +99,7 @@ public sealed class ArchiveChannelHandlerTests
         {
             ArchivedBy = string.Empty,
         };
-        ChannelState state = new()
+        ChannelAggregate state = new()
         {
             IsCreated = true,
             ChannelId = "channel-1",

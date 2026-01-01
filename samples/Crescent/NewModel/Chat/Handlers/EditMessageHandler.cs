@@ -13,12 +13,12 @@ namespace Crescent.NewModel.Chat.Handlers;
 /// <summary>
 ///     Command handler for editing a message in the chat.
 /// </summary>
-internal sealed class EditMessageHandler : CommandHandler<EditMessage, ChatState>
+internal sealed class EditMessageHandler : CommandHandler<EditMessage, ChatAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         EditMessage command,
-        ChatState? state
+        ChatAggregate? state
     )
     {
         // Ensure chat exists

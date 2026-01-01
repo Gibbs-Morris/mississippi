@@ -65,7 +65,7 @@ public sealed class StartConversationHandlerTests
             ConversationId = "conv-123",
             ChannelId = "channel-456",
         };
-        ConversationState existingState = new()
+        ConversationAggregate existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
