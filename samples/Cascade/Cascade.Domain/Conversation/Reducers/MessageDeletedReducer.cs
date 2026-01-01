@@ -2,8 +2,6 @@
 // Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
-using System.Linq;
-
 using Cascade.Domain.Conversation.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
@@ -25,12 +23,19 @@ internal sealed class MessageDeletedReducer : Reducer<MessageDeleted, Conversati
         int index = state.Messages.FindIndex(m => m.MessageId == eventData.MessageId);
         if (index < 0)
         {
-            return state with { };
+            return state with
+            {
+            };
         }
 
         Message existingMessage = state.Messages[index];
-        Message updatedMessage = existingMessage with { IsDeleted = true };
-
-        return state with { Messages = state.Messages.SetItem(index, updatedMessage) };
+        Message updatedMessage = existingMessage with
+        {
+            IsDeleted = true,
+        };
+        return state with
+        {
+            Messages = state.Messages.SetItem(index, updatedMessage),
+        };
     }
 }

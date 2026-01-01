@@ -16,8 +16,6 @@ using Cascade.Domain.Conversation.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Conversation.Handlers;
 
@@ -30,11 +28,11 @@ namespace Cascade.Domain.L0Tests.Conversation.Handlers;
 public sealed class DeleteMessageHandlerTests
 {
     /// <summary>
-    ///     Verifies that deleting a message returns a MessageDeleted event.
+    ///     Verifies that deleting an already deleted message returns an error.
     /// </summary>
     [Fact]
-    [AllureStep("Handle DeleteMessage when message exists")]
-    public void HandleReturnsMessageDeletedEventWhenMessageExists()
+    [AllureStep("Handle DeleteMessage when message already deleted")]
+    public void HandleReturnsErrorWhenMessageAlreadyDeleted()
     {
         // Arrange
         DeleteMessageHandler handler = new();
@@ -43,30 +41,28 @@ public sealed class DeleteMessageHandlerTests
             MessageId = "msg-001",
             DeletedBy = "user-789",
         };
-        Message existingMessage = new()
+        Message deletedMessage = new()
         {
             MessageId = "msg-001",
             Content = "Message content",
             SentBy = "user-789",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+            IsDeleted = true,
         };
         ConversationState existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
             ChannelId = "channel-456",
-            Messages = ImmutableList.Create(existingMessage),
+            Messages = ImmutableList.Create(deletedMessage),
         };
 
         // Act
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
 
         // Assert
-        Assert.True(result.Success);
-        object singleEvent = Assert.Single(result.Value!);
-        MessageDeleted deleted = Assert.IsType<MessageDeleted>(singleEvent);
-        Assert.Equal("msg-001", deleted.MessageId);
-        Assert.Equal("user-789", deleted.DeletedBy);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 
     /// <summary>
@@ -129,11 +125,11 @@ public sealed class DeleteMessageHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that deleting an already deleted message returns an error.
+    ///     Verifies that deleting a message returns a MessageDeleted event.
     /// </summary>
     [Fact]
-    [AllureStep("Handle DeleteMessage when message already deleted")]
-    public void HandleReturnsErrorWhenMessageAlreadyDeleted()
+    [AllureStep("Handle DeleteMessage when message exists")]
+    public void HandleReturnsMessageDeletedEventWhenMessageExists()
     {
         // Arrange
         DeleteMessageHandler handler = new();
@@ -142,27 +138,29 @@ public sealed class DeleteMessageHandlerTests
             MessageId = "msg-001",
             DeletedBy = "user-789",
         };
-        Message deletedMessage = new()
+        Message existingMessage = new()
         {
             MessageId = "msg-001",
             Content = "Message content",
             SentBy = "user-789",
             SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
-            IsDeleted = true,
         };
         ConversationState existingState = new()
         {
             IsStarted = true,
             ConversationId = "conv-123",
             ChannelId = "channel-456",
-            Messages = ImmutableList.Create(deletedMessage),
+            Messages = ImmutableList.Create(existingMessage),
         };
 
         // Act
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+        Assert.True(result.Success);
+        object singleEvent = Assert.Single(result.Value!);
+        MessageDeleted deleted = Assert.IsType<MessageDeleted>(singleEvent);
+        Assert.Equal("msg-001", deleted.MessageId);
+        Assert.Equal("user-789", deleted.DeletedBy);
     }
 }

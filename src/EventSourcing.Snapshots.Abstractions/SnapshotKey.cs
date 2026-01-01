@@ -7,8 +7,8 @@ using Orleans;
 namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 
 /// <summary>
-///     Identifies a specific snapshot version for a projection, scoped by projection type, projection id, and reducers
-///     hash.
+///     Identifies a specific snapshot version for a projection, scoped by brook name, projection type, projection id, and
+///     reducers hash.
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Snapshots.Abstractions.SnapshotKey")]
@@ -21,7 +21,7 @@ public readonly record struct SnapshotKey
     /// <summary>
     ///     Initializes a new instance of the <see cref="SnapshotKey" /> struct.
     /// </summary>
-    /// <param name="stream">The snapshot stream key (projection type/id and reducers hash).</param>
+    /// <param name="stream">The snapshot stream key (brook name, projection type/id and reducers hash).</param>
     /// <param name="version">The snapshot version.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when version is negative.</exception>
     public SnapshotKey(
@@ -39,7 +39,7 @@ public readonly record struct SnapshotKey
     }
 
     /// <summary>
-    ///     Gets the snapshot stream key (projection type/id and reducers hash).
+    ///     Gets the snapshot stream key (brook name, projection type/id and reducers hash).
     /// </summary>
     [Id(0)]
     public SnapshotStreamKey Stream { get; }
@@ -54,7 +54,9 @@ public readonly record struct SnapshotKey
     ///     Converts a snapshot key to its composite string representation.
     /// </summary>
     /// <param name="key">The snapshot key to convert.</param>
-    /// <returns>The string representation in the format "projectionType|projectionId|reducersHash|version".</returns>
+    /// <returns>
+    ///     The string representation in the format "brookName|projectionType|projectionId|reducersHash|version".
+    /// </returns>
     public static string FromSnapshotKey(
         SnapshotKey key
     ) =>
@@ -76,33 +78,37 @@ public readonly record struct SnapshotKey
         int second = first < 0 ? -1 : value.IndexOf(SeparatorString, first + 1, StringComparison.Ordinal);
         int third = second < 0 ? -1 : value.IndexOf(SeparatorString, second + 1, StringComparison.Ordinal);
         int fourth = third < 0 ? -1 : value.IndexOf(SeparatorString, third + 1, StringComparison.Ordinal);
-        if ((first < 0) || (second < 0) || (third < 0) || (fourth >= 0))
+        int fifth = fourth < 0 ? -1 : value.IndexOf(SeparatorString, fourth + 1, StringComparison.Ordinal);
+        if ((first < 0) || (second < 0) || (third < 0) || (fourth < 0) || (fifth >= 0))
         {
             throw new FormatException(
-                $"Composite key must be in the form '<projectionType>{Separator}<projectionId>{Separator}<reducersHash>{Separator}<version>'.");
+                $"Composite key must be in the form '<brookName>{Separator}<projectionType>{Separator}<projectionId>{Separator}<reducersHash>{Separator}<version>'.");
         }
 
-        string projectionType = value[..first];
-        string projectionId = value[(first + 1)..second];
-        string reducersHash = value[(second + 1)..third];
-        ReadOnlySpan<char> versionSpan = value.AsSpan(third + 1);
+        string brookName = value[..first];
+        string projectionType = value[(first + 1)..second];
+        string projectionId = value[(second + 1)..third];
+        string reducersHash = value[(third + 1)..fourth];
+        ReadOnlySpan<char> versionSpan = value.AsSpan(fourth + 1);
         if (!long.TryParse(versionSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out long version))
         {
             throw new FormatException($"Could not parse '{versionSpan}' as a {nameof(Version)} (long).");
         }
 
-        return new(new(projectionType, projectionId, reducersHash), version);
+        return new(new(brookName, projectionType, projectionId, reducersHash), version);
     }
 
     /// <summary>
     ///     Implicitly converts a <see cref="SnapshotKey" /> to its composite string representation.
     /// </summary>
     /// <param name="key">The snapshot key to convert.</param>
-    /// <returns>The string representation in the format "projectionType|projectionId|reducersHash|version".</returns>
+    /// <returns>
+    ///     The string representation in the format "brookName|projectionType|projectionId|reducersHash|version".
+    /// </returns>
     public static implicit operator string(
         SnapshotKey key
     ) =>
-        $"{key.Stream.ProjectionType}{Separator}{key.Stream.ProjectionId}{Separator}{key.Stream.ReducersHash}{Separator}{key.Version}";
+        $"{key.Stream.BrookName}{Separator}{key.Stream.ProjectionType}{Separator}{key.Stream.ProjectionId}{Separator}{key.Stream.ReducersHash}{Separator}{key.Version}";
 
     /// <summary>
     ///     Implicitly converts a composite string value to a <see cref="SnapshotKey" />.
@@ -117,6 +123,8 @@ public readonly record struct SnapshotKey
     /// <summary>
     ///     Returns the composite string representation of this snapshot key.
     /// </summary>
-    /// <returns>The string representation in the format "projectionType|projectionId|reducersHash|version".</returns>
+    /// <returns>
+    ///     The string representation in the format "brookName|projectionType|projectionId|reducersHash|version".
+    /// </returns>
     public override string ToString() => this;
 }

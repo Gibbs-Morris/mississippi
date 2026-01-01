@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Brooks.Reader;
@@ -18,14 +19,13 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.Snapshots;
 
 /// <summary>
-///     Base class for snapshot cache grains that provide immutable, versioned state access.
+///     Snapshot cache grain that provides immutable, versioned state access.
 /// </summary>
 /// <typeparam name="TSnapshot">The type of state stored in the snapshot.</typeparam>
-/// <typeparam name="TBrook">The brook definition type that identifies the event stream.</typeparam>
 /// <remarks>
 ///     <para>
 ///         Snapshot cache grains are keyed by <see cref="SnapshotKey" /> in the format
-///         "projectionType|projectionId|reducersHash|version". Once activated and hydrated,
+///         "brookName|projectionType|projectionId|reducersHash|version". Once activated and hydrated,
 ///         the state is immutable and cached in memory for fast read access.
 ///     </para>
 ///     <para>
@@ -51,18 +51,21 @@ namespace Mississippi.EventSourcing.Snapshots;
 ///         <see cref="ISnapshotPersisterGrain" /> for background persistence if the snapshot
 ///         was rebuilt.
 ///     </para>
+///     <para>
+///         The brook name is read from the grain key, eliminating the need for custom derived
+///         grain classes with <c>[BrookName]</c> attributes.
+///     </para>
 /// </remarks>
-public abstract class SnapshotCacheGrainBase<TSnapshot, TBrook>
+internal sealed class SnapshotCacheGrain<TSnapshot>
     : ISnapshotCacheGrain<TSnapshot>,
       IGrainBase
-    where TBrook : IBrookDefinition
 {
     private SnapshotKey snapshotKey;
 
     private TSnapshot? state;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="SnapshotCacheGrainBase{TSnapshot, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="SnapshotCacheGrain{TSnapshot}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="snapshotStorageReader">Reader for loading snapshots from storage.</param>
@@ -71,8 +74,10 @@ public abstract class SnapshotCacheGrainBase<TSnapshot, TBrook>
     /// <param name="snapshotStateConverter">Converter for serializing/deserializing state to/from envelopes.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="retentionOptions">Options controlling snapshot retention and replay strategy.</param>
+    /// <param name="brookEventConverter">Converter for deserializing brook events to domain events.</param>
+    /// <param name="initialStateFactory">Factory for creating the initial snapshot state.</param>
     /// <param name="logger">Logger instance.</param>
-    protected SnapshotCacheGrainBase(
+    public SnapshotCacheGrain(
         IGrainContext grainContext,
         ISnapshotStorageReader snapshotStorageReader,
         IBrookGrainFactory brookGrainFactory,
@@ -80,7 +85,9 @@ public abstract class SnapshotCacheGrainBase<TSnapshot, TBrook>
         ISnapshotStateConverter<TSnapshot> snapshotStateConverter,
         ISnapshotGrainFactory snapshotGrainFactory,
         IOptions<SnapshotRetentionOptions> retentionOptions,
-        ILogger logger
+        IBrookEventConverter brookEventConverter,
+        IInitialStateFactory<TSnapshot> initialStateFactory,
+        ILogger<SnapshotCacheGrain<TSnapshot>> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
@@ -91,51 +98,31 @@ public abstract class SnapshotCacheGrainBase<TSnapshot, TBrook>
             snapshotStateConverter ?? throw new ArgumentNullException(nameof(snapshotStateConverter));
         SnapshotGrainFactory = snapshotGrainFactory ?? throw new ArgumentNullException(nameof(snapshotGrainFactory));
         RetentionOptions = retentionOptions?.Value ?? throw new ArgumentNullException(nameof(retentionOptions));
+        BrookEventConverter = brookEventConverter ?? throw new ArgumentNullException(nameof(brookEventConverter));
+        InitialStateFactory = initialStateFactory ?? throw new ArgumentNullException(nameof(initialStateFactory));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
-
-    /// <summary>
-    ///     Gets the brook name from the <typeparamref name="TBrook" /> definition.
-    /// </summary>
-    protected static string BrookName => TBrook.BrookName;
 
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
 
-    /// <summary>
-    ///     Gets the factory for resolving brook grains.
-    /// </summary>
-    protected IBrookGrainFactory BrookGrainFactory { get; }
+    private IBrookEventConverter BrookEventConverter { get; }
 
-    /// <summary>
-    ///     Gets the logger instance.
-    /// </summary>
-    protected ILogger Logger { get; }
+    private IBrookGrainFactory BrookGrainFactory { get; }
 
-    /// <summary>
-    ///     Gets the snapshot retention options controlling replay strategy.
-    /// </summary>
-    protected SnapshotRetentionOptions RetentionOptions { get; }
+    private IInitialStateFactory<TSnapshot> InitialStateFactory { get; }
 
-    /// <summary>
-    ///     Gets the root reducer for computing state from events.
-    /// </summary>
-    protected IRootReducer<TSnapshot> RootReducer { get; }
+    private ILogger<SnapshotCacheGrain<TSnapshot>> Logger { get; }
 
-    /// <summary>
-    ///     Gets the factory for resolving snapshot grains.
-    /// </summary>
-    protected ISnapshotGrainFactory SnapshotGrainFactory { get; }
+    private SnapshotRetentionOptions RetentionOptions { get; }
 
-    /// <summary>
-    ///     Gets the converter for serializing/deserializing state to/from envelopes.
-    /// </summary>
-    protected ISnapshotStateConverter<TSnapshot> SnapshotStateConverter { get; }
+    private IRootReducer<TSnapshot> RootReducer { get; }
 
-    /// <summary>
-    ///     Gets the reader for loading snapshots from storage.
-    /// </summary>
-    protected ISnapshotStorageReader SnapshotStorageReader { get; }
+    private ISnapshotGrainFactory SnapshotGrainFactory { get; }
+
+    private ISnapshotStateConverter<TSnapshot> SnapshotStateConverter { get; }
+
+    private ISnapshotStorageReader SnapshotStorageReader { get; }
 
     /// <inheritdoc />
     public ValueTask<TSnapshot> GetStateAsync(
@@ -148,7 +135,7 @@ public abstract class SnapshotCacheGrainBase<TSnapshot, TBrook>
     /// </summary>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the activation operation.</returns>
-    public virtual async Task OnActivateAsync(
+    public async Task OnActivateAsync(
         CancellationToken token
     )
     {
@@ -186,37 +173,16 @@ public abstract class SnapshotCacheGrainBase<TSnapshot, TBrook>
         Logger.Activated(primaryKey);
     }
 
-    /// <summary>
-    ///     Creates the initial state when no events exist in the stream.
-    /// </summary>
-    /// <returns>The initial state.</returns>
-    protected abstract TSnapshot CreateInitialState();
-
-    /// <summary>
-    ///     Deserializes a brook event to a domain event object.
-    /// </summary>
-    /// <param name="brookEvent">The brook event to deserialize.</param>
-    /// <returns>The deserialized domain event.</returns>
-    /// <remarks>
-    ///     Override this method to provide custom event deserialization logic.
-    ///     The default implementation throws <see cref="NotImplementedException" />.
-    /// </remarks>
-    protected abstract object DeserializeEvent(
-        BrookEvent brookEvent
-    );
-
-    /// <summary>
-    ///     Gets the entity ID portion of the snapshot key for constructing the brook key.
-    /// </summary>
-    /// <returns>The entity ID.</returns>
-    protected virtual string GetEntityId() => snapshotKey.Stream.ProjectionId;
-
     private async Task RebuildStateFromStreamAsync(
         CancellationToken token
     )
     {
+        // Brook name is now in the key - use it directly
+        string brookName = snapshotKey.Stream.BrookName;
+        string entityId = snapshotKey.Stream.ProjectionId;
+
         // Construct the brook key from the snapshot stream key
-        BrookKey brookKey = new(BrookName, GetEntityId());
+        BrookKey brookKey = new(brookName, entityId);
         string keyString = snapshotKey;
         Logger.RebuildingFromStream(brookKey, keyString);
         long targetVersion = snapshotKey.Version;
@@ -241,7 +207,7 @@ public abstract class SnapshotCacheGrainBase<TSnapshot, TBrook>
         {
             // No base snapshot available, rebuild from the beginning
             Logger.NoBaseSnapshotAvailable(keyString);
-            state = CreateInitialState();
+            state = InitialStateFactory.Create();
             readFrom = new(0);
         }
 
@@ -254,9 +220,7 @@ public abstract class SnapshotCacheGrainBase<TSnapshot, TBrook>
         await foreach (BrookEvent brookEvent in readerGrain.ReadEventsAsync(readFrom, readTo, token)
                            .WithCancellation(token))
         {
-            // The brook event data needs to be deserialized by the derived class
-            // since we don't have access to the event converter here
-            object eventData = DeserializeEvent(brookEvent);
+            object eventData = BrookEventConverter.ToDomainEvent(brookEvent);
             state = RootReducer.Reduce(state, eventData);
             eventCount++;
         }

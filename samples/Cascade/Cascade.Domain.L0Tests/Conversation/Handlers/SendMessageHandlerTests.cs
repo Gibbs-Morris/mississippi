@@ -14,8 +14,6 @@ using Cascade.Domain.Conversation.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Conversation.Handlers;
 
@@ -28,18 +26,18 @@ namespace Cascade.Domain.L0Tests.Conversation.Handlers;
 public sealed class SendMessageHandlerTests
 {
     /// <summary>
-    ///     Verifies that sending a message in a started conversation returns a MessageSent event.
+    ///     Verifies that sending with empty content returns an error.
     /// </summary>
     [Fact]
-    [AllureStep("Handle SendMessage when conversation started")]
-    public void HandleReturnsMessageSentEventWhenConversationStarted()
+    [AllureStep("Handle SendMessage with empty content")]
+    public void HandleReturnsErrorWhenContentEmpty()
     {
         // Arrange
         SendMessageHandler handler = new();
         SendMessage command = new()
         {
             MessageId = "msg-001",
-            Content = "Hello, world!",
+            Content = string.Empty,
             SentBy = "user-789",
         };
         ConversationState existingState = new()
@@ -53,12 +51,8 @@ public sealed class SendMessageHandlerTests
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
 
         // Assert
-        Assert.True(result.Success);
-        object singleEvent = Assert.Single(result.Value!);
-        MessageSent sent = Assert.IsType<MessageSent>(singleEvent);
-        Assert.Equal("msg-001", sent.MessageId);
-        Assert.Equal("Hello, world!", sent.Content);
-        Assert.Equal("user-789", sent.SentBy);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
     }
 
     /// <summary>
@@ -116,36 +110,6 @@ public sealed class SendMessageHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that sending with empty content returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle SendMessage with empty content")]
-    public void HandleReturnsErrorWhenContentEmpty()
-    {
-        // Arrange
-        SendMessageHandler handler = new();
-        SendMessage command = new()
-        {
-            MessageId = "msg-001",
-            Content = string.Empty,
-            SentBy = "user-789",
-        };
-        ConversationState existingState = new()
-        {
-            IsStarted = true,
-            ConversationId = "conv-123",
-            ChannelId = "channel-456",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
-    }
-
-    /// <summary>
     ///     Verifies that sending with an empty sender ID returns an error.
     /// </summary>
     [Fact]
@@ -173,5 +137,39 @@ public sealed class SendMessageHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that sending a message in a started conversation returns a MessageSent event.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle SendMessage when conversation started")]
+    public void HandleReturnsMessageSentEventWhenConversationStarted()
+    {
+        // Arrange
+        SendMessageHandler handler = new();
+        SendMessage command = new()
+        {
+            MessageId = "msg-001",
+            Content = "Hello, world!",
+            SentBy = "user-789",
+        };
+        ConversationState existingState = new()
+        {
+            IsStarted = true,
+            ConversationId = "conv-123",
+            ChannelId = "channel-456",
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
+
+        // Assert
+        Assert.True(result.Success);
+        object singleEvent = Assert.Single(result.Value!);
+        MessageSent sent = Assert.IsType<MessageSent>(singleEvent);
+        Assert.Equal("msg-001", sent.MessageId);
+        Assert.Equal("Hello, world!", sent.Content);
+        Assert.Equal("user-789", sent.SentBy);
     }
 }

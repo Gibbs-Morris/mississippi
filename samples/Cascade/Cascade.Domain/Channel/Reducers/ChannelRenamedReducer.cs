@@ -19,5 +19,8 @@ internal sealed class ChannelRenamedReducer : Reducer<ChannelRenamed, ChannelSta
         ChannelState state,
         ChannelRenamed eventData
     ) =>
-        state with { Name = eventData.NewName };
+        state with
+        {
+            Name = eventData.NewName,
+        };
 }

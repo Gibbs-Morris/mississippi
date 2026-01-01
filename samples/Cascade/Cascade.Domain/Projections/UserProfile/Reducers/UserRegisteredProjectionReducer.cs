@@ -24,7 +24,7 @@ internal sealed class UserRegisteredProjectionReducer : Reducer<UserRegistered, 
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return new UserProfileProjection
+        return new()
         {
             UserId = eventData.UserId,
             DisplayName = eventData.DisplayName,

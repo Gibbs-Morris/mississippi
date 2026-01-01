@@ -15,8 +15,6 @@ using Cascade.Domain.User.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.User.Handlers;
 
@@ -28,33 +26,6 @@ namespace Cascade.Domain.L0Tests.User.Handlers;
 [AllureFeature("RegisterUser")]
 public sealed class RegisterUserHandlerTests
 {
-    /// <summary>
-    ///     Verifies that registering a new user returns a UserRegistered event.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle RegisterUser when not registered")]
-    public void HandleReturnsUserRegisteredEventWhenNotRegistered()
-    {
-        // Arrange
-        RegisterUserHandler handler = new();
-        RegisterUser command = new()
-        {
-            UserId = "user-123",
-            DisplayName = "John Doe",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
-
-        // Assert
-        Assert.True(result.Success);
-        object singleEvent = Assert.Single(result.Value!);
-        UserRegistered registered = Assert.IsType<UserRegistered>(singleEvent);
-        Assert.Equal("user-123", registered.UserId);
-        Assert.Equal("John Doe", registered.DisplayName);
-        Assert.True(registered.RegisteredAt > DateTimeOffset.UtcNow.AddMinutes(-1));
-    }
-
     /// <summary>
     ///     Verifies that registering an already registered user returns an error.
     /// </summary>
@@ -128,5 +99,32 @@ public sealed class RegisterUserHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that registering a new user returns a UserRegistered event.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle RegisterUser when not registered")]
+    public void HandleReturnsUserRegisteredEventWhenNotRegistered()
+    {
+        // Arrange
+        RegisterUserHandler handler = new();
+        RegisterUser command = new()
+        {
+            UserId = "user-123",
+            DisplayName = "John Doe",
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
+
+        // Assert
+        Assert.True(result.Success);
+        object singleEvent = Assert.Single(result.Value!);
+        UserRegistered registered = Assert.IsType<UserRegistered>(singleEvent);
+        Assert.Equal("user-123", registered.UserId);
+        Assert.Equal("John Doe", registered.DisplayName);
+        Assert.True(registered.RegisteredAt > DateTimeOffset.UtcNow.AddMinutes(-1));
     }
 }

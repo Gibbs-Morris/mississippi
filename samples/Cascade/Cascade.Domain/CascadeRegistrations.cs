@@ -61,7 +61,6 @@ public static class CascadeRegistrations
 
         // Add UX projections infrastructure
         services.AddUxProjections();
-
         return services;
     }
 
@@ -97,7 +96,6 @@ public static class CascadeRegistrations
 
         // Add snapshot state converter for ChannelState
         services.AddSnapshotStateConverter<ChannelState>();
-
         return services;
     }
 
@@ -130,7 +128,6 @@ public static class CascadeRegistrations
 
         // Add snapshot state converter for ConversationState
         services.AddSnapshotStateConverter<ConversationState>();
-
         return services;
     }
 
@@ -168,7 +165,6 @@ public static class CascadeRegistrations
 
         // Add snapshot state converter for UserState
         services.AddSnapshotStateConverter<UserState>();
-
         return services;
     }
 
@@ -192,6 +188,8 @@ public static class CascadeRegistrations
         // Add snapshot state converter for UserProfileProjection
         services.AddSnapshotStateConverter<UserProfileProjection>();
 
+        // Register initial state factory for UserProfileProjection snapshot cache grain
+        services.AddInitialStateFactory<UserProfileProjection, UserProfileProjectionInitialStateFactory>();
         return services;
     }
 }

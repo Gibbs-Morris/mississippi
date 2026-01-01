@@ -2,10 +2,9 @@
 // Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
-using Cascade.Domain.User;
-
 using Microsoft.Extensions.Logging;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.UxProjections;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
@@ -21,7 +20,7 @@ namespace Cascade.Domain.Projections.UserProfile;
 /// <remarks>
 ///     <para>
 ///         This grain demonstrates the UX projection pattern for user profile data.
-///         It consumes the <see cref="UserBrook" /> event stream and produces a
+///         It consumes the User brook event stream and produces a
 ///         read-optimized projection for UX display purposes.
 ///     </para>
 ///     <para>
@@ -30,7 +29,8 @@ namespace Cascade.Domain.Projections.UserProfile;
 ///         a new snapshot if the brook has advanced since the last read.
 ///     </para>
 /// </remarks>
-internal sealed class UserProfileProjectionGrain : UxProjectionGrainBase<UserProfileProjection, UserBrook>
+[BrookName("CASCADE", "CHAT", "USER")]
+internal sealed class UserProfileProjectionGrain : UxProjectionGrainBase<UserProfileProjection>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="UserProfileProjectionGrain" /> class.

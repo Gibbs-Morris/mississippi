@@ -15,8 +15,6 @@ using Cascade.Domain.Channel.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Channel.Handlers;
 
@@ -112,30 +110,6 @@ public sealed class CreateChannelHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that creating a channel with empty name returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle CreateChannel with empty name")]
-    public void HandleReturnsErrorWhenNameEmpty()
-    {
-        // Arrange
-        CreateChannelHandler handler = new();
-        CreateChannel command = new()
-        {
-            ChannelId = "channel-1",
-            Name = string.Empty,
-            CreatedBy = "user-123",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
-    }
-
-    /// <summary>
     ///     Verifies that creating a channel with empty createdBy returns an error.
     /// </summary>
     [Fact]
@@ -149,6 +123,30 @@ public sealed class CreateChannelHandlerTests
             ChannelId = "channel-1",
             Name = "General",
             CreatedBy = string.Empty,
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that creating a channel with empty name returns an error.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle CreateChannel with empty name")]
+    public void HandleReturnsErrorWhenNameEmpty()
+    {
+        // Arrange
+        CreateChannelHandler handler = new();
+        CreateChannel command = new()
+        {
+            ChannelId = "channel-1",
+            Name = string.Empty,
+            CreatedBy = "user-123",
         };
 
         // Act

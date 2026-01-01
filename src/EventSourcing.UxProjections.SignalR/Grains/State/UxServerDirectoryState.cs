@@ -19,6 +19,6 @@ public sealed record UxServerDirectoryState
     ///     Gets the dictionary of active servers keyed by server identifier.
     /// </summary>
     [Id(0)]
-    public ImmutableDictionary<string, ServerInfo> ActiveServers { get; init; }
-        = ImmutableDictionary<string, ServerInfo>.Empty;
+    public ImmutableDictionary<string, ServerInfo> ActiveServers { get; init; } =
+        ImmutableDictionary<string, ServerInfo>.Empty;
 }

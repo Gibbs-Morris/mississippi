@@ -27,7 +27,9 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.Grains;
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.EventSourcing.UxProjections.SignalR.UxGroupGrain")]
-internal sealed class UxGroupGrain : IUxGroupGrain, IGrainBase
+internal sealed class UxGroupGrain
+    : IUxGroupGrain,
+      IGrainBase
 {
     private UxGroupState state = new();
 
@@ -56,13 +58,13 @@ internal sealed class UxGroupGrain : IUxGroupGrain, IGrainBase
     private ILogger<UxGroupGrain> Logger { get; }
 
     /// <inheritdoc />
-    public Task AddConnectionAsync(string connectionId)
+    public Task AddConnectionAsync(
+        string connectionId
+    )
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
-
         string groupKey = this.GetPrimaryKeyString();
         Logger.AddingConnectionToGroup(connectionId, groupKey);
-
         if (state.ConnectionIds.Contains(connectionId))
         {
             Logger.ConnectionAlreadyInGroup(connectionId, groupKey);
@@ -73,20 +75,17 @@ internal sealed class UxGroupGrain : IUxGroupGrain, IGrainBase
         {
             ConnectionIds = state.ConnectionIds.Add(connectionId),
         };
-
         Logger.ConnectionAddedToGroup(connectionId, groupKey, state.ConnectionIds.Count);
-
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task<ImmutableHashSet<string>> GetConnectionsAsync()
-    {
-        return Task.FromResult(state.ConnectionIds);
-    }
+    public Task<ImmutableHashSet<string>> GetConnectionsAsync() => Task.FromResult(state.ConnectionIds);
 
     /// <inheritdoc />
-    public Task OnActivateAsync(CancellationToken token)
+    public Task OnActivateAsync(
+        CancellationToken token
+    )
     {
         string groupKey = this.GetPrimaryKeyString();
         Logger.GroupGrainActivated(groupKey, state.ConnectionIds.Count);
@@ -94,13 +93,13 @@ internal sealed class UxGroupGrain : IUxGroupGrain, IGrainBase
     }
 
     /// <inheritdoc />
-    public Task RemoveConnectionAsync(string connectionId)
+    public Task RemoveConnectionAsync(
+        string connectionId
+    )
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
-
         string groupKey = this.GetPrimaryKeyString();
         Logger.RemovingConnectionFromGroup(connectionId, groupKey);
-
         if (!state.ConnectionIds.Contains(connectionId))
         {
             Logger.ConnectionNotInGroup(connectionId, groupKey);
@@ -111,7 +110,6 @@ internal sealed class UxGroupGrain : IUxGroupGrain, IGrainBase
         {
             ConnectionIds = state.ConnectionIds.Remove(connectionId),
         };
-
         Logger.ConnectionRemovedFromGroup(connectionId, groupKey, state.ConnectionIds.Count);
 
         // Deactivate if empty
@@ -125,11 +123,13 @@ internal sealed class UxGroupGrain : IUxGroupGrain, IGrainBase
     }
 
     /// <inheritdoc />
-    public async Task SendAllAsync(string methodName, object?[] args)
+    public async Task SendAllAsync(
+        string methodName,
+        object?[] args
+    )
     {
         ArgumentException.ThrowIfNullOrEmpty(methodName);
         ArgumentNullException.ThrowIfNull(args);
-
         string groupKey = this.GetPrimaryKeyString();
         Logger.SendingToGroup(groupKey, methodName, state.ConnectionIds.Count);
 

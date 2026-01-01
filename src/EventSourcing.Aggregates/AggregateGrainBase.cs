@@ -22,7 +22,6 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///     Base class for aggregate grains that encapsulate domain state and process commands.
 /// </summary>
 /// <typeparam name="TSnapshot">The internal state type of the aggregate.</typeparam>
-/// <typeparam name="TBrook">The brook definition type that identifies the event stream.</typeparam>
 /// <remarks>
 ///     <para>
 ///         Aggregate grains are single-threaded write processors backed by a brook (event stream).
@@ -33,15 +32,15 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///         The internal state is never exposed; use projections for read queries.
 ///     </para>
 ///     <para>
-///         The <typeparamref name="TBrook" /> type parameter provides compile-time type safety
-///         for brook identity, ensuring projections can reference the same brook type.
+///         Derived classes MUST be decorated with <see cref="BrookNameAttribute" /> directly
+///         on the final sealed class. If the attribute is missing, the grain will fail to
+///         activate with an exception.
 ///     </para>
 /// </remarks>
-public abstract class AggregateGrainBase<TSnapshot, TBrook>
+public abstract class AggregateGrainBase<TSnapshot>
     : IAggregateGrain,
       IGrainBase
     where TSnapshot : class
-    where TBrook : IBrookDefinition
 {
     private BrookKey brookKey;
 
@@ -54,7 +53,7 @@ public abstract class AggregateGrainBase<TSnapshot, TBrook>
     private SnapshotStreamKey snapshotStreamKey;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="AggregateGrainBase{TSnapshot, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="AggregateGrainBase{TSnapshot}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="brookGrainFactory">Factory for resolving brook grains.</param>
@@ -82,11 +81,6 @@ public abstract class AggregateGrainBase<TSnapshot, TBrook>
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    /// <summary>
-    ///     Gets the brook name from the <typeparamref name="TBrook" /> definition.
-    /// </summary>
-    protected static string BrookName => TBrook.BrookName;
-
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
 
@@ -99,6 +93,15 @@ public abstract class AggregateGrainBase<TSnapshot, TBrook>
     ///     Gets the factory for resolving brook grains.
     /// </summary>
     protected IBrookGrainFactory BrookGrainFactory { get; }
+
+    /// <summary>
+    ///     Gets the brook name from the <see cref="BrookNameAttribute" /> on this grain type.
+    /// </summary>
+    /// <remarks>
+    ///     This property reads the attribute from the concrete grain type at runtime.
+    ///     If the attribute is missing, an <see cref="InvalidOperationException" /> is thrown.
+    /// </remarks>
+    protected string BrookName => BrookDefinitionHelper.GetBrookNameFromGrain(GetType());
 
     /// <summary>
     ///     Gets the logger instance.
@@ -125,13 +128,19 @@ public abstract class AggregateGrainBase<TSnapshot, TBrook>
     /// </summary>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the activation operation.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the <see cref="BrookNameAttribute" /> is missing from the concrete grain type.
+    /// </exception>
     public virtual Task OnActivateAsync(
         CancellationToken token
     )
     {
+        // Validate that the attribute is present on the concrete grain type (fail-fast)
+        // This call will throw InvalidOperationException if the attribute is missing
+        _ = BrookDefinitionHelper.GetDefinition(GetType());
         string primaryKey = this.GetPrimaryKeyString();
         brookKey = BrookKey.FromString(primaryKey);
-        snapshotStreamKey = new(SnapshotNameHelper.GetSnapshotName<TSnapshot>(), brookKey.Id, ReducersHash);
+        snapshotStreamKey = new(BrookName, SnapshotNameHelper.GetSnapshotName<TSnapshot>(), brookKey.Id, ReducersHash);
         Logger.Activated(primaryKey);
         return Task.CompletedTask;
     }

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -164,10 +165,10 @@ internal static class UxProjectionScenario
         // Step 3: Read projection snapshot directly from Cosmos to verify persistence
         logger.UxProjectionStep(runId, 3, "Read projection snapshot directly from Cosmos");
 
-        // Build the snapshot key using the projection's snapshot name and reducer hash
+        // Build the snapshot key using the brook name, projection's snapshot name, and reducer hash
         string reducerHash = rootReducer.GetReducerHash();
-        string projectionType = "CRESCENT.SAMPLE.COUNTERSUMMARY.V1"; // From [SnapshotName] attribute
-        SnapshotStreamKey streamKey = new(projectionType, counterId, reducerHash);
+        string projectionType = SnapshotNameHelper.GetSnapshotName<CounterSummaryProjection>();
+        SnapshotStreamKey streamKey = new(CounterBrook.BrookName, projectionType, counterId, reducerHash);
 
         // We need to find the snapshot version - read the latest available
         // First, let's try to read at version that matches expected event count (14)

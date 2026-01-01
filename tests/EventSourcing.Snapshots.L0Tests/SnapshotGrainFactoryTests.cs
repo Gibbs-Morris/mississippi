@@ -37,7 +37,7 @@ public sealed class SnapshotGrainFactoryTests
     public void GetSnapshotCacheGrainReturnsGrainFromFactory()
     {
         // Arrange
-        SnapshotKey key = new(new("TestProjection", "entity-1", "hash123"), 5);
+        SnapshotKey key = new(new("TEST.BROOK", "TestProjection", "entity-1", "hash123"), 5);
         Mock<ISnapshotCacheGrain<SnapshotGrainFactoryTestState>> expectedGrainMock = new();
         Mock<IGrainFactory> grainFactoryMock = new();
         grainFactoryMock
@@ -64,7 +64,7 @@ public sealed class SnapshotGrainFactoryTests
     public void GetSnapshotPersisterGrainReturnsGrainFromFactory()
     {
         // Arrange
-        SnapshotKey key = new(new("TestProjection", "entity-1", "hash123"), 5);
+        SnapshotKey key = new(new("TEST.BROOK", "TestProjection", "entity-1", "hash123"), 5);
         Mock<ISnapshotPersisterGrain> expectedGrainMock = new();
         Mock<IGrainFactory> grainFactoryMock = new();
         grainFactoryMock.Setup(f => f.GetGrain<ISnapshotPersisterGrain>(key.ToString(), null))

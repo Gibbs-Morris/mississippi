@@ -7,6 +7,7 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Moq;
@@ -17,7 +18,7 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="UxProjectionGrainBase{TProjection, TBrook}" />.
+///     Tests for <see cref="UxProjectionGrainBase{TProjection}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections")]
@@ -49,10 +50,11 @@ public sealed class UxProjectionGrainTests
     private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123";
 
     /// <summary>
-    ///     A testable implementation of <see cref="UxProjectionGrainBase{TProjection, TBrook}" />
+    ///     A testable implementation of <see cref="UxProjectionGrainBase{TProjection}" />
     ///     that allows testing without full Orleans infrastructure.
     /// </summary>
-    private sealed class TestableUxProjectionGrain : UxProjectionGrainBase<TestProjection, TestBrookDefinition>
+    [BrookName("TEST", "MODULE", "STREAM")]
+    private sealed class TestableUxProjectionGrain : UxProjectionGrainBase<TestProjection>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TestableUxProjectionGrain" /> class.

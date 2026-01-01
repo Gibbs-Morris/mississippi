@@ -126,7 +126,7 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
 
         // Check If-None-Match header for conditional GET
         string? ifNoneMatch = Request.Headers.IfNoneMatch.ToString();
-        if (!string.IsNullOrEmpty(ifNoneMatch) && ifNoneMatch == currentETag)
+        if (!string.IsNullOrEmpty(ifNoneMatch) && (ifNoneMatch == currentETag))
         {
             Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
             return StatusCode(304);
@@ -143,7 +143,6 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
         // Set caching headers
         Response.Headers.ETag = currentETag;
         Response.Headers.CacheControl = "private, must-revalidate";
-
         Logger.ProjectionRetrieved(entityId, ProjectionTypeName);
         return Ok(projection);
     }

@@ -3,7 +3,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Immutable;
 
 using Allure.Xunit.Attributes;
 using Allure.Xunit.Attributes.Steps;
@@ -11,8 +10,6 @@ using Allure.Xunit.Attributes.Steps;
 using Crescent.NewModel.Chat;
 using Crescent.NewModel.Chat.Events;
 using Crescent.NewModel.Chat.Reducers;
-
-using Xunit;
 
 
 namespace Crescent.NewModel.L0Tests.Chat.Reducers;
@@ -49,7 +46,7 @@ public sealed class MessageEditedReducerTests
             Name = "General",
             Messages =
             [
-                new ChatMessage
+                new()
                 {
                     MessageId = "msg-001",
                     Content = "Original content",
@@ -93,7 +90,7 @@ public sealed class MessageEditedReducerTests
             Name = "General",
             Messages =
             [
-                new ChatMessage
+                new()
                 {
                     MessageId = "msg-001",
                     Content = "Hello",

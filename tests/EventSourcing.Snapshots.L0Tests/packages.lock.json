@@ -669,6 +669,13 @@
           "xunit.abstractions": "2.0.3"
         }
       },
+      "Mississippi.EventSourcing.Aggregates.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Brooks": {
         "type": "Project",
         "dependencies": {
@@ -703,6 +710,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",

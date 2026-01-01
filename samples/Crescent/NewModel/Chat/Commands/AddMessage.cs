@@ -11,10 +11,10 @@ namespace Crescent.NewModel.Chat.Commands;
 internal sealed record AddMessage
 {
     /// <summary>
-    ///     Gets the unique identifier for the message.
+    ///     Gets the author of the message.
     /// </summary>
-    [Id(0)]
-    public required string MessageId { get; init; }
+    [Id(2)]
+    public required string Author { get; init; }
 
     /// <summary>
     ///     Gets the content of the message.
@@ -23,8 +23,8 @@ internal sealed record AddMessage
     public required string Content { get; init; }
 
     /// <summary>
-    ///     Gets the author of the message.
+    ///     Gets the unique identifier for the message.
     /// </summary>
-    [Id(2)]
-    public required string Author { get; init; }
+    [Id(0)]
+    public required string MessageId { get; init; }
 }

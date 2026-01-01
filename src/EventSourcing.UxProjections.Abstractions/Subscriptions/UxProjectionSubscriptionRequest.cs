@@ -1,5 +1,3 @@
-using System;
-
 using Orleans;
 
 
@@ -23,16 +21,16 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
 public sealed record UxProjectionSubscriptionRequest
 {
     /// <summary>
-    ///     Gets the name of the projection type to subscribe to.
-    /// </summary>
-    [Id(0)]
-    public required string ProjectionType { get; init; }
-
-    /// <summary>
     ///     Gets the brook type that the projection consumes.
     /// </summary>
     [Id(1)]
     public required string BrookType { get; init; }
+
+    /// <summary>
+    ///     Gets the client-assigned subscription identifier for matching responses.
+    /// </summary>
+    [Id(3)]
+    public required string ClientSubscriptionId { get; init; }
 
     /// <summary>
     ///     Gets the entity identifier within the brook.
@@ -41,8 +39,8 @@ public sealed record UxProjectionSubscriptionRequest
     public required string EntityId { get; init; }
 
     /// <summary>
-    ///     Gets the client-assigned subscription identifier for matching responses.
+    ///     Gets the name of the projection type to subscribe to.
     /// </summary>
-    [Id(3)]
-    public required string ClientSubscriptionId { get; init; }
+    [Id(0)]
+    public required string ProjectionType { get; init; }
 }

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Reducers;
+using Mississippi.EventSourcing.Snapshots;
 
 
 namespace Crescent.NewModel.Chat;
@@ -46,6 +47,11 @@ internal static class ChatRegistrations
         services.AddReducer<MessageEdited, ChatState, MessageEditedReducer>();
         services.AddReducer<MessageDeleted, ChatState, MessageDeletedReducer>();
 
+        // Add snapshot state converter for ChatState
+        services.AddSnapshotStateConverter<ChatState>();
+
+        // Register initial state factory for snapshot cache grain
+        services.AddInitialStateFactory<ChatState, ChatStateInitialStateFactory>();
         return services;
     }
 }

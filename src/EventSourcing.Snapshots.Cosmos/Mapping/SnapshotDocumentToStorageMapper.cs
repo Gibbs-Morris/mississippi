@@ -15,7 +15,7 @@ internal sealed class SnapshotDocumentToStorageMapper : IMapper<SnapshotDocument
     ) =>
         new()
         {
-            StreamKey = new(input.ProjectionType, input.ProjectionId, input.ReducersHash),
+            StreamKey = new(input.BrookName, input.ProjectionType, input.ProjectionId, input.ReducersHash),
             Version = input.Version,
             Data = input.Data,
             DataContentType = input.DataContentType,

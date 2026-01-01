@@ -25,6 +25,9 @@ internal sealed class UserWentOfflineProjectionReducer : Reducer<UserWentOffline
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(eventData);
-        return state with { IsOnline = false };
+        return state with
+        {
+            IsOnline = false,
+        };
     }
 }

@@ -9,30 +9,10 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.Grains;
 internal static partial class UxGroupGrainLoggerExtensions
 {
     [LoggerMessage(
-        EventId = 1,
-        Level = LogLevel.Debug,
-        Message = "Group grain activated for '{GroupKey}' with {ConnectionCount} connections")]
-    public static partial void GroupGrainActivated(
-        this ILogger logger,
-        string groupKey,
-        int connectionCount
-    );
-
-    [LoggerMessage(
         EventId = 2,
         Level = LogLevel.Debug,
         Message = "Adding connection '{ConnectionId}' to group '{GroupKey}'")]
     public static partial void AddingConnectionToGroup(
-        this ILogger logger,
-        string connectionId,
-        string groupKey
-    );
-
-    [LoggerMessage(
-        EventId = 3,
-        Level = LogLevel.Debug,
-        Message = "Connection '{ConnectionId}' already in group '{GroupKey}'")]
-    public static partial void ConnectionAlreadyInGroup(
         this ILogger logger,
         string connectionId,
         string groupKey
@@ -50,10 +30,10 @@ internal static partial class UxGroupGrainLoggerExtensions
     );
 
     [LoggerMessage(
-        EventId = 5,
+        EventId = 3,
         Level = LogLevel.Debug,
-        Message = "Removing connection '{ConnectionId}' from group '{GroupKey}'")]
-    public static partial void RemovingConnectionFromGroup(
+        Message = "Connection '{ConnectionId}' already in group '{GroupKey}'")]
+    public static partial void ConnectionAlreadyInGroup(
         this ILogger logger,
         string connectionId,
         string groupKey
@@ -81,11 +61,28 @@ internal static partial class UxGroupGrainLoggerExtensions
     );
 
     [LoggerMessage(
-        EventId = 8,
+        EventId = 1,
         Level = LogLevel.Debug,
-        Message = "Group '{GroupKey}' is now empty, deactivating")]
+        Message = "Group grain activated for '{GroupKey}' with {ConnectionCount} connections")]
+    public static partial void GroupGrainActivated(
+        this ILogger logger,
+        string groupKey,
+        int connectionCount
+    );
+
+    [LoggerMessage(EventId = 8, Level = LogLevel.Debug, Message = "Group '{GroupKey}' is now empty, deactivating")]
     public static partial void GroupNowEmpty(
         this ILogger logger,
+        string groupKey
+    );
+
+    [LoggerMessage(
+        EventId = 5,
+        Level = LogLevel.Debug,
+        Message = "Removing connection '{ConnectionId}' from group '{GroupKey}'")]
+    public static partial void RemovingConnectionFromGroup(
+        this ILogger logger,
+        string connectionId,
         string groupKey
     );
 

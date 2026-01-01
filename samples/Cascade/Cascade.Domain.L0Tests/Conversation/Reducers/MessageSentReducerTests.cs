@@ -12,8 +12,6 @@ using Cascade.Domain.Conversation;
 using Cascade.Domain.Conversation.Events;
 using Cascade.Domain.Conversation.Reducers;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Conversation.Reducers;
 

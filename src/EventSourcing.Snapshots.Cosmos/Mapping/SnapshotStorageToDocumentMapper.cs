@@ -20,6 +20,7 @@ internal sealed class SnapshotStorageToDocumentMapper : IMapper<SnapshotStorageM
             Id = input.Version.ToString(CultureInfo.InvariantCulture),
             Type = "snapshot",
             SnapshotPartitionKey = input.StreamKey.ToString(),
+            BrookName = input.StreamKey.BrookName,
             ProjectionType = input.StreamKey.ProjectionType,
             ProjectionId = input.StreamKey.ProjectionId,
             ReducersHash = input.StreamKey.ReducersHash,

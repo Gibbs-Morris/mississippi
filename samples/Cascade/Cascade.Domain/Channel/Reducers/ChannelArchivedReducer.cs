@@ -19,5 +19,8 @@ internal sealed class ChannelArchivedReducer : Reducer<ChannelArchived, ChannelS
         ChannelState state,
         ChannelArchived eventData
     ) =>
-        state with { IsArchived = true };
+        state with
+        {
+            IsArchived = true,
+        };
 }

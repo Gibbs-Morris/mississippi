@@ -23,9 +23,7 @@ internal sealed class DeleteMessageHandler : CommandHandler<DeleteMessage, ChatS
         // Ensure chat exists
         if (state?.IsCreated != true)
         {
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.NotFound,
-                "Chat does not exist.");
+            return OperationResult.Fail<IReadOnlyList<object>>(AggregateErrorCodes.NotFound, "Chat does not exist.");
         }
 
         // Validate command
@@ -37,9 +35,7 @@ internal sealed class DeleteMessageHandler : CommandHandler<DeleteMessage, ChatS
         }
 
         // Find the message
-        ChatMessage? existingMessage = state.Messages
-            .FirstOrDefault(m => m.MessageId == command.MessageId);
-
+        ChatMessage? existingMessage = state.Messages.FirstOrDefault(m => m.MessageId == command.MessageId);
         if (existingMessage is null)
         {
             return OperationResult.Fail<IReadOnlyList<object>>(

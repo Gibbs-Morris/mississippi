@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 
 using Allure.Xunit.Attributes;
 using Allure.Xunit.Attributes.Steps;
@@ -15,8 +14,6 @@ using Crescent.NewModel.Chat.Events;
 using Crescent.NewModel.Chat.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-
-using Xunit;
 
 
 namespace Crescent.NewModel.L0Tests.Chat.Handlers;
@@ -29,46 +26,6 @@ namespace Crescent.NewModel.L0Tests.Chat.Handlers;
 [AllureSubSuite("DeleteMessageHandler")]
 public sealed class DeleteMessageHandlerTests
 {
-    /// <summary>
-    ///     Verifies that deleting a message produces a MessageDeleted event.
-    /// </summary>
-    [Fact]
-    [AllureStep("DeleteMessage with valid data produces MessageDeleted event")]
-    public void DeleteMessageWithValidDataProducesMessageDeletedEvent()
-    {
-        // Arrange
-        DeleteMessageHandler handler = new();
-        DeleteMessage command = new()
-        {
-            MessageId = "msg-001",
-        };
-        ChatState existingState = new()
-        {
-            IsCreated = true,
-            Name = "General",
-            Messages =
-            [
-                new ChatMessage
-                {
-                    MessageId = "msg-001",
-                    Content = "Hello!",
-                    Author = "user1",
-                    CreatedAt = DateTimeOffset.UtcNow,
-                },
-            ],
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
-
-        // Assert
-        Assert.True(result.Success);
-        Assert.NotNull(result.Value);
-        Assert.Single(result.Value);
-        MessageDeleted? @event = Assert.IsType<MessageDeleted>(result.Value[0]);
-        Assert.Equal("msg-001", @event.MessageId);
-    }
-
     /// <summary>
     ///     Verifies that deleting a message when chat does not exist fails.
     /// </summary>
@@ -110,7 +67,7 @@ public sealed class DeleteMessageHandlerTests
             Name = "General",
             Messages =
             [
-                new ChatMessage
+                new()
                 {
                     MessageId = "msg-001",
                     Content = "Hello!",
@@ -153,5 +110,45 @@ public sealed class DeleteMessageHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that deleting a message produces a MessageDeleted event.
+    /// </summary>
+    [Fact]
+    [AllureStep("DeleteMessage with valid data produces MessageDeleted event")]
+    public void DeleteMessageWithValidDataProducesMessageDeletedEvent()
+    {
+        // Arrange
+        DeleteMessageHandler handler = new();
+        DeleteMessage command = new()
+        {
+            MessageId = "msg-001",
+        };
+        ChatState existingState = new()
+        {
+            IsCreated = true,
+            Name = "General",
+            Messages =
+            [
+                new()
+                {
+                    MessageId = "msg-001",
+                    Content = "Hello!",
+                    Author = "user1",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                },
+            ],
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Single(result.Value);
+        MessageDeleted? @event = Assert.IsType<MessageDeleted>(result.Value[0]);
+        Assert.Equal("msg-001", @event.MessageId);
     }
 }

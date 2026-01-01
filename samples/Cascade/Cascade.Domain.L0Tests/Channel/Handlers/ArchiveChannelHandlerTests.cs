@@ -15,8 +15,6 @@ using Cascade.Domain.Channel.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Channel.Handlers;
 
@@ -57,28 +55,6 @@ public sealed class ArchiveChannelHandlerTests
         ChannelArchived archived = Assert.IsType<ChannelArchived>(singleEvent);
         Assert.Equal("user-123", archived.ArchivedBy);
         Assert.True(archived.ArchivedAt > DateTimeOffset.UtcNow.AddMinutes(-1));
-    }
-
-    /// <summary>
-    ///     Verifies that archiving a non-existent channel returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle ArchiveChannel when not created")]
-    public void HandleReturnsErrorWhenNotCreated()
-    {
-        // Arrange
-        ArchiveChannelHandler handler = new();
-        ArchiveChannel command = new()
-        {
-            ArchivedBy = "user-123",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 
     /// <summary>
@@ -136,5 +112,27 @@ public sealed class ArchiveChannelHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that archiving a non-existent channel returns an error.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle ArchiveChannel when not created")]
+    public void HandleReturnsErrorWhenNotCreated()
+    {
+        // Arrange
+        ArchiveChannelHandler handler = new();
+        ArchiveChannel command = new()
+        {
+            ArchivedBy = "user-123",
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 }

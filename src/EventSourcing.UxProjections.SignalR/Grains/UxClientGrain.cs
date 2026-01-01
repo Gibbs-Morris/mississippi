@@ -27,7 +27,9 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.Grains;
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.EventSourcing.UxProjections.SignalR.UxClientGrain")]
-internal sealed class UxClientGrain : IUxClientGrain, IGrainBase
+internal sealed class UxClientGrain
+    : IUxClientGrain,
+      IGrainBase
 {
     private UxClientState state = new();
 
@@ -51,24 +53,23 @@ internal sealed class UxClientGrain : IUxClientGrain, IGrainBase
     private ILogger<UxClientGrain> Logger { get; }
 
     /// <inheritdoc />
-    public Task ConnectAsync(string hubName, string serverId)
+    public Task ConnectAsync(
+        string hubName,
+        string serverId
+    )
     {
         ArgumentException.ThrowIfNullOrEmpty(hubName);
         ArgumentException.ThrowIfNullOrEmpty(serverId);
-
         string connectionId = ExtractConnectionId();
         Logger.ClientConnecting(connectionId, hubName, serverId);
-
-        state = new UxClientState
+        state = new()
         {
             ConnectionId = connectionId,
             HubName = hubName,
             ServerId = serverId,
             ConnectedAt = DateTimeOffset.UtcNow,
         };
-
         Logger.ClientConnected(connectionId, hubName, serverId);
-
         return Task.CompletedTask;
     }
 
@@ -77,27 +78,23 @@ internal sealed class UxClientGrain : IUxClientGrain, IGrainBase
     {
         string connectionId = ExtractConnectionId();
         Logger.ClientDisconnecting(connectionId);
-
-        state = new UxClientState();
-
+        state = new();
         Logger.ClientDisconnected(connectionId);
-
         this.DeactivateOnIdle();
-
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task<string?> GetServerIdAsync()
     {
-        string? serverId = string.IsNullOrEmpty(state.ServerId)
-            ? null
-            : state.ServerId;
+        string? serverId = string.IsNullOrEmpty(state.ServerId) ? null : state.ServerId;
         return Task.FromResult(serverId);
     }
 
     /// <inheritdoc />
-    public Task OnActivateAsync(CancellationToken token)
+    public Task OnActivateAsync(
+        CancellationToken token
+    )
     {
         string connectionId = ExtractConnectionId();
         Logger.ClientGrainActivated(connectionId);
@@ -105,11 +102,13 @@ internal sealed class UxClientGrain : IUxClientGrain, IGrainBase
     }
 
     /// <inheritdoc />
-    public Task SendMessageAsync(string methodName, object?[] args)
+    public Task SendMessageAsync(
+        string methodName,
+        object?[] args
+    )
     {
         ArgumentException.ThrowIfNullOrEmpty(methodName);
         ArgumentNullException.ThrowIfNull(args);
-
         string connectionId = ExtractConnectionId();
         Logger.SendingMessage(connectionId, methodName);
 
@@ -123,8 +122,6 @@ internal sealed class UxClientGrain : IUxClientGrain, IGrainBase
         // Grain key format: "ConnectionId" (or "HubName:ConnectionId" depending on usage)
         string key = this.GetPrimaryKeyString();
         int separatorIndex = key.IndexOf(':', StringComparison.Ordinal);
-        return separatorIndex >= 0
-            ? key[(separatorIndex + 1)..]
-            : key;
+        return separatorIndex >= 0 ? key[(separatorIndex + 1)..] : key;
     }
 }

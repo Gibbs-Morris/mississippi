@@ -11,8 +11,6 @@ using Crescent.NewModel.Chat;
 using Crescent.NewModel.Chat.Events;
 using Crescent.NewModel.Chat.Reducers;
 
-using Xunit;
-
 
 namespace Crescent.NewModel.L0Tests.Chat.Reducers;
 

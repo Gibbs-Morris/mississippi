@@ -16,8 +16,6 @@ using Cascade.Domain.Conversation.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Conversation.Handlers;
 
@@ -30,11 +28,11 @@ namespace Cascade.Domain.L0Tests.Conversation.Handlers;
 public sealed class EditMessageHandlerTests
 {
     /// <summary>
-    ///     Verifies that editing a message returns a MessageEdited event.
+    ///     Verifies that editing by a non-sender returns an error.
     /// </summary>
     [Fact]
-    [AllureStep("Handle EditMessage when message exists")]
-    public void HandleReturnsMessageEditedEventWhenMessageExists()
+    [AllureStep("Handle EditMessage when editor is not sender")]
+    public void HandleReturnsErrorWhenEditorIsNotSender()
     {
         // Arrange
         EditMessageHandler handler = new();
@@ -42,7 +40,7 @@ public sealed class EditMessageHandlerTests
         {
             MessageId = "msg-001",
             NewContent = "Updated content",
-            EditedBy = "user-789",
+            EditedBy = "other-user",
         };
         Message existingMessage = new()
         {
@@ -63,12 +61,47 @@ public sealed class EditMessageHandlerTests
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
 
         // Assert
-        Assert.True(result.Success);
-        object singleEvent = Assert.Single(result.Value!);
-        MessageEdited edited = Assert.IsType<MessageEdited>(singleEvent);
-        Assert.Equal("msg-001", edited.MessageId);
-        Assert.Equal("Updated content", edited.NewContent);
-        Assert.Equal("user-789", edited.EditedBy);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that editing a deleted message returns an error.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle EditMessage when message deleted")]
+    public void HandleReturnsErrorWhenMessageDeleted()
+    {
+        // Arrange
+        EditMessageHandler handler = new();
+        EditMessage command = new()
+        {
+            MessageId = "msg-001",
+            NewContent = "Updated content",
+            EditedBy = "user-789",
+        };
+        Message deletedMessage = new()
+        {
+            MessageId = "msg-001",
+            Content = "Original content",
+            SentBy = "user-789",
+            SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+            IsDeleted = true,
+        };
+        ConversationState existingState = new()
+        {
+            IsStarted = true,
+            ConversationId = "conv-123",
+            ChannelId = "channel-456",
+            Messages = ImmutableList.Create(deletedMessage),
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 
     /// <summary>
@@ -84,36 +117,6 @@ public sealed class EditMessageHandlerTests
         {
             MessageId = string.Empty,
             NewContent = "Updated content",
-            EditedBy = "user-789",
-        };
-        ConversationState existingState = new()
-        {
-            IsStarted = true,
-            ConversationId = "conv-123",
-            ChannelId = "channel-456",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
-    }
-
-    /// <summary>
-    ///     Verifies that editing with empty new content returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle EditMessage with empty new content")]
-    public void HandleReturnsErrorWhenNewContentEmpty()
-    {
-        // Arrange
-        EditMessageHandler handler = new();
-        EditMessage command = new()
-        {
-            MessageId = "msg-001",
-            NewContent = string.Empty,
             EditedBy = "user-789",
         };
         ConversationState existingState = new()
@@ -163,11 +166,41 @@ public sealed class EditMessageHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that editing a deleted message returns an error.
+    ///     Verifies that editing with empty new content returns an error.
     /// </summary>
     [Fact]
-    [AllureStep("Handle EditMessage when message deleted")]
-    public void HandleReturnsErrorWhenMessageDeleted()
+    [AllureStep("Handle EditMessage with empty new content")]
+    public void HandleReturnsErrorWhenNewContentEmpty()
+    {
+        // Arrange
+        EditMessageHandler handler = new();
+        EditMessage command = new()
+        {
+            MessageId = "msg-001",
+            NewContent = string.Empty,
+            EditedBy = "user-789",
+        };
+        ConversationState existingState = new()
+        {
+            IsStarted = true,
+            ConversationId = "conv-123",
+            ChannelId = "channel-456",
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that editing a message returns a MessageEdited event.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle EditMessage when message exists")]
+    public void HandleReturnsMessageEditedEventWhenMessageExists()
     {
         // Arrange
         EditMessageHandler handler = new();
@@ -176,45 +209,6 @@ public sealed class EditMessageHandlerTests
             MessageId = "msg-001",
             NewContent = "Updated content",
             EditedBy = "user-789",
-        };
-        Message deletedMessage = new()
-        {
-            MessageId = "msg-001",
-            Content = "Original content",
-            SentBy = "user-789",
-            SentAt = DateTimeOffset.UtcNow.AddMinutes(-5),
-            IsDeleted = true,
-        };
-        ConversationState existingState = new()
-        {
-            IsStarted = true,
-            ConversationId = "conv-123",
-            ChannelId = "channel-456",
-            Messages = ImmutableList.Create(deletedMessage),
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
-    }
-
-    /// <summary>
-    ///     Verifies that editing by a non-sender returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle EditMessage when editor is not sender")]
-    public void HandleReturnsErrorWhenEditorIsNotSender()
-    {
-        // Arrange
-        EditMessageHandler handler = new();
-        EditMessage command = new()
-        {
-            MessageId = "msg-001",
-            NewContent = "Updated content",
-            EditedBy = "other-user",
         };
         Message existingMessage = new()
         {
@@ -235,7 +229,11 @@ public sealed class EditMessageHandlerTests
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+        Assert.True(result.Success);
+        object singleEvent = Assert.Single(result.Value!);
+        MessageEdited edited = Assert.IsType<MessageEdited>(singleEvent);
+        Assert.Equal("msg-001", edited.MessageId);
+        Assert.Equal("Updated content", edited.NewContent);
+        Assert.Equal("user-789", edited.EditedBy);
     }
 }

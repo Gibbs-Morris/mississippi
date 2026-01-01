@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -18,8 +19,9 @@ namespace Crescent.ConsoleApp.Counter;
 /// <summary>
 ///     Aggregate grain implementation for the counter domain.
 /// </summary>
+[BrookName("CRESCENT", "SAMPLE", "COUNTER")]
 internal sealed class CounterAggregateGrain
-    : AggregateGrainBase<CounterState, CounterBrook>,
+    : AggregateGrainBase<CounterState>,
       ICounterAggregateGrain
 {
     /// <summary>

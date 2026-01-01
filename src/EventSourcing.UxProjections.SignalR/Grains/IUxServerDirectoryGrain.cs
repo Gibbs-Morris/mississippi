@@ -25,12 +25,14 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.Grains;
 public interface IUxServerDirectoryGrain : IGrainWithStringKey
 {
     /// <summary>
-    ///     Registers a server as active in the directory.
+    ///     Gets a list of servers that have not sent a heartbeat within the timeout.
     /// </summary>
-    /// <param name="serverId">The unique identifier of the server.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Alias("RegisterServerAsync")]
-    Task RegisterServerAsync(string serverId);
+    /// <param name="timeout">The timeout duration for considering a server dead.</param>
+    /// <returns>An immutable list of dead server identifiers.</returns>
+    [Alias("GetDeadServersAsync")]
+    Task<ImmutableList<string>> GetDeadServersAsync(
+        TimeSpan timeout
+    );
 
     /// <summary>
     ///     Updates the heartbeat timestamp and connection count for a server.
@@ -39,7 +41,20 @@ public interface IUxServerDirectoryGrain : IGrainWithStringKey
     /// <param name="connectionCount">The current number of active connections.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("HeartbeatAsync")]
-    Task HeartbeatAsync(string serverId, int connectionCount);
+    Task HeartbeatAsync(
+        string serverId,
+        int connectionCount
+    );
+
+    /// <summary>
+    ///     Registers a server as active in the directory.
+    /// </summary>
+    /// <param name="serverId">The unique identifier of the server.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Alias("RegisterServerAsync")]
+    Task RegisterServerAsync(
+        string serverId
+    );
 
     /// <summary>
     ///     Unregisters a server from the directory.
@@ -47,13 +62,7 @@ public interface IUxServerDirectoryGrain : IGrainWithStringKey
     /// <param name="serverId">The unique identifier of the server.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("UnregisterServerAsync")]
-    Task UnregisterServerAsync(string serverId);
-
-    /// <summary>
-    ///     Gets a list of servers that have not sent a heartbeat within the timeout.
-    /// </summary>
-    /// <param name="timeout">The timeout duration for considering a server dead.</param>
-    /// <returns>An immutable list of dead server identifiers.</returns>
-    [Alias("GetDeadServersAsync")]
-    Task<ImmutableList<string>> GetDeadServersAsync(TimeSpan timeout);
+    Task UnregisterServerAsync(
+        string serverId
+    );
 }

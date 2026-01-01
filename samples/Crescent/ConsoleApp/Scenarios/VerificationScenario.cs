@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -160,10 +161,11 @@ internal static class VerificationScenario
         // Step 3: Read snapshot directly from Cosmos to verify snapshot persistence
         logger.VerificationStep(runId, 3, "Read snapshot data directly from Cosmos");
 
-        // Build the snapshot key: we need the projection type, projection id, reducer hash, and version
+        // Build the snapshot key: we need the brook name, projection type, projection id, reducer hash, and version
         // The version should match the current stream position
         string reducerHash = rootReducer.GetReducerHash();
-        SnapshotStreamKey streamKey = new(brookKey.Type, counterId, reducerHash);
+        string projectionType = SnapshotNameHelper.GetSnapshotName<CounterState>();
+        SnapshotStreamKey streamKey = new(brookKey.Type, projectionType, counterId, reducerHash);
         SnapshotKey snapshotKey = new(streamKey, currentPosition.Value);
         SnapshotEnvelope? envelope = await snapshotStorageProvider.ReadAsync(snapshotKey, cancellationToken);
         if (envelope == null)

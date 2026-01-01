@@ -11,8 +11,6 @@ using Cascade.Domain.User;
 using Cascade.Domain.User.Events;
 using Cascade.Domain.User.Reducers;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.User.Reducers;
 
@@ -24,37 +22,6 @@ namespace Cascade.Domain.L0Tests.User.Reducers;
 [AllureFeature("OnlineStatus")]
 public sealed class OnlineStatusReducerTests
 {
-    /// <summary>
-    ///     Verifies that reducing a UserWentOnline event sets IsOnline to true.
-    /// </summary>
-    [Fact]
-    [AllureStep("Reduce UserWentOnline sets online")]
-    public void ReduceUserWentOnlineSetsOnline()
-    {
-        // Arrange
-        UserWentOnlineReducer reducer = new();
-        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-        UserWentOnline evt = new()
-        {
-            Timestamp = timestamp,
-        };
-        UserState state = new()
-        {
-            IsRegistered = true,
-            UserId = "user-123",
-            DisplayName = "John",
-            IsOnline = false,
-        };
-
-        // Act
-        UserState result = reducer.Reduce(state, evt);
-
-        // Assert
-        Assert.True(result.IsOnline);
-        Assert.Equal(timestamp, result.LastSeenAt);
-        Assert.Equal("user-123", result.UserId);
-    }
-
     /// <summary>
     ///     Verifies that reducing a UserWentOffline event sets IsOnline to false.
     /// </summary>
@@ -82,6 +49,37 @@ public sealed class OnlineStatusReducerTests
 
         // Assert
         Assert.False(result.IsOnline);
+        Assert.Equal(timestamp, result.LastSeenAt);
+        Assert.Equal("user-123", result.UserId);
+    }
+
+    /// <summary>
+    ///     Verifies that reducing a UserWentOnline event sets IsOnline to true.
+    /// </summary>
+    [Fact]
+    [AllureStep("Reduce UserWentOnline sets online")]
+    public void ReduceUserWentOnlineSetsOnline()
+    {
+        // Arrange
+        UserWentOnlineReducer reducer = new();
+        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        UserWentOnline evt = new()
+        {
+            Timestamp = timestamp,
+        };
+        UserState state = new()
+        {
+            IsRegistered = true,
+            UserId = "user-123",
+            DisplayName = "John",
+            IsOnline = false,
+        };
+
+        // Act
+        UserState result = reducer.Reduce(state, evt);
+
+        // Assert
+        Assert.True(result.IsOnline);
         Assert.Equal(timestamp, result.LastSeenAt);
         Assert.Equal("user-123", result.UserId);
     }

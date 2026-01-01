@@ -23,9 +23,7 @@ internal sealed class AddMessageHandler : CommandHandler<AddMessage, ChatState>
         // Ensure chat exists
         if (state?.IsCreated != true)
         {
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.NotFound,
-                "Chat does not exist.");
+            return OperationResult.Fail<IReadOnlyList<object>>(AggregateErrorCodes.NotFound, "Chat does not exist.");
         }
 
         // Validate command

@@ -19,7 +19,7 @@ public sealed class SnapshotKeyTests
     [Fact]
     public void ConstructorRejectsNegativeVersion()
     {
-        SnapshotStreamKey stream = new("proj", "id", "hash");
+        SnapshotStreamKey stream = new("TEST.BROOK", "proj", "id", "hash");
         Assert.Throws<ArgumentOutOfRangeException>(() => new SnapshotKey(stream, -1));
     }
 
@@ -29,11 +29,11 @@ public sealed class SnapshotKeyTests
     [Fact]
     public void ConstructorStoresValues()
     {
-        SnapshotStreamKey stream = new("proj", "id", "hash");
+        SnapshotStreamKey stream = new("TEST.BROOK", "proj", "id", "hash");
         SnapshotKey key = new(stream, 42);
         Assert.Equal(stream, key.Stream);
         Assert.Equal(42, key.Version);
-        Assert.Equal("proj|id|hash|42", key.ToString());
+        Assert.Equal("TEST.BROOK|proj|id|hash|42", key.ToString());
     }
 
     /// <summary>
@@ -42,10 +42,10 @@ public sealed class SnapshotKeyTests
     [Fact]
     public void FromSnapshotKeyReturnsCompositeString()
     {
-        SnapshotStreamKey stream = new("type", "id", "hash");
+        SnapshotStreamKey stream = new("TEST.BROOK", "type", "id", "hash");
         SnapshotKey key = new(stream, 9);
         string composite = SnapshotKey.FromSnapshotKey(key);
-        Assert.Equal("type|id|hash|9", composite);
+        Assert.Equal("TEST.BROOK|type|id|hash|9", composite);
     }
 
     /// <summary>
@@ -54,8 +54,8 @@ public sealed class SnapshotKeyTests
     [Fact]
     public void FromStringBadFormatThrows()
     {
-        Assert.Throws<FormatException>(() => SnapshotKey.FromString("too|few|parts"));
-        Assert.Throws<FormatException>(() => SnapshotKey.FromString("type|id|hash|notanumber"));
+        Assert.Throws<FormatException>(() => SnapshotKey.FromString("too|few|parts|four"));
+        Assert.Throws<FormatException>(() => SnapshotKey.FromString("brook|type|id|hash|notanumber"));
     }
 
     /// <summary>
@@ -73,7 +73,8 @@ public sealed class SnapshotKeyTests
     [Fact]
     public void FromStringParsesComposite()
     {
-        SnapshotKey key = SnapshotKey.FromString("type|id|hash|7");
+        SnapshotKey key = SnapshotKey.FromString("brook|type|id|hash|7");
+        Assert.Equal("brook", key.Stream.BrookName);
         Assert.Equal("type", key.Stream.ProjectionType);
         Assert.Equal("id", key.Stream.ProjectionId);
         Assert.Equal("hash", key.Stream.ReducersHash);
@@ -86,7 +87,7 @@ public sealed class SnapshotKeyTests
     [Fact]
     public void FromStringTooManyPartsThrows()
     {
-        Assert.Throws<FormatException>(() => SnapshotKey.FromString("type|id|hash|1|extra"));
+        Assert.Throws<FormatException>(() => SnapshotKey.FromString("brook|type|id|hash|1|extra"));
     }
 
     /// <summary>
@@ -95,11 +96,11 @@ public sealed class SnapshotKeyTests
     [Fact]
     public void ImplicitConversionsWork()
     {
-        SnapshotStreamKey stream = new("type", "id", "hash");
+        SnapshotStreamKey stream = new("TEST.BROOK", "type", "id", "hash");
         SnapshotKey key = new(stream, 5);
         string composite = key;
-        Assert.Equal("type|id|hash|5", composite);
-        SnapshotKey parsed = "type|id|hash|5";
+        Assert.Equal("TEST.BROOK|type|id|hash|5", composite);
+        SnapshotKey parsed = "TEST.BROOK|type|id|hash|5";
         Assert.Equal(key, parsed);
     }
 }

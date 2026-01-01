@@ -21,7 +21,6 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///     to a specific version of a projection.
 /// </summary>
 /// <typeparam name="TProjection">The projection state type.</typeparam>
-/// <typeparam name="TBrook">The brook definition type that identifies the event stream.</typeparam>
 /// <remarks>
 ///     <para>
 ///         Versioned cache grains are stateless workers that cache a specific version
@@ -40,20 +39,24 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///             <item>Cache and return.</item>
 ///         </list>
 ///     </para>
+///     <para>
+///         Concrete grains MUST declare the <see cref="BrookNameAttribute" /> on
+///         the final sealed class (not on abstract or intermediate types). Activation will
+///         fail-fast with an <see cref="InvalidOperationException" /> if the attribute is missing.
+///     </para>
 /// </remarks>
 [StatelessWorker]
-public abstract class UxProjectionVersionedCacheGrainBase<TProjection, TBrook>
+public abstract class UxProjectionVersionedCacheGrainBase<TProjection>
     : IUxProjectionVersionedCacheGrain<TProjection>,
       IGrainBase
     where TProjection : class
-    where TBrook : IBrookDefinition
 {
     private TProjection? cachedProjection;
 
     private UxProjectionVersionedKey versionedKey;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="UxProjectionVersionedCacheGrainBase{TProjection, TBrook}" /> class.
+    ///     Initializes a new instance of the <see cref="UxProjectionVersionedCacheGrainBase{TProjection}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
@@ -72,13 +75,14 @@ public abstract class UxProjectionVersionedCacheGrainBase<TProjection, TBrook>
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    /// <summary>
-    ///     Gets the brook name from the <typeparamref name="TBrook" /> definition.
-    /// </summary>
-    protected static string BrookName => TBrook.BrookName;
-
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
+
+    /// <summary>
+    ///     Gets the brook name from the <see cref="BrookNameAttribute" /> declared
+    ///     on the concrete grain type.
+    /// </summary>
+    protected string BrookName => BrookDefinitionHelper.GetBrookNameFromGrain(GetType());
 
     /// <summary>
     ///     Gets the logger instance.
@@ -114,6 +118,9 @@ public abstract class UxProjectionVersionedCacheGrainBase<TProjection, TBrook>
         CancellationToken token
     )
     {
+        // Fail-fast: ensure the concrete grain type has the required attribute.
+        // This validates that the attribute is declared on the final sealed class (not inherited).
+        BrookDefinitionHelper.GetDefinition(GetType());
         string primaryKey = this.GetPrimaryKeyString();
         try
         {
@@ -133,6 +140,7 @@ public abstract class UxProjectionVersionedCacheGrainBase<TProjection, TBrook>
 
         // Load projection from snapshot cache on activation (versioned = immutable)
         SnapshotStreamKey snapshotStreamKey = new(
+            BrookName,
             SnapshotNameHelper.GetSnapshotName<TProjection>(),
             versionedKey.ProjectionKey.BrookKey.Id,
             ReducersHash);

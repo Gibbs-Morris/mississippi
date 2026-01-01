@@ -14,8 +14,6 @@ using Cascade.Domain.Channel.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Channel.Handlers;
 
@@ -56,28 +54,6 @@ public sealed class RenameChannelHandlerTests
         ChannelRenamed renamed = Assert.IsType<ChannelRenamed>(singleEvent);
         Assert.Equal("Old Name", renamed.OldName);
         Assert.Equal("New Name", renamed.NewName);
-    }
-
-    /// <summary>
-    ///     Verifies that renaming a non-existent channel returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle RenameChannel when not created")]
-    public void HandleReturnsErrorWhenNotCreated()
-    {
-        // Arrange
-        RenameChannelHandler handler = new();
-        RenameChannel command = new()
-        {
-            NewName = "New Name",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 
     /// <summary>
@@ -135,5 +111,27 @@ public sealed class RenameChannelHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that renaming a non-existent channel returns an error.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle RenameChannel when not created")]
+    public void HandleReturnsErrorWhenNotCreated()
+    {
+        // Arrange
+        RenameChannelHandler handler = new();
+        RenameChannel command = new()
+        {
+            NewName = "New Name",
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 }

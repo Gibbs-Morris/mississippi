@@ -24,9 +24,7 @@ internal sealed class EditMessageHandler : CommandHandler<EditMessage, ChatState
         // Ensure chat exists
         if (state?.IsCreated != true)
         {
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.NotFound,
-                "Chat does not exist.");
+            return OperationResult.Fail<IReadOnlyList<object>>(AggregateErrorCodes.NotFound, "Chat does not exist.");
         }
 
         // Validate command
@@ -45,9 +43,7 @@ internal sealed class EditMessageHandler : CommandHandler<EditMessage, ChatState
         }
 
         // Find the message
-        ChatMessage? existingMessage = state.Messages
-            .FirstOrDefault(m => m.MessageId == command.MessageId);
-
+        ChatMessage? existingMessage = state.Messages.FirstOrDefault(m => m.MessageId == command.MessageId);
         if (existingMessage is null)
         {
             return OperationResult.Fail<IReadOnlyList<object>>(

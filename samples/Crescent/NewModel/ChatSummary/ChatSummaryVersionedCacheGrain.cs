@@ -1,7 +1,6 @@
-using Crescent.NewModel.Chat;
-
 using Microsoft.Extensions.Logging;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.UxProjections;
@@ -26,8 +25,8 @@ namespace Crescent.NewModel.ChatSummary;
 ///         snapshot cache grain.
 ///     </para>
 /// </remarks>
-internal sealed class ChatSummaryVersionedCacheGrain
-    : UxProjectionVersionedCacheGrainBase<ChatSummaryProjection, ChatBrook>
+[BrookName("CRESCENT", "NEWMODEL", "CHAT")]
+internal sealed class ChatSummaryVersionedCacheGrain : UxProjectionVersionedCacheGrainBase<ChatSummaryProjection>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="ChatSummaryVersionedCacheGrain" /> class.

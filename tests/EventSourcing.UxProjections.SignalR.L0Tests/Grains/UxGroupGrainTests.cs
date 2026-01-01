@@ -25,10 +25,25 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.L0Tests.Grains;
 [AllureSubSuite("UxGroupGrain")]
 public sealed class UxGroupGrainTests
 {
-    private const string HubName = "TestHub";
-    private const string GroupName = "chat-room-1";
     private const string ConnectionId1 = "connection-abc123";
+
     private const string ConnectionId2 = "connection-def456";
+
+    private static UxGroupGrain CreateGrain(
+        string grainKey
+    )
+    {
+        Mock<IGrainContext> context = new();
+        Mock<IGrainFactory> grainFactory = new();
+        Mock<ILogger<UxGroupGrain>> logger = new();
+        GrainId grainId = GrainId.Create("ux-group", grainKey);
+        context.SetupGet(c => c.GrainId).Returns(grainId);
+        return new(context.Object, grainFactory.Object, logger.Object);
+    }
+
+    private const string GroupName = "chat-room-1";
+
+    private const string HubName = "TestHub";
 
     /// <summary>
     ///     AddConnectionAsync should add connection to the group.
@@ -90,63 +105,6 @@ public sealed class UxGroupGrainTests
     }
 
     /// <summary>
-    ///     RemoveConnectionAsync should remove connection from the group.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task RemoveConnectionAsyncRemovesConnectionFromGroup()
-    {
-        // Arrange
-        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
-        await grain.AddConnectionAsync(ConnectionId1);
-        await grain.AddConnectionAsync(ConnectionId2);
-
-        // Act
-        await grain.RemoveConnectionAsync(ConnectionId1);
-
-        // Assert
-        ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
-        Assert.Single(connections);
-        Assert.DoesNotContain(ConnectionId1, connections);
-        Assert.Contains(ConnectionId2, connections);
-    }
-
-    /// <summary>
-    ///     RemoveConnectionAsync should handle non-existent connections gracefully.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task RemoveConnectionAsyncHandlesNonExistentConnection()
-    {
-        // Arrange
-        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
-
-        // Act - should not throw
-        await grain.RemoveConnectionAsync("non-existent-connection");
-
-        // Assert
-        ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
-        Assert.Empty(connections);
-    }
-
-    /// <summary>
-    ///     GetConnectionsAsync returns empty set when no connections.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task GetConnectionsAsyncReturnsEmptyWhenNoConnections()
-    {
-        // Arrange
-        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
-
-        // Act
-        ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
-
-        // Assert
-        Assert.Empty(connections);
-    }
-
-    /// <summary>
     ///     AddConnectionAsync should throw when connectionId is null.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -158,66 +116,6 @@ public sealed class UxGroupGrainTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => grain.AddConnectionAsync(null!));
-    }
-
-    /// <summary>
-    ///     RemoveConnectionAsync should throw when connectionId is null.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task RemoveConnectionAsyncThrowsWhenConnectionIdIsNull()
-    {
-        // Arrange
-        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.RemoveConnectionAsync(null!));
-    }
-
-    /// <summary>
-    ///     SendAllAsync should throw when methodName is null.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task SendAllAsyncThrowsWhenMethodNameIsNull()
-    {
-        // Arrange
-        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.SendAllAsync(null!, []));
-    }
-
-    /// <summary>
-    ///     SendAllAsync should throw when args is null.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task SendAllAsyncThrowsWhenArgsIsNull()
-    {
-        // Arrange
-        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.SendAllAsync("TestMethod", null!));
-    }
-
-    /// <summary>
-    ///     OnActivateAsync should complete successfully.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task OnActivateAsyncCompletes()
-    {
-        // Arrange
-        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
-
-        // Act
-        Func<Task> actionAsync = () => grain.OnActivateAsync(CancellationToken.None);
-
-        // Assert
-        Exception? exception = await Record.ExceptionAsync(actionAsync);
-        Assert.Null(exception);
     }
 
     /// <summary>
@@ -262,15 +160,120 @@ public sealed class UxGroupGrainTests
         Assert.Throws<ArgumentNullException>(() => new UxGroupGrain(context.Object, grainFactory.Object, null!));
     }
 
-    private static UxGroupGrain CreateGrain(string grainKey)
+    /// <summary>
+    ///     GetConnectionsAsync returns empty set when no connections.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetConnectionsAsyncReturnsEmptyWhenNoConnections()
     {
-        Mock<IGrainContext> context = new();
-        Mock<IGrainFactory> grainFactory = new();
-        Mock<ILogger<UxGroupGrain>> logger = new();
+        // Arrange
+        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
 
-        GrainId grainId = GrainId.Create("ux-group", grainKey);
-        context.SetupGet(c => c.GrainId).Returns(grainId);
+        // Act
+        ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
 
-        return new UxGroupGrain(context.Object, grainFactory.Object, logger.Object);
+        // Assert
+        Assert.Empty(connections);
+    }
+
+    /// <summary>
+    ///     OnActivateAsync should complete successfully.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task OnActivateAsyncCompletes()
+    {
+        // Arrange
+        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
+
+        // Act
+        Func<Task> actionAsync = () => grain.OnActivateAsync(CancellationToken.None);
+
+        // Assert
+        Exception? exception = await Record.ExceptionAsync(actionAsync);
+        Assert.Null(exception);
+    }
+
+    /// <summary>
+    ///     RemoveConnectionAsync should handle non-existent connections gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RemoveConnectionAsyncHandlesNonExistentConnection()
+    {
+        // Arrange
+        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
+
+        // Act - should not throw
+        await grain.RemoveConnectionAsync("non-existent-connection");
+
+        // Assert
+        ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
+        Assert.Empty(connections);
+    }
+
+    /// <summary>
+    ///     RemoveConnectionAsync should remove connection from the group.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RemoveConnectionAsyncRemovesConnectionFromGroup()
+    {
+        // Arrange
+        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
+        await grain.AddConnectionAsync(ConnectionId1);
+        await grain.AddConnectionAsync(ConnectionId2);
+
+        // Act
+        await grain.RemoveConnectionAsync(ConnectionId1);
+
+        // Assert
+        ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
+        Assert.Single(connections);
+        Assert.DoesNotContain(ConnectionId1, connections);
+        Assert.Contains(ConnectionId2, connections);
+    }
+
+    /// <summary>
+    ///     RemoveConnectionAsync should throw when connectionId is null.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RemoveConnectionAsyncThrowsWhenConnectionIdIsNull()
+    {
+        // Arrange
+        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.RemoveConnectionAsync(null!));
+    }
+
+    /// <summary>
+    ///     SendAllAsync should throw when args is null.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SendAllAsyncThrowsWhenArgsIsNull()
+    {
+        // Arrange
+        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.SendAllAsync("TestMethod", null!));
+    }
+
+    /// <summary>
+    ///     SendAllAsync should throw when methodName is null.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SendAllAsyncThrowsWhenMethodNameIsNull()
+    {
+        // Arrange
+        UxGroupGrain grain = CreateGrain($"{HubName}:{GroupName}");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.SendAllAsync(null!, []));
     }
 }

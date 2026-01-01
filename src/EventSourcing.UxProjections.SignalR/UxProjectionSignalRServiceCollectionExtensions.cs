@@ -26,7 +26,9 @@ public static class UxProjectionSignalRServiceCollectionExtensions
     ///         to map the hub endpoint.
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddUxProjectionSignalR(this IServiceCollection services)
+    public static IServiceCollection AddUxProjectionSignalR(
+        this IServiceCollection services
+    )
     {
         services.AddSignalR();
         return services;

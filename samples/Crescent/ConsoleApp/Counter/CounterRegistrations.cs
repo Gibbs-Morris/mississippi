@@ -53,6 +53,9 @@ internal static class CounterRegistrations
         // Add snapshot state converter for CounterState (required for aggregate snapshots)
         services.AddSnapshotStateConverter<CounterState>();
 
+        // Register initial state factory for CounterState snapshot cache grain
+        services.AddInitialStateFactory<CounterState, CounterStateInitialStateFactory>();
+
         // Register reducers for CounterSummaryProjection (UX projection)
         services.AddReducer<CounterInitialized, CounterSummaryProjection, CounterSummaryInitializedReducer>();
         services.AddReducer<CounterIncremented, CounterSummaryProjection, CounterSummaryIncrementedReducer>();
@@ -61,6 +64,9 @@ internal static class CounterRegistrations
 
         // Add snapshot state converter for CounterSummaryProjection (required for projection verification)
         services.AddSnapshotStateConverter<CounterSummaryProjection>();
+
+        // Register initial state factory for CounterSummaryProjection snapshot cache grain
+        services.AddInitialStateFactory<CounterSummaryProjection, CounterSummaryProjectionInitialStateFactory>();
 
         // Add UX projections infrastructure for read-optimized views.
         // This enables the CounterSummaryProjectionGrain to serve cached projections.

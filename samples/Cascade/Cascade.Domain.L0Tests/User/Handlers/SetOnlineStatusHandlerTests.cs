@@ -14,8 +14,6 @@ using Cascade.Domain.User.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.User.Handlers;
 
@@ -27,66 +25,6 @@ namespace Cascade.Domain.L0Tests.User.Handlers;
 [AllureFeature("SetOnlineStatus")]
 public sealed class SetOnlineStatusHandlerTests
 {
-    /// <summary>
-    ///     Verifies that setting online status to true returns a UserWentOnline event.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle SetOnlineStatus when going online")]
-    public void HandleReturnsUserWentOnlineEventWhenGoingOnline()
-    {
-        // Arrange
-        SetOnlineStatusHandler handler = new();
-        SetOnlineStatus command = new()
-        {
-            IsOnline = true,
-        };
-        UserState state = new()
-        {
-            IsRegistered = true,
-            UserId = "user-123",
-            DisplayName = "John",
-            IsOnline = false,
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
-
-        // Assert
-        Assert.True(result.Success);
-        object singleEvent = Assert.Single(result.Value!);
-        Assert.IsType<UserWentOnline>(singleEvent);
-    }
-
-    /// <summary>
-    ///     Verifies that setting online status to false returns a UserWentOffline event.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle SetOnlineStatus when going offline")]
-    public void HandleReturnsUserWentOfflineEventWhenGoingOffline()
-    {
-        // Arrange
-        SetOnlineStatusHandler handler = new();
-        SetOnlineStatus command = new()
-        {
-            IsOnline = false,
-        };
-        UserState state = new()
-        {
-            IsRegistered = true,
-            UserId = "user-123",
-            DisplayName = "John",
-            IsOnline = true,
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
-
-        // Assert
-        Assert.True(result.Success);
-        object singleEvent = Assert.Single(result.Value!);
-        Assert.IsType<UserWentOffline>(singleEvent);
-    }
-
     /// <summary>
     ///     Verifies that setting same status returns empty events list.
     /// </summary>
@@ -136,5 +74,65 @@ public sealed class SetOnlineStatusHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that setting online status to false returns a UserWentOffline event.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle SetOnlineStatus when going offline")]
+    public void HandleReturnsUserWentOfflineEventWhenGoingOffline()
+    {
+        // Arrange
+        SetOnlineStatusHandler handler = new();
+        SetOnlineStatus command = new()
+        {
+            IsOnline = false,
+        };
+        UserState state = new()
+        {
+            IsRegistered = true,
+            UserId = "user-123",
+            DisplayName = "John",
+            IsOnline = true,
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
+
+        // Assert
+        Assert.True(result.Success);
+        object singleEvent = Assert.Single(result.Value!);
+        Assert.IsType<UserWentOffline>(singleEvent);
+    }
+
+    /// <summary>
+    ///     Verifies that setting online status to true returns a UserWentOnline event.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle SetOnlineStatus when going online")]
+    public void HandleReturnsUserWentOnlineEventWhenGoingOnline()
+    {
+        // Arrange
+        SetOnlineStatusHandler handler = new();
+        SetOnlineStatus command = new()
+        {
+            IsOnline = true,
+        };
+        UserState state = new()
+        {
+            IsRegistered = true,
+            UserId = "user-123",
+            DisplayName = "John",
+            IsOnline = false,
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
+
+        // Assert
+        Assert.True(result.Success);
+        object singleEvent = Assert.Single(result.Value!);
+        Assert.IsType<UserWentOnline>(singleEvent);
     }
 }

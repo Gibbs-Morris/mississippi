@@ -9,14 +9,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks;
-using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Reader;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
 
 using Orleans;
 using Orleans.Runtime;
-using Orleans.Streams;
 
 
 namespace Mississippi.EventSourcing.UxProjections.Subscriptions;
@@ -38,7 +37,9 @@ namespace Mississippi.EventSourcing.UxProjections.Subscriptions;
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.EventSourcing.UxProjections.UxProjectionSubscriptionGrain")]
-internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionGrain, IGrainBase
+internal sealed class UxProjectionSubscriptionGrain
+    : IUxProjectionSubscriptionGrain,
+      IGrainBase
 {
     private readonly Dictionary<string, ActiveSubscription> subscriptions = [];
 
@@ -76,17 +77,13 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
     {
         string connectionId = this.GetPrimaryKeyString();
         Logger.ClearingAllSubscriptions(connectionId, subscriptions.Count);
-
-        foreach (ActiveSubscription subscription in subscriptions.Values
-            .Where(s => s.StreamHandle is not null))
+        foreach (ActiveSubscription subscription in subscriptions.Values.Where(s => s.StreamHandle is not null))
         {
             await subscription.StreamHandle!.UnsubscribeAsync();
         }
 
         subscriptions.Clear();
-
         Logger.AllSubscriptionsCleared(connectionId);
-
         this.DeactivateOnIdle();
     }
 
@@ -96,12 +93,13 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
         ImmutableList<UxProjectionSubscriptionRequest> requests = subscriptions.Values
             .Select(s => s.Request)
             .ToImmutableList();
-
         return Task.FromResult(requests);
     }
 
     /// <inheritdoc />
-    public Task OnActivateAsync(CancellationToken token)
+    public Task OnActivateAsync(
+        CancellationToken token
+    )
     {
         string connectionId = this.GetPrimaryKeyString();
         Logger.SubscriptionGrainActivated(connectionId);
@@ -111,38 +109,34 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
     }
 
     /// <inheritdoc />
-    public Task<string> SubscribeAsync(UxProjectionSubscriptionRequest request)
+    public Task<string> SubscribeAsync(
+        UxProjectionSubscriptionRequest request
+    )
     {
         ArgumentNullException.ThrowIfNull(request);
-
         string subscriptionId = Guid.NewGuid().ToString("N");
-        Brooks.Abstractions.BrookKey brookKey = new(request.BrookType, request.EntityId);
+        BrookKey brookKey = new(request.BrookType, request.EntityId);
         UxProjectionKey projectionKey = new(request.ProjectionType, brookKey);
         string connectionId = this.GetPrimaryKeyString();
-
         Logger.SubscribingToProjection(connectionId, subscriptionId, projectionKey);
-
         ActiveSubscription subscription = new()
         {
             Request = request,
             ProjectionKey = projectionKey,
             StreamHandle = null,
         };
-
         subscriptions[subscriptionId] = subscription;
-
         Logger.SubscribedToProjection(connectionId, subscriptionId, projectionKey);
-
         return Task.FromResult(subscriptionId);
     }
 
     /// <inheritdoc />
-    public async Task UnsubscribeAsync(string subscriptionId)
+    public async Task UnsubscribeAsync(
+        string subscriptionId
+    )
     {
         ArgumentNullException.ThrowIfNull(subscriptionId);
-
         string connectionId = this.GetPrimaryKeyString();
-
         if (!subscriptions.TryGetValue(subscriptionId, out ActiveSubscription? subscription))
         {
             Logger.SubscriptionNotFound(connectionId, subscriptionId);
@@ -150,14 +144,12 @@ internal sealed class UxProjectionSubscriptionGrain : IUxProjectionSubscriptionG
         }
 
         Logger.UnsubscribingFromProjection(connectionId, subscriptionId, subscription.ProjectionKey);
-
         if (subscription.StreamHandle is not null)
         {
             await subscription.StreamHandle.UnsubscribeAsync();
         }
 
         subscriptions.Remove(subscriptionId);
-
         Logger.UnsubscribedFromProjection(connectionId, subscriptionId, subscription.ProjectionKey);
     }
 }

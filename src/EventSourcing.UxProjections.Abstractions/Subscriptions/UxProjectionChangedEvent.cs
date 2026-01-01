@@ -26,16 +26,16 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
 public sealed record UxProjectionChangedEvent
 {
     /// <summary>
-    ///     Gets the key identifying the projection that changed.
-    /// </summary>
-    [Id(0)]
-    public required UxProjectionKey ProjectionKey { get; init; }
-
-    /// <summary>
     ///     Gets the new version of the projection.
     /// </summary>
     [Id(1)]
     public required BrookPosition NewVersion { get; init; }
+
+    /// <summary>
+    ///     Gets the key identifying the projection that changed.
+    /// </summary>
+    [Id(0)]
+    public required UxProjectionKey ProjectionKey { get; init; }
 
     /// <summary>
     ///     Gets the timestamp when the change was detected.

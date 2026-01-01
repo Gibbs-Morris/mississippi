@@ -43,11 +43,10 @@ public sealed class UxProjectionControllerTests
             httpContext.Request.Headers.IfNoneMatch = ifNoneMatchHeader;
         }
 
-        controller.ControllerContext = new ControllerContext
+        controller.ControllerContext = new()
         {
             HttpContext = httpContext,
         };
-
         return controller;
     }
 
@@ -103,6 +102,120 @@ public sealed class UxProjectionControllerTests
         Assert.Throws<ArgumentNullException>(() => new TestableController(
             null!,
             NullLogger<UxProjectionControllerBase<TestProjection, TestBrookDefinition>>.Instance));
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync returns 304 Not Modified when If-None-Match matches.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("ETag")]
+    public async Task GetAsyncReturns304WhenIfNoneMatchMatches()
+    {
+        // Arrange
+        const long version = 42;
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(version));
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
+            .Returns(grainMock.Object);
+        TestableController controller = CreateController(factoryMock, "\"42\"");
+
+        // Act
+        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+
+        // Assert
+        StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
+        Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
+        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync returns Cache-Control header.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("ETag")]
+    public async Task GetAsyncReturnsCacheControlHeader()
+    {
+        // Arrange
+        TestProjection expectedProjection = new(100);
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(42));
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
+            .Returns(grainMock.Object);
+        TestableController controller = CreateController(factoryMock);
+
+        // Act
+        await controller.GetAsync(TestEntityId);
+
+        // Assert
+        Assert.True(controller.Response.Headers.TryGetValue("Cache-Control", out StringValues cacheControl));
+        Assert.Equal("private, must-revalidate", cacheControl.ToString());
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync returns data when If-None-Match does not match.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("ETag")]
+    public async Task GetAsyncReturnsDataWhenIfNoneMatchDoesNotMatch()
+    {
+        // Arrange
+        const long currentVersion = 42;
+        TestProjection expectedProjection = new(100);
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(currentVersion));
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
+            .Returns(grainMock.Object);
+        TestableController controller = CreateController(factoryMock, "\"41\"");
+
+        // Act
+        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+
+        // Assert
+        OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+        TestProjection projection = Assert.IsType<TestProjection>(okResult.Value);
+        Assert.Equal(100, projection.Value);
+        Assert.True(controller.Response.Headers.TryGetValue("ETag", out StringValues etag));
+        Assert.Equal("\"42\"", etag.ToString());
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync returns ETag header with projection version.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("ETag")]
+    public async Task GetAsyncReturnsETagHeader()
+    {
+        // Arrange
+        const long version = 42;
+        TestProjection expectedProjection = new(100);
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(version));
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
+            .Returns(grainMock.Object);
+        TestableController controller = CreateController(factoryMock);
+
+        // Act
+        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result.Result);
+        Assert.True(controller.Response.Headers.TryGetValue("ETag", out StringValues etag));
+        Assert.Equal("\"42\"", etag.ToString());
     }
 
     /// <summary>
@@ -262,115 +375,5 @@ public sealed class UxProjectionControllerTests
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
         BrookPosition position = Assert.IsType<BrookPosition>(okResult.Value);
         Assert.Equal(42, position.Value);
-    }
-
-    /// <summary>
-    ///     Verifies that GetAsync returns ETag header with projection version.
-    /// </summary>
-    /// <returns>Asynchronous test task.</returns>
-    [Fact]
-    [AllureFeature("ETag")]
-    public async Task GetAsyncReturnsETagHeader()
-    {
-        // Arrange
-        const long version = 42;
-        TestProjection expectedProjection = new(100);
-        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
-        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new BrookPosition(version));
-        Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
-        TestableController controller = CreateController(factoryMock);
-
-        // Act
-        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
-
-        // Assert
-        Assert.IsType<OkObjectResult>(result.Result);
-        Assert.True(controller.Response.Headers.TryGetValue("ETag", out StringValues etag));
-        Assert.Equal("\"42\"", etag.ToString());
-    }
-
-    /// <summary>
-    ///     Verifies that GetAsync returns 304 Not Modified when If-None-Match matches.
-    /// </summary>
-    /// <returns>Asynchronous test task.</returns>
-    [Fact]
-    [AllureFeature("ETag")]
-    public async Task GetAsyncReturns304WhenIfNoneMatchMatches()
-    {
-        // Arrange
-        const long version = 42;
-        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new BrookPosition(version));
-        Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
-        TestableController controller = CreateController(factoryMock, ifNoneMatchHeader: "\"42\"");
-
-        // Act
-        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
-
-        // Assert
-        StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
-        Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
-        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    /// <summary>
-    ///     Verifies that GetAsync returns data when If-None-Match does not match.
-    /// </summary>
-    /// <returns>Asynchronous test task.</returns>
-    [Fact]
-    [AllureFeature("ETag")]
-    public async Task GetAsyncReturnsDataWhenIfNoneMatchDoesNotMatch()
-    {
-        // Arrange
-        const long currentVersion = 42;
-        TestProjection expectedProjection = new(100);
-        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
-        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new BrookPosition(currentVersion));
-        Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
-        TestableController controller = CreateController(factoryMock, ifNoneMatchHeader: "\"41\"");
-
-        // Act
-        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
-
-        // Assert
-        OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-        TestProjection projection = Assert.IsType<TestProjection>(okResult.Value);
-        Assert.Equal(100, projection.Value);
-        Assert.True(controller.Response.Headers.TryGetValue("ETag", out StringValues etag));
-        Assert.Equal("\"42\"", etag.ToString());
-    }
-
-    /// <summary>
-    ///     Verifies that GetAsync returns Cache-Control header.
-    /// </summary>
-    /// <returns>Asynchronous test task.</returns>
-    [Fact]
-    [AllureFeature("ETag")]
-    public async Task GetAsyncReturnsCacheControlHeader()
-    {
-        // Arrange
-        TestProjection expectedProjection = new(100);
-        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
-        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new BrookPosition(42));
-        Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
-        TestableController controller = CreateController(factoryMock);
-
-        // Act
-        await controller.GetAsync(TestEntityId);
-
-        // Assert
-        Assert.True(controller.Response.Headers.TryGetValue("Cache-Control", out StringValues cacheControl));
-        Assert.Equal("private, must-revalidate", cacheControl.ToString());
     }
 }

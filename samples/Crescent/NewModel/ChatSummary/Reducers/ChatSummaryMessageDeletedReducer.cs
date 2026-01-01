@@ -23,7 +23,6 @@ internal sealed class ChatSummaryMessageDeletedReducer : Reducer<MessageDeleted,
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         if (state is null)
         {
             return state!;

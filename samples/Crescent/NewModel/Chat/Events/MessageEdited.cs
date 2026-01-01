@@ -16,16 +16,16 @@ namespace Crescent.NewModel.Chat.Events;
 internal sealed record MessageEdited
 {
     /// <summary>
+    ///     Gets the timestamp when the message was edited.
+    /// </summary>
+    [Id(3)]
+    public DateTimeOffset EditedAt { get; init; }
+
+    /// <summary>
     ///     Gets the unique identifier for the message.
     /// </summary>
     [Id(0)]
     public required string MessageId { get; init; }
-
-    /// <summary>
-    ///     Gets the previous content of the message.
-    /// </summary>
-    [Id(1)]
-    public required string PreviousContent { get; init; }
 
     /// <summary>
     ///     Gets the new content of the message.
@@ -34,8 +34,8 @@ internal sealed record MessageEdited
     public required string NewContent { get; init; }
 
     /// <summary>
-    ///     Gets the timestamp when the message was edited.
+    ///     Gets the previous content of the message.
     /// </summary>
-    [Id(3)]
-    public DateTimeOffset EditedAt { get; init; }
+    [Id(1)]
+    public required string PreviousContent { get; init; }
 }

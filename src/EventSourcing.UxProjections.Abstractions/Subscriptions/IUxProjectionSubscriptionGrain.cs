@@ -29,6 +29,25 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
 public interface IUxProjectionSubscriptionGrain : IGrainWithStringKey
 {
     /// <summary>
+    ///     Clears all subscriptions for this connection.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    ///     This method should be called when the SignalR connection is closed to ensure
+    ///     all subscriptions are properly cleaned up before the grain deactivates.
+    /// </remarks>
+    [Alias("ClearAllAsync")]
+    Task ClearAllAsync();
+
+    /// <summary>
+    ///     Gets all active subscriptions for this connection.
+    /// </summary>
+    /// <returns>An immutable list of all active subscription requests.</returns>
+    [ReadOnly]
+    [Alias("GetSubscriptionsAsync")]
+    Task<ImmutableList<UxProjectionSubscriptionRequest>> GetSubscriptionsAsync();
+
+    /// <summary>
     ///     Subscribes to a projection for version change notifications.
     /// </summary>
     /// <param name="request">The subscription request containing projection details.</param>
@@ -49,23 +68,4 @@ public interface IUxProjectionSubscriptionGrain : IGrainWithStringKey
     Task UnsubscribeAsync(
         string subscriptionId
     );
-
-    /// <summary>
-    ///     Gets all active subscriptions for this connection.
-    /// </summary>
-    /// <returns>An immutable list of all active subscription requests.</returns>
-    [ReadOnly]
-    [Alias("GetSubscriptionsAsync")]
-    Task<ImmutableList<UxProjectionSubscriptionRequest>> GetSubscriptionsAsync();
-
-    /// <summary>
-    ///     Clears all subscriptions for this connection.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    /// <remarks>
-    ///     This method should be called when the SignalR connection is closed to ensure
-    ///     all subscriptions are properly cleaned up before the grain deactivates.
-    /// </remarks>
-    [Alias("ClearAllAsync")]
-    Task ClearAllAsync();
 }

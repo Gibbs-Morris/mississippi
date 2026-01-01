@@ -16,7 +16,7 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 [AllureSubSuite("Write Model")]
 public sealed class SnapshotWriteModelTests
 {
-    private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
+    private static readonly SnapshotStreamKey StreamKey = new("TEST.BROOK", "type", "id", "hash");
 
     /// <summary>
     ///     Ensures two models with different keys are not equal.

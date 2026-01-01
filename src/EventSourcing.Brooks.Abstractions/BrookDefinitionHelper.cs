@@ -7,7 +7,8 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 namespace Mississippi.EventSourcing.Brooks.Abstractions;
 
 /// <summary>
-///     Provides helper methods for working with <see cref="IBrookDefinition" /> types.
+///     Provides helper methods for working with <see cref="IBrookDefinition" /> types
+///     and types decorated with <see cref="BrookNameAttribute" />.
 /// </summary>
 public static class BrookDefinitionHelper
 {
@@ -42,6 +43,62 @@ public static class BrookDefinitionHelper
         }
 
         return attribute.BrookName;
+    }
+
+    /// <summary>
+    ///     Gets the brook name from a grain type.
+    ///     The attribute MUST be declared directly on the concrete type (not inherited).
+    /// </summary>
+    /// <param name="grainType">The grain type to read the attribute from.</param>
+    /// <returns>The brook name string.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="grainType" /> is null.</exception>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the attribute is not found on the concrete type.
+    /// </exception>
+    /// <remarks>
+    ///     This is a convenience method that calls <see cref="GetDefinition" /> and returns
+    ///     the <see cref="BrookNameAttribute.BrookName" /> property.
+    /// </remarks>
+    public static string GetBrookNameFromGrain(
+        Type grainType
+    ) =>
+        GetDefinition(grainType).BrookName;
+
+    /// <summary>
+    ///     Gets the <see cref="BrookNameAttribute" /> from a grain type.
+    ///     The attribute MUST be declared directly on the concrete type (not inherited).
+    /// </summary>
+    /// <param name="grainType">The grain type to read the attribute from.</param>
+    /// <returns>The <see cref="BrookNameAttribute" /> instance.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="grainType" /> is null.</exception>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the attribute is not found on the concrete type.
+    /// </exception>
+    /// <remarks>
+    ///     <para>
+    ///         This method uses <c>inherit: false</c> to ensure the attribute is declared
+    ///         directly on the final sealed grain class, not on a base class.
+    ///     </para>
+    ///     <para>
+    ///         Use this method for grain base classes that need to read their brook identity
+    ///         at runtime from the concrete derived class.
+    ///     </para>
+    /// </remarks>
+    public static BrookNameAttribute GetDefinition(
+        Type grainType
+    )
+    {
+        ArgumentNullException.ThrowIfNull(grainType);
+        BrookNameAttribute? attribute = grainType.GetCustomAttribute<BrookNameAttribute>(false);
+        if (attribute is null)
+        {
+            throw new InvalidOperationException(
+                $"Type '{grainType.FullName}' is missing [BrookName] attribute. " +
+                $"The attribute MUST be declared directly on the final sealed class, not on a base class. " +
+                $"Add [BrookName(\"APP\", \"MODULE\", \"NAME\")] to '{grainType.Name}'.");
+        }
+
+        return attribute;
     }
 
     /// <summary>

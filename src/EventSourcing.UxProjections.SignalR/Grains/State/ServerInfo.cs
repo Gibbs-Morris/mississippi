@@ -13,10 +13,10 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.Grains.State;
 public sealed record ServerInfo
 {
     /// <summary>
-    ///     Gets the unique identifier of the server.
+    ///     Gets the number of active connections on this server.
     /// </summary>
-    [Id(0)]
-    public string ServerId { get; init; } = string.Empty;
+    [Id(2)]
+    public int ConnectionCount { get; init; }
 
     /// <summary>
     ///     Gets the timestamp of the last heartbeat received from this server.
@@ -25,8 +25,8 @@ public sealed record ServerInfo
     public DateTimeOffset LastHeartbeat { get; init; }
 
     /// <summary>
-    ///     Gets the number of active connections on this server.
+    ///     Gets the unique identifier of the server.
     /// </summary>
-    [Id(2)]
-    public int ConnectionCount { get; init; }
+    [Id(0)]
+    public string ServerId { get; init; } = string.Empty;
 }

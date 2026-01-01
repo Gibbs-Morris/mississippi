@@ -6,6 +6,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 
 using Moq;
@@ -16,7 +17,7 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="UxProjectionVersionedCacheGrainBase{TProjection, TBrook}" />.
+///     Tests for <see cref="UxProjectionVersionedCacheGrainBase{TProjection}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections")]
@@ -50,10 +51,10 @@ public sealed class UxProjectionVersionedCacheGrainTests
     private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123|42";
 
     /// <summary>
-    ///     A testable implementation of <see cref="UxProjectionVersionedCacheGrainBase{TProjection, TBrook}" />.
+    ///     A testable implementation of <see cref="UxProjectionVersionedCacheGrainBase{TProjection}" />.
     /// </summary>
-    private sealed class TestableUxProjectionVersionedCacheGrain
-        : UxProjectionVersionedCacheGrainBase<TestProjection, TestBrookDefinition>
+    [BrookName("TEST", "MODULE", "STREAM")]
+    private sealed class TestableUxProjectionVersionedCacheGrain : UxProjectionVersionedCacheGrainBase<TestProjection>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TestableUxProjectionVersionedCacheGrain" /> class.
@@ -73,19 +74,20 @@ public sealed class UxProjectionVersionedCacheGrainTests
         }
 
         /// <summary>
-        ///     Gets the brook name from the brook definition for testing.
+        ///     Gets the brook name from the attribute for testing.
         /// </summary>
         /// <returns>The brook name.</returns>
-        public static string GetBrookName() => BrookName;
+        public string GetBrookNameForTest() => BrookName;
     }
 
     /// <summary>
-    ///     BrookName property should return the brook name from the brook definition.
+    ///     BrookName property should return the brook name from the attribute.
     /// </summary>
     [Fact]
-    public void BrookNameReturnsValueFromBrookDefinition()
+    public void BrookNameReturnsValueFromAttribute()
     {
-        string brookName = TestableUxProjectionVersionedCacheGrain.GetBrookName();
+        TestableUxProjectionVersionedCacheGrain grain = CreateGrain();
+        string brookName = grain.GetBrookNameForTest();
         Assert.Equal("TEST.MODULE.STREAM", brookName);
     }
 

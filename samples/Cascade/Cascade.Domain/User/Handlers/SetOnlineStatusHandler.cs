@@ -38,9 +38,14 @@ internal sealed class SetOnlineStatusHandler : CommandHandler<SetOnlineStatus, U
         }
 
         object @event = command.IsOnline
-            ? new UserWentOnline { Timestamp = DateTimeOffset.UtcNow }
-            : new UserWentOffline { Timestamp = DateTimeOffset.UtcNow };
-
+            ? new UserWentOnline
+            {
+                Timestamp = DateTimeOffset.UtcNow,
+            }
+            : new UserWentOffline
+            {
+                Timestamp = DateTimeOffset.UtcNow,
+            };
         return OperationResult.Ok<IReadOnlyList<object>>(new[] { @event });
     }
 }

@@ -29,7 +29,9 @@ internal sealed class UserLeftChannelProjectionReducer : Reducer<UserLeftChannel
         // Only process if channel exists
         if (!state.ChannelIds.Contains(eventData.ChannelId))
         {
-            return state with { };
+            return state with
+            {
+            };
         }
 
         return state with

@@ -49,9 +49,7 @@ internal sealed class DeleteMessageHandler : CommandHandler<DeleteMessage, Conve
         Message? message = state.Messages.FirstOrDefault(m => m.MessageId == command.MessageId);
         if (message is null)
         {
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.InvalidState,
-                "Message not found.");
+            return OperationResult.Fail<IReadOnlyList<object>>(AggregateErrorCodes.InvalidState, "Message not found.");
         }
 
         if (message.IsDeleted)

@@ -14,8 +14,6 @@ using Crescent.NewModel.Chat.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Crescent.NewModel.L0Tests.Chat.Handlers;
 
@@ -27,40 +25,6 @@ namespace Crescent.NewModel.L0Tests.Chat.Handlers;
 [AllureSubSuite("AddMessageHandler")]
 public sealed class AddMessageHandlerTests
 {
-    /// <summary>
-    ///     Verifies that adding a message produces a MessageAdded event.
-    /// </summary>
-    [Fact]
-    [AllureStep("AddMessage with valid data produces MessageAdded event")]
-    public void AddMessageWithValidDataProducesMessageAddedEvent()
-    {
-        // Arrange
-        AddMessageHandler handler = new();
-        AddMessage command = new()
-        {
-            MessageId = "msg-001",
-            Content = "Hello, world!",
-            Author = "user1",
-        };
-        ChatState existingState = new()
-        {
-            IsCreated = true,
-            Name = "General",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
-
-        // Assert
-        Assert.True(result.Success);
-        Assert.NotNull(result.Value);
-        Assert.Single(result.Value);
-        MessageAdded? @event = Assert.IsType<MessageAdded>(result.Value[0]);
-        Assert.Equal("msg-001", @event.MessageId);
-        Assert.Equal("Hello, world!", @event.Content);
-        Assert.Equal("user1", @event.Author);
-    }
-
     /// <summary>
     ///     Verifies that adding a message when chat does not exist fails.
     /// </summary>
@@ -86,19 +50,19 @@ public sealed class AddMessageHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that adding a message with empty content fails.
+    ///     Verifies that adding a message with empty author fails.
     /// </summary>
     [Fact]
-    [AllureStep("AddMessage with empty content fails with InvalidCommand")]
-    public void AddMessageWithEmptyContentFailsWithInvalidCommand()
+    [AllureStep("AddMessage with empty author fails with InvalidCommand")]
+    public void AddMessageWithEmptyAuthorFailsWithInvalidCommand()
     {
         // Arrange
         AddMessageHandler handler = new();
         AddMessage command = new()
         {
             MessageId = "msg-001",
-            Content = string.Empty,
-            Author = "user1",
+            Content = "Hello!",
+            Author = string.Empty,
         };
         ChatState existingState = new()
         {
@@ -115,19 +79,19 @@ public sealed class AddMessageHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that adding a message with empty author fails.
+    ///     Verifies that adding a message with empty content fails.
     /// </summary>
     [Fact]
-    [AllureStep("AddMessage with empty author fails with InvalidCommand")]
-    public void AddMessageWithEmptyAuthorFailsWithInvalidCommand()
+    [AllureStep("AddMessage with empty content fails with InvalidCommand")]
+    public void AddMessageWithEmptyContentFailsWithInvalidCommand()
     {
         // Arrange
         AddMessageHandler handler = new();
         AddMessage command = new()
         {
             MessageId = "msg-001",
-            Content = "Hello!",
-            Author = string.Empty,
+            Content = string.Empty,
+            Author = "user1",
         };
         ChatState existingState = new()
         {
@@ -170,5 +134,39 @@ public sealed class AddMessageHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that adding a message produces a MessageAdded event.
+    /// </summary>
+    [Fact]
+    [AllureStep("AddMessage with valid data produces MessageAdded event")]
+    public void AddMessageWithValidDataProducesMessageAddedEvent()
+    {
+        // Arrange
+        AddMessageHandler handler = new();
+        AddMessage command = new()
+        {
+            MessageId = "msg-001",
+            Content = "Hello, world!",
+            Author = "user1",
+        };
+        ChatState existingState = new()
+        {
+            IsCreated = true,
+            Name = "General",
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, existingState);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Single(result.Value);
+        MessageAdded? @event = Assert.IsType<MessageAdded>(result.Value[0]);
+        Assert.Equal("msg-001", @event.MessageId);
+        Assert.Equal("Hello, world!", @event.Content);
+        Assert.Equal("user1", @event.Author);
     }
 }

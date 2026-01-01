@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Brooks.Writer;
@@ -23,7 +24,7 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.Aggregates.Tests;
 
 /// <summary>
-///     Tests for <see cref="AggregateGrainBase{TSnapshot, TBrook}" />.
+///     Tests for <see cref="AggregateGrainBase{TSnapshot}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Aggregates")]
@@ -87,7 +88,8 @@ public class AggregateGrainTests
     /// <summary>
     ///     Testable aggregate grain that exposes protected methods.
     /// </summary>
-    private sealed class TestableAggregateGrain : AggregateGrainBase<AggregateGrainTestState, AggregateGrainTestBrook>
+    [BrookName("TEST", "AGGREGATES", "TESTBROOK")]
+    private sealed class TestableAggregateGrain : AggregateGrainBase<AggregateGrainTestState>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TestableAggregateGrain" /> class.
@@ -113,12 +115,6 @@ public class AggregateGrainTests
         }
 
         /// <summary>
-        ///     Gets the brook name from the brook definition for testing.
-        /// </summary>
-        /// <returns>The brook name.</returns>
-        public static string GetBrookName() => BrookName;
-
-        /// <summary>
         ///     Exposes the protected ExecuteAsync method for testing.
         /// </summary>
         /// <typeparam name="TCommand">The command type.</typeparam>
@@ -135,12 +131,12 @@ public class AggregateGrainTests
     }
 
     /// <summary>
-    ///     BrookName property should return the brook name from the brook definition.
+    ///     BrookName property should return the brook name from the brook definition attribute.
     /// </summary>
     [Fact]
-    public void BrookNameReturnsValueFromBrookDefinition()
+    public void BrookNameReturnsValueFromBrookDefinitionAttribute()
     {
-        string brookName = TestableAggregateGrain.GetBrookName();
+        string brookName = BrookDefinitionHelper.GetBrookNameFromGrain(typeof(TestableAggregateGrain));
         Assert.Equal("TEST.AGGREGATES.TESTBROOK", brookName);
     }
 

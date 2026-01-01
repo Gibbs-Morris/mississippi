@@ -20,22 +20,19 @@ internal sealed class MessageDeletedReducer : Reducer<MessageDeleted, ChatState>
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         ChatState currentState = state ?? new();
 
         // Find and remove the message
-        int messageIndex = currentState.Messages
-            .FindIndex(m => m.MessageId == @event.MessageId);
-
+        int messageIndex = currentState.Messages.FindIndex(m => m.MessageId == @event.MessageId);
         if (messageIndex < 0)
         {
             // Message not in the last 50, return a copy with no changes
-            return currentState with { };
+            return currentState with
+            {
+            };
         }
 
-        ImmutableList<ChatMessage> updatedMessages = currentState.Messages
-            .RemoveAt(messageIndex);
-
+        ImmutableList<ChatMessage> updatedMessages = currentState.Messages.RemoveAt(messageIndex);
         return currentState with
         {
             Messages = updatedMessages,

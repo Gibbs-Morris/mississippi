@@ -12,8 +12,6 @@ using Crescent.NewModel.Chat;
 using Crescent.NewModel.Chat.Events;
 using Crescent.NewModel.Chat.Reducers;
 
-using Xunit;
-
 
 namespace Crescent.NewModel.L0Tests.Chat.Reducers;
 
@@ -70,16 +68,16 @@ public sealed class MessageAddedReducerTests
         // Arrange
         MessageAddedReducer reducer = new();
         ImmutableList<ChatMessage>.Builder messagesBuilder = ImmutableList.CreateBuilder<ChatMessage>();
-
         for (int i = 0; i < 50; i++)
         {
-            messagesBuilder.Add(new ChatMessage
-            {
-                MessageId = $"msg-{i:D3}",
-                Content = $"Message {i}",
-                Author = "user1",
-                CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-50 + i),
-            });
+            messagesBuilder.Add(
+                new()
+                {
+                    MessageId = $"msg-{i:D3}",
+                    Content = $"Message {i}",
+                    Author = "user1",
+                    CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-50 + i),
+                });
         }
 
         ChatState existingState = new()
@@ -89,7 +87,6 @@ public sealed class MessageAddedReducerTests
             Messages = messagesBuilder.ToImmutable(),
             TotalMessageCount = 50,
         };
-
         MessageAdded @event = new()
         {
             MessageId = "msg-050",

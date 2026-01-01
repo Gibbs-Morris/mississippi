@@ -28,7 +28,9 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.Grains;
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.EventSourcing.UxProjections.SignalR.UxServerDirectoryGrain")]
-internal sealed class UxServerDirectoryGrain : IUxServerDirectoryGrain, IGrainBase
+internal sealed class UxServerDirectoryGrain
+    : IUxServerDirectoryGrain,
+      IGrainBase
 {
     private UxServerDirectoryState state = new();
 
@@ -52,15 +54,14 @@ internal sealed class UxServerDirectoryGrain : IUxServerDirectoryGrain, IGrainBa
     private ILogger<UxServerDirectoryGrain> Logger { get; }
 
     /// <inheritdoc />
-    public Task<ImmutableList<string>> GetDeadServersAsync(TimeSpan timeout)
+    public Task<ImmutableList<string>> GetDeadServersAsync(
+        TimeSpan timeout
+    )
     {
         DateTimeOffset cutoff = DateTimeOffset.UtcNow - timeout;
-
-        ImmutableList<string> deadServers = state.ActiveServers.Values
-            .Where(s => s.LastHeartbeat < cutoff)
+        ImmutableList<string> deadServers = state.ActiveServers.Values.Where(s => s.LastHeartbeat < cutoff)
             .Select(s => s.ServerId)
             .ToImmutableList();
-
         if (deadServers.Count > 0)
         {
             Logger.DeadServersFound(deadServers.Count, timeout);
@@ -70,10 +71,12 @@ internal sealed class UxServerDirectoryGrain : IUxServerDirectoryGrain, IGrainBa
     }
 
     /// <inheritdoc />
-    public Task HeartbeatAsync(string serverId, int connectionCount)
+    public Task HeartbeatAsync(
+        string serverId,
+        int connectionCount
+    )
     {
         ArgumentException.ThrowIfNullOrEmpty(serverId);
-
         if (!state.ActiveServers.TryGetValue(serverId, out ServerInfo? existing))
         {
             Logger.HeartbeatFromUnknownServer(serverId);
@@ -85,55 +88,51 @@ internal sealed class UxServerDirectoryGrain : IUxServerDirectoryGrain, IGrainBa
             LastHeartbeat = DateTimeOffset.UtcNow,
             ConnectionCount = connectionCount,
         };
-
         state = state with
         {
             ActiveServers = state.ActiveServers.SetItem(serverId, updated),
         };
-
         Logger.ServerHeartbeat(serverId, connectionCount);
-
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task OnActivateAsync(CancellationToken token)
+    public Task OnActivateAsync(
+        CancellationToken token
+    )
     {
         Logger.ServerDirectoryActivated(state.ActiveServers.Count);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task RegisterServerAsync(string serverId)
+    public Task RegisterServerAsync(
+        string serverId
+    )
     {
         ArgumentException.ThrowIfNullOrEmpty(serverId);
-
         Logger.RegisteringServer(serverId);
-
         ServerInfo serverInfo = new()
         {
             ServerId = serverId,
             LastHeartbeat = DateTimeOffset.UtcNow,
             ConnectionCount = 0,
         };
-
         state = state with
         {
             ActiveServers = state.ActiveServers.SetItem(serverId, serverInfo),
         };
-
         Logger.ServerRegistered(serverId, state.ActiveServers.Count);
-
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task UnregisterServerAsync(string serverId)
+    public Task UnregisterServerAsync(
+        string serverId
+    )
     {
         ArgumentException.ThrowIfNullOrEmpty(serverId);
-
         Logger.UnregisteringServer(serverId);
-
         if (!state.ActiveServers.ContainsKey(serverId))
         {
             Logger.ServerNotFound(serverId);
@@ -144,9 +143,7 @@ internal sealed class UxServerDirectoryGrain : IUxServerDirectoryGrain, IGrainBa
         {
             ActiveServers = state.ActiveServers.Remove(serverId),
         };
-
         Logger.ServerUnregistered(serverId, state.ActiveServers.Count);
-
         return Task.CompletedTask;
     }
 }

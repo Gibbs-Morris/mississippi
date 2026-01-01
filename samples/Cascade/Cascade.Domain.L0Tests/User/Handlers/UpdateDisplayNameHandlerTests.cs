@@ -14,8 +14,6 @@ using Cascade.Domain.User.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.User.Handlers;
 
@@ -58,28 +56,6 @@ public sealed class UpdateDisplayNameHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that updating display name for an unregistered user returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle UpdateDisplayName when not registered")]
-    public void HandleReturnsErrorWhenNotRegistered()
-    {
-        // Arrange
-        UpdateDisplayNameHandler handler = new();
-        UpdateDisplayName command = new()
-        {
-            NewDisplayName = "New Name",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
-    }
-
-    /// <summary>
     ///     Verifies that updating display name with empty value returns an error.
     /// </summary>
     [Fact]
@@ -105,5 +81,27 @@ public sealed class UpdateDisplayNameHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that updating display name for an unregistered user returns an error.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle UpdateDisplayName when not registered")]
+    public void HandleReturnsErrorWhenNotRegistered()
+    {
+        // Arrange
+        UpdateDisplayNameHandler handler = new();
+        UpdateDisplayName command = new()
+        {
+            NewDisplayName = "New Name",
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 }

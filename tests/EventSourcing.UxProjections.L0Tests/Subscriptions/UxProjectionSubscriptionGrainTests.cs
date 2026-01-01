@@ -8,15 +8,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks;
-using Mississippi.EventSourcing.Brooks.Cursor;
 using Mississippi.EventSourcing.Brooks.Reader;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
 using Mississippi.EventSourcing.UxProjections.Subscriptions;
 
 using Moq;
 
-using Orleans;
 using Orleans.Runtime;
 
 
@@ -31,6 +28,108 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests.Subscriptions;
 public sealed class UxProjectionSubscriptionGrainTests
 {
     private const string ConnectionId = "connection-abc123";
+
+    private static UxProjectionSubscriptionGrain CreateGrain(
+        string connectionId
+    )
+    {
+        Mock<IGrainContext> context = new();
+        Mock<ILogger<UxProjectionSubscriptionGrain>> logger = new();
+        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
+        Mock<IStreamIdFactory> streamIdFactory = new();
+        GrainId grainId = GrainId.Create("ux-projection-subscription", connectionId);
+        context.SetupGet(c => c.GrainId).Returns(grainId);
+        return new(context.Object, options, streamIdFactory.Object, logger.Object);
+    }
+
+    /// <summary>
+    ///     ClearAllAsync should remove all subscriptions.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ClearAllAsyncRemovesAllSubscriptions()
+    {
+        // Arrange
+        UxProjectionSubscriptionGrain grain = CreateGrain(ConnectionId);
+        UxProjectionSubscriptionRequest request1 = new()
+        {
+            ProjectionType = "UserProfile",
+            BrookType = "UserEvents",
+            EntityId = "user-123",
+            ClientSubscriptionId = "client-sub-1",
+        };
+        UxProjectionSubscriptionRequest request2 = new()
+        {
+            ProjectionType = "ChannelMessages",
+            BrookType = "ChannelEvents",
+            EntityId = "channel-456",
+            ClientSubscriptionId = "client-sub-2",
+        };
+        await grain.SubscribeAsync(request1);
+        await grain.SubscribeAsync(request2);
+
+        // Act
+        await grain.ClearAllAsync();
+
+        // Assert
+        ImmutableList<UxProjectionSubscriptionRequest> subscriptions = await grain.GetSubscriptionsAsync();
+        Assert.Empty(subscriptions);
+    }
+
+    /// <summary>
+    ///     Constructor should throw when grainContext is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenGrainContextIsNull()
+    {
+        // Arrange
+        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
+        Mock<IStreamIdFactory> streamIdFactory = new();
+        Mock<ILogger<UxProjectionSubscriptionGrain>> logger = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionSubscriptionGrain(
+            null!,
+            options,
+            streamIdFactory.Object,
+            logger.Object));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when logger is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenLoggerIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> context = new();
+        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
+        Mock<IStreamIdFactory> streamIdFactory = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionSubscriptionGrain(
+            context.Object,
+            options,
+            streamIdFactory.Object,
+            null!));
+    }
+
+    /// <summary>
+    ///     GetSubscriptionsAsync returns empty list when no subscriptions.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetSubscriptionsAsyncReturnsEmptyWhenNoSubscriptions()
+    {
+        // Arrange
+        UxProjectionSubscriptionGrain grain = CreateGrain(ConnectionId);
+
+        // Act
+        ImmutableList<UxProjectionSubscriptionRequest> subscriptions = await grain.GetSubscriptionsAsync();
+
+        // Assert
+        Assert.Empty(subscriptions);
+    }
 
     /// <summary>
     ///     SubscribeAsync should return a subscription ID and add to state.
@@ -55,7 +154,6 @@ public sealed class UxProjectionSubscriptionGrainTests
         // Assert
         Assert.NotNull(subscriptionId);
         Assert.NotEmpty(subscriptionId);
-
         ImmutableList<UxProjectionSubscriptionRequest> subscriptions = await grain.GetSubscriptionsAsync();
         Assert.Single(subscriptions);
         Assert.Equal(request, subscriptions[0]);
@@ -91,7 +189,6 @@ public sealed class UxProjectionSubscriptionGrainTests
 
         // Assert
         Assert.NotEqual(id1, id2);
-
         ImmutableList<UxProjectionSubscriptionRequest> subscriptions = await grain.GetSubscriptionsAsync();
         Assert.Equal(2, subscriptions.Count);
     }
@@ -138,113 +235,5 @@ public sealed class UxProjectionSubscriptionGrainTests
         // Assert - verify grain still functions and has no subscriptions
         ImmutableList<UxProjectionSubscriptionRequest> subscriptions = await grain.GetSubscriptionsAsync();
         Assert.Empty(subscriptions);
-    }
-
-    /// <summary>
-    ///     ClearAllAsync should remove all subscriptions.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task ClearAllAsyncRemovesAllSubscriptions()
-    {
-        // Arrange
-        UxProjectionSubscriptionGrain grain = CreateGrain(ConnectionId);
-        UxProjectionSubscriptionRequest request1 = new()
-        {
-            ProjectionType = "UserProfile",
-            BrookType = "UserEvents",
-            EntityId = "user-123",
-            ClientSubscriptionId = "client-sub-1",
-        };
-        UxProjectionSubscriptionRequest request2 = new()
-        {
-            ProjectionType = "ChannelMessages",
-            BrookType = "ChannelEvents",
-            EntityId = "channel-456",
-            ClientSubscriptionId = "client-sub-2",
-        };
-        await grain.SubscribeAsync(request1);
-        await grain.SubscribeAsync(request2);
-
-        // Act
-        await grain.ClearAllAsync();
-
-        // Assert
-        ImmutableList<UxProjectionSubscriptionRequest> subscriptions = await grain.GetSubscriptionsAsync();
-        Assert.Empty(subscriptions);
-    }
-
-    /// <summary>
-    ///     GetSubscriptionsAsync returns empty list when no subscriptions.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task GetSubscriptionsAsyncReturnsEmptyWhenNoSubscriptions()
-    {
-        // Arrange
-        UxProjectionSubscriptionGrain grain = CreateGrain(ConnectionId);
-
-        // Act
-        ImmutableList<UxProjectionSubscriptionRequest> subscriptions = await grain.GetSubscriptionsAsync();
-
-        // Assert
-        Assert.Empty(subscriptions);
-    }
-
-    /// <summary>
-    ///     Constructor should throw when grainContext is null.
-    /// </summary>
-    [Fact]
-    public void ConstructorThrowsWhenGrainContextIsNull()
-    {
-        // Arrange
-        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
-        Mock<IStreamIdFactory> streamIdFactory = new();
-        Mock<ILogger<UxProjectionSubscriptionGrain>> logger = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UxProjectionSubscriptionGrain(
-            null!,
-            options,
-            streamIdFactory.Object,
-            logger.Object));
-    }
-
-    /// <summary>
-    ///     Constructor should throw when logger is null.
-    /// </summary>
-    [Fact]
-    public void ConstructorThrowsWhenLoggerIsNull()
-    {
-        // Arrange
-        Mock<IGrainContext> context = new();
-        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
-        Mock<IStreamIdFactory> streamIdFactory = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UxProjectionSubscriptionGrain(
-            context.Object,
-            options,
-            streamIdFactory.Object,
-            null!));
-    }
-
-    private static UxProjectionSubscriptionGrain CreateGrain(
-        string connectionId
-    )
-    {
-        Mock<IGrainContext> context = new();
-        Mock<ILogger<UxProjectionSubscriptionGrain>> logger = new();
-        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
-        Mock<IStreamIdFactory> streamIdFactory = new();
-
-        GrainId grainId = GrainId.Create("ux-projection-subscription", connectionId);
-        context.SetupGet(c => c.GrainId).Returns(grainId);
-
-        return new UxProjectionSubscriptionGrain(
-            context.Object,
-            options,
-            streamIdFactory.Object,
-            logger.Object);
     }
 }

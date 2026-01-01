@@ -20,17 +20,16 @@ internal sealed class MessageEditedReducer : Reducer<MessageEdited, ChatState>
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         ChatState currentState = state ?? new();
 
         // Find and update the message
-        int messageIndex = currentState.Messages
-            .FindIndex(m => m.MessageId == @event.MessageId);
-
+        int messageIndex = currentState.Messages.FindIndex(m => m.MessageId == @event.MessageId);
         if (messageIndex < 0)
         {
             // Message not in the last 50, return a copy with no changes
-            return currentState with { };
+            return currentState with
+            {
+            };
         }
 
         ChatMessage existingMessage = currentState.Messages[messageIndex];
@@ -39,10 +38,7 @@ internal sealed class MessageEditedReducer : Reducer<MessageEdited, ChatState>
             Content = @event.NewContent,
             EditedAt = @event.EditedAt,
         };
-
-        ImmutableList<ChatMessage> updatedMessages = currentState.Messages
-            .SetItem(messageIndex, updatedMessage);
-
+        ImmutableList<ChatMessage> updatedMessages = currentState.Messages.SetItem(messageIndex, updatedMessage);
         return currentState with
         {
             Messages = updatedMessages,

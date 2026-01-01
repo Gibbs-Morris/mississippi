@@ -29,7 +29,9 @@ internal sealed class UserJoinedChannelProjectionReducer : Reducer<UserJoinedCha
         // Prevent duplicate channel IDs
         if (state.ChannelIds.Contains(eventData.ChannelId))
         {
-            return state with { };
+            return state with
+            {
+            };
         }
 
         return state with

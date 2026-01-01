@@ -22,16 +22,16 @@ namespace Mississippi.EventSourcing.UxProjections.Subscriptions;
 internal sealed class ActiveSubscription
 {
     /// <summary>
-    ///     Gets the original subscription request from the client.
-    /// </summary>
-    [Id(0)]
-    public required UxProjectionSubscriptionRequest Request { get; init; }
-
-    /// <summary>
     ///     Gets the projection key derived from the subscription request.
     /// </summary>
     [Id(1)]
     public required UxProjectionKey ProjectionKey { get; init; }
+
+    /// <summary>
+    ///     Gets the original subscription request from the client.
+    /// </summary>
+    [Id(0)]
+    public required UxProjectionSubscriptionRequest Request { get; init; }
 
     /// <summary>
     ///     Gets or sets the stream subscription handle.

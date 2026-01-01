@@ -29,7 +29,10 @@ public interface IUxClientGrain : IGrainWithStringKey
     /// <param name="serverId">The unique identifier of the hosting server.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("ConnectAsync")]
-    Task ConnectAsync(string hubName, string serverId);
+    Task ConnectAsync(
+        string hubName,
+        string serverId
+    );
 
     /// <summary>
     ///     Disconnects and cleans up the client state.
@@ -39,15 +42,6 @@ public interface IUxClientGrain : IGrainWithStringKey
     Task DisconnectAsync();
 
     /// <summary>
-    ///     Sends a message to this connection via the hosting server.
-    /// </summary>
-    /// <param name="methodName">The SignalR hub method name to invoke.</param>
-    /// <param name="args">The arguments to pass to the method.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Alias("SendMessageAsync")]
-    Task SendMessageAsync(string methodName, object?[] args);
-
-    /// <summary>
     ///     Gets the server identifier hosting this connection.
     /// </summary>
     /// <returns>
@@ -55,4 +49,16 @@ public interface IUxClientGrain : IGrainWithStringKey
     /// </returns>
     [Alias("GetServerIdAsync")]
     Task<string?> GetServerIdAsync();
+
+    /// <summary>
+    ///     Sends a message to this connection via the hosting server.
+    /// </summary>
+    /// <param name="methodName">The SignalR hub method name to invoke.</param>
+    /// <param name="args">The arguments to pass to the method.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Alias("SendMessageAsync")]
+    Task SendMessageAsync(
+        string methodName,
+        object?[] args
+    );
 }

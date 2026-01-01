@@ -17,6 +17,12 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.Grains.State;
 public sealed record UxClientState
 {
     /// <summary>
+    ///     Gets the timestamp when the connection was established.
+    /// </summary>
+    [Id(3)]
+    public DateTimeOffset ConnectedAt { get; init; }
+
+    /// <summary>
     ///     Gets the SignalR connection identifier.
     /// </summary>
     [Id(0)]
@@ -33,10 +39,4 @@ public sealed record UxClientState
     /// </summary>
     [Id(2)]
     public string ServerId { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the timestamp when the connection was established.
-    /// </summary>
-    [Id(3)]
-    public DateTimeOffset ConnectedAt { get; init; }
 }

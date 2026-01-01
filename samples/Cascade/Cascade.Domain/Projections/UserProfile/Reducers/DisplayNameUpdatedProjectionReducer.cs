@@ -25,6 +25,9 @@ internal sealed class DisplayNameUpdatedProjectionReducer : Reducer<DisplayNameU
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(eventData);
-        return state with { DisplayName = eventData.NewDisplayName };
+        return state with
+        {
+            DisplayName = eventData.NewDisplayName,
+        };
     }
 }

@@ -15,8 +15,6 @@ using Cascade.Domain.User.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.User.Handlers;
 
@@ -29,17 +27,17 @@ namespace Cascade.Domain.L0Tests.User.Handlers;
 public sealed class LeaveChannelHandlerTests
 {
     /// <summary>
-    ///     Verifies that leaving a channel returns a UserLeftChannel event.
+    ///     Verifies that leaving a channel with empty channel ID returns an error.
     /// </summary>
     [Fact]
-    [AllureStep("Handle LeaveChannel when a member")]
-    public void HandleReturnsUserLeftChannelEventWhenMember()
+    [AllureStep("Handle LeaveChannel with empty channel ID")]
+    public void HandleReturnsErrorWhenChannelIdEmpty()
     {
         // Arrange
         LeaveChannelHandler handler = new();
         LeaveChannel command = new()
         {
-            ChannelId = "channel-1",
+            ChannelId = string.Empty,
         };
         UserState state = new()
         {
@@ -53,10 +51,8 @@ public sealed class LeaveChannelHandlerTests
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
 
         // Assert
-        Assert.True(result.Success);
-        object singleEvent = Assert.Single(result.Value!);
-        UserLeftChannel left = Assert.IsType<UserLeftChannel>(singleEvent);
-        Assert.Equal("channel-1", left.ChannelId);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
     }
 
     /// <summary>
@@ -111,17 +107,17 @@ public sealed class LeaveChannelHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that leaving a channel with empty channel ID returns an error.
+    ///     Verifies that leaving a channel returns a UserLeftChannel event.
     /// </summary>
     [Fact]
-    [AllureStep("Handle LeaveChannel with empty channel ID")]
-    public void HandleReturnsErrorWhenChannelIdEmpty()
+    [AllureStep("Handle LeaveChannel when a member")]
+    public void HandleReturnsUserLeftChannelEventWhenMember()
     {
         // Arrange
         LeaveChannelHandler handler = new();
         LeaveChannel command = new()
         {
-            ChannelId = string.Empty,
+            ChannelId = "channel-1",
         };
         UserState state = new()
         {
@@ -135,7 +131,9 @@ public sealed class LeaveChannelHandlerTests
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+        Assert.True(result.Success);
+        object singleEvent = Assert.Single(result.Value!);
+        UserLeftChannel left = Assert.IsType<UserLeftChannel>(singleEvent);
+        Assert.Equal("channel-1", left.ChannelId);
     }
 }

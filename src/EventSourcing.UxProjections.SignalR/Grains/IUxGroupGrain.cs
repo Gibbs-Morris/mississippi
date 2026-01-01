@@ -29,7 +29,16 @@ public interface IUxGroupGrain : IGrainWithStringKey
     /// <param name="connectionId">The SignalR connection identifier to add.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("AddConnectionAsync")]
-    Task AddConnectionAsync(string connectionId);
+    Task AddConnectionAsync(
+        string connectionId
+    );
+
+    /// <summary>
+    ///     Gets all connection identifiers in this group.
+    /// </summary>
+    /// <returns>An immutable set of connection identifiers.</returns>
+    [Alias("GetConnectionsAsync")]
+    Task<ImmutableHashSet<string>> GetConnectionsAsync();
 
     /// <summary>
     ///     Removes a connection from this group.
@@ -37,7 +46,9 @@ public interface IUxGroupGrain : IGrainWithStringKey
     /// <param name="connectionId">The SignalR connection identifier to remove.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("RemoveConnectionAsync")]
-    Task RemoveConnectionAsync(string connectionId);
+    Task RemoveConnectionAsync(
+        string connectionId
+    );
 
     /// <summary>
     ///     Sends a message to all connections in this group.
@@ -46,12 +57,8 @@ public interface IUxGroupGrain : IGrainWithStringKey
     /// <param name="args">The arguments to pass to the method.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("SendAllAsync")]
-    Task SendAllAsync(string methodName, object?[] args);
-
-    /// <summary>
-    ///     Gets all connection identifiers in this group.
-    /// </summary>
-    /// <returns>An immutable set of connection identifiers.</returns>
-    [Alias("GetConnectionsAsync")]
-    Task<ImmutableHashSet<string>> GetConnectionsAsync();
+    Task SendAllAsync(
+        string methodName,
+        object?[] args
+    );
 }

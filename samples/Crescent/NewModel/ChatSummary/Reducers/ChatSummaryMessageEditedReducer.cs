@@ -23,7 +23,6 @@ internal sealed class ChatSummaryMessageEditedReducer : Reducer<MessageEdited, C
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         if (state is null)
         {
             return state!;
@@ -33,7 +32,6 @@ internal sealed class ChatSummaryMessageEditedReducer : Reducer<MessageEdited, C
         string preview = @event.NewContent.Length > ChatSummaryProjection.PreviewMaxLength
             ? @event.NewContent[..ChatSummaryProjection.PreviewMaxLength] + "..."
             : @event.NewContent;
-
         return state with
         {
             LastMessageAt = @event.EditedAt,

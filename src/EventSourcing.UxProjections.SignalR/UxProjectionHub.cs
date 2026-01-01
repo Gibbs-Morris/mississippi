@@ -47,29 +47,33 @@ public sealed class UxProjectionHub : Hub<IUxProjectionHubClient>
 
     private ILogger<UxProjectionHub> Logger { get; }
 
+    /// <summary>
+    ///     Gets a stable server identifier based on environment.
+    ///     In production, this would typically come from configuration.
+    /// </summary>
+    /// <returns>The machine name as the server identifier.</returns>
+    private static string GetServerId() => Environment.MachineName;
+
     /// <inheritdoc />
     public override async Task OnConnectedAsync()
     {
         Logger.ClientConnected(Context.ConnectionId);
-
         IUxClientGrain clientGrain = GrainFactory.GetGrain<IUxClientGrain>(Context.ConnectionId);
         await clientGrain.ConnectAsync(nameof(UxProjectionHub), GetServerId());
-
         await base.OnConnectedAsync();
     }
 
     /// <inheritdoc />
-    public override async Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnDisconnectedAsync(
+        Exception? exception
+    )
     {
         Logger.ClientDisconnected(Context.ConnectionId, exception);
-
         IUxProjectionSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IUxProjectionSubscriptionGrain>(Context.ConnectionId);
         await subscriptionGrain.ClearAllAsync();
-
         IUxClientGrain clientGrain = GrainFactory.GetGrain<IUxClientGrain>(Context.ConnectionId);
         await clientGrain.DisconnectAsync();
-
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -89,7 +93,6 @@ public sealed class UxProjectionHub : Hub<IUxProjectionHubClient>
         ArgumentException.ThrowIfNullOrEmpty(projectionType);
         ArgumentException.ThrowIfNullOrEmpty(brookType);
         ArgumentException.ThrowIfNullOrEmpty(entityId);
-
         Logger.SubscribingToProjection(Context.ConnectionId, projectionType, entityId);
 
         // Add to SignalR group for direct projection grain notifications
@@ -104,13 +107,10 @@ public sealed class UxProjectionHub : Hub<IUxProjectionHubClient>
             EntityId = entityId,
             ClientSubscriptionId = Guid.NewGuid().ToString("N"),
         };
-
         IUxProjectionSubscriptionGrain grain =
             GrainFactory.GetGrain<IUxProjectionSubscriptionGrain>(Context.ConnectionId);
         string subscriptionId = await grain.SubscribeAsync(request);
-
         Logger.SubscribedToProjection(Context.ConnectionId, subscriptionId, projectionType, entityId);
-
         return subscriptionId;
     }
 
@@ -130,23 +130,12 @@ public sealed class UxProjectionHub : Hub<IUxProjectionHubClient>
         ArgumentException.ThrowIfNullOrEmpty(subscriptionId);
         ArgumentException.ThrowIfNullOrEmpty(projectionType);
         ArgumentException.ThrowIfNullOrEmpty(entityId);
-
         Logger.UnsubscribingFromProjection(Context.ConnectionId, subscriptionId, projectionType, entityId);
-
         string groupName = $"projection:{projectionType}:{entityId}";
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
-
         IUxProjectionSubscriptionGrain grain =
             GrainFactory.GetGrain<IUxProjectionSubscriptionGrain>(Context.ConnectionId);
         await grain.UnsubscribeAsync(subscriptionId);
-
         Logger.UnsubscribedFromProjection(Context.ConnectionId, subscriptionId);
-    }
-
-    private static string GetServerId()
-    {
-        // Use a stable server identifier based on environment
-        // In production, this would typically come from configuration
-        return Environment.MachineName;
     }
 }

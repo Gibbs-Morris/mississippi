@@ -13,22 +13,16 @@ namespace Crescent.NewModel.Chat;
 internal sealed record ChatMessage
 {
     /// <summary>
-    ///     Gets the unique identifier for the message.
+    ///     Gets the author of the message.
     /// </summary>
-    [Id(0)]
-    public required string MessageId { get; init; }
+    [Id(2)]
+    public required string Author { get; init; }
 
     /// <summary>
     ///     Gets the content of the message.
     /// </summary>
     [Id(1)]
     public required string Content { get; init; }
-
-    /// <summary>
-    ///     Gets the author of the message.
-    /// </summary>
-    [Id(2)]
-    public required string Author { get; init; }
 
     /// <summary>
     ///     Gets the timestamp when the message was created.
@@ -41,4 +35,10 @@ internal sealed record ChatMessage
     /// </summary>
     [Id(4)]
     public DateTimeOffset? EditedAt { get; init; }
+
+    /// <summary>
+    ///     Gets the unique identifier for the message.
+    /// </summary>
+    [Id(0)]
+    public required string MessageId { get; init; }
 }

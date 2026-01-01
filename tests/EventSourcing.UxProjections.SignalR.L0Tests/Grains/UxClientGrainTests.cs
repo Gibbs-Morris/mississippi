@@ -23,8 +23,21 @@ namespace Mississippi.EventSourcing.UxProjections.SignalR.L0Tests.Grains;
 [AllureSubSuite("UxClientGrain")]
 public sealed class UxClientGrainTests
 {
-    private const string HubName = "TestHub";
     private const string ConnectionId = "connection-abc123";
+
+    private static UxClientGrain CreateGrain(
+        string grainKey
+    )
+    {
+        Mock<IGrainContext> context = new();
+        Mock<ILogger<UxClientGrain>> logger = new();
+        GrainId grainId = GrainId.Create("ux-client", grainKey);
+        context.SetupGet(c => c.GrainId).Returns(grainId);
+        return new(context.Object, logger.Object);
+    }
+
+    private const string HubName = "TestHub";
+
     private const string ServerId = "server-001";
 
     /// <summary>
@@ -43,6 +56,60 @@ public sealed class UxClientGrainTests
         // Assert
         string? serverId = await grain.GetServerIdAsync();
         Assert.Equal(ServerId, serverId);
+    }
+
+    /// <summary>
+    ///     ConnectAsync should throw when hubName is null.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ConnectAsyncThrowsWhenHubNameIsNull()
+    {
+        // Arrange
+        UxClientGrain grain = CreateGrain($"{HubName}:{ConnectionId}");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.ConnectAsync(null!, ServerId));
+    }
+
+    /// <summary>
+    ///     ConnectAsync should throw when serverId is null.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ConnectAsyncThrowsWhenServerIdIsNull()
+    {
+        // Arrange
+        UxClientGrain grain = CreateGrain($"{HubName}:{ConnectionId}");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.ConnectAsync(HubName, null!));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when grainContext is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenGrainContextIsNull()
+    {
+        // Arrange
+        Mock<ILogger<UxClientGrain>> logger = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new UxClientGrain(null!, logger.Object));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when logger is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenLoggerIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> context = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new UxClientGrain(context.Object, null!));
     }
 
     /// <summary>
@@ -82,31 +149,21 @@ public sealed class UxClientGrainTests
     }
 
     /// <summary>
-    ///     ConnectAsync should throw when hubName is null.
+    ///     OnActivateAsync should complete successfully.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task ConnectAsyncThrowsWhenHubNameIsNull()
+    public async Task OnActivateAsyncCompletes()
     {
         // Arrange
         UxClientGrain grain = CreateGrain($"{HubName}:{ConnectionId}");
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.ConnectAsync(null!, ServerId));
-    }
+        // Act
+        Func<Task> actionAsync = () => grain.OnActivateAsync(CancellationToken.None);
 
-    /// <summary>
-    ///     ConnectAsync should throw when serverId is null.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task ConnectAsyncThrowsWhenServerIdIsNull()
-    {
-        // Arrange
-        UxClientGrain grain = CreateGrain($"{HubName}:{ConnectionId}");
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.ConnectAsync(HubName, null!));
+        // Assert
+        Exception? exception = await Record.ExceptionAsync(actionAsync);
+        Assert.Null(exception);
     }
 
     /// <summary>
@@ -128,20 +185,6 @@ public sealed class UxClientGrainTests
     }
 
     /// <summary>
-    ///     SendMessageAsync should throw when methodName is null.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task SendMessageAsyncThrowsWhenMethodNameIsNull()
-    {
-        // Arrange
-        UxClientGrain grain = CreateGrain($"{HubName}:{ConnectionId}");
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.SendMessageAsync(null!, []));
-    }
-
-    /// <summary>
     ///     SendMessageAsync should throw when args is null.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -156,57 +199,16 @@ public sealed class UxClientGrainTests
     }
 
     /// <summary>
-    ///     OnActivateAsync should complete successfully.
+    ///     SendMessageAsync should throw when methodName is null.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task OnActivateAsyncCompletes()
+    public async Task SendMessageAsyncThrowsWhenMethodNameIsNull()
     {
         // Arrange
         UxClientGrain grain = CreateGrain($"{HubName}:{ConnectionId}");
 
-        // Act
-        Func<Task> actionAsync = () => grain.OnActivateAsync(CancellationToken.None);
-
-        // Assert
-        Exception? exception = await Record.ExceptionAsync(actionAsync);
-        Assert.Null(exception);
-    }
-
-    /// <summary>
-    ///     Constructor should throw when grainContext is null.
-    /// </summary>
-    [Fact]
-    public void ConstructorThrowsWhenGrainContextIsNull()
-    {
-        // Arrange
-        Mock<ILogger<UxClientGrain>> logger = new();
-
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UxClientGrain(null!, logger.Object));
-    }
-
-    /// <summary>
-    ///     Constructor should throw when logger is null.
-    /// </summary>
-    [Fact]
-    public void ConstructorThrowsWhenLoggerIsNull()
-    {
-        // Arrange
-        Mock<IGrainContext> context = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UxClientGrain(context.Object, null!));
-    }
-
-    private static UxClientGrain CreateGrain(string grainKey)
-    {
-        Mock<IGrainContext> context = new();
-        Mock<ILogger<UxClientGrain>> logger = new();
-
-        GrainId grainId = GrainId.Create("ux-client", grainKey);
-        context.SetupGet(c => c.GrainId).Returns(grainId);
-
-        return new UxClientGrain(context.Object, logger.Object);
+        await Assert.ThrowsAsync<ArgumentNullException>(() => grain.SendMessageAsync(null!, []));
     }
 }

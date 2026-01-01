@@ -21,12 +21,13 @@ internal sealed class MessageSentReducer : Reducer<MessageSent, ConversationStat
     ) =>
         state with
         {
-            Messages = state.Messages.Add(new Message
-            {
-                MessageId = eventData.MessageId,
-                Content = eventData.Content,
-                SentBy = eventData.SentBy,
-                SentAt = eventData.SentAt,
-            }),
+            Messages = state.Messages.Add(
+                new()
+                {
+                    MessageId = eventData.MessageId,
+                    Content = eventData.Content,
+                    SentBy = eventData.SentBy,
+                    SentAt = eventData.SentAt,
+                }),
         };
 }

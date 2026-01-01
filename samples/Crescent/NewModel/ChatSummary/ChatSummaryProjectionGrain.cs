@@ -1,7 +1,6 @@
-using Crescent.NewModel.Chat;
-
 using Microsoft.Extensions.Logging;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.UxProjections;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
@@ -17,8 +16,8 @@ namespace Crescent.NewModel.ChatSummary;
 /// <remarks>
 ///     <para>
 ///         This grain demonstrates the "multiple projections per brook" pattern.
-///         It consumes the same <see cref="ChatBrook" /> event stream as the
-///         <see cref="ChatAggregateGrain" />, but produces a read-optimized
+///         It consumes the same Chat brook event stream as the
+///         ChatAggregateGrain, but produces a read-optimized
 ///         projection for UX display purposes.
 ///     </para>
 ///     <para>
@@ -27,7 +26,8 @@ namespace Crescent.NewModel.ChatSummary;
 ///         a new snapshot if the brook has advanced since the last read.
 ///     </para>
 /// </remarks>
-internal sealed class ChatSummaryProjectionGrain : UxProjectionGrainBase<ChatSummaryProjection, ChatBrook>
+[BrookName("CRESCENT", "NEWMODEL", "CHAT")]
+internal sealed class ChatSummaryProjectionGrain : UxProjectionGrainBase<ChatSummaryProjection>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="ChatSummaryProjectionGrain" /> class.

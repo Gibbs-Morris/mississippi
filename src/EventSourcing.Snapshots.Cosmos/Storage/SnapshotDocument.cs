@@ -11,6 +11,12 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 internal sealed class SnapshotDocument
 {
     /// <summary>
+    ///     Gets or sets the brook name identifying the event stream.
+    /// </summary>
+    [JsonProperty("brookName")]
+    public string BrookName { get; set; } = string.Empty;
+
+    /// <summary>
     ///     Gets or sets the snapshot payload bytes.
     /// </summary>
     [JsonProperty("data")]

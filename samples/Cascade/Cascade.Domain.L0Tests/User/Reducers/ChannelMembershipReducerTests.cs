@@ -12,8 +12,6 @@ using Cascade.Domain.User;
 using Cascade.Domain.User.Events;
 using Cascade.Domain.User.Reducers;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.User.Reducers;
 
@@ -87,6 +85,35 @@ public sealed class ChannelMembershipReducerTests
     }
 
     /// <summary>
+    ///     Verifies that reducing a UserLeftChannel event for last channel results in empty set.
+    /// </summary>
+    [Fact]
+    [AllureStep("Reduce UserLeftChannel last channel")]
+    public void ReduceUserLeftChannelLastChannel()
+    {
+        // Arrange
+        UserLeftChannelReducer reducer = new();
+        UserLeftChannel evt = new()
+        {
+            ChannelId = "channel-1",
+            LeftAt = DateTimeOffset.UtcNow,
+        };
+        UserState state = new()
+        {
+            IsRegistered = true,
+            UserId = "user-123",
+            DisplayName = "John",
+            ChannelIds = ImmutableHashSet.Create("channel-1"),
+        };
+
+        // Act
+        UserState result = reducer.Reduce(state, evt);
+
+        // Assert
+        Assert.Empty(result.ChannelIds);
+    }
+
+    /// <summary>
     ///     Verifies that reducing a UserLeftChannel event removes the channel.
     /// </summary>
     [Fact]
@@ -115,34 +142,5 @@ public sealed class ChannelMembershipReducerTests
         Assert.DoesNotContain("channel-1", result.ChannelIds);
         Assert.Contains("channel-2", result.ChannelIds);
         Assert.Single(result.ChannelIds);
-    }
-
-    /// <summary>
-    ///     Verifies that reducing a UserLeftChannel event for last channel results in empty set.
-    /// </summary>
-    [Fact]
-    [AllureStep("Reduce UserLeftChannel last channel")]
-    public void ReduceUserLeftChannelLastChannel()
-    {
-        // Arrange
-        UserLeftChannelReducer reducer = new();
-        UserLeftChannel evt = new()
-        {
-            ChannelId = "channel-1",
-            LeftAt = DateTimeOffset.UtcNow,
-        };
-        UserState state = new()
-        {
-            IsRegistered = true,
-            UserId = "user-123",
-            DisplayName = "John",
-            ChannelIds = ImmutableHashSet.Create("channel-1"),
-        };
-
-        // Act
-        UserState result = reducer.Reduce(state, evt);
-
-        // Assert
-        Assert.Empty(result.ChannelIds);
     }
 }

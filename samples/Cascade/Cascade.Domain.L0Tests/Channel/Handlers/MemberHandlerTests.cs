@@ -16,8 +16,6 @@ using Cascade.Domain.Channel.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Channel.Handlers;
 
@@ -29,60 +27,6 @@ namespace Cascade.Domain.L0Tests.Channel.Handlers;
 [AllureFeature("MemberManagement")]
 public sealed class MemberHandlerTests
 {
-    /// <summary>
-    ///     Verifies that adding a member returns a MemberAdded event.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle AddMember when not already member")]
-    public void HandleAddMemberReturnsMemberAddedEvent()
-    {
-        // Arrange
-        AddMemberHandler handler = new();
-        AddMember command = new()
-        {
-            UserId = "user-456",
-        };
-        ChannelState state = new()
-        {
-            IsCreated = true,
-            ChannelId = "channel-1",
-            Name = "General",
-            MemberIds = ImmutableHashSet.Create("user-123"),
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
-
-        // Assert
-        Assert.True(result.Success);
-        object singleEvent = Assert.Single(result.Value!);
-        MemberAdded added = Assert.IsType<MemberAdded>(singleEvent);
-        Assert.Equal("user-456", added.UserId);
-        Assert.True(added.AddedAt > DateTimeOffset.UtcNow.AddMinutes(-1));
-    }
-
-    /// <summary>
-    ///     Verifies that adding a member when channel not created returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle AddMember when channel not created")]
-    public void HandleAddMemberReturnsErrorWhenNotCreated()
-    {
-        // Arrange
-        AddMemberHandler handler = new();
-        AddMember command = new()
-        {
-            UserId = "user-456",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
-    }
-
     /// <summary>
     ///     Verifies that adding a member when already a member returns an error.
     /// </summary>
@@ -142,90 +86,21 @@ public sealed class MemberHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that removing a member returns a MemberRemoved event.
+    ///     Verifies that adding a member when channel not created returns an error.
     /// </summary>
     [Fact]
-    [AllureStep("Handle RemoveMember when member")]
-    public void HandleRemoveMemberReturnsMemberRemovedEvent()
+    [AllureStep("Handle AddMember when channel not created")]
+    public void HandleAddMemberReturnsErrorWhenNotCreated()
     {
         // Arrange
-        RemoveMemberHandler handler = new();
-        RemoveMember command = new()
+        AddMemberHandler handler = new();
+        AddMember command = new()
         {
-            UserId = "user-123",
-        };
-        ChannelState state = new()
-        {
-            IsCreated = true,
-            ChannelId = "channel-1",
-            Name = "General",
-            MemberIds = ImmutableHashSet.Create("user-123", "user-456"),
+            UserId = "user-456",
         };
 
         // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
-
-        // Assert
-        Assert.True(result.Success);
-        object singleEvent = Assert.Single(result.Value!);
-        MemberRemoved removed = Assert.IsType<MemberRemoved>(singleEvent);
-        Assert.Equal("user-123", removed.UserId);
-        Assert.True(removed.RemovedAt > DateTimeOffset.UtcNow.AddMinutes(-1));
-    }
-
-    /// <summary>
-    ///     Verifies that removing a member when not a member returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle RemoveMember when not member")]
-    public void HandleRemoveMemberReturnsErrorWhenNotMember()
-    {
-        // Arrange
-        RemoveMemberHandler handler = new();
-        RemoveMember command = new()
-        {
-            UserId = "user-789",
-        };
-        ChannelState state = new()
-        {
-            IsCreated = true,
-            ChannelId = "channel-1",
-            Name = "General",
-            MemberIds = ImmutableHashSet.Create("user-123"),
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
-    }
-
-    /// <summary>
-    ///     Verifies that removing a member from archived channel returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle RemoveMember when channel archived")]
-    public void HandleRemoveMemberReturnsErrorWhenArchived()
-    {
-        // Arrange
-        RemoveMemberHandler handler = new();
-        RemoveMember command = new()
-        {
-            UserId = "user-123",
-        };
-        ChannelState state = new()
-        {
-            IsCreated = true,
-            ChannelId = "channel-1",
-            Name = "General",
-            IsArchived = true,
-            MemberIds = ImmutableHashSet.Create("user-123"),
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
 
         // Assert
         Assert.False(result.Success);
@@ -261,6 +136,97 @@ public sealed class MemberHandlerTests
     }
 
     /// <summary>
+    ///     Verifies that adding a member returns a MemberAdded event.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle AddMember when not already member")]
+    public void HandleAddMemberReturnsMemberAddedEvent()
+    {
+        // Arrange
+        AddMemberHandler handler = new();
+        AddMember command = new()
+        {
+            UserId = "user-456",
+        };
+        ChannelState state = new()
+        {
+            IsCreated = true,
+            ChannelId = "channel-1",
+            Name = "General",
+            MemberIds = ImmutableHashSet.Create("user-123"),
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
+
+        // Assert
+        Assert.True(result.Success);
+        object singleEvent = Assert.Single(result.Value!);
+        MemberAdded added = Assert.IsType<MemberAdded>(singleEvent);
+        Assert.Equal("user-456", added.UserId);
+        Assert.True(added.AddedAt > DateTimeOffset.UtcNow.AddMinutes(-1));
+    }
+
+    /// <summary>
+    ///     Verifies that removing a member from archived channel returns an error.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle RemoveMember when channel archived")]
+    public void HandleRemoveMemberReturnsErrorWhenArchived()
+    {
+        // Arrange
+        RemoveMemberHandler handler = new();
+        RemoveMember command = new()
+        {
+            UserId = "user-123",
+        };
+        ChannelState state = new()
+        {
+            IsCreated = true,
+            ChannelId = "channel-1",
+            Name = "General",
+            IsArchived = true,
+            MemberIds = ImmutableHashSet.Create("user-123"),
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that removing a member when not a member returns an error.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle RemoveMember when not member")]
+    public void HandleRemoveMemberReturnsErrorWhenNotMember()
+    {
+        // Arrange
+        RemoveMemberHandler handler = new();
+        RemoveMember command = new()
+        {
+            UserId = "user-789",
+        };
+        ChannelState state = new()
+        {
+            IsCreated = true,
+            ChannelId = "channel-1",
+            Name = "General",
+            MemberIds = ImmutableHashSet.Create("user-123"),
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+    }
+
+    /// <summary>
     ///     Verifies that removing a member with empty user ID returns an error.
     /// </summary>
     [Fact]
@@ -287,5 +253,37 @@ public sealed class MemberHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that removing a member returns a MemberRemoved event.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle RemoveMember when member")]
+    public void HandleRemoveMemberReturnsMemberRemovedEvent()
+    {
+        // Arrange
+        RemoveMemberHandler handler = new();
+        RemoveMember command = new()
+        {
+            UserId = "user-123",
+        };
+        ChannelState state = new()
+        {
+            IsCreated = true,
+            ChannelId = "channel-1",
+            Name = "General",
+            MemberIds = ImmutableHashSet.Create("user-123", "user-456"),
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
+
+        // Assert
+        Assert.True(result.Success);
+        object singleEvent = Assert.Single(result.Value!);
+        MemberRemoved removed = Assert.IsType<MemberRemoved>(singleEvent);
+        Assert.Equal("user-123", removed.UserId);
+        Assert.True(removed.RemovedAt > DateTimeOffset.UtcNow.AddMinutes(-1));
     }
 }

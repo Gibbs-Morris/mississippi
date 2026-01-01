@@ -19,5 +19,8 @@ internal sealed class MemberRemovedReducer : Reducer<MemberRemoved, ChannelState
         ChannelState state,
         MemberRemoved eventData
     ) =>
-        state with { MemberIds = state.MemberIds.Remove(eventData.UserId) };
+        state with
+        {
+            MemberIds = state.MemberIds.Remove(eventData.UserId),
+        };
 }

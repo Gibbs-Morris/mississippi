@@ -2,8 +2,6 @@
 // Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
-using System.Linq;
-
 using Cascade.Domain.Conversation.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
@@ -25,7 +23,9 @@ internal sealed class MessageEditedReducer : Reducer<MessageEdited, Conversation
         int index = state.Messages.FindIndex(m => m.MessageId == eventData.MessageId);
         if (index < 0)
         {
-            return state with { };
+            return state with
+            {
+            };
         }
 
         Message existingMessage = state.Messages[index];
@@ -34,7 +34,9 @@ internal sealed class MessageEditedReducer : Reducer<MessageEdited, Conversation
             Content = eventData.NewContent,
             EditedAt = eventData.EditedAt,
         };
-
-        return state with { Messages = state.Messages.SetItem(index, updatedMessage) };
+        return state with
+        {
+            Messages = state.Messages.SetItem(index, updatedMessage),
+        };
     }
 }

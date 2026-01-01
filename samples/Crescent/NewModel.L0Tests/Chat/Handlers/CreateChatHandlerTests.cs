@@ -14,8 +14,6 @@ using Crescent.NewModel.Chat.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Crescent.NewModel.L0Tests.Chat.Handlers;
 
@@ -27,31 +25,6 @@ namespace Crescent.NewModel.L0Tests.Chat.Handlers;
 [AllureSubSuite("CreateChatHandler")]
 public sealed class CreateChatHandlerTests
 {
-    /// <summary>
-    ///     Verifies that creating a chat with a valid name produces a ChatCreated event.
-    /// </summary>
-    [Fact]
-    [AllureStep("CreateChat with valid name produces ChatCreated event")]
-    public void CreateChatWithValidNameProducesChatCreatedEvent()
-    {
-        // Arrange
-        CreateChatHandler handler = new();
-        CreateChat command = new()
-        {
-            Name = "General",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
-
-        // Assert
-        Assert.True(result.Success);
-        Assert.NotNull(result.Value);
-        Assert.Single(result.Value);
-        ChatCreated? @event = Assert.IsType<ChatCreated>(result.Value[0]);
-        Assert.Equal("General", @event.Name);
-    }
-
     /// <summary>
     ///     Verifies that creating a chat when one already exists fails.
     /// </summary>
@@ -99,5 +72,30 @@ public sealed class CreateChatHandlerTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that creating a chat with a valid name produces a ChatCreated event.
+    /// </summary>
+    [Fact]
+    [AllureStep("CreateChat with valid name produces ChatCreated event")]
+    public void CreateChatWithValidNameProducesChatCreatedEvent()
+    {
+        // Arrange
+        CreateChatHandler handler = new();
+        CreateChat command = new()
+        {
+            Name = "General",
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Single(result.Value);
+        ChatCreated? @event = Assert.IsType<ChatCreated>(result.Value[0]);
+        Assert.Equal("General", @event.Name);
     }
 }

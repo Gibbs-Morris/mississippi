@@ -1,7 +1,6 @@
-using Crescent.ConsoleApp.Counter;
-
 using Microsoft.Extensions.Logging;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.UxProjections;
@@ -26,8 +25,8 @@ namespace Crescent.ConsoleApp.CounterSummary;
 ///         snapshot cache grain.
 ///     </para>
 /// </remarks>
-internal sealed class CounterSummaryVersionedCacheGrain
-    : UxProjectionVersionedCacheGrainBase<CounterSummaryProjection, CounterBrook>
+[BrookName("CRESCENT", "SAMPLE", "COUNTER")]
+internal sealed class CounterSummaryVersionedCacheGrain : UxProjectionVersionedCacheGrainBase<CounterSummaryProjection>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="CounterSummaryVersionedCacheGrain" /> class.

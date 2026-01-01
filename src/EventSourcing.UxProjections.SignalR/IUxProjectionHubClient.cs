@@ -29,5 +29,9 @@ public interface IUxProjectionHubClient
     ///     The client should fetch updated data via HTTP GET when this is received.
     ///     Use the newVersion value to track whether a refresh is needed.
     /// </remarks>
-    Task OnProjectionChangedAsync(string projectionType, string entityId, long newVersion);
+    Task OnProjectionChangedAsync(
+        string projectionType,
+        string entityId,
+        long newVersion
+    );
 }

@@ -14,8 +14,6 @@ using Cascade.Domain.Conversation.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Conversation.Handlers;
 
@@ -83,29 +81,6 @@ public sealed class StartConversationHandlerTests
     }
 
     /// <summary>
-    ///     Verifies that starting with an empty conversation ID returns an error.
-    /// </summary>
-    [Fact]
-    [AllureStep("Handle StartConversation with empty conversation ID")]
-    public void HandleReturnsErrorWhenConversationIdEmpty()
-    {
-        // Arrange
-        StartConversationHandler handler = new();
-        StartConversation command = new()
-        {
-            ConversationId = string.Empty,
-            ChannelId = "channel-456",
-        };
-
-        // Act
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
-    }
-
-    /// <summary>
     ///     Verifies that starting with an empty channel ID returns an error.
     /// </summary>
     [Fact]
@@ -118,6 +93,29 @@ public sealed class StartConversationHandlerTests
         {
             ConversationId = "conv-123",
             ChannelId = string.Empty,
+        };
+
+        // Act
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies that starting with an empty conversation ID returns an error.
+    /// </summary>
+    [Fact]
+    [AllureStep("Handle StartConversation with empty conversation ID")]
+    public void HandleReturnsErrorWhenConversationIdEmpty()
+    {
+        // Arrange
+        StartConversationHandler handler = new();
+        StartConversation command = new()
+        {
+            ConversationId = string.Empty,
+            ChannelId = "channel-456",
         };
 
         // Act

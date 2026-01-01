@@ -4,6 +4,7 @@ using Crescent.NewModel.ChatSummary.Reducers;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.EventSourcing.Snapshots;
 
 
 namespace Crescent.NewModel.ChatSummary;
@@ -28,6 +29,11 @@ internal static class ChatSummaryRegistrations
         services.AddSingleton<IReducer<MessageEdited, ChatSummaryProjection>, ChatSummaryMessageEditedReducer>();
         services.AddSingleton<IReducer<MessageDeleted, ChatSummaryProjection>, ChatSummaryMessageDeletedReducer>();
 
+        // Add snapshot state converter for ChatSummaryProjection
+        services.AddSnapshotStateConverter<ChatSummaryProjection>();
+
+        // Register initial state factory for snapshot cache grain
+        services.AddInitialStateFactory<ChatSummaryProjection, ChatSummaryProjectionInitialStateFactory>();
         return services;
     }
 }

@@ -32,10 +32,16 @@ namespace Cascade.Domain.Projections.UserProfile;
 internal sealed record UserProfileProjection
 {
     /// <summary>
-    ///     Gets the user identifier.
+    ///     Gets the number of channels the user has joined.
     /// </summary>
-    [Id(0)]
-    public string UserId { get; init; } = string.Empty;
+    [Id(5)]
+    public int ChannelCount { get; init; }
+
+    /// <summary>
+    ///     Gets the list of channel IDs the user has joined.
+    /// </summary>
+    [Id(6)]
+    public ImmutableList<string> ChannelIds { get; init; } = ImmutableList<string>.Empty;
 
     /// <summary>
     ///     Gets the user's display name.
@@ -50,26 +56,20 @@ internal sealed record UserProfileProjection
     public bool IsOnline { get; init; }
 
     /// <summary>
-    ///     Gets the time when the user registered.
-    /// </summary>
-    [Id(3)]
-    public DateTimeOffset RegisteredAt { get; init; }
-
-    /// <summary>
     ///     Gets the time when the user last went online.
     /// </summary>
     [Id(4)]
     public DateTimeOffset? LastOnlineAt { get; init; }
 
     /// <summary>
-    ///     Gets the number of channels the user has joined.
+    ///     Gets the time when the user registered.
     /// </summary>
-    [Id(5)]
-    public int ChannelCount { get; init; }
+    [Id(3)]
+    public DateTimeOffset RegisteredAt { get; init; }
 
     /// <summary>
-    ///     Gets the list of channel IDs the user has joined.
+    ///     Gets the user identifier.
     /// </summary>
-    [Id(6)]
-    public ImmutableList<string> ChannelIds { get; init; } = ImmutableList<string>.Empty;
+    [Id(0)]
+    public string UserId { get; init; } = string.Empty;
 }

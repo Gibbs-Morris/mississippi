@@ -20,12 +20,6 @@ internal sealed class ChatSummaryCreatedReducer : Reducer<ChatCreated, ChatSumma
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
-        return new ChatSummaryProjection(
-            @event.Name,
-            MessageCount: 0,
-            LastMessageAt: null,
-            LastMessagePreview: null,
-            ImmutableHashSet<string>.Empty);
+        return new(@event.Name, 0, null, null, ImmutableHashSet<string>.Empty);
     }
 }

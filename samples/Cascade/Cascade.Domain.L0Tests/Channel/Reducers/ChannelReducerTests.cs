@@ -12,8 +12,6 @@ using Cascade.Domain.Channel;
 using Cascade.Domain.Channel.Events;
 using Cascade.Domain.Channel.Reducers;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.Channel.Reducers;
 
@@ -25,6 +23,36 @@ namespace Cascade.Domain.L0Tests.Channel.Reducers;
 [AllureFeature("ChannelReducers")]
 public sealed class ChannelReducerTests
 {
+    /// <summary>
+    ///     Verifies that reducing a ChannelArchived event sets archived flag.
+    /// </summary>
+    [Fact]
+    [AllureStep("Reduce ChannelArchived sets archived")]
+    public void ReduceChannelArchivedSetsArchived()
+    {
+        // Arrange
+        ChannelArchivedReducer reducer = new();
+        ChannelArchived evt = new()
+        {
+            ArchivedBy = "user-123",
+            ArchivedAt = DateTimeOffset.UtcNow,
+        };
+        ChannelState state = new()
+        {
+            IsCreated = true,
+            ChannelId = "channel-1",
+            Name = "General",
+            IsArchived = false,
+        };
+
+        // Act
+        ChannelState result = reducer.Reduce(state, evt);
+
+        // Assert
+        Assert.True(result.IsArchived);
+        Assert.Equal("channel-1", result.ChannelId);
+    }
+
     /// <summary>
     ///     Verifies that reducing a ChannelCreated event creates a channel state.
     /// </summary>
@@ -81,36 +109,6 @@ public sealed class ChannelReducerTests
 
         // Assert
         Assert.Equal("New Name", result.Name);
-        Assert.Equal("channel-1", result.ChannelId);
-    }
-
-    /// <summary>
-    ///     Verifies that reducing a ChannelArchived event sets archived flag.
-    /// </summary>
-    [Fact]
-    [AllureStep("Reduce ChannelArchived sets archived")]
-    public void ReduceChannelArchivedSetsArchived()
-    {
-        // Arrange
-        ChannelArchivedReducer reducer = new();
-        ChannelArchived evt = new()
-        {
-            ArchivedBy = "user-123",
-            ArchivedAt = DateTimeOffset.UtcNow,
-        };
-        ChannelState state = new()
-        {
-            IsCreated = true,
-            ChannelId = "channel-1",
-            Name = "General",
-            IsArchived = false,
-        };
-
-        // Act
-        ChannelState result = reducer.Reduce(state, evt);
-
-        // Assert
-        Assert.True(result.IsArchived);
         Assert.Equal("channel-1", result.ChannelId);
     }
 

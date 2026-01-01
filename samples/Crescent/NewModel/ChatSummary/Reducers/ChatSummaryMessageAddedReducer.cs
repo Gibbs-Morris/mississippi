@@ -19,7 +19,6 @@ internal sealed class ChatSummaryMessageAddedReducer : Reducer<MessageAdded, Cha
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         if (state is null)
         {
             return state!;
@@ -28,7 +27,6 @@ internal sealed class ChatSummaryMessageAddedReducer : Reducer<MessageAdded, Cha
         string preview = @event.Content.Length > ChatSummaryProjection.PreviewMaxLength
             ? @event.Content[..ChatSummaryProjection.PreviewMaxLength] + "..."
             : @event.Content;
-
         return state with
         {
             MessageCount = state.MessageCount + 1,

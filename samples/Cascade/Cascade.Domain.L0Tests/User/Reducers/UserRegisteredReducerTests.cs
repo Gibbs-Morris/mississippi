@@ -11,8 +11,6 @@ using Cascade.Domain.User;
 using Cascade.Domain.User.Events;
 using Cascade.Domain.User.Reducers;
 
-using Xunit;
-
 
 namespace Cascade.Domain.L0Tests.User.Reducers;
 

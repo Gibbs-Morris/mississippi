@@ -37,10 +37,5 @@ internal sealed record ChatSummaryProjection(
     public static ChatSummaryProjection CreateInitial(
         string name
     ) =>
-        new(
-            name,
-            MessageCount: 0,
-            LastMessageAt: null,
-            LastMessagePreview: null,
-            ImmutableHashSet<string>.Empty);
+        new(name, 0, null, null, ImmutableHashSet<string>.Empty);
 }

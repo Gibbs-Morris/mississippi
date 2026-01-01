@@ -18,7 +18,7 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 [AllureSubSuite("Snapshot Mapping")]
 public sealed class SnapshotMappingTests
 {
-    private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
+    private static readonly SnapshotStreamKey StreamKey = new("TEST.BROOK", "type", "id", "hash");
 
     /// <summary>
     ///     Ensures documents map to envelopes.
@@ -46,6 +46,7 @@ public sealed class SnapshotMappingTests
         {
             Data = new byte[] { 3 },
             DataContentType = "json",
+            BrookName = StreamKey.BrookName,
             ProjectionType = StreamKey.ProjectionType,
             ProjectionId = StreamKey.ProjectionId,
             ReducersHash = StreamKey.ReducersHash,
@@ -75,6 +76,7 @@ public sealed class SnapshotMappingTests
         Assert.Equal("7", document.Id);
         Assert.Equal("snapshot", document.Type);
         Assert.Equal(StreamKey.ToString(), document.SnapshotPartitionKey);
+        Assert.Equal(StreamKey.BrookName, document.BrookName);
         Assert.Equal(StreamKey.ProjectionType, document.ProjectionType);
         Assert.Equal(StreamKey.ProjectionId, document.ProjectionId);
         Assert.Equal(StreamKey.ReducersHash, document.ReducersHash);
