@@ -191,6 +191,110 @@ After all changes, do one final pass:
 | Language-specific   | `.github/instructions/{lang}.instructions.md`  | Only for specific file types |
 | Task-specific       | `.github/prompts/{task}.prompt.md`             | On-demand workflows          |
 | Persona/role        | `.github/agents/{role}.agent.md`               | Specialized AI behavior      |
+| Agent skill         | `.github/skills/{skill-name}/SKILL.md`         | Specialized task automation  |
+
+## Agent Skills Workflow
+
+Agent Skills are modular folders containing instructions and resources for specialized, repeatable tasks. GitHub Copilot automatically detects and loads relevant skills when your prompt matches a skill's purpose.
+
+**Reference:** [Agent Skills Specification](https://agentskills.io/specification) | [GitHub Copilot Skills Support](https://github.blog/changelog/2025-12-18-github-copilot-now-supports-agent-skills/)
+
+### When to Use Agent Skills vs Other Rule Types
+
+| Use Case                               | Rule Type                |
+| -------------------------------------- | ------------------------ |
+| Global coding standards                | `copilot-instructions.md`|
+| File-type specific rules               | `*.instructions.md`      |
+| On-demand prompts                      | `*.prompt.md`            |
+| AI personas/roles                      | `*.agent.md`             |
+| **Task automation with scripts/tools** | **Agent Skills**         |
+| **Repeatable specialized workflows**   | **Agent Skills**         |
+| **Framework/library-specific patterns**| **Agent Skills**         |
+
+### Creating an Agent Skill
+
+#### 1. Directory Structure
+
+```text
+.github/skills/
+└── {skill-name}/
+    ├── SKILL.md          # Required: Skill definition
+    ├── scripts/          # Optional: Supporting scripts
+    ├── references/       # Optional: Reference docs
+    └── assets/           # Optional: Resources
+```
+
+#### 2. SKILL.md Format
+
+```yaml
+---
+name: skill-name
+description: Clear explanation of what this skill does and when to use it.
+license: Apache-2.0
+metadata:
+  author: your-org
+  version: "1.0"
+---
+
+# Instructions
+
+[Markdown content with step-by-step instructions, examples, and guidelines]
+```
+
+#### 3. Required Fields
+
+| Field         | Requirements                                          |
+| ------------- | ----------------------------------------------------- |
+| `name`        | Lowercase, hyphens only, max 64 chars, matches folder |
+| `description` | Max 1024 chars, explains purpose and trigger context  |
+
+#### 4. Optional Fields
+
+- `license` - License name or file reference
+- `compatibility` - Environment requirements (max 500 chars)
+- `metadata` - Arbitrary key-value pairs (author, version, etc.)
+- `allowed-tools` - Space-delimited list of permitted tools
+
+### Example: Code Review Skill
+
+```yaml
+---
+name: code-review
+description: Reviews code for style, logic errors, and security vulnerabilities. Use when user requests a code review or submits a pull request.
+license: Apache-2.0
+metadata:
+  author: example-org
+  version: "1.0"
+---
+
+# Code Review Instructions
+
+## Steps
+1. Check for security vulnerabilities
+2. Verify code style compliance
+3. Analyze logic correctness
+4. Report findings with severity levels
+
+## Severity Levels
+- 🔴 Critical: Security issues, build failures
+- 🟠 Major: Rule violations, maintainability
+- 🟡 Minor: Style, optimization
+```
+
+### Skill Naming Rules
+
+- Lowercase letters, numbers, hyphens only
+- No consecutive hyphens (`--`)
+- Cannot start or end with hyphen
+- Must match parent folder name exactly
+
+### Token Economy for Skills
+
+Skills load only when matched, reducing context overhead:
+
+- Keep SKILL.md focused (target: 200-400 tokens)
+- Move complex logic to `scripts/` folder
+- Reference external docs rather than embedding
 
 ## Thinking Examples
 
