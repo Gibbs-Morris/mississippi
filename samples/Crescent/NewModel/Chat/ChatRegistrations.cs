@@ -49,9 +49,6 @@ internal static class ChatRegistrations
 
         // Add snapshot state converter for ChatState
         services.AddSnapshotStateConverter<ChatState>();
-
-        // Register initial state factory for snapshot cache grain
-        services.AddInitialStateFactory<ChatState, ChatStateInitialStateFactory>();
         return services;
     }
 }

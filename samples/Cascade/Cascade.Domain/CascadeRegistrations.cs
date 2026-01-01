@@ -187,9 +187,6 @@ public static class CascadeRegistrations
 
         // Add snapshot state converter for UserProfileProjection
         services.AddSnapshotStateConverter<UserProfileProjection>();
-
-        // Register initial state factory for UserProfileProjection snapshot cache grain
-        services.AddInitialStateFactory<UserProfileProjection, UserProfileProjectionInitialStateFactory>();
         return services;
     }
 }

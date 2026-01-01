@@ -28,7 +28,7 @@ namespace Mississippi.EventSourcing.Snapshots;
 ///         matching the cache grain's key for one-to-one correspondence.
 ///     </para>
 /// </remarks>
-internal class SnapshotPersisterGrain
+internal sealed class SnapshotPersisterGrain
     : ISnapshotPersisterGrain,
       IGrainBase
 {
@@ -65,7 +65,7 @@ internal class SnapshotPersisterGrain
     private ISnapshotStorageWriter SnapshotStorageWriter { get; }
 
     /// <inheritdoc />
-    public virtual Task OnActivateAsync(
+    public Task OnActivateAsync(
         CancellationToken token
     )
     {

@@ -49,7 +49,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null,
         IOptions<SnapshotRetentionOptions>? retentionOptions = null,
         Mock<IBrookEventConverter>? brookEventConverterMock = null,
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>>? initialStateFactoryMock = null,
         Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>>? loggerMock = null
     )
     {
@@ -61,13 +60,6 @@ public sealed class SnapshotCacheGrainTests
         snapshotGrainFactoryMock ??= new();
         retentionOptions ??= Options.Create(new SnapshotRetentionOptions());
         brookEventConverterMock ??= new();
-        initialStateFactoryMock ??= new();
-        initialStateFactoryMock.Setup(f => f.Create())
-            .Returns(
-                new SnapshotCacheGrainTestState
-                {
-                    Value = 0,
-                });
         loggerMock ??= new();
         return new(
             grainContextMock.Object,
@@ -78,7 +70,6 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             retentionOptions,
             brookEventConverterMock.Object,
-            initialStateFactoryMock.Object,
             loggerMock.Object);
     }
 
@@ -104,7 +95,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>> initialStateFactoryMock = new();
         Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>> loggerMock = new();
 
         // Act & Assert
@@ -117,7 +107,6 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             options,
             null!,
-            initialStateFactoryMock.Object,
             loggerMock.Object));
     }
 
@@ -136,7 +125,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>> initialStateFactoryMock = new();
         Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>> loggerMock = new();
 
         // Act & Assert
@@ -149,7 +137,6 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             options,
             brookEventConverterMock.Object,
-            initialStateFactoryMock.Object,
             loggerMock.Object));
     }
 
@@ -168,7 +155,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>> initialStateFactoryMock = new();
         Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>> loggerMock = new();
 
         // Act & Assert
@@ -181,39 +167,6 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             options,
             brookEventConverterMock.Object,
-            initialStateFactoryMock.Object,
-            loggerMock.Object));
-    }
-
-    /// <summary>
-    ///     Verifies that constructor throws when initialStateFactory is null.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenInitialStateFactoryIsNull()
-    {
-        // Arrange
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<ISnapshotStorageReader> storageReaderMock = new();
-        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
-        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
-        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
-        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
-        Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>> loggerMock = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new SnapshotCacheGrain<SnapshotCacheGrainTestState>(
-            grainContextMock.Object,
-            storageReaderMock.Object,
-            brookGrainFactoryMock.Object,
-            rootReducerMock.Object,
-            converterMock.Object,
-            snapshotGrainFactoryMock.Object,
-            options,
-            brookEventConverterMock.Object,
-            null!,
             loggerMock.Object));
     }
 
@@ -233,7 +186,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>> initialStateFactoryMock = new();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new SnapshotCacheGrain<SnapshotCacheGrainTestState>(
@@ -245,7 +197,6 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             options,
             brookEventConverterMock.Object,
-            initialStateFactoryMock.Object,
             null!));
     }
 
@@ -264,7 +215,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>> initialStateFactoryMock = new();
         Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>> loggerMock = new();
 
         // Act & Assert
@@ -277,7 +227,6 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             null!,
             brookEventConverterMock.Object,
-            initialStateFactoryMock.Object,
             loggerMock.Object));
     }
 
@@ -296,7 +245,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>> initialStateFactoryMock = new();
         Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>> loggerMock = new();
 
         // Act & Assert
@@ -309,7 +257,6 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             options,
             brookEventConverterMock.Object,
-            initialStateFactoryMock.Object,
             loggerMock.Object));
     }
 
@@ -328,7 +275,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>> initialStateFactoryMock = new();
         Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>> loggerMock = new();
 
         // Act & Assert
@@ -341,7 +287,6 @@ public sealed class SnapshotCacheGrainTests
             null!,
             options,
             brookEventConverterMock.Object,
-            initialStateFactoryMock.Object,
             loggerMock.Object));
     }
 
@@ -360,7 +305,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>> initialStateFactoryMock = new();
         Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>> loggerMock = new();
 
         // Act & Assert
@@ -373,7 +317,6 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             options,
             brookEventConverterMock.Object,
-            initialStateFactoryMock.Object,
             loggerMock.Object));
     }
 
@@ -392,7 +335,6 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         IOptions<SnapshotRetentionOptions> options = Options.Create(new SnapshotRetentionOptions());
         Mock<IBrookEventConverter> brookEventConverterMock = new();
-        Mock<IInitialStateFactory<SnapshotCacheGrainTestState>> initialStateFactoryMock = new();
         Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>> loggerMock = new();
 
         // Act & Assert
@@ -405,7 +347,6 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             options,
             brookEventConverterMock.Object,
-            initialStateFactoryMock.Object,
             loggerMock.Object));
     }
 

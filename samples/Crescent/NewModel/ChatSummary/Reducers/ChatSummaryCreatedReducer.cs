@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Immutable;
 
 using Crescent.NewModel.Chat.Events;
 
@@ -20,6 +19,9 @@ internal sealed class ChatSummaryCreatedReducer : Reducer<ChatCreated, ChatSumma
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-        return new(@event.Name, 0, null, null, ImmutableHashSet<string>.Empty);
+        return state with
+        {
+            Name = @event.Name,
+        };
     }
 }
