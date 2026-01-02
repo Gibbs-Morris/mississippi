@@ -9,7 +9,7 @@ Create the main channel view **organism** showing message history with real-time
 
 ## Atomic Design Structure
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │ ChannelView.razor (ORGANISM)                                            │
 │   - Holds state (projection data)                                       │
@@ -404,6 +404,7 @@ Create the main channel view **organism** showing message history with real-time
 ## Files to Create (Atomic Organization)
 
 ### Atoms
+
 - `samples/Cascade/Cascade.Server/Components/Atoms/Avatar.razor`
 - `samples/Cascade/Cascade.Server/Components/Atoms/OnlineIndicator.razor`
 - `samples/Cascade/Cascade.Server/Components/Atoms/MessageInput.razor`
@@ -412,15 +413,18 @@ Create the main channel view **organism** showing message history with real-time
 - `samples/Cascade/Cascade.Server/Components/Atoms/EmptyState.razor`
 
 ### Molecules
+
 - `samples/Cascade/Cascade.Server/Components/Molecules/MessageItem.razor`
 - `samples/Cascade/Cascade.Server/Components/Molecules/MessageComposer.razor`
 - `samples/Cascade/Cascade.Server/Components/Molecules/UserItem.razor`
 
 ### Organisms
+
 - `samples/Cascade/Cascade.Server/Components/Organisms/ChannelView.razor`
 - `samples/Cascade/Cascade.Server/Components/Organisms/MemberList.razor`
 
 ### Tests
+
 - `samples/Cascade/Cascade.Server.L0Tests/Components/ChannelViewTests.cs`
 - `samples/Cascade/Cascade.Server.L0Tests/Components/MessageItemTests.cs`
 - `samples/Cascade/Cascade.Server.L0Tests/Components/MessageComposerTests.cs`

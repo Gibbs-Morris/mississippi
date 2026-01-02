@@ -400,4 +400,3 @@ siloBuilder
 - **Custom backplane handles distributed routing** - no external packages needed
 - Grains push to clients via `HubContext<UxProjectionHub>.Group(entityId).SendAsync(...)`
 - All stateful grains persist state via aggregate storage provider
-

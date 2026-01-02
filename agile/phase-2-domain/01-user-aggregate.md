@@ -41,7 +41,7 @@ internal sealed record UserState
 ### Commands
 
 | Command | Properties | Validation |
-|---------|------------|------------|
+| --------- | ------------ | ------------ |
 | `RegisterUser` | `UserId`, `DisplayName` | User must not already be registered |
 | `UpdateDisplayName` | `NewDisplayName` | User must be registered; name not empty |
 | `SetOnlineStatus` | `IsOnline` | User must be registered |
@@ -51,7 +51,7 @@ internal sealed record UserState
 ### Events
 
 | Event | Properties |
-|-------|------------|
+| ------- | ------------ |
 | `UserRegistered` | `UserId`, `DisplayName`, `RegisteredAt` |
 | `DisplayNameUpdated` | `OldDisplayName`, `NewDisplayName` |
 | `UserWentOnline` | `Timestamp` |
@@ -89,7 +89,7 @@ internal sealed record UserState
 
 ## Files to Create
 
-```
+```text
 samples/Cascade/Cascade.Domain/
 ├── User/
 │   ├── Commands/

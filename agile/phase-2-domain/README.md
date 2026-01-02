@@ -8,7 +8,7 @@ Create `Cascade.Domain` library with three aggregates (User, Channel, Conversati
 
 ## Project Structure
 
-```
+```text
 samples/Cascade/
 └── Cascade.Domain/
     ├── User/
@@ -49,7 +49,7 @@ samples/Cascade/
 ## Tasks
 
 | Task | File | Status |
-|------|------|--------|
+| ------ | ------ | -------- |
 | 2.1 User Aggregate | [01-user-aggregate.md](./01-user-aggregate.md) | ⬜ |
 | 2.2 Channel Aggregate | [02-channel-aggregate.md](./02-channel-aggregate.md) | ⬜ |
 | 2.3 Conversation Aggregate | [03-conversation-aggregate.md](./03-conversation-aggregate.md) | ⬜ |

@@ -47,7 +47,7 @@ flowchart TB
 ## Tasks
 
 | Task | File | Status |
-|------|------|--------|
+| ------ | ------ | -------- |
 | 1.0 SignalR↔Orleans Integration Strategy | [00-signalr-orleans-integration.md](./00-signalr-orleans-integration.md) | ✅ Design |
 | 1.1 Add Subscription Abstractions | [01-abstractions.md](./01-abstractions.md) | ✅ |
 | 1.2 Per-Connection Subscription Grain | [02-subscription-grain.md](./02-subscription-grain.md) | ✅ |
@@ -98,7 +98,7 @@ flowchart TB
 Three approaches were evaluated for delivering notifications from Orleans grains to SignalR clients:
 
 | Approach | Complexity | Grain Push | Recommended |
-|----------|------------|------------|-------------|
+| ---------- | ------------ | ------------ | ------------- |
 | **A: Custom Orleans Backplane** | Medium | ✅ Native | ✅ **Build This** |
 | B: Orleans Stream as Hop | Medium | Via stream | Fallback |
 | C: External Backplane (Redis/Azure) | Medium | Via service | Not recommended |
@@ -123,6 +123,7 @@ public class UxProjectionGrain : Grain
 ```
 
 **Why preferred:**
+
 - **No external dependencies** – Orleans IS the backplane (no Redis, no Azure SignalR)
 - **Grains are first-class** – any grain can push to clients anytime
 - **Production proven** – active community project

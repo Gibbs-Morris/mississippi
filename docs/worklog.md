@@ -17,6 +17,7 @@ Review focused on interfaces and abstraction layer files in dependency order.
 ### 1. Copyright Header Fixes
 
 **Files Modified (McLaren Applied Ltd. → Gibbs-Morris):**
+
 - `src/EventSourcing.UxProjections.Abstractions/UxProjectionCursorKey.cs`
 - `src/EventSourcing.UxProjections.Abstractions/UxProjectionVersionedCacheKey.cs`
 
@@ -27,6 +28,7 @@ Review focused on interfaces and abstraction layer files in dependency order.
 ### 2. Copyright Header Fixes (Corsair Software Ltd → Gibbs-Morris)
 
 **Files Modified:**
+
 - `samples/Cascade/Cascade.AppHost/Program.cs`
 - `samples/Cascade/Cascade.L2Tests/TestBase.cs`
 - `samples/Cascade/Cascade.L2Tests/PlaywrightFixture.cs`
@@ -46,6 +48,7 @@ Review focused on interfaces and abstraction layer files in dependency order.
 ### 3. Copyright Header Fixes (GMM → Gibbs-Morris)
 
 **Files Modified:**
+
 - `samples/Cascade/Cascade.Server/Program.cs`
 - `samples/Cascade/Cascade.Server/Components/App.razor`
 - `samples/Cascade/Cascade.Server/Components/_Imports.razor`
@@ -75,6 +78,7 @@ Review focused on interfaces and abstraction layer files in dependency order.
 ### 4. Unit Test Key Format Fixes
 
 **Files Modified:**
+
 - `tests/EventSourcing.UxProjections.L0Tests/UxProjectionVersionedCacheGrainTests.cs`
 - `tests/EventSourcing.UxProjections.L0Tests/UxProjectionCursorGrainIntegrationTests.cs`
 

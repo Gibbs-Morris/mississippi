@@ -14,6 +14,7 @@ All composite keys follow a **consistent ordering principle**:
 4. **Additional context** – Last (storage name, hash, instance ID, etc.)
 
 This order ensures:
+
 - Keys can be prefix-matched for routing and partitioning
 - The most significant identifier (brook) comes first
 - Version-specific keys extend non-versioned keys naturally
@@ -21,7 +22,7 @@ This order ensures:
 ## Summary Table
 
 | Grain Interface | Key Type | Current Key Format (in code) | Example (current) | Agreed Format |
-|-----------------|----------|------------------------------|-------------------|---------------|
+| ----------------- | ---------- | ------------------------------ | ------------------- | --------------- |
 | `IBrookWriterGrain` | `BrookKey` | `{Type}\|{Id}` | `CRESCENT.CHAT\|abc123` | `{BrookName}\|{EntityId}` |
 | `IBrookCursorGrain` | `BrookKey` | `{Type}\|{Id}` | `CRESCENT.CHAT\|abc123` | `{BrookName}\|{EntityId}` |
 | `IBrookReaderGrain` | `BrookKey` | `{Type}\|{Id}` | `CRESCENT.CHAT\|abc123` | `{BrookName}\|{EntityId}` |
@@ -45,7 +46,7 @@ This order ensures:
 The following properties will be renamed for consistency:
 
 | Type | Current Property | New Property | Notes |
-|------|------------------|--------------|-------|
+| ------ | ------------------ | -------------- | ------- |
 | `BrookKey` | `Type` | `BrookName` | ✅ Agreed |
 | `BrookKey` | `Id` | `EntityId` | ✅ Agreed |
 | `SnapshotStreamKey` | `ProjectionType` | `SnapshotStorageName` | ✅ Agreed |
@@ -371,7 +372,7 @@ sequenceDiagram
 ### Key Requirements Analysis (Agreed)
 
 | Grain | BrookName | EntityId | Version | SnapshotStorageName | ReducersHash | Key Format |
-|-------|-----------|----------|---------|---------------------|--------------|------------|
+| ------- | ----------- | ---------- | --------- | --------------------- | -------------- | ------------ |
 | `IUxProjectionGrain<T>` | from `[BrookName]` | ✅ key | - | - | - | `{EntityId}` |
 | `IUxProjectionCursorGrain` | ✅ key | ✅ key | - | - | - | `{BrookName}\|{EntityId}` |
 | `IUxProjectionVersionedCacheGrain<T>` | ✅ key | ✅ key | ✅ key | from `TProjection` | computed | `{BrookName}\|{EntityId}\|{Version}` |
@@ -409,6 +410,7 @@ sequenceDiagram
 ### 2. Key Component Naming ✅ RESOLVED
 
 Property renames agreed:
+
 - `BrookKey.Type` → `BrookName`
 - `BrookKey.Id` → `EntityId`
 - `SnapshotStreamKey.ProjectionType` → `SnapshotStorageName`
@@ -429,7 +431,7 @@ Standard order established: `BrookName` → `EntityId` → `Version` → Additio
 ## Decisions Log
 
 | # | Decision | Status |
-|---|----------|--------|
+| --- | ---------- | -------- |
 | 1 | Rename `BrookKey.Type` → `BrookName`, `BrookKey.Id` → `EntityId` | ✅ Agreed |
 | 2 | Rename `SnapshotStreamKey.ProjectionType` → `SnapshotStorageName` | ✅ Agreed |
 | 3 | Rename `SnapshotStreamKey.ProjectionId` → `EntityId` | ✅ Agreed |

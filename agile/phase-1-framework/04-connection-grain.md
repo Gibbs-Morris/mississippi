@@ -6,10 +6,12 @@
 ## Reason for Merge
 
 The original design had two separate grains:
+
 - `IUxProjectionSubscriptionGrain` - keyed per projection, tracked connections
 - `IConnectionSubscriptionGrain` - keyed per connection, tracked projections
 
 **Simplified to one grain per connection** that:
+
 - Is keyed by ConnectionId
 - Subscribes to projection streams directly
 - Forwards all updates to a per-connection output stream
@@ -41,6 +43,7 @@ For now, the subscription grain handles stream subscriptions directly without th
 ### Why Aggregate Pattern?
 
 The connection grain manages state (active subscriptions) and needs to:
+
 1. Persist subscription state for recovery
 2. Execute side effects (subscribe to Orleans streams)
 3. Handle lifecycle events (connect, disconnect, reconnect)

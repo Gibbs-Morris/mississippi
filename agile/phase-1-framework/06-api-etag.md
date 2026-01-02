@@ -78,7 +78,7 @@ public async Task<ActionResult<TProjection>> GetAsync(
 ### Headers Added
 
 | Header | Direction | Purpose |
-|--------|-----------|---------|
+| -------- | ----------- | --------- |
 | `ETag` | Response | Current projection version |
 | `Cache-Control` | Response | `private, must-revalidate` |
 | `If-None-Match` | Request | Client's cached version |

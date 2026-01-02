@@ -9,7 +9,7 @@ Create a Playwright-based E2E test project that validates the complete Cascade c
 
 ## Test Execution Architecture
 
-```
+```text
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │                    TEST EXECUTION (via Aspire)                                │
 │                                                                               │

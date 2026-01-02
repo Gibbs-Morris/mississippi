@@ -8,7 +8,7 @@ Set up .NET Aspire orchestration for local development (Azurite + Cosmos Emulato
 
 ## Project Structure
 
-```
+```text
 samples/Cascade/
 ├── Cascade.AppHost/           # Aspire orchestrator
 ├── Cascade.ServiceDefaults/   # Shared configuration (optional)
@@ -18,7 +18,7 @@ samples/Cascade/
 ## Tasks
 
 | Task | File | Status |
-|------|------|--------|
+| ------ | ------ | -------- |
 | 3.1 Add Aspire Packages | [01-aspire-packages.md](./01-aspire-packages.md) | ⬜ |
 | 3.2 Create AppHost | [02-apphost.md](./02-apphost.md) | ⬜ |
 | 3.3 Create Blazor Server | [03-blazor-server.md](./03-blazor-server.md) | ⬜ |
@@ -35,7 +35,7 @@ samples/Cascade/
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    Cascade.AppHost                          │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
@@ -51,7 +51,7 @@ samples/Cascade/
 ## Key Dependencies
 
 | Package | Version | Purpose |
-|---------|---------|---------|
+| --------- | --------- | --------- |
 | `Aspire.Hosting.AppHost` | 13.1.0 | AppHost orchestration |
 | `Aspire.Hosting.Azure.CosmosDB` | 13.1.0 | Cosmos Emulator resource |
 | `Aspire.Hosting.Azure.Storage` | 13.1.0 | Azurite resource |
@@ -61,6 +61,7 @@ samples/Cascade/
 ## Storage Pattern
 
 Following Crescent sample patterns:
+
 - **Cosmos DB Emulator**: Event store (brooks) and snapshots
 - **Azurite Blob Storage**: Distributed locking (Orleans grain directory)
 

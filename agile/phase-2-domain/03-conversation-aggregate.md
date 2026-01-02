@@ -51,7 +51,7 @@ internal sealed record DirectMessage
 ### Commands
 
 | Command | Properties | Validation |
-|---------|------------|------------|
+| --------- | ------------ | ------------ |
 | `StartConversation` | `ConversationId`, `InitiatorUserId`, `ParticipantUserIds` | Must have 2+ participants; conversation must not exist |
 | `SendDirectMessage` | `MessageId`, `AuthorUserId`, `Content` | Conversation must exist; author must be participant; content not empty |
 | `EditDirectMessage` | `MessageId`, `NewContent`, `EditedByUserId` | Message must exist; editor must be author |
@@ -62,7 +62,7 @@ internal sealed record DirectMessage
 ### Events
 
 | Event | Properties |
-|-------|------------|
+| ------- | ------------ |
 | `ConversationStarted` | `ConversationId`, `ParticipantUserIds`, `StartedByUserId`, `StartedAt` |
 | `DirectMessageSent` | `MessageId`, `AuthorUserId`, `Content`, `SentAt` |
 | `DirectMessageEdited` | `MessageId`, `OldContent`, `NewContent`, `EditedAt` |
@@ -113,7 +113,7 @@ For group DMs, use a generated ID like `"dm-{ulid}"`.
 
 ## Files to Create
 
-```
+```text
 samples/Cascade/Cascade.Domain/
 ├── Conversation/
 │   ├── Commands/

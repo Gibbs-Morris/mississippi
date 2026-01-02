@@ -1,4 +1,3 @@
-````markdown
 # SignalR ↔ Orleans Integration Strategy
 
 **Status**: 🔵 Design Complete  
@@ -21,7 +20,7 @@ This document describes our approach for bridging SignalR and Orleans for real-t
 ## Approaches Comparison
 
 | Approach | Complexity | Scale-out | Grain Push | External Deps | Recommended |
-|----------|------------|-----------|------------|---------------|-------------|
+| ---------- | ------------ | ----------- | ------------ | --------------- | ------------- |
 | **A: Custom Orleans Backplane** | Medium | Excellent | ✅ Native | None | ✅ **Build This** |
 | B: Orleans Stream as Hop | Medium | Good | Via stream | None | Fallback |
 | C: External Backplane (Redis/Azure) | Medium | Good | Via service | Redis or Azure SignalR | Not recommended |
@@ -77,7 +76,7 @@ flowchart TB
 ### Aggregate Grains (We Build These)
 
 | Grain | Key | Purpose | State |
-|-------|-----|---------|-------|
+| ------- | ----- | --------- | ------- |
 | `IUxClientGrain` | Hub:ConnectionId | Tracks hosting server; routes messages | `UxClientState` |
 | `IUxGroupGrain` | Hub:GroupName | Tracks group membership; handles broadcasts | `UxGroupState` |
 | `IUxServerDirectoryGrain` | Singleton | Tracks active servers; detects failures | `UxServerDirectoryState` |
@@ -283,7 +282,7 @@ public interface IUxServerDirectoryGrain : IGrainWithStringKey
 ### Resilience Features
 
 | Feature | How It Works |
-|---------|--------------|
+| --------- | -------------- |
 | **Server Failure Detection** | `UxServerDirectoryGrain` detects missing heartbeats → publishes disconnect event |
 | **Client Cleanup** | `UxClientGrain` subscribes to server disconnect stream → auto-cleans on server death |
 | **Group Cleanup** | `UxGroupGrain` subscribes to client disconnect stream → removes dead connections |
@@ -292,6 +291,7 @@ public interface IUxServerDirectoryGrain : IGrainWithStringKey
 ### Trade-offs
 
 **Advantages:**
+
 - No external dependencies (Redis, Azure SignalR)
 - Grains are first-class – can push anytime
 - Automatic distributed routing
@@ -300,6 +300,7 @@ public interface IUxServerDirectoryGrain : IGrainWithStringKey
 - Event sourcing ready if needed
 
 **Considerations:**
+
 - We own the implementation (but that's a feature)
 - Group fan-out happens via grain calls (slightly more latency than stream broadcast for huge groups)
 
@@ -307,7 +308,7 @@ public interface IUxServerDirectoryGrain : IGrainWithStringKey
 
 ## Approach B: Orleans Stream as Hop (Fallback)
 
-### Overview
+### Stream Hop Overview
 
 The current design in [05-notification-bridge.md](./05-notification-bridge.md). A per-connection grain subscribes to projection streams and publishes to a per-connection output stream. A bridge service consumes the stream and forwards to `IHubContext`.
 
@@ -325,14 +326,16 @@ flowchart TB
 - If you need custom stream processing between grain and SignalR
 - Simpler for initial prototyping
 
-### Trade-offs
+### Stream Hop Trade-offs
 
 **Advantages:**
+
 - Pure Orleans streams (no custom HubLifetimeManager)
 - More control over stream processing
 - Simpler initial implementation
 
 **Disadvantages:**
+
 - Manual bridge service to maintain
 - Grains can't push directly; must publish to stream
 - More moving parts than custom backplane
@@ -344,6 +347,7 @@ flowchart TB
 Using Redis or Azure SignalR as the backplane with a separate Orleans → backplane bridge.
 
 **Why Not Recommended:**
+
 - Adds external dependency (Redis or Azure SignalR)
 - Extra network hop Orleans → backplane → SignalR
 - More infrastructure to manage
@@ -497,6 +501,7 @@ If the current stream-based design is already implemented:
 ✅ **Build Custom Orleans Backplane (Approach A)** as the primary integration strategy.
 
 **Rationale:**
+
 - Eliminates external dependencies
 - Enables powerful grain-to-client push pattern
 - All stateful grains are aggregate grains with persistence
@@ -515,5 +520,3 @@ If custom backplane implementation encounters blockers, fall back to Approach B 
 - [SignalR.Orleans GitHub](https://github.com/OrleansContrib/SignalR.Orleans) – Architecture inspiration (we build our own)
 - [Original ChatGPT Analysis](https://chatgpt.com/s/dr_6954992033208191a6edb6cedbe6a4ef) – Detailed architecture breakdown
 - [Current Stream Design](./05-notification-bridge.md) – Fallback approach
-
-````

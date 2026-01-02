@@ -5,12 +5,14 @@ This document tracks all files changed in PR #174 compared to the `main` branch.
 ## Review Process
 
 Files will be reviewed for consistency in:
+
 - XML comments
 - Function names
 - Class names
 - Variable names
 
 Files are marked with:
+
 - `[ ]` - Not yet reviewed
 - `[x]` - Reviewed and verified
 

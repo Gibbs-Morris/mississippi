@@ -88,7 +88,7 @@ For each container, specify:
 ### [Container Name]
 
 | Attribute | Value |
-|-----------|-------|
+| ----------- | ------- |
 | Technology | ASP.NET Core 9 |
 | Hosting | Azure Container Apps |
 | Scaling | 2-10 instances |
@@ -143,7 +143,7 @@ Create ADRs in `docs/adr/` for:
 ## Communication Patterns
 
 | From | To | Pattern | Protocol |
-|------|----|---------|----------|
+| ------ | ---- | --------- | ---------- |
 | Web | API | Sync | HTTPS |
 | API | Queue | Async | AMQP |
 

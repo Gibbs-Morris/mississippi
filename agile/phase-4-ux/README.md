@@ -12,7 +12,7 @@ Build Blazor components for the chat UI using **atomic design principles**, incl
 - **Commands flow UP** via `EventCallback` to parent components
 - Components are organized in increasing complexity: Atoms → Molecules → Organisms → Pages
 
-```
+```text
 ┌───────────────────────────────────────────────────────────────────┐
 │                        ATOMIC DESIGN                              │
 │                                                                   │
@@ -71,7 +71,7 @@ private async Task HandleSendMessage(string content)
 
 ## Component Structure (Atomic Organization)
 
-```
+```text
 Cascade.Server/
 └── Components/
     ├── Atoms/                       # Smallest building blocks
@@ -102,7 +102,7 @@ Cascade.Server/
 ## Tasks
 
 | Task | File | Status |
-|------|------|--------|
+| ------ | ------ | -------- |
 | 4.1 Projection Subscription Service | [01-subscription-service.md](./01-subscription-service.md) | ⬜ |
 | 4.2 Login Page | [02-login-page.md](./02-login-page.md) | ⬜ |
 | 4.3 Channel List | [03-channel-list.md](./03-channel-list.md) | ⬜ |

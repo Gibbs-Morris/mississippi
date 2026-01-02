@@ -54,7 +54,7 @@ internal sealed record ChannelMessage
 ### Commands
 
 | Command | Properties | Validation |
-|---------|------------|------------|
+| --------- | ------------ | ------------ |
 | `CreateChannel` | `ChannelId`, `Name`, `Description?`, `CreatedByUserId` | Channel must not exist |
 | `RenameChannel` | `NewName`, `RenamedByUserId` | Channel must exist; name not empty |
 | `AddMember` | `UserId`, `AddedByUserId` | Channel must exist; user not already member |
@@ -67,7 +67,7 @@ internal sealed record ChannelMessage
 ### Events
 
 | Event | Properties |
-|-------|------------|
+| ------- | ------------ |
 | `ChannelCreated` | `ChannelId`, `Name`, `Description?`, `CreatedByUserId`, `CreatedAt` |
 | `ChannelRenamed` | `OldName`, `NewName`, `RenamedByUserId`, `Timestamp` |
 | `MemberAdded` | `UserId`, `AddedByUserId`, `AddedAt` |
@@ -113,7 +113,7 @@ internal sealed record ChannelMessage
 
 ## Files to Create
 
-```
+```text
 samples/Cascade/Cascade.Domain/
 ├── Channel/
 │   ├── Commands/

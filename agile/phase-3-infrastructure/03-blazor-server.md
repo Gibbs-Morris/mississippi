@@ -121,7 +121,7 @@ app.Run();
 
 ## Blazor Components Structure
 
-```
+```text
 Cascade.Server/
 ├── Components/
 │   ├── App.razor              # Root component

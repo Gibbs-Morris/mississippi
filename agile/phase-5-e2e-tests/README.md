@@ -20,6 +20,7 @@ await app.StartAsync();  // Starts Cosmos Emulator, Azurite, Cascade.Server
 ```
 
 This ensures:
+
 - Full Orleans silo with Cosmos storage
 - Real SignalR connections
 - Containerized dependencies (Azurite, Cosmos Emulator)
@@ -27,7 +28,7 @@ This ensures:
 
 ## Test Project Structure
 
-```
+```text
 samples/Cascade/
 └── Cascade.L2Tests/
     ├── Cascade.L2Tests.csproj
@@ -48,7 +49,7 @@ samples/Cascade/
 ## Tasks
 
 | Task | File | Status |
-|------|------|--------|
+| ------ | ------ | -------- |
 | 5.1 Playwright L2 Tests via Aspire | [01-playwright-tests.md](./01-playwright-tests.md) | ✅ |
 
 ## Acceptance Criteria
@@ -91,7 +92,7 @@ samples/Cascade/
 ## Key Technologies
 
 | Package | Purpose |
-|---------|---------|
+| --------- | --------- |
 | `Microsoft.Playwright` | Browser automation |
 | `Microsoft.Playwright.NUnit` or `xunit` | Test framework integration |
 | `Aspire.Hosting.Testing` | Start AppHost in tests |
@@ -99,6 +100,7 @@ samples/Cascade/
 ## Test Levels Reference
 
 Per repository conventions:
+
 - **L0**: Unit tests (mocks, no IO)
 - **L1**: Light integration (temp files, in-proc)
 - **L2**: Functional tests with real dependencies
@@ -106,6 +108,7 @@ Per repository conventions:
 - **L4**: Synthetic monitoring
 
 This project is **L2** because it:
+
 - Uses real Aspire-managed containers (Cosmos, Azurite)
 - Tests real Orleans grains and SignalR connections
 - Validates functional behavior across the full stack

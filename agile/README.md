@@ -5,7 +5,7 @@
 ## Phase Overview
 
 | Phase | Focus | Status |
-|-------|-------|--------|
+| ------- | ------- | -------- |
 | [Phase 1](./phase-1-framework/README.md) | Framework – Real-Time Projection Subscriptions | ✅ Complete |
 | [Phase 2](./phase-2-domain/README.md) | Domain – Cascade Chat Aggregates | ✅ Complete |
 | [Phase 3](./phase-3-infrastructure/README.md) | Infrastructure – Aspire & Blazor Host | ✅ Complete |
@@ -45,6 +45,7 @@
 ## TDD Workflow
 
 Each task follows Red-Green-Refactor:
+
 1. **Red**: Write failing test(s) capturing the acceptance criteria
 2. **Green**: Implement minimal code to pass tests
 3. **Refactor**: Clean up while keeping tests green

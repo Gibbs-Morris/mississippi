@@ -119,6 +119,7 @@ internal sealed record OnlineUsersProjection
 ## Cross-Aggregate Projection Challenge
 
 Some projections need events from multiple aggregates:
+
 - `ChannelMemberListProjection` needs `MemberAdded` (Channel) + `UserWentOnline` (User)
 - `UserChannelListProjection` needs `UserJoinedChannel` (User) + `ChannelRenamed` (Channel)
 
@@ -148,7 +149,7 @@ Some projections need events from multiple aggregates:
 
 ## Files to Create
 
-```
+```text
 samples/Cascade/Cascade.Domain/
 ├── Projections/
 │   ├── UserChannelList/
