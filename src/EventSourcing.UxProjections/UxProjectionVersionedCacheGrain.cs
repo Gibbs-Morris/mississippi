@@ -28,8 +28,8 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///         by handling requests for historical versions.
 ///     </para>
 ///     <para>
-///         The grain is keyed by <see cref="UxProjectionVersionedKey" /> in the format
-///         "projectionTypeName|brookType|brookId|version".
+///         The grain is keyed by <see cref="UxProjectionVersionedCacheKey" /> in the format
+///         "brookName|entityId|version".
 ///     </para>
 ///     <para>
 ///         Read path:
@@ -52,7 +52,7 @@ internal sealed class UxProjectionVersionedCacheGrain<TProjection>
 {
     private TProjection? cachedProjection;
 
-    private UxProjectionVersionedKey versionedKey;
+    private UxProjectionVersionedCacheKey versionedKey;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="UxProjectionVersionedCacheGrain{TProjection}" /> class.
@@ -105,7 +105,7 @@ internal sealed class UxProjectionVersionedCacheGrain<TProjection>
         string primaryKey = this.GetPrimaryKeyString();
         try
         {
-            versionedKey = UxProjectionVersionedKey.FromString(primaryKey);
+            versionedKey = UxProjectionVersionedCacheKey.Parse(primaryKey);
         }
         catch (Exception ex) when (ex is ArgumentException or FormatException)
         {
@@ -115,18 +115,17 @@ internal sealed class UxProjectionVersionedCacheGrain<TProjection>
 
         Logger.VersionedCacheGrainActivated(
             primaryKey,
-            versionedKey.ProjectionKey.ProjectionTypeName,
-            versionedKey.ProjectionKey.BrookKey,
+            versionedKey.BrookName,
+            versionedKey.EntityId,
             versionedKey.Version);
 
         // Load projection from snapshot cache on activation (versioned = immutable)
-        // Brook name is extracted from the key (brookKey.BrookName contains the brook name)
-        string brookName = versionedKey.ProjectionKey.BrookKey.BrookName;
+        // Brook name and entity ID are extracted directly from the key
         string reducersHash = RootReducer.GetReducerHash();
         SnapshotStreamKey snapshotStreamKey = new(
-            brookName,
+            versionedKey.BrookName,
             SnapshotStorageNameHelper.GetStorageName<TProjection>(),
-            versionedKey.ProjectionKey.BrookKey.EntityId,
+            versionedKey.EntityId,
             reducersHash);
         SnapshotKey snapshotKey = new(snapshotStreamKey, versionedKey.Version.Value);
         ISnapshotCacheGrain<TProjection> snapshotCacheGrain =
