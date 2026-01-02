@@ -1,7 +1,3 @@
-// <copyright file="IProjectionSubscriberFactory.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 namespace Cascade.Server.Components.Services;
 
 /// <summary>

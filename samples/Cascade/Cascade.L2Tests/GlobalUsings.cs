@@ -1,7 +1,3 @@
-// <copyright file="GlobalUsings.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 global using System;
 global using System.Collections.Generic;
 global using System.Net;

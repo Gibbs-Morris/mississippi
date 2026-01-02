@@ -1,7 +1,3 @@
-// <copyright file="RealTimeTests.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using System.Diagnostics;
 
 using Allure.Xunit.Attributes;

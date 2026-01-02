@@ -1,7 +1,3 @@
-// <copyright file="IConversationAggregateGrain.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;

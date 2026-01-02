@@ -71,7 +71,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     public async Task DeactivateAsyncCompletesWithoutError()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
-        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("grain-deactivate-test"));
+        UxProjectionCursorKey key =
+            UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("grain-deactivate-test"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act
@@ -135,7 +136,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     public async Task SameGrainReferenceReturnsConsistentPosition()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
-        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("consistent-position"));
+        UxProjectionCursorKey key =
+            UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("consistent-position"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act - call multiple times

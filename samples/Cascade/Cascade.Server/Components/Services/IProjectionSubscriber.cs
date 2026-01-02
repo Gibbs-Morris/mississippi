@@ -1,7 +1,3 @@
-// <copyright file="IProjectionSubscriber.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;

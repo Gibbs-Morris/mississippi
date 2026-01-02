@@ -1,7 +1,3 @@
-// <copyright file="MessagingTests.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using Allure.Xunit.Attributes;
 
 using Cascade.L2Tests.PageObjects;

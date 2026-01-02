@@ -1,7 +1,3 @@
-// <copyright file="DisplayNameUpdatedReducerTests.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using Allure.Xunit.Attributes;
 using Allure.Xunit.Attributes.Steps;
 

@@ -1,7 +1,3 @@
-// <copyright file="StartConversationHandlerTests.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using System.Collections.Generic;
 
 using Allure.Xunit.Attributes;

@@ -1,7 +1,3 @@
-// <copyright file="Program.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using Cascade.Domain;
 using Cascade.Server.Components;
 using Cascade.Server.Components.Services;

@@ -1,7 +1,3 @@
-// <copyright file="SnapshotStorageLoggerExtensions.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using Microsoft.Extensions.Logging;
 
 

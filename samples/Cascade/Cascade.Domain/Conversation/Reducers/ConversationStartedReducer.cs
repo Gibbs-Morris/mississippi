@@ -1,7 +1,3 @@
-// <copyright file="ConversationStartedReducer.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using System.Collections.Immutable;
 
 using Cascade.Domain.Conversation.Events;

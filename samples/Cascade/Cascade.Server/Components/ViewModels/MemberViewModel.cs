@@ -1,7 +1,3 @@
-// <copyright file="MemberViewModel.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 namespace Cascade.Server.Components.ViewModels;
 
 /// <summary>

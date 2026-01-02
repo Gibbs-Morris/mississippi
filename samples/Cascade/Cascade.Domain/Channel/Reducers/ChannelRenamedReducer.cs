@@ -1,7 +1,3 @@
-// <copyright file="ChannelRenamedReducer.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using Cascade.Domain.Channel.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;

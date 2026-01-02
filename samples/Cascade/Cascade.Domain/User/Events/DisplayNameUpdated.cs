@@ -1,7 +1,3 @@
-// <copyright file="DisplayNameUpdated.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;

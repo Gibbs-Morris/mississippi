@@ -1,7 +1,3 @@
-// <copyright file="PlaywrightFixture.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 

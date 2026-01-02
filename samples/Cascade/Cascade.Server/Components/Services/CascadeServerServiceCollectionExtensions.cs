@@ -1,7 +1,3 @@
-// <copyright file="CascadeServerServiceCollectionExtensions.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using System;
 
 using Microsoft.AspNetCore.SignalR.Client;
