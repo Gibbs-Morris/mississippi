@@ -10,6 +10,8 @@
         <Project Path="samples\Crescent\NewModel\NewModel.csproj" />
         <Project Path="samples\Crescent\WebApp\WebApp.Client\WebApp.Client.csproj" />
         <Project Path="samples\Crescent\WebApp\WebApp\WebApp.csproj" />
+        <Project Path="samples\Cascade\Cascade.AppHost\Cascade.AppHost.csproj" />
+        <Project Path="samples\Cascade\Cascade.Server\Cascade.Server.csproj" />
         <Project Path="samples\Cascade\Cascade.Domain\Cascade.Domain.csproj" />
     </Folder>
     <Folder Name="/Sample Tests/">
@@ -18,6 +20,7 @@
         <Project Path="samples\Crescent\NewModel.L0Tests\NewModel.L0Tests.csproj" />
         <Project Path="samples\Crescent\WebApp.L0Tests\WebApp.L0Tests.csproj" />
         <Project Path="samples\Cascade\Cascade.Domain.L0Tests\Cascade.Domain.L0Tests.csproj" />
+        <Project Path="samples\Cascade\Cascade.L2Tests\Cascade.L2Tests.csproj" />
     </Folder>
 
     <Folder Name="/Framework/">

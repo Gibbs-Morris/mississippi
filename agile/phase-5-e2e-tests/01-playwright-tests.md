@@ -1,6 +1,6 @@
 # Task 5.1: Playwright L2 Tests via Aspire
 
-**Status**: ⬜ Not Started  
+**Status**: ✅ Complete  
 **Depends On**: All previous phases
 
 ## Goal
@@ -60,14 +60,14 @@ Create a Playwright-based E2E test project that validates the complete Cascade c
 
 ## Acceptance Criteria
 
-- [ ] Test project `Cascade.L2Tests` created with Playwright + Aspire.Hosting.Testing packages
-- [ ] **Test fixture starts full Aspire AppHost** (Cosmos Emulator, Azurite, Cascade.Server)
-- [ ] Tests wait for all resources to be healthy before executing
-- [ ] Page objects abstract Blazor component interactions
-- [ ] Multi-browser test for real-time message delivery
-- [ ] Tests are deterministic and isolated
-- [ ] Proper cleanup via Aspire `StopAsync`/`DisposeAsync`
-- [ ] Added to `samples.sln` and `samples.slnx`
+- [x] Test project `Cascade.L2Tests` created with Playwright + Aspire.Hosting.Testing packages
+- [x] **Test fixture starts full Aspire AppHost** (Cosmos Emulator, Azurite, Cascade.Server)
+- [x] Tests wait for all resources to be healthy before executing
+- [x] Page objects abstract Blazor component interactions
+- [x] Multi-browser test for real-time message delivery
+- [x] Tests are deterministic and isolated
+- [x] Proper cleanup via Aspire `StopAsync`/`DisposeAsync`
+- [x] Added to `samples.sln` and `samples.slnx`
 
 ## Project File
 

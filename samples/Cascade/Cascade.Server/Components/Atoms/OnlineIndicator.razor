@@ -1,0 +1,13 @@
+@* OnlineIndicator.razor - Atom component for showing online/offline status *@
+
+<span class="online-indicator @(IsOnline ? "online" : "offline")" title="@(IsOnline ? "Online" : "Offline")"></span>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether the user is online.
+    /// </summary>
+    [Parameter]
+    public bool IsOnline { get; set; }
+
+}

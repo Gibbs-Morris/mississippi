@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Aspire client integration -->
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" />
+    <PackageReference Include="Aspire.Microsoft.Azure.Cosmos" />
+
+    <!-- Orleans -->
+    <PackageReference Include="Microsoft.Orleans.Server" />
+    <PackageReference Include="Microsoft.Orleans.Streaming" />
+    <PackageReference Include="Microsoft.Orleans.Persistence.Memory" />
+
+    <!-- SignalR Client for Blazor components -->
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Mississippi framework -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections.SignalR\EventSourcing.UxProjections.SignalR.csproj" />
+    <ProjectReference Include="..\..\..\src\Core.Cosmos\Core.Cosmos.csproj" />
+
+    <!-- Domain -->
+    <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

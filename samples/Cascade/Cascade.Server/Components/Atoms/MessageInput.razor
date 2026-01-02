@@ -1,0 +1,60 @@
+@* MessageInput.razor - Atom component for text input with enter key support *@
+
+<input type="text"
+       value="@Value"
+       @oninput="HandleInput"
+       @onkeypress="HandleKeyPress"
+       placeholder="@Placeholder"
+       disabled="@IsDisabled"
+       class="message-input-field"/>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the current input value.
+    /// </summary>
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets the callback when value changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnValueChanged { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the callback when Enter key is pressed.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnEnterPressed { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the placeholder text.
+    /// </summary>
+    [Parameter]
+    public string Placeholder { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether the input is disabled.
+    /// </summary>
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    private async Task HandleInput(
+        ChangeEventArgs e
+    )
+    {
+        await OnValueChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+    }
+
+    private async Task HandleKeyPress(
+        KeyboardEventArgs e
+    )
+    {
+        if (e.Key == "Enter")
+        {
+            await OnEnterPressed.InvokeAsync();
+        }
+    }
+
+}

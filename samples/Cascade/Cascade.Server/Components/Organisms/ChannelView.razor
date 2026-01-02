@@ -1,0 +1,160 @@
+@using Cascade.Server.Components.Atoms
+@using Cascade.Server.Components.Molecules
+@using Cascade.Server.Components.Services
+@using Cascade.Server.Components.ViewModels
+@* ChannelView.razor - Organism component that owns state and dispatches commands *@
+
+@inject IChatService ChatService
+@inject UserSession Session
+
+<div class="channel-view">
+    <div class="channel-header">
+        <h2># @ChannelName</h2>
+    </div>
+
+    <div class="channel-content">
+        <div class="message-area">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+            @if (isLoading)
+            {
+                <LoadingSpinner Message="Loading messages..."/>
+            }
+            else if (messages.Count == 0)
+            {
+                <EmptyState Message="No messages yet. Start the conversation!"/>
+            }
+            else
+            {
+                @foreach (MessageViewModel message in messages)
+                {
+                    <MessageItem
+                        Message="@message"
+                        IsOwn="@(message.AuthorUserId == Session.UserId)"/>
+                }
+            }
+        </div>
+
+        <MemberList Members="@members"/>
+    </div>
+
+    <!-- MessageComposer raises OnSend event, parent handles command dispatch -->
+    <MessageComposer OnSend="HandleSendMessageAsync" IsSending="@isSending"/>
+</div>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the channel identifier to display.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public string ChannelId { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets the channel name to display in the header.
+    /// </summary>
+    [Parameter]
+    public string ChannelName { get; set; } = "Channel";
+
+    private readonly List<MessageViewModel> messages = [];
+
+    private readonly List<MemberViewModel> members = [];
+
+    private bool isLoading = true;
+
+    private bool isSending;
+
+    private string? errorMessage;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(ChannelId))
+        {
+            await LoadChannelDataAsync();
+        }
+    }
+
+    private async Task LoadChannelDataAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        try
+        {
+            // In a full implementation, this would subscribe to a ChannelMessagesProjection
+            // For now, we show the pattern with placeholder data
+            await Task.Delay(100); // Simulate async loading
+
+            // Clear and reset - actual data would come from projection subscription
+            messages.Clear();
+            members.Clear();
+
+            // Add the current user as a member (placeholder)
+            if (Session.IsAuthenticated)
+            {
+                members.Add(
+                    new()
+                    {
+                        UserId = Session.UserId!,
+                        DisplayName = Session.DisplayName ?? "You",
+                        IsOnline = true,
+                    });
+            }
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    ///     Command handler - receives command from child, dispatches to aggregate.
+    ///     This is where "commands flow up" meets "dispatch to aggregate".
+    /// </summary>
+    private async Task HandleSendMessageAsync(
+        string content
+    )
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return;
+        }
+
+        isSending = true;
+        errorMessage = null;
+        StateHasChanged();
+        try
+        {
+            // Dispatch command to aggregate via ChatService
+            await ChatService.SendMessageAsync(ChannelId, content);
+
+            // Optimistically add the message to the UI
+            // In a full implementation, the projection subscription would handle this
+            messages.Add(
+                new()
+                {
+                    MessageId = $"msg-{DateTime.UtcNow.Ticks}",
+                    Content = content,
+                    AuthorUserId = Session.UserId!,
+                    AuthorDisplayName = Session.DisplayName ?? "You",
+                    SentAt = DateTimeOffset.UtcNow,
+                });
+
+            // Scroll to bottom would happen here via JS interop
+        }
+        catch (ChatOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSending = false;
+            StateHasChanged();
+        }
+    }
+
+}

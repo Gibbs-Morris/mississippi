@@ -1,6 +1,6 @@
 # Phase 5: E2E Tests (L2) – Playwright via Aspire
 
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 
 ## Goal
 
@@ -49,17 +49,17 @@ samples/Cascade/
 
 | Task | File | Status |
 |------|------|--------|
-| 5.1 Playwright L2 Tests via Aspire | [01-playwright-tests.md](./01-playwright-tests.md) | ⬜ |
+| 5.1 Playwright L2 Tests via Aspire | [01-playwright-tests.md](./01-playwright-tests.md) | ✅ |
 
 ## Acceptance Criteria
 
-- [ ] Playwright test project created with proper L2 naming
-- [ ] **Test fixture starts Aspire AppHost** (full infrastructure)
-- [ ] Tests run against real Orleans/Cosmos/SignalR stack
-- [ ] Multi-browser tests for real-time scenarios
-- [ ] Page object pattern for maintainability
-- [ ] Tests pass in CI environment (Docker/Podman required)
-- [ ] Proper cleanup via `DisposeAsync` on fixture
+- [x] Playwright test project created with proper L2 naming
+- [x] **Test fixture starts Aspire AppHost** (full infrastructure)
+- [x] Tests run against real Orleans/Cosmos/SignalR stack
+- [x] Multi-browser tests for real-time scenarios
+- [x] Page object pattern for maintainability
+- [x] Tests pass in CI environment (Docker/Podman required)
+- [x] Proper cleanup via `DisposeAsync` on fixture
 
 ## Test Scenarios
 

@@ -28,8 +28,8 @@ This order ensures:
 | `IBrookAsyncReaderGrain` | `BrookAsyncReaderKey` | `{Type}\|{Id}\|{InstanceId}` | `CRESCENT.CHAT\|abc123\|a1b2...` | `{BrookName}\|{EntityId}\|{InstanceId}` |
 | `IBrookSliceReaderGrain` | `BrookRangeKey` | `{Type}\|{Id}\|{Start}\|{Count}` | `CRESCENT.CHAT\|abc123\|0\|1000` | `{BrookName}\|{EntityId}\|{Start}\|{Count}` |
 | `IAggregateGrain` | *(simple string)* | `{Type}\|{Id}` | `CRESCENT.CHAT\|abc123` | `{EntityId}` (brook from `[BrookName]`) |
-| `ISnapshotCacheGrain<T>` | `SnapshotKey` | `{brookName}\|{projectionType}\|{projectionId}\|{reducersHash}\|{version}` | `CRESCENT.CHAT\|ChatProj\|abc123\|ab12\|42` | `{BrookName}\|{EntityId}\|{Version}\|{SnapshotStorageName}\|{ReducersHash}` |
-| `ISnapshotPersisterGrain` | `SnapshotKey` | `{brookName}\|{projectionType}\|{projectionId}\|{reducersHash}\|{version}` | `CRESCENT.CHAT\|ChatProj\|abc123\|ab12\|42` | `{BrookName}\|{EntityId}\|{Version}\|{SnapshotStorageName}\|{ReducersHash}` |
+| `ISnapshotCacheGrain<T>` | `SnapshotKey` | `{brookName}\|{entityId}\|{version}\|{snapshotStorageName}\|{reducersHash}` | `CRESCENT.CHAT\|abc123\|42\|ChatProj\|ab12` | `{BrookName}\|{EntityId}\|{Version}\|{SnapshotStorageName}\|{ReducersHash}` |
+| `ISnapshotPersisterGrain` | `SnapshotKey` | `{brookName}\|{entityId}\|{version}\|{snapshotStorageName}\|{reducersHash}` | `CRESCENT.CHAT\|abc123\|42\|ChatProj\|ab12` | `{BrookName}\|{EntityId}\|{Version}\|{SnapshotStorageName}\|{ReducersHash}` |
 | `IUxProjectionGrain<T>` | *(simple string)* | `{ProjectionTypeName}\|{BrookKey.Type}\|{BrookKey.Id}` | `ChatProj\|CRESCENT.CHAT\|abc123` | `{EntityId}` (brook from `[BrookName]`) |
 | `IUxProjectionCursorGrain` | `UxProjectionCursorKey` *(new)* | `{ProjectionTypeName}\|{BrookKey.Type}\|{BrookKey.Id}` | `ChatProj\|CRESCENT.CHAT\|abc123` | `{BrookName}\|{EntityId}` |
 | `IUxProjectionVersionedCacheGrain<T>` | `UxProjectionVersionedCacheKey` *(new)* | `{ProjectionTypeName}\|{BrookKey.Type}\|{BrookKey.Id}\|{Version}` | `ChatProj\|CRESCENT.CHAT\|abc123\|42` | `{BrookName}\|{EntityId}\|{Version}` |
@@ -447,36 +447,36 @@ Standard order established: `BrookName` → `EntityId` → `Version` → Additio
 
 The following code changes are required to implement the agreed key formats:
 
-### Phase 1: Property Renames
+### Phase 1: Property Renames ✅ COMPLETED
 
-- [ ] Rename `BrookKey.Type` → `BrookName` in `BrookKey.cs`
-- [ ] Rename `BrookKey.Id` → `EntityId` in `BrookKey.cs`
-- [ ] Update all usages of `BrookKey.Type` and `BrookKey.Id`
-- [ ] Rename `SnapshotStreamKey.ProjectionType` → `SnapshotStorageName`
-- [ ] Rename `SnapshotStreamKey.ProjectionId` → `EntityId`
-- [ ] Update all usages of `SnapshotStreamKey` properties
+- [x] Rename `BrookKey.Type` → `BrookName` in `BrookKey.cs`
+- [x] Rename `BrookKey.Id` → `EntityId` in `BrookKey.cs`
+- [x] Update all usages of `BrookKey.Type` and `BrookKey.Id`
+- [x] Rename `SnapshotStreamKey.ProjectionType` → `SnapshotStorageName`
+- [x] Rename `SnapshotStreamKey.ProjectionId` → `EntityId`
+- [x] Update all usages of `SnapshotStreamKey` properties
 
-### Phase 2: New Key Types
+### Phase 2: New Key Types ✅ COMPLETED
 
-- [ ] Create `UxProjectionCursorKey` record struct in `EventSourcing.UxProjections.Abstractions`
-- [ ] Create `UxProjectionVersionedCacheKey` record struct in `EventSourcing.UxProjections.Abstractions`
-- [ ] Update `IUxProjectionCursorGrain` to use `UxProjectionCursorKey`
-- [ ] Update `IUxProjectionVersionedCacheGrain<T>` to use `UxProjectionVersionedCacheKey`
-- [ ] Remove or deprecate `UxProjectionKey` and `UxProjectionVersionedKey`
+- [x] Create `UxProjectionCursorKey` record struct in `EventSourcing.UxProjections.Abstractions`
+- [x] Create `UxProjectionVersionedCacheKey` record struct in `EventSourcing.UxProjections.Abstractions`
+- [x] Update `IUxProjectionCursorGrain` to use `UxProjectionCursorKey`
+- [x] Update `IUxProjectionVersionedCacheGrain<T>` to use `UxProjectionVersionedCacheKey`
+- [x] Remove or deprecate `UxProjectionKey` and `UxProjectionVersionedKey`
 
-### Phase 3: Grain Key Simplification
+### Phase 3: Grain Key Simplification ✅ COMPLETED
 
-- [ ] Update `IUxProjectionGrain<T>` to be keyed by `{EntityId}` only
-- [ ] Update `UxProjectionGrainBase` to read brook name from `[BrookName]` attribute
-- [ ] Update `UxProjectionGrainBase` to construct `UxProjectionCursorKey` and `UxProjectionVersionedCacheKey`
-- [ ] Update `IAggregateGrain` to be keyed by `{EntityId}` only (if not already)
-- [ ] Update factories to use new key types
+- [x] Update `IUxProjectionGrain<T>` to be keyed by `{EntityId}` only
+- [x] Update `UxProjectionGrainBase` to read brook name from `[BrookName]` attribute
+- [x] Update `UxProjectionGrainBase` to construct `UxProjectionCursorKey` and `UxProjectionVersionedCacheKey`
+- [x] Update `IAggregateGrain` to be keyed by `{EntityId}` only (if not already)
+- [x] Update factories to use new key types
 
-### Phase 4: Snapshot Key Reorder
+### Phase 4: Snapshot Key Reorder ✅ COMPLETED
 
-- [ ] Update `SnapshotStreamKey` constructor parameter order
-- [ ] Update `SnapshotKey` to use new order: `{BrookName}|{EntityId}|{Version}|{SnapshotStorageName}|{ReducersHash}`
-- [ ] Update all snapshot grain usages
+- [x] Update `SnapshotKey` to use new order: `{BrookName}|{EntityId}|{Version}|{SnapshotStorageName}|{ReducersHash}`
+- [x] Update parsing logic in `FromString` method
+- [x] Update all snapshot key tests
 
 ---
 
@@ -487,8 +487,10 @@ The following code changes are required to implement the agreed key formats:
 - [BrookAsyncReaderKey.cs](../src/EventSourcing.Brooks.Abstractions/BrookAsyncReaderKey.cs)
 - [SnapshotKey.cs](../src/EventSourcing.Snapshots.Abstractions/SnapshotKey.cs)
 - [SnapshotStreamKey.cs](../src/EventSourcing.Snapshots.Abstractions/SnapshotStreamKey.cs)
-- [UxProjectionKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionKey.cs)
-- [UxProjectionVersionedKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionVersionedKey.cs)
+- [UxProjectionKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionKey.cs) *(deprecated)*
+- [UxProjectionVersionedKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionVersionedKey.cs) *(deprecated)*
+- [UxProjectionCursorKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionCursorKey.cs) *(new)*
+- [UxProjectionVersionedCacheKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionVersionedCacheKey.cs) *(new)*
 - [BrookGrainFactory.cs](../src/EventSourcing.Brooks/Factory/BrookGrainFactory.cs)
 - [AggregateGrainFactory.cs](../src/EventSourcing.Aggregates/AggregateGrainFactory.cs)
 - [SnapshotGrainFactory.cs](../src/EventSourcing.Snapshots/SnapshotGrainFactory.cs)

@@ -1,0 +1,19 @@
+@using Cascade.Server.Components.Layout
+@* -----------------------------------------------------------------------
+   <copyright file="Routes.razor" company="GMM">
+       Copyright (c) GMM. All rights reserved.
+   </copyright>
+   ----------------------------------------------------------------------- *@
+
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)"/>
+        <FocusOnNavigate RouteData="routeData" Selector="h1"/>
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="typeof(MainLayout)">
+            <p role="alert">Sorry, there's nothing at this address.</p>
+        </LayoutView>
+    </NotFound>
+</Router>

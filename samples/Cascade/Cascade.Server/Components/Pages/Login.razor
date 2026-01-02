@@ -1,0 +1,108 @@
+@* -----------------------------------------------------------------------
+   <copyright file="Login.razor" company="GMM">
+       Copyright (c) GMM. All rights reserved.
+   </copyright>
+   ----------------------------------------------------------------------- *@
+@page "/login"
+@using System.ComponentModel.DataAnnotations
+@using Cascade.Server.Components.Services
+
+@inject UserSession UserSession
+@inject NavigationManager Navigation
+
+<PageTitle>Login - Cascade Chat</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-header text-center">
+                    <h2 class="mb-0">Welcome to Cascade Chat</h2>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="loginModel" OnValidSubmit="HandleLoginAsync" FormName="LoginForm">
+                        <DataAnnotationsValidator/>
+
+                        <div class="mb-3">
+                            <label for="displayName" class="form-label">Display Name</label>
+                            <InputText id="displayName"
+                                       @bind-Value="loginModel.DisplayName"
+                                       class="form-control"
+                                       placeholder="Enter your name"
+                                       disabled="@isLoading"/>
+                            <ValidationMessage For="() => loginModel.DisplayName" class="text-danger"/>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                @errorMessage
+                            </div>
+                        }
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                                @if (isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    <span>Joining...</span>
+                                }
+                                else
+                                {
+                                    <span>Join Chat</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [SupplyParameterFromForm]
+    private LoginModel loginModel { get; set; } = new();
+
+    private bool isLoading;
+
+    private string? errorMessage;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        // If already logged in, redirect to channels
+        if (UserSession.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/channels");
+        }
+    }
+
+    private async Task HandleLoginAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            await UserSession.LoginAsync(loginModel.DisplayName);
+            Navigation.NavigateTo("/channels");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private sealed class LoginModel
+    {
+        [Required(ErrorMessage = "Please enter a display name")]
+        [StringLength(50, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 50 characters")]
+        public string DisplayName { get; set; } = string.Empty;
+    }
+
+}
