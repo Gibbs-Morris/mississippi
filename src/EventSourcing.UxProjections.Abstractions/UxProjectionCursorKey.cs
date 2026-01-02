@@ -1,5 +1,5 @@
-// <copyright file="UxProjectionCursorKey.cs" company="McLaren Applied Ltd.">
-// Copyright (c) McLaren Applied Ltd. All rights reserved.
+// <copyright file="UxProjectionCursorKey.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
 using System;

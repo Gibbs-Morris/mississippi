@@ -58,7 +58,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
         return new(grainContextMock.Object, snapshotGrainFactoryMock.Object, rootReducerMock.Object, loggerMock.Object);
     }
 
-    private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123|42";
+    private const string ValidPrimaryKey = "TEST.MODULE.STREAM|entity-123|42";
 
     /// <summary>
     ///     Constructor should initialize properties correctly.

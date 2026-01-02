@@ -1,8 +1,6 @@
-// -----------------------------------------------------------------------
-// <copyright file="IProjectionSubscriber.cs" company="GMM">
-//     Copyright (c) GMM. All rights reserved.
+// <copyright file="IProjectionSubscriber.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
-// -----------------------------------------------------------------------
 
 using System;
 using System.Threading;

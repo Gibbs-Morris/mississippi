@@ -1,8 +1,6 @@
-// -----------------------------------------------------------------------
-// <copyright file="ProjectionSubscriberFactory.cs" company="GMM">
-//     Copyright (c) GMM. All rights reserved.
+// <copyright file="ProjectionSubscriberFactory.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
-// -----------------------------------------------------------------------
 
 using System;
 

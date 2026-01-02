@@ -1,6 +1,5 @@
-// <copyright file="PlaywrightFixture.cs" company="Corsair Software Ltd">
-// Copyright (c) Corsair Software Ltd. All rights reserved.
-// Licensed under the Apache-2.0 License. See LICENSE file in the project root for full license information.
+// <copyright file="PlaywrightFixture.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
 using Microsoft.Extensions.Logging;

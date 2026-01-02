@@ -1,8 +1,6 @@
-// -----------------------------------------------------------------------
-// <copyright file="Program.cs" company="GMM">
-//     Copyright (c) GMM. All rights reserved.
+// <copyright file="Program.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
-// -----------------------------------------------------------------------
 
 using Cascade.Domain;
 using Cascade.Server.Components;

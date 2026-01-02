@@ -19,7 +19,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections")]
 [AllureSubSuite("UxProjectionCursorGrain Integration")]
-#pragma warning disable CS0618 // Type or member is obsolete - testing legacy IBrookDefinition-based methods
 public sealed class UxProjectionCursorGrainIntegrationTests
 {
     private readonly TestCluster cluster = TestClusterAccess.Cluster;
@@ -32,8 +31,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     [AllureFeature("Grain Activation")]
     public async Task CursorGrainActivatesWithValidKeyFormat()
     {
-        // Arrange
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("valid-key-test");
+        // Arrange - use UxProjectionCursorKey format (brookName|entityId)
+        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("valid-key-test"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act - this call implicitly activates the grain
@@ -51,8 +50,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     [AllureFeature("Grain Activation")]
     public async Task CursorGrainReturnsInitialMinusOnePosition()
     {
-        // Arrange
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("grain-test-1");
+        // Arrange - use UxProjectionCursorKey format (brookName|entityId)
+        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("grain-test-1"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act
@@ -71,8 +70,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     [AllureFeature("Grain Lifecycle")]
     public async Task DeactivateAsyncCompletesWithoutError()
     {
-        // Arrange
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("grain-deactivate-test");
+        // Arrange - use UxProjectionCursorKey format (brookName|entityId)
+        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("grain-deactivate-test"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act
@@ -91,8 +90,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     [AllureFeature("Grain Identity")]
     public async Task GrainReferenceObtainedMultipleTimesIsSameGrain()
     {
-        // Arrange
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("same-grain-test");
+        // Arrange - use UxProjectionCursorKey format (brookName|entityId)
+        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("same-grain-test"));
         IUxProjectionCursorGrain cursor1 = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
         IUxProjectionCursorGrain cursor2 = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
@@ -112,9 +111,9 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     [AllureFeature("Multi-Grain")]
     public async Task MultipleCursorGrainsReturnIndependentInitialPositions()
     {
-        // Arrange
-        UxProjectionKey key1 = UxProjectionKey.ForGrain<TestProjection, TestGrain>("multi-init-1");
-        UxProjectionKey key2 = UxProjectionKey.ForGrain<TestProjection, TestGrain>("multi-init-2");
+        // Arrange - use UxProjectionCursorKey format (brookName|entityId)
+        UxProjectionCursorKey key1 = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("multi-init-1"));
+        UxProjectionCursorKey key2 = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("multi-init-2"));
         IUxProjectionCursorGrain cursor1 = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key1.ToString());
         IUxProjectionCursorGrain cursor2 = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key2.ToString());
 
@@ -135,8 +134,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     [AllureFeature("Position Consistency")]
     public async Task SameGrainReferenceReturnsConsistentPosition()
     {
-        // Arrange
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("consistent-position");
+        // Arrange - use UxProjectionCursorKey format (brookName|entityId)
+        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("consistent-position"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act - call multiple times

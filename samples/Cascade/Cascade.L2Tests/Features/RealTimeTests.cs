@@ -1,6 +1,5 @@
-// <copyright file="RealTimeTests.cs" company="Corsair Software Ltd">
-// Copyright (c) Corsair Software Ltd. All rights reserved.
-// Licensed under the Apache-2.0 License. See LICENSE file in the project root for full license information.
+// <copyright file="RealTimeTests.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
 using System.Diagnostics;

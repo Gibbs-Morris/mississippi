@@ -1,8 +1,6 @@
-// -----------------------------------------------------------------------
-// <copyright file="IChatService.cs" company="GMM">
-//     Copyright (c) GMM. All rights reserved.
+// <copyright file="IChatService.cs" company="Gibbs-Morris">
+// Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
-// -----------------------------------------------------------------------
 
 using System.Threading;
 using System.Threading.Tasks;
