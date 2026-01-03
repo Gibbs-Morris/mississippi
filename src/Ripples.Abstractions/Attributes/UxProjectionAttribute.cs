@@ -38,8 +38,10 @@ public sealed class UxProjectionAttribute : Attribute
     /// Initializes a new instance of the <see cref="UxProjectionAttribute"/> class.
     /// </summary>
     /// <param name="route">The HTTP route.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="route"/> is null.</exception>
     public UxProjectionAttribute(string route)
     {
+        ArgumentNullException.ThrowIfNull(route);
         Route = route;
     }
 }

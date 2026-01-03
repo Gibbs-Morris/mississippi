@@ -47,6 +47,17 @@ public sealed class UxAggregateAttributeTests
     }
 
     /// <summary>
+    /// Verifies that UxAggregateAttribute throws when route is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenRouteIsNull()
+    {
+        // Arrange & Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new UxAggregateAttribute(null!));
+    }
+
+    /// <summary>
     /// Verifies that Authorize defaults to null.
     /// </summary>
     [Fact]

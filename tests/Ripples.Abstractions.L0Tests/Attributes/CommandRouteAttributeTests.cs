@@ -47,6 +47,17 @@ public sealed class CommandRouteAttributeTests
     }
 
     /// <summary>
+    /// Verifies that CommandRouteAttribute throws when route is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorThrowsWhenRouteIsNull()
+    {
+        // Arrange & Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new CommandRouteAttribute(null!));
+    }
+
+    /// <summary>
     /// Verifies that Route is read-only.
     /// </summary>
     [Fact]

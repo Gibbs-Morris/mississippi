@@ -22,8 +22,10 @@ public sealed class UxAggregateAttribute : Attribute
     /// Initializes a new instance of the <see cref="UxAggregateAttribute"/> class.
     /// </summary>
     /// <param name="route">The HTTP route.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="route"/> is null.</exception>
     public UxAggregateAttribute(string route)
     {
+        ArgumentNullException.ThrowIfNull(route);
         Route = route;
     }
 }

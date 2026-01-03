@@ -17,8 +17,10 @@ public sealed class CommandRouteAttribute : Attribute
     /// Initializes a new instance of the <see cref="CommandRouteAttribute"/> class.
     /// </summary>
     /// <param name="route">The HTTP route.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="route"/> is null.</exception>
     public CommandRouteAttribute(string route)
     {
+        ArgumentNullException.ThrowIfNull(route);
         Route = route;
     }
 }
