@@ -80,7 +80,7 @@ flowchart TB
 
 ```
 src/
-├── Ripples.Abstractions/              # Shared interfaces (netstandard2.1)
+├── Ripples.Abstractions/              # Shared interfaces (net9.0)
 │   ├── IRipple.cs                     # Core ripple interface
 │   ├── IRippleStore.cs                # Store interface
 │   ├── IRippleEffect.cs               # Effect interface
@@ -92,7 +92,7 @@ src/
 │       ├── IProjectionState.cs        # { Data, Version, IsLoading, Error }
 │       └── ICommandState.cs
 │
-├── Ripples/                           # Core store logic (netstandard2.1)
+├── Ripples/                           # Core store logic (net9.0)
 │   ├── RippleStore.cs                 # State management
 │   ├── Reducers/                      # Built-in reducers
 │   └── Selectors/                     # Built-in selectors

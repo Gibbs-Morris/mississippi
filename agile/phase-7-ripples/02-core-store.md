@@ -13,7 +13,7 @@ Create the `Ripples` core project with state management logic shared between Ser
 - [ ] Built-in reducers for projection state
 - [ ] Built-in reducers for command state
 - [ ] Selector infrastructure
-- [ ] Project targets `netstandard2.1`
+- [ ] Project targets `net9.0` (inherited from Directory.Build.props)
 - [ ] L0 tests for all reducers and selectors
 
 ## New Project

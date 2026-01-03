@@ -14,8 +14,8 @@ Create the `Ripples.Abstractions` project containing core interfaces and types s
 - [ ] `IRippleStore` interface defined
 - [ ] Action types: `SubscribeTo<T>`, `Unsubscribe<T>`, `SendCommand<T>`
 - [ ] State types: `IProjectionState<T>`, `RipplePoolStats`
-- [ ] Project targets `netstandard2.1`
-- [ ] Zero external dependencies
+- [ ] Project targets `net9.0` (inherited from Directory.Build.props)
+- [ ] Minimal dependencies (only what's needed for interfaces)
 - [ ] XML documentation on all public types
 - [ ] L0 tests for any logic in abstractions
 

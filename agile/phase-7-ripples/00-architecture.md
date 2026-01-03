@@ -295,10 +295,10 @@ public sealed partial class ChannelAggregateController : ControllerBase
 ## Dependencies
 
 ```
-Ripples.Abstractions (netstandard2.1)
-├── No dependencies (pure interfaces)
+Ripples.Abstractions (net9.0)
+├── Minimal dependencies (inherited from Directory.Build.props)
 
-Ripples (netstandard2.1)
+Ripples (net9.0)
 ├── Ripples.Abstractions
 └── Microsoft.Extensions.DependencyInjection.Abstractions
 
