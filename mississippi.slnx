@@ -25,6 +25,8 @@
     <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
     <Project Path="src\EventSourcing.Generators\EventSourcing.Generators.csproj" />
     <Project Path="src\EventSourcing.UxProjections.SignalR\EventSourcing.UxProjections.SignalR.csproj" />
+    <Project Path="src\Ripples.Abstractions\Ripples.Abstractions.csproj" />
+    <Project Path="src\Ripples\Ripples.csproj" />
   </Folder>
 
   <Folder Name="/Tests/">
@@ -52,6 +54,8 @@
     <Project Path="tests\EventSourcing.Serialization.Abstractions.L0Tests\EventSourcing.Serialization.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Serialization.Json.L0Tests\EventSourcing.Serialization.Json.L0Tests.csproj" />
     <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
+    <Project Path="tests\Ripples.Abstractions.L0Tests\Ripples.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Ripples.L0Tests\Ripples.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Workflows/">

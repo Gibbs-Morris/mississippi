@@ -1,13 +1,12 @@
-namespace Mississippi.Ripples.Abstractions.L0Tests.Attributes;
-
 using System;
 
 using Allure.Xunit.Attributes;
 
-using Xunit;
+
+namespace Mississippi.Ripples.Abstractions.L0Tests.Attributes;
 
 /// <summary>
-/// Tests for <see cref="UxAggregateAttribute"/>.
+///     Tests for <see cref="UxAggregateAttribute" />.
 /// </summary>
 [AllureParentSuite("Ripples")]
 [AllureSuite("Abstractions")]
@@ -15,39 +14,38 @@ using Xunit;
 public sealed class UxAggregateAttributeTests
 {
     /// <summary>
-    /// Verifies that UxAggregateAttribute targets interface only.
+    ///     Verifies that Authorize defaults to null.
     /// </summary>
     [Fact]
-    [AllureFeature("Attribute Usage")]
-    public void TargetsInterfaceOnly()
+    [AllureFeature("Properties")]
+    public void AuthorizeDefaultsToNull()
     {
         // Arrange & Act
-        var attributeUsage = (AttributeUsageAttribute?)Attribute.GetCustomAttribute(
-            typeof(UxAggregateAttribute),
-            typeof(AttributeUsageAttribute));
+        UxAggregateAttribute attribute = new("/api/orders");
 
         // Assert
-        Assert.NotNull(attributeUsage);
-        Assert.Equal(AttributeTargets.Interface, attributeUsage!.ValidOn);
-        Assert.False(attributeUsage.AllowMultiple);
+        Assert.Null(attribute.Authorize);
     }
 
     /// <summary>
-    /// Verifies that UxAggregateAttribute requires route in constructor.
+    ///     Verifies that Authorize is settable.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void RouteIsRequiredInConstructor()
+    [AllureFeature("Properties")]
+    public void AuthorizeIsSettable()
     {
         // Arrange & Act
-        var attribute = new UxAggregateAttribute("/api/orders");
+        UxAggregateAttribute attribute = new("/api/orders")
+        {
+            Authorize = "AdminPolicy",
+        };
 
         // Assert
-        Assert.Equal("/api/orders", attribute.Route);
+        Assert.Equal("AdminPolicy", attribute.Authorize);
     }
 
     /// <summary>
-    /// Verifies that UxAggregateAttribute throws when route is null.
+    ///     Verifies that UxAggregateAttribute throws when route is null.
     /// </summary>
     [Fact]
     [AllureFeature("Constructor")]
@@ -58,33 +56,34 @@ public sealed class UxAggregateAttributeTests
     }
 
     /// <summary>
-    /// Verifies that Authorize defaults to null.
+    ///     Verifies that UxAggregateAttribute requires route in constructor.
     /// </summary>
     [Fact]
-    [AllureFeature("Properties")]
-    public void AuthorizeDefaultsToNull()
+    [AllureFeature("Constructor")]
+    public void RouteIsRequiredInConstructor()
     {
         // Arrange & Act
-        var attribute = new UxAggregateAttribute("/api/orders");
+        UxAggregateAttribute attribute = new("/api/orders");
 
         // Assert
-        Assert.Null(attribute.Authorize);
+        Assert.Equal("/api/orders", attribute.Route);
     }
 
     /// <summary>
-    /// Verifies that Authorize is settable.
+    ///     Verifies that UxAggregateAttribute targets interface only.
     /// </summary>
     [Fact]
-    [AllureFeature("Properties")]
-    public void AuthorizeIsSettable()
+    [AllureFeature("Attribute Usage")]
+    public void TargetsInterfaceOnly()
     {
         // Arrange & Act
-        var attribute = new UxAggregateAttribute("/api/orders")
-        {
-            Authorize = "AdminPolicy",
-        };
+        AttributeUsageAttribute? attributeUsage = (AttributeUsageAttribute?)Attribute.GetCustomAttribute(
+            typeof(UxAggregateAttribute),
+            typeof(AttributeUsageAttribute));
 
         // Assert
-        Assert.Equal("AdminPolicy", attribute.Authorize);
+        Assert.NotNull(attributeUsage);
+        Assert.Equal(AttributeTargets.Interface, attributeUsage!.ValidOn);
+        Assert.False(attributeUsage.AllowMultiple);
     }
 }
