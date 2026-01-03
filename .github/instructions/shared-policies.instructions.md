@@ -15,6 +15,7 @@ Governing thought: Common rules for every instruction—zero warnings, centraliz
 - **DI Property Pattern** - Injected dependencies **MUST** use `private Type Name { get; }` (no underscored fields); constructors **SHOULD** be the only injection point. Why: Matches analyzers, logging, and testability patterns.
 - **LoggerExtensions Entry Point** - Logging **MUST** go through LoggerExtensions using `[LoggerMessage]`; direct `ILogger.Log*` calls **MUST NOT** be introduced. Why: Enforces the high-performance logging standard across the repo.
 - **No File-Level Copyright Banners** - Copyright or license headers/banners **MUST NOT** appear at the top of source, script, or markup files; repository-level licensing already applies. Why: Avoids noisy/stale headers and keeps diffs focused on behavior.
+- **Canonical Solutions Are .slnx** - `.slnx` files are the source of truth; `.sln` files **MUST NOT** be hand-edited because CI/automation regenerates them via SlnGen for legacy tooling (ReSharper, Stryker). Why: Prevents drift between generated and canonical solutions.
 
 ## Scope and Audience
 
