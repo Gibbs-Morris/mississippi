@@ -29,12 +29,20 @@
     <Project Path="src\Ripples\Ripples.csproj" />
     <Project Path="src\Ripples.Blazor\Ripples.Blazor.csproj" />
   </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Ripples.Client/Ripples.Client.csproj" />
+    <Project Path="src/Ripples.Generators/Ripples.Generators.csproj" />
+    <Project Path="src/Ripples.Server/Ripples.Server.csproj" />
+  </Folder>
 
   <Folder Name="/Tests/">
     <Project Path="tests\EventSourcing.UxProjections.Abstractions.L0Tests\EventSourcing.UxProjections.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
     <Project Path="tests/EventSourcing.UxProjections.SignalR.L0Tests/EventSourcing.UxProjections.SignalR.L0Tests.csproj" />
+    <Project Path="tests/Ripples.Client.L0Tests/Ripples.Client.L0Tests.csproj" />
+    <Project Path="tests/Ripples.Generators.L0Tests/Ripples.Generators.L0Tests.csproj" />
+    <Project Path="tests/Ripples.Server.L0Tests/Ripples.Server.L0Tests.csproj" />
     <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />
     <Project Path="tests\AspNetCore.Orleans.L0Tests\AspNetCore.Orleans.L0Tests.csproj" />
     <Project Path="tests\Core.L0Tests\Core.L0Tests.csproj" />
