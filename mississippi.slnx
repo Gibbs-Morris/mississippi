@@ -27,6 +27,7 @@
     <Project Path="src\EventSourcing.UxProjections.SignalR\EventSourcing.UxProjections.SignalR.csproj" />
     <Project Path="src\Ripples.Abstractions\Ripples.Abstractions.csproj" />
     <Project Path="src\Ripples\Ripples.csproj" />
+    <Project Path="src\Ripples.Blazor\Ripples.Blazor.csproj" />
   </Folder>
 
   <Folder Name="/Tests/">
@@ -56,6 +57,7 @@
     <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
     <Project Path="tests\Ripples.Abstractions.L0Tests\Ripples.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Ripples.L0Tests\Ripples.L0Tests.csproj" />
+    <Project Path="tests\Ripples.Blazor.L0Tests\Ripples.Blazor.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Workflows/">
