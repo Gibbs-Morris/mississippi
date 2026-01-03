@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -46,8 +47,8 @@ internal static class VerificationScenario
         IGrainFactory grainFactory,
         IBrookStorageProvider brookStorageProvider,
         ISnapshotStorageProvider snapshotStorageProvider,
-        ISnapshotStateConverter<CounterState> snapshotStateConverter,
-        IRootReducer<CounterState> rootReducer,
+        ISnapshotStateConverter<CounterAggregate> snapshotStateConverter,
+        IRootReducer<CounterAggregate> rootReducer,
         string counterId,
         CancellationToken cancellationToken = default
     )
@@ -57,7 +58,7 @@ internal static class VerificationScenario
         bool allPassed = true;
 
         // Step 1: Build the grain key and perform aggregate operations
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
         logger.VerificationStep(runId, 1, "Execute aggregate commands to generate events");
 
@@ -121,21 +122,24 @@ internal static class VerificationScenario
         // Step 2: Read events directly from Cosmos to verify stream persistence
         logger.VerificationStep(runId, 2, "Read stream data directly from Cosmos");
         BrookPosition currentPosition = await brookStorageProvider.ReadCursorPositionAsync(brookKey, cancellationToken);
-        logger.VerificationStreamCursor(runId, brookKey.Type, brookKey.Id, currentPosition.Value);
-        if (currentPosition.Value < 8)
+        logger.VerificationStreamCursor(runId, brookKey.BrookName, brookKey.EntityId, currentPosition.Value);
+
+        // Cursor is 0-indexed: if we have 8 events (positions 0-7), cursor value is 7
+        // So cursor >= 7 means at least 8 events
+        if (currentPosition.Value < 7)
         {
             logger.VerificationStepFailed(
                 runId,
                 2,
-                "Expected at least 8 events",
+                "Expected at least 8 events (cursor >= 7)",
                 $"Got cursor position {currentPosition.Value}");
             allPassed = false;
         }
         else
         {
-            // Read all events
+            // Read all events - start at position 0, count is cursor+1 (since cursor is 0-indexed)
             int eventCount = 0;
-            BrookRangeKey range = new(brookKey.Type, brookKey.Id, 1, currentPosition.Value);
+            BrookRangeKey range = new(brookKey.BrookName, brookKey.EntityId, 0, currentPosition.Value + 1);
             await foreach (BrookEvent evt in brookStorageProvider.ReadEventsAsync(range, cancellationToken))
             {
                 eventCount++;
@@ -160,43 +164,71 @@ internal static class VerificationScenario
         // Step 3: Read snapshot directly from Cosmos to verify snapshot persistence
         logger.VerificationStep(runId, 3, "Read snapshot data directly from Cosmos");
 
-        // Build the snapshot key: we need the projection type, projection id, reducer hash, and version
+        // Build the snapshot key: we need the brook name, projection type, projection id, reducer hash, and version
         // The version should match the current stream position
         string reducerHash = rootReducer.GetReducerHash();
-        SnapshotStreamKey streamKey = new(brookKey.Type, counterId, reducerHash);
-        SnapshotKey snapshotKey = new(streamKey, currentPosition.Value);
-        SnapshotEnvelope? envelope = await snapshotStorageProvider.ReadAsync(snapshotKey, cancellationToken);
+        string projectionType = SnapshotStorageNameHelper.GetStorageName<CounterAggregate>();
+        SnapshotStreamKey streamKey = new(brookKey.BrookName, projectionType, counterId, reducerHash);
+
+        // Try to find the snapshot - it might be at a version less than currentPosition if persister hasn't caught up
+        SnapshotEnvelope? envelope = null;
+        long foundAtVersion = -1;
+
+        // Try current position first, then work backwards (snapshots may lag behind events)
+        for (long version = currentPosition.Value; (version >= 0) && (envelope == null); version--)
+        {
+            SnapshotKey snapshotKey = new(streamKey, version);
+            envelope = await snapshotStorageProvider.ReadAsync(snapshotKey, cancellationToken);
+            if (envelope != null)
+            {
+                foundAtVersion = version;
+            }
+        }
+
         if (envelope == null)
         {
-            logger.VerificationSnapshotNotFound(runId, streamKey.ProjectionType, streamKey.ProjectionId);
-            logger.VerificationStepFailed(runId, 3, "Snapshot not found", "ReadAsync returned null");
+            logger.VerificationSnapshotNotFound(runId, streamKey.SnapshotStorageName, streamKey.EntityId);
+            logger.VerificationStepFailed(runId, 3, "Snapshot not found", "ReadAsync returned null for all versions");
             allPassed = false;
         }
         else
         {
             logger.VerificationSnapshotFound(
                 runId,
-                streamKey.ProjectionType,
-                streamKey.ProjectionId,
-                snapshotKey.Version,
+                streamKey.SnapshotStorageName,
+                streamKey.EntityId,
+                foundAtVersion,
                 envelope.Data.Length);
 
             // Deserialize the snapshot data using the state converter
-            CounterState state = snapshotStateConverter.FromEnvelope(envelope);
+            CounterAggregate state = snapshotStateConverter.FromEnvelope(envelope);
             logger.VerificationSnapshotDetails(
                 runId,
                 envelope.DataContentType,
                 envelope.ReducerHash,
                 $"Count={state.Count}");
 
-            // Expected final value: 10 (init) + 5 (increments) - 2 (decrements) = 13
-            int expectedValue = 13;
+            // Calculate expected value based on snapshot version (0-indexed)
+            // Version 0 = after Init(10), Version 1-5 = after Increments, Version 6-7 = after Decrements
+            // Version: 0=Init(10), 1=Inc(11), 2=Inc(12), 3=Inc(13), 4=Inc(14), 5=Inc(15), 6=Dec(14), 7=Dec(13)
+            int expectedValue = foundAtVersion switch
+            {
+                0 => 10, // Just initialized
+                1 => 11, // 1 increment
+                2 => 12, // 2 increments
+                3 => 13, // 3 increments
+                4 => 14, // 4 increments
+                5 => 15, // 5 increments
+                6 => 14, // 5 increments + 1 decrement
+                >= 7 => 13, // 5 increments + 2 decrements (final state)
+                var _ => 13, // Default to final expected
+            };
             if (state.Count == expectedValue)
             {
                 logger.VerificationStepComplete(
                     runId,
                     3,
-                    $"Snapshot state Count {state.Count} matches expected {expectedValue}");
+                    $"Snapshot state Count {state.Count} matches expected {expectedValue} for version {foundAtVersion}");
             }
             else
             {

@@ -779,6 +779,9 @@
           "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
+      "Mississippi.EventSourcing.Reducers.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.EventSourcing.Snapshots.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -791,6 +794,7 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
         }

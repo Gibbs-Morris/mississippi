@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -58,7 +59,7 @@ internal static class UxProjectionScenario
         bool allPassed = true;
 
         // Step 1: Build the grain key and perform aggregate operations
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
         logger.UxProjectionStep(runId, 1, "Execute aggregate commands to generate events for projection");
 
@@ -121,8 +122,8 @@ internal static class UxProjectionScenario
 
         // Step 2: Query the UX projection grain
         logger.UxProjectionStep(runId, 2, "Query UX projection grain for cached projection state");
-        IUxProjectionGrain<CounterSummaryProjection> projectionGrain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<CounterSummaryProjection, CounterBrook>(counterId);
+        IUxProjectionGrain<CounterSummaryProjection> projectionGrain = uxProjectionGrainFactory
+            .GetUxProjectionGrain<CounterSummaryProjection>(counterId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(cancellationToken);
         if (projection == null)
         {
@@ -164,30 +165,40 @@ internal static class UxProjectionScenario
         // Step 3: Read projection snapshot directly from Cosmos to verify persistence
         logger.UxProjectionStep(runId, 3, "Read projection snapshot directly from Cosmos");
 
-        // Build the snapshot key using the projection's snapshot name and reducer hash
+        // Build the snapshot key using the brook name, projection's snapshot name, and reducer hash
         string reducerHash = rootReducer.GetReducerHash();
-        string projectionType = "CRESCENT.SAMPLE.COUNTERSUMMARY.V1"; // From [SnapshotName] attribute
-        SnapshotStreamKey streamKey = new(projectionType, counterId, reducerHash);
+        string projectionType = SnapshotStorageNameHelper.GetStorageName<CounterSummaryProjection>();
+        SnapshotStreamKey streamKey = new(BrookNames.Counter, projectionType, counterId, reducerHash);
 
-        // We need to find the snapshot version - read the latest available
-        // First, let's try to read at version that matches expected event count (14)
-        SnapshotKey snapshotKey = new(streamKey, 14);
-        SnapshotEnvelope? envelope = await snapshotStorageProvider.ReadAsync(snapshotKey, cancellationToken);
+        // Try to find the snapshot - it might be at a version less than 14 if persister hasn't caught up
+        SnapshotEnvelope? envelope = null;
+        long foundAtVersion = -1;
+
+        // Try from version 14 down to 0 (snapshots may lag behind events)
+        for (long version = 14; (version >= 0) && (envelope == null); version--)
+        {
+            SnapshotKey snapshotKey = new(streamKey, version);
+            envelope = await snapshotStorageProvider.ReadAsync(snapshotKey, cancellationToken);
+            if (envelope != null)
+            {
+                foundAtVersion = version;
+            }
+        }
+
         if (envelope == null)
         {
-            // Try reading without specific version - the snapshot might be at a different position
+            // No snapshot found at any version
             logger.UxProjectionSnapshotNotFound(runId, projectionType, counterId, 14);
-            logger.UxProjectionStepFailed(runId, 3, "Snapshot found at version 14", "ReadAsync returned null");
+            logger.UxProjectionStepFailed(
+                runId,
+                3,
+                "Snapshot found at any version",
+                "ReadAsync returned null for all versions");
             allPassed = false;
         }
         else
         {
-            logger.UxProjectionSnapshotFound(
-                runId,
-                projectionType,
-                counterId,
-                snapshotKey.Version,
-                envelope.Data.Length);
+            logger.UxProjectionSnapshotFound(runId, projectionType, counterId, foundAtVersion, envelope.Data.Length);
 
             // Deserialize the snapshot data using the state converter
             CounterSummaryProjection snapshotState = snapshotStateConverter.FromEnvelope(envelope);

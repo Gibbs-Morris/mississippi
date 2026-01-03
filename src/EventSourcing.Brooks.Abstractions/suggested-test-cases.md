@@ -31,7 +31,7 @@ Invariants:
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Priority | Type |
-|----|----------|---------------------|------|----------|------|
+| ---- | ---------- | --------------------- | ------ | ---------- | ------ |
 | BE1 | Default construction | new BrookEvent(); inspect props -> defaults | Defaults | M | Unit |
 | BE2 | Custom initialization | construct with all props -> values preserved | Basic | H | Unit |
 | BE3 | Large payload array | Data 1MB -> length preserved | Size | L | Unit |
@@ -55,7 +55,7 @@ Invariants:
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Priority | Type |
-|----|----------|---------------------|------|----------|------|
+| ---- | ---------- | --------------------- | ------ | ---------- | ------ |
 | BK1 | Valid construction | new("a","b") -> ToString == `a&#124;b` | Happy | H | Unit |
 | BK2 | Null type | type null -> ctor throws ArgNull | Null | H | Unit |
 | BK3 | Null id | id null -> ctor throws ArgNull | Null | H | Unit |
@@ -82,7 +82,7 @@ Invariants:
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Priority | Type |
-|----|----------|---------------------|------|----------|------|
+| ---- | ---------- | --------------------- | ------ | ---------- | ------ |
 | BP1 | Default not set | new BrookPosition() -> Value -1 & NotSet | Sentinel | H | Unit |
 | BP2 | Valid positive | new(5) -> Value 5 NotSet false | Basic | H | Unit |
 | BP3 | Invalid below -1 | new(-2) -> ArgOutOfRange | Bounds | H | Unit |
@@ -108,7 +108,7 @@ Invariants:
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Priority | Type |
-|----|----------|---------------------|------|----------|------|
+| ---- | ---------- | --------------------- | ------ | ---------- | ------ |
 | BRK1 | Valid construction | new("t","i",0,5) -> End 4 | Basic | H | Unit |
 | BRK2 | Negative start | start -1 -> ArgOutOfRange | Bounds | H | Unit |
 | BRK3 | Negative count | count -1 -> ArgOutOfRange | Bounds | H | Unit |
@@ -121,17 +121,17 @@ Test Cases:
 
 ---
 
-### File: Attributes/EventNameAttribute.cs & BrookNameAttribute.cs
+### File: Attributes/EventStorageNameAttribute.cs & BrookNameAttribute.cs
 
 Attribute presence and retrieval.
 
-#### Types: EventNameAttribute / BrookNameAttribute
+#### Types: EventStorageNameAttribute / BrookNameAttribute
 
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Priority | Type |
-|----|----------|---------------------|----------|------|
-| ATTR1 | EventNameAttribute discovered | reflect sample annotated class -> attribute present | M | Unit |
+| ---- | ---------- | --------------------- | ---------- | ------ |
+| ATTR1 | EventStorageNameAttribute discovered | reflect sample annotated class -> attribute present | M | Unit |
 | ATTR2 | BrookNameAttribute discovered | reflect sample annotated class -> attribute present | M | Unit |
 
 ---
@@ -150,20 +150,20 @@ Invariants:
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Priority | Type |
-|----|----------|---------------------|------|----------|------|
+| ---- | ---------- | --------------------- | ------ | ---------- | ------ |
 | HLP1 | Registers provider | services -> call -> can resolve both interfaces | DI | M | Unit |
 
 Member: `RegisterBrookStorageProvider<TProvider,TOptions>(IServiceCollection, Action<TOptions>)`
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Priority | Type |
-|----|----------|---------------------|------|----------|------|
+| ---- | ---------- | --------------------- | ------ | ---------- | ------ |
 | HLP2 | Registers + configure delegate | action sets property -> options bound | Options | M | Unit |
 
 Member: `RegisterBrookStorageProvider<TProvider,TOptions>(IServiceCollection, IConfiguration)`
 
 | ID | Scenario | Given / When / Then | Edge | Priority | Type |
-|----|----------|---------------------|------|----------|------|
+| ---- | ---------- | --------------------- | ------ | ---------- | ------ |
 | HLP3 | Registers + config section | in-memory config -> options bound | Config | M | Unit |
 
 ---

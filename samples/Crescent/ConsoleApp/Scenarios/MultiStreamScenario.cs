@@ -104,14 +104,14 @@ internal static class MultiStreamScenario
             [
                 new()
                 {
-                    Type = keyA.Type,
-                    Id = keyA.Id,
+                    Type = keyA.BrookName,
+                    Id = keyA.EntityId,
                     Cursor = cA.Value,
                 },
                 new()
                 {
-                    Type = keyB.Type,
-                    Id = keyB.Id,
+                    Type = keyB.BrookName,
+                    Id = keyB.EntityId,
                     Cursor = cB.Value,
                 },
             ];

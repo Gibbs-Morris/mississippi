@@ -23,13 +23,13 @@ public sealed class BrookRangeKeyTests
     {
         BrookKey bk = new("tp", "id");
         BrookRangeKey rk = BrookRangeKey.FromBrookCompositeKey(bk, 2, 5);
-        Assert.Equal("tp", rk.Type);
-        Assert.Equal("id", rk.Id);
+        Assert.Equal("tp", rk.BrookName);
+        Assert.Equal("id", rk.EntityId);
         Assert.Equal(2, rk.Start.Value);
         Assert.Equal(5, rk.Count);
         BrookKey asKey = rk.ToBrookCompositeKey();
-        Assert.Equal(bk.Type, asKey.Type);
-        Assert.Equal(bk.Id, asKey.Id);
+        Assert.Equal(bk.BrookName, asKey.BrookName);
+        Assert.Equal(bk.EntityId, asKey.EntityId);
         string s = rk;
         Assert.Equal(BrookRangeKey.FromBrookRangeKey(rk), s);
     }
@@ -46,8 +46,8 @@ public sealed class BrookRangeKeyTests
         string type = new('x', 509);
         string id = new('y', 510);
         BrookRangeKey key = new(type, id, 0, 0);
-        Assert.Equal(type, key.Type);
-        Assert.Equal(id, key.Id);
+        Assert.Equal(type, key.BrookName);
+        Assert.Equal(id, key.EntityId);
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public sealed class BrookRangeKeyTests
     {
         string type = new('t', 1000);
         BrookRangeKey key = new(type, "i", 12_345, 67_890);
-        Assert.Equal(type, key.Type);
+        Assert.Equal(type, key.BrookName);
     }
 
     /// <summary>
@@ -167,8 +167,8 @@ public sealed class BrookRangeKeyTests
     public void FromStringParsesValidCompositeKey()
     {
         BrookRangeKey parsed = BrookRangeKey.FromString("alpha|beta|7|13");
-        Assert.Equal("alpha", parsed.Type);
-        Assert.Equal("beta", parsed.Id);
+        Assert.Equal("alpha", parsed.BrookName);
+        Assert.Equal("beta", parsed.EntityId);
         Assert.Equal(7, parsed.Start.Value);
         Assert.Equal(13, parsed.Count);
     }

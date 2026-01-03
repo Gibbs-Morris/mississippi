@@ -123,12 +123,12 @@ Include architectural notes:
 
 ### Users
 | Actor | Description | Interactions |
-|-------|-------------|--------------|
+| ------- | ------------- | -------------- |
 | ... | ... | ... |
 
 ### External Systems
 | System | Description | Integration |
-|--------|-------------|-------------|
+| -------- | ------------- | ------------- |
 | ... | ... | ... |
 
 ## Related ADRs

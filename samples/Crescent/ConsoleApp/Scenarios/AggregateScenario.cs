@@ -42,8 +42,8 @@ internal static class AggregateScenario
         logger.AggregateScenarioStart(runId, scenarioName, counterId);
         Stopwatch sw = Stopwatch.StartNew();
 
-        // Build the grain key using the brook definition pattern
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        // Build the grain key using the brook name constant
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Initialize
@@ -148,7 +148,7 @@ internal static class AggregateScenario
         const string scenarioName = "ConcurrencyConflict";
         logger.AggregateScenarioStart(runId, scenarioName, counterId);
         Stopwatch sw = Stopwatch.StartNew();
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Initialize
@@ -205,7 +205,7 @@ internal static class AggregateScenario
         string scenarioName = $"Throughput({operationCount})";
         logger.AggregateScenarioStart(runId, scenarioName, counterId);
         Stopwatch sw = Stopwatch.StartNew();
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Initialize
@@ -279,7 +279,7 @@ internal static class AggregateScenario
         const string scenarioName = "ValidationErrors";
         logger.AggregateScenarioStart(runId, scenarioName, counterId);
         Stopwatch sw = Stopwatch.StartNew();
-        BrookKey brookKey = BrookKey.For<CounterBrook>(counterId);
+        BrookKey brookKey = new(BrookNames.Counter, counterId);
         ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
 
         // Attempt increment before initialization (should fail)

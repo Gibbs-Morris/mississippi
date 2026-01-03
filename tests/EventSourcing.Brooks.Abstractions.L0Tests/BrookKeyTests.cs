@@ -36,8 +36,8 @@ public sealed class BrookKeyTests
         string type = new('x', 512);
         string id = new('y', 511);
         BrookKey key = new(type, id);
-        Assert.Equal(type, key.Type);
-        Assert.Equal(id, key.Id);
+        Assert.Equal(type, key.BrookName);
+        Assert.Equal(id, key.EntityId);
     }
 
     /// <summary>
@@ -47,8 +47,8 @@ public sealed class BrookKeyTests
     public void ConstructorCreatesKey()
     {
         BrookKey key = new("type", "id");
-        Assert.Equal("type", key.Type);
-        Assert.Equal("id", key.Id);
+        Assert.Equal("type", key.BrookName);
+        Assert.Equal("id", key.EntityId);
         Assert.Equal("type|id", key.ToString());
     }
 
@@ -109,8 +109,8 @@ public sealed class BrookKeyTests
     public void FromStringAllowsEmptyType()
     {
         BrookKey key = BrookKey.FromString("|identifier");
-        Assert.Equal(string.Empty, key.Type);
-        Assert.Equal("identifier", key.Id);
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal("identifier", key.EntityId);
     }
 
     /// <summary>
@@ -141,8 +141,8 @@ public sealed class BrookKeyTests
         string s = k; // implicit to string
         Assert.Equal("t|i", s);
         BrookKey parsed = "t|i"; // implicit from string
-        Assert.Equal("t", parsed.Type);
-        Assert.Equal("i", parsed.Id);
+        Assert.Equal("t", parsed.BrookName);
+        Assert.Equal("i", parsed.EntityId);
     }
 
     /// <summary>

@@ -99,26 +99,26 @@ public readonly record struct BrookAsyncReaderKey
             throw new ArgumentException("Invalid BrookAsyncReaderKey format: missing second separator.", nameof(key));
         }
 
-        string type = span[..firstSep].ToString();
-        string id = remaining[..secondSep].ToString();
+        string brookName = span[..firstSep].ToString();
+        string entityId = remaining[..secondSep].ToString();
         string instanceIdStr = remaining[(secondSep + 1)..].ToString();
         if (!Guid.TryParse(instanceIdStr, out Guid instanceId))
         {
             throw new ArgumentException("Invalid BrookAsyncReaderKey format: invalid instance ID.", nameof(key));
         }
 
-        return new(new(type, id), instanceId);
+        return new(new(brookName, entityId), instanceId);
     }
 
     /// <summary>
     ///     Converts the async reader key to its string representation for use as a grain key.
     /// </summary>
     /// <param name="key">The async reader key to convert.</param>
-    /// <returns>A string representation in the format "type|id|instanceId".</returns>
+    /// <returns>A string representation in the format "brookName|entityId|instanceId".</returns>
     public static implicit operator string(
         BrookAsyncReaderKey key
     ) =>
-        $"{key.BrookKey.Type}{Separator}{key.BrookKey.Id}{Separator}{key.InstanceId:N}";
+        $"{key.BrookKey.BrookName}{Separator}{key.BrookKey.EntityId}{Separator}{key.InstanceId:N}";
 
     /// <summary>
     ///     Converts a string to a <see cref="BrookAsyncReaderKey" />.
@@ -134,6 +134,6 @@ public readonly record struct BrookAsyncReaderKey
     /// <summary>
     ///     Returns the string representation of this async reader key.
     /// </summary>
-    /// <returns>A string representation in the format "type|id|instanceId".</returns>
+    /// <returns>A string representation in the format "brookName|entityId|instanceId".</returns>
     public override string ToString() => this;
 }

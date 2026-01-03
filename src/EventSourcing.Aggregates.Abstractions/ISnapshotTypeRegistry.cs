@@ -17,7 +17,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         deserialization during snapshot loading and serialization when persisting snapshots.
 ///     </para>
 ///     <para>
-///         Snapshot types are identified by their <see cref="SnapshotNameAttribute" />, which provides
+///         Snapshot types are identified by their <see cref="SnapshotStorageNameAttribute" />, which provides
 ///         a stable string identity that survives type renames and namespace changes.
 ///     </para>
 /// </remarks>
@@ -31,7 +31,7 @@ public interface ISnapshotTypeRegistry
     /// <summary>
     ///     Registers a snapshot type with its corresponding snapshot name.
     /// </summary>
-    /// <param name="snapshotName">The snapshot name as defined by <see cref="SnapshotNameAttribute" />.</param>
+    /// <param name="snapshotName">The snapshot name as defined by <see cref="SnapshotStorageNameAttribute" />.</param>
     /// <param name="snapshotType">The CLR type of the snapshot.</param>
     void Register(
         string snapshotName,
@@ -57,7 +57,7 @@ public interface ISnapshotTypeRegistry
     );
 
     /// <summary>
-    ///     Scans an assembly for types decorated with <see cref="SnapshotNameAttribute" /> and registers them.
+    ///     Scans an assembly for types decorated with <see cref="SnapshotStorageNameAttribute" /> and registers them.
     /// </summary>
     /// <param name="assembly">The assembly to scan.</param>
     /// <returns>The number of snapshot types registered from the assembly.</returns>

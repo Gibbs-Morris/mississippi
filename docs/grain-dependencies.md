@@ -17,7 +17,7 @@ flowchart LR
   end
 
   subgraph Snapshots["Mississippi.EventSourcing.Snapshots"]
-    SnapshotCache["SnapshotCacheGrainBase / ISnapshotCacheGrain"]
+    SnapshotCache["SnapshotCacheGrain / ISnapshotCacheGrain"]
     SnapshotPersister["SnapshotPersisterGrain / ISnapshotPersisterGrain"]
   end
 

@@ -45,7 +45,7 @@ flowchart LR
   end
 
   subgraph Snapshots["Mississippi.EventSourcing.Snapshots"]
-    SnapshotCache["SnapshotCacheGrainBase<br/>━━━━━━━━━━━━━━━<br/>✅ GetStateAsync [ReadOnly]"]
+    SnapshotCache["SnapshotCacheGrain<br/>━━━━━━━━━━━━━━━<br/>✅ GetStateAsync [ReadOnly]"]
     SnapshotPersister["SnapshotPersisterGrain<br/>━━━━━━━━━━━━━━━<br/>🔥 PersistAsync [OneWay]"]
   end
 

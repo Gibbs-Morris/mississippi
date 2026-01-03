@@ -14,8 +14,8 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 /// <remarks>
 ///     <para>
 ///         Versioned cache grains are stateless workers keyed by
-///         <see cref="UxProjectionVersionedKey" /> in the format
-///         "projectionTypeName|brookType|brookId|version".
+///         <see cref="UxProjectionVersionedCacheKey" /> in the format
+///         "brookName|entityId|version".
 ///     </para>
 ///     <para>
 ///         Each grain instance caches a specific version of a projection in memory.

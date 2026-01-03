@@ -17,12 +17,12 @@ internal static partial class UxProjectionCursorGrainLoggerExtensions
         EventId = 1,
         Level = LogLevel.Debug,
         Message =
-            "UX projection cursor grain activated with key '{PrimaryKey}' for projection '{ProjectionTypeName}' on brook '{BrookKey}'")]
+            "UX projection cursor grain activated with key '{PrimaryKey}' for brook '{BrookName}' entity '{EntityId}'")]
     public static partial void CursorGrainActivated(
         this ILogger logger,
         string primaryKey,
-        string projectionTypeName,
-        BrookKey brookKey
+        string brookName,
+        string entityId
     );
 
     [LoggerMessage(
@@ -38,29 +38,29 @@ internal static partial class UxProjectionCursorGrainLoggerExtensions
     [LoggerMessage(
         EventId = 3,
         Level = LogLevel.Debug,
-        Message = "UX projection cursor position updated to {Position} for '{ProjectionKey}'")]
+        Message = "UX projection cursor position updated to {Position} for '{CursorKey}'")]
     public static partial void PositionUpdated(
         this ILogger logger,
-        UxProjectionKey projectionKey,
+        UxProjectionCursorKey cursorKey,
         BrookPosition position
     );
 
     [LoggerMessage(
         EventId = 5,
         Level = LogLevel.Debug,
-        Message = "Stream completed for UX projection cursor '{ProjectionKey}'")]
+        Message = "Stream completed for UX projection cursor '{CursorKey}'")]
     public static partial void StreamCompleted(
         this ILogger logger,
-        UxProjectionKey projectionKey
+        UxProjectionCursorKey cursorKey
     );
 
     [LoggerMessage(
         EventId = 4,
         Level = LogLevel.Warning,
-        Message = "Stream error occurred for UX projection cursor '{ProjectionKey}'")]
+        Message = "Stream error occurred for UX projection cursor '{CursorKey}'")]
     public static partial void StreamError(
         this ILogger logger,
-        UxProjectionKey projectionKey,
+        UxProjectionCursorKey cursorKey,
         Exception exception
     );
 }

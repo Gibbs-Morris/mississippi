@@ -7,7 +7,8 @@ using Orleans;
 namespace Mississippi.EventSourcing.Brooks.Abstractions;
 
 /// <summary>
-///     Represents a range key for querying brooks, consisting of type, id, start position, and count components.
+///     Represents a range key for querying brooks, consisting of brook name, entity id, start position, and count
+///     components.
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Abstractions.BrookRangeKey")]
@@ -20,32 +21,32 @@ public readonly record struct BrookRangeKey
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookRangeKey" /> struct.
     /// </summary>
-    /// <param name="type">The type component of the key.</param>
-    /// <param name="id">The id component of the key.</param>
+    /// <param name="brookName">The brook name component of the key.</param>
+    /// <param name="entityId">The entity id component of the key.</param>
     /// <param name="start">The starting position of the range.</param>
     /// <param name="count">The number of items in the range.</param>
-    /// <exception cref="ArgumentNullException">Thrown when type or id is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when brookName or entityId is null.</exception>
     /// <exception cref="ArgumentException">
     ///     Thrown when the composite key exceeds the maximum length or contains invalid
     ///     characters.
     /// </exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when start or count is negative.</exception>
     public BrookRangeKey(
-        string type,
-        string id,
+        string brookName,
+        string entityId,
         long start,
         long count
     )
     {
-        ValidateComponent(type, nameof(type));
-        ValidateComponent(id, nameof(id));
+        ValidateComponent(brookName, nameof(brookName));
+        ValidateComponent(entityId, nameof(entityId));
         ValidateRange(start, nameof(start));
         ValidateRange(count, nameof(count));
 
         // Rough length check (no allocation)
         // +3 separator chars
-        if ((type.Length +
-             id.Length +
+        if ((brookName.Length +
+             entityId.Length +
              start.ToString(CultureInfo.InvariantCulture).Length +
              count.ToString(CultureInfo.InvariantCulture).Length +
              3) >
@@ -54,11 +55,17 @@ public readonly record struct BrookRangeKey
             throw new ArgumentException($"Composite key exceeds the {MaxLength}-character limit.");
         }
 
-        Type = type;
-        Id = id;
+        BrookName = brookName;
+        EntityId = entityId;
         Start = start;
         Count = count;
     }
+
+    /// <summary>
+    ///     Gets the brook name component of the brook range key.
+    /// </summary>
+    [Id(0)]
+    public string BrookName { get; }
 
     /// <summary>
     ///     Gets the count component of the brook range key.
@@ -72,10 +79,10 @@ public readonly record struct BrookRangeKey
     public BrookPosition End => (Start + Count) - 1;
 
     /// <summary>
-    ///     Gets the id component of the brook range key.
+    ///     Gets the entity id component of the brook range key.
     /// </summary>
     [Id(1)]
-    public string Id { get; }
+    public string EntityId { get; }
 
     /// <summary>
     ///     Gets the starting position of the range.
@@ -84,15 +91,9 @@ public readonly record struct BrookRangeKey
     public BrookPosition Start { get; }
 
     /// <summary>
-    ///     Gets the type component of the brook range key.
-    /// </summary>
-    [Id(0)]
-    public string Type { get; }
-
-    /// <summary>
     ///     Creates a brook range key from a brook key and range parameters.
     /// </summary>
-    /// <param name="key">The brook key containing type and id.</param>
+    /// <param name="key">The brook key containing brook name and entity id.</param>
     /// <param name="start">The starting position of the range.</param>
     /// <param name="count">The number of items in the range.</param>
     /// <returns>A new brook range key.</returns>
@@ -101,13 +102,13 @@ public readonly record struct BrookRangeKey
         long start,
         long count
     ) =>
-        new(key.Type, key.Id, start, count);
+        new(key.BrookName, key.EntityId, start, count);
 
     /// <summary>
     ///     Converts a brook range key to its string representation.
     /// </summary>
     /// <param name="key">The brook range key to convert.</param>
-    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
+    /// <returns>A string representation of the brook range key in the format "brookName|entityId|start|count".</returns>
     public static string FromBrookRangeKey(
         BrookRangeKey key
     ) =>
@@ -140,11 +141,11 @@ public readonly record struct BrookRangeKey
         if (found != 3)
         {
             throw new FormatException(
-                $"Composite key must be in the form '<type>{Separator}<id>{Separator}<start>{Separator}<count>'.");
+                $"Composite key must be in the form '<brookName>{Separator}<entityId>{Separator}<start>{Separator}<count>'.");
         }
 
-        string type = value[..idx[0]];
-        string id = value[(idx[0] + 1)..idx[1]];
+        string brookName = value[..idx[0]];
+        string entityId = value[(idx[0] + 1)..idx[1]];
         ReadOnlySpan<char> startSpan = value.AsSpan(idx[1] + 1, idx[2] - idx[1] - 1);
         string countSpan = value[(idx[2] + 1)..];
         if (!long.TryParse(startSpan, out long start))
@@ -157,18 +158,18 @@ public readonly record struct BrookRangeKey
             throw new FormatException($"Could not parse '{countSpan}' as a {nameof(Count)} (long).");
         }
 
-        return new(type, id, start, count);
+        return new(brookName, entityId, start, count);
     }
 
     /// <summary>
     ///     Implicitly converts a <see cref="BrookRangeKey" /> to its string representation.
     /// </summary>
     /// <param name="key">The brook range key to convert.</param>
-    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
+    /// <returns>A string representation of the brook range key in the format "brookName|entityId|start|count".</returns>
     public static implicit operator string(
         BrookRangeKey key
     ) =>
-        $"{key.Type}{Separator}{key.Id}{Separator}{key.Start.Value}{Separator}{key.Count}";
+        $"{key.BrookName}{Separator}{key.EntityId}{Separator}{key.Start.Value}{Separator}{key.Count}";
 
     /// <summary>
     ///     Implicitly converts a string to a <see cref="BrookRangeKey" />.
@@ -210,14 +211,14 @@ public readonly record struct BrookRangeKey
     }
 
     /// <summary>
-    ///     Converts this brook range key to a brook key containing only the type and id components.
+    ///     Converts this brook range key to a brook key containing only the brook name and entity id components.
     /// </summary>
-    /// <returns>A brook key with the type and id from this range key.</returns>
-    public BrookKey ToBrookCompositeKey() => new(Type, Id);
+    /// <returns>A brook key with the brook name and entity id from this range key.</returns>
+    public BrookKey ToBrookCompositeKey() => new(BrookName, EntityId);
 
     /// <summary>
     ///     Returns the string representation of this brook range key.
     /// </summary>
-    /// <returns>A string representation of the brook range key in the format "type|id|start|count".</returns>
+    /// <returns>A string representation of the brook range key in the format "brookName|entityId|start|count".</returns>
     public override string ToString() => this;
 }

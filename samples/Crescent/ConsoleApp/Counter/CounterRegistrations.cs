@@ -39,19 +39,19 @@ internal static class CounterRegistrations
         services.AddEventType<CounterReset>();
 
         // Register command handlers
-        services.AddCommandHandler<InitializeCounter, CounterState, InitializeCounterHandler>();
-        services.AddCommandHandler<IncrementCounter, CounterState, IncrementCounterHandler>();
-        services.AddCommandHandler<DecrementCounter, CounterState, DecrementCounterHandler>();
-        services.AddCommandHandler<ResetCounter, CounterState, ResetCounterHandler>();
+        services.AddCommandHandler<InitializeCounter, CounterAggregate, InitializeCounterHandler>();
+        services.AddCommandHandler<IncrementCounter, CounterAggregate, IncrementCounterHandler>();
+        services.AddCommandHandler<DecrementCounter, CounterAggregate, DecrementCounterHandler>();
+        services.AddCommandHandler<ResetCounter, CounterAggregate, ResetCounterHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<CounterInitialized, CounterState, CounterInitializedReducer>();
-        services.AddReducer<CounterIncremented, CounterState, CounterIncrementedReducer>();
-        services.AddReducer<CounterDecremented, CounterState, CounterDecrementedReducer>();
-        services.AddReducer<CounterReset, CounterState, CounterResetReducer>();
+        services.AddReducer<CounterInitialized, CounterAggregate, CounterInitializedReducer>();
+        services.AddReducer<CounterIncremented, CounterAggregate, CounterIncrementedReducer>();
+        services.AddReducer<CounterDecremented, CounterAggregate, CounterDecrementedReducer>();
+        services.AddReducer<CounterReset, CounterAggregate, CounterResetReducer>();
 
-        // Add snapshot state converter for CounterState (required for aggregate snapshots)
-        services.AddSnapshotStateConverter<CounterState>();
+        // Add snapshot state converter for CounterAggregate (required for aggregate snapshots)
+        services.AddSnapshotStateConverter<CounterAggregate>();
 
         // Register reducers for CounterSummaryProjection (UX projection)
         services.AddReducer<CounterInitialized, CounterSummaryProjection, CounterSummaryInitializedReducer>();

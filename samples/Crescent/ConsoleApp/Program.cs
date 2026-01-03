@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
@@ -20,7 +20,6 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Serialization.Abstractions;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -93,11 +92,11 @@ builder.Services.AddCosmosSnapshotStorageProvider(options =>
 // Add snapshot caching infrastructure (required for aggregates using snapshots)
 builder.Services.AddSnapshotCaching();
 
-// Add snapshot state converter for CounterState (required for snapshot verification)
-builder.Services.AddSnapshotStateConverter<CounterState>();
+// Add snapshot state converter for CounterAggregate (required for snapshot verification)
+builder.Services.AddSnapshotStateConverter<CounterAggregate>();
 
 // Add JSON serialization for aggregate events
-builder.Services.AddSingleton<ISerializationProvider, JsonSerializationProvider>();
+builder.Services.AddJsonSerialization();
 
 // Add counter aggregate domain services
 builder.Services.AddCounterAggregate();
@@ -159,8 +158,8 @@ if (string.Equals(mode, "reuse", StringComparison.OrdinalIgnoreCase) &&
 else
 {
     brookKey = new($"test-brook-{Guid.NewGuid():N}", "sample-brook-001");
-    runState.PrimaryType = brookKey.Type;
-    runState.PrimaryId = brookKey.Id;
+    runState.PrimaryType = brookKey.BrookName;
+    runState.PrimaryId = brookKey.EntityId;
     logger.ModeFreshUsingNewBrookKey(runId, brookKey, RunStateStore.FilePath);
 }
 
@@ -295,9 +294,9 @@ LogScenarioResult(logger, aggThroughputResult);
 logger.ScenarioVerificationEndToEnd();
 IBrookStorageProvider brookStorageProvider = host.Services.GetRequiredService<IBrookStorageProvider>();
 ISnapshotStorageProvider snapshotStorageProvider = host.Services.GetRequiredService<ISnapshotStorageProvider>();
-ISnapshotStateConverter<CounterState> snapshotStateConverter =
-    host.Services.GetRequiredService<ISnapshotStateConverter<CounterState>>();
-IRootReducer<CounterState> counterRootReducer = host.Services.GetRequiredService<IRootReducer<CounterState>>();
+ISnapshotStateConverter<CounterAggregate> snapshotStateConverter =
+    host.Services.GetRequiredService<ISnapshotStateConverter<CounterAggregate>>();
+IRootReducer<CounterAggregate> counterRootReducer = host.Services.GetRequiredService<IRootReducer<CounterAggregate>>();
 ScenarioResult verificationResult = await VerificationScenario.RunEndToEndVerificationAsync(
     logger,
     runId,
@@ -385,7 +384,7 @@ BrookPosition confirmed = await host2.Services.GetRequiredService<IBrookGrainFac
     .GetBrookCursorGrain(brookKey)
     .GetLatestPositionConfirmedAsync();
 runState.PrimaryCursor = confirmed.Value;
-runState.UpsertStream(brookKey.Type, brookKey.Id, confirmed.Value);
+runState.UpsertStream(brookKey.BrookName, brookKey.EntityId, confirmed.Value);
 await RunStateStore.SaveAsync(runState, logger);
 await host2.StopAsync();
 await host.StopAsync();

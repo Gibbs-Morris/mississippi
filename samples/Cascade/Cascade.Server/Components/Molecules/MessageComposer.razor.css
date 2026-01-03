@@ -1,0 +1,12 @@
+/* <copyright file="MessageComposer.razor.css" company="Gibbs-Morris">
+   Copyright (c) Gibbs-Morris. All rights reserved.
+   </copyright> */
+
+/* Message composer molecule - combines input and send button */
+.message-composer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-top: 1px solid #40444b;
+    background: #36393f;
+}

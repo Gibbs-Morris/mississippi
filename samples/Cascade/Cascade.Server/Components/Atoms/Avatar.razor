@@ -1,0 +1,5 @@
+@* Avatar.razor - Atom component for displaying user avatars *@
+
+<div class="avatar" title="@UserName">
+    @(string.IsNullOrEmpty(UserName) ? "?" : UserName[0].ToString().ToUpperInvariant())
+</div>

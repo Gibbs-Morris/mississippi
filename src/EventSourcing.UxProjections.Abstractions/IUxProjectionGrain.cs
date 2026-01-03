@@ -20,8 +20,9 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 ///         cache grains.
 ///     </para>
 ///     <para>
-///         The grain is keyed by <see cref="UxProjectionKey" /> in the format
-///         "projectionTypeName|brookType|brookId".
+///         The grain is keyed by just the entity ID. The brook name is obtained from
+///         the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         on the concrete grain class, and the projection type is known from <typeparamref name="TProjection" />.
 ///     </para>
 ///     <para>
 ///         All projection reads are served via versioned cache grains to maintain single

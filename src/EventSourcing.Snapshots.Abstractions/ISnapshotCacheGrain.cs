@@ -14,7 +14,7 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 /// <remarks>
 ///     <para>
 ///         This grain is keyed by <see cref="SnapshotKey" /> in the format
-///         "projectionType|projectionId|reducersHash|version".
+///         "brookName|entityId|version|snapshotStorageName|reducersHash".
 ///         Once activated and hydrated, the state is immutable and cached in memory for fast read access.
 ///     </para>
 ///     <para>

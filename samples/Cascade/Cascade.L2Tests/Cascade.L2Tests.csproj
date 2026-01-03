@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Aspire Testing Infrastructure -->
+    <PackageReference Include="Aspire.Hosting.Testing" />
+
+    <!-- Playwright for E2E browser automation -->
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cascade.AppHost\Cascade.AppHost.csproj" />
+  </ItemGroup>
+</Project>

@@ -115,7 +115,7 @@ public static class AggregateRegistrations
     ///     Registers an event type so it can be resolved during aggregate hydration.
     /// </summary>
     /// <typeparam name="TEvent">
-    ///     The event type. Must be decorated with <see cref="EventNameAttribute" />.
+    ///     The event type. Must be decorated with <see cref="EventStorageNameAttribute" />.
     /// </typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
@@ -152,7 +152,7 @@ public static class AggregateRegistrations
     ///     Registers a snapshot type so it can be resolved during snapshot loading.
     /// </summary>
     /// <typeparam name="TSnapshot">
-    ///     The snapshot type. Must be decorated with <see cref="SnapshotNameAttribute" />.
+    ///     The snapshot type. Must be decorated with <see cref="SnapshotStorageNameAttribute" />.
     /// </typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
@@ -172,14 +172,14 @@ public static class AggregateRegistrations
     }
 
     /// <summary>
-    ///     Scans an assembly for types decorated with <see cref="EventNameAttribute" /> and registers them.
+    ///     Scans an assembly for types decorated with <see cref="EventStorageNameAttribute" /> and registers them.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="assembly">The assembly to scan for event types.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <remarks>
     ///     This method queues the assembly to be scanned when the <see cref="IEventTypeRegistry" /> is created.
-    ///     All types in the assembly decorated with <see cref="EventNameAttribute" /> will be automatically
+    ///     All types in the assembly decorated with <see cref="EventStorageNameAttribute" /> will be automatically
     ///     registered, eliminating the need to call <see cref="AddEventType{TEvent}" /> for each type.
     /// </remarks>
     public static IServiceCollection ScanAssemblyForEventTypes(
@@ -210,14 +210,14 @@ public static class AggregateRegistrations
         services.ScanAssemblyForEventTypes(typeof(TMarker).Assembly);
 
     /// <summary>
-    ///     Scans an assembly for types decorated with <see cref="SnapshotNameAttribute" /> and registers them.
+    ///     Scans an assembly for types decorated with <see cref="SnapshotStorageNameAttribute" /> and registers them.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="assembly">The assembly to scan for snapshot types.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <remarks>
     ///     This method queues the assembly to be scanned when the <see cref="ISnapshotTypeRegistry" /> is created.
-    ///     All types in the assembly decorated with <see cref="SnapshotNameAttribute" /> will be automatically
+    ///     All types in the assembly decorated with <see cref="SnapshotStorageNameAttribute" /> will be automatically
     ///     registered, eliminating the need to call <see cref="AddSnapshotType{TSnapshot}" /> for each type.
     /// </remarks>
     public static IServiceCollection ScanAssemblyForSnapshotTypes(
@@ -293,7 +293,7 @@ public static class AggregateRegistrations
             IEventTypeRegistry registry
         )
         {
-            string eventName = EventNameHelper.GetEventName<TEvent>();
+            string eventName = EventStorageNameHelper.GetStorageName<TEvent>();
             registry.Register(eventName, typeof(TEvent));
         }
     }
@@ -316,7 +316,7 @@ public static class AggregateRegistrations
             ISnapshotTypeRegistry registry
         )
         {
-            string snapshotName = SnapshotNameHelper.GetSnapshotName<TSnapshot>();
+            string snapshotName = SnapshotStorageNameHelper.GetStorageName<TSnapshot>();
             registry.Register(snapshotName, typeof(TSnapshot));
         }
     }

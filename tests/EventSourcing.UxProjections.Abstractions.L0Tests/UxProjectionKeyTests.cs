@@ -84,8 +84,8 @@ public sealed class UxProjectionKeyTests
     {
         UxProjectionKey key = UxProjectionKey.FromString("ProjectionName|brookType|entityId");
         Assert.Equal("ProjectionName", key.ProjectionTypeName);
-        Assert.Equal("brookType", key.BrookKey.Type);
-        Assert.Equal("entityId", key.BrookKey.Id);
+        Assert.Equal("brookType", key.BrookKey.BrookName);
+        Assert.Equal("entityId", key.BrookKey.EntityId);
     }
 
     /// <summary>
@@ -159,8 +159,8 @@ public sealed class UxProjectionKeyTests
     {
         UxProjectionKey key = "ProjectionName|brookType|entityId";
         Assert.Equal("ProjectionName", key.ProjectionTypeName);
-        Assert.Equal("brookType", key.BrookKey.Type);
-        Assert.Equal("entityId", key.BrookKey.Id);
+        Assert.Equal("brookType", key.BrookKey.BrookName);
+        Assert.Equal("entityId", key.BrookKey.EntityId);
     }
 
     /// <summary>

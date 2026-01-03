@@ -32,7 +32,7 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 [AllureSubSuite("Cosmos Repository")]
 public sealed class SnapshotCosmosRepositoryTests
 {
-    private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
+    private static readonly SnapshotStreamKey StreamKey = new("TEST.BROOK", "type", "id", "hash");
 
     private static readonly SnapshotKey SnapshotKey = new(StreamKey, 3);
 

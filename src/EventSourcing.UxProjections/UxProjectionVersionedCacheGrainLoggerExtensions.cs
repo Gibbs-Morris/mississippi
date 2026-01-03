@@ -9,20 +9,20 @@ using Mississippi.EventSourcing.UxProjections.Abstractions;
 namespace Mississippi.EventSourcing.UxProjections;
 
 /// <summary>
-///     Logger extensions for <see cref="UxProjectionVersionedCacheGrainBase{TProjection, TBrook}" />.
+///     Logger extensions for <see cref="UxProjectionVersionedCacheGrain{TProjection}" />.
 /// </summary>
 internal static partial class UxProjectionVersionedCacheGrainLoggerExtensions
 {
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Debug,
-        Message = "Versioned UX projection cache grain activated with key '{PrimaryKey}' for projection " +
-                  "'{ProjectionTypeName}' on brook '{BrookKey}' at version {Version}")]
+        Message = "Versioned UX projection cache grain activated with key '{PrimaryKey}' for brook " +
+                  "'{BrookName}' entity '{EntityId}' at version {Version}")]
     public static partial void VersionedCacheGrainActivated(
         this ILogger logger,
         string primaryKey,
-        string projectionTypeName,
-        BrookKey brookKey,
+        string brookName,
+        string entityId,
         BrookPosition version
     );
 
@@ -42,7 +42,7 @@ internal static partial class UxProjectionVersionedCacheGrainLoggerExtensions
         Message = "Cache hit for versioned UX projection '{VersionedKey}'")]
     public static partial void VersionedCacheHit(
         this ILogger logger,
-        UxProjectionVersionedKey versionedKey
+        UxProjectionVersionedCacheKey versionedKey
     );
 
     [LoggerMessage(
@@ -51,7 +51,7 @@ internal static partial class UxProjectionVersionedCacheGrainLoggerExtensions
         Message = "Loaded versioned UX projection '{VersionedKey}' from snapshot")]
     public static partial void VersionedCacheLoaded(
         this ILogger logger,
-        UxProjectionVersionedKey versionedKey
+        UxProjectionVersionedCacheKey versionedKey
     );
 
     [LoggerMessage(
@@ -60,6 +60,6 @@ internal static partial class UxProjectionVersionedCacheGrainLoggerExtensions
         Message = "Cache miss for versioned UX projection '{VersionedKey}', fetching from snapshot")]
     public static partial void VersionedCacheMiss(
         this ILogger logger,
-        UxProjectionVersionedKey versionedKey
+        UxProjectionVersionedCacheKey versionedKey
     );
 }

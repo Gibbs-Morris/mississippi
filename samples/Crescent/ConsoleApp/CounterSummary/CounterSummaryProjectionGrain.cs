@@ -1,7 +1,6 @@
-using Crescent.ConsoleApp.Counter;
-
 using Microsoft.Extensions.Logging;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.UxProjections;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
@@ -17,8 +16,8 @@ namespace Crescent.ConsoleApp.CounterSummary;
 /// <remarks>
 ///     <para>
 ///         This grain demonstrates the "multiple projections per brook" pattern.
-///         It consumes the same <see cref="CounterBrook" /> event stream as the
-///         <see cref="CounterAggregateGrain" />, but produces a read-optimized
+///         It consumes the same Counter brook event stream as the
+///         CounterAggregateGrain, but produces a read-optimized
 ///         projection for UX display purposes.
 ///     </para>
 ///     <para>
@@ -27,7 +26,8 @@ namespace Crescent.ConsoleApp.CounterSummary;
 ///         a new snapshot if the brook has advanced since the last read.
 ///     </para>
 /// </remarks>
-internal sealed class CounterSummaryProjectionGrain : UxProjectionGrainBase<CounterSummaryProjection, CounterBrook>
+[BrookName("CRESCENT", "SAMPLE", "COUNTER")]
+internal sealed class CounterSummaryProjectionGrain : UxProjectionGrainBase<CounterSummaryProjection>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="CounterSummaryProjectionGrain" /> class.

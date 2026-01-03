@@ -11,14 +11,14 @@ namespace Crescent.ConsoleApp.CounterSummary;
 /// <remarks>
 ///     <para>
 ///         This projection demonstrates the "multiple projections per brook" pattern.
-///         Both <see cref="Counter.CounterState" /> (the aggregate state) and this projection
-///         derive from the same <see cref="Counter.CounterBrook" /> event stream, but serve
+///         Both <see cref="Counter.CounterAggregate" /> (the aggregate state) and this projection
+///         derive from the same event stream (identified by <see cref="BrookNameAttribute" />), but serve
 ///         different purposes:
 ///     </para>
 ///     <list type="bullet">
 ///         <item>
 ///             <description>
-///                 <see cref="Counter.CounterState" /> is the write-side aggregate state used for
+///                 <see cref="Counter.CounterAggregate" /> is the write-side aggregate state used for
 ///                 command processing and consistency enforcement.
 ///             </description>
 ///         </item>
@@ -30,7 +30,7 @@ namespace Crescent.ConsoleApp.CounterSummary;
 ///         </item>
 ///     </list>
 /// </remarks>
-[SnapshotName("CRESCENT", "SAMPLE", "COUNTERSUMMARY")]
+[SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSUMMARY")]
 [GenerateSerializer]
 [Alias("Crescent.ConsoleApp.CounterSummary.CounterSummaryProjection")]
 internal sealed record CounterSummaryProjection

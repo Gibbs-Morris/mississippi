@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Moq;
 
@@ -23,18 +22,6 @@ namespace Mississippi.EventSourcing.Aggregates.Tests;
 [AllureSubSuite("Grain Factory")]
 public class AggregateGrainFactoryTests
 {
-    /// <summary>
-    ///     Test brook definition.
-    /// </summary>
-    [BrookName("TEST", "APP", "BROOK")]
-    private sealed class TestBrook : IBrookDefinition
-    {
-        /// <summary>
-        ///     Gets the brook name.
-        /// </summary>
-        public static string BrookName => "TEST.APP.BROOK";
-    }
-
     /// <summary>
     ///     Constructor should throw when grain factory is null.
     /// </summary>
@@ -64,7 +51,7 @@ public class AggregateGrainFactoryTests
         Mock<IGrainFactory> grainFactoryMock = new();
         Mock<ILogger<AggregateGrainFactory>> loggerMock = new();
         Mock<ITestAggregateGrain> grainMock = new();
-        BrookKey expectedKey = BrookKey.For<TestBrook>("entity-456");
+        BrookKey expectedKey = new("TEST.APP.BROOK", "entity-456");
         string? capturedKey = null;
         grainFactoryMock.Setup(f => f.GetGrain<ITestAggregateGrain>(It.IsAny<string>(), It.IsAny<string?>()))
             .Callback<string, string?>((
@@ -75,30 +62,6 @@ public class AggregateGrainFactoryTests
         AggregateGrainFactory factory = new(grainFactoryMock.Object, loggerMock.Object);
         ITestAggregateGrain result = factory.GetAggregate<ITestAggregateGrain>(expectedKey);
         Assert.Same(grainMock.Object, result);
-        Assert.Equal((string)expectedKey, capturedKey);
-    }
-
-    /// <summary>
-    ///     GetAggregate with brook type should resolve grain with correct key.
-    /// </summary>
-    [Fact]
-    public void GetAggregateWithBrookTypeResolvesGrainWithCorrectKey()
-    {
-        Mock<IGrainFactory> grainFactoryMock = new();
-        Mock<ILogger<AggregateGrainFactory>> loggerMock = new();
-        Mock<ITestAggregateGrain> grainMock = new();
-        string? capturedKey = null;
-        grainFactoryMock.Setup(f => f.GetGrain<ITestAggregateGrain>(It.IsAny<string>(), It.IsAny<string?>()))
-            .Callback<string, string?>((
-                key,
-                _
-            ) => capturedKey = key)
-            .Returns(grainMock.Object);
-        AggregateGrainFactory factory = new(grainFactoryMock.Object, loggerMock.Object);
-        ITestAggregateGrain result = factory.GetAggregate<ITestAggregateGrain, TestBrook>("entity-123");
-        Assert.Same(grainMock.Object, result);
-        Assert.NotNull(capturedKey);
-        BrookKey expectedKey = BrookKey.For<TestBrook>("entity-123");
         Assert.Equal((string)expectedKey, capturedKey);
     }
 }

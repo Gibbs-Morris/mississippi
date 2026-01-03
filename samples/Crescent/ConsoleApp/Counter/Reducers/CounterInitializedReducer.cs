@@ -10,11 +10,11 @@ namespace Crescent.ConsoleApp.Counter.Reducers;
 /// <summary>
 ///     Reducer for <see cref="CounterInitialized" /> events.
 /// </summary>
-internal sealed class CounterInitializedReducer : Reducer<CounterInitialized, CounterState>
+internal sealed class CounterInitializedReducer : Reducer<CounterInitialized, CounterAggregate>
 {
     /// <inheritdoc />
-    protected override CounterState ReduceCore(
-        CounterState state,
+    protected override CounterAggregate ReduceCore(
+        CounterAggregate state,
         CounterInitialized @event
     )
     {

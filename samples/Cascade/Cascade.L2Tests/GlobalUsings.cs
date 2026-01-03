@@ -1,0 +1,13 @@
+global using System;
+global using System.Collections.Generic;
+global using System.Net;
+global using System.Threading;
+global using System.Threading.Tasks;
+
+global using Aspire.Hosting;
+global using Aspire.Hosting.ApplicationModel;
+global using Aspire.Hosting.Testing;
+
+global using Microsoft.Extensions.DependencyInjection;
+
+global using Xunit;
