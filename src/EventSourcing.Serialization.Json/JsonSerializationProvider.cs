@@ -12,7 +12,7 @@ namespace Mississippi.EventSourcing.Serialization.Json;
 /// <summary>
 ///     Provides JSON serialization functionality using System.Text.Json.
 /// </summary>
-public class JsonSerializationProvider : ISerializationProvider
+internal sealed class JsonSerializationProvider : ISerializationProvider
 {
     /// <summary>
     ///     Gets the format identifier for this serialization provider.

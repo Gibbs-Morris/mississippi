@@ -1,11 +1,7 @@
 @page "/channels"
 @page "/channels/{ChannelId}"
 @using Cascade.Server.Components.Organisms
-@using Cascade.Server.Components.Services
 @using Cascade.Server.Components.Shared
-
-@inject UserSession UserSession
-@inject NavigationManager Navigation
 
 <PageTitle>Cascade Chat - Channels</PageTitle>
 
@@ -36,52 +32,8 @@ else
             {
                 <ChannelView
                     ChannelId="@ChannelId"
-                    ChannelName="@GetChannelDisplayName(ChannelId)"/>
+                    ChannelName=\"@ChannelDisplayHelper.GetDisplayName(ChannelId)\"/>
             }
         </div>
     </div>
-}
-
-@code {
-
-    /// <summary>
-    ///     Gets or sets the selected channel ID from the route.
-    /// </summary>
-    [Parameter]
-    public string? ChannelId { get; set; }
-
-    /// <inheritdoc />
-    protected override void OnInitialized()
-    {
-        if (!UserSession.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/login");
-        }
-    }
-
-    private void HandleChannelSelected(
-        string channelId
-    )
-    {
-        Navigation.NavigateTo($"/channels/{channelId}");
-    }
-
-    private static string GetChannelDisplayName(
-        string channelId
-    )
-    {
-        // Extract a readable name from the channel ID
-        // Format is typically: channel-NAME-TIMESTAMP
-        if (channelId.StartsWith("channel-", StringComparison.OrdinalIgnoreCase))
-        {
-            string[] parts = channelId.Substring(8).Split('-');
-            if (parts.Length >= 1)
-            {
-                return parts[0].ToLowerInvariant();
-            }
-        }
-
-        return channelId;
-    }
-
 }

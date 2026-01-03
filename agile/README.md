@@ -12,6 +12,7 @@
 | [Phase 4](./phase-4-ux/README.md) | UX – Blazor Components | ✅ Complete |
 | [Phase 5](./phase-5-e2e-tests/README.md) | E2E Tests (L2) – Playwright | ✅ Complete |
 | [Phase 6](./phase-6-review/README.md) | Implementation Review | ⬜ Not Started |
+| [Phase 7](./phase-7-ripples/README.md) | Ripples – State Management Framework | 🔵 Design Complete |
 
 ## Completion Criteria
 
@@ -21,6 +22,7 @@
 - [x] Blazor Server app with real-time message updates
 - [x] Playwright L2 tests validating multi-user scenarios
 - [ ] Implementation review completed (Phase 6)
+- [ ] Ripples state management framework implemented (Phase 7)
 - [ ] `./go.ps1` passes for both mississippi.sln and samples.sln
 
 ## Key Decisions
@@ -34,6 +36,10 @@
 7. **Framework-First**: Maximize reusable framework code, minimize sample-specific code. If it can be generic, it goes in the framework.
 8. **Command Dispatcher**: Standard framework pattern for sending commands from Blazor UX to aggregate grains with consistent error handling and optimistic UI support.
 9. **Atomic Design for Blazor**: Components follow atomic design (atoms → molecules → organisms → templates → pages). State flows down, commands flow up.
+10. **Ripples Library**: Mississippi.Ripples is a Redux-like state management library with built-in backend integration for both Blazor Server and Blazor WebAssembly.
+11. **Dual Hosting**: Same `IRipple<T>` interface works in Server (direct grain) and WASM (HTTP + SignalR).
+12. **Composable Projections**: List projections contain only IDs; detail projections load per-row via `IRipplePool<T>` with HOT/WARM/COLD tiering.
+13. **Source Generators**: Auto-generate projection controllers, aggregate controllers, and route registries from grain attributes.
 
 ## Guiding Principles
 

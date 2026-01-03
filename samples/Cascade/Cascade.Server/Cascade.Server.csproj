@@ -22,6 +22,7 @@
     <!-- Mississippi framework -->
     <ProjectReference Include="..\..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections.SignalR\EventSourcing.UxProjections.SignalR.csproj" />
     <ProjectReference Include="..\..\..\src\Core.Cosmos\Core.Cosmos.csproj" />

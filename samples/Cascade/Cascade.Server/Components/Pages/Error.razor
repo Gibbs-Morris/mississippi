@@ -2,8 +2,6 @@
    Copyright (c) Gibbs-Morris. All rights reserved.
    </copyright> *@
 @page "/error"
-@using System.Diagnostics
-@using Microsoft.AspNetCore.Http
 
 <PageTitle>Error - Cascade Chat</PageTitle>
 
@@ -27,19 +25,3 @@
     For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
     and restarting the app.
 </p>
-
-@code {
-
-    [CascadingParameter]
-    private HttpContext? HttpContext { get; set; }
-
-    private string? RequestId { get; set; }
-
-    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
-
-    protected override void OnInitialized()
-    {
-        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
-    }
-
-}

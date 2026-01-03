@@ -1,0 +1,44 @@
+/* <copyright file="MemberList.razor.css" company="Gibbs-Morris">
+   Copyright (c) Gibbs-Morris. All rights reserved.
+   </copyright> */
+
+/* Member list organism - displays channel members sidebar */
+.member-list {
+    width: 200px;
+    min-width: 200px;
+    background: #2c2f33;
+    padding: 1rem;
+    border-left: 1px solid #40444b;
+    overflow-y: auto;
+}
+
+.member-list h4 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8e9297;
+    margin: 0 0 0.75rem 0;
+}
+
+.member-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0;
+    color: #8e9297;
+    font-size: 0.875rem;
+}
+
+.member-item:hover {
+    color: white;
+}
+
+.empty {
+    font-size: 0.875rem;
+    color: #72767d;
+}

@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Microsoft.Playwright;
 
 
@@ -8,8 +6,6 @@ namespace Cascade.L2Tests;
 /// <summary>
 ///     Base class for E2E tests providing common helper methods.
 /// </summary>
-[AllureParentSuite("Cascade")]
-[AllureSuite("E2E Tests")]
 #pragma warning disable CA1515 // Types can be made internal - xUnit requires public base class
 public abstract class TestBase : IClassFixture<PlaywrightFixture>
 #pragma warning restore CA1515

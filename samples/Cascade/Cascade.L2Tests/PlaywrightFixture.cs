@@ -17,7 +17,7 @@ public sealed class PlaywrightFixture
       IDisposable
 #pragma warning restore CA1515
 {
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(120);
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(180);
 
     private DistributedApplication? app;
 
@@ -43,7 +43,11 @@ public sealed class PlaywrightFixture
     /// <returns>A new page instance.</returns>
     public async Task<IPage> CreatePageAsync()
     {
-        IBrowserContext context = await Browser.NewContextAsync();
+        IBrowserContext context = await Browser.NewContextAsync(
+            new()
+            {
+                IgnoreHTTPSErrors = true,
+            });
         return await context.NewPageAsync();
     }
 
@@ -99,12 +103,25 @@ public sealed class PlaywrightFixture
         app = builtApp;
         await app.StartAsync().WaitAsync(DefaultTimeout);
 
-        // Wait for the cascade-server resource to be healthy
+        // Wait for container resources to be healthy first (cosmos emulator takes ~30+ seconds)
         using CancellationTokenSource cts = new(DefaultTimeout);
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("cosmos", cts.Token);
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("storage", cts.Token);
+
+        // Wait for the cascade-server resource to be healthy
         await app.ResourceNotifications.WaitForResourceHealthyAsync("cascade-server", cts.Token);
 
-        // Get the Cascade.Server URL
-        Uri resourceUrl = app.GetEndpoint("cascade-server", "http");
+        // Get the Cascade.Server URL (try https first, fall back to http)
+        Uri? resourceUrl;
+        try
+        {
+            resourceUrl = app.GetEndpoint("cascade-server", "https");
+        }
+        catch (InvalidOperationException)
+        {
+            resourceUrl = app.GetEndpoint("cascade-server", "http");
+        }
+
         BaseUrl = resourceUrl.ToString().TrimEnd('/');
 
         // Initialize Playwright

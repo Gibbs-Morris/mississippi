@@ -10,6 +10,8 @@ namespace Cascade.L2Tests.Features;
 /// <summary>
 ///     Tests for channel creation functionality.
 /// </summary>
+[AllureParentSuite("Cascade Chat App")]
+[AllureSuite("Channels")]
 [AllureSubSuite("Channel Creation")]
 public class ChannelCreationTests : TestBase
 {

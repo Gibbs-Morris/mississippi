@@ -1,8 +1,3 @@
-@inject IProjectionSubscriberFactory SubscriberFactory
-@inject UserSession UserSession
-@inject NavigationManager Navigation
-@using Cascade.Domain.Projections.UserProfile
-@using Cascade.Server.Components.Services
 @implements IAsyncDisposable
 
 <div class="channel-list">
@@ -30,8 +25,8 @@
             @foreach (string channelId in subscriber.Current!.ChannelIds)
             {
                 <li class="channel-item @(SelectedChannelId == channelId ? "selected" : "")"
-                    @onclick="() => SelectChannel(channelId)">
-                    <span class="channel-name"># @GetChannelDisplayName(channelId)</span>
+                    @onclick="() => SelectChannelAsync(channelId)">
+                    <span class=\"channel-name\"># @ChannelDisplayHelper.GetDisplayName(channelId)</span>
                 </li>
             }
         </ul>
@@ -40,91 +35,5 @@
 
 @if (showCreateModal)
 {
-    <CreateChannelModal OnCreated="OnChannelCreated" OnClose="HideCreateModal"/>
-}
-
-@code {
-
-    /// <summary>
-    ///     Gets or sets the currently selected channel ID.
-    /// </summary>
-    [Parameter]
-    public string? SelectedChannelId { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the callback when a channel is selected.
-    /// </summary>
-    [Parameter]
-    public EventCallback<string> OnChannelSelected { get; set; }
-
-    private IProjectionSubscriber<UserProfileProjection>? subscriber;
-
-    private bool showCreateModal;
-
-    /// <inheritdoc />
-    protected override async Task OnInitializedAsync()
-    {
-        if (UserSession.IsAuthenticated)
-        {
-            subscriber = SubscriberFactory.Create<UserProfileProjection>();
-            subscriber.OnChanged += HandleProjectionChanged;
-            await subscriber.SubscribeAsync(UserSession.UserId!);
-        }
-    }
-
-    private void HandleProjectionChanged(
-        object? sender,
-        EventArgs e
-    )
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    private async Task SelectChannel(
-        string channelId
-    )
-    {
-        await OnChannelSelected.InvokeAsync(channelId);
-    }
-
-    private void ShowCreateModal() => showCreateModal = true;
-
-    private void HideCreateModal() => showCreateModal = false;
-
-    private void OnChannelCreated(
-        string channelId
-    )
-    {
-        showCreateModal = false;
-        _ = SelectChannel(channelId);
-    }
-
-    private static string GetChannelDisplayName(
-        string channelId
-    )
-    {
-        // Extract a readable name from the channel ID
-        // Format is typically: channel-NAME-TIMESTAMP
-        if (channelId.StartsWith("channel-", StringComparison.OrdinalIgnoreCase))
-        {
-            string[] parts = channelId.Substring(8).Split('-');
-            if (parts.Length >= 1)
-            {
-                return parts[0].ToLowerInvariant();
-            }
-        }
-
-        return channelId;
-    }
-
-    /// <inheritdoc />
-    public async ValueTask DisposeAsync()
-    {
-        if (subscriber is not null)
-        {
-            subscriber.OnChanged -= HandleProjectionChanged;
-            await subscriber.DisposeAsync();
-        }
-    }
-
+    <CreateChannelModal OnCreated="OnChannelCreatedAsync" OnClose="HideCreateModal"/>
 }

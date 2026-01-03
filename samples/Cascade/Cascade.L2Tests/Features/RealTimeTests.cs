@@ -12,7 +12,9 @@ namespace Cascade.L2Tests.Features;
 /// <summary>
 ///     Tests for real-time functionality using multiple browser contexts.
 /// </summary>
-[AllureSubSuite("Real-Time")]
+[AllureParentSuite("Cascade Chat App")]
+[AllureSuite("Real-Time")]
+[AllureSubSuite("Message Delivery")]
 public class RealTimeTests : TestBase
 {
     /// <summary>

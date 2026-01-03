@@ -5,42 +5,9 @@
     <MessageInput
         Value="@messageContent"
         OnValueChanged="@(v => messageContent = v)"
-        OnEnterPressed="@HandleSend"
+        OnEnterPressed="@HandleSendAsync"
         Placeholder="Type a message..."
         IsDisabled="@IsSending"/>
 
-    <SendButton OnClick="@HandleSend" IsDisabled="@(IsSending || string.IsNullOrWhiteSpace(messageContent))"/>
+    <SendButton OnClick="@HandleSendAsync" IsDisabled="@(IsSending || string.IsNullOrWhiteSpace(messageContent))"/>
 </div>
-
-@code {
-
-    /// <summary>
-    ///     Gets or sets the callback when a message should be sent. Commands flow UP via EventCallback.
-    /// </summary>
-    [Parameter]
-    [EditorRequired]
-    public EventCallback<string> OnSend { get; set; }
-
-    /// <summary>
-    ///     Gets or sets a value indicating whether a message is currently being sent.
-    /// </summary>
-    [Parameter]
-    public bool IsSending { get; set; }
-
-    private string messageContent = string.Empty;
-
-    private async Task HandleSend()
-    {
-        if (string.IsNullOrWhiteSpace(messageContent))
-        {
-            return;
-        }
-
-        string content = messageContent;
-        messageContent = string.Empty; // Clear for UX (optimistic update)
-
-        // Raise event to parent - parent dispatches command to aggregate
-        await OnSend.InvokeAsync(content);
-    }
-
-}

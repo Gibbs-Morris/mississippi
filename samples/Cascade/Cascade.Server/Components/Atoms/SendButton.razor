@@ -1,29 +1,7 @@
 @* SendButton.razor - Atom component for the send message button *@
 
 <button class="btn btn-primary send-button"
-        @onclick="HandleClick"
+        @onclick="HandleClickAsync"
         disabled="@IsDisabled">
     Send
 </button>
-
-@code {
-
-    /// <summary>
-    ///     Gets or sets the callback when button is clicked.
-    /// </summary>
-    [Parameter]
-    [EditorRequired]
-    public EventCallback OnClick { get; set; }
-
-    /// <summary>
-    ///     Gets or sets a value indicating whether the button is disabled.
-    /// </summary>
-    [Parameter]
-    public bool IsDisabled { get; set; }
-
-    private async Task HandleClick()
-    {
-        await OnClick.InvokeAsync();
-    }
-
-}

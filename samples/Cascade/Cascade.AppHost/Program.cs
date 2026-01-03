@@ -12,13 +12,16 @@ IResourceBuilder<AzureStorageResource> storage = builder.AddAzureStorage("storag
 IResourceBuilder<AzureBlobStorageResource> blobs = storage.AddBlobs("blobs");
 
 // Add Cosmos DB (emulator)
-IResourceBuilder<AzureCosmosDBDatabaseResource> cosmos = builder.AddAzureCosmosDB("cosmos")
-    .RunAsEmulator()
-    .AddCosmosDatabase("cascade-db");
+// The cosmos resource publishes the connection string under name "cosmos"
+IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmos").RunAsEmulator();
+_ = cosmos.AddCosmosDatabase("cascade-db");
 
 // Add Cascade Server with resource references
+// WaitFor ensures the server doesn't start until emulators are ready
 builder.AddProject<Cascade_Server>("cascade-server")
     .WithReference(blobs)
-    .WithReference(cosmos)
+    .WaitFor(storage)
+    .WithReference(cosmos) // Reference the parent cosmos resource for connection string
+    .WaitFor(cosmos)
     .WithExternalHttpEndpoints();
 await builder.Build().RunAsync();

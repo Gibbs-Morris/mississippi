@@ -10,7 +10,9 @@ namespace Cascade.L2Tests.Features;
 /// <summary>
 ///     Tests for the login flow.
 /// </summary>
-[AllureSubSuite("Login")]
+[AllureParentSuite("Cascade Chat App")]
+[AllureSuite("Authentication")]
+[AllureSubSuite("Login Flow")]
 public class LoginTests : TestBase
 {
     /// <summary>

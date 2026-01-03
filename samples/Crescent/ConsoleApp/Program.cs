@@ -20,7 +20,6 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Serialization.Abstractions;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -97,7 +96,7 @@ builder.Services.AddSnapshotCaching();
 builder.Services.AddSnapshotStateConverter<CounterAggregate>();
 
 // Add JSON serialization for aggregate events
-builder.Services.AddSingleton<ISerializationProvider, JsonSerializationProvider>();
+builder.Services.AddJsonSerialization();
 
 // Add counter aggregate domain services
 builder.Services.AddCounterAggregate();

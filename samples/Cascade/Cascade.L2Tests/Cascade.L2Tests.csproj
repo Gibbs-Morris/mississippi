@@ -6,7 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Aspire Testing Infrastructure -->
     <PackageReference Include="Aspire.Hosting.Testing" />
+
+    <!-- Playwright for E2E browser automation -->
     <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
 

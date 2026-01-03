@@ -10,7 +10,9 @@ namespace Cascade.L2Tests.Features;
 /// <summary>
 ///     Tests for messaging functionality within channels.
 /// </summary>
-[AllureSubSuite("Messaging")]
+[AllureParentSuite("Cascade Chat App")]
+[AllureSuite("Messaging")]
+[AllureSubSuite("Send Messages")]
 public class MessagingTests : TestBase
 {
     /// <summary>

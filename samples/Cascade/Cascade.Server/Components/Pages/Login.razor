@@ -2,11 +2,6 @@
    Copyright (c) Gibbs-Morris. All rights reserved.
    </copyright> *@
 @page "/login"
-@using System.ComponentModel.DataAnnotations
-@using Cascade.Server.Components.Services
-
-@inject UserSession UserSession
-@inject NavigationManager Navigation
 
 <PageTitle>Login - Cascade Chat</PageTitle>
 
@@ -18,17 +13,17 @@
                     <h2 class="mb-0">Welcome to Cascade Chat</h2>
                 </div>
                 <div class="card-body">
-                    <EditForm Model="loginModel" OnValidSubmit="HandleLoginAsync" FormName="LoginForm">
+                    <EditForm Model="Model" OnValidSubmit="HandleLoginAsync" FormName="LoginForm">
                         <DataAnnotationsValidator/>
 
                         <div class="mb-3">
                             <label for="displayName" class="form-label">Display Name</label>
                             <InputText id="displayName"
-                                       @bind-Value="loginModel.DisplayName"
+                                       @bind-Value="Model.DisplayName"
                                        class="form-control"
                                        placeholder="Enter your name"
                                        disabled="@isLoading"/>
-                            <ValidationMessage For="() => loginModel.DisplayName" class="text-danger"/>
+                            <ValidationMessage For="() => Model.DisplayName" class="text-danger"/>
                         </div>
 
                         @if (!string.IsNullOrEmpty(errorMessage))
@@ -57,50 +52,3 @@
         </div>
     </div>
 </div>
-
-@code {
-
-    [SupplyParameterFromForm]
-    private LoginModel loginModel { get; set; } = new();
-
-    private bool isLoading;
-
-    private string? errorMessage;
-
-    /// <inheritdoc />
-    protected override void OnInitialized()
-    {
-        // If already logged in, redirect to channels
-        if (UserSession.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/channels");
-        }
-    }
-
-    private async Task HandleLoginAsync()
-    {
-        isLoading = true;
-        errorMessage = null;
-        try
-        {
-            await UserSession.LoginAsync(loginModel.DisplayName);
-            Navigation.NavigateTo("/channels");
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ex.Message;
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private sealed class LoginModel
-    {
-        [Required(ErrorMessage = "Please enter a display name")]
-        [StringLength(50, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 50 characters")]
-        public string DisplayName { get; set; } = string.Empty;
-    }
-
-}

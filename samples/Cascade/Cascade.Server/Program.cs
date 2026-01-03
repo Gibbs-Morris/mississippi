@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
+using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.EventSourcing.UxProjections.SignalR;
 
@@ -36,6 +37,7 @@ builder.Services.AddCascadeDomain();
 builder.Services.AddCascadeServerServices();
 
 // Add event sourcing services to DI container
+builder.Services.AddJsonSerialization();
 builder.Services.AddEventSourcingByService();
 
 // Configure Orleans silo

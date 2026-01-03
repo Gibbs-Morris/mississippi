@@ -1,12 +1,8 @@
-@using System.ComponentModel.DataAnnotations
-@using Cascade.Server.Components.Services
-@inject IChatService ChatService
-
-<div class="modal-backdrop" @onclick="Close">
+<div class="modal-backdrop" @onclick="CloseAsync">
     <div class="modal-content" @onclick:stopPropagation="true">
         <h4>Create Channel</h4>
 
-        <EditForm Model="model" OnValidSubmit="HandleSubmit" FormName="createChannel">
+        <EditForm Model="model" OnValidSubmit="HandleSubmitAsync" FormName="createChannel">
             <DataAnnotationsValidator/>
 
             <div class="form-group mb-3">
@@ -26,7 +22,7 @@
             }
 
             <div class="modal-actions d-flex gap-2 justify-content-end">
-                <button type="button" class="btn btn-secondary" @onclick="Close" disabled="@isLoading">Cancel</button>
+                <button type="button" class="btn btn-secondary" @onclick="CloseAsync" disabled="@isLoading">Cancel</button>
                 <button type="submit" class="btn btn-primary" disabled="@isLoading">
                     @if (isLoading)
                     {
@@ -38,62 +34,3 @@
         </EditForm>
     </div>
 </div>
-
-@code {
-
-    /// <summary>
-    ///     Gets or sets the callback when a channel is created.
-    /// </summary>
-    [Parameter]
-    public EventCallback<string> OnCreated { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the callback when the modal is closed.
-    /// </summary>
-    [Parameter]
-    public EventCallback OnClose { get; set; }
-
-    private readonly CreateChannelModel model = new();
-
-    private bool isLoading;
-
-    private string? error;
-
-    private async Task HandleSubmit()
-    {
-        isLoading = true;
-        error = null;
-        try
-        {
-            string channelId = await ChatService.CreateChannelAsync(model.Name, model.Description);
-            await OnCreated.InvokeAsync(channelId);
-        }
-        catch (ChatOperationException ex)
-        {
-            error = ex.Message;
-        }
-#pragma warning disable CA1031 // Catch general exception for UI error display
-        catch (Exception ex)
-#pragma warning restore CA1031
-        {
-            error = $"An unexpected error occurred: {ex.Message}";
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private async Task Close() => await OnClose.InvokeAsync();
-
-    private sealed class CreateChannelModel
-    {
-        [Required(ErrorMessage = "Channel name is required")]
-        [StringLength(50, MinimumLength = 2, ErrorMessage = "Channel name must be between 2 and 50 characters")]
-        public string Name { get; set; } = string.Empty;
-
-        [StringLength(200, ErrorMessage = "Description cannot exceed 200 characters")]
-        public string? Description { get; set; }
-    }
-
-}

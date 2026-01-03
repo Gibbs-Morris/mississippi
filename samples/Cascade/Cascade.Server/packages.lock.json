@@ -1096,6 +1096,13 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )"
         }
       },
+      "Mississippi.EventSourcing.Serialization.Json": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Snapshots": {
         "type": "Project",
         "dependencies": {

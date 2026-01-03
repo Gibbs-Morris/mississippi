@@ -8,6 +8,10 @@ using Cascade.Domain.Conversation.Commands;
 using Cascade.Domain.Conversation.Events;
 using Cascade.Domain.Conversation.Handlers;
 using Cascade.Domain.Conversation.Reducers;
+using Cascade.Domain.Projections.ChannelMemberList;
+using Cascade.Domain.Projections.ChannelMessages;
+using Cascade.Domain.Projections.OnlineUsers;
+using Cascade.Domain.Projections.UserChannelList;
 using Cascade.Domain.Projections.UserProfile;
 using Cascade.Domain.Projections.UserProfile.Reducers;
 using Cascade.Domain.User;
@@ -22,6 +26,11 @@ using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Reducers;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.UxProjections;
+
+using ChannelMemberListReducers = Cascade.Domain.Projections.ChannelMemberList.Reducers;
+using ChannelMessagesReducers = Cascade.Domain.Projections.ChannelMessages.Reducers;
+using OnlineUsersReducers = Cascade.Domain.Projections.OnlineUsers.Reducers;
+using UserChannelListReducers = Cascade.Domain.Projections.UserChannelList.Reducers;
 
 
 namespace Cascade.Domain;
@@ -54,6 +63,10 @@ public static class CascadeRegistrations
 
         // Add UX projections
         services.AddUserProfileProjection();
+        services.AddUserChannelListProjection();
+        services.AddChannelMessagesProjection();
+        services.AddChannelMemberListProjection();
+        services.AddOnlineUsersProjection();
 
         // Add UX projections infrastructure
         services.AddUxProjections();
@@ -96,6 +109,58 @@ public static class CascadeRegistrations
     }
 
     /// <summary>
+    ///     Adds the ChannelMemberListProjection services to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    private static IServiceCollection AddChannelMemberListProjection(
+        this IServiceCollection services
+    )
+    {
+        // Register reducers for ChannelMemberListProjection (UX projection)
+        services
+            .AddReducer<ChannelCreated, ChannelMemberListProjection,
+                ChannelMemberListReducers.ChannelCreatedProjectionReducer>();
+        services
+            .AddReducer<MemberAdded, ChannelMemberListProjection,
+                ChannelMemberListReducers.MemberAddedProjectionReducer>();
+        services
+            .AddReducer<MemberRemoved, ChannelMemberListProjection,
+                ChannelMemberListReducers.MemberRemovedProjectionReducer>();
+
+        // Add snapshot state converter for ChannelMemberListProjection
+        services.AddSnapshotStateConverter<ChannelMemberListProjection>();
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds the ChannelMessagesProjection services to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    private static IServiceCollection AddChannelMessagesProjection(
+        this IServiceCollection services
+    )
+    {
+        // Register reducers for ChannelMessagesProjection (UX projection)
+        services
+            .AddReducer<ConversationStarted, ChannelMessagesProjection,
+                ChannelMessagesReducers.ConversationStartedProjectionReducer>();
+        services
+            .AddReducer<MessageSent, ChannelMessagesProjection, ChannelMessagesReducers.MessageSentProjectionReducer>();
+        services
+            .AddReducer<MessageEdited, ChannelMessagesProjection,
+                ChannelMessagesReducers.MessageEditedProjectionReducer>();
+        services
+            .AddReducer<MessageDeleted, ChannelMessagesProjection,
+                ChannelMessagesReducers.MessageDeletedProjectionReducer>();
+
+        // Add snapshot state converter for ChannelMessagesProjection
+        services.AddSnapshotStateConverter<ChannelMessagesProjection>();
+        return services;
+    }
+
+    /// <summary>
     ///     Adds the Conversation aggregate services to the service collection.
     /// </summary>
     /// <param name="services">The service collection.</param>
@@ -124,6 +189,31 @@ public static class CascadeRegistrations
 
         // Add snapshot state converter for ConversationAggregate
         services.AddSnapshotStateConverter<ConversationAggregate>();
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds the OnlineUsersProjection services to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    private static IServiceCollection AddOnlineUsersProjection(
+        this IServiceCollection services
+    )
+    {
+        // Register reducers for OnlineUsersProjection (UX projection)
+        services
+            .AddReducer<UserRegistered, OnlineUsersProjection, OnlineUsersReducers.UserRegisteredProjectionReducer>();
+        services
+            .AddReducer<DisplayNameUpdated, OnlineUsersProjection,
+                OnlineUsersReducers.DisplayNameUpdatedProjectionReducer>();
+        services
+            .AddReducer<UserWentOnline, OnlineUsersProjection, OnlineUsersReducers.UserWentOnlineProjectionReducer>();
+        services
+            .AddReducer<UserWentOffline, OnlineUsersProjection, OnlineUsersReducers.UserWentOfflineProjectionReducer>();
+
+        // Add snapshot state converter for OnlineUsersProjection
+        services.AddSnapshotStateConverter<OnlineUsersProjection>();
         return services;
     }
 
@@ -161,6 +251,31 @@ public static class CascadeRegistrations
 
         // Add snapshot state converter for UserAggregate
         services.AddSnapshotStateConverter<UserAggregate>();
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds the UserChannelListProjection services to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    private static IServiceCollection AddUserChannelListProjection(
+        this IServiceCollection services
+    )
+    {
+        // Register reducers for UserChannelListProjection (UX projection)
+        services
+            .AddReducer<UserRegistered, UserChannelListProjection,
+                UserChannelListReducers.UserRegisteredProjectionReducer>();
+        services
+            .AddReducer<UserJoinedChannel, UserChannelListProjection,
+                UserChannelListReducers.UserJoinedChannelProjectionReducer>();
+        services
+            .AddReducer<UserLeftChannel, UserChannelListProjection,
+                UserChannelListReducers.UserLeftChannelProjectionReducer>();
+
+        // Add snapshot state converter for UserChannelListProjection
+        services.AddSnapshotStateConverter<UserChannelListProjection>();
         return services;
     }
 
