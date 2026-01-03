@@ -1,0 +1,63 @@
+name: "Docusaurus Build"
+on:
+  push:
+    branches:
+      - main
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+      - topic/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: "Build Docusaurus Site"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: docs/Docusaurus/package-lock.json
+
+      - name: Install dependencies
+        working-directory: docs/Docusaurus
+        run: npm ci
+
+      - name: Build Docusaurus site
+        working-directory: docs/Docusaurus
+        run: npm run build
+
+      - name: Install Playwright browsers
+        working-directory: docs/Docusaurus
+        run: npx playwright install chromium
+
+      - name: Run Playwright tests
+        working-directory: docs/Docusaurus
+        run: npm test
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docusaurus-build
+          path: docs/Docusaurus/build
+          retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: docs/Docusaurus/playwright-report
+          retention-days: 7
