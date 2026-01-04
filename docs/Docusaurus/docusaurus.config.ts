@@ -15,12 +15,14 @@ const config: Config = {
   },
 
   // Set the production url of your site here
+  // NOSONAR: hardcoded URL is intentional for GitHub Pages deployment configuration
   url: 'https://gibbs-morris.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
 
   // GitHub pages deployment config.
+  // NOSONAR: organization and project names are intentionally hardcoded
   organizationName: 'Gibbs-Morris',
   projectName: 'mississippi',
 
@@ -78,6 +80,7 @@ const config: Config = {
           position: 'right',
         },
         {
+          // NOSONAR: GitHub repository URL is intentionally hardcoded for navigation
           href: 'https://github.com/Gibbs-Morris/mississippi',
           label: 'GitHub',
           position: 'right',
@@ -101,6 +104,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
+              // NOSONAR: GitHub repository URL is intentionally hardcoded for footer link
               href: 'https://github.com/Gibbs-Morris/mississippi',
             },
           ],
