@@ -32,7 +32,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: docs/Docusaurus
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Build Docusaurus site
         working-directory: docs/Docusaurus
