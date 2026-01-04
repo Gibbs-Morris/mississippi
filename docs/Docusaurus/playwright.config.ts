@@ -36,7 +36,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run serve',
     // NOSONAR: localhost testing requires http, not https
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3000/mississippi',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
