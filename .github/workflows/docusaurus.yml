@@ -40,7 +40,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: docs/Docusaurus
-        run: npx playwright install chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Run Playwright tests
         working-directory: docs/Docusaurus
