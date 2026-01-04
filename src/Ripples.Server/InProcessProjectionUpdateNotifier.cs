@@ -3,7 +3,9 @@ namespace Mississippi.Ripples.Server;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
+
+using Microsoft.Extensions.Logging;
+
 using Mississippi.Ripples.Abstractions;
 
 /// <summary>
@@ -20,9 +22,21 @@ using Mississippi.Ripples.Abstractions;
 /// observer to receive real-time updates when projection grains change state.
 /// </para>
 /// </remarks>
-public sealed class InProcessProjectionUpdateNotifier : IProjectionUpdateNotifier
+internal sealed class InProcessProjectionUpdateNotifier : IProjectionUpdateNotifier
 {
     private readonly ConcurrentDictionary<string, SubscriptionCollection> subscriptions = new();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InProcessProjectionUpdateNotifier"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    public InProcessProjectionUpdateNotifier(ILogger<InProcessProjectionUpdateNotifier> logger)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+        Logger = logger;
+    }
+
+    private ILogger<InProcessProjectionUpdateNotifier> Logger { get; }
 
     /// <inheritdoc/>
     public IDisposable Subscribe(
@@ -35,10 +49,14 @@ public sealed class InProcessProjectionUpdateNotifier : IProjectionUpdateNotifie
         ArgumentNullException.ThrowIfNull(callback);
 
         string key = CreateKey(projectionType, entityId);
-        SubscriptionCollection collection = subscriptions.GetOrAdd(key, _ => new SubscriptionCollection());
+        SubscriptionCollection collection = subscriptions.GetOrAdd(
+            key,
+            _ => new SubscriptionCollection(projectionType, entityId, Logger));
 
         Subscription subscription = new(this, key, callback);
         collection.Add(subscription);
+
+        InProcessProjectionUpdateNotifierLoggerExtensions.SubscriptionCreated(Logger, projectionType, entityId);
 
         return subscription;
     }
@@ -58,6 +76,13 @@ public sealed class InProcessProjectionUpdateNotifier : IProjectionUpdateNotifie
 
         if (subscriptions.TryGetValue(key, out SubscriptionCollection? collection))
         {
+            InProcessProjectionUpdateNotifierLoggerExtensions.NotifyingSubscribers(
+                Logger,
+                collection.Count,
+                projectionType,
+                entityId,
+                newVersion);
+
             ProjectionUpdatedEvent args = new(projectionType, entityId, newVersion);
             collection.NotifyAll(args);
         }
@@ -83,6 +108,30 @@ public sealed class InProcessProjectionUpdateNotifier : IProjectionUpdateNotifie
     {
         private readonly List<Subscription> items = [];
         private readonly object syncRoot = new();
+        private readonly string projectionType;
+        private readonly string entityId;
+        private readonly ILogger logger;
+
+        public SubscriptionCollection(
+            string projectionType,
+            string entityId,
+            ILogger logger)
+        {
+            this.projectionType = projectionType;
+            this.entityId = entityId;
+            this.logger = logger;
+        }
+
+        public int Count
+        {
+            get
+            {
+                lock (syncRoot)
+                {
+                    return items.Count;
+                }
+            }
+        }
 
         public bool IsEmpty
         {
@@ -130,8 +179,11 @@ public sealed class InProcessProjectionUpdateNotifier : IProjectionUpdateNotifie
                 catch (Exception ex)
 #pragma warning restore CA1031
                 {
-                    // Handler exceptions should not propagate - log to debugger
-                    Debug.WriteLine($"Projection update callback failed: {ex}");
+                    InProcessProjectionUpdateNotifierLoggerExtensions.CallbackFailed(
+                        logger,
+                        projectionType,
+                        entityId,
+                        ex);
                 }
             }
         }

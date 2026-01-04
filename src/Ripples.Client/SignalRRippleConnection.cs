@@ -2,13 +2,14 @@ namespace Mississippi.Ripples.Client;
 
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using Mississippi.Ripples.Abstractions;
 
 /// <summary>
 /// SignalR connection for receiving projection updates in Blazor WebAssembly.
@@ -65,7 +66,7 @@ internal sealed class SignalRRippleConnection : ISignalRRippleConnection
         hubConnection.Reconnected += OnReconnectedAsync;
 
         projectionUpdatedSubscription = hubConnection.On<string, string, long>(
-            "ProjectionUpdated",
+            RippleHubConstants.ProjectionUpdatedMethod,
             OnProjectionUpdatedAsync);
     }
 
@@ -164,7 +165,7 @@ internal sealed class SignalRRippleConnection : ISignalRRippleConnection
         string key = CreateKey(projectionType, entityId);
         SubscriptionGroup group = subscriptions.GetOrAdd(
             key,
-            _ => new SubscriptionGroup(projectionType, entityId));
+            _ => new SubscriptionGroup(projectionType, entityId, Logger));
 
         Subscription subscription = new(this, key, callback);
         group.Add(subscription);
@@ -230,7 +231,7 @@ internal sealed class SignalRRippleConnection : ISignalRRippleConnection
             projectionType,
             entityId);
         return hubConnection.InvokeAsync(
-            "Subscribe",
+            RippleHubConstants.SubscribeMethod,
             projectionType,
             entityId,
             cancellationToken);
@@ -246,7 +247,7 @@ internal sealed class SignalRRippleConnection : ISignalRRippleConnection
             projectionType,
             entityId);
         return hubConnection.InvokeAsync(
-            "Unsubscribe",
+            RippleHubConstants.UnsubscribeMethod,
             projectionType,
             entityId,
             cancellationToken);
@@ -321,13 +322,18 @@ internal sealed class SignalRRippleConnection : ISignalRRippleConnection
         }
     }
 
-    private sealed class SubscriptionGroup(string projectionType, string entityId)
+    private sealed class SubscriptionGroup(
+        string projectionType,
+        string entityId,
+        ILogger<SignalRRippleConnection> logger)
     {
         private readonly ConcurrentDictionary<Subscription, byte> callbacks = new();
 
         public string ProjectionType { get; } = projectionType;
 
         public string EntityId { get; } = entityId;
+
+        private ILogger<SignalRRippleConnection> Logger { get; } = logger;
 
         public void Add(Subscription subscription)
             => callbacks.TryAdd(subscription, 0);
@@ -346,7 +352,11 @@ internal sealed class SignalRRippleConnection : ISignalRRippleConnection
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Exception in subscription callback: {ex}");
+                    SignalRRippleConnectionLoggerExtensions.SubscriptionCallbackFailed(
+                        Logger,
+                        ProjectionType,
+                        EntityId,
+                        ex);
                 }
 #pragma warning restore CA1031
             }

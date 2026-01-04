@@ -21,11 +21,11 @@ using Mississippi.Ripples.Abstractions;
 /// subscription. It efficiently manages multiple subscriptions with tiered caching.
 /// </para>
 /// </remarks>
-public sealed class ServerRipplePool<TProjection> : IRipplePool<TProjection>
+internal sealed class ServerRipplePool<TProjection> : IRipplePool<TProjection>
     where TProjection : class
 {
     private readonly ConcurrentDictionary<string, PoolEntry> entries = new(StringComparer.Ordinal);
-    private readonly SemaphoreSlim semaphore = new(1, 1);
+    private readonly SemaphoreSlim subscriptionLock = new(1, 1);
     private bool isDisposed;
     private int totalFetches;
     private int cacheHits;
@@ -41,11 +41,13 @@ public sealed class ServerRipplePool<TProjection> : IRipplePool<TProjection>
         IProjectionUpdateNotifier signalRNotifier,
         ILoggerFactory loggerFactory)
     {
-        ProjectionGrainFactory = projectionGrainFactory ??
-            throw new ArgumentNullException(nameof(projectionGrainFactory));
-        SignalRNotifier = signalRNotifier ??
-            throw new ArgumentNullException(nameof(signalRNotifier));
-        LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        ArgumentNullException.ThrowIfNull(projectionGrainFactory);
+        ArgumentNullException.ThrowIfNull(signalRNotifier);
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+
+        ProjectionGrainFactory = projectionGrainFactory;
+        SignalRNotifier = signalRNotifier;
+        LoggerFactory = loggerFactory;
         Logger = loggerFactory.CreateLogger<ServerRipplePool<TProjection>>();
     }
 
@@ -132,7 +134,7 @@ public sealed class ServerRipplePool<TProjection> : IRipplePool<TProjection>
             return;
         }
 
-        await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await subscriptionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -158,7 +160,7 @@ public sealed class ServerRipplePool<TProjection> : IRipplePool<TProjection>
         }
         finally
         {
-            semaphore.Release();
+            subscriptionLock.Release();
         }
     }
 
@@ -170,7 +172,7 @@ public sealed class ServerRipplePool<TProjection> : IRipplePool<TProjection>
             return;
         }
 
-        await semaphore.WaitAsync().ConfigureAwait(false);
+        await subscriptionLock.WaitAsync().ConfigureAwait(false);
 
         try
         {
@@ -190,8 +192,8 @@ public sealed class ServerRipplePool<TProjection> : IRipplePool<TProjection>
         }
         finally
         {
-            semaphore.Release();
-            semaphore.Dispose();
+            subscriptionLock.Release();
+            subscriptionLock.Dispose();
         }
     }
 

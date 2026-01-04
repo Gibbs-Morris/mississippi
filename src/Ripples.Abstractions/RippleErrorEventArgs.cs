@@ -14,8 +14,11 @@ public sealed class RippleErrorEventArgs : EventArgs
     /// <param name="exception">The exception that occurred.</param>
     public RippleErrorEventArgs(
         Exception exception
-    ) =>
-        Exception = exception ?? throw new ArgumentNullException(nameof(exception));
+    )
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        Exception = exception;
+    }
 
     /// <summary>
     ///     Gets the exception that occurred.

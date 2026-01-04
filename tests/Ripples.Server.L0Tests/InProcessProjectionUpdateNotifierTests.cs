@@ -5,6 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.Extensions.Logging.Abstractions;
+
 using Mississippi.Ripples.Abstractions;
 
 /// <summary>
@@ -23,7 +25,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void SubscribeWithValidParametersReturnsDisposable()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
 
         // Act
         using IDisposable result = sut.Subscribe("TestProjection", "entity-1", _ => { });
@@ -40,7 +42,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void SubscribeWithNullProjectionTypeThrowsArgumentNullException()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
 
         // Act & Assert
         ArgumentNullException ex = Assert.Throws<ArgumentNullException>(
@@ -59,7 +61,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void SubscribeWithEmptyProjectionTypeThrowsArgumentException()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
 
         // Act & Assert
         ArgumentException ex = Assert.Throws<ArgumentException>(
@@ -78,7 +80,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void SubscribeWithNullEntityIdThrowsArgumentNullException()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
 
         // Act & Assert
         ArgumentNullException ex = Assert.Throws<ArgumentNullException>(
@@ -97,7 +99,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void SubscribeWithNullCallbackThrowsArgumentNullException()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
 
         // Act & Assert
         ArgumentNullException ex = Assert.Throws<ArgumentNullException>(
@@ -116,7 +118,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void NotifyProjectionChangedInvokesSubscribedCallback()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
         ProjectionUpdatedEvent? received = null;
         using IDisposable subscription = sut.Subscribe(
             "TestProjection",
@@ -141,7 +143,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void NotifyProjectionChangedDoesNotInvokeCallbackForDifferentProjectionType()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
         bool invoked = false;
         using IDisposable subscription = sut.Subscribe(
             "TestProjection",
@@ -163,7 +165,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void NotifyProjectionChangedDoesNotInvokeCallbackForDifferentEntityId()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
         bool invoked = false;
         using IDisposable subscription = sut.Subscribe(
             "TestProjection",
@@ -185,7 +187,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void NotifyProjectionChangedInvokesMultipleCallbacksForSameSubscription()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
         int invokeCount1 = 0;
         int invokeCount2 = 0;
         using IDisposable subscription1 = sut.Subscribe(
@@ -217,7 +219,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void DisposeStopsCallbackInvocation()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
         int invokeCount = 0;
         IDisposable subscription = sut.Subscribe(
             "TestProjection",
@@ -240,7 +242,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void DisposeWhenCalledMultipleTimesDoesNotThrow()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
         IDisposable subscription = sut.Subscribe(
             "TestProjection",
             "entity-1",
@@ -263,7 +265,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void NotifyProjectionChangedWhenCallbackThrowsContinuesToOtherCallbacks()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
         int invokeCount = 0;
         using IDisposable subscription1 = sut.Subscribe(
             "TestProjection",
@@ -289,7 +291,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void NotifyProjectionChangedWithNullProjectionTypeThrowsArgumentNullException()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
 
         // Act & Assert
         ArgumentNullException ex = Assert.Throws<ArgumentNullException>(
@@ -305,7 +307,7 @@ public sealed class InProcessProjectionUpdateNotifierTests
     public void NotifyProjectionChangedWithNullEntityIdThrowsArgumentNullException()
     {
         // Arrange
-        InProcessProjectionUpdateNotifier sut = new();
+        InProcessProjectionUpdateNotifier sut = new(NullLogger<InProcessProjectionUpdateNotifier>.Instance);
 
         // Act & Assert
         ArgumentNullException ex = Assert.Throws<ArgumentNullException>(

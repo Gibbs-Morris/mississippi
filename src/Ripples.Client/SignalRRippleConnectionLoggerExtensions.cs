@@ -59,4 +59,13 @@ internal static partial class SignalRRippleConnectionLoggerExtensions
         ILogger logger,
         string projectionType,
         string entityId);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Subscription callback failed for {ProjectionType} entity {EntityId}")]
+    public static partial void SubscriptionCallbackFailed(
+        ILogger logger,
+        string projectionType,
+        string entityId,
+        Exception exception);
 }

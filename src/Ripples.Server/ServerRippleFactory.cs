@@ -16,7 +16,7 @@ using Mississippi.Ripples.Abstractions;
 /// </para>
 /// </remarks>
 /// <typeparam name="TProjection">The projection type.</typeparam>
-public sealed class ServerRippleFactory<TProjection> : IRippleFactory<TProjection>
+internal sealed class ServerRippleFactory<TProjection> : IRippleFactory<TProjection>
     where TProjection : class
 {
     /// <summary>
@@ -30,11 +30,13 @@ public sealed class ServerRippleFactory<TProjection> : IRippleFactory<TProjectio
         IProjectionUpdateNotifier signalRNotifier,
         ILoggerFactory loggerFactory)
     {
-        ProjectionGrainFactory = projectionGrainFactory ??
-            throw new ArgumentNullException(nameof(projectionGrainFactory));
-        SignalRNotifier = signalRNotifier ??
-            throw new ArgumentNullException(nameof(signalRNotifier));
-        LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        ArgumentNullException.ThrowIfNull(projectionGrainFactory);
+        ArgumentNullException.ThrowIfNull(signalRNotifier);
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+
+        ProjectionGrainFactory = projectionGrainFactory;
+        SignalRNotifier = signalRNotifier;
+        LoggerFactory = loggerFactory;
     }
 
     private IUxProjectionGrainFactory ProjectionGrainFactory { get; }

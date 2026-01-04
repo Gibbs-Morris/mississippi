@@ -19,10 +19,10 @@ using Mississippi.Ripples.Abstractions;
 /// the application runs in the same process as Orleans.
 /// </para>
 /// </remarks>
-public sealed class ServerRipple<TProjection> : IRipple<TProjection>
+internal sealed class ServerRipple<TProjection> : IRipple<TProjection>
     where TProjection : class
 {
-    private readonly SemaphoreSlim semaphore = new(1, 1);
+    private readonly SemaphoreSlim subscriptionLock = new(1, 1);
     private bool isDisposed;
     private string? currentEntityId;
     private IDisposable? signalRSubscription;
@@ -38,11 +38,13 @@ public sealed class ServerRipple<TProjection> : IRipple<TProjection>
         IProjectionUpdateNotifier signalRNotifier,
         ILogger<ServerRipple<TProjection>> logger)
     {
-        ProjectionGrainFactory = projectionGrainFactory ??
-            throw new ArgumentNullException(nameof(projectionGrainFactory));
-        SignalRNotifier = signalRNotifier ??
-            throw new ArgumentNullException(nameof(signalRNotifier));
-        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(projectionGrainFactory);
+        ArgumentNullException.ThrowIfNull(signalRNotifier);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        ProjectionGrainFactory = projectionGrainFactory;
+        SignalRNotifier = signalRNotifier;
+        Logger = logger;
     }
 
     private IUxProjectionGrainFactory ProjectionGrainFactory { get; }
@@ -78,7 +80,7 @@ public sealed class ServerRipple<TProjection> : IRipple<TProjection>
     /// <inheritdoc/>
     public async Task SubscribeAsync(string entityId, CancellationToken cancellationToken = default)
     {
-        await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await subscriptionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -135,14 +137,14 @@ public sealed class ServerRipple<TProjection> : IRipple<TProjection>
         }
         finally
         {
-            semaphore.Release();
+            subscriptionLock.Release();
         }
     }
 
     /// <inheritdoc/>
     public async Task UnsubscribeAsync(CancellationToken cancellationToken = default)
     {
-        await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await subscriptionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -150,14 +152,14 @@ public sealed class ServerRipple<TProjection> : IRipple<TProjection>
         }
         finally
         {
-            semaphore.Release();
+            subscriptionLock.Release();
         }
     }
 
     /// <inheritdoc/>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
-        await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await subscriptionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -205,7 +207,7 @@ public sealed class ServerRipple<TProjection> : IRipple<TProjection>
         }
         finally
         {
-            semaphore.Release();
+            subscriptionLock.Release();
         }
     }
 
@@ -217,7 +219,7 @@ public sealed class ServerRipple<TProjection> : IRipple<TProjection>
             return;
         }
 
-        await semaphore.WaitAsync().ConfigureAwait(false);
+        await subscriptionLock.WaitAsync().ConfigureAwait(false);
 
         try
         {
@@ -238,8 +240,8 @@ public sealed class ServerRipple<TProjection> : IRipple<TProjection>
         }
         finally
         {
-            semaphore.Release();
-            semaphore.Dispose();
+            subscriptionLock.Release();
+            subscriptionLock.Dispose();
         }
     }
 
