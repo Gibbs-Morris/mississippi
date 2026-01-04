@@ -41,6 +41,14 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Cache npm packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
       - name: Install markdownlint CLI
         run: |
           set -euo pipefail
