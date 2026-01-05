@@ -2,7 +2,7 @@
 //   Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
-using Cascade.Server.Components.Services;
+using Cascade.Server.Services;
 
 using Microsoft.AspNetCore.Components;
 

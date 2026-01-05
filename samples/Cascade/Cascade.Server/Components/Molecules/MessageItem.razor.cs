@@ -2,7 +2,7 @@
 //   Copyright (c) Gibbs-Morris. All rights reserved.
 // </copyright>
 
-using Cascade.Server.Components.ViewModels;
+using Cascade.Server.ViewModels;
 
 using Microsoft.AspNetCore.Components;
 

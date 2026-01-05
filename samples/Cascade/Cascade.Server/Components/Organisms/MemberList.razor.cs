@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 
-using Cascade.Server.Components.ViewModels;
+using Cascade.Server.ViewModels;
 
 using Microsoft.AspNetCore.Components;
 

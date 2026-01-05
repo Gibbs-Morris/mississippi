@@ -8,11 +8,11 @@
         </button>
     </div>
 
-    @if (subscriber is null || !subscriber.IsLoaded)
+    @if (subscription is null || !subscription.IsLoaded)
     {
         <div class="loading">Loading channels...</div>
     }
-    else if (subscriber.Current?.ChannelIds.Count == 0)
+    else if (subscription.Current?.ChannelIds.Count == 0)
     {
         <div class="empty-state">
             <p>No channels yet.</p>
@@ -22,11 +22,11 @@
     else
     {
         <ul class="channel-items">
-            @foreach (string channelId in subscriber.Current!.ChannelIds)
+            @foreach (string channelId in subscription.Current!.ChannelIds)
             {
                 <li class="channel-item @(SelectedChannelId == channelId ? "selected" : "")"
                     @onclick="() => SelectChannelAsync(channelId)">
-                    <span class=\"channel-name\"># @ChannelDisplayHelper.GetDisplayName(channelId)</span>
+                    <span class="channel-name"># @ChannelDisplayHelper.GetDisplayName(channelId)</span>
                 </li>
             }
         </ul>

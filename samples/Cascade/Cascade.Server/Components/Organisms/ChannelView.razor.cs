@@ -4,12 +4,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
-using Cascade.Server.Components.Services;
-using Cascade.Server.Components.ViewModels;
+using Cascade.Domain.Projections.ChannelMemberList;
+using Cascade.Domain.Projections.ChannelMessages;
+using Cascade.Server.Services;
+using Cascade.Server.ViewModels;
 
 using Microsoft.AspNetCore.Components;
+
+using Mississippi.Ripples.Abstractions;
 
 
 namespace Cascade.Server.Components.Organisms;
@@ -17,7 +22,7 @@ namespace Cascade.Server.Components.Organisms;
 /// <summary>
 ///     Organism component that owns state and dispatches commands.
 /// </summary>
-public sealed partial class ChannelView : ComponentBase
+public sealed partial class ChannelView : ComponentBase, IAsyncDisposable
 {
     private readonly List<MemberViewModel> members = [];
 
@@ -28,6 +33,10 @@ public sealed partial class ChannelView : ComponentBase
     private bool isLoading = true;
 
     private bool isSending;
+
+    private IProjectionBinder<ChannelMemberListProjection>? memberBinder;
+
+    private IProjectionBinder<ChannelMessagesProjection>? messagesBinder;
 
     /// <summary>
     ///     Gets or sets the channel identifier to display.
@@ -46,14 +55,57 @@ public sealed partial class ChannelView : ComponentBase
     private IChatService ChatService { get; set; } = default!;
 
     [Inject]
+    private IProjectionCache ProjectionCache { get; set; } = default!;
+
+    [Inject]
     private UserSession Session { get; set; } = default!;
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (messagesBinder is not null)
+        {
+            await messagesBinder.DisposeAsync();
+        }
+
+        if (memberBinder is not null)
+        {
+            await memberBinder.DisposeAsync();
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        // Create binders once - they handle entity ID switching automatically
+        messagesBinder = ProjectionCache.CreateBinder<ChannelMessagesProjection>();
+        memberBinder = ProjectionCache.CreateBinder<ChannelMemberListProjection>();
+    }
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        if (!string.IsNullOrEmpty(ChannelId))
+        if (string.IsNullOrEmpty(ChannelId))
         {
-            await LoadChannelDataAsync();
+            return;
+        }
+
+        isLoading = true;
+        StateHasChanged();
+        try
+        {
+            // Bind to projections - binders handle switching if ChannelId changes
+            await messagesBinder!.BindAsync(ChannelId, UpdateMessages);
+            await memberBinder!.BindAsync(ChannelId, UpdateMembers);
+
+            // Initialize from current values if already loaded
+            UpdateMessages();
+            UpdateMembers();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
 
@@ -78,19 +130,9 @@ public sealed partial class ChannelView : ComponentBase
             // Dispatch command to aggregate via ChatService
             await ChatService.SendMessageAsync(ChannelId, content);
 
-            // Optimistically add the message to the UI
-            // In a full implementation, the projection subscription would handle this
-            messages.Add(
-                new()
-                {
-                    MessageId = $"msg-{DateTime.UtcNow.Ticks}",
-                    Content = content,
-                    AuthorUserId = Session.UserId!,
-                    AuthorDisplayName = Session.DisplayName ?? "You",
-                    SentAt = DateTimeOffset.UtcNow,
-                });
-
-            // Scroll to bottom would happen here via JS interop
+            // The projection subscription will automatically update the UI when
+            // the aggregate emits the MessageSent event and the projection is refreshed.
+            // No optimistic UI update needed - real-time SignalR will handle it.
         }
         catch (ChatOperationException ex)
         {
@@ -103,36 +145,41 @@ public sealed partial class ChannelView : ComponentBase
         }
     }
 
-    private async Task LoadChannelDataAsync()
+    private void UpdateMembers()
     {
-        isLoading = true;
-        StateHasChanged();
-        try
+        if (memberBinder?.Current is { } projection)
         {
-            // In a full implementation, this would subscribe to a ChannelMessagesProjection
-            // For now, we show the pattern with placeholder data
-            await Task.Delay(100); // Simulate async loading
-
-            // Clear and reset - actual data would come from projection subscription
-            messages.Clear();
             members.Clear();
-
-            // Add the current user as a member (placeholder)
-            if (Session.IsAuthenticated)
-            {
-                members.Add(
-                    new()
+            members.AddRange(
+                projection.Members.Select(
+                    member => new MemberViewModel
                     {
-                        UserId = Session.UserId!,
-                        DisplayName = Session.DisplayName ?? "You",
-                        IsOnline = true,
-                    });
-            }
+                        UserId = member.UserId,
+                        DisplayName = member.UserId, // Could be enhanced with user lookup
+                        IsOnline = true, // Could be tracked via separate projection
+                    }));
         }
-        finally
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateMessages()
+    {
+        if (messagesBinder?.Current is { } projection)
         {
-            isLoading = false;
-            StateHasChanged();
+            messages.Clear();
+            messages.AddRange(
+                projection.Messages.Select(
+                    message => new MessageViewModel
+                    {
+                        MessageId = message.MessageId,
+                        Content = message.Content,
+                        AuthorUserId = message.SentBy,
+                        AuthorDisplayName = message.SentBy, // Could be enhanced with user lookup
+                        SentAt = message.SentAt,
+                    }));
         }
+
+        _ = InvokeAsync(StateHasChanged);
     }
 }

@@ -6,9 +6,11 @@ using System;
 using System.Threading.Tasks;
 
 using Cascade.Domain.Projections.UserProfile;
-using Cascade.Server.Components.Services;
+using Cascade.Server.Services;
 
 using Microsoft.AspNetCore.Components;
+
+using Mississippi.Ripples.Abstractions;
 
 
 namespace Cascade.Server.Components.Shared;
@@ -22,7 +24,7 @@ public sealed partial class ChannelList
 {
     private bool showCreateModal;
 
-    private IProjectionSubscriber<UserProfileProjection>? subscriber;
+    private IProjectionSubscription<UserProfileProjection>? subscription;
 
     /// <summary>
     ///     Gets or sets the callback when a channel is selected.
@@ -40,7 +42,7 @@ public sealed partial class ChannelList
     private NavigationManager Navigation { get; set; } = default!;
 
     [Inject]
-    private IProjectionSubscriberFactory SubscriberFactory { get; set; } = default!;
+    private IProjectionCache ProjectionCache { get; set; } = default!;
 
     [Inject]
     private UserSession UserSession { get; set; } = default!;
@@ -48,10 +50,9 @@ public sealed partial class ChannelList
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        if (subscriber is not null)
+        if (subscription is not null)
         {
-            subscriber.OnChanged -= HandleProjectionChanged;
-            await subscriber.DisposeAsync();
+            await subscription.DisposeAsync();
         }
     }
 
@@ -60,22 +61,10 @@ public sealed partial class ChannelList
     {
         if (UserSession.IsAuthenticated)
         {
-            subscriber = SubscriberFactory.Create<UserProfileProjection>();
-            subscriber.OnChanged += HandleProjectionChanged;
-            await subscriber.SubscribeAsync(UserSession.UserId!);
+            subscription = await ProjectionCache.SubscribeAsync<UserProfileProjection>(
+                UserSession.UserId!,
+                () => _ = InvokeAsync(StateHasChanged));
         }
-    }
-
-    private void HandleProjectionChanged(
-        object? sender,
-        EventArgs e
-    )
-    {
-        // Fire-and-forget is intentional for UI state updates from events.
-        // InvokeAsync marshals StateHasChanged to the correct synchronization context.
-#pragma warning disable VSTHRD110 // Observe the awaitable result of this method call
-        _ = InvokeAsync(StateHasChanged);
-#pragma warning restore VSTHRD110
     }
 
     private void HideCreateModal() => showCreateModal = false;

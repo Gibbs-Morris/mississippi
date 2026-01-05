@@ -6,7 +6,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
-using Cascade.Server.Components.Services;
+using Cascade.Server.Services;
 
 using Microsoft.AspNetCore.Components;
 
