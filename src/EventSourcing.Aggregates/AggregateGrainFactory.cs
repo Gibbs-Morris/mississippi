@@ -15,12 +15,6 @@ namespace Mississippi.EventSourcing.Aggregates;
 /// </summary>
 internal sealed class AggregateGrainFactory : IAggregateGrainFactory
 {
-    private static readonly Action<ILogger, string, string, Exception?> LogResolvingAggregate =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Debug,
-            new(1, nameof(GetAggregate)),
-            "Resolving aggregate {GrainType} with key {AggregateKey}");
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="AggregateGrainFactory" /> class.
     /// </summary>
@@ -45,7 +39,7 @@ internal sealed class AggregateGrainFactory : IAggregateGrainFactory
     )
         where TGrain : IAggregateGrain
     {
-        LogResolvingAggregate(Logger, typeof(TGrain).Name, aggregateKey, null);
+        Logger.AggregateGrainFactoryResolvingAggregate(typeof(TGrain).Name, aggregateKey);
         return GrainFactory.GetGrain<TGrain>(aggregateKey.ToBrookKey());
     }
 
@@ -55,7 +49,7 @@ internal sealed class AggregateGrainFactory : IAggregateGrainFactory
     )
         where TGrain : IAggregateGrain
     {
-        LogResolvingAggregate(Logger, typeof(TGrain).Name, brookKey, null);
+        Logger.AggregateGrainFactoryResolvingAggregate(typeof(TGrain).Name, brookKey);
         return GrainFactory.GetGrain<TGrain>(brookKey);
     }
 }
