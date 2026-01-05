@@ -10,20 +10,23 @@
 | [Phase 2](./phase-2-domain/README.md) | Domain – Cascade Chat Aggregates | ✅ Complete |
 | [Phase 3](./phase-3-infrastructure/README.md) | Infrastructure – Aspire & Blazor Host | ✅ Complete |
 | [Phase 4](./phase-4-ux/README.md) | UX – Blazor Components | ✅ Complete |
-| [Phase 5](./phase-5-e2e-tests/README.md) | E2E Tests (L2) – Playwright | ✅ Complete |
-| [Phase 6](./phase-6-review/README.md) | Implementation Review | ⬜ Not Started |
-| [Phase 7](./phase-7-ripples/README.md) | Ripples – State Management Framework | 🔵 Design Complete |
+| [Phase 5](./phase-5-e2e-tests/README.md) | E2E Tests (L2) – Playwright | ⚠️ Tests written, infrastructure needed |
+| [Phase 6](./phase-6-review/README.md) | Implementation Review | ✅ Complete (issues logged in Phase 8) |
+| [Phase 7](./phase-7-ripples/README.md) | Ripples – State Management Framework | ✅ Complete (available, not required) |
+| [Phase 8](./phase-8-fixes/README.md) | Post-Review Fixes | ✅ Complete (L2 infra pending) |
 
 ## Completion Criteria
 
 - [x] All framework real-time subscription infrastructure implemented with L0 tests
 - [x] Cascade domain aggregates and projections complete with L0 tests
 - [x] Aspire AppHost orchestrating Azurite + Cosmos Emulator
-- [x] Blazor Server app with real-time message updates
-- [x] Playwright L2 tests validating multi-user scenarios
-- [ ] Implementation review completed (Phase 6)
-- [ ] Ripples state management framework implemented (Phase 7)
-- [ ] `./go.ps1` passes for both mississippi.sln and samples.sln
+- [x] Blazor Server app with real-time message updates (wired to projections)
+- [x] Playwright L2 tests written (require infrastructure to run)
+- [x] Implementation review completed (Phase 6 → issues tracked in Phase 8)
+- [x] Ripples state management framework implemented (133 tests, available for use)
+- [x] AggregateKey abstraction hides BrookKey from samples (Phase 8)
+- [x] `./go.ps1` passes for mississippi.sln (L0 tests only)
+- [ ] `./go.ps1` passes for samples.sln (L2 tests require running infrastructure)
 
 ## Key Decisions
 
