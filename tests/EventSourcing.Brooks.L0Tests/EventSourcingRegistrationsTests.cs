@@ -7,12 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Brooks.Reader;
 
 
-namespace Mississippi.EventSourcing.Tests;
+namespace Mississippi.EventSourcing.Brooks.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="EventSourcingRegistrations" /> extension methods.

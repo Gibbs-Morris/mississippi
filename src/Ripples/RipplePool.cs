@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Mississippi.Ripples.Abstractions;
+using Mississippi.Ripples.Abstractions.Options;
 
 
 namespace Mississippi.Ripples;

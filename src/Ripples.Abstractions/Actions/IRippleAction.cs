@@ -1,4 +1,4 @@
-namespace Mississippi.Ripples.Abstractions;
+namespace Mississippi.Ripples.Abstractions.Actions;
 
 /// <summary>
 ///     Marker interface for ripple actions.

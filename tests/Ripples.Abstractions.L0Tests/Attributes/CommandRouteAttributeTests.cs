@@ -3,6 +3,8 @@ using System.Reflection;
 
 using Allure.Xunit.Attributes;
 
+using Mississippi.Ripples.Abstractions.Attributes;
+
 
 namespace Mississippi.Ripples.Abstractions.L0Tests.Attributes;
 

@@ -12,7 +12,7 @@ using Mississippi.Core.Abstractions.Mapping;
 using Moq;
 
 
-namespace Mississippi.Core.Abstractions.Tests.Mapping;
+namespace Mississippi.Core.Abstractions.L0Tests.Mapping;
 
 /// <summary>
 ///     Provides unit tests for the <see cref="AsyncEnumerableMapper{TFrom,TTo}" /> class.

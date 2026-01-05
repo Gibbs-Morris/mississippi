@@ -6,7 +6,7 @@ using SnapshotStorageNameAttribute =
     Mississippi.EventSourcing.Brooks.Abstractions.Attributes.SnapshotStorageNameAttribute;
 
 
-namespace Mississippi.EventSourcing.Abstractions.Tests.Attributes;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests.Attributes;
 
 /// <summary>
 ///     Contains unit tests that verify the behaviour of the <see cref="SnapshotStorageNameAttribute" /> class.

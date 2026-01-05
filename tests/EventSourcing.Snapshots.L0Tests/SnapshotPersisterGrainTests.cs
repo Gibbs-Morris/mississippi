@@ -12,7 +12,7 @@ using Moq;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Tests;
+namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotPersisterGrain" />.

@@ -11,7 +11,7 @@ using Microsoft.Azure.Cosmos;
 using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests.Retry;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Retry;
 
 /// <summary>
 ///     Contract-level tests for <see cref="IRetryPolicy" /> behavior using the Cosmos implementation.

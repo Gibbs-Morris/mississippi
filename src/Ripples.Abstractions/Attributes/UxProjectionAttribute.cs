@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Ripples.Abstractions;
+namespace Mississippi.Ripples.Abstractions.Attributes;
 
 /// <summary>
 ///     Marks a record as a UX projection that should be exposed via HTTP/SignalR.

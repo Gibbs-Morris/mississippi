@@ -18,7 +18,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests.Storage;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Storage;
 
 /// <summary>
 ///     Tests for <see cref="CosmosRepository" /> covering the Storage/CosmosRepository plan items.

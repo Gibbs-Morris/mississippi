@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.Testing.Utilities.Storage;
 
@@ -8,7 +7,7 @@ using Orleans.Hosting;
 using Orleans.TestingHost;
 
 
-namespace Mississippi.EventSourcing.Tests.Infrastructure;
+namespace Mississippi.EventSourcing.Brooks.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Silo configuration for the EventSourcing test cluster.

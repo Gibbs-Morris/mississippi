@@ -5,7 +5,7 @@ using Allure.Xunit.Attributes;
 using EventStorageNameAttribute = Mississippi.EventSourcing.Brooks.Abstractions.Attributes.EventStorageNameAttribute;
 
 
-namespace Mississippi.EventSourcing.Abstractions.Tests.Attributes;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests.Attributes;
 
 /// <summary>
 ///     Contains unit tests that verify the behaviour of the <see cref="EventStorageNameAttribute" /> class.

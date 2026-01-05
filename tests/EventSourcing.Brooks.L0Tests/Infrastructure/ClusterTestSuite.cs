@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Tests.Infrastructure;
+namespace Mississippi.EventSourcing.Brooks.L0Tests.Infrastructure;
 
 /// <summary>
 ///     xUnit collection definition to share a single TestCluster across tests.

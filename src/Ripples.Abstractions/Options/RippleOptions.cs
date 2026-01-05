@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Ripples.Abstractions;
+namespace Mississippi.Ripples.Abstractions.Options;
 
 /// <summary>
 ///     Configuration options for Ripples state management.

@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Ripples.Abstractions;
+namespace Mississippi.Ripples.Abstractions.State;
 
 /// <summary>
 ///     Represents the loading/connection state of a projection.

@@ -15,7 +15,7 @@ using Moq;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Tests.Factory;
+namespace Mississippi.EventSourcing.Brooks.L0Tests.Factory;
 
 /// <summary>
 ///     Tests for <see cref="BrookGrainFactory" />.

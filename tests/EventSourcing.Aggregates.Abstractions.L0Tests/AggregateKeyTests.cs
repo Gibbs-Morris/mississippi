@@ -5,7 +5,7 @@ using Allure.Xunit.Attributes;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions.Tests;
+namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateKey" /> behavior.

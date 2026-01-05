@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Core.Abstractions.Mapping;
 
 
-namespace Mississippi.Core.Abstractions.Tests.Mapping;
+namespace Mississippi.Core.Abstractions.L0Tests.Mapping;
 
 /// <summary>
 ///     Contains unit tests that verify the <see cref="MappingRegistrations" /> extension methods register expected

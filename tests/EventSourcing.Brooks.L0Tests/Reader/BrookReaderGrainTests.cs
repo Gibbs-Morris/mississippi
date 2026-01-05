@@ -9,15 +9,15 @@ using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.EventSourcing.Brooks.L0Tests.Infrastructure;
 using Mississippi.EventSourcing.Brooks.Reader;
 using Mississippi.EventSourcing.Brooks.Writer;
-using Mississippi.EventSourcing.Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
 
 using Orleans.TestingHost;
 
 
-namespace Mississippi.EventSourcing.Tests.Reader;
+namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
 
 /// <summary>
 ///     Integration tests for <see cref="IBrookReaderGrain" /> and <see cref="IBrookAsyncReaderGrain" />.

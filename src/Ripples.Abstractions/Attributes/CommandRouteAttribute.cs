@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Ripples.Abstractions;
+namespace Mississippi.Ripples.Abstractions.Attributes;
 
 /// <summary>
 ///     Specifies the HTTP route for an aggregate command method.

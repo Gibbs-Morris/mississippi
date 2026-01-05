@@ -12,7 +12,7 @@ using Moq;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Tests;
+namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateGrainFactory" />.

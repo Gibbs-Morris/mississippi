@@ -3,7 +3,7 @@ using System;
 using Allure.Xunit.Attributes;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions.Tests;
+namespace Mississippi.EventSourcing.Snapshots.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotStreamKey" />.

@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Ripples.Abstractions;
+namespace Mississippi.Ripples.Abstractions.Actions;
 
 /// <summary>
 ///     Action dispatched when a projection load fails.

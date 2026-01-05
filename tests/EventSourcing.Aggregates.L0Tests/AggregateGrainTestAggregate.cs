@@ -1,7 +1,7 @@
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Tests;
+namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 
 /// <summary>
 ///     Test state for AggregateGrain tests.

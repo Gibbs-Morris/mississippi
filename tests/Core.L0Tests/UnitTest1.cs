@@ -1,7 +1,7 @@
 using Allure.Xunit.Attributes;
 
 
-namespace Mississippi.Core.Tests;
+namespace Mississippi.Core.L0Tests;
 
 /// <summary>
 ///     A test class.

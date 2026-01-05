@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 using Mississippi.EventSourcing.Serialization.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Serialization.Tests;
+namespace Mississippi.EventSourcing.Serialization.L0Tests;
 
 /// <summary>
 ///     Tests covering <see cref="SerializationStorageProviderHelpers" /> registrations.

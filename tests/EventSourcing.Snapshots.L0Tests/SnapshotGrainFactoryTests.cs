@@ -9,7 +9,7 @@ using Moq;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Tests;
+namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotGrainFactory" />.

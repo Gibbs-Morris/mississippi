@@ -8,13 +8,12 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookStorageProvider" /> behavior.

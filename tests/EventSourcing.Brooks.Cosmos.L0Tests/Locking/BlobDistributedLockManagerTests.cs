@@ -12,13 +12,12 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests.Locking;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Locking;
 
 /// <summary>
 ///     Tests for <see cref="BlobDistributedLockManager" /> lease acquisition paths.

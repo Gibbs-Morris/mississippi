@@ -5,7 +5,7 @@ using Allure.Xunit.Attributes;
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Abstractions.Attributes.Tests;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests.Attributes;
 
 /// <summary>
 ///     Tests for <see cref="EventStorageNameHelper" /> functionality.

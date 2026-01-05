@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Ripples.Abstractions;
+namespace Mississippi.Ripples.Abstractions.Attributes;
 
 /// <summary>
 ///     Marks an interface as a UX aggregate, enabling command routing via HTTP.

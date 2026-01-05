@@ -18,7 +18,7 @@ using Moq;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Tests.Reader;
+namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
 
 /// <summary>
 ///     Unit tests for <see cref="BrookSliceReaderGrain" />.
