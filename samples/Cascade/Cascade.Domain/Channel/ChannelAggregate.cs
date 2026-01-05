@@ -11,7 +11,7 @@ namespace Cascade.Domain.Channel;
 /// <summary>
 ///     Represents the state of a channel aggregate.
 /// </summary>
-[SnapshotStorageName("CASCADE", "CHAT", "CHANNELSTATE", version: 1)]
+[SnapshotStorageName("CASCADE", "CHAT", "CHANNELSTATE")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.ChannelAggregate")]
 internal sealed record ChannelAggregate

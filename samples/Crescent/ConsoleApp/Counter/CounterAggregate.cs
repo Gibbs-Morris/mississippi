@@ -9,7 +9,7 @@ namespace Crescent.ConsoleApp.Counter;
 ///     Internal aggregate state for the counter.
 ///     This is never exposed externally; use projections for read queries.
 /// </summary>
-[SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSTATE", version: 1)]
+[SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSTATE")]
 [GenerateSerializer]
 [Alias("Crescent.ConsoleApp.Counter.CounterAggregate")]
 internal sealed record CounterAggregate

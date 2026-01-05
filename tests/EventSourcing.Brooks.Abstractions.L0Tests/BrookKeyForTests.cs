@@ -85,6 +85,18 @@ public class BrookKeyForTests
     }
 
     /// <summary>
+    ///     ForType should throw InvalidOperationException when type lacks BrookNameAttribute.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ForType")]
+    public void ForTypeThrowsWhenTypeLacksBrookNameAttribute()
+    {
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => BrookKey.ForType<UnattributedType>("entity-123"));
+        Assert.Contains("BrookNameAttribute", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ForType should work with any type decorated with BrookNameAttribute, not just grains.
     /// </summary>
     [Fact]
@@ -95,18 +107,5 @@ public class BrookKeyForTests
         BrookKey key = BrookKey.ForType<TestProjection>("record-123");
         Assert.Equal("PROJ.DOMAIN.ENTITY", key.BrookName);
         Assert.Equal("record-123", key.EntityId);
-    }
-
-    /// <summary>
-    ///     ForType should throw InvalidOperationException when type lacks BrookNameAttribute.
-    /// </summary>
-    [Fact]
-    [AllureFeature("ForType")]
-    public void ForTypeThrowsWhenTypeLacksBrookNameAttribute()
-    {
-        InvalidOperationException exception =
-            Assert.Throws<InvalidOperationException>(() =>
-                BrookKey.ForType<UnattributedType>("entity-123"));
-        Assert.Contains("BrookNameAttribute", exception.Message, StringComparison.Ordinal);
     }
 }

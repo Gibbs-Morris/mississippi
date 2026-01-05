@@ -18,7 +18,7 @@ public class EventStorageNameHelperTests
     /// <summary>
     ///     Test fixture decorated with EventStorageName attribute.
     /// </summary>
-    [EventStorageName("APP", "MODULE", "EVENT", 1)]
+    [EventStorageName("APP", "MODULE", "EVENT")]
     private sealed class DecoratedEvent
     {
     }

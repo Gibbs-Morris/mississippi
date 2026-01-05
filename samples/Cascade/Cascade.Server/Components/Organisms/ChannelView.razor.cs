@@ -18,7 +18,9 @@ namespace Cascade.Server.Components.Organisms;
 /// <summary>
 ///     Organism component that owns state and dispatches commands.
 /// </summary>
-public sealed partial class ChannelView : ComponentBase, IAsyncDisposable
+public sealed partial class ChannelView
+    : ComponentBase,
+      IAsyncDisposable
 {
     private readonly List<MemberViewModel> members = [];
 
@@ -147,13 +149,12 @@ public sealed partial class ChannelView : ComponentBase, IAsyncDisposable
         {
             members.Clear();
             members.AddRange(
-                projection.Members.Select(
-                    member => new MemberViewModel
-                    {
-                        UserId = member.UserId,
-                        DisplayName = member.UserId, // Could be enhanced with user lookup
-                        IsOnline = true, // Could be tracked via separate projection
-                    }));
+                projection.Members.Select(member => new MemberViewModel
+                {
+                    UserId = member.UserId,
+                    DisplayName = member.UserId, // Could be enhanced with user lookup
+                    IsOnline = true, // Could be tracked via separate projection
+                }));
         }
 
         _ = InvokeAsync(StateHasChanged);
@@ -165,15 +166,14 @@ public sealed partial class ChannelView : ComponentBase, IAsyncDisposable
         {
             messages.Clear();
             messages.AddRange(
-                projection.Messages.Select(
-                    message => new MessageViewModel
-                    {
-                        MessageId = message.MessageId,
-                        Content = message.Content,
-                        AuthorUserId = message.SentBy,
-                        AuthorDisplayName = message.SentBy, // Could be enhanced with user lookup
-                        SentAt = message.SentAt,
-                    }));
+                projection.Messages.Select(message => new MessageViewModel
+                {
+                    MessageId = message.MessageId,
+                    Content = message.Content,
+                    AuthorUserId = message.SentBy,
+                    AuthorDisplayName = message.SentBy, // Could be enhanced with user lookup
+                    SentAt = message.SentAt,
+                }));
         }
 
         _ = InvokeAsync(StateHasChanged);

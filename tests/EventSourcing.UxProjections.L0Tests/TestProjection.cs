@@ -12,5 +12,5 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 ///     for DynamicProxyGenAssembly2 configured in Directory.Build.props.
 /// </remarks>
 [BrookName("TEST", "MODULE", "STREAM")]
-[SnapshotStorageName("TEST", "UXPROJECTIONS", "TESTPROJECTION", 1)]
+[SnapshotStorageName("TEST", "UXPROJECTIONS", "TESTPROJECTION")]
 internal sealed record TestProjection(int Value);

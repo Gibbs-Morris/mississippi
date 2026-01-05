@@ -105,9 +105,8 @@ public sealed class UxProjectionKeyForProjectionTests
     [AllureFeature("Validation")]
     public void ForProjectionThrowsWhenProjectionLacksBrookNameAttribute()
     {
-        InvalidOperationException exception =
-            Assert.Throws<InvalidOperationException>(() =>
-                UxProjectionKey.ForProjection<UnattributedProjection>("entity123"));
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            UxProjectionKey.ForProjection<UnattributedProjection>("entity123"));
         Assert.Contains("BrookNameAttribute", exception.Message, StringComparison.Ordinal);
     }
 }

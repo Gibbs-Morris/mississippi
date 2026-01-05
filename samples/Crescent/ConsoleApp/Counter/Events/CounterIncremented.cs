@@ -8,7 +8,7 @@ namespace Crescent.ConsoleApp.Counter.Events;
 /// <summary>
 ///     Event raised when the counter is incremented.
 /// </summary>
-[EventStorageName("CRESCENT", "SAMPLE", "COUNTERINCREMENTED", version: 1)]
+[EventStorageName("CRESCENT", "SAMPLE", "COUNTERINCREMENTED")]
 [GenerateSerializer]
 [Alias("Crescent.ConsoleApp.Counter.Events.CounterIncremented")]
 internal sealed record CounterIncremented

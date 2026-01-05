@@ -8,7 +8,7 @@ namespace Crescent.ConsoleApp.Counter.Events;
 /// <summary>
 ///     Event raised when a counter is initialized.
 /// </summary>
-[EventStorageName("CRESCENT", "SAMPLE", "COUNTERINITIALIZED", version: 1)]
+[EventStorageName("CRESCENT", "SAMPLE", "COUNTERINITIALIZED")]
 [GenerateSerializer]
 [Alias("Crescent.ConsoleApp.Counter.Events.CounterInitialized")]
 internal sealed record CounterInitialized

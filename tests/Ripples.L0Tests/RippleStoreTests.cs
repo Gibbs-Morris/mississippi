@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Ripples.Abstractions;
 using Mississippi.Ripples.Abstractions.Actions;
 using Mississippi.Ripples.Abstractions.State;
 

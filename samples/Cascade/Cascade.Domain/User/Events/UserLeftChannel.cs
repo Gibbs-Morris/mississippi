@@ -10,7 +10,7 @@ namespace Cascade.Domain.User.Events;
 /// <summary>
 ///     Event raised when a user leaves a channel.
 /// </summary>
-[EventStorageName("CASCADE", "CHAT", "USERLEFTCHANNEL", version: 1)]
+[EventStorageName("CASCADE", "CHAT", "USERLEFTCHANNEL")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.Events.UserLeftChannel")]
 internal sealed record UserLeftChannel

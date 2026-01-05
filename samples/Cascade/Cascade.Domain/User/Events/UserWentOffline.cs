@@ -10,7 +10,7 @@ namespace Cascade.Domain.User.Events;
 /// <summary>
 ///     Event raised when a user goes offline.
 /// </summary>
-[EventStorageName("CASCADE", "CHAT", "USERWENTOFFLINE", version: 1)]
+[EventStorageName("CASCADE", "CHAT", "USERWENTOFFLINE")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.Events.UserWentOffline")]
 internal sealed record UserWentOffline

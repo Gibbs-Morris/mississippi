@@ -23,7 +23,7 @@ namespace Cascade.Domain.Projections.UserProfile;
 ///     </para>
 /// </remarks>
 [BrookName("CASCADE", "CHAT", "USER")]
-[SnapshotStorageName("CASCADE", "CHAT", "USERPROFILE", version: 1)]
+[SnapshotStorageName("CASCADE", "CHAT", "USERPROFILE")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.UserProfile.UserProfileProjection")]
 internal sealed record UserProfileProjection

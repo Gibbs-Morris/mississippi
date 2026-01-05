@@ -47,6 +47,7 @@
         <Project Path="src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
         <Project Path="src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
         <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
+        <Project Path="src\EventSourcing.UxProjections.Api.Generators\EventSourcing.UxProjections.Api.Generators.csproj" />
         <Project Path="src\EventSourcing.UxProjections.SignalR\EventSourcing.UxProjections.SignalR.csproj" />
     </Folder>
     <Folder Name="/Framework/Ripples/">
@@ -84,6 +85,7 @@
         <Project Path="tests\EventSourcing.UxProjections.Abstractions.L0Tests\EventSourcing.UxProjections.Abstractions.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
+        <Project Path="tests\EventSourcing.UxProjections.Api.Generators.L0Tests\EventSourcing.UxProjections.Api.Generators.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.UxProjections.SignalR.L0Tests\EventSourcing.UxProjections.SignalR.L0Tests.csproj" />
     </Folder>
     <Folder Name="/Tests/Ripples/">

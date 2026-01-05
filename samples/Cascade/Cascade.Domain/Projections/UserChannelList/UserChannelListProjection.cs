@@ -21,7 +21,7 @@ namespace Cascade.Domain.Projections.UserChannelList;
 ///     </para>
 /// </remarks>
 [BrookName("CASCADE", "CHAT", "USER")]
-[SnapshotStorageName("CASCADE", "CHAT", "USERCHANNELLIST", version: 1)]
+[SnapshotStorageName("CASCADE", "CHAT", "USERCHANNELLIST")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.UserChannelList.UserChannelListProjection")]
 internal sealed record UserChannelListProjection
