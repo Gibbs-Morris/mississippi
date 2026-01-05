@@ -23,7 +23,7 @@ public sealed class RipplesClientOptions
     /// <remarks>
     ///     Default is true. When enabled, uses exponential backoff for reconnection attempts.
     /// </remarks>
-    public bool EnableAutoReconnect { get; set; } = true;
+    public bool IsAutoReconnectEnabled { get; set; } = true;
 
     /// <summary>
     ///     Gets or sets the timeout for HTTP requests.

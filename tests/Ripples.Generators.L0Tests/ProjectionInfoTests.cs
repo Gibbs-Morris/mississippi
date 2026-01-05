@@ -32,7 +32,7 @@ public sealed class ProjectionInfoTests
             TypeName = "MyProjection",
             Namespace = "MyNamespace",
             Route = "my-projections",
-            EnableBatch = false,
+            IsBatchEnabled = false,
             Authorize = "AdminPolicy",
             BrookName = "my-brook",
             Tags = tags,
@@ -43,7 +43,7 @@ public sealed class ProjectionInfoTests
         sut.TypeName.Should().Be("MyProjection");
         sut.Namespace.Should().Be("MyNamespace");
         sut.Route.Should().Be("my-projections");
-        sut.EnableBatch.Should().BeFalse();
+        sut.IsBatchEnabled.Should().BeFalse();
         sut.Authorize.Should().Be("AdminPolicy");
         sut.BrookName.Should().Be("my-brook");
         sut.Tags.Should().BeEquivalentTo(tags);
@@ -64,7 +64,7 @@ public sealed class ProjectionInfoTests
         sut.TypeName.Should().BeEmpty();
         sut.Namespace.Should().BeEmpty();
         sut.Route.Should().BeEmpty();
-        sut.EnableBatch.Should().BeTrue();
+        sut.IsBatchEnabled.Should().BeTrue();
         sut.Authorize.Should().BeNull();
         sut.BrookName.Should().BeNull();
         sut.Tags.Should().BeNull();

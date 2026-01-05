@@ -18,7 +18,7 @@ internal sealed class ProjectionInfo
     /// <summary>
     ///     Gets or sets a value indicating whether batch endpoints are enabled.
     /// </summary>
-    public bool EnableBatch { get; set; } = true;
+    public bool IsBatchEnabled { get; set; } = true;
 
     /// <summary>
     ///     Gets or sets the fully qualified type name of the projection.

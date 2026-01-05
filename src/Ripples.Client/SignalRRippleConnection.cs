@@ -49,7 +49,7 @@ internal sealed class SignalRRippleConnection : ISignalRRippleConnection
                          throw new InvalidOperationException("BaseApiUri must be configured.");
         string hubUrl = $"{baseUrl}{Options.SignalRHubPath}";
         IHubConnectionBuilder builder = new HubConnectionBuilder().WithUrl(hubUrl);
-        if (Options.EnableAutoReconnect)
+        if (Options.IsAutoReconnectEnabled)
         {
             builder = builder.WithAutomaticReconnect(new ExponentialBackoffRetryPolicy(Options));
         }

@@ -23,7 +23,7 @@ public sealed record RippleOptions
     ///     Gets a value indicating whether batching is enabled for prefetch operations.
     ///     Defaults to true.
     /// </summary>
-    public bool EnableBatching { get; init; } = true;
+    public bool IsBatchingEnabled { get; init; } = true;
 
     /// <summary>
     ///     Gets the maximum number of warm tier entries.

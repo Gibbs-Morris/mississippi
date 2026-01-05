@@ -44,7 +44,7 @@ public sealed class RipplesClientOptionsTests
         // Assert
         sut.BaseApiUri.Should().BeNull();
         sut.SignalRHubPath.Should().Be("/hubs/projections");
-        sut.EnableAutoReconnect.Should().BeTrue();
+        sut.IsAutoReconnectEnabled.Should().BeTrue();
         sut.MaxReconnectAttempts.Should().Be(10);
         sut.InitialReconnectDelay.Should().Be(TimeSpan.FromSeconds(1));
         sut.MaxReconnectDelay.Should().Be(TimeSpan.FromSeconds(30));
@@ -52,20 +52,20 @@ public sealed class RipplesClientOptionsTests
     }
 
     /// <summary>
-    ///     EnableAutoReconnect can be disabled.
+    ///     IsAutoReconnectEnabled can be disabled.
     /// </summary>
     [Fact]
     [AllureFeature("Configuration")]
-    public void EnableAutoReconnectCanBeDisabled()
+    public void IsAutoReconnectEnabledCanBeDisabled()
     {
         // Arrange
         RipplesClientOptions sut = new();
 
         // Act
-        sut.EnableAutoReconnect = false;
+        sut.IsAutoReconnectEnabled = false;
 
         // Assert
-        sut.EnableAutoReconnect.Should().BeFalse();
+        sut.IsAutoReconnectEnabled.Should().BeFalse();
     }
 
     /// <summary>

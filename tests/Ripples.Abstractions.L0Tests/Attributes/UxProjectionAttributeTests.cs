@@ -87,34 +87,34 @@ public sealed class UxProjectionAttributeTests
     }
 
     /// <summary>
-    ///     Verifies that EnableBatch defaults to true.
+    ///     Verifies that IsBatchEnabled defaults to true.
     /// </summary>
     [Fact]
     [AllureFeature("Properties")]
-    public void EnableBatchDefaultsToTrue()
+    public void IsBatchEnabledDefaultsToTrue()
     {
         // Arrange & Act
         UxProjectionAttribute attribute = new("/api/projections");
 
         // Assert
-        Assert.True(attribute.EnableBatch);
+        Assert.True(attribute.IsBatchEnabled);
     }
 
     /// <summary>
-    ///     Verifies that EnableBatch is settable.
+    ///     Verifies that IsBatchEnabled is settable.
     /// </summary>
     [Fact]
     [AllureFeature("Properties")]
-    public void EnableBatchIsSettable()
+    public void IsBatchEnabledIsSettable()
     {
         // Arrange & Act
         UxProjectionAttribute attribute = new("/api/projections")
         {
-            EnableBatch = false,
+            IsBatchEnabled = false,
         };
 
         // Assert
-        Assert.False(attribute.EnableBatch);
+        Assert.False(attribute.IsBatchEnabled);
     }
 
     /// <summary>

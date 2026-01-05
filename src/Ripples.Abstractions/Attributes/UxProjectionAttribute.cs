@@ -33,10 +33,10 @@ public sealed class UxProjectionAttribute : Attribute
     public string? BrookName { get; set; }
 
     /// <summary>
-    ///     Gets or sets a value indicating whether to enable batch endpoints.
+    ///     Gets or sets a value indicating whether batch endpoints are enabled.
     ///     Defaults to <c>true</c>.
     /// </summary>
-    public bool EnableBatch { get; set; } = true;
+    public bool IsBatchEnabled { get; set; } = true;
 
     /// <summary>
     ///     Gets the HTTP route for this projection.

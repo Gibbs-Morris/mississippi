@@ -206,15 +206,15 @@ public sealed class RipplesGenerator : IIncrementalGenerator
             : string.Empty;
 
         // Extract optional properties
-        bool enableBatch = true;
+        bool isBatchEnabled = true;
         string? authorize = null;
         string? brookName = null;
         foreach (KeyValuePair<string, TypedConstant> arg in attribute.NamedArguments)
         {
             switch (arg.Key)
             {
-                case "EnableBatch":
-                    enableBatch = (bool)(arg.Value.Value ?? true);
+                case "IsBatchEnabled":
+                    isBatchEnabled = (bool)(arg.Value.Value ?? true);
                     break;
                 case "Authorize":
                     authorize = arg.Value.Value?.ToString();
@@ -231,7 +231,7 @@ public sealed class RipplesGenerator : IIncrementalGenerator
             TypeName = typeSymbol.Name,
             Namespace = typeSymbol.ContainingNamespace.ToDisplayString(),
             Route = route,
-            EnableBatch = enableBatch,
+            IsBatchEnabled = isBatchEnabled,
             Authorize = authorize,
             BrookName = brookName,
         };
@@ -335,7 +335,7 @@ public sealed partial class {aggregate.AggregateName}Controller : ControllerBase
         string authorizeAttribute = projection.Authorize is not null
             ? $"\n    [Authorize(Policy = \"{projection.Authorize}\")]"
             : string.Empty;
-        string batchMethod = projection.EnableBatch
+        string batchMethod = projection.IsBatchEnabled
             ? $@"
 
     /// <summary>
@@ -492,7 +492,7 @@ public enum RippleHostingMode
         public static string {projection.TypeName}(string entityId)
             => $""api/projections/{projection.Route}/{{entityId}}"";
 ");
-            if (projection.EnableBatch)
+            if (projection.IsBatchEnabled)
             {
                 projectionMethods.Append(
                     $@"
