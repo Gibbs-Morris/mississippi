@@ -14,6 +14,7 @@ namespace Cascade.Domain.L0Tests.Conversation.Reducers;
 /// <summary>
 ///     Tests for <see cref="MessageSentReducer" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("Conversation")]
 [AllureSubSuite("Reducers")]
 [AllureFeature("MessageSent")]

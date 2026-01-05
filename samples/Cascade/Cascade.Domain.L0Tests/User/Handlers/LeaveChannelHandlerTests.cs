@@ -17,6 +17,7 @@ namespace Cascade.Domain.L0Tests.User.Handlers;
 /// <summary>
 ///     Tests for <see cref="LeaveChannelHandler" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("User")]
 [AllureSubSuite("Handlers")]
 [AllureFeature("LeaveChannel")]

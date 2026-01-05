@@ -17,6 +17,7 @@ namespace Cascade.Domain.L0Tests.Channel.Handlers;
 /// <summary>
 ///     Tests for <see cref="ArchiveChannelHandler" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("Channel")]
 [AllureSubSuite("Handlers")]
 [AllureFeature("ArchiveChannel")]

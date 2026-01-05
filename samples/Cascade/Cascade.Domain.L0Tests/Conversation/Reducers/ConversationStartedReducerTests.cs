@@ -13,6 +13,7 @@ namespace Cascade.Domain.L0Tests.Conversation.Reducers;
 /// <summary>
 ///     Tests for <see cref="ConversationStartedReducer" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("Conversation")]
 [AllureSubSuite("Reducers")]
 [AllureFeature("ConversationStarted")]

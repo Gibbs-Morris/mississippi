@@ -18,6 +18,7 @@ namespace Cascade.Domain.L0Tests.Channel.Handlers;
 /// <summary>
 ///     Tests for <see cref="AddMemberHandler" /> and <see cref="RemoveMemberHandler" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("Channel")]
 [AllureSubSuite("Handlers")]
 [AllureFeature("MemberManagement")]

@@ -18,6 +18,7 @@ namespace Cascade.Domain.L0Tests.Conversation.Handlers;
 /// <summary>
 ///     Tests for <see cref="DeleteMessageHandler" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("Conversation")]
 [AllureSubSuite("Handlers")]
 [AllureFeature("DeleteMessage")]

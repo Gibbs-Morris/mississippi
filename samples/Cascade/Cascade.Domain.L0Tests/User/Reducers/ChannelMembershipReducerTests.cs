@@ -14,6 +14,7 @@ namespace Cascade.Domain.L0Tests.User.Reducers;
 /// <summary>
 ///     Tests for <see cref="UserJoinedChannelReducer" /> and <see cref="UserLeftChannelReducer" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("User")]
 [AllureSubSuite("Reducers")]
 [AllureFeature("ChannelMembership")]

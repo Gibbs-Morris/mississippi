@@ -16,6 +16,7 @@ namespace Cascade.Domain.L0Tests.Channel.Handlers;
 /// <summary>
 ///     Tests for <see cref="RenameChannelHandler" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("Channel")]
 [AllureSubSuite("Handlers")]
 [AllureFeature("RenameChannel")]

@@ -14,6 +14,7 @@ namespace Cascade.Domain.L0Tests.Channel.Reducers;
 /// <summary>
 ///     Tests for Channel reducers.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("Channel")]
 [AllureSubSuite("Reducers")]
 [AllureFeature("ChannelReducers")]

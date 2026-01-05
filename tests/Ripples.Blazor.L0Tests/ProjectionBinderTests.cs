@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using FluentAssertions;
 
 using Mississippi.Ripples.Abstractions;
@@ -14,6 +16,9 @@ namespace Mississippi.Ripples.Blazor.L0Tests;
 /// <summary>
 ///     Unit tests for <see cref="ProjectionBinder{TProjection}" />.
 /// </summary>
+[AllureParentSuite("Ripples")]
+[AllureSuite("Blazor")]
+[AllureSubSuite("Components")]
 public sealed class ProjectionBinderTests : IAsyncDisposable
 {
     private readonly IProjectionCache mockCache;

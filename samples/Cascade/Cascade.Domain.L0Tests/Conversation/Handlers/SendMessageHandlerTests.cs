@@ -16,6 +16,7 @@ namespace Cascade.Domain.L0Tests.Conversation.Handlers;
 /// <summary>
 ///     Tests for <see cref="SendMessageHandler" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("Conversation")]
 [AllureSubSuite("Handlers")]
 [AllureFeature("SendMessage")]

@@ -16,6 +16,7 @@ namespace Cascade.Domain.L0Tests.User.Handlers;
 /// <summary>
 ///     Tests for <see cref="UpdateDisplayNameHandler" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("User")]
 [AllureSubSuite("Handlers")]
 [AllureFeature("UpdateDisplayName")]

@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Allure.Xunit.Attributes;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,9 @@ namespace Mississippi.Ripples.Blazor.L0Tests;
 /// <summary>
 ///     Unit tests for <see cref="ProjectionCache" />.
 /// </summary>
+[AllureParentSuite("Ripples")]
+[AllureSuite("Blazor")]
+[AllureSubSuite("Components")]
 public sealed class ProjectionCacheTests : IAsyncDisposable
 {
     private readonly IRippleFactory<TestProjection> mockFactory;

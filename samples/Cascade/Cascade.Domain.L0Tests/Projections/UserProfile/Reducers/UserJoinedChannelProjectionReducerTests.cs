@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 
+using Allure.Xunit.Attributes;
 using Allure.Xunit.Attributes.Steps;
 
 using Cascade.Domain.Projections.UserProfile;
@@ -13,6 +14,9 @@ namespace Cascade.Domain.L0Tests.Projections.UserProfile.Reducers;
 /// <summary>
 ///     Unit tests for the <see cref="UserJoinedChannelProjectionReducer" /> class.
 /// </summary>
+[AllureParentSuite("Cascade")]
+[AllureSuite("Core")]
+[AllureSubSuite("Unit")]
 public sealed class UserJoinedChannelProjectionReducerTests
 {
     /// <summary>

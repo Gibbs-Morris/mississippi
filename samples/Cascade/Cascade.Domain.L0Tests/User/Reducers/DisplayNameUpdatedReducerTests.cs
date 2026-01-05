@@ -11,6 +11,7 @@ namespace Cascade.Domain.L0Tests.User.Reducers;
 /// <summary>
 ///     Tests for <see cref="DisplayNameUpdatedReducer" />.
 /// </summary>
+[AllureParentSuite("Cascade")]
 [AllureSuite("User")]
 [AllureSubSuite("Reducers")]
 [AllureFeature("DisplayNameUpdated")]
