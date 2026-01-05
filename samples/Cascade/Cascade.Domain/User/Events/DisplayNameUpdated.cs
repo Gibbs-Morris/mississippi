@@ -8,7 +8,7 @@ namespace Cascade.Domain.User.Events;
 /// <summary>
 ///     Event raised when a user's display name is updated.
 /// </summary>
-[EventStorageName("CASCADE", "CHAT", "DISPLAYNAMEUPDATED")]
+[EventStorageName("CASCADE", "CHAT", "DISPLAYNAMEUPDATED", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.Events.DisplayNameUpdated")]
 internal sealed record DisplayNameUpdated

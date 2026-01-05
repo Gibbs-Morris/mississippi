@@ -20,7 +20,7 @@ namespace Cascade.Domain.Projections.ChannelMessages;
 ///         ConversationStarted, MessageSent, MessageEdited, MessageDeleted.
 ///     </para>
 /// </remarks>
-[SnapshotStorageName("CASCADE", "CHAT", "CHANNELMESSAGES")]
+[SnapshotStorageName("CASCADE", "CHAT", "CHANNELMESSAGES", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.ChannelMessages.ChannelMessagesProjection")]
 internal sealed record ChannelMessagesProjection

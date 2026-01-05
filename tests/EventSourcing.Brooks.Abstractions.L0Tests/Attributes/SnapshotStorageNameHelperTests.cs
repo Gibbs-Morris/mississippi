@@ -19,7 +19,7 @@ public class SnapshotStorageNameHelperTests
     /// <summary>
     ///     Test fixture decorated with SnapshotStorageName attribute.
     /// </summary>
-    [SnapshotStorageName("APP", "MODULE", "STATE")]
+    [SnapshotStorageName("APP", "MODULE", "STATE", version: 1)]
     private sealed class DecoratedState
     {
     }

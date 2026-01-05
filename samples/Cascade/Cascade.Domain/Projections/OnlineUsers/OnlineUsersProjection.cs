@@ -25,7 +25,7 @@ namespace Cascade.Domain.Projections.OnlineUsers;
 ///         multiple user projections.
 ///     </para>
 /// </remarks>
-[SnapshotStorageName("CASCADE", "CHAT", "ONLINEUSERS")]
+[SnapshotStorageName("CASCADE", "CHAT", "ONLINEUSERS", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.OnlineUsers.OnlineUsersProjection")]
 internal sealed record OnlineUsersProjection

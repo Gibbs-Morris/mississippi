@@ -12,7 +12,7 @@ namespace Cascade.Domain.User;
 ///     Internal state for the user aggregate.
 ///     This is never exposed externally; use projections for read queries.
 /// </summary>
-[SnapshotStorageName("CASCADE", "CHAT", "USERSTATE")]
+[SnapshotStorageName("CASCADE", "CHAT", "USERSTATE", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.UserAggregate")]
 internal sealed record UserAggregate

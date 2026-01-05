@@ -43,7 +43,7 @@ public static class SnapshotStorageNameHelper
                 {
                     throw new InvalidOperationException(
                         $"Type {t.Name} does not have a SnapshotStorageNameAttribute. " +
-                        $"Decorate the type with [SnapshotStorageName(\"APP\", \"MODULE\", \"NAME\")] to define its storage identity.");
+                        $"Decorate the type with [SnapshotStorageName(\"APP\", \"MODULE\", \"NAME\", version: 1)] to define its storage identity.");
                 }
 
                 return attribute.StorageName;

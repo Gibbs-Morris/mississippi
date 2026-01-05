@@ -10,7 +10,7 @@ namespace Cascade.Domain.Conversation.Events;
 /// <summary>
 ///     Event raised when a conversation is started.
 /// </summary>
-[EventStorageName("CASCADE", "CHAT", "CONVERSATIONSTARTED")]
+[EventStorageName("CASCADE", "CHAT", "CONVERSATIONSTARTED", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Conversation.Events.ConversationStarted")]
 internal sealed record ConversationStarted

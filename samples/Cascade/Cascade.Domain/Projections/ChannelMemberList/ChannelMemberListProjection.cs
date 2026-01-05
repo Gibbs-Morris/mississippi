@@ -20,7 +20,7 @@ namespace Cascade.Domain.Projections.ChannelMemberList;
 ///         ChannelCreated, MemberAdded, MemberRemoved.
 ///     </para>
 /// </remarks>
-[SnapshotStorageName("CASCADE", "CHAT", "CHANNELMEMBERLIST")]
+[SnapshotStorageName("CASCADE", "CHAT", "CHANNELMEMBERLIST", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.ChannelMemberList.ChannelMemberListProjection")]
 internal sealed record ChannelMemberListProjection

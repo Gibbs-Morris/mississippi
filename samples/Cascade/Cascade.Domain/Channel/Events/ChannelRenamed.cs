@@ -8,7 +8,7 @@ namespace Cascade.Domain.Channel.Events;
 /// <summary>
 ///     Event raised when a channel is renamed.
 /// </summary>
-[EventStorageName("CASCADE", "CHAT", "CHANNELRENAMED")]
+[EventStorageName("CASCADE", "CHAT", "CHANNELRENAMED", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.Events.ChannelRenamed")]
 internal sealed record ChannelRenamed

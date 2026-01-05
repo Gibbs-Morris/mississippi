@@ -8,7 +8,7 @@ namespace Crescent.ConsoleApp.Counter.Events;
 /// <summary>
 ///     Event raised when the counter is reset.
 /// </summary>
-[EventStorageName("CRESCENT", "SAMPLE", "COUNTERRESET")]
+[EventStorageName("CRESCENT", "SAMPLE", "COUNTERRESET", version: 1)]
 [GenerateSerializer]
 [Alias("Crescent.ConsoleApp.Counter.Events.CounterReset")]
 internal sealed record CounterReset

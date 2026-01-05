@@ -43,7 +43,7 @@ public static class EventStorageNameHelper
                 {
                     throw new InvalidOperationException(
                         $"Type {t.Name} does not have an EventStorageNameAttribute. " +
-                        $"Decorate the type with [EventStorageName(\"APP\", \"MODULE\", \"NAME\")] to define its storage identity.");
+                        $"Decorate the type with [EventStorageName(\"APP\", \"MODULE\", \"NAME\", version: 1)] to define its storage identity.");
                 }
 
                 return attribute.StorageName;

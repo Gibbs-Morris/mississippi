@@ -10,7 +10,7 @@ namespace Cascade.Domain.User.Events;
 /// <summary>
 ///     Event raised when a user joins a channel.
 /// </summary>
-[EventStorageName("CASCADE", "CHAT", "USERJOINEDCHANNEL")]
+[EventStorageName("CASCADE", "CHAT", "USERJOINEDCHANNEL", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.Events.UserJoinedChannel")]
 internal sealed record UserJoinedChannel

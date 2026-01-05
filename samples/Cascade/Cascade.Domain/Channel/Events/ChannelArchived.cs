@@ -10,7 +10,7 @@ namespace Cascade.Domain.Channel.Events;
 /// <summary>
 ///     Event raised when a channel is archived.
 /// </summary>
-[EventStorageName("CASCADE", "CHAT", "CHANNELARCHIVED")]
+[EventStorageName("CASCADE", "CHAT", "CHANNELARCHIVED", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.Events.ChannelArchived")]
 internal sealed record ChannelArchived
