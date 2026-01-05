@@ -1,6 +1,6 @@
 using Cascade.Domain;
 using Cascade.Server.Components;
-using Cascade.Server.Components.Services;
+using Cascade.Server.Services;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;

@@ -5,10 +5,9 @@ using System.Threading.Tasks;
 using Cascade.Domain.User;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
-namespace Cascade.Server.Components.Services;
+namespace Cascade.Server.Services;
 
 /// <summary>
 ///     Scoped service that stores the current user's session state.
@@ -86,8 +85,8 @@ internal sealed class UserSession
         string userId = $"user-{normalizedName}";
 
         // Get the user aggregate grain
-        BrookKey brookKey = BrookKey.ForGrain<IUserAggregateGrain>(userId);
-        IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(brookKey);
+        AggregateKey aggregateKey = AggregateKey.ForAggregate<IUserAggregateGrain>(userId);
+        IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(aggregateKey);
 
         // Register the user (idempotent - returns error if already registered, which we ignore)
         OperationResult result = await userGrain.RegisterAsync(userId, displayName);
@@ -119,8 +118,8 @@ internal sealed class UserSession
         if (!string.IsNullOrEmpty(UserId))
         {
             // Set user offline
-            BrookKey brookKey = BrookKey.ForGrain<IUserAggregateGrain>(UserId);
-            IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(brookKey);
+            AggregateKey aggregateKey = AggregateKey.ForAggregate<IUserAggregateGrain>(UserId);
+            IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(aggregateKey);
             await userGrain.SetOnlineStatusAsync(false);
         }
 

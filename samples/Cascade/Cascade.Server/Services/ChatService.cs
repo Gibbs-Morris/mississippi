@@ -8,10 +8,9 @@ using Cascade.Domain.Conversation;
 using Cascade.Domain.User;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
-namespace Cascade.Server.Components.Services;
+namespace Cascade.Server.Services;
 
 /// <summary>
 ///     Facade for chat operations that wraps grain calls.
@@ -74,7 +73,7 @@ internal sealed class ChatService : IChatService
         string channelId = GenerateChannelId(name);
 
         // Get the channel grain and create the channel
-        BrookKey channelKey = BrookKey.ForGrain<IChannelAggregateGrain>(channelId);
+        AggregateKey channelKey = AggregateKey.ForAggregate<IChannelAggregateGrain>(channelId);
         IChannelAggregateGrain channelGrain = AggregateGrainFactory.GetAggregate<IChannelAggregateGrain>(channelKey);
         OperationResult result = await channelGrain.CreateAsync(channelId, name, Session.UserId!);
         if (!result.Success)
@@ -92,7 +91,7 @@ internal sealed class ChatService : IChatService
         }
 
         // Also update the user's channel list
-        BrookKey userKey = BrookKey.ForGrain<IUserAggregateGrain>(Session.UserId!);
+        AggregateKey userKey = AggregateKey.ForAggregate<IUserAggregateGrain>(Session.UserId!);
         IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(userKey);
         await userGrain.JoinChannelAsync(channelId);
         return channelId;
@@ -108,7 +107,7 @@ internal sealed class ChatService : IChatService
         EnsureAuthenticated();
 
         // Add user to channel
-        BrookKey channelKey = BrookKey.ForGrain<IChannelAggregateGrain>(channelId);
+        AggregateKey channelKey = AggregateKey.ForAggregate<IChannelAggregateGrain>(channelId);
         IChannelAggregateGrain channelGrain = AggregateGrainFactory.GetAggregate<IChannelAggregateGrain>(channelKey);
         OperationResult result = await channelGrain.AddMemberAsync(Session.UserId!);
         if (!result.Success && (result.ErrorCode != AggregateErrorCodes.InvalidState))
@@ -117,7 +116,7 @@ internal sealed class ChatService : IChatService
         }
 
         // Update user's channel list
-        BrookKey userKey = BrookKey.ForGrain<IUserAggregateGrain>(Session.UserId!);
+        AggregateKey userKey = AggregateKey.ForAggregate<IUserAggregateGrain>(Session.UserId!);
         IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(userKey);
         OperationResult userResult = await userGrain.JoinChannelAsync(channelId);
         if (!userResult.Success && (userResult.ErrorCode != AggregateErrorCodes.InvalidState))
@@ -138,7 +137,7 @@ internal sealed class ChatService : IChatService
         EnsureAuthenticated();
 
         // Remove user from channel
-        BrookKey channelKey = BrookKey.ForGrain<IChannelAggregateGrain>(channelId);
+        AggregateKey channelKey = AggregateKey.ForAggregate<IChannelAggregateGrain>(channelId);
         IChannelAggregateGrain channelGrain = AggregateGrainFactory.GetAggregate<IChannelAggregateGrain>(channelKey);
         OperationResult result = await channelGrain.RemoveMemberAsync(Session.UserId!);
         if (!result.Success && (result.ErrorCode != AggregateErrorCodes.InvalidState))
@@ -147,7 +146,7 @@ internal sealed class ChatService : IChatService
         }
 
         // Update user's channel list
-        BrookKey userKey = BrookKey.ForGrain<IUserAggregateGrain>(Session.UserId!);
+        AggregateKey userKey = AggregateKey.ForAggregate<IUserAggregateGrain>(Session.UserId!);
         IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(userKey);
         OperationResult userResult = await userGrain.LeaveChannelAsync(channelId);
         if (!userResult.Success && (userResult.ErrorCode != AggregateErrorCodes.InvalidState))
@@ -173,7 +172,7 @@ internal sealed class ChatService : IChatService
         string conversationId = channelId;
 
         // Get the conversation grain
-        BrookKey conversationKey = BrookKey.ForGrain<IConversationAggregateGrain>(conversationId);
+        AggregateKey conversationKey = AggregateKey.ForAggregate<IConversationAggregateGrain>(conversationId);
         IConversationAggregateGrain conversationGrain =
             AggregateGrainFactory.GetAggregate<IConversationAggregateGrain>(conversationKey);
 

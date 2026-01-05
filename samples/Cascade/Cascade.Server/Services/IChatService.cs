@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Cascade.Server.Components.Services;
+namespace Cascade.Server.Services;
 
 /// <summary>
 ///     Facade for chat operations that wraps grain calls.

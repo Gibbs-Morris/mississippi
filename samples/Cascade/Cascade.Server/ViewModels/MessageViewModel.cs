@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Cascade.Server.Components.ViewModels;
+namespace Cascade.Server.ViewModels;
 
 /// <summary>
 ///     View model for displaying a message in the UI.

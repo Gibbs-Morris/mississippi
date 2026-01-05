@@ -6,7 +6,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 
 
-namespace Cascade.Server.Components.Utilities;
+namespace Cascade.Server.Utilities;
 
 /// <summary>
 ///     Provides utility methods for channel display formatting.

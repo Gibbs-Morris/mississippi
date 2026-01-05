@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Cascade.Server.Components.Services;
+namespace Cascade.Server.Services;
 
 /// <summary>
 ///     Exception thrown when a chat operation fails.
