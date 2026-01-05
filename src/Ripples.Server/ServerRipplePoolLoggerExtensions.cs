@@ -1,13 +1,26 @@
-namespace Mississippi.Ripples.Server;
-
 using System;
+
 using Microsoft.Extensions.Logging;
 
+
+namespace Mississippi.Ripples.Server;
+
 /// <summary>
-/// Logger extensions for <see cref="ServerRipplePool{TProjection}"/>.
+///     Logger extensions for <see cref="ServerRipplePool{TProjection}" />.
 /// </summary>
 internal static partial class ServerRipplePoolLoggerExtensions
 {
+    [LoggerMessage(
+        EventId = 4,
+        Level = LogLevel.Error,
+        Message = "Pool entry fetch failed for {ProjectionType}/{EntityId}")]
+    public static partial void PoolEntryFetchFailed(
+        this ILogger logger,
+        Exception exception,
+        string projectionType,
+        string entityId
+    );
+
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Debug,
@@ -16,16 +29,8 @@ internal static partial class ServerRipplePoolLoggerExtensions
         this ILogger logger,
         string projectionType,
         int totalCount,
-        int newCount);
-
-    [LoggerMessage(
-        EventId = 2,
-        Level = LogLevel.Debug,
-        Message = "Pool unsubscribed from {ProjectionType}: {RemovedCount} removed")]
-    public static partial void PoolUnsubscribed(
-        this ILogger logger,
-        string projectionType,
-        int removedCount);
+        int newCount
+    );
 
     [LoggerMessage(
         EventId = 3,
@@ -36,15 +41,16 @@ internal static partial class ServerRipplePoolLoggerExtensions
         string projectionType,
         int totalCount,
         int addedCount,
-        int removedCount);
+        int removedCount
+    );
 
     [LoggerMessage(
-        EventId = 4,
-        Level = LogLevel.Error,
-        Message = "Pool entry fetch failed for {ProjectionType}/{EntityId}")]
-    public static partial void PoolEntryFetchFailed(
+        EventId = 2,
+        Level = LogLevel.Debug,
+        Message = "Pool unsubscribed from {ProjectionType}: {RemovedCount} removed")]
+    public static partial void PoolUnsubscribed(
         this ILogger logger,
-        Exception exception,
         string projectionType,
-        string entityId);
+        int removedCount
+    );
 }

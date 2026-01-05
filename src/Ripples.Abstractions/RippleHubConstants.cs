@@ -1,34 +1,34 @@
 namespace Mississippi.Ripples.Abstractions;
 
 /// <summary>
-/// Constants for SignalR hub method names used by Ripples.
+///     Constants for SignalR hub method names used by Ripples.
 /// </summary>
 /// <remarks>
-/// <para>
-/// These constants ensure consistency between server-side hub implementations
-/// and client-side SignalR connections. Using shared constants prevents
-/// runtime errors from typos in method name strings.
-/// </para>
+///     <para>
+///         These constants ensure consistency between server-side hub implementations
+///         and client-side SignalR connections. Using shared constants prevents
+///         runtime errors from typos in method name strings.
+///     </para>
 /// </remarks>
 public static class RippleHubConstants
 {
     /// <summary>
-    /// The hub method name for receiving projection update notifications.
+    ///     The hub method name for receiving projection update notifications.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Parameters: (string projectionType, string entityId, long newVersion).
-    /// </para>
+    ///     <para>
+    ///         Parameters: (string projectionType, string entityId, long newVersion).
+    ///     </para>
     /// </remarks>
     public const string ProjectionUpdatedMethod = "ProjectionUpdated";
 
     /// <summary>
-    /// The hub method name for subscribing to projection updates.
+    ///     The hub method name for subscribing to projection updates.
     /// </summary>
     public const string SubscribeMethod = "Subscribe";
 
     /// <summary>
-    /// The hub method name for unsubscribing from projection updates.
+    ///     The hub method name for unsubscribing from projection updates.
     /// </summary>
     public const string UnsubscribeMethod = "Unsubscribe";
 }

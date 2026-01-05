@@ -1,51 +1,56 @@
-namespace Mississippi.Ripples.Client;
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+
+namespace Mississippi.Ripples.Client;
+
 /// <summary>
-/// Represents a SignalR connection for receiving projection updates.
+///     Represents a SignalR connection for receiving projection updates.
 /// </summary>
 /// <remarks>
-/// <para>
-/// This interface abstracts the SignalR connection lifecycle, allowing
-/// components to subscribe to projection updates without managing the
-/// underlying connection details.
-/// </para>
-/// <para>
-/// The connection implements automatic reconnection with exponential backoff
-/// based on the configured <see cref="RipplesClientOptions"/>.
-/// </para>
+///     <para>
+///         This interface abstracts the SignalR connection lifecycle, allowing
+///         components to subscribe to projection updates without managing the
+///         underlying connection details.
+///     </para>
+///     <para>
+///         The connection implements automatic reconnection with exponential backoff
+///         based on the configured <see cref="RipplesClientOptions" />.
+///     </para>
 /// </remarks>
 public interface ISignalRRippleConnection : IAsyncDisposable
 {
     /// <summary>
-    /// Gets the current connection state.
-    /// </summary>
-    SignalRConnectionState State { get; }
-
-    /// <summary>
-    /// Occurs when the connection state changes.
+    ///     Occurs when the connection state changes.
     /// </summary>
     event EventHandler<SignalRConnectionStateChangeEventArgs>? StateChanged;
 
     /// <summary>
-    /// Starts the SignalR connection if not already connected.
+    ///     Gets the current connection state.
+    /// </summary>
+    SignalRConnectionState State { get; }
+
+    /// <summary>
+    ///     Starts the SignalR connection if not already connected.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task StartAsync(CancellationToken cancellationToken = default);
+    Task StartAsync(
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
-    /// Stops the SignalR connection.
+    ///     Stops the SignalR connection.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task StopAsync(CancellationToken cancellationToken = default);
+    Task StopAsync(
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
-    /// Subscribes to updates for a specific projection entity.
+    ///     Subscribes to updates for a specific projection entity.
     /// </summary>
     /// <param name="projectionType">The projection type name.</param>
     /// <param name="entityId">The entity identifier.</param>
@@ -56,10 +61,11 @@ public interface ISignalRRippleConnection : IAsyncDisposable
         string projectionType,
         string entityId,
         Action<long> callback,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
-    /// Unsubscribes from updates for a specific projection entity.
+    ///     Unsubscribes from updates for a specific projection entity.
     /// </summary>
     /// <param name="projectionType">The projection type name.</param>
     /// <param name="entityId">The entity identifier.</param>
@@ -68,42 +74,43 @@ public interface ISignalRRippleConnection : IAsyncDisposable
     Task UnsubscribeAsync(
         string projectionType,
         string entityId,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 }
 
 /// <summary>
-/// Represents the state of a SignalR connection.
+///     Represents the state of a SignalR connection.
 /// </summary>
 public enum SignalRConnectionState
 {
     /// <summary>
-    /// The connection has not been started.
+    ///     The connection has not been started.
     /// </summary>
     Disconnected,
 
     /// <summary>
-    /// The connection is being established.
+    ///     The connection is being established.
     /// </summary>
     Connecting,
 
     /// <summary>
-    /// The connection is established and active.
+    ///     The connection is established and active.
     /// </summary>
     Connected,
 
     /// <summary>
-    /// The connection is attempting to reconnect.
+    ///     The connection is attempting to reconnect.
     /// </summary>
     Reconnecting,
 }
 
 /// <summary>
-/// Event arguments for <see cref="ISignalRRippleConnection.StateChanged"/>.
+///     Event arguments for <see cref="ISignalRRippleConnection.StateChanged" />.
 /// </summary>
 public sealed class SignalRConnectionStateChangeEventArgs : EventArgs
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="SignalRConnectionStateChangeEventArgs"/> class.
+    ///     Initializes a new instance of the <see cref="SignalRConnectionStateChangeEventArgs" /> class.
     /// </summary>
     /// <param name="previousState">The previous connection state.</param>
     /// <param name="currentState">The current connection state.</param>
@@ -111,7 +118,8 @@ public sealed class SignalRConnectionStateChangeEventArgs : EventArgs
     public SignalRConnectionStateChangeEventArgs(
         SignalRConnectionState previousState,
         SignalRConnectionState currentState,
-        Exception? exception = null)
+        Exception? exception = null
+    )
     {
         PreviousState = previousState;
         CurrentState = currentState;
@@ -119,17 +127,17 @@ public sealed class SignalRConnectionStateChangeEventArgs : EventArgs
     }
 
     /// <summary>
-    /// Gets the previous connection state.
-    /// </summary>
-    public SignalRConnectionState PreviousState { get; }
-
-    /// <summary>
-    /// Gets the current connection state.
+    ///     Gets the current connection state.
     /// </summary>
     public SignalRConnectionState CurrentState { get; }
 
     /// <summary>
-    /// Gets the exception if the state change was due to an error; otherwise, null.
+    ///     Gets the exception if the state change was due to an error; otherwise, null.
     /// </summary>
     public Exception? Exception { get; }
+
+    /// <summary>
+    ///     Gets the previous connection state.
+    /// </summary>
+    public SignalRConnectionState PreviousState { get; }
 }

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text;
+using System.Threading;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -11,151 +13,23 @@ using Mississippi.Ripples.Generators.Models;
 namespace Mississippi.Ripples.Generators;
 
 /// <summary>
-/// Incremental source generator for Ripples projection and aggregate controllers.
+///     Incremental source generator for Ripples projection and aggregate controllers.
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public sealed class RipplesGenerator : IIncrementalGenerator
 {
-    private const string UxProjectionAttributeFullName = "Mississippi.Ripples.Abstractions.UxProjectionAttribute";
-    private const string UxAggregateAttributeFullName = "Mississippi.Ripples.Abstractions.UxAggregateAttribute";
     private const string CommandRouteAttributeFullName = "Mississippi.Ripples.Abstractions.CommandRouteAttribute";
 
-    /// <inheritdoc />
-    public void Initialize(IncrementalGeneratorInitializationContext context)
-    {
-        // Filter for types with [UxProjection] attribute
-        IncrementalValuesProvider<ProjectionInfo> projections = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                UxProjectionAttributeFullName,
-                predicate: static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax,
-                transform: static (ctx, ct) => ExtractProjectionInfo(ctx, ct))
-            .Where(static info => info is not null)!;
+    private const string UxAggregateAttributeFullName = "Mississippi.Ripples.Abstractions.UxAggregateAttribute";
 
-        // Filter for interfaces with [UxAggregate] attribute
-        IncrementalValuesProvider<AggregateInfo> aggregates = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                UxAggregateAttributeFullName,
-                predicate: static (node, _) => node is InterfaceDeclarationSyntax,
-                transform: static (ctx, ct) => ExtractAggregateInfo(ctx, ct))
-            .Where(static info => info is not null)!;
-
-        // Collect all projections for route registry generation
-        IncrementalValueProvider<ImmutableArray<ProjectionInfo>> allProjections = projections.Collect();
-        IncrementalValueProvider<ImmutableArray<AggregateInfo>> allAggregates = aggregates.Collect();
-
-        // Generate projection controllers
-        context.RegisterSourceOutput(projections, static (spc, projection) =>
-        {
-            string source = GenerateProjectionController(projection);
-            spc.AddSource($"{projection.TypeName}Controller.g.cs", source);
-        });
-
-        // Generate aggregate controllers
-        context.RegisterSourceOutput(aggregates, static (spc, aggregate) =>
-        {
-            string source = GenerateAggregateController(aggregate);
-            spc.AddSource($"{aggregate.AggregateName}Controller.g.cs", source);
-        });
-
-        // Combine projections and aggregates for route registry
-        IncrementalValueProvider<(ImmutableArray<ProjectionInfo> Projections, ImmutableArray<AggregateInfo> Aggregates)> combined =
-            allProjections.Combine(allAggregates);
-
-        // Generate route registry
-        context.RegisterSourceOutput(combined, static (spc, data) =>
-        {
-            if (data.Projections.Length == 0 && data.Aggregates.Length == 0)
-            {
-                return;
-            }
-
-            string source = GenerateRouteRegistry(data.Projections, data.Aggregates);
-            spc.AddSource("RouteRegistry.g.cs", source);
-        });
-
-        // Generate Ripple service registrations
-        context.RegisterSourceOutput(allProjections, static (spc, projections) =>
-        {
-            if (projections.Length == 0)
-            {
-                return;
-            }
-
-            string source = GenerateRippleRegistrations(projections);
-            spc.AddSource("RippleServiceCollectionExtensions.g.cs", source);
-        });
-    }
-
-    private static ProjectionInfo? ExtractProjectionInfo(
-        GeneratorAttributeSyntaxContext context,
-        System.Threading.CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-
-        if (context.TargetSymbol is not INamedTypeSymbol typeSymbol)
-        {
-            return null;
-        }
-
-        AttributeData? attribute = null;
-        foreach (AttributeData attr in typeSymbol.GetAttributes())
-        {
-            if (attr.AttributeClass?.ToDisplayString() == UxProjectionAttributeFullName)
-            {
-                attribute = attr;
-                break;
-            }
-        }
-
-        if (attribute is null)
-        {
-            return null;
-        }
-
-        // Extract route from constructor argument
-        string route = attribute.ConstructorArguments.Length > 0
-            ? attribute.ConstructorArguments[0].Value?.ToString() ?? string.Empty
-            : string.Empty;
-
-        // Extract optional properties
-        bool enableBatch = true;
-        string? authorize = null;
-        string? brookName = null;
-
-        foreach (KeyValuePair<string, TypedConstant> arg in attribute.NamedArguments)
-        {
-            switch (arg.Key)
-            {
-                case "EnableBatch":
-                    enableBatch = (bool)(arg.Value.Value ?? true);
-                    break;
-                case "Authorize":
-                    authorize = arg.Value.Value?.ToString();
-                    break;
-                case "BrookName":
-                    brookName = arg.Value.Value?.ToString();
-                    break;
-            }
-        }
-
-        return new ProjectionInfo
-        {
-            FullTypeName = typeSymbol.ToDisplayString(),
-            TypeName = typeSymbol.Name,
-            Namespace = typeSymbol.ContainingNamespace.ToDisplayString(),
-            Route = route,
-            EnableBatch = enableBatch,
-            Authorize = authorize,
-            BrookName = brookName,
-        };
-    }
+    private const string UxProjectionAttributeFullName = "Mississippi.Ripples.Abstractions.UxProjectionAttribute";
 
     private static AggregateInfo? ExtractAggregateInfo(
         GeneratorAttributeSyntaxContext context,
-        System.Threading.CancellationToken ct)
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
-
         if (context.TargetSymbol is not INamedTypeSymbol typeSymbol)
         {
             return null;
@@ -193,10 +67,10 @@ public sealed class RipplesGenerator : IIncrementalGenerator
         }
 
         // Extract commands from interface methods
-        System.Collections.Generic.List<CommandInfo> commands = new();
+        List<CommandInfo> commands = new();
         foreach (ISymbol member in typeSymbol.GetMembers())
         {
-            if (member is not IMethodSymbol methodSymbol || methodSymbol.MethodKind != MethodKind.Ordinary)
+            if (member is not IMethodSymbol methodSymbol || (methodSymbol.MethodKind != MethodKind.Ordinary))
             {
                 continue;
             }
@@ -210,7 +84,9 @@ public sealed class RipplesGenerator : IIncrementalGenerator
         string aggregateName = interfaceName;
 
         // Remove "I" prefix if present
-        if (aggregateName.StartsWith("I", StringComparison.Ordinal) && aggregateName.Length > 1 && char.IsUpper(aggregateName[1]))
+        if (aggregateName.StartsWith("I", StringComparison.Ordinal) &&
+            (aggregateName.Length > 1) &&
+            char.IsUpper(aggregateName[1]))
         {
             aggregateName = aggregateName.Substring(1);
         }
@@ -227,7 +103,7 @@ public sealed class RipplesGenerator : IIncrementalGenerator
             aggregateName = aggregateName.Substring(0, aggregateName.Length - 9);
         }
 
-        return new AggregateInfo
+        return new()
         {
             FullTypeName = typeSymbol.ToDisplayString(),
             InterfaceName = interfaceName,
@@ -239,7 +115,9 @@ public sealed class RipplesGenerator : IIncrementalGenerator
         };
     }
 
-    private static CommandInfo ExtractCommandInfo(IMethodSymbol methodSymbol)
+    private static CommandInfo ExtractCommandInfo(
+        IMethodSymbol methodSymbol
+    )
     {
         // Check for [CommandRoute] attribute
         string? route = null;
@@ -285,8 +163,7 @@ public sealed class RipplesGenerator : IIncrementalGenerator
 
         // Extract XML documentation
         string? xmlDoc = methodSymbol.GetDocumentationCommentXml();
-
-        return new CommandInfo
+        return new()
         {
             MethodName = methodSymbol.Name,
             Route = route,
@@ -297,130 +174,87 @@ public sealed class RipplesGenerator : IIncrementalGenerator
         };
     }
 
-    private static string RemoveAsyncSuffix(string methodName)
+    private static ProjectionInfo? ExtractProjectionInfo(
+        GeneratorAttributeSyntaxContext context,
+        CancellationToken ct
+    )
     {
-        if (methodName.EndsWith("Async", StringComparison.Ordinal))
+        ct.ThrowIfCancellationRequested();
+        if (context.TargetSymbol is not INamedTypeSymbol typeSymbol)
         {
-            return methodName.Substring(0, methodName.Length - 5);
+            return null;
         }
 
-        return methodName;
-    }
-
-    private static string ToKebabCase(string input)
-    {
-        if (string.IsNullOrEmpty(input))
+        AttributeData? attribute = null;
+        foreach (AttributeData attr in typeSymbol.GetAttributes())
         {
-            return input;
-        }
-
-        System.Text.StringBuilder sb = new();
-        for (int i = 0; i < input.Length; i++)
-        {
-            char c = input[i];
-            if (char.IsUpper(c))
+            if (attr.AttributeClass?.ToDisplayString() == UxProjectionAttributeFullName)
             {
-                if (i > 0)
-                {
-                    sb.Append('-');
-                }
-
-                sb.Append(char.ToLowerInvariant(c));
-            }
-            else
-            {
-                sb.Append(c);
+                attribute = attr;
+                break;
             }
         }
 
-        return sb.ToString();
-    }
+        if (attribute is null)
+        {
+            return null;
+        }
 
-    private static string GenerateProjectionController(ProjectionInfo projection)
-    {
-        string authorizeAttribute = projection.Authorize is not null
-            ? $"\n    [Authorize(Policy = \"{projection.Authorize}\")]"
+        // Extract route from constructor argument
+        string route = attribute.ConstructorArguments.Length > 0
+            ? attribute.ConstructorArguments[0].Value?.ToString() ?? string.Empty
             : string.Empty;
 
-        string batchMethod = projection.EnableBatch
-            ? $@"
+        // Extract optional properties
+        bool enableBatch = true;
+        string? authorize = null;
+        string? brookName = null;
+        foreach (KeyValuePair<string, TypedConstant> arg in attribute.NamedArguments)
+        {
+            switch (arg.Key)
+            {
+                case "EnableBatch":
+                    enableBatch = (bool)(arg.Value.Value ?? true);
+                    break;
+                case "Authorize":
+                    authorize = arg.Value.Value?.ToString();
+                    break;
+                case "BrookName":
+                    brookName = arg.Value.Value?.ToString();
+                    break;
+            }
+        }
 
-    /// <summary>
-    /// Gets multiple projections in a single request.
-    /// </summary>
-    /// <param name=""request"">The batch request containing entity IDs.</param>
-    /// <param name=""cancellationToken"">A token to cancel the operation.</param>
-    /// <returns>A dictionary mapping entity IDs to projections.</returns>
-    [HttpPost(""batch"")]
-    public async Task<ActionResult<Dictionary<string, {projection.TypeName}>>> GetBatchAsync(
-        [FromBody] BatchProjectionRequest request,
-        CancellationToken cancellationToken = default)
-    {{
-        return await GetBatchCoreAsync(request.EntityIds, cancellationToken);
-    }}"
-            : string.Empty;
-
-        return $@"// <auto-generated/>
-#nullable enable
-
-using System;
-using System.CodeDom.Compiler;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-
-using Mississippi.EventSourcing.UxProjections.Api;
-
-using Orleans;
-
-namespace {projection.Namespace};
-
-/// <summary>
-/// API controller for <see cref=""{projection.TypeName}""/> projection.
-/// </summary>
-[GeneratedCode(""Mississippi.Ripples.Generators"", ""1.0.0"")]
-[Route(""api/projections/{projection.Route}/{{entityId}}"")]{authorizeAttribute}
-[ApiController]
-public sealed partial class {projection.TypeName}Controller
-    : UxProjectionControllerBase<{projection.TypeName}>
-{{
-    /// <summary>
-    /// Initializes a new instance of the <see cref=""{projection.TypeName}Controller""/> class.
-    /// </summary>
-    /// <param name=""clusterClient"">The Orleans cluster client.</param>
-    /// <param name=""logger"">The logger instance.</param>
-    public {projection.TypeName}Controller(
-        IClusterClient clusterClient,
-        ILogger<{projection.TypeName}Controller> logger)
-        : base(clusterClient, logger)
-    {{
-    }}{batchMethod}
-}}
-";
+        return new()
+        {
+            FullTypeName = typeSymbol.ToDisplayString(),
+            TypeName = typeSymbol.Name,
+            Namespace = typeSymbol.ContainingNamespace.ToDisplayString(),
+            Route = route,
+            EnableBatch = enableBatch,
+            Authorize = authorize,
+            BrookName = brookName,
+        };
     }
 
-    private static string GenerateAggregateController(AggregateInfo aggregate)
+    private static string GenerateAggregateController(
+        AggregateInfo aggregate
+    )
     {
         string authorizeAttribute = aggregate.Authorize is not null
             ? $"\n    [Authorize(Policy = \"{aggregate.Authorize}\")]"
             : string.Empty;
-
-        System.Text.StringBuilder methods = new();
+        StringBuilder methods = new();
         foreach (CommandInfo command in aggregate.Commands)
         {
             string parameterDeclaration = command.HasParameter
                 ? $",\n        [FromBody] {command.ParameterType} {command.ParameterName}"
                 : string.Empty;
-
             string methodCall = command.HasParameter
                 ? $"await grain.{command.MethodName}({command.ParameterName})"
                 : $"await grain.{command.MethodName}()";
-
-            methods.Append($@"
+            methods.Append(
+                $@"
 
     /// <summary>
     /// Executes the {RemoveAsyncSuffix(command.MethodName)} command.
@@ -494,87 +328,82 @@ public sealed partial class {aggregate.AggregateName}Controller : ControllerBase
 ";
     }
 
-    private static string GenerateRouteRegistry(
-        ImmutableArray<ProjectionInfo> projections,
-        ImmutableArray<AggregateInfo> aggregates)
+    private static string GenerateProjectionController(
+        ProjectionInfo projection
+    )
     {
-        System.Text.StringBuilder projectionMethods = new();
-        foreach (ProjectionInfo projection in projections)
-        {
-            projectionMethods.Append($@"
-        /// <summary>
-        /// Gets the route for {projection.TypeName} with the specified entity ID.
-        /// </summary>
-        public static string {projection.TypeName}(string entityId)
-            => $""api/projections/{projection.Route}/{{entityId}}"";
-");
+        string authorizeAttribute = projection.Authorize is not null
+            ? $"\n    [Authorize(Policy = \"{projection.Authorize}\")]"
+            : string.Empty;
+        string batchMethod = projection.EnableBatch
+            ? $@"
 
-            if (projection.EnableBatch)
-            {
-                projectionMethods.Append($@"
-        /// <summary>
-        /// Gets the batch route for {projection.TypeName}.
-        /// </summary>
-        public static string {projection.TypeName}Batch()
-            => ""api/projections/{projection.Route}/batch"";
-");
-            }
-        }
-
-        System.Text.StringBuilder commandMethods = new();
-        foreach (AggregateInfo aggregate in aggregates)
-        {
-            foreach (CommandInfo command in aggregate.Commands)
-            {
-                string methodNameWithoutAsync = command.MethodName.EndsWith("Async", StringComparison.Ordinal)
-                    ? command.MethodName.Substring(0, command.MethodName.Length - 5)
-                    : command.MethodName;
-
-                commandMethods.Append($@"
-        /// <summary>
-        /// Gets the route for {aggregate.AggregateName}.{methodNameWithoutAsync} command.
-        /// </summary>
-        public static string {aggregate.AggregateName}_{methodNameWithoutAsync}(string entityId)
-            => $""api/commands/{aggregate.Route}/{{entityId}}/{command.Route}"";
-");
-            }
-        }
-
+    /// <summary>
+    /// Gets multiple projections in a single request.
+    /// </summary>
+    /// <param name=""request"">The batch request containing entity IDs.</param>
+    /// <param name=""cancellationToken"">A token to cancel the operation.</param>
+    /// <returns>A dictionary mapping entity IDs to projections.</returns>
+    [HttpPost(""batch"")]
+    public async Task<ActionResult<Dictionary<string, {projection.TypeName}>>> GetBatchAsync(
+        [FromBody] BatchProjectionRequest request,
+        CancellationToken cancellationToken = default)
+    {{
+        return await GetBatchCoreAsync(request.EntityIds, cancellationToken);
+    }}"
+            : string.Empty;
         return $@"// <auto-generated/>
 #nullable enable
 
 using System;
 using System.CodeDom.Compiler;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Mississippi.Ripples;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+
+using Mississippi.EventSourcing.UxProjections.Api;
+
+using Orleans;
+
+namespace {projection.Namespace};
 
 /// <summary>
-/// Registry of all projection and command routes for client-side URL construction.
+/// API controller for <see cref=""{projection.TypeName}""/> projection.
 /// </summary>
 [GeneratedCode(""Mississippi.Ripples.Generators"", ""1.0.0"")]
-public static partial class RouteRegistry
+[Route(""api/projections/{projection.Route}/{{entityId}}"")]{authorizeAttribute}
+[ApiController]
+public sealed partial class {projection.TypeName}Controller
+    : UxProjectionControllerBase<{projection.TypeName}>
 {{
     /// <summary>
-    /// Projection routes.
+    /// Initializes a new instance of the <see cref=""{projection.TypeName}Controller""/> class.
     /// </summary>
-    public static class Projections
-    {{{projectionMethods}    }}
-
-    /// <summary>
-    /// Command routes.
-    /// </summary>
-    public static class Commands
-    {{{commandMethods}    }}
+    /// <param name=""clusterClient"">The Orleans cluster client.</param>
+    /// <param name=""logger"">The logger instance.</param>
+    public {projection.TypeName}Controller(
+        IClusterClient clusterClient,
+        ILogger<{projection.TypeName}Controller> logger)
+        : base(clusterClient, logger)
+    {{
+    }}{batchMethod}
 }}
 ";
     }
 
-    private static string GenerateRippleRegistrations(ImmutableArray<ProjectionInfo> projections)
+    private static string GenerateRippleRegistrations(
+        ImmutableArray<ProjectionInfo> projections
+    )
     {
-        System.Text.StringBuilder registrations = new();
+        StringBuilder registrations = new();
         foreach (ProjectionInfo projection in projections)
         {
-            registrations.Append($@"
+            registrations.Append(
+                $@"
         // {projection.TypeName}
         if (mode == RippleHostingMode.Server || mode == RippleHostingMode.Auto)
         {{
@@ -645,5 +474,223 @@ public enum RippleHostingMode
     Client,
 }}
 ";
+    }
+
+    private static string GenerateRouteRegistry(
+        ImmutableArray<ProjectionInfo> projections,
+        ImmutableArray<AggregateInfo> aggregates
+    )
+    {
+        StringBuilder projectionMethods = new();
+        foreach (ProjectionInfo projection in projections)
+        {
+            projectionMethods.Append(
+                $@"
+        /// <summary>
+        /// Gets the route for {projection.TypeName} with the specified entity ID.
+        /// </summary>
+        public static string {projection.TypeName}(string entityId)
+            => $""api/projections/{projection.Route}/{{entityId}}"";
+");
+            if (projection.EnableBatch)
+            {
+                projectionMethods.Append(
+                    $@"
+        /// <summary>
+        /// Gets the batch route for {projection.TypeName}.
+        /// </summary>
+        public static string {projection.TypeName}Batch()
+            => ""api/projections/{projection.Route}/batch"";
+");
+            }
+        }
+
+        StringBuilder commandMethods = new();
+        foreach (AggregateInfo aggregate in aggregates)
+        {
+            foreach (CommandInfo command in aggregate.Commands)
+            {
+                string methodNameWithoutAsync = command.MethodName.EndsWith("Async", StringComparison.Ordinal)
+                    ? command.MethodName.Substring(0, command.MethodName.Length - 5)
+                    : command.MethodName;
+                commandMethods.Append(
+                    $@"
+        /// <summary>
+        /// Gets the route for {aggregate.AggregateName}.{methodNameWithoutAsync} command.
+        /// </summary>
+        public static string {aggregate.AggregateName}_{methodNameWithoutAsync}(string entityId)
+            => $""api/commands/{aggregate.Route}/{{entityId}}/{command.Route}"";
+");
+            }
+        }
+
+        return $@"// <auto-generated/>
+#nullable enable
+
+using System;
+using System.CodeDom.Compiler;
+
+namespace Mississippi.Ripples;
+
+/// <summary>
+/// Registry of all projection and command routes for client-side URL construction.
+/// </summary>
+[GeneratedCode(""Mississippi.Ripples.Generators"", ""1.0.0"")]
+public static partial class RouteRegistry
+{{
+    /// <summary>
+    /// Projection routes.
+    /// </summary>
+    public static class Projections
+    {{{projectionMethods}    }}
+
+    /// <summary>
+    /// Command routes.
+    /// </summary>
+    public static class Commands
+    {{{commandMethods}    }}
+}}
+";
+    }
+
+    private static string RemoveAsyncSuffix(
+        string methodName
+    )
+    {
+        if (methodName.EndsWith("Async", StringComparison.Ordinal))
+        {
+            return methodName.Substring(0, methodName.Length - 5);
+        }
+
+        return methodName;
+    }
+
+    private static string ToKebabCase(
+        string input
+    )
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return input;
+        }
+
+        StringBuilder sb = new();
+        for (int i = 0; i < input.Length; i++)
+        {
+            char c = input[i];
+            if (char.IsUpper(c))
+            {
+                if (i > 0)
+                {
+                    sb.Append('-');
+                }
+
+                sb.Append(char.ToLowerInvariant(c));
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    /// <inheritdoc />
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        // Filter for types with [UxProjection] attribute
+        IncrementalValuesProvider<ProjectionInfo> projections = context.SyntaxProvider.ForAttributeWithMetadataName(
+                UxProjectionAttributeFullName,
+                static (
+                    node,
+                    _
+                ) => node is ClassDeclarationSyntax or RecordDeclarationSyntax,
+                static (
+                    ctx,
+                    ct
+                ) => ExtractProjectionInfo(ctx, ct))
+            .Where(static info => info is not null)!;
+
+        // Filter for interfaces with [UxAggregate] attribute
+        IncrementalValuesProvider<AggregateInfo> aggregates = context.SyntaxProvider.ForAttributeWithMetadataName(
+                UxAggregateAttributeFullName,
+                static (
+                    node,
+                    _
+                ) => node is InterfaceDeclarationSyntax,
+                static (
+                    ctx,
+                    ct
+                ) => ExtractAggregateInfo(ctx, ct))
+            .Where(static info => info is not null)!;
+
+        // Collect all projections for route registry generation
+        IncrementalValueProvider<ImmutableArray<ProjectionInfo>> allProjections = projections.Collect();
+        IncrementalValueProvider<ImmutableArray<AggregateInfo>> allAggregates = aggregates.Collect();
+
+        // Generate projection controllers
+        context.RegisterSourceOutput(
+            projections,
+            static (
+                spc,
+                projection
+            ) =>
+            {
+                string source = GenerateProjectionController(projection);
+                spc.AddSource($"{projection.TypeName}Controller.g.cs", source);
+            });
+
+        // Generate aggregate controllers
+        context.RegisterSourceOutput(
+            aggregates,
+            static (
+                spc,
+                aggregate
+            ) =>
+            {
+                string source = GenerateAggregateController(aggregate);
+                spc.AddSource($"{aggregate.AggregateName}Controller.g.cs", source);
+            });
+
+        // Combine projections and aggregates for route registry
+        IncrementalValueProvider<(ImmutableArray<ProjectionInfo> Projections, ImmutableArray<AggregateInfo> Aggregates)>
+            combined = allProjections.Combine(allAggregates);
+
+        // Generate route registry
+        context.RegisterSourceOutput(
+            combined,
+            static (
+                spc,
+                data
+            ) =>
+            {
+                if ((data.Projections.Length == 0) && (data.Aggregates.Length == 0))
+                {
+                    return;
+                }
+
+                string source = GenerateRouteRegistry(data.Projections, data.Aggregates);
+                spc.AddSource("RouteRegistry.g.cs", source);
+            });
+
+        // Generate Ripple service registrations
+        context.RegisterSourceOutput(
+            allProjections,
+            static (
+                spc,
+                projections
+            ) =>
+            {
+                if (projections.Length == 0)
+                {
+                    return;
+                }
+
+                string source = GenerateRippleRegistrations(projections);
+                spc.AddSource("RippleServiceCollectionExtensions.g.cs", source);
+            });
     }
 }

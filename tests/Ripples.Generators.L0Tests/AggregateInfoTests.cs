@@ -1,17 +1,14 @@
-using Allure.Net.Commons;
 using Allure.Xunit.Attributes;
 
 using FluentAssertions;
 
 using Mississippi.Ripples.Generators.Models;
 
-using Xunit;
-
 
 namespace Mississippi.Ripples.Generators.L0Tests;
 
 /// <summary>
-/// Tests for <see cref="AggregateInfo"/>.
+///     Tests for <see cref="AggregateInfo" />.
 /// </summary>
 [AllureParentSuite("Mississippi")]
 [AllureSuite("Ripples.Generators")]
@@ -19,34 +16,21 @@ namespace Mississippi.Ripples.Generators.L0Tests;
 public sealed class AggregateInfoTests
 {
     /// <summary>
-    /// Verifies that default values are set correctly.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Default Values")]
-    public void DefaultValuesAreSetCorrectly()
-    {
-        // Act
-        AggregateInfo sut = new();
-
-        // Assert
-        sut.FullTypeName.Should().BeEmpty();
-        sut.InterfaceName.Should().BeEmpty();
-        sut.AggregateName.Should().BeEmpty();
-        sut.Namespace.Should().BeEmpty();
-        sut.Route.Should().BeEmpty();
-        sut.Authorize.Should().BeNull();
-        sut.Commands.Should().BeEmpty();
-    }
-
-    /// <summary>
-    /// Verifies that all properties can be set.
+    ///     Verifies that all properties can be set.
     /// </summary>
     [Fact]
     [AllureFeature("Property Assignment")]
     public void AllPropertiesCanBeSet()
     {
         // Arrange
-        CommandInfo[] commands = [new CommandInfo { MethodName = "CreateAsync", Route = "create" }];
+        CommandInfo[] commands =
+        [
+            new()
+            {
+                MethodName = "CreateAsync",
+                Route = "create",
+            },
+        ];
 
         // Act
         AggregateInfo sut = new()
@@ -69,5 +53,25 @@ public sealed class AggregateInfoTests
         sut.Authorize.Should().Be("AdminPolicy");
         sut.Commands.Should().HaveCount(1);
         sut.Commands[0].MethodName.Should().Be("CreateAsync");
+    }
+
+    /// <summary>
+    ///     Verifies that default values are set correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Default Values")]
+    public void DefaultValuesAreSetCorrectly()
+    {
+        // Act
+        AggregateInfo sut = new();
+
+        // Assert
+        sut.FullTypeName.Should().BeEmpty();
+        sut.InterfaceName.Should().BeEmpty();
+        sut.AggregateName.Should().BeEmpty();
+        sut.Namespace.Should().BeEmpty();
+        sut.Route.Should().BeEmpty();
+        sut.Authorize.Should().BeNull();
+        sut.Commands.Should().BeEmpty();
     }
 }

@@ -6,7 +6,7 @@ using Allure.Xunit.Attributes;
 namespace Mississippi.Ripples.Client.L0Tests;
 
 /// <summary>
-/// Tests for <see cref="RipplesClientOptions"/>.
+///     Tests for <see cref="RipplesClientOptions" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Ripples")]
 [AllureSuite("Client")]
@@ -14,7 +14,25 @@ namespace Mississippi.Ripples.Client.L0Tests;
 public sealed class RipplesClientOptionsTests
 {
     /// <summary>
-    /// Default values are correctly initialized.
+    ///     BaseApiUri can be set to a value.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Configuration")]
+    public void BaseApiUriCanBeSet()
+    {
+        // Arrange
+        RipplesClientOptions sut = new();
+        Uri expected = new("https://api.example.com");
+
+        // Act
+        sut.BaseApiUri = expected;
+
+        // Assert
+        sut.BaseApiUri.Should().Be(expected);
+    }
+
+    /// <summary>
+    ///     Default values are correctly initialized.
     /// </summary>
     [Fact]
     [AllureFeature("Configuration")]
@@ -34,42 +52,7 @@ public sealed class RipplesClientOptionsTests
     }
 
     /// <summary>
-    /// BaseApiUri can be set to a value.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Configuration")]
-    public void BaseApiUriCanBeSet()
-    {
-        // Arrange
-        RipplesClientOptions sut = new();
-        Uri expected = new("https://api.example.com");
-
-        // Act
-        sut.BaseApiUri = expected;
-
-        // Assert
-        sut.BaseApiUri.Should().Be(expected);
-    }
-
-    /// <summary>
-    /// SignalRHubPath can be set to a custom value.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Configuration")]
-    public void SignalRHubPathCanBeSet()
-    {
-        // Arrange
-        RipplesClientOptions sut = new();
-
-        // Act
-        sut.SignalRHubPath = "/custom/hub";
-
-        // Assert
-        sut.SignalRHubPath.Should().Be("/custom/hub");
-    }
-
-    /// <summary>
-    /// EnableAutoReconnect can be disabled.
+    ///     EnableAutoReconnect can be disabled.
     /// </summary>
     [Fact]
     [AllureFeature("Configuration")]
@@ -86,24 +69,25 @@ public sealed class RipplesClientOptionsTests
     }
 
     /// <summary>
-    /// MaxReconnectAttempts can be set to zero for unlimited.
+    ///     HttpTimeout can be customized.
     /// </summary>
     [Fact]
     [AllureFeature("Configuration")]
-    public void MaxReconnectAttemptsCanBeSetToZero()
+    public void HttpTimeoutCanBeCustomized()
     {
         // Arrange
         RipplesClientOptions sut = new();
+        TimeSpan expected = TimeSpan.FromMinutes(2);
 
         // Act
-        sut.MaxReconnectAttempts = 0;
+        sut.HttpTimeout = expected;
 
         // Assert
-        sut.MaxReconnectAttempts.Should().Be(0);
+        sut.HttpTimeout.Should().Be(expected);
     }
 
     /// <summary>
-    /// InitialReconnectDelay can be customized.
+    ///     InitialReconnectDelay can be customized.
     /// </summary>
     [Fact]
     [AllureFeature("Configuration")]
@@ -121,7 +105,24 @@ public sealed class RipplesClientOptionsTests
     }
 
     /// <summary>
-    /// MaxReconnectDelay can be customized.
+    ///     MaxReconnectAttempts can be set to zero for unlimited.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Configuration")]
+    public void MaxReconnectAttemptsCanBeSetToZero()
+    {
+        // Arrange
+        RipplesClientOptions sut = new();
+
+        // Act
+        sut.MaxReconnectAttempts = 0;
+
+        // Assert
+        sut.MaxReconnectAttempts.Should().Be(0);
+    }
+
+    /// <summary>
+    ///     MaxReconnectDelay can be customized.
     /// </summary>
     [Fact]
     [AllureFeature("Configuration")]
@@ -139,20 +140,19 @@ public sealed class RipplesClientOptionsTests
     }
 
     /// <summary>
-    /// HttpTimeout can be customized.
+    ///     SignalRHubPath can be set to a custom value.
     /// </summary>
     [Fact]
     [AllureFeature("Configuration")]
-    public void HttpTimeoutCanBeCustomized()
+    public void SignalRHubPathCanBeSet()
     {
         // Arrange
         RipplesClientOptions sut = new();
-        TimeSpan expected = TimeSpan.FromMinutes(2);
 
         // Act
-        sut.HttpTimeout = expected;
+        sut.SignalRHubPath = "/custom/hub";
 
         // Assert
-        sut.HttpTimeout.Should().Be(expected);
+        sut.SignalRHubPath.Should().Be("/custom/hub");
     }
 }

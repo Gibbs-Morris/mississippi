@@ -1,17 +1,14 @@
-using Allure.Net.Commons;
 using Allure.Xunit.Attributes;
 
 using FluentAssertions;
 
 using Mississippi.Ripples.Generators.Models;
 
-using Xunit;
-
 
 namespace Mississippi.Ripples.Generators.L0Tests;
 
 /// <summary>
-/// Tests for <see cref="ProjectionInfo"/>.
+///     Tests for <see cref="ProjectionInfo" />.
 /// </summary>
 [AllureParentSuite("Mississippi")]
 [AllureSuite("Ripples.Generators")]
@@ -19,28 +16,7 @@ namespace Mississippi.Ripples.Generators.L0Tests;
 public sealed class ProjectionInfoTests
 {
     /// <summary>
-    /// Verifies that default values are set correctly.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Default Values")]
-    public void DefaultValuesAreSetCorrectly()
-    {
-        // Act
-        ProjectionInfo sut = new();
-
-        // Assert
-        sut.FullTypeName.Should().BeEmpty();
-        sut.TypeName.Should().BeEmpty();
-        sut.Namespace.Should().BeEmpty();
-        sut.Route.Should().BeEmpty();
-        sut.EnableBatch.Should().BeTrue();
-        sut.Authorize.Should().BeNull();
-        sut.BrookName.Should().BeNull();
-        sut.Tags.Should().BeNull();
-    }
-
-    /// <summary>
-    /// Verifies that all properties can be set.
+    ///     Verifies that all properties can be set.
     /// </summary>
     [Fact]
     [AllureFeature("Property Assignment")]
@@ -71,5 +47,26 @@ public sealed class ProjectionInfoTests
         sut.Authorize.Should().Be("AdminPolicy");
         sut.BrookName.Should().Be("my-brook");
         sut.Tags.Should().BeEquivalentTo(tags);
+    }
+
+    /// <summary>
+    ///     Verifies that default values are set correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Default Values")]
+    public void DefaultValuesAreSetCorrectly()
+    {
+        // Act
+        ProjectionInfo sut = new();
+
+        // Assert
+        sut.FullTypeName.Should().BeEmpty();
+        sut.TypeName.Should().BeEmpty();
+        sut.Namespace.Should().BeEmpty();
+        sut.Route.Should().BeEmpty();
+        sut.EnableBatch.Should().BeTrue();
+        sut.Authorize.Should().BeNull();
+        sut.BrookName.Should().BeNull();
+        sut.Tags.Should().BeNull();
     }
 }

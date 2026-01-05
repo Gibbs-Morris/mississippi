@@ -1,15 +1,12 @@
-using Allure.Net.Commons;
 using Allure.Xunit.Attributes;
 
 using FluentAssertions;
-
-using Xunit;
 
 
 namespace Mississippi.Ripples.Generators.L0Tests;
 
 /// <summary>
-/// Tests for <see cref="RipplesGenerator"/> helper methods and code generation.
+///     Tests for <see cref="RipplesGenerator" /> helper methods and code generation.
 /// </summary>
 [AllureParentSuite("Mississippi")]
 [AllureSuite("Ripples.Generators")]
@@ -17,7 +14,7 @@ namespace Mississippi.Ripples.Generators.L0Tests;
 public sealed class RipplesGeneratorTests
 {
     /// <summary>
-    /// Verifies that the generator can be instantiated.
+    ///     Verifies that the generator can be instantiated.
     /// </summary>
     [Fact]
     [AllureFeature("Generator Instantiation")]

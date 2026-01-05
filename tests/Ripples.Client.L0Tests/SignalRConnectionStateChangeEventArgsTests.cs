@@ -6,7 +6,7 @@ using Allure.Xunit.Attributes;
 namespace Mississippi.Ripples.Client.L0Tests;
 
 /// <summary>
-/// Tests for <see cref="SignalRConnectionStateChangeEventArgs"/>.
+///     Tests for <see cref="SignalRConnectionStateChangeEventArgs" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Ripples")]
 [AllureSuite("Client")]
@@ -14,27 +14,28 @@ namespace Mississippi.Ripples.Client.L0Tests;
 public sealed class SignalRConnectionStateChangeEventArgsTests
 {
     /// <summary>
-    /// Constructor sets properties correctly without exception.
+    ///     All connection states can be used.
     /// </summary>
-    [Fact]
+    /// <param name="state">The connection state to test.</param>
+    [Theory]
     [AllureFeature("Event Args")]
-    public void ConstructorSetsPropertiesWithoutException()
+    [InlineData(SignalRConnectionState.Disconnected)]
+    [InlineData(SignalRConnectionState.Connecting)]
+    [InlineData(SignalRConnectionState.Connected)]
+    [InlineData(SignalRConnectionState.Reconnecting)]
+    public void AllConnectionStatesCanBeUsed(
+        SignalRConnectionState state
+    )
     {
-        // Arrange
-        SignalRConnectionState previousState = SignalRConnectionState.Disconnected;
-        SignalRConnectionState currentState = SignalRConnectionState.Connected;
-
-        // Act
-        SignalRConnectionStateChangeEventArgs sut = new(previousState, currentState);
+        // Arrange & Act
+        SignalRConnectionStateChangeEventArgs sut = new(state, SignalRConnectionState.Disconnected);
 
         // Assert
-        sut.PreviousState.Should().Be(previousState);
-        sut.CurrentState.Should().Be(currentState);
-        sut.Exception.Should().BeNull();
+        sut.PreviousState.Should().Be(state);
     }
 
     /// <summary>
-    /// Constructor sets exception when provided.
+    ///     Constructor sets exception when provided.
     /// </summary>
     [Fact]
     [AllureFeature("Event Args")]
@@ -55,26 +56,27 @@ public sealed class SignalRConnectionStateChangeEventArgsTests
     }
 
     /// <summary>
-    /// All connection states can be used.
+    ///     Constructor sets properties correctly without exception.
     /// </summary>
-    /// <param name="state">The connection state to test.</param>
-    [Theory]
+    [Fact]
     [AllureFeature("Event Args")]
-    [InlineData(SignalRConnectionState.Disconnected)]
-    [InlineData(SignalRConnectionState.Connecting)]
-    [InlineData(SignalRConnectionState.Connected)]
-    [InlineData(SignalRConnectionState.Reconnecting)]
-    public void AllConnectionStatesCanBeUsed(SignalRConnectionState state)
+    public void ConstructorSetsPropertiesWithoutException()
     {
-        // Arrange & Act
-        SignalRConnectionStateChangeEventArgs sut = new(state, SignalRConnectionState.Disconnected);
+        // Arrange
+        SignalRConnectionState previousState = SignalRConnectionState.Disconnected;
+        SignalRConnectionState currentState = SignalRConnectionState.Connected;
+
+        // Act
+        SignalRConnectionStateChangeEventArgs sut = new(previousState, currentState);
 
         // Assert
-        sut.PreviousState.Should().Be(state);
+        sut.PreviousState.Should().Be(previousState);
+        sut.CurrentState.Should().Be(currentState);
+        sut.Exception.Should().BeNull();
     }
 
     /// <summary>
-    /// EventArgs inherits from System.EventArgs.
+    ///     EventArgs inherits from System.EventArgs.
     /// </summary>
     [Fact]
     [AllureFeature("Event Args")]
