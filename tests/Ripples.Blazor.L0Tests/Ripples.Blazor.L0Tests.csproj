@@ -3,6 +3,7 @@
     <ItemGroup>
         <PackageReference Include="bunit" />
         <PackageReference Include="FluentAssertions" />
+        <PackageReference Include="NSubstitute" />
     </ItemGroup>
 
     <ItemGroup>
