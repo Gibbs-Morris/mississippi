@@ -28,6 +28,14 @@ handoffs:
     agent: "Squad: TDD Developer"
     prompt: Implement the specified work item using TDD. Report back when complete or blocked.
     send: true
+  - label: "📝 Create/Update Documentation"
+    agent: "Squad: Doc Writer"
+    prompt: Generate or update developer documentation for the feature/topic specified above.
+    send: true
+  - label: "📝 Reconcile Documentation"
+    agent: "Squad: Doc Writer"
+    prompt: Reconcile documentation against source code. Check for drift and update as needed.
+    send: true
   - label: "🧹 Process Cleanup Backlog"
     agent: "Squad: Cleanup Agent"
     prompt: Process the cleanup backlog at docs/cleanup-backlog.md. All parallel work has been merged.
@@ -120,18 +128,20 @@ If reviewers disagree:
 
 You coordinate these specialized agents:
 
-| Agent                          | Role                        | When to Use                       |
-| ------------------------------ | --------------------------- | --------------------------------- |
-| Squad: C1 Context Architect    | System Context (C1)         | New systems, major integrations   |
-| Squad: C2 Container Architect  | Container Design (C2)       | Service boundaries, deployments   |
-| Squad: C3 Component Architect  | Component Design (C3)       | Internal structure of containers  |
-| Squad: C4 Code Architect       | Code Design (C4)            | Class/interface design            |
-| Squad: Work Breakdown          | Vertical Slice Planning     | Splitting work for parallel dev   |
-| Squad: TDD Developer           | Implementation              | Building features TDD-style       |
-| Squad: Code Reviewer           | Quality Assurance           | Validating code against rules     |
-| Squad: QA Engineer             | Test Coverage               | Verifying test completeness       |
-| Squad: Principal Engineer      | Maintainability             | Readability and simplicity        |
-| Squad: Cleanup Agent           | Deferred Refactors          | Cross-cutting fixes after merge   |
+| Agent                          | Role                        | When to Use                               |
+| ------------------------------ | --------------------------- | ----------------------------------------- |
+| Squad: C1 Context Architect    | System Context (C1)         | New systems, major integrations           |
+| Squad: C2 Container Architect  | Container Design (C2)       | Service boundaries, deployments           |
+| Squad: C3 Component Architect  | Component Design (C3)       | Internal structure of containers          |
+| Squad: C4 Code Architect       | Code Design (C4)            | Class/interface design                    |
+| Squad: Work Breakdown          | Vertical Slice Planning     | Splitting work for parallel dev           |
+| Squad: TDD Developer           | Implementation              | Building features TDD-style               |
+| Squad: Code Reviewer           | Quality Assurance           | Validating code against rules             |
+| Squad: QA Engineer             | Test Coverage               | Verifying test completeness               |
+| Squad: Principal Engineer      | Maintainability             | Readability and simplicity                |
+| Squad: Cleanup Agent           | Deferred Refactors          | Cross-cutting fixes after merge           |
+| Squad: Doc Writer              | Developer Documentation     | Creating/reconciling Docusaurus docs      |
+| Squad: XML Doc Writer          | Code Documentation          | XML docs for C# types                     |
 
 ## Squad Workflow Diagram
 

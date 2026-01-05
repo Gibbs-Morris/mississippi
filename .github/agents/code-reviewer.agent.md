@@ -8,6 +8,10 @@ handoffs:
     agent: "Squad: TDD Developer"
     prompt: Fix the violations identified in the code review above. Re-submit for review when complete.
     send: true
+  - label: "📝 Update Documentation"
+    agent: "Squad: Doc Writer"
+    prompt: Documentation drift detected. Update documentation for the code changes identified above.
+    send: true
   - label: "✅ Analyze Test Coverage"
     agent: "Squad: QA Engineer"
     prompt: Code review passed. Proceed with QA coverage analysis.
@@ -127,6 +131,12 @@ Apply these checks to files that implement grain interfaces (types implementing 
 - [ ] Minimal content (no duplicated settings)
 - [ ] Correct SDK selection
 - [ ] No `Version` attributes
+
+### Documentation Drift
+
+- [ ] Code changes affecting public APIs have corresponding documentation updates
+- [ ] Source code links in `docs/Docusaurus/docs/` are still valid
+- [ ] New features/behaviors are documented or flagged for Doc Writer
 
 ## Output Format
 
