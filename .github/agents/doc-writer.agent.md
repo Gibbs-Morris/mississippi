@@ -74,7 +74,7 @@ Read and understand the implementation:
 
 ```bash
 # Find relevant source files
-find src -name "*.cs" | head -50
+find src -name "*.cs"
 
 # Search for specific types/patterns
 grep -r "class YourType" src/
@@ -160,18 +160,18 @@ flowchart TD
     B --> C[Repository]
 ```
 
-### See Also Example
+## See Also Example
 
 ```markdown
 - [Related Topic](./related-topic.md)
 - [API Reference](../api-reference/feature.md)
 ```
 
-### Mode 2: Reconcile Documentation
+## Mode 2: Reconcile Documentation
 
 When asked to reconcile or validate documentation:
 
-#### 1. Extract Source References
+### 1. Extract Source References
 
 Parse existing documentation to find source code links:
 
@@ -180,7 +180,7 @@ Parse existing documentation to find source code links:
 grep -r "src/" docs/Docusaurus/docs/ | grep -E "\.cs|\.ts"
 ```
 
-#### 2. Verify Source Files Exist
+### 2. Verify Source Files Exist
 
 For each referenced file:
 
@@ -189,7 +189,7 @@ For each referenced file:
 test -f "path/to/file.cs" && echo "EXISTS" || echo "MISSING"
 ```
 
-#### 3. Compare Content
+### 3. Compare Content
 
 For each source file, analyze if documented behaviors still match:
 
@@ -198,7 +198,7 @@ For each source file, analyze if documented behaviors still match:
 - Confirm configuration options are current
 - Validate example code still compiles
 
-#### 4. Generate Reconciliation Report
+### 4. Generate Reconciliation Report
 
 ```markdown
 # Documentation Reconciliation Report
@@ -238,11 +238,11 @@ For each source file, analyze if documented behaviors still match:
 3. Add documentation for new `src/Core/Handlers/` directory
 ```
 
-### Mode 3: Refactor Documentation
+## Mode 3: Refactor Documentation
 
 When documentation structure needs improvement:
 
-#### 1. Analyze Current Structure
+### 1. Analyze Current Structure
 
 Map the existing documentation:
 
@@ -250,7 +250,7 @@ Map the existing documentation:
 find docs/Docusaurus/docs -name "*.md" -type f
 ```
 
-#### 2. Identify Issues
+### 2. Identify Issues
 
 Common problems to detect:
 
@@ -260,7 +260,7 @@ Common problems to detect:
 - Missing sidebar entries
 - Duplicate content
 
-#### 3. Propose New Structure
+### 3. Propose New Structure
 
 Create a refactoring plan:
 
@@ -287,7 +287,7 @@ Always link documentation to source code for traceability.
 
 ### Link Format
 
-Use relative paths from the doc file to source:
+Use relative paths from the doc file to source. The exact path depends on where the documentation file is located within `docs/Docusaurus/docs/`. Adjust the number of `../` segments based on the documentation file's depth in the hierarchy.
 
 ```markdown
 ## Implementation
