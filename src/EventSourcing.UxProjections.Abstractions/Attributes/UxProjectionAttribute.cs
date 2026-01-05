@@ -4,13 +4,16 @@ using System;
 namespace Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 
 /// <summary>
-///     Marks a projection class to generate an HTTP API controller.
+///     Marks a record as a UX projection that should be exposed via HTTP/SignalR.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Apply this attribute to a projection class to have the source generator
-///         emit a partial controller class inheriting from
-///         <c>UxProjectionControllerBase&lt;TProjection&gt;</c>.
+///         Apply this attribute to a projection class to:
+///         <list type="bullet">
+///             <item>Generate an HTTP API controller via the ProjectionApiGenerator.</item>
+///             <item>Register IRipple/IRipplePool services via the RipplesGenerator (if using Ripples).</item>
+///             <item>Generate route helpers in the RouteRegistry.</item>
+///         </list>
 ///     </para>
 ///     <para>
 ///         The generated controller provides the following endpoints:
@@ -18,13 +21,13 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 ///             <item><c>GET api/projections/{Route}/{entityId}</c> - Returns the latest projection state.</item>
 ///             <item><c>GET api/projections/{Route}/{entityId}/version</c> - Returns the latest version.</item>
 ///             <item><c>GET api/projections/{Route}/{entityId}/at/{version}</c> - Returns projection at version.</item>
-///             <item><c>POST api/projections/{Route}/{entityId}/batch</c> - Batch fetch (if enabled).</item>
+///             <item><c>POST api/projections/{Route}/batch</c> - Batch fetch (if enabled).</item>
 ///         </list>
 ///     </para>
 ///     <para>
 ///         Example usage:
 ///         <code>
-///             [GenerateProjectionApi("users")]
+///             [UxProjection("users")]
 ///             [BrookName("user-events")]
 ///             public sealed class UserProjection
 ///             {
@@ -35,17 +38,17 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-public sealed class GenerateProjectionApiAttribute : Attribute
+public sealed class UxProjectionAttribute : Attribute
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="GenerateProjectionApiAttribute" /> class.
+    ///     Initializes a new instance of the <see cref="UxProjectionAttribute" /> class.
     /// </summary>
     /// <param name="route">
     ///     The HTTP route segment for this projection.
     ///     The full route will be <c>api/projections/{route}/{entityId}</c>.
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="route" /> is null.</exception>
-    public GenerateProjectionApiAttribute(
+    public UxProjectionAttribute(
         string route
     )
     {
@@ -60,6 +63,11 @@ public sealed class GenerateProjectionApiAttribute : Attribute
     ///     When set, the generated controller will have an <c>[Authorize(Policy = "...")]</c> attribute.
     /// </remarks>
     public string? Authorize { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the brook name to read from (defaults to projection type name).
+    /// </summary>
+    public string? BrookName { get; set; }
 
     /// <summary>
     ///     Gets or sets a value indicating whether batch endpoints are enabled.

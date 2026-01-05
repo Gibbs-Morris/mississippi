@@ -1104,7 +1104,10 @@
         }
       },
       "Mississippi.Ripples.Abstractions": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
+        }
       },
       "Mississippi.Ripples.Blazor": {
         "type": "Project",

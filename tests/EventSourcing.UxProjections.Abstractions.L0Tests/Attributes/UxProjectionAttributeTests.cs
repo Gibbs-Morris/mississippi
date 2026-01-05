@@ -2,19 +2,37 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Ripples.Abstractions.Attributes;
+using Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 
 
-namespace Mississippi.Ripples.Abstractions.L0Tests.Attributes;
+namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests.Attributes;
 
 /// <summary>
 ///     Tests for <see cref="UxProjectionAttribute" />.
 /// </summary>
-[AllureParentSuite("Ripples")]
-[AllureSuite("Abstractions")]
+[AllureParentSuite("Event Sourcing")]
+[AllureSuite("UX Projections Abstractions")]
 [AllureSubSuite("UxProjectionAttribute")]
 public sealed class UxProjectionAttributeTests
 {
+    /// <summary>
+    ///     Verifies that attribute targets class only.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Attribute Targeting")]
+    public void AttributeTargetsClassOnly()
+    {
+        // Arrange & Act
+        AttributeUsageAttribute? usage = (AttributeUsageAttribute?)Attribute.GetCustomAttribute(
+            typeof(UxProjectionAttribute),
+            typeof(AttributeUsageAttribute));
+
+        // Assert
+        Assert.NotNull(usage);
+        Assert.Equal(AttributeTargets.Class, usage.ValidOn);
+        Assert.False(usage.Inherited);
+    }
+
     /// <summary>
     ///     Verifies that Authorize defaults to null.
     /// </summary>
@@ -23,7 +41,7 @@ public sealed class UxProjectionAttributeTests
     public void AuthorizeDefaultsToNull()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("/api/projections");
+        UxProjectionAttribute attribute = new("users");
 
         // Assert
         Assert.Null(attribute.Authorize);
@@ -37,7 +55,7 @@ public sealed class UxProjectionAttributeTests
     public void AuthorizeIsSettable()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("/api/projections")
+        UxProjectionAttribute attribute = new("users")
         {
             Authorize = "AdminPolicy",
         };
@@ -54,7 +72,7 @@ public sealed class UxProjectionAttributeTests
     public void BrookNameDefaultsToNull()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("/api/projections");
+        UxProjectionAttribute attribute = new("users");
 
         // Assert
         Assert.Null(attribute.BrookName);
@@ -68,24 +86,42 @@ public sealed class UxProjectionAttributeTests
     public void BrookNameIsSettable()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("/api/projections")
+        UxProjectionAttribute attribute = new("users")
         {
-            BrookName = "my-brook",
+            BrookName = "user-events",
         };
 
         // Assert
-        Assert.Equal("my-brook", attribute.BrookName);
+        Assert.Equal("user-events", attribute.BrookName);
     }
 
     /// <summary>
-    ///     Verifies that UxProjectionAttribute throws when route is null.
+    ///     Verifies that constructor sets Route property.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ConstructorSetsRoute()
+    {
+        // Arrange & Act
+        UxProjectionAttribute attribute = new("users");
+
+        // Assert
+        Assert.Equal("users", attribute.Route);
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when route is null.
     /// </summary>
     [Fact]
     [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenRouteIsNull()
     {
-        // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UxProjectionAttribute(null!));
+        // Arrange & Act
+        ArgumentNullException ex =
+            Assert.Throws<ArgumentNullException>(() => _ = new UxProjectionAttribute(null!));
+
+        // Assert
+        Assert.Equal("route", ex.ParamName);
     }
 
     /// <summary>
@@ -96,7 +132,7 @@ public sealed class UxProjectionAttributeTests
     public void IsBatchEnabledDefaultsToTrue()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("/api/projections");
+        UxProjectionAttribute attribute = new("users");
 
         // Assert
         Assert.True(attribute.IsBatchEnabled);
@@ -110,27 +146,13 @@ public sealed class UxProjectionAttributeTests
     public void IsBatchEnabledIsSettable()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("/api/projections")
+        UxProjectionAttribute attribute = new("users")
         {
             IsBatchEnabled = false,
         };
 
         // Assert
         Assert.False(attribute.IsBatchEnabled);
-    }
-
-    /// <summary>
-    ///     Verifies that UxProjectionAttribute requires route in constructor.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Constructor")]
-    public void RouteIsRequiredInConstructor()
-    {
-        // Arrange & Act
-        UxProjectionAttribute attribute = new("/api/projections");
-
-        // Assert
-        Assert.Equal("/api/projections", attribute.Route);
     }
 
     /// <summary>
@@ -141,7 +163,7 @@ public sealed class UxProjectionAttributeTests
     public void TagsDefaultsToNull()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("/api/projections");
+        UxProjectionAttribute attribute = new("users");
 
         // Assert
         Assert.Null(attribute.Tags);
@@ -155,7 +177,7 @@ public sealed class UxProjectionAttributeTests
     public void TagsIsSettable()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("/api/projections")
+        UxProjectionAttribute attribute = new("users")
         {
             Tags = ["Orders", "Admin"],
         };
@@ -165,23 +187,5 @@ public sealed class UxProjectionAttributeTests
         Assert.Equal(2, attribute.Tags!.Length);
         Assert.Contains("Orders", attribute.Tags);
         Assert.Contains("Admin", attribute.Tags);
-    }
-
-    /// <summary>
-    ///     Verifies that UxProjectionAttribute targets class only.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Attribute Usage")]
-    public void TargetsClassOnly()
-    {
-        // Arrange & Act
-        AttributeUsageAttribute? attributeUsage = (AttributeUsageAttribute?)Attribute.GetCustomAttribute(
-            typeof(UxProjectionAttribute),
-            typeof(AttributeUsageAttribute));
-
-        // Assert
-        Assert.NotNull(attributeUsage);
-        Assert.Equal(AttributeTargets.Class, attributeUsage!.ValidOn);
-        Assert.False(attributeUsage.AllowMultiple);
     }
 }

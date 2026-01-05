@@ -1,7 +1,7 @@
 namespace Mississippi.EventSourcing.UxProjections.Api.Generators.Models;
 
 /// <summary>
-///     Contains extracted information about a projection type marked with [GenerateProjectionApi].
+///     Contains extracted information about a projection type marked with [UxProjection].
 /// </summary>
 internal sealed class ProjectionApiInfo
 {

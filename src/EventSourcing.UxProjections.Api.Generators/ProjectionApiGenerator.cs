@@ -15,7 +15,7 @@ namespace Mississippi.EventSourcing.UxProjections.Api.Generators;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This generator scans for classes decorated with <c>[GenerateProjectionApi]</c>
+///         This generator scans for classes decorated with <c>[UxProjection]</c>
 ///         and emits partial controller classes that inherit from
 ///         <c>UxProjectionControllerBase&lt;TProjection&gt;</c>.
 ///     </para>
@@ -47,8 +47,8 @@ public sealed class BatchProjectionRequest
 }
 ";
 
-    private const string GenerateProjectionApiAttributeFullName =
-        "Mississippi.EventSourcing.UxProjections.Abstractions.Attributes.GenerateProjectionApiAttribute";
+    private const string UxProjectionAttributeFullName =
+        "Mississippi.EventSourcing.UxProjections.Abstractions.Attributes.UxProjectionAttribute";
 
     private static ProjectionApiInfo? ExtractProjectionInfo(
         GeneratorAttributeSyntaxContext context,
@@ -64,7 +64,7 @@ public sealed class BatchProjectionRequest
         AttributeData? attribute = null;
         foreach (AttributeData attr in typeSymbol.GetAttributes())
         {
-            if (attr.AttributeClass?.ToDisplayString() == GenerateProjectionApiAttributeFullName)
+            if (attr.AttributeClass?.ToDisplayString() == UxProjectionAttributeFullName)
             {
                 attribute = attr;
                 break;
@@ -159,7 +159,7 @@ namespace {projection.Namespace};
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This controller was auto-generated from the <c>[GenerateProjectionApi]</c> attribute.
+///         This controller was auto-generated from the <c>[UxProjection]</c> attribute.
 ///         To customize behavior, create a partial class with additional methods.
 ///     </para>
 /// </remarks>
@@ -191,9 +191,9 @@ public sealed partial class {projection.TypeName}Controller
         IncrementalGeneratorInitializationContext context
     )
     {
-        // Filter for types with [GenerateProjectionApi] attribute
+        // Filter for types with [UxProjection] attribute
         IncrementalValuesProvider<ProjectionApiInfo> projections = context.SyntaxProvider.ForAttributeWithMetadataName(
-                GenerateProjectionApiAttributeFullName,
+                UxProjectionAttributeFullName,
                 static (
                     node,
                     _
