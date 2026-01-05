@@ -1,7 +1,3 @@
-// <copyright file="ChannelView.razor.cs" company="Gibbs-Morris">
-//   Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using System;
 using System.Collections.Generic;
 using System.Linq;

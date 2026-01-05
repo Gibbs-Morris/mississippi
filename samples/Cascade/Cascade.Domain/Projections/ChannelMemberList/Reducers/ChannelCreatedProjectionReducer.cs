@@ -1,5 +1,3 @@
-// Copyright (c) Gibbs-Morris. All rights reserved.
-
 using System;
 
 using Cascade.Domain.Channel.Events;

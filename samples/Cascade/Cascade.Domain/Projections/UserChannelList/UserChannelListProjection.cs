@@ -1,5 +1,3 @@
-// Copyright (c) Gibbs-Morris. All rights reserved.
-
 using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;

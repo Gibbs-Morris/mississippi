@@ -1,7 +1,3 @@
-// <copyright file="Error.razor.cs" company="Gibbs-Morris">
-//   Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using System.Diagnostics;
 
 using Microsoft.AspNetCore.Components;

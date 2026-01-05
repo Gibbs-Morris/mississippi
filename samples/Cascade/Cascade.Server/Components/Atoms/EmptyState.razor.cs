@@ -1,7 +1,3 @@
-// <copyright file="EmptyState.razor.cs" company="Gibbs-Morris">
-//   Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using Microsoft.AspNetCore.Components;
 
 

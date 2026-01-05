@@ -1,5 +1,3 @@
-// Copyright (c) Gibbs-Morris. All rights reserved.
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;

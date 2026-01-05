@@ -1,7 +1,3 @@
-// <copyright file="SendButton.razor.cs" company="Gibbs-Morris">
-//   Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
