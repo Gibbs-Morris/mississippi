@@ -86,6 +86,26 @@ public readonly record struct UxProjectionKey
         new(typeof(TProjection).Name, BrookKey.ForGrain<TGrain>(entityId));
 
     /// <summary>
+    ///     Creates a UX projection key for a projection type that is decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </summary>
+    /// <typeparam name="TProjection">
+    ///     The projection type decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </typeparam>
+    /// <param name="entityId">The entity identifier within the brook.</param>
+    /// <returns>A UX projection key for the specified projection type's brook.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when <typeparamref name="TProjection" /> is not decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </exception>
+    public static UxProjectionKey ForProjection<TProjection>(
+        string entityId
+    )
+        where TProjection : class =>
+        new(typeof(TProjection).Name, BrookKey.ForType<TProjection>(entityId));
+
+    /// <summary>
     ///     Creates a UX projection key from its string representation.
     /// </summary>
     /// <param name="value">The string value to convert.</param>

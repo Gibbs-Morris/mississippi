@@ -58,7 +58,7 @@ public class AggregateRegistrationsTests
     /// <summary>
     ///     Test event class.
     /// </summary>
-    [EventStorageName("TEST", "APP", "TESTEVENT", version: 1)]
+    [EventStorageName("TEST", "APP", "TESTEVENT", 1)]
     private sealed class TestEvent;
 
     /// <summary>

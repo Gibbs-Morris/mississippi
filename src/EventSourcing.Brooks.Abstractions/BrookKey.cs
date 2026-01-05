@@ -74,6 +74,26 @@ public readonly record struct BrookKey
         new(BrookNameHelper.GetBrookName<TGrain>(), entityId);
 
     /// <summary>
+    ///     Creates a brook key from any type decorated with <see cref="Attributes.BrookNameAttribute" />
+    ///     and an entity identifier.
+    /// </summary>
+    /// <typeparam name="T">
+    ///     The type decorated with <see cref="Attributes.BrookNameAttribute" />.
+    ///     This can be a projection type, grain type, or any other type with the attribute.
+    /// </typeparam>
+    /// <param name="entityId">The unique identifier for the entity within the brook.</param>
+    /// <returns>A brook key constructed from the type's brook name and entity identifier.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when <typeparamref name="T" /> is not decorated with
+    ///     <see cref="Attributes.BrookNameAttribute" />.
+    /// </exception>
+    public static BrookKey ForType<T>(
+        string entityId
+    )
+        where T : class =>
+        new(BrookNameHelper.GetBrookName<T>(), entityId);
+
+    /// <summary>
     ///     Converts a brook key to its string representation.
     /// </summary>
     /// <param name="key">The brook key to convert.</param>

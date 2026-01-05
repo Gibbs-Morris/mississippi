@@ -16,14 +16,14 @@ internal sealed class ProjectionInfo
     public string? BrookName { get; set; }
 
     /// <summary>
-    ///     Gets or sets a value indicating whether batch endpoints are enabled.
-    /// </summary>
-    public bool IsBatchEnabled { get; set; } = true;
-
-    /// <summary>
     ///     Gets or sets the fully qualified type name of the projection.
     /// </summary>
     public string FullTypeName { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether batch endpoints are enabled.
+    /// </summary>
+    public bool IsBatchEnabled { get; set; } = true;
 
     /// <summary>
     ///     Gets or sets the namespace of the projection type.

@@ -30,6 +30,7 @@ namespace Crescent.ConsoleApp.CounterSummary;
 ///         </item>
 ///     </list>
 /// </remarks>
+[BrookName("CRESCENT", "SAMPLE", "COUNTER")]
 [SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSUMMARY", version: 1)]
 [GenerateSerializer]
 [Alias("Crescent.ConsoleApp.CounterSummary.CounterSummaryProjection")]

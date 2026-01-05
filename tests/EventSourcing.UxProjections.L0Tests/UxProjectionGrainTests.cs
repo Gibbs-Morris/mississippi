@@ -7,7 +7,6 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Moq;
@@ -18,11 +17,11 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="UxProjectionGrainBase{TProjection}" />.
+///     Tests for <see cref="UxProjectionGrain{TProjection}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionGrainBase")]
+[AllureSubSuite("UxProjectionGrain")]
 public sealed class UxProjectionGrainTests
 {
     private static Mock<IGrainContext> CreateDefaultGrainContext(
@@ -34,10 +33,10 @@ public sealed class UxProjectionGrainTests
         return mock;
     }
 
-    private static TestableUxProjectionGrain CreateGrain(
+    private static UxProjectionGrain<TestProjection> CreateGrain(
         Mock<IGrainContext>? grainContextMock = null,
         Mock<IUxProjectionGrainFactory>? uxProjectionGrainFactoryMock = null,
-        Mock<ILogger>? loggerMock = null,
+        Mock<ILogger<UxProjectionGrain<TestProjection>>>? loggerMock = null,
         string primaryKey = ValidPrimaryKey
     )
     {
@@ -50,29 +49,6 @@ public sealed class UxProjectionGrainTests
     private const string ValidPrimaryKey = "entity-123";
 
     /// <summary>
-    ///     A testable implementation of <see cref="UxProjectionGrainBase{TProjection}" />
-    ///     that allows testing without full Orleans infrastructure.
-    /// </summary>
-    [BrookName("TEST", "MODULE", "STREAM")]
-    private sealed class TestableUxProjectionGrain : UxProjectionGrainBase<TestProjection>
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="TestableUxProjectionGrain" /> class.
-        /// </summary>
-        /// <param name="grainContext">The Orleans grain context.</param>
-        /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains and cursors.</param>
-        /// <param name="logger">Logger instance.</param>
-        public TestableUxProjectionGrain(
-            IGrainContext grainContext,
-            IUxProjectionGrainFactory uxProjectionGrainFactory,
-            ILogger logger
-        )
-            : base(grainContext, uxProjectionGrainFactory, logger)
-        {
-        }
-    }
-
-    /// <summary>
     ///     Verifies that constructor throws when grainContext is null.
     /// </summary>
     [Fact]
@@ -81,10 +57,10 @@ public sealed class UxProjectionGrainTests
     {
         // Arrange
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        Mock<ILogger> loggerMock = new();
+        Mock<ILogger<UxProjectionGrain<TestProjection>>> loggerMock = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionGrain(
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionGrain<TestProjection>(
             null!,
             uxProjectionGrainFactoryMock.Object,
             loggerMock.Object));
@@ -102,7 +78,7 @@ public sealed class UxProjectionGrainTests
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionGrain(
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionGrain<TestProjection>(
             grainContextMock.Object,
             uxProjectionGrainFactoryMock.Object,
             null!));
@@ -117,10 +93,10 @@ public sealed class UxProjectionGrainTests
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<ILogger> loggerMock = new();
+        Mock<ILogger<UxProjectionGrain<TestProjection>>> loggerMock = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionGrain(
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionGrain<TestProjection>(
             grainContextMock.Object,
             null!,
             loggerMock.Object));
@@ -146,7 +122,8 @@ public sealed class UxProjectionGrainTests
         uxProjectionGrainFactoryMock
             .Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()))
             .Returns(versionedCacheGrainMock.Object);
-        TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        UxProjectionGrain<TestProjection> grain = CreateGrain(
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -184,7 +161,8 @@ public sealed class UxProjectionGrainTests
                 f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()))
             .Returns(versionedCacheGrainMock1.Object)
             .Returns(versionedCacheGrainMock2.Object);
-        TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        UxProjectionGrain<TestProjection> grain = CreateGrain(
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act - call GetAsync twice with advancing cursor
@@ -220,7 +198,8 @@ public sealed class UxProjectionGrainTests
             .Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()))
             .Callback<UxProjectionVersionedCacheKey>(key => capturedKey = key)
             .Returns(versionedCacheGrainMock.Object);
-        TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        UxProjectionGrain<TestProjection> grain = CreateGrain(
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -246,7 +225,8 @@ public sealed class UxProjectionGrainTests
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
         uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionCursorKey>()))
             .Returns(cursorGrainMock.Object);
-        TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        UxProjectionGrain<TestProjection> grain = CreateGrain(
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -270,7 +250,8 @@ public sealed class UxProjectionGrainTests
         // Arrange
         BrookPosition notSetVersion = new(-1);
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
-        TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        UxProjectionGrain<TestProjection> grain = CreateGrain(
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -302,7 +283,8 @@ public sealed class UxProjectionGrainTests
             .Setup(f => f.GetUxProjectionVersionedCacheGrain<TestProjection>(It.IsAny<UxProjectionVersionedCacheKey>()))
             .Callback<UxProjectionVersionedCacheKey>(key => capturedKey = key)
             .Returns(versionedCacheGrainMock.Object);
-        TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        UxProjectionGrain<TestProjection> grain = CreateGrain(
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -330,7 +312,8 @@ public sealed class UxProjectionGrainTests
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
         uxProjectionGrainFactoryMock.Setup(f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionCursorKey>()))
             .Returns(cursorGrainMock.Object);
-        TestableUxProjectionGrain grain = CreateGrain(uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
+        UxProjectionGrain<TestProjection> grain = CreateGrain(
+            uxProjectionGrainFactoryMock: uxProjectionGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -349,7 +332,7 @@ public sealed class UxProjectionGrainTests
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        TestableUxProjectionGrain grain = CreateGrain(grainContextMock);
+        UxProjectionGrain<TestProjection> grain = CreateGrain(grainContextMock);
 
         // Act & Assert
         Assert.Same(grainContextMock.Object, grain.GrainContext);
@@ -364,7 +347,7 @@ public sealed class UxProjectionGrainTests
     public async Task OnActivateAsyncCompletesSuccessfullyWithAnyEntityIdFormat()
     {
         // Arrange - any string is now a valid entity ID
-        TestableUxProjectionGrain grain = CreateGrain(primaryKey: "any-valid-entity-id");
+        UxProjectionGrain<TestProjection> grain = CreateGrain(primaryKey: "any-valid-entity-id");
 
         // Act
         Exception? exception = await Record.ExceptionAsync(() => grain.OnActivateAsync(CancellationToken.None));
@@ -382,7 +365,7 @@ public sealed class UxProjectionGrainTests
     public async Task OnActivateAsyncCompletesSuccessfullyWithValidPrimaryKey()
     {
         // Arrange
-        TestableUxProjectionGrain grain = CreateGrain();
+        UxProjectionGrain<TestProjection> grain = CreateGrain();
 
         // Act
         Exception? exception = await Record.ExceptionAsync(() => grain.OnActivateAsync(CancellationToken.None));

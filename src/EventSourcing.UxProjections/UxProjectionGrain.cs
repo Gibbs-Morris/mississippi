@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Orleans;
@@ -16,9 +15,12 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.UxProjections;
 
 /// <summary>
-///     Base class for UX projection grains that provide cached, read-optimized access to projection state.
+///     UX projection grain that provides cached, read-optimized access to projection state.
 /// </summary>
-/// <typeparam name="TProjection">The projection state type.</typeparam>
+/// <typeparam name="TProjection">
+///     The projection state type. Must be decorated with
+///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+/// </typeparam>
 /// <remarks>
 ///     <para>
 ///         UX projection grains are stateless workers that serve as the entry point to the
@@ -27,12 +29,13 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///     </para>
 ///     <para>
 ///         The grain is keyed by just the entity ID. The brook name is obtained from
-///         the <see cref="BrookNameAttribute" /> on the concrete grain class.
+///         the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         on the <typeparamref name="TProjection" /> type itself.
 ///     </para>
 ///     <para>
-///         Derived classes MUST be decorated with <see cref="BrookNameAttribute" />
-///         directly on the final sealed class. If the attribute is missing, the grain will
-///         fail to activate with an exception.
+///         The projection type <typeparamref name="TProjection" /> MUST be decorated with
+///         <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+///         If the attribute is missing, the grain will fail to activate with an exception.
 ///     </para>
 ///     <para>
 ///         Read path for latest projection:
@@ -55,7 +58,7 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///     </para>
 /// </remarks>
 [StatelessWorker]
-public abstract class UxProjectionGrainBase<TProjection>
+internal sealed class UxProjectionGrain<TProjection>
     : IUxProjectionGrain<TProjection>,
       IGrainBase
     where TProjection : class
@@ -63,15 +66,15 @@ public abstract class UxProjectionGrainBase<TProjection>
     private string entityId = null!;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="UxProjectionGrainBase{TProjection}" /> class.
+    ///     Initializes a new instance of the <see cref="UxProjectionGrain{TProjection}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains and cursors.</param>
     /// <param name="logger">Logger instance.</param>
-    protected UxProjectionGrainBase(
+    public UxProjectionGrain(
         IGrainContext grainContext,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
-        ILogger logger
+        ILogger<UxProjectionGrain<TProjection>> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
@@ -80,27 +83,24 @@ public abstract class UxProjectionGrainBase<TProjection>
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    ///     Gets the brook name from the
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+    ///     on the <typeparamref name="TProjection" /> type.
+    /// </summary>
+    /// <remarks>
+    ///     This property reads the attribute from the projection type at runtime.
+    ///     If the attribute is missing, an <see cref="InvalidOperationException" /> is thrown.
+    ///     The value is cached in <see cref="BrookNameHelper" /> so repeated calls are efficient.
+    /// </remarks>
+    private static string BrookName => BrookNameHelper.GetBrookName<TProjection>();
+
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
 
-    /// <summary>
-    ///     Gets the brook name from the <see cref="BrookNameAttribute" /> on this grain type.
-    /// </summary>
-    /// <remarks>
-    ///     This property reads the attribute from the concrete grain type at runtime.
-    ///     If the attribute is missing, an <see cref="InvalidOperationException" /> is thrown.
-    /// </remarks>
-    protected string BrookName => BrookNameHelper.GetBrookNameFromGrain(GetType());
+    private ILogger<UxProjectionGrain<TProjection>> Logger { get; }
 
-    /// <summary>
-    ///     Gets the logger instance.
-    /// </summary>
-    protected ILogger Logger { get; }
-
-    /// <summary>
-    ///     Gets the factory for resolving UX projection grains and cursors.
-    /// </summary>
-    protected IUxProjectionGrainFactory UxProjectionGrainFactory { get; }
+    private IUxProjectionGrainFactory UxProjectionGrainFactory { get; }
 
     /// <inheritdoc />
     public async ValueTask<TProjection?> GetAsync(
@@ -159,20 +159,23 @@ public abstract class UxProjectionGrainBase<TProjection>
     }
 
     /// <summary>
-    ///     Called when the grain is activated. Validates the attribute and initializes the entity ID.
+    ///     Called when the grain is activated. Validates the projection type has
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+    ///     and initializes the entity ID.
     /// </summary>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the activation operation.</returns>
     /// <exception cref="InvalidOperationException">
-    ///     Thrown when the <see cref="BrookNameAttribute" /> is missing from the concrete grain type.
+    ///     Thrown when the <typeparamref name="TProjection" /> type is missing the
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
     /// </exception>
-    public virtual Task OnActivateAsync(
+    public Task OnActivateAsync(
         CancellationToken token
     )
     {
-        // Validate that the attribute is present on the concrete grain type (fail-fast)
+        // Validate that the attribute is present on the projection type (fail-fast)
         // This call will throw InvalidOperationException if the attribute is missing
-        _ = BrookNameHelper.GetDefinition(GetType());
+        _ = BrookNameHelper.GetBrookName<TProjection>();
         entityId = this.GetPrimaryKeyString();
         Logger.ProjectionGrainActivated(entityId, BrookName);
         return Task.CompletedTask;

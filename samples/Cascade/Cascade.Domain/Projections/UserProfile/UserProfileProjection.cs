@@ -22,6 +22,7 @@ namespace Cascade.Domain.Projections.UserProfile;
 ///         UserJoinedChannel, UserLeftChannel.
 ///     </para>
 /// </remarks>
+[BrookName("CASCADE", "CHAT", "USER")]
 [SnapshotStorageName("CASCADE", "CHAT", "USERPROFILE", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.UserProfile.UserProfileProjection")]

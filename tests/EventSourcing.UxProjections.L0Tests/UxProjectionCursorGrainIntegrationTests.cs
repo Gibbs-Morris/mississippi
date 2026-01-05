@@ -32,7 +32,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     public async Task CursorGrainActivatesWithValidKeyFormat()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
-        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("valid-key-test"));
+        UxProjectionCursorKey key =
+            UxProjectionCursorKey.FromBrookKey(BrookKey.ForType<TestProjection>("valid-key-test"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act - this call implicitly activates the grain
@@ -51,7 +52,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     public async Task CursorGrainReturnsInitialMinusOnePosition()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
-        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("grain-test-1"));
+        UxProjectionCursorKey key =
+            UxProjectionCursorKey.FromBrookKey(BrookKey.ForType<TestProjection>("grain-test-1"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act
@@ -72,7 +74,7 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
         UxProjectionCursorKey key =
-            UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("grain-deactivate-test"));
+            UxProjectionCursorKey.FromBrookKey(BrookKey.ForType<TestProjection>("grain-deactivate-test"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act
@@ -92,7 +94,8 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     public async Task GrainReferenceObtainedMultipleTimesIsSameGrain()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
-        UxProjectionCursorKey key = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("same-grain-test"));
+        UxProjectionCursorKey key =
+            UxProjectionCursorKey.FromBrookKey(BrookKey.ForType<TestProjection>("same-grain-test"));
         IUxProjectionCursorGrain cursor1 = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
         IUxProjectionCursorGrain cursor2 = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
@@ -113,8 +116,10 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     public async Task MultipleCursorGrainsReturnIndependentInitialPositions()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
-        UxProjectionCursorKey key1 = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("multi-init-1"));
-        UxProjectionCursorKey key2 = UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("multi-init-2"));
+        UxProjectionCursorKey key1 =
+            UxProjectionCursorKey.FromBrookKey(BrookKey.ForType<TestProjection>("multi-init-1"));
+        UxProjectionCursorKey key2 =
+            UxProjectionCursorKey.FromBrookKey(BrookKey.ForType<TestProjection>("multi-init-2"));
         IUxProjectionCursorGrain cursor1 = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key1.ToString());
         IUxProjectionCursorGrain cursor2 = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key2.ToString());
 
@@ -137,7 +142,7 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
         UxProjectionCursorKey key =
-            UxProjectionCursorKey.FromBrookKey(BrookKey.ForGrain<TestGrain>("consistent-position"));
+            UxProjectionCursorKey.FromBrookKey(BrookKey.ForType<TestProjection>("consistent-position"));
         IUxProjectionCursorGrain cursor = cluster.GrainFactory.GetGrain<IUxProjectionCursorGrain>(key.ToString());
 
         // Act - call multiple times

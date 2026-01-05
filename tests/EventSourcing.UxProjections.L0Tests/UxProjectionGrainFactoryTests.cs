@@ -20,7 +20,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections")]
 [AllureSubSuite("UxProjectionGrainFactory")]
-#pragma warning disable CS0618 // Type or member is obsolete - testing legacy IBrookDefinition-based methods
 public sealed class UxProjectionGrainFactoryTests
 {
     /// <summary>
@@ -72,10 +71,10 @@ public sealed class UxProjectionGrainFactoryTests
     }
 
     /// <summary>
-    ///     Resolves a UX projection cursor grain via Orleans IGrainFactory and returns the instance.
+    ///     Resolves a UX projection cursor grain via projection type and returns the instance.
     /// </summary>
     [Fact]
-    public void GetUxProjectionCursorGrainWithTypesResolvesAndReturnsInstance()
+    public void GetUxProjectionCursorGrainWithProjectionTypeResolvesAndReturnsInstance()
     {
         // Arrange
         string entityId = "cursor-entity";
@@ -87,10 +86,38 @@ public sealed class UxProjectionGrainFactoryTests
         UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
 
         // Act
-        IUxProjectionCursorGrain resolved = sut.GetUxProjectionCursorGrainForGrain<TestProjection, TestGrain>(entityId);
+        IUxProjectionCursorGrain resolved = sut.GetUxProjectionCursorGrain<TestProjection>(entityId);
 
         // Assert
         Assert.Same(cursorGrain.Object, resolved);
+    }
+
+    /// <summary>
+    ///     GetUxProjectionCursorGrain with projection type derives brook name from projection.
+    /// </summary>
+    [Fact]
+    public void GetUxProjectionCursorGrainWithProjectionTypeUsesBrookNameFromProjection()
+    {
+        // Arrange
+        string entityId = "cursor-entity";
+        Mock<IUxProjectionCursorGrain> cursorGrain = new();
+        Mock<IGrainFactory> grainFactory = new(MockBehavior.Strict);
+        string? capturedKey = null;
+        grainFactory.Setup(g => g.GetGrain<IUxProjectionCursorGrain>(It.IsAny<string>(), It.IsAny<string?>()))
+            .Callback<string, string?>((
+                key,
+                _
+            ) => capturedKey = key)
+            .Returns(cursorGrain.Object);
+        Mock<ILogger<UxProjectionGrainFactory>> logger = new();
+        UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
+
+        // Act
+        sut.GetUxProjectionCursorGrain<TestProjection>(entityId);
+
+        // Assert - TestProjection has [BrookName("TEST", "MODULE", "STREAM")]
+        Assert.NotNull(capturedKey);
+        Assert.Equal("TEST.MODULE.STREAM|cursor-entity", capturedKey);
     }
 
     /// <summary>
@@ -169,38 +196,6 @@ public sealed class UxProjectionGrainFactoryTests
     }
 
     /// <summary>
-    ///     Versioned cache grain uses correct key format.
-    /// </summary>
-    [Fact]
-    public void GetUxProjectionVersionedCacheGrainUsesCorrectKeyFormat()
-    {
-        // Arrange
-        string entityId = "versioned-entity";
-        BrookPosition version = new(42);
-        Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrain = new();
-        Mock<IGrainFactory> grainFactory = new(MockBehavior.Strict);
-        string? capturedKey = null;
-        grainFactory
-            .Setup(g => g.GetGrain<IUxProjectionVersionedCacheGrain<TestProjection>>(
-                It.IsAny<string>(),
-                It.IsAny<string?>()))
-            .Callback<string, string?>((
-                key,
-                _
-            ) => capturedKey = key)
-            .Returns(versionedCacheGrain.Object);
-        Mock<ILogger<UxProjectionGrainFactory>> logger = new();
-        UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
-
-        // Act
-        sut.GetUxProjectionVersionedCacheGrainForGrain<TestProjection, TestGrain>(entityId, version);
-
-        // Assert
-        Assert.NotNull(capturedKey);
-        Assert.Equal("TEST.MODULE.STREAM|versioned-entity|42", capturedKey);
-    }
-
-    /// <summary>
     ///     Resolves a versioned cache grain via key and returns the instance.
     /// </summary>
     [Fact]
@@ -227,10 +222,10 @@ public sealed class UxProjectionGrainFactoryTests
     }
 
     /// <summary>
-    ///     Resolves a versioned cache grain via types and returns the instance.
+    ///     Resolves a versioned cache grain via projection type and returns the instance.
     /// </summary>
     [Fact]
-    public void GetUxProjectionVersionedCacheGrainWithTypesResolvesAndReturnsInstance()
+    public void GetUxProjectionVersionedCacheGrainWithProjectionTypeResolvesAndReturnsInstance()
     {
         // Arrange
         string entityId = "versioned-entity";
@@ -247,9 +242,41 @@ public sealed class UxProjectionGrainFactoryTests
 
         // Act
         IUxProjectionVersionedCacheGrain<TestProjection> resolved =
-            sut.GetUxProjectionVersionedCacheGrainForGrain<TestProjection, TestGrain>(entityId, version);
+            sut.GetUxProjectionVersionedCacheGrain<TestProjection>(entityId, version);
 
         // Assert
         Assert.Same(versionedCacheGrain.Object, resolved);
+    }
+
+    /// <summary>
+    ///     Versioned cache grain uses correct key format when resolving via projection type.
+    /// </summary>
+    [Fact]
+    public void GetUxProjectionVersionedCacheGrainWithProjectionTypeUsesCorrectKeyFormat()
+    {
+        // Arrange
+        string entityId = "versioned-entity";
+        BrookPosition version = new(42);
+        Mock<IUxProjectionVersionedCacheGrain<TestProjection>> versionedCacheGrain = new();
+        Mock<IGrainFactory> grainFactory = new(MockBehavior.Strict);
+        string? capturedKey = null;
+        grainFactory
+            .Setup(g => g.GetGrain<IUxProjectionVersionedCacheGrain<TestProjection>>(
+                It.IsAny<string>(),
+                It.IsAny<string?>()))
+            .Callback<string, string?>((
+                key,
+                _
+            ) => capturedKey = key)
+            .Returns(versionedCacheGrain.Object);
+        Mock<ILogger<UxProjectionGrainFactory>> logger = new();
+        UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
+
+        // Act - TestProjection has [BrookName("TEST", "MODULE", "STREAM")]
+        sut.GetUxProjectionVersionedCacheGrain<TestProjection>(entityId, version);
+
+        // Assert
+        Assert.NotNull(capturedKey);
+        Assert.Equal("TEST.MODULE.STREAM|versioned-entity|42", capturedKey);
     }
 }

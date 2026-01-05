@@ -31,10 +31,7 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
     {
         mockCache = Substitute.For<IProjectionCache>();
         mockSubscription = Substitute.For<IProjectionSubscription<TestProjection>>();
-        mockCache.SubscribeAsync<TestProjection>(
-                Arg.Any<string>(),
-                Arg.Any<Action>(),
-                Arg.Any<CancellationToken>())
+        mockCache.SubscribeAsync<TestProjection>(Arg.Any<string>(), Arg.Any<Action>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(mockSubscription));
         sut = new(mockCache);
     }
@@ -42,48 +39,6 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await sut.DisposeAsync();
-    }
-
-    // Constructor Tests
-    [Fact]
-    public void ConstructorThrowsWhenCacheIsNull()
-    {
-        // Act
-        Action act = () => _ = new ProjectionBinder<TestProjection>(null!);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>().WithParameterName("cache");
-    }
-
-    // BindAsync Tests - Basic
-    [Fact]
-    public async Task BindAsync_WithValidEntityId_SubscribesToCache()
-    {
-        // Arrange
-        const string entityId = "user-123";
-        Action onChanged = () => { };
-
-        // Act
-        await sut.BindAsync(entityId, onChanged);
-
-        // Assert
-        await mockCache.Received(1).SubscribeAsync<TestProjection>(
-            entityId,
-            onChanged,
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task BindAsync_WithValidEntityId_SetsEntityIdProperty()
-    {
-        // Arrange
-        const string entityId = "user-123";
-
-        // Act
-        await sut.BindAsync(entityId, () => { });
-
-        // Assert
-        sut.EntityId.Should().Be(entityId);
     }
 
     [Fact]
@@ -116,6 +71,19 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
         await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("onChanged");
     }
 
+    [Fact]
+    public async Task BindAsync_AfterDispose_Throws()
+    {
+        // Arrange
+        await sut.DisposeAsync();
+
+        // Act
+        Func<Task> act = async () => await sut.BindAsync("entity-1", () => { });
+
+        // Assert
+        await act.Should().ThrowAsync<ObjectDisposedException>();
+    }
+
     // BindAsync Tests - Same Entity (No-op)
     [Fact]
     public async Task BindAsync_CalledTwiceWithSameEntityId_OnlySubscribesOnce()
@@ -129,10 +97,8 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
         await sut.BindAsync(entityId, onChanged);
 
         // Assert
-        await mockCache.Received(1).SubscribeAsync<TestProjection>(
-            entityId,
-            Arg.Any<Action>(),
-            Arg.Any<CancellationToken>());
+        await mockCache.Received(1)
+            .SubscribeAsync<TestProjection>(entityId, Arg.Any<Action>(), Arg.Any<CancellationToken>());
     }
 
     // BindAsync Tests - Different Entity (Switch)
@@ -142,8 +108,10 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
         // Arrange
         const string entityId1 = "user-1";
         const string entityId2 = "user-2";
-        IProjectionSubscription<TestProjection> mockSubscription1 = Substitute.For<IProjectionSubscription<TestProjection>>();
-        IProjectionSubscription<TestProjection> mockSubscription2 = Substitute.For<IProjectionSubscription<TestProjection>>();
+        IProjectionSubscription<TestProjection> mockSubscription1 =
+            Substitute.For<IProjectionSubscription<TestProjection>>();
+        IProjectionSubscription<TestProjection> mockSubscription2 =
+            Substitute.For<IProjectionSubscription<TestProjection>>();
         mockCache.SubscribeAsync<TestProjection>(entityId1, Arg.Any<Action>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(mockSubscription1));
         mockCache.SubscribeAsync<TestProjection>(entityId2, Arg.Any<Action>(), Arg.Any<CancellationToken>())
@@ -169,8 +137,10 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
         await sut.BindAsync(entityId2, () => { });
 
         // Assert
-        await mockCache.Received(1).SubscribeAsync<TestProjection>(entityId1, Arg.Any<Action>(), Arg.Any<CancellationToken>());
-        await mockCache.Received(1).SubscribeAsync<TestProjection>(entityId2, Arg.Any<Action>(), Arg.Any<CancellationToken>());
+        await mockCache.Received(1)
+            .SubscribeAsync<TestProjection>(entityId1, Arg.Any<Action>(), Arg.Any<CancellationToken>());
+        await mockCache.Received(1)
+            .SubscribeAsync<TestProjection>(entityId2, Arg.Any<Action>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -186,6 +156,45 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
 
         // Assert
         sut.EntityId.Should().Be(entityId2);
+    }
+
+    [Fact]
+    public async Task BindAsync_WithValidEntityId_SetsEntityIdProperty()
+    {
+        // Arrange
+        const string entityId = "user-123";
+
+        // Act
+        await sut.BindAsync(entityId, () => { });
+
+        // Assert
+        sut.EntityId.Should().Be(entityId);
+    }
+
+    // BindAsync Tests - Basic
+    [Fact]
+    public async Task BindAsync_WithValidEntityId_SubscribesToCache()
+    {
+        // Arrange
+        const string entityId = "user-123";
+        Action onChanged = () => { };
+
+        // Act
+        await sut.BindAsync(entityId, onChanged);
+
+        // Assert
+        await mockCache.Received(1).SubscribeAsync<TestProjection>(entityId, onChanged, Arg.Any<CancellationToken>());
+    }
+
+    // Constructor Tests
+    [Fact]
+    public void ConstructorThrowsWhenCacheIsNull()
+    {
+        // Act
+        Action act = () => _ = new ProjectionBinder<TestProjection>(null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("cache");
     }
 
     // Property Delegation Tests
@@ -212,6 +221,57 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
 
         // Assert
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DisposeAsync_CalledMultipleTimes_OnlyDisposesOnce()
+    {
+        // Arrange
+        await sut.BindAsync("entity-1", () => { });
+
+        // Act
+        await sut.DisposeAsync();
+        await sut.DisposeAsync();
+
+        // Assert
+        await mockSubscription.Received(1).DisposeAsync();
+    }
+
+    // DisposeAsync Tests
+    [Fact]
+    public async Task DisposeAsync_DisposesActiveSubscription()
+    {
+        // Arrange
+        await sut.BindAsync("entity-1", () => { });
+
+        // Act
+        await sut.DisposeAsync();
+
+        // Assert
+        await mockSubscription.Received(1).DisposeAsync();
+    }
+
+    [Fact]
+    public async Task DisposeAsync_SetsEntityIdToNull()
+    {
+        // Arrange
+        await sut.BindAsync("entity-1", () => { });
+
+        // Act
+        await sut.DisposeAsync();
+
+        // Assert
+        sut.EntityId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DisposeAsync_WhenNotBound_DoesNotThrow()
+    {
+        // Act
+        Func<Task> act = async () => await sut.DisposeAsync();
+
+        // Assert
+        await act.Should().NotThrowAsync();
     }
 
     [Fact]
@@ -287,6 +347,28 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
         result.Should().BeNull();
     }
 
+    [Fact]
+    public async Task UnbindAsync_AllowsRebinding()
+    {
+        // Arrange
+        const string entityId1 = "entity-1";
+        const string entityId2 = "entity-2";
+        IProjectionSubscription<TestProjection> mockSub1 = Substitute.For<IProjectionSubscription<TestProjection>>();
+        IProjectionSubscription<TestProjection> mockSub2 = Substitute.For<IProjectionSubscription<TestProjection>>();
+        mockCache.SubscribeAsync<TestProjection>(entityId1, Arg.Any<Action>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(mockSub1));
+        mockCache.SubscribeAsync<TestProjection>(entityId2, Arg.Any<Action>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(mockSub2));
+        await sut.BindAsync(entityId1, () => { });
+        await sut.UnbindAsync();
+
+        // Act
+        await sut.BindAsync(entityId2, () => { });
+
+        // Assert
+        sut.EntityId.Should().Be(entityId2);
+    }
+
     // UnbindAsync Tests
     [Fact]
     public async Task UnbindAsync_DisposesSubscription()
@@ -322,91 +404,5 @@ public sealed class ProjectionBinderTests : IAsyncDisposable
 
         // Assert
         await act.Should().NotThrowAsync();
-    }
-
-    [Fact]
-    public async Task UnbindAsync_AllowsRebinding()
-    {
-        // Arrange
-        const string entityId1 = "entity-1";
-        const string entityId2 = "entity-2";
-        IProjectionSubscription<TestProjection> mockSub1 = Substitute.For<IProjectionSubscription<TestProjection>>();
-        IProjectionSubscription<TestProjection> mockSub2 = Substitute.For<IProjectionSubscription<TestProjection>>();
-        mockCache.SubscribeAsync<TestProjection>(entityId1, Arg.Any<Action>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(mockSub1));
-        mockCache.SubscribeAsync<TestProjection>(entityId2, Arg.Any<Action>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(mockSub2));
-        await sut.BindAsync(entityId1, () => { });
-        await sut.UnbindAsync();
-
-        // Act
-        await sut.BindAsync(entityId2, () => { });
-
-        // Assert
-        sut.EntityId.Should().Be(entityId2);
-    }
-
-    // DisposeAsync Tests
-    [Fact]
-    public async Task DisposeAsync_DisposesActiveSubscription()
-    {
-        // Arrange
-        await sut.BindAsync("entity-1", () => { });
-
-        // Act
-        await sut.DisposeAsync();
-
-        // Assert
-        await mockSubscription.Received(1).DisposeAsync();
-    }
-
-    [Fact]
-    public async Task DisposeAsync_WhenNotBound_DoesNotThrow()
-    {
-        // Act
-        Func<Task> act = async () => await sut.DisposeAsync();
-
-        // Assert
-        await act.Should().NotThrowAsync();
-    }
-
-    [Fact]
-    public async Task DisposeAsync_CalledMultipleTimes_OnlyDisposesOnce()
-    {
-        // Arrange
-        await sut.BindAsync("entity-1", () => { });
-
-        // Act
-        await sut.DisposeAsync();
-        await sut.DisposeAsync();
-
-        // Assert
-        await mockSubscription.Received(1).DisposeAsync();
-    }
-
-    [Fact]
-    public async Task BindAsync_AfterDispose_Throws()
-    {
-        // Arrange
-        await sut.DisposeAsync();
-
-        // Act
-        Func<Task> act = async () => await sut.BindAsync("entity-1", () => { });
-
-        // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
-    }
-
-    [Fact]
-    public async Task DisposeAsync_SetsEntityIdToNull()
-    {
-        // Arrange
-        await sut.BindAsync("entity-1", () => { });
-
-        // Act
-        await sut.DisposeAsync();
-
-        // Assert
-        sut.EntityId.Should().BeNull();
     }
 }

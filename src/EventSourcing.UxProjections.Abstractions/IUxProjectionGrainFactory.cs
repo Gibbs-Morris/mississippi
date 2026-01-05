@@ -11,6 +11,11 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 ///         The factory abstracts grain resolution and key construction, allowing consumers
 ///         to request projection grains using domain types rather than string keys.
 ///     </para>
+///     <para>
+///         Projection types must be decorated with
+///         <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         to identify which brook they read from.
+///     </para>
 /// </remarks>
 public interface IUxProjectionGrainFactory
 {
@@ -24,34 +29,37 @@ public interface IUxProjectionGrainFactory
     );
 
     /// <summary>
-    ///     Gets a UX projection cursor grain for the specified projection type and grain with a brook name attribute.
+    ///     Gets a UX projection cursor grain for the specified projection type.
     /// </summary>
-    /// <typeparam name="TProjection">The projection state type.</typeparam>
-    /// <typeparam name="TGrain">
-    ///     The grain type decorated with
+    /// <typeparam name="TProjection">
+    ///     The projection state type, decorated with
     ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
     /// </typeparam>
     /// <param name="entityId">The entity identifier within the brook.</param>
     /// <returns>A grain reference for the UX projection cursor.</returns>
-    IUxProjectionCursorGrain GetUxProjectionCursorGrainForGrain<TProjection, TGrain>(
+    IUxProjectionCursorGrain GetUxProjectionCursorGrain<TProjection>(
         string entityId
     )
-        where TGrain : class;
+        where TProjection : class;
 
     /// <summary>
     ///     Gets a UX projection grain for the specified entity ID.
     /// </summary>
-    /// <typeparam name="TProjection">The projection state type.</typeparam>
+    /// <typeparam name="TProjection">
+    ///     The projection state type, decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </typeparam>
     /// <param name="entityId">The entity identifier.</param>
     /// <returns>A grain reference for the UX projection.</returns>
     /// <remarks>
     ///     The grain is keyed by just the entity ID. The brook name is obtained from
     ///     the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
-    ///     on the concrete grain class, and the projection type is known from <typeparamref name="TProjection" />.
+    ///     on the <typeparamref name="TProjection" /> type itself.
     /// </remarks>
     IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection>(
         string entityId
-    );
+    )
+        where TProjection : class;
 
     /// <summary>
     ///     Gets a versioned UX projection cache grain for the specified key.
@@ -64,19 +72,18 @@ public interface IUxProjectionGrainFactory
     );
 
     /// <summary>
-    ///     Gets a versioned UX projection cache grain for the specified projection type, grain, and version.
+    ///     Gets a versioned UX projection cache grain for the specified projection type and version.
     /// </summary>
-    /// <typeparam name="TProjection">The projection state type.</typeparam>
-    /// <typeparam name="TGrain">
-    ///     The grain type decorated with
+    /// <typeparam name="TProjection">
+    ///     The projection state type, decorated with
     ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
     /// </typeparam>
     /// <param name="entityId">The entity identifier within the brook.</param>
     /// <param name="version">The specific version to retrieve.</param>
     /// <returns>A grain reference for the versioned UX projection cache.</returns>
-    IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrainForGrain<TProjection, TGrain>(
+    IUxProjectionVersionedCacheGrain<TProjection> GetUxProjectionVersionedCacheGrain<TProjection>(
         string entityId,
         BrookPosition version
     )
-        where TGrain : class;
+        where TProjection : class;
 }

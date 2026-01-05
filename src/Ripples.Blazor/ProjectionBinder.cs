@@ -74,10 +74,8 @@ internal sealed class ProjectionBinder<TProjection> : IProjectionBinder<TProject
 
         // Subscribe to new entity
         EntityId = entityId;
-        subscription = await cache.SubscribeAsync<TProjection>(
-            entityId,
-            onChanged,
-            cancellationToken).ConfigureAwait(false);
+        subscription = await cache.SubscribeAsync<TProjection>(entityId, onChanged, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc />

@@ -20,6 +20,7 @@ namespace Cascade.Domain.Projections.ChannelMessages;
 ///         ConversationStarted, MessageSent, MessageEdited, MessageDeleted.
 ///     </para>
 /// </remarks>
+[BrookName("CASCADE", "CHAT", "CONVERSATION")]
 [SnapshotStorageName("CASCADE", "CHAT", "CHANNELMESSAGES", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.ChannelMessages.ChannelMessagesProjection")]

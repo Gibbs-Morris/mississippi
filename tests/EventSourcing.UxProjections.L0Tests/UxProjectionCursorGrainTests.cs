@@ -321,7 +321,7 @@ public sealed class UxProjectionCursorGrainTests
     public void UxProjectionKeyForMethodCreatesCorrectKey()
     {
         // Act
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("my-entity");
+        UxProjectionKey key = UxProjectionKey.ForProjection<TestProjection>("my-entity");
 
         // Assert
         Assert.Equal("TestProjection", key.ProjectionTypeName);
@@ -395,7 +395,7 @@ public sealed class UxProjectionCursorGrainTests
     public void UxProjectionKeyRoundtripsThroughSerialization()
     {
         // Arrange
-        UxProjectionKey original = UxProjectionKey.ForGrain<TestProjection, TestGrain>("test-id");
+        UxProjectionKey original = UxProjectionKey.ForProjection<TestProjection>("test-id");
 
         // Act
         string serialized = original.ToString();
@@ -415,7 +415,7 @@ public sealed class UxProjectionCursorGrainTests
     public void UxProjectionKeyToStringReturnsCorrectFormat()
     {
         // Arrange
-        UxProjectionKey key = UxProjectionKey.ForGrain<TestProjection, TestGrain>("entity-123");
+        UxProjectionKey key = UxProjectionKey.ForProjection<TestProjection>("entity-123");
 
         // Act
         string result = key.ToString();

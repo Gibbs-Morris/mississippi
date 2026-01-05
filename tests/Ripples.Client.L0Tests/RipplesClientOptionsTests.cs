@@ -52,23 +52,6 @@ public sealed class RipplesClientOptionsTests
     }
 
     /// <summary>
-    ///     IsAutoReconnectEnabled can be disabled.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Configuration")]
-    public void IsAutoReconnectEnabledCanBeDisabled()
-    {
-        // Arrange
-        RipplesClientOptions sut = new();
-
-        // Act
-        sut.IsAutoReconnectEnabled = false;
-
-        // Assert
-        sut.IsAutoReconnectEnabled.Should().BeFalse();
-    }
-
-    /// <summary>
     ///     HttpTimeout can be customized.
     /// </summary>
     [Fact]
@@ -102,6 +85,23 @@ public sealed class RipplesClientOptionsTests
 
         // Assert
         sut.InitialReconnectDelay.Should().Be(expected);
+    }
+
+    /// <summary>
+    ///     IsAutoReconnectEnabled can be disabled.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Configuration")]
+    public void IsAutoReconnectEnabledCanBeDisabled()
+    {
+        // Arrange
+        RipplesClientOptions sut = new();
+
+        // Act
+        sut.IsAutoReconnectEnabled = false;
+
+        // Assert
+        sut.IsAutoReconnectEnabled.Should().BeFalse();
     }
 
     /// <summary>

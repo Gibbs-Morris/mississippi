@@ -18,14 +18,6 @@ public sealed class RipplesClientOptions
     public Uri? BaseApiUri { get; set; }
 
     /// <summary>
-    ///     Gets or sets a value indicating whether automatic reconnection is enabled for SignalR.
-    /// </summary>
-    /// <remarks>
-    ///     Default is true. When enabled, uses exponential backoff for reconnection attempts.
-    /// </remarks>
-    public bool IsAutoReconnectEnabled { get; set; } = true;
-
-    /// <summary>
     ///     Gets or sets the timeout for HTTP requests.
     /// </summary>
     /// <remarks>
@@ -40,6 +32,14 @@ public sealed class RipplesClientOptions
     ///     Default is 1 second. Delay increases exponentially with each attempt.
     /// </remarks>
     public TimeSpan InitialReconnectDelay { get; set; } = TimeSpan.FromSeconds(1);
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether automatic reconnection is enabled for SignalR.
+    /// </summary>
+    /// <remarks>
+    ///     Default is true. When enabled, uses exponential backoff for reconnection attempts.
+    /// </remarks>
+    public bool IsAutoReconnectEnabled { get; set; } = true;
 
     /// <summary>
     ///     Gets or sets the maximum number of reconnection attempts.

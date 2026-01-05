@@ -25,6 +25,7 @@ namespace Cascade.Domain.Projections.OnlineUsers;
 ///         multiple user projections.
 ///     </para>
 /// </remarks>
+[BrookName("CASCADE", "CHAT", "USER")]
 [SnapshotStorageName("CASCADE", "CHAT", "ONLINEUSERS", version: 1)]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.OnlineUsers.OnlineUsersProjection")]
