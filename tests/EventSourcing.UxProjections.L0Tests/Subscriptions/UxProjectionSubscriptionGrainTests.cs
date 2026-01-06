@@ -7,8 +7,7 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
 using Mississippi.EventSourcing.UxProjections.Subscriptions;
 

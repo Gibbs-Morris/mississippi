@@ -9,7 +9,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;

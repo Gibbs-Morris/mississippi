@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Moq;

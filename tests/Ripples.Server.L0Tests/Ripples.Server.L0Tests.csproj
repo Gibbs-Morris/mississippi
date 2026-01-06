@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\src\Ripples.Server\Ripples.Server.csproj" />
-    </ItemGroup>
-
-</Project>

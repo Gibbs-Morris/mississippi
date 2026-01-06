@@ -686,20 +686,24 @@
           "System.Drawing.Common": "6.0.0"
         }
       },
-      "Mississippi.Core.Abstractions": {
+      "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
-      "Mississippi.Core.Cosmos": {
+      "Mississippi.Common.Cosmos": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Azure.Cosmos": "[3.54.1, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.1, )",
+          "Mississippi.Common.Cosmos.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
+      },
+      "Mississippi.Common.Cosmos.Abstractions": {
+        "type": "Project"
       },
       "Mississippi.EventSourcing.Aggregates": {
         "type": "Project",
@@ -709,7 +713,7 @@
           "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
-          "Mississippi.EventSourcing.Serialization": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
         }
       },
@@ -736,7 +740,8 @@
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )",
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )"
         }
       },
       "Mississippi.EventSourcing.Brooks.Cosmos": {
@@ -746,7 +751,8 @@
           "Microsoft.Azure.Cosmos": "[3.54.1, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options": "[9.0.11, )",
-          "Mississippi.Core.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Cosmos": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
@@ -761,12 +767,6 @@
       },
       "Mississippi.EventSourcing.Reducers.Abstractions": {
         "type": "Project"
-      },
-      "Mississippi.EventSourcing.Serialization": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )"
-        }
       },
       "Mississippi.EventSourcing.Serialization.Abstractions": {
         "type": "Project",
@@ -807,8 +807,8 @@
           "Microsoft.Azure.Cosmos": "[3.54.1, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options": "[9.0.11, )",
-          "Mississippi.Core.Abstractions": "[1.0.0, )",
-          "Mississippi.Core.Cosmos": "[1.0.0, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Cosmos": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }

@@ -626,49 +626,8 @@
       },
       "Microsoft.IdentityModel.Abstractions": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "OtlIWcyX01olfdevPKZdIPfBEvbcioDyBiE/Z2lHsopsMD7twcKtlN9kMevHmI5IIPhFpfwCIiR6qHQz1WHUIw=="
-      },
-      "Microsoft.IdentityModel.JsonWebTokens": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "s6++gF9x0rQApQzOBbSyp4jUaAlwm+DroKfL8gdOHxs83k8SJfUXhuc46rDB3rNXBQ1MVRxqKUrqFhO/M0E97g==",
-        "dependencies": {
-          "Microsoft.IdentityModel.Tokens": "8.0.1"
-        }
-      },
-      "Microsoft.IdentityModel.Logging": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "UCPF2exZqBXe7v/6sGNiM6zCQOUXXQ9+v5VTb9gPB8ZSUPnX53BxlN78v2jsbIvK9Dq4GovQxo23x8JgWvm/Qg==",
-        "dependencies": {
-          "Microsoft.IdentityModel.Abstractions": "8.0.1"
-        }
-      },
-      "Microsoft.IdentityModel.Protocols": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "uA2vpKqU3I2mBBEaeJAWPTjT9v1TZrGWKdgK6G5qJd03CLx83kdiqO9cmiK8/n1erkHzFBwU/RphP83aAe3i3g==",
-        "dependencies": {
-          "Microsoft.IdentityModel.Tokens": "8.0.1"
-        }
-      },
-      "Microsoft.IdentityModel.Protocols.OpenIdConnect": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "AQDbfpL+yzuuGhO/mQhKNsp44pm5Jv8/BI4KiFXR7beVGZoSH35zMV3PrmcfvSTsyI6qrcR898NzUauD6SRigg==",
-        "dependencies": {
-          "Microsoft.IdentityModel.Protocols": "8.0.1",
-          "System.IdentityModel.Tokens.Jwt": "8.0.1"
-        }
-      },
-      "Microsoft.IdentityModel.Tokens": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "kDimB6Dkd3nkW2oZPDkMkVHfQt3IDqO5gL0oa8WVy3OP4uE8Ij+8TXnqg9TOd9ufjsY3IDiGz7pCUbnfL18tjg==",
-        "dependencies": {
-          "Microsoft.IdentityModel.Logging": "8.0.1"
-        }
+        "resolved": "6.35.0",
+        "contentHash": "xuR8E4Rd96M41CnUSCiOJ2DBh+z+zQSmyrYHdYhD6K4fXBcQGVnRCFQ0efROUYpP+p0zC1BLKr0JRpVuujTZSg=="
       },
       "Microsoft.JSInterop": {
         "type": "Transitive",
@@ -939,15 +898,6 @@
           "Microsoft.Win32.SystemEvents": "6.0.0"
         }
       },
-      "System.IdentityModel.Tokens.Jwt": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "GJw3bYkWpOgvN3tJo5X4lYUeIFA2HD293FPUhKmp7qxS+g5ywAb34Dnd3cDAFLkcMohy5XTpoaZ4uAHuw0uSPQ==",
-        "dependencies": {
-          "Microsoft.IdentityModel.JsonWebTokens": "8.0.1",
-          "Microsoft.IdentityModel.Tokens": "8.0.1"
-        }
-      },
       "System.IO.Hashing": {
         "type": "Transitive",
         "resolved": "9.0.10",
@@ -1067,30 +1017,24 @@
           "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
-      "Mississippi.Core": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.AspNetCore.Authentication.JwtBearer": "[9.0.11, )",
-          "Microsoft.Extensions.Features": "[9.0.11, )",
-          "Microsoft.Orleans.Sdk": "[9.2.1, )",
-          "Microsoft.Orleans.Streaming": "[9.2.1, )",
-          "Mississippi.Core.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Core.Abstractions": {
+      "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
-      "Mississippi.Core.Cosmos": {
+      "Mississippi.Common.Cosmos": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Azure.Cosmos": "[3.54.1, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.1, )",
+          "Mississippi.Common.Cosmos.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
+      },
+      "Mississippi.Common.Cosmos.Abstractions": {
+        "type": "Project"
       },
       "Mississippi.EventSourcing.Aggregates": {
         "type": "Project",
@@ -1100,7 +1044,7 @@
           "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
-          "Mississippi.EventSourcing.Serialization": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
         }
       },
@@ -1127,7 +1071,8 @@
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )",
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )"
         }
       },
       "Mississippi.EventSourcing.Brooks.Cosmos": {
@@ -1137,7 +1082,8 @@
           "Microsoft.Azure.Cosmos": "[3.54.1, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options": "[9.0.11, )",
-          "Mississippi.Core.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Cosmos": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
@@ -1152,12 +1098,6 @@
       },
       "Mississippi.EventSourcing.Reducers.Abstractions": {
         "type": "Project"
-      },
-      "Mississippi.EventSourcing.Serialization": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )"
-        }
       },
       "Mississippi.EventSourcing.Serialization.Abstractions": {
         "type": "Project",
@@ -1198,8 +1138,8 @@
           "Microsoft.Azure.Cosmos": "[3.54.1, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options": "[9.0.11, )",
-          "Mississippi.Core.Abstractions": "[1.0.0, )",
-          "Mississippi.Core.Cosmos": "[1.0.0, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Cosmos": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
@@ -1227,8 +1167,7 @@
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
           "Mississippi.AspNetCore.SignalR.Orleans": "[1.0.0, )",
-          "Mississippi.Core": "[1.0.0, )",
-          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
         }
       },
@@ -1252,14 +1191,10 @@
           "Mississippi.Ripples.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Ripples.Server": {
+      "Mississippi.Ripples.InProcess": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.UxProjections.SignalR": "[1.0.0, )",
-          "Mississippi.Ripples": "[1.0.0, )",
-          "Mississippi.Ripples.Abstractions": "[1.0.0, )",
-          "Mississippi.Ripples.Blazor": "[1.0.0, )"
+          "Mississippi.Ripples.Abstractions": "[1.0.0, )"
         }
       },
       "Azure.Storage.Blobs": {
@@ -1277,15 +1212,6 @@
         "requested": "[2.8.0, )",
         "resolved": "2.8.0",
         "contentHash": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA=="
-      },
-      "Microsoft.AspNetCore.Authentication.JwtBearer": {
-        "type": "CentralTransitive",
-        "requested": "[9.0.11, )",
-        "resolved": "9.0.11",
-        "contentHash": "76KB8sBNzyo4L6mPXCYVHC/Uo1wQKF0jdGzQD8lPLLZ01CAyq2daU/h4jk2+F6QJ1gPgprlZz3Z/1trQ3CVdLA==",
-        "dependencies": {
-          "Microsoft.IdentityModel.Protocols.OpenIdConnect": "8.0.1"
-        }
       },
       "Microsoft.AspNetCore.Components": {
         "type": "CentralTransitive",
@@ -1367,8 +1293,8 @@
       "Microsoft.Extensions.Features": {
         "type": "CentralTransitive",
         "requested": "[9.0.11, )",
-        "resolved": "9.0.11",
-        "contentHash": "8Ac8mhr8Tzkd1eEdOQf9VGCegNMmma/jqOoSg3zibklo6p2xHER5HrDwzUFsgDDJkw/lHHyVDvyBpYLd/sqTXA=="
+        "resolved": "8.0.11",
+        "contentHash": "xL0WcA9bRu49QSUmGZEYY5dslR/x52fl+XY9GWOP2h5ibOJY7hF8Tz/raXVP+GPJ2S2piNPlfL4GkJK794PjFA=="
       },
       "Microsoft.Extensions.Hosting": {
         "type": "CentralTransitive",

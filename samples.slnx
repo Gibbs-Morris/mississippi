@@ -24,14 +24,11 @@
     </Folder>
 
     <Folder Name="/Framework/Core/">
-        <Project Path="src\AspNetCore.Orleans\AspNetCore.Orleans.csproj" />
         <Project Path="src\AspNetCore.SignalR.Orleans.Abstractions\AspNetCore.SignalR.Orleans.Abstractions.csproj" />
         <Project Path="src\AspNetCore.SignalR.Orleans.Grains\AspNetCore.SignalR.Orleans.Grains.csproj" />
         <Project Path="src\AspNetCore.SignalR.Orleans\AspNetCore.SignalR.Orleans.csproj" />
-        <Project Path="src\Core.Abstractions\Core.Abstractions.csproj" />
-        <Project Path="src\Core\Core.csproj" />
-        <Project Path="src\Core.Cosmos\Core.Cosmos.csproj" />
-        <Project Path="src\Hosting\Hosting.csproj" />
+        <Project Path="src\Common.Abstractions\Common.Abstractions.csproj" />
+        <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
     </Folder>
     <Folder Name="/Framework/EventSourcing/">
         <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
@@ -39,11 +36,9 @@
         <Project Path="src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
         <Project Path="src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
         <Project Path="src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
-        <Project Path="src\EventSourcing.Generators\EventSourcing.Generators.csproj" />
         <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
         <Project Path="src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
         <Project Path="src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
-        <Project Path="src\EventSourcing.Serialization\EventSourcing.Serialization.csproj" />
         <Project Path="src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
         <Project Path="src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
         <Project Path="src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
@@ -61,16 +56,13 @@
         <Project Path="src\Ripples.Generators\Ripples.Generators.csproj" />
         <Project Path="src\Ripples.Orleans\Ripples.Orleans.csproj" />
         <Project Path="src\Ripples.Orleans.SignalR\Ripples.Orleans.SignalR.csproj" />
-        <Project Path="src\Ripples.Server\Ripples.Server.csproj" />
+        <Project Path="src\Ripples.InProcess\Ripples.InProcess.csproj" />
     </Folder>
 
     <Folder Name="/Tests/Core/">
         <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />
-        <Project Path="tests\AspNetCore.Orleans.L0Tests\AspNetCore.Orleans.L0Tests.csproj" />
-        <Project Path="tests\Core.Abstractions.L0Tests\Core.Abstractions.L0Tests.csproj" />
-        <Project Path="tests\Core.L0Tests\Core.L0Tests.csproj" />
-        <Project Path="tests\Core.Cosmos.L0Tests\Core.Cosmos.L0Tests.csproj" />
-        <Project Path="tests\Hosting.L0Tests\Hosting.L0Tests.csproj" />
+        <Project Path="tests\Common.Abstractions.L0Tests\Common.Abstractions.L0Tests.csproj" />
+        <Project Path="tests\Common.Cosmos.L0Tests\Common.Cosmos.L0Tests.csproj" />
         <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
     </Folder>
     <Folder Name="/Tests/EventSourcing/">
@@ -98,6 +90,6 @@
         <Project Path="tests\Ripples.L0Tests\Ripples.L0Tests.csproj" />
         <Project Path="tests\Ripples.Blazor.L0Tests\Ripples.Blazor.L0Tests.csproj" />
         <Project Path="tests\Ripples.Generators.L0Tests\Ripples.Generators.L0Tests.csproj" />
-        <Project Path="tests\Ripples.Server.L0Tests\Ripples.Server.L0Tests.csproj" />
+        <Project Path="tests\Ripples.InProcess.L0Tests\Ripples.InProcess.L0Tests.csproj" />
     </Folder>
 </Solution>

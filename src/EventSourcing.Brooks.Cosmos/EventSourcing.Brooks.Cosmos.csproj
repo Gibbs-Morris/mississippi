@@ -7,7 +7,8 @@
         <PackageReference Include="Newtonsoft.Json"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Core.Abstractions\Core.Abstractions.csproj" />
+        <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
+        <ProjectReference Include="..\Common.Cosmos\Common.Cosmos.csproj" />
         <ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj"/>
     </ItemGroup>
 </Project>

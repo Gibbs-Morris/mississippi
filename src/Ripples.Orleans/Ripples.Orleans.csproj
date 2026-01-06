@@ -8,7 +8,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\AspNetCore.SignalR.Orleans.Abstractions\AspNetCore.SignalR.Orleans.Abstractions.csproj" />
-		<ProjectReference Include="..\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+		<ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
 		<ProjectReference Include="..\Ripples.Abstractions\Ripples.Abstractions.csproj" />
 	</ItemGroup>
 </Project>

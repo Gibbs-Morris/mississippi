@@ -435,6 +435,41 @@
           "System.IO.Pipelines": "8.0.0"
         }
       },
+      "Microsoft.Orleans.Runtime": {
+        "type": "Transitive",
+        "resolved": "9.2.1",
+        "contentHash": "ywRCeLZaGGYL0d2lcupE/q6goNGvu64/zoLa5YmRJnsyGtMBBpGyWPF7u1f5Zx6FJv5wBZFTIg3EeQlT9o/rvA==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Connections.Abstractions": "8.0.11",
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "4.5.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "4.5.0",
+          "Microsoft.Extensions.Configuration": "8.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Configuration.Binder": "8.0.2",
+          "Microsoft.Extensions.Configuration.Json": "8.0.1",
+          "Microsoft.Extensions.DependencyInjection": "8.0.1",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
+          "Microsoft.Extensions.DependencyModel": "8.0.2",
+          "Microsoft.Extensions.Hosting": "8.0.1",
+          "Microsoft.Extensions.Hosting.Abstractions": "8.0.1",
+          "Microsoft.Extensions.Logging": "8.0.1",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "Microsoft.Extensions.Logging.Console": "8.0.1",
+          "Microsoft.Extensions.Logging.Debug": "8.0.1",
+          "Microsoft.Extensions.ObjectPool": "8.0.11",
+          "Microsoft.Extensions.Options": "8.0.2",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "8.0.0",
+          "Microsoft.Orleans.Analyzers": "9.2.1",
+          "Microsoft.Orleans.CodeGenerator": "9.2.1",
+          "Microsoft.Orleans.Core": "9.2.1",
+          "Newtonsoft.Json": "13.0.3",
+          "System.Collections.Immutable": "8.0.0",
+          "System.IO.Hashing": "8.0.0",
+          "System.IO.Pipelines": "8.0.0",
+          "System.Memory.Data": "8.0.1"
+        }
+      },
       "Microsoft.Orleans.Serialization": {
         "type": "Transitive",
         "resolved": "9.2.1",
@@ -636,7 +671,8 @@
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )",
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )"
         }
       },
       "Mississippi.EventSourcing.UxProjections.Abstractions": {
@@ -827,6 +863,42 @@
         "contentHash": "HkFIT+0k8tjYDCf50ywXAj/bT3iegONqcxgUy4T56uH8sI/92T6enq8XqwgdWsGs22eP486uy2HuBYqzrF44xg==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
+        }
+      },
+      "Microsoft.Orleans.Streaming": {
+        "type": "CentralTransitive",
+        "requested": "[9.2.1, )",
+        "resolved": "9.2.1",
+        "contentHash": "btojSH9XgItFzvLwiVpHwWmaFoUbZa9XfqN7mclor6q0PMQ09MHP3N+BWHGb6qeXJHua6z+7mO9ZmLyZRxV38Q==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Connections.Abstractions": "8.0.11",
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "4.5.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "4.5.0",
+          "Microsoft.Extensions.Configuration": "8.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Configuration.Binder": "8.0.2",
+          "Microsoft.Extensions.Configuration.Json": "8.0.1",
+          "Microsoft.Extensions.DependencyInjection": "8.0.1",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
+          "Microsoft.Extensions.DependencyModel": "8.0.2",
+          "Microsoft.Extensions.Hosting": "8.0.1",
+          "Microsoft.Extensions.Hosting.Abstractions": "8.0.1",
+          "Microsoft.Extensions.Logging": "8.0.1",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "Microsoft.Extensions.Logging.Console": "8.0.1",
+          "Microsoft.Extensions.Logging.Debug": "8.0.1",
+          "Microsoft.Extensions.ObjectPool": "8.0.11",
+          "Microsoft.Extensions.Options": "8.0.2",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "8.0.0",
+          "Microsoft.Orleans.Analyzers": "9.2.1",
+          "Microsoft.Orleans.CodeGenerator": "9.2.1",
+          "Microsoft.Orleans.Runtime": "9.2.1",
+          "Newtonsoft.Json": "13.0.3",
+          "System.Collections.Immutable": "8.0.0",
+          "System.IO.Hashing": "8.0.0",
+          "System.IO.Pipelines": "8.0.0",
+          "System.Memory.Data": "8.0.1"
         }
       },
       "Newtonsoft.Json": {

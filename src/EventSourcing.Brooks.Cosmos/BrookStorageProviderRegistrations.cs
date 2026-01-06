@@ -12,7 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Common.Cosmos.Abstractions.Retry;
+using Mississippi.Common.Cosmos.Retry;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
@@ -20,7 +22,6 @@ using Mississippi.EventSourcing.Brooks.Cosmos.Batching;
 using Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
-using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 

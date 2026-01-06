@@ -24,7 +24,7 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.ConfigureServices(services =>
         {
             services.AddUxProjections();
-            services.AddSingleton<IStreamIdFactory, StreamIdFactory>();
+            services.AddEventSourcingByService(); // Registers IStreamIdFactory
             services.AddSingleton<InMemoryBrookStorage>();
             services.AddSingleton<IBrookStorageReader>(sp => sp.GetRequiredService<InMemoryBrookStorage>());
         });

@@ -24,11 +24,11 @@
     <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections.SignalR\EventSourcing.UxProjections.SignalR.csproj" />
-    <ProjectReference Include="..\..\..\src\Core.Cosmos\Core.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\Common.Cosmos\Common.Cosmos.csproj" />
 
     <!-- Ripples Blazor for UI projection subscriptions -->
     <ProjectReference Include="..\..\..\src\Ripples.Blazor\Ripples.Blazor.csproj" />
-    <ProjectReference Include="..\..\..\src\Ripples.Server\Ripples.Server.csproj" />
+    <ProjectReference Include="..\..\..\src\Ripples.InProcess\Ripples.InProcess.csproj" />
 
     <!-- Domain -->
     <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj" />

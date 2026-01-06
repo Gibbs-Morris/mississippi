@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.Ripples;
 using Mississippi.Ripples.Abstractions;
-using Mississippi.Ripples.Server;
+using Mississippi.Ripples.InProcess;
 
 
 namespace Cascade.Server.Services;
