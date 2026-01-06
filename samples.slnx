@@ -21,6 +21,7 @@
         <Project Path="src\Core.Abstractions\Core.Abstractions.csproj" />
         <Project Path="src\Core\Core.csproj" />
         <Project Path="src\Core.Cosmos\Core.Cosmos.csproj" />
+        <Project Path="src\DocumentationGenerator\DocumentationGenerator.csproj" />
         <Project Path="src\Hosting\Hosting.csproj" />
         <Project Path="src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
         <Project Path="src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
@@ -42,6 +43,7 @@
     </Folder>
 
     <Folder Name="/Tests/">
+        <Project Path="tests\DocumentationGenerator.L0Tests\DocumentationGenerator.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.UxProjections.Abstractions.L0Tests\EventSourcing.UxProjections.Abstractions.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
