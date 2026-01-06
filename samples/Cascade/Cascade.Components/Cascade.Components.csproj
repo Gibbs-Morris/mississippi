@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Use package reference instead of FrameworkReference for WASM compatibility -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\Ripples.Abstractions\Ripples.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

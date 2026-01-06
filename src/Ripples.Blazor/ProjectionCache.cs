@@ -237,12 +237,14 @@ public sealed class ProjectionCache : IProjectionCache
                 break;
             }
 
-            // Remove from cache
+            // Remove from cache and dispose asynchronously
+#pragma warning disable CA2000, IDISP007 // Ownership transfers to DisposeEntryAsync
             if (cache.TryRemove(keyToEvict.Value, out CacheEntry? removed))
             {
-                // Await the disposal to avoid ValueTask issues
-                _ = Task.Run(async () => await removed.DisposeAsync().ConfigureAwait(false));
+                // Dispose on background thread to avoid blocking
+                _ = DisposeEntryAsync(removed);
             }
+#pragma warning restore CA2000, IDISP007
         }
     }
 
@@ -253,6 +255,28 @@ public sealed class ProjectionCache : IProjectionCache
         if (cache.TryGetValue(key, out CacheEntry? entry))
         {
             entry.DecrementSubscribers();
+        }
+    }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Background disposal should not throw")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP007:Don't dispose injected",
+        Justification = "Entry ownership is transferred from cache on removal")]
+    private static async Task DisposeEntryAsync(
+        CacheEntry entry
+    )
+    {
+        try
+        {
+            await entry.DisposeAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            // Swallow exceptions during background disposal
         }
     }
 

@@ -78,12 +78,12 @@ public interface IProjectionCache : IAsyncDisposable
     /// <example>
     ///     <code>
     ///     private IProjectionBinder&lt;UserProfileProjection&gt;? binder;
-    /// 
+    ///
     ///     protected override void OnInitialized()
     ///     {
     ///         binder = ProjectionCache.CreateBinder&lt;UserProfileProjection&gt;();
     ///     }
-    /// 
+    ///
     ///     protected override async Task OnParametersSetAsync()
     ///     {
     ///         await binder!.BindAsync(UserId, () =&gt; InvokeAsync(StateHasChanged));

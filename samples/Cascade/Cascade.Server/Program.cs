@@ -12,9 +12,6 @@ using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.EventSourcing.UxProjections.SignalR;
 
-using Orleans.Configuration;
-using Orleans.Hosting;
-
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +19,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 // using connection strings from Aspire AppHost references
 builder.AddAzureCosmosClient("cosmos");
 builder.AddAzureBlobServiceClient("blobs");
+builder.AddAzureTableClient("clustering");
 
 // Add Blazor services with Interactive Server rendering
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
@@ -40,16 +38,10 @@ builder.Services.AddCascadeServerServices();
 builder.Services.AddJsonSerialization();
 builder.Services.AddEventSourcingByService();
 
-// Configure Orleans silo
+// Configure Orleans silo - Aspire handles clustering configuration
 builder.UseOrleans(silo =>
 {
-    silo.UseLocalhostClustering()
-        .Configure<ClusterOptions>(options =>
-        {
-            options.ClusterId = "cascade-dev";
-            options.ServiceId = "cascade";
-        })
-        .AddMemoryGrainStorage("PubSubStore")
+    silo.AddMemoryGrainStorage("PubSubStore")
         .AddEventSourcing();
 });
 

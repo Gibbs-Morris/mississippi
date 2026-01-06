@@ -71,18 +71,6 @@
           "Microsoft.AspNetCore.Components": "9.0.11"
         }
       },
-      "Microsoft.AspNetCore.Components.Web": {
-        "type": "Transitive",
-        "resolved": "9.0.11",
-        "contentHash": "wU9oVKqHfP4euIpRiRHLVkmhjFXctOvRDHOMUdBRnUErUua+fE6KsIRuBvUKla6tIql9sS58wbETZnjZpnX0lw==",
-        "dependencies": {
-          "Microsoft.AspNetCore.Components": "9.0.11",
-          "Microsoft.AspNetCore.Components.Forms": "9.0.11",
-          "Microsoft.Extensions.DependencyInjection": "9.0.11",
-          "Microsoft.Extensions.Primitives": "9.0.11",
-          "Microsoft.JSInterop": "9.0.11"
-        }
-      },
       "Microsoft.AspNetCore.Metadata": {
         "type": "Transitive",
         "resolved": "9.0.11",
@@ -184,6 +172,19 @@
         "dependencies": {
           "Microsoft.AspNetCore.Authorization": "9.0.11",
           "Microsoft.AspNetCore.Components.Analyzers": "9.0.11"
+        }
+      },
+      "Microsoft.AspNetCore.Components.Web": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.11, )",
+        "resolved": "9.0.11",
+        "contentHash": "wU9oVKqHfP4euIpRiRHLVkmhjFXctOvRDHOMUdBRnUErUua+fE6KsIRuBvUKla6tIql9sS58wbETZnjZpnX0lw==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "9.0.11",
+          "Microsoft.AspNetCore.Components.Forms": "9.0.11",
+          "Microsoft.Extensions.DependencyInjection": "9.0.11",
+          "Microsoft.Extensions.Primitives": "9.0.11",
+          "Microsoft.JSInterop": "9.0.11"
         }
       },
       "Microsoft.AspNetCore.Components.WebAssembly": {

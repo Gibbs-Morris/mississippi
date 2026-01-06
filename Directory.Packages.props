@@ -16,6 +16,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.11" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.11" />
     <PackageVersion Include="Microsoft.AspNetCore.Components" Version="9.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="9.0.11" />
     <PackageVersion Include="bunit" Version="1.37.7" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.11" />
@@ -36,14 +37,18 @@
     <PackageVersion Include="Microsoft.Orleans.TestingHost" Version="9.2.1" />
     <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="9.2.1" />
     <PackageVersion Include="Microsoft.Orleans.Server" Version="9.2.1" />
+    <PackageVersion Include="Microsoft.Orleans.Client" Version="9.2.1" />
     <PackageVersion Include="Microsoft.Orleans.Streaming" Version="9.2.1" />
     <PackageVersion Include="Microsoft.Orleans.Persistence.Memory" Version="9.2.1" />
+    <PackageVersion Include="Microsoft.Orleans.Clustering.AzureStorage" Version="9.2.1" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.11" />
     <!-- .NET Aspire -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.1.0" />
     <PackageVersion Include="Aspire.Hosting.Azure.CosmosDB" Version="13.1.0" />
     <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Hosting.Orleans" Version="13.1.0" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Azure.Data.Tables" Version="13.1.0" />
     <PackageVersion Include="Aspire.Microsoft.Azure.Cosmos" Version="13.1.0" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="13.1.0" />
     <!-- Playwright for E2E tests -->

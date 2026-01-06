@@ -10,9 +10,11 @@
     <PackageReference Include="Aspire.Hosting.AppHost" />
     <PackageReference Include="Aspire.Hosting.Azure.CosmosDB" />
     <PackageReference Include="Aspire.Hosting.Azure.Storage" />
+    <PackageReference Include="Aspire.Hosting.Orleans" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Cascade.Server\Cascade.Server.csproj" />
+    <ProjectReference Include="..\Cascade.WebApi\Cascade.WebApi.csproj" />
   </ItemGroup>
 </Project>
