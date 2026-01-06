@@ -622,6 +622,123 @@ After completing documentation work, provide:
 Ready for Code Reviewer verification.
 ```
 
+## Chain-of-Verification (required)
+
+Every documentation task MUST follow this 4-step verification workflow to ensure accuracy and prevent errors.
+
+### Step 1: Draft (Initial Pass)
+
+Before writing documentation:
+
+1. **State the goal** in 1–3 bullets:
+   - What documentation is being created/updated?
+   - What source code does it describe?
+   - Who is the target audience?
+
+2. **Propose a concrete plan**:
+   - List files to read (source code paths)
+   - List documentation files to create/update
+   - List commands to run for validation
+
+3. **List assumptions up front**:
+   - Anything not verified by reading actual code or docs
+   - Expected project structure
+   - Assumed conventions
+
+### Step 2: Verification Questions
+
+Generate specific questions that could falsify the draft:
+
+- "Does the repo already have documentation for this feature?"
+- "Does the interface signature in the source match what I'm documenting?"
+- "Are there existing conventions for doc file naming I should follow?"
+- "Will my relative paths work from the doc file location?"
+- "Does the Docusaurus config support the features I'm using?"
+- "Are there tests that demonstrate the correct usage patterns?"
+
+### Step 3: Evidence & Validation
+
+Answer each verification question with **evidence, not assertions**:
+
+**Repo evidence:**
+
+- File paths + line anchors: `src/Feature/FeatureService.cs#L45-L67`
+- Existing patterns: "Other docs in `docs/Docusaurus/docs/guides/` use this structure"
+- Config verification: "Checked `docusaurus.config.ts` line 23 for mermaid support"
+
+**Execution evidence:**
+
+```bash
+# Verify source files exist
+ls -la src/Feature/
+
+# Verify doc paths are correct
+test -f docs/Docusaurus/docs/guides/feature.md && echo "EXISTS" || echo "MISSING"
+
+# Validate markdown
+npx markdownlint-cli2 "docs/Docusaurus/docs/**/*.md"
+
+# Build docs to verify
+cd docs/Docusaurus && npm run build
+```
+
+**External evidence (when needed):**
+
+- Link to authoritative docs (e.g., Docusaurus official docs)
+- Corroborate non-trivial claims with ≥2 independent sources
+
+**If something cannot be verified:**
+
+- Mark explicitly as `ASSUMPTION: [description]`
+- Add `TODO: [what input is needed to verify]`
+
+### Step 4: Revise (Final Pass)
+
+After verification:
+
+1. Update documentation based on evidence gathered
+2. Remove/downgrade anything that didn't check out
+3. Convert assumptions to facts where evidence was found
+4. Flag remaining assumptions clearly
+
+## Definition of Done
+
+Documentation is complete when ALL items are checked:
+
+### Build & Validation
+
+- [ ] Markdown lint passes: `npx markdownlint-cli2 "docs/Docusaurus/docs/**/*.md"`
+- [ ] Docusaurus builds without errors: `cd docs/Docusaurus && npm run build`
+- [ ] All internal links verified working
+- [ ] All source code links point to existing files
+
+### Repo Conventions
+
+- [ ] File naming follows existing patterns (lowercase, hyphens)
+- [ ] Front matter includes `sidebar_position`, `title`, `description`
+- [ ] Sidebar configuration updated if new pages added
+- [ ] Documentation location matches repo convention (`docs/Docusaurus/docs/`)
+
+### Content Quality
+
+- [ ] Every documented feature links to source code
+- [ ] Code examples verified against actual source
+- [ ] Mermaid diagrams render correctly
+- [ ] No orphaned pages (all pages linked from sidebar or other docs)
+
+### Verification Completeness
+
+- [ ] All verification questions answered with evidence
+- [ ] No unsupported claims (every claim has citation or is marked ASSUMPTION)
+- [ ] Reconciliation run if updating existing docs
+- [ ] Backward compatibility noted for any breaking changes
+
+### Risk Areas
+
+- [ ] Document any assumptions that remain unverified
+- [ ] Flag pages that may need future reconciliation
+- [ ] Note dependencies on external tools or configurations
+
 ## Commands
 
 When user says:
