@@ -14,7 +14,7 @@ public static class ChannelDisplayHelper
     /// </summary>
     /// <param name="channelId">The channel ID in format "channel-NAME-TIMESTAMP".</param>
     /// <returns>The extracted channel name in lowercase, or the original ID if format is unrecognized.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="channelId"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="channelId" /> is <c>null</c>.</exception>
     [SuppressMessage(
         "Globalization",
         "CA1308:Normalize strings to uppercase",

@@ -5,6 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Ripples\Ripples.csproj" />
         <ProjectReference Include="..\Ripples.Abstractions\Ripples.Abstractions.csproj" />
     </ItemGroup>
 

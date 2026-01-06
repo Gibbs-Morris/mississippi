@@ -13,6 +13,11 @@ namespace Mississippi.Ripples.Abstractions;
 public static class RippleHubConstants
 {
     /// <summary>
+    ///     The name of the Ripple SignalR hub.
+    /// </summary>
+    public const string HubName = "RippleHub";
+
+    /// <summary>
     ///     The hub method name for receiving projection update notifications.
     /// </summary>
     /// <remarks>
@@ -25,10 +30,10 @@ public static class RippleHubConstants
     /// <summary>
     ///     The hub method name for subscribing to projection updates.
     /// </summary>
-    public const string SubscribeMethod = "Subscribe";
+    public const string SubscribeMethod = "SubscribeAsync";
 
     /// <summary>
     ///     The hub method name for unsubscribing from projection updates.
     /// </summary>
-    public const string UnsubscribeMethod = "Unsubscribe";
+    public const string UnsubscribeMethod = "UnsubscribeAsync";
 }

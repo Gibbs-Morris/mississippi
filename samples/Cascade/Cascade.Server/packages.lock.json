@@ -1053,6 +1053,20 @@
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )"
         }
       },
+      "Mississippi.AspNetCore.SignalR.Orleans": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.AspNetCore.SignalR.Orleans.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.AspNetCore.SignalR.Orleans.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+        }
+      },
       "Mississippi.Core": {
         "type": "Project",
         "dependencies": {
@@ -1212,13 +1226,16 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.AspNetCore.SignalR.Orleans": "[1.0.0, )",
           "Mississippi.Core": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Ripples": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Mississippi.Ripples.Abstractions": "[1.0.0, )"
         }
       },
@@ -1231,6 +1248,7 @@
       "Mississippi.Ripples.Blazor": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.Ripples": "[1.0.0, )",
           "Mississippi.Ripples.Abstractions": "[1.0.0, )"
         }
       },

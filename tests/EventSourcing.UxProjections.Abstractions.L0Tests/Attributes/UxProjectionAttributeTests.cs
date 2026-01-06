@@ -117,8 +117,7 @@ public sealed class UxProjectionAttributeTests
     public void ConstructorThrowsWhenRouteIsNull()
     {
         // Arrange & Act
-        ArgumentNullException ex =
-            Assert.Throws<ArgumentNullException>(() => _ = new UxProjectionAttribute(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => _ = new UxProjectionAttribute(null!));
 
         // Assert
         Assert.Equal("route", ex.ParamName);

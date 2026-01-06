@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+
+using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Ripples.Abstractions;
 using Mississippi.Ripples.Abstractions.Actions;
@@ -11,57 +16,80 @@ using Mississippi.Ripples.Abstractions.State;
 namespace Mississippi.Ripples;
 
 /// <summary>
-///     Central state container for ripple projections using Redux-like dispatch pattern.
+///     Central state container implementing Redux-like dispatch pattern.
+///     Supports both local feature states and server-synced projection states.
 /// </summary>
 public sealed class RippleStore : IRippleStore
 {
+    private readonly ConcurrentDictionary<string, IEffect> effects = new();
+
+    private readonly ConcurrentDictionary<string, object> featureStates = new();
+
     private readonly List<Action> listeners = [];
 
     private readonly object listenersLock = new();
 
-    private readonly ConcurrentDictionary<(Type, string), object> states = new();
+    private readonly List<IMiddleware> middlewares = [];
+
+    private readonly ConcurrentDictionary<(Type, string), object> projectionStates = new();
+
+    private readonly ConcurrentDictionary<string, object> rootActionReducers = new();
+
+    private readonly IServiceProvider? serviceProvider;
 
     private bool disposed;
 
-    private static object CreateErrorState(
-        Type stateType,
-        string entityId,
-        Exception error
-    )
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="RippleStore" /> class.
+    /// </summary>
+    public RippleStore()
     {
-        ConstructorInfo constructor = stateType.GetConstructor([typeof(string)])!;
-        object newState = constructor.Invoke([entityId]);
-        newState = SetStateProperty(stateType, newState, "LastError", error);
-        newState = SetStateProperty(stateType, newState, "IsLoading", false);
-        newState = SetStateProperty(stateType, newState, "IsLoaded", false);
-        return newState;
     }
 
-    private static object CreateLoadedState(
-        Type stateType,
-        string entityId,
-        object? data,
-        long version
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="RippleStore" /> class with DI support.
+    /// </summary>
+    /// <param name="serviceProvider">
+    ///     The service provider for resolving root action reducers and effects.
+    /// </param>
+    public RippleStore(
+        IServiceProvider serviceProvider
     )
     {
-        ConstructorInfo constructor = stateType.GetConstructor([typeof(string)])!;
-        object newState = constructor.Invoke([entityId]);
-        newState = SetStateProperty(stateType, newState, "Data", data);
-        newState = SetStateProperty(stateType, newState, "Version", version);
-        newState = SetStateProperty(stateType, newState, "IsLoaded", true);
-        newState = SetStateProperty(stateType, newState, "IsLoading", false);
-        return newState;
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+        this.serviceProvider = serviceProvider;
+
+        // Resolve effects registered in DI
+        foreach (IEffect effect in serviceProvider.GetServices<IEffect>())
+        {
+            RegisterEffect(effect);
+        }
+
+        // Resolve middleware registered in DI
+        foreach (IMiddleware middleware in serviceProvider.GetServices<IMiddleware>())
+        {
+            RegisterMiddleware(middleware);
+        }
     }
 
-    private static object CreateStateWithProperty(
-        Type stateType,
-        string entityId,
-        bool isLoading
+    /// <summary>
+    ///     Creates a new RippleStore with the specified effects.
+    ///     The store takes ownership of the effects and will dispose them when the store is disposed.
+    /// </summary>
+    /// <typeparam name="TEffect">The effect type.</typeparam>
+    /// <param name="effectFactory">Factory function to create the effect. Receives the store instance.</param>
+    /// <returns>A new RippleStore with the effect registered.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="effectFactory" /> is null.</exception>
+    public static RippleStore CreateWithEffect<TEffect>(
+        Func<RippleStore, TEffect> effectFactory
     )
+        where TEffect : IEffect
     {
-        ConstructorInfo constructor = stateType.GetConstructor([typeof(string)])!;
-        object newState = constructor.Invoke([entityId]);
-        return SetStateProperty(stateType, newState, "IsLoading", isLoading);
+        ArgumentNullException.ThrowIfNull(effectFactory);
+        RippleStore store = new();
+        TEffect effect = effectFactory(store);
+        store.RegisterEffect(effect);
+        return store;
     }
 
     private static object SetStateProperty(
@@ -71,12 +99,13 @@ public sealed class RippleStore : IRippleStore
         object? value
     )
     {
-        // Records use with-expressions which compile to a clone method
-        // For now, use init-only property setters via reflection
-        PropertyInfo prop = stateType.GetProperty(propertyName)!;
+        PropertyInfo? prop = stateType.GetProperty(propertyName);
+        if (prop == null)
+        {
+            return state;
+        }
 
-        // Records with init setters require special handling
-        // Use the with-expression pattern by creating a new instance
+        // Records use with-expressions which compile to a clone method
         MethodInfo? cloneMethod = stateType.GetMethod("<Clone>$");
         if (cloneMethod != null)
         {
@@ -92,13 +121,18 @@ public sealed class RippleStore : IRippleStore
 
     /// <inheritdoc />
     public void Dispatch(
-        IRippleAction action
+        IAction action
     )
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         ArgumentNullException.ThrowIfNull(action);
-        ReduceAction(action);
-        NotifyListeners();
+
+        // Build the middleware pipeline ending with the core dispatch
+        Action<IAction> coreDispatch = CoreDispatch;
+        Action<IAction> pipeline = BuildMiddlewarePipeline(coreDispatch);
+
+        // Execute the pipeline
+        pipeline(action);
     }
 
     /// <inheritdoc />
@@ -115,23 +149,110 @@ public sealed class RippleStore : IRippleStore
             listeners.Clear();
         }
 
-        states.Clear();
+        // Dispose any effects that implement IDisposable
+        foreach (IEffect effect in effects.Values)
+        {
+            if (effect is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        projectionStates.Clear();
+        featureStates.Clear();
+        rootActionReducers.Clear();
+        effects.Clear();
+        middlewares.Clear();
     }
 
     /// <inheritdoc />
-    public IProjectionState<T>? GetState<T>(
+    public TState GetFeatureState<TState>()
+        where TState : class, IFeatureState
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        string featureKey = TState.FeatureKey;
+        if (featureStates.TryGetValue(featureKey, out object? state))
+        {
+            return (TState)state;
+        }
+
+        // If no reducer registered, try to create default state
+        // This allows querying unregistered feature states (returns default)
+        throw new InvalidOperationException(
+            $"No reducer registered for feature state '{featureKey}'. " +
+            $"Call RegisterFeatureState<{typeof(TState).Name}>() before selecting.");
+    }
+
+    /// <inheritdoc />
+    public IProjectionState<T>? GetProjectionState<T>(
         string entityId
     )
         where T : class
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         (Type, string) key = (typeof(T), entityId);
-        if (states.TryGetValue(key, out object? state))
+        if (projectionStates.TryGetValue(key, out object? state))
         {
             return (IProjectionState<T>)state;
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Registers an effect for handling async operations.
+    /// </summary>
+    /// <param name="effect">The effect instance.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="effect" /> is null.</exception>
+    public void RegisterEffect(
+        IEffect effect
+    )
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        string key = effect.GetType().FullName ?? effect.GetType().Name;
+        effects[key] = effect;
+    }
+
+    /// <summary>
+    ///     Registers a feature state with its root action reducer from DI.
+    /// </summary>
+    /// <typeparam name="TState">The feature state type.</typeparam>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the store was not created with a service provider.
+    /// </exception>
+    public void RegisterFeatureState<TState>()
+        where TState : class, IFeatureState, new()
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        if (serviceProvider is null)
+        {
+            throw new InvalidOperationException(
+                "Cannot register feature state without a service provider. " +
+                "Use the constructor that accepts IServiceProvider.");
+        }
+
+        string featureKey = TState.FeatureKey;
+        featureStates[featureKey] = new TState();
+        IRootActionReducer<TState>? rootReducer = serviceProvider.GetService<IRootActionReducer<TState>>();
+        if (rootReducer is not null)
+        {
+            rootActionReducers[featureKey] = rootReducer;
+        }
+    }
+
+    /// <summary>
+    ///     Registers a middleware in the dispatch pipeline.
+    /// </summary>
+    /// <param name="middleware">The middleware instance.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="middleware" /> is null.</exception>
+    public void RegisterMiddleware(
+        IMiddleware middleware
+    )
+    {
+        ArgumentNullException.ThrowIfNull(middleware);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        middlewares.Add(middleware);
     }
 
     /// <inheritdoc />
@@ -149,6 +270,40 @@ public sealed class RippleStore : IRippleStore
         return new Subscription(this, listener);
     }
 
+    private Action<IAction> BuildMiddlewarePipeline(
+        Action<IAction> coreDispatch
+    )
+    {
+        Action<IAction> next = coreDispatch;
+
+        // Build pipeline in reverse order (last middleware wraps first)
+        for (int i = middlewares.Count - 1; i >= 0; i--)
+        {
+            IMiddleware middleware = middlewares[i];
+            Action<IAction> currentNext = next;
+            next = action => middleware.Invoke(action, currentNext);
+        }
+
+        return next;
+    }
+
+    private void CoreDispatch(
+        IAction action
+    )
+    {
+        // First, run reducers for feature states
+        ReduceFeatureStates(action);
+
+        // Then, handle built-in projection actions
+        ReduceProjectionAction(action);
+
+        // Notify listeners of state change
+        NotifyListeners();
+
+        // Finally, trigger effects asynchronously
+        _ = TriggerEffectsAsync(action);
+    }
+
     private void NotifyListeners()
     {
         List<Action> snapshot;
@@ -163,100 +318,41 @@ public sealed class RippleStore : IRippleStore
         }
     }
 
-    private void ReduceAction(
-        IRippleAction action
+    private void ReduceFeatureStates(
+        IAction action
     )
     {
-        switch (action)
+        // Use root action reducers for all feature states
+        foreach (KeyValuePair<string, object> kvp in rootActionReducers)
         {
-            case ProjectionLoadingAction<object> loading:
-                ReduceLoadingAction(loading);
-                break;
-            case ProjectionLoadedAction<object> loaded:
-                ReduceLoadedAction(loaded);
-                break;
-            case ProjectionErrorAction<object> error:
-                ReduceErrorAction(error);
-                break;
-            case ProjectionConnectionChangedAction<object> connectionChanged:
-                ReduceConnectionChangedAction(connectionChanged);
-                break;
-            default:
-                ReduceGenericAction(action);
-                break;
-        }
-    }
-
-    private void ReduceConnectionChangedAction<T>(
-        ProjectionConnectionChangedAction<T> action
-    )
-        where T : class
-    {
-        (Type, string EntityId) key = (typeof(T), action.EntityId);
-        IProjectionState<T>? existingState = GetState<T>(action.EntityId);
-        if (existingState is ProjectionState<T> state)
-        {
-            ProjectionState<T> newState = state with
+            string featureKey = kvp.Key;
+            object rootReducer = kvp.Value;
+            if (!featureStates.TryGetValue(featureKey, out object? currentState))
             {
-                IsConnected = action.IsConnected,
-            };
-            states[key] = newState;
+                continue;
+            }
+
+            // Use reflection to call Reduce on the generic root action reducer
+            Type rootReducerType = rootReducer.GetType();
+            MethodInfo? reduceMethod = rootReducerType.GetMethod("Reduce");
+            if (reduceMethod == null)
+            {
+                continue;
+            }
+
+            object? newState = reduceMethod.Invoke(rootReducer, [currentState, action]);
+            if ((newState != null) && !ReferenceEquals(newState, currentState))
+            {
+                featureStates[featureKey] = newState;
+            }
         }
     }
 
-    private void ReduceConnectionChangedGeneric(
-        Type projectionType,
-        IRippleAction action
+    private void ReduceProjectionAction(
+        IAction action
     )
     {
-        Type actionType = action.GetType();
-        PropertyInfo isConnectedProp = actionType.GetProperty("IsConnected")!;
-        bool isConnected = (bool)isConnectedProp.GetValue(action)!;
-        (Type, string) key = (projectionType, action.EntityId);
-        if (states.TryGetValue(key, out object? existingState))
-        {
-            Type stateType = existingState.GetType();
-            object withIsConnected = SetStateProperty(stateType, existingState, "IsConnected", isConnected);
-            states[key] = withIsConnected;
-        }
-    }
-
-    private void ReduceErrorAction<T>(
-        ProjectionErrorAction<T> action
-    )
-        where T : class
-    {
-        (Type, string EntityId) key = (typeof(T), action.EntityId);
-        IProjectionState<T>? existingState = GetState<T>(action.EntityId);
-        ProjectionState<T> newState = new(action.EntityId)
-        {
-            Data = existingState?.Data,
-            Version = existingState?.Version ?? 0,
-            IsLoading = false,
-            IsLoaded = false,
-            LastError = action.Error,
-        };
-        states[key] = newState;
-    }
-
-    private void ReduceErrorGeneric(
-        Type projectionType,
-        IRippleAction action
-    )
-    {
-        Type actionType = action.GetType();
-        PropertyInfo errorProp = actionType.GetProperty("Error")!;
-        Exception error = (Exception)errorProp.GetValue(action)!;
-        (Type, string) key = (projectionType, action.EntityId);
-        Type stateType = typeof(ProjectionState<>).MakeGenericType(projectionType);
-        object newState = CreateErrorState(stateType, action.EntityId, error);
-        states[key] = newState;
-    }
-
-    private void ReduceGenericAction(
-        IRippleAction action
-    )
-    {
+        // Handle built-in projection actions
         Type actionType = action.GetType();
         if (!actionType.IsGenericType)
         {
@@ -267,78 +363,154 @@ public sealed class RippleStore : IRippleStore
         Type projectionType = actionType.GetGenericArguments()[0];
         if (genericDef == typeof(ProjectionLoadingAction<>))
         {
-            ReduceLoadingGeneric(projectionType, action.EntityId);
+            ReduceProjectionLoading(projectionType, (IRippleAction)action);
         }
         else if (genericDef == typeof(ProjectionLoadedAction<>))
         {
-            ReduceLoadedGeneric(projectionType, action);
+            ReduceProjectionLoaded(projectionType, action);
+        }
+        else if (genericDef == typeof(ProjectionUpdatedAction<>))
+        {
+            ReduceProjectionUpdated(projectionType, action);
         }
         else if (genericDef == typeof(ProjectionErrorAction<>))
         {
-            ReduceErrorGeneric(projectionType, action);
+            ReduceProjectionError(projectionType, (IRippleAction)action, action);
         }
         else if (genericDef == typeof(ProjectionConnectionChangedAction<>))
         {
-            ReduceConnectionChangedGeneric(projectionType, action);
+            ReduceProjectionConnectionChanged(projectionType, (IRippleAction)action, action);
         }
     }
 
-    private void ReduceLoadedAction<T>(
-        ProjectionLoadedAction<T> action
+    private void ReduceProjectionConnectionChanged(
+        Type projectionType,
+        IRippleAction rippleAction,
+        IAction action
     )
-        where T : class
     {
-        (Type, string EntityId) key = (typeof(T), action.EntityId);
-        ProjectionState<T> newState = new(action.EntityId)
+        Type actionType = action.GetType();
+        PropertyInfo isConnectedProp = actionType.GetProperty("IsConnected")!;
+        bool isConnected = (bool)isConnectedProp.GetValue(action)!;
+        (Type, string) key = (projectionType, rippleAction.EntityId);
+        if (projectionStates.TryGetValue(key, out object? existingState))
         {
-            Data = action.Data,
-            Version = action.Version,
-            IsLoaded = true,
-            IsLoading = false,
-        };
-        states[key] = newState;
+            Type stateType = existingState.GetType();
+            object withIsConnected = SetStateProperty(stateType, existingState, "IsConnected", isConnected);
+            projectionStates[key] = withIsConnected;
+        }
     }
 
-    private void ReduceLoadedGeneric(
+    private void ReduceProjectionError(
+        Type projectionType,
+        IRippleAction rippleAction,
+        IAction action
+    )
+    {
+        Type actionType = action.GetType();
+        PropertyInfo errorProp = actionType.GetProperty("Error")!;
+        Exception error = (Exception)errorProp.GetValue(action)!;
+        (Type, string) key = (projectionType, rippleAction.EntityId);
+
+        // Preserve existing data if available
+        object? existingData = null;
+        long? existingVersion = null;
+        if (projectionStates.TryGetValue(key, out object? existingState))
+        {
+            Type stateType = existingState.GetType();
+            existingData = stateType.GetProperty("Data")?.GetValue(existingState);
+            existingVersion = (long?)stateType.GetProperty("Version")?.GetValue(existingState);
+        }
+
+        Type newStateType = typeof(ProjectionState<>).MakeGenericType(projectionType);
+        ConstructorInfo constructor = newStateType.GetConstructor([typeof(string)])!;
+        object newState = constructor.Invoke([rippleAction.EntityId]);
+        newState = SetStateProperty(newStateType, newState, "Data", existingData);
+        newState = SetStateProperty(newStateType, newState, "Version", existingVersion);
+        newState = SetStateProperty(newStateType, newState, "IsLoading", false);
+        newState = SetStateProperty(newStateType, newState, "IsLoaded", false);
+        newState = SetStateProperty(newStateType, newState, "LastError", error);
+        projectionStates[key] = newState;
+    }
+
+    private void ReduceProjectionLoaded(
+        Type projectionType,
+        IAction action
+    )
+    {
+        Type actionType = action.GetType();
+        PropertyInfo entityIdProp = actionType.GetProperty("EntityId")!;
+        PropertyInfo dataProp = actionType.GetProperty("Data")!;
+        PropertyInfo versionProp = actionType.GetProperty("Version")!;
+        string entityId = (string)entityIdProp.GetValue(action)!;
+        object? data = dataProp.GetValue(action);
+        long version = (long)versionProp.GetValue(action)!;
+        (Type, string) key = (projectionType, entityId);
+        Type stateType = typeof(ProjectionState<>).MakeGenericType(projectionType);
+        ConstructorInfo constructor = stateType.GetConstructor([typeof(string)])!;
+        object newState = constructor.Invoke([entityId]);
+        newState = SetStateProperty(stateType, newState, "Data", data);
+        newState = SetStateProperty(stateType, newState, "Version", version);
+        newState = SetStateProperty(stateType, newState, "IsLoaded", true);
+        newState = SetStateProperty(stateType, newState, "IsLoading", false);
+        projectionStates[key] = newState;
+    }
+
+    private void ReduceProjectionLoading(
         Type projectionType,
         IRippleAction action
     )
     {
-        Type actionType = action.GetType();
-        PropertyInfo dataProp = actionType.GetProperty("Data")!;
-        PropertyInfo versionProp = actionType.GetProperty("Version")!;
-        object? data = dataProp.GetValue(action);
-        long version = (long)versionProp.GetValue(action)!;
         (Type, string) key = (projectionType, action.EntityId);
         Type stateType = typeof(ProjectionState<>).MakeGenericType(projectionType);
-        object newState = CreateLoadedState(stateType, action.EntityId, data, version);
-        states[key] = newState;
+        ConstructorInfo constructor = stateType.GetConstructor([typeof(string)])!;
+        object newState = constructor.Invoke([action.EntityId]);
+        newState = SetStateProperty(stateType, newState, "IsLoading", true);
+        projectionStates[key] = newState;
     }
 
-    private void ReduceLoadingAction<T>(
-        ProjectionLoadingAction<T> action
-    )
-        where T : class
-    {
-        (Type, string EntityId) key = (typeof(T), action.EntityId);
-        ProjectionState<T> newState = new(action.EntityId)
-        {
-            IsLoading = true,
-        };
-        states[key] = newState;
-    }
-
-    private void ReduceLoadingGeneric(
+    private void ReduceProjectionUpdated(
         Type projectionType,
-        string entityId
+        IAction action
     )
     {
-        (Type, string) key = (projectionType, entityId);
-        Type stateType = typeof(ProjectionState<>).MakeGenericType(projectionType);
+        // Same logic as Loaded - updates data and version
+        ReduceProjectionLoaded(projectionType, action);
+    }
 
-        // Use reflection to create with-expression equivalent
-        object withIsLoading = CreateStateWithProperty(stateType, entityId, true);
-        states[key] = withIsLoading;
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Effects are responsible for their own error handling; store must remain stable")]
+    private async Task TriggerEffectsAsync(
+        IAction action
+    )
+    {
+        foreach (IEffect effect in effects.Values)
+        {
+            if (!effect.CanHandle(action))
+            {
+                continue;
+            }
+
+            try
+            {
+                await foreach (IAction resultAction in effect.HandleAsync(action, CancellationToken.None))
+                {
+                    Dispatch(resultAction);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when effect is cancelled; don't propagate
+            }
+            catch (Exception)
+            {
+                // Effects should handle their own errors by emitting error actions.
+                // Swallow exceptions here to prevent effect failures from breaking dispatch.
+                // In production, effects should catch their own exceptions and emit error actions.
+            }
+        }
     }
 
     private void Unsubscribe(

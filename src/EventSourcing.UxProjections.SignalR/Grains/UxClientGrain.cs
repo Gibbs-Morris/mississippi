@@ -3,11 +3,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.UxProjections.SignalR.Grains.State;
+using Mississippi.EventSourcing.UxProjections.SignalR.Messages;
 
 using Orleans;
 using Orleans.Runtime;
+using Orleans.Streams;
 
 
 namespace Mississippi.EventSourcing.UxProjections.SignalR.Grains;
@@ -37,13 +40,16 @@ internal sealed class UxClientGrain
     ///     Initializes a new instance of the <see cref="UxClientGrain" /> class.
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="options">Configuration options for the Orleans backplane.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
     public UxClientGrain(
         IGrainContext grainContext,
+        IOptions<OrleansBackplaneOptions> options,
         ILogger<UxClientGrain> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
+        Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -51,6 +57,8 @@ internal sealed class UxClientGrain
     public IGrainContext GrainContext { get; }
 
     private ILogger<UxClientGrain> Logger { get; }
+
+    private IOptions<OrleansBackplaneOptions> Options { get; }
 
     /// <inheritdoc />
     public Task ConnectAsync(
@@ -102,7 +110,7 @@ internal sealed class UxClientGrain
     }
 
     /// <inheritdoc />
-    public Task SendMessageAsync(
+    public async Task SendMessageAsync(
         string methodName,
         object?[] args
     )
@@ -112,9 +120,24 @@ internal sealed class UxClientGrain
         string connectionId = ExtractConnectionId();
         Logger.SendingMessage(connectionId, methodName);
 
-        // Note: Actual message delivery is handled by the HubLifetimeManager.
-        // This grain stores state; the message is routed through Orleans streams.
-        return Task.CompletedTask;
+        // Get the server ID for this connection
+        if (string.IsNullOrEmpty(state.ServerId))
+        {
+            Logger.ClientNotConnected(connectionId);
+            return;
+        }
+
+        // Publish message to the server's stream for delivery
+        StreamId serverStreamId = StreamId.Create(Options.Value.ServerStreamNamespace, state.ServerId);
+        IAsyncStream<ServerMessage> stream = this.GetStreamProvider(Options.Value.StreamProviderName)
+            .GetStream<ServerMessage>(serverStreamId);
+        ServerMessage message = new()
+        {
+            ConnectionId = connectionId,
+            MethodName = methodName,
+            Args = args,
+        };
+        await stream.OnNextAsync(message);
     }
 
     private string ExtractConnectionId()

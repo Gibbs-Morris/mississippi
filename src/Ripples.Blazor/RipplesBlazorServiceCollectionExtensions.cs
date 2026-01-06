@@ -13,84 +13,42 @@ namespace Mississippi.Ripples.Blazor;
 public static class RipplesBlazorServiceCollectionExtensions
 {
     /// <summary>
-    ///     Registers a ripple for a specific projection type that can be used in Blazor components.
-    /// </summary>
-    /// <typeparam name="TProjection">The type of projection.</typeparam>
-    /// <param name="services">The service collection.</param>
-    /// <param name="factory">Factory function to create the ripple.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddRipple<TProjection>(
-        this IServiceCollection services,
-        Func<IServiceProvider, IRipple<TProjection>> factory
-    )
-        where TProjection : class
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(factory);
-        services.AddScoped(factory);
-        return services;
-    }
-
-    /// <summary>
-    ///     Registers a ripple pool for a specific projection type that can be used in Blazor components.
-    /// </summary>
-    /// <typeparam name="TProjection">The type of projection.</typeparam>
-    /// <param name="services">The service collection.</param>
-    /// <param name="factory">Factory function to create the ripple pool.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddRipplePool<TProjection>(
-        this IServiceCollection services,
-        Func<IServiceProvider, IRipplePool<TProjection>> factory
-    )
-        where TProjection : class
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(factory);
-        services.AddScoped(factory);
-        return services;
-    }
-
-    /// <summary>
-    ///     Adds Ripples Blazor services to the service collection.
+    ///     Adds the Ripples store to the service collection for Redux-style state management.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="maxCacheSize">
-    ///     Maximum number of projections to keep in cache. Default is 50.
-    ///     Older unused projections are evicted via LRU when this limit is reached.
-    /// </param>
+    /// <param name="configureStore">Optional action to configure the store with feature states.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <remarks>
     ///     <para>
-    ///         This method registers <see cref="IProjectionCache" /> as a scoped service
-    ///         (one instance per Blazor circuit). The cache persists projection data across
-    ///         page navigations and uses LRU eviction when the cache limit is reached.
+    ///         This method registers <see cref="IRippleStore" /> as a scoped service
+    ///         (one instance per Blazor circuit). Use with <see cref="RippleComponent" />
+    ///         for automatic state subscription and disposal.
     ///     </para>
-    ///     <para>
-    ///         For Blazor Server, call this followed by:
+    ///     <example>
     ///         <code>
-    /// services.AddRipplesBlazor();
-    /// services.AddRipplesServer();
-    /// services.AddServerRipple&lt;MyProjection&gt;();
+    /// // Register reducers with DI:
+    /// services.AddReducer&lt;ToggleSidebarAction, SidebarState, ToggleSidebarReducer&gt;();
+    /// 
+    /// // Then register the store:
+    /// services.AddRippleStore(store =&gt;
+    /// {
+    ///     store.RegisterFeatureState&lt;SidebarState&gt;();
+    /// });
     /// </code>
-    ///     </para>
-    ///     <para>
-    ///         For Blazor WebAssembly, call this followed by:
-    ///         <code>
-    /// services.AddRipplesBlazor();
-    /// services.AddRipplesClient(options => options.BaseApiUri = new Uri("https://api.example.com"));
-    /// services.AddClientRipple&lt;MyProjection&gt;();
-    /// </code>
-    ///     </para>
+    ///     </example>
     /// </remarks>
-    public static IServiceCollection AddRipplesBlazor(
+    public static IServiceCollection AddRippleStore(
         this IServiceCollection services,
-        int maxCacheSize = 50
+        Action<IRippleStore>? configureStore = null
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-
-        // Register the circuit-scoped projection cache
-        services.AddScoped<IProjectionCache>(sp => new ProjectionCache(sp, maxCacheSize));
+        services.AddScoped<IRippleStore>(sp =>
+        {
+            RippleStore store = new(sp);
+            configureStore?.Invoke(store);
+            return store;
+        });
         return services;
     }
 }

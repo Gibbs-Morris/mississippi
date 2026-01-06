@@ -27,8 +27,8 @@ public static class RipplesServerServiceCollectionExtensions
     ///         </list>
     ///     </para>
     ///     <para>
-    ///         After calling this, register individual ripple factories using
-    ///         <see cref="AddServerRipple{TProjection}" /> for each projection type.
+    ///         Use in combination with <see cref="Blazor.RipplesBlazorServiceCollectionExtensions.AddRippleStore" />
+    ///         for Redux-style state management in Blazor Server applications.
     ///     </para>
     ///     <para>
     ///         The services rely on Orleans grain factory being available for projection access.
@@ -65,22 +65,6 @@ public static class RipplesServerServiceCollectionExtensions
 
         // Let the caller configure the notifier
         configureNotifier(services);
-        return services;
-    }
-
-    /// <summary>
-    ///     Registers a server ripple factory for the specified projection type.
-    /// </summary>
-    /// <typeparam name="TProjection">The projection type.</typeparam>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddServerRipple<TProjection>(
-        this IServiceCollection services
-    )
-        where TProjection : class
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        services.AddSingleton<IRippleFactory<TProjection>, ServerRippleFactory<TProjection>>();
         return services;
     }
 }

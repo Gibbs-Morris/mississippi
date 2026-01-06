@@ -1,7 +1,7 @@
 ---
 name: CoV-enterprise-solo
 description: End-to-end enterprise coding agent that performs Chain-of-Verification before editing, then implements and validates (cloud-host friendly).
-tools: ["read", "search", "edit", "execute"]
+tools: ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'github/*', 'copilot-container-tools/*', 'microsoft.docs.mcp/*', 'agent', 'github.vscode-pull-request-github/copilotCodingAgent', 'github.vscode-pull-request-github/issue_fetch', 'github.vscode-pull-request-github/suggest-fix', 'github.vscode-pull-request-github/searchSyntax', 'github.vscode-pull-request-github/doSearch', 'github.vscode-pull-request-github/renderIssues', 'github.vscode-pull-request-github/activePullRequest', 'github.vscode-pull-request-github/openPullRequest', 'todo']
 metadata:
   specialization: enterprise-systems
   workflow: chain-of-verification

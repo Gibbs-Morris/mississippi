@@ -1,0 +1,47 @@
+// <copyright file="ServerMessage.cs" company="Gibbs-Morris">
+// Proprietary and Confidential.
+// All rights reserved.
+// </copyright>
+
+using System.Collections.Generic;
+
+using Orleans;
+
+
+namespace Mississippi.AspNetCore.SignalR.Orleans.Messages;
+
+/// <summary>
+///     Represents a message targeted at a specific SignalR connection via the Orleans backplane.
+/// </summary>
+/// <remarks>
+///     <para>
+///         These messages are published to server-specific Orleans streams
+///         when a connection resides on a different server than the sender.
+///     </para>
+///     <para>
+///         This message type is used by <c>SignalRClientGrain</c> (on silos) to publish
+///         messages that <c>OrleansHubLifetimeManager</c> (on ASP.NET pods) consumes.
+///     </para>
+/// </remarks>
+[GenerateSerializer]
+[Alias("Mississippi.AspNetCore.SignalR.Orleans.ServerMessage")]
+public sealed record ServerMessage
+{
+    /// <summary>
+    ///     Gets the arguments to pass to the hub method.
+    /// </summary>
+    [Id(2)]
+    public IReadOnlyList<object?> Args { get; init; } = [];
+
+    /// <summary>
+    ///     Gets the target connection identifier.
+    /// </summary>
+    [Id(0)]
+    public string ConnectionId { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     Gets the name of the hub method to invoke.
+    /// </summary>
+    [Id(1)]
+    public string MethodName { get; init; } = string.Empty;
+}

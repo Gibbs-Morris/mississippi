@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Description>Orleans grains for Ripples projection subscription management. Provides RippleSubscriptionGrain for per-connection subscription tracking with brook stream deduplication. Safe for silo deployment - no SignalR dependencies.</Description>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Orleans.Sdk" />
+		<PackageReference Include="Microsoft.Orleans.Streaming" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\AspNetCore.SignalR.Orleans.Abstractions\AspNetCore.SignalR.Orleans.Abstractions.csproj" />
+		<ProjectReference Include="..\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+		<ProjectReference Include="..\Ripples.Abstractions\Ripples.Abstractions.csproj" />
+	</ItemGroup>
+</Project>

@@ -1,6 +1,7 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
+using Aspire.Hosting.Orleans;
 
 using Projects;
 
@@ -18,8 +19,7 @@ IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmo
 _ = cosmos.AddCosmosDatabase("cascade-db");
 
 // Add Orleans resource with Azure Table Storage clustering
-IResourceBuilder<OrleansService> orleans = builder.AddOrleans("default")
-    .WithClustering(clusteringTable);
+OrleansService orleans = builder.AddOrleans("default").WithClustering(clusteringTable);
 
 // Add Cascade Server (Orleans silo) with resource references
 // WaitFor ensures the server doesn't start until emulators are ready
@@ -30,14 +30,4 @@ builder.AddProject<Cascade_Server>("cascade-server")
     .WaitFor(cosmos)
     .WithReference(orleans) // Reference Orleans as a silo
     .WithExternalHttpEndpoints();
-
-// Add Cascade WebApi (Orleans client) serving WASM with resource references
-builder.AddProject<Cascade_WebApi>("cascade-webapi")
-    .WithReference(blobs)
-    .WaitFor(storage)
-    .WithReference(cosmos)
-    .WaitFor(cosmos)
-    .WithReference(orleans.AsClient()) // Reference Orleans as a client
-    .WithExternalHttpEndpoints();
-
 await builder.Build().RunAsync();

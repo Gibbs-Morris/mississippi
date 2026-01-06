@@ -1,9 +1,13 @@
 namespace Mississippi.Ripples.Abstractions.Actions;
 
 /// <summary>
-///     Marker interface for ripple actions.
+///     Marker interface for server-synced ripple actions that target a specific entity.
 /// </summary>
-public interface IRippleAction
+/// <remarks>
+///     Extends <see cref="IAction" /> with an <see cref="EntityId" /> property for actions
+///     that interact with projections or aggregates identified by an entity key.
+/// </remarks>
+public interface IRippleAction : IAction
 {
     /// <summary>
     ///     Gets the entity identifier this action applies to.

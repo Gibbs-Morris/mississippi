@@ -1,13 +1,12 @@
 using System;
 
 using Cascade.Components.Services;
-using Cascade.Domain.Projections.ChannelMemberList;
-using Cascade.Domain.Projections.ChannelMessages;
-using Cascade.Domain.Projections.UserProfile;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Ripples.Blazor;
+using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.Ripples;
+using Mississippi.Ripples.Abstractions;
 using Mississippi.Ripples.Server;
 
 
@@ -37,16 +36,19 @@ internal static class CascadeServerServiceCollectionExtensions
         // Register ChatService as scoped (one per Blazor circuit)
         services.AddScoped<IChatService, ChatService>();
 
-        // Register Ripples Blazor infrastructure (IProjectionCache)
-        services.AddRipplesBlazor();
-
         // Register Ripples Server infrastructure (IProjectionUpdateNotifier)
         services.AddRipplesServer();
 
-        // Register server ripples for each projection type used in the UI
-        services.AddServerRipple<UserProfileProjection>();
-        services.AddServerRipple<ChannelMemberListProjection>();
-        services.AddServerRipple<ChannelMessagesProjection>();
+        // Register RippleStore with the subscription effect
+        // The effect needs the store to dispatch real-time updates, so we create them together.
+        // RippleStore.CreateWithEffect takes ownership of the effect and disposes it on store disposal.
+        services.AddScoped<IRippleStore>(sp =>
+        {
+            IUxProjectionGrainFactory grainFactory = sp.GetRequiredService<IUxProjectionGrainFactory>();
+            IProjectionUpdateNotifier notifier = sp.GetRequiredService<IProjectionUpdateNotifier>();
+            return RippleStore.CreateWithEffect(store =>
+                new ServerProjectionSubscriptionEffect(store, grainFactory, notifier));
+        });
         return services;
     }
 }

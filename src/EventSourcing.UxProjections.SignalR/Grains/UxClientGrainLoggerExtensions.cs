@@ -52,6 +52,15 @@ internal static partial class UxClientGrainLoggerExtensions
     );
 
     [LoggerMessage(
+        EventId = 7,
+        Level = LogLevel.Warning,
+        Message = "Cannot send message to client '{ConnectionId}' - connection not registered")]
+    public static partial void ClientNotConnected(
+        this ILogger logger,
+        string connectionId
+    );
+
+    [LoggerMessage(
         EventId = 6,
         Level = LogLevel.Debug,
         Message = "Sending message '{MethodName}' to client '{ConnectionId}'")]

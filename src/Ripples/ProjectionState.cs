@@ -9,7 +9,7 @@ namespace Mississippi.Ripples;
 ///     Immutable state container for a projection entity.
 /// </summary>
 /// <typeparam name="T">The projection type.</typeparam>
-internal sealed record ProjectionState<T> : IProjectionState<T>
+public sealed record ProjectionState<T> : IProjectionState<T>
     where T : class
 {
     /// <summary>

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,7 +10,8 @@ using Cascade.Server.ViewModels;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Ripples.Abstractions;
+using Mississippi.Ripples.Abstractions.State;
+using Mississippi.Ripples.Blazor;
 
 
 namespace Cascade.Server.Components.Organisms;
@@ -19,9 +19,7 @@ namespace Cascade.Server.Components.Organisms;
 /// <summary>
 ///     Organism component that owns state and dispatches commands.
 /// </summary>
-public sealed partial class ChannelView
-    : ComponentBase,
-      IAsyncDisposable
+public sealed partial class ChannelView : RippleComponent
 {
     private readonly List<MemberViewModel> members = [];
 
@@ -33,9 +31,7 @@ public sealed partial class ChannelView
 
     private bool isSending;
 
-    private IProjectionBinder<ChannelMemberListProjection>? memberBinder;
-
-    private IProjectionBinder<ChannelMessagesProjection>? messagesBinder;
+    private string? lastChannelId;
 
     /// <summary>
     ///     Gets or sets the channel identifier to display.
@@ -53,58 +49,54 @@ public sealed partial class ChannelView
     [Inject]
     private IChatService ChatService { get; set; } = default!;
 
-    [Inject]
-    private IProjectionCache ProjectionCache { get; set; } = default!;
+    /// <summary>
+    ///     Gets the channel member list projection state.
+    /// </summary>
+    private IProjectionState<ChannelMemberListProjection>? MembersState =>
+        !string.IsNullOrEmpty(ChannelId) ? GetProjectionState<ChannelMemberListProjection>(ChannelId) : null;
+
+    /// <summary>
+    ///     Gets the channel messages projection state.
+    /// </summary>
+    private IProjectionState<ChannelMessagesProjection>? MessagesState =>
+        !string.IsNullOrEmpty(ChannelId) ? GetProjectionState<ChannelMessagesProjection>(ChannelId) : null;
 
     [Inject]
     private UserSession Session { get; set; } = default!;
 
     /// <inheritdoc />
-    public async ValueTask DisposeAsync()
+    protected override void OnParametersSet()
     {
-        if (messagesBinder is not null)
-        {
-            await messagesBinder.DisposeAsync();
-        }
-
-        if (memberBinder is not null)
-        {
-            await memberBinder.DisposeAsync();
-        }
-    }
-
-    /// <inheritdoc />
-    protected override void OnInitialized()
-    {
-        // Create binders once - they handle entity ID switching automatically
-        messagesBinder = ProjectionCache.CreateBinder<ChannelMessagesProjection>();
-        memberBinder = ProjectionCache.CreateBinder<ChannelMemberListProjection>();
-    }
-
-    /// <inheritdoc />
-    protected override async Task OnParametersSetAsync()
-    {
+        base.OnParametersSet();
         if (string.IsNullOrEmpty(ChannelId))
         {
             return;
         }
 
-        isLoading = true;
-        StateHasChanged();
-        try
+        // Unsubscribe from old channel if changed
+        if ((lastChannelId != null) && (lastChannelId != ChannelId))
         {
-            // Bind to projections - binders handle switching if ChannelId changes
-            await messagesBinder!.BindAsync(ChannelId, UpdateMessages);
-            await memberBinder!.BindAsync(ChannelId, UpdateMembers);
-
-            // Initialize from current values if already loaded
-            UpdateMessages();
-            UpdateMembers();
+            UnsubscribeFromProjection<ChannelMessagesProjection>(lastChannelId);
+            UnsubscribeFromProjection<ChannelMemberListProjection>(lastChannelId);
         }
-        finally
+
+        // Subscribe to new channel
+        if (lastChannelId != ChannelId)
+        {
+            isLoading = true;
+            SubscribeToProjection<ChannelMessagesProjection>(ChannelId);
+            SubscribeToProjection<ChannelMemberListProjection>(ChannelId);
+            lastChannelId = ChannelId;
+        }
+
+        // Update view models from projection state
+        UpdateMessages();
+        UpdateMembers();
+
+        // Check loading state
+        if ((MessagesState != null) && !MessagesState.IsLoading)
         {
             isLoading = false;
-            StateHasChanged();
         }
     }
 
@@ -146,7 +138,7 @@ public sealed partial class ChannelView
 
     private void UpdateMembers()
     {
-        if (memberBinder?.Current is { } projection)
+        if (MembersState?.Data is { } projection)
         {
             members.Clear();
             members.AddRange(
@@ -157,13 +149,11 @@ public sealed partial class ChannelView
                     IsOnline = true, // Could be tracked via separate projection
                 }));
         }
-
-        _ = InvokeAsync(StateHasChanged);
     }
 
     private void UpdateMessages()
     {
-        if (messagesBinder?.Current is { } projection)
+        if (MessagesState?.Data is { } projection)
         {
             messages.Clear();
             messages.AddRange(
@@ -176,7 +166,5 @@ public sealed partial class ChannelView
                     SentAt = message.SentAt,
                 }));
         }
-
-        _ = InvokeAsync(StateHasChanged);
     }
 }

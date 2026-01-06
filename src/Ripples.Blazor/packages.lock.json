@@ -484,6 +484,13 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Ripples": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Mississippi.Ripples.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Ripples.Abstractions": {
         "type": "Project",
         "dependencies": {

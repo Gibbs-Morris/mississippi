@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
+using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
 using Mississippi.EventSourcing.UxProjections.SignalR.Grains;
 
@@ -98,6 +99,12 @@ public sealed class UxProjectionHub : Hub<IUxProjectionHubClient>
         // Add to SignalR group for direct projection grain notifications
         string groupName = $"projection:{projectionType}:{entityId}";
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+
+        // Activate the notification grain to start forwarding cursor updates to SignalR
+        UxProjectionKey projectionKey = new(projectionType, new(brookType, entityId));
+        IUxProjectionNotificationGrain notificationGrain =
+            GrainFactory.GetGrain<IUxProjectionNotificationGrain>(projectionKey.ToString());
+        await notificationGrain.ActivateAsync();
 
         // Track subscription in per-connection grain
         UxProjectionSubscriptionRequest request = new()

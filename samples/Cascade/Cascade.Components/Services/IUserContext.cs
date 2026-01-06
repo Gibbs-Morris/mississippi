@@ -25,12 +25,6 @@ namespace Cascade.Components.Services;
 public interface IUserContext
 {
     /// <summary>
-    ///     Gets the current user's identifier.
-    /// </summary>
-    /// <value>The user identifier if authenticated; otherwise, <c>null</c>.</value>
-    string? UserId { get; }
-
-    /// <summary>
     ///     Gets the current user's display name.
     /// </summary>
     /// <value>The display name if authenticated; otherwise, <c>null</c>.</value>
@@ -40,4 +34,10 @@ public interface IUserContext
     ///     Gets a value indicating whether the user is authenticated.
     /// </summary>
     bool IsAuthenticated { get; }
+
+    /// <summary>
+    ///     Gets the current user's identifier.
+    /// </summary>
+    /// <value>The user identifier if authenticated; otherwise, <c>null</c>.</value>
+    string? UserId { get; }
 }

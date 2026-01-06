@@ -49,7 +49,7 @@ public sealed class RippleStoreTests : IDisposable
 
         // Act
         sut.Dispatch(connectedAction);
-        IProjectionState<TestProjection>? state = sut.GetState<TestProjection>("non-existent");
+        IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("non-existent");
 
         // Assert - no state should be created
         Assert.Null(state);
@@ -69,7 +69,7 @@ public sealed class RippleStoreTests : IDisposable
         // Act
         sut.Dispatch(loadedAction);
         sut.Dispatch(connectedAction);
-        IProjectionState<TestProjection>? state = sut.GetState<TestProjection>("entity-1");
+        IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("entity-1");
 
         // Assert
         Assert.NotNull(state);
@@ -166,7 +166,7 @@ public sealed class RippleStoreTests : IDisposable
         store.Dispose();
 
         // Act & Assert - store was disposed
-        Assert.Throws<ObjectDisposedException>(() => store.GetState<TestProjection>("entity-1"));
+        Assert.Throws<ObjectDisposedException>(() => store.GetProjectionState<TestProjection>("entity-1"));
     }
 
     /// <summary>
@@ -177,7 +177,7 @@ public sealed class RippleStoreTests : IDisposable
     public void GetStateReturnsNullWhenNoStateExists()
     {
         // Arrange & Act
-        IProjectionState<TestProjection>? state = sut.GetState<TestProjection>("entity-1");
+        IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("entity-1");
 
         // Assert
         Assert.Null(state);
@@ -195,7 +195,7 @@ public sealed class RippleStoreTests : IDisposable
 
         // Act
         sut.Dispatch(action);
-        IProjectionState<TestProjection>? state = sut.GetState<TestProjection>("entity-1");
+        IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("entity-1");
 
         // Assert
         Assert.NotNull(state);
@@ -217,7 +217,7 @@ public sealed class RippleStoreTests : IDisposable
 
         // Act
         sut.Dispatch(loadedAction);
-        IProjectionState<TestProjection>? state = sut.GetState<TestProjection>("entity-1");
+        IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("entity-1");
 
         // Assert
         Assert.NotNull(state);
@@ -243,7 +243,7 @@ public sealed class RippleStoreTests : IDisposable
         // Act
         sut.Dispatch(loadingAction);
         sut.Dispatch(errorAction);
-        IProjectionState<TestProjection>? state = sut.GetState<TestProjection>("entity-1");
+        IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("entity-1");
 
         // Assert
         Assert.NotNull(state);

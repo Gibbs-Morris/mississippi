@@ -1,4 +1,4 @@
-@implements IAsyncDisposable
+@inherits RippleComponent
 
 <div class="channel-list">
     <div class="channel-list-header">
@@ -8,11 +8,11 @@
         </button>
     </div>
 
-    @if (subscription is null || !subscription.IsLoaded)
+    @if (UserProfileState is null || UserProfileState.IsLoading)
     {
         <div class="loading">Loading channels...</div>
     }
-    else if (subscription.Current?.ChannelIds.Count == 0)
+    else if (UserProfileState.Data?.ChannelIds.Count == 0)
     {
         <div class="empty-state">
             <p>No channels yet.</p>
@@ -22,7 +22,7 @@
     else
     {
         <ul class="channel-items">
-            @foreach (string channelId in subscription.Current!.ChannelIds)
+            @foreach (string channelId in UserProfileState.Data!.ChannelIds)
             {
                 <li class="channel-item @(SelectedChannelId == channelId ? "selected" : "")"
                     @onclick="() => SelectChannelAsync(channelId)">

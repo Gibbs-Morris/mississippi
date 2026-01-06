@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 
 using Cascade.Domain.Projections.UserProfile;
@@ -6,7 +5,8 @@ using Cascade.Server.Services;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Ripples.Abstractions;
+using Mississippi.Ripples.Abstractions.State;
+using Mississippi.Ripples.Blazor;
 
 
 namespace Cascade.Server.Components.Shared;
@@ -14,13 +14,9 @@ namespace Cascade.Server.Components.Shared;
 /// <summary>
 ///     Component for displaying a list of channels the user belongs to.
 /// </summary>
-public sealed partial class ChannelList
-    : ComponentBase,
-      IAsyncDisposable
+public sealed partial class ChannelList : RippleComponent
 {
     private bool showCreateModal;
-
-    private IProjectionSubscription<UserProfileProjection>? subscription;
 
     /// <summary>
     ///     Gets or sets the callback when a channel is selected.
@@ -37,29 +33,22 @@ public sealed partial class ChannelList
     [Inject]
     private NavigationManager Navigation { get; set; } = default!;
 
-    [Inject]
-    private IProjectionCache ProjectionCache { get; set; } = default!;
+    /// <summary>
+    ///     Gets the user profile projection state.
+    /// </summary>
+    private IProjectionState<UserProfileProjection>? UserProfileState =>
+        UserSession.UserId is not null ? GetProjectionState<UserProfileProjection>(UserSession.UserId) : null;
 
     [Inject]
     private UserSession UserSession { get; set; } = default!;
 
     /// <inheritdoc />
-    public async ValueTask DisposeAsync()
+    protected override void OnParametersSet()
     {
-        if (subscription is not null)
+        base.OnParametersSet();
+        if (UserSession.IsAuthenticated && UserSession.UserId is not null)
         {
-            await subscription.DisposeAsync();
-        }
-    }
-
-    /// <inheritdoc />
-    protected override async Task OnInitializedAsync()
-    {
-        if (UserSession.IsAuthenticated)
-        {
-            subscription = await ProjectionCache.SubscribeAsync<UserProfileProjection>(
-                UserSession.UserId!,
-                () => _ = InvokeAsync(StateHasChanged));
+            SubscribeToProjection<UserProfileProjection>(UserSession.UserId);
         }
     }
 

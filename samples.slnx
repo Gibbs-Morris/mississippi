@@ -9,8 +9,6 @@
         <Project Path="samples\Cascade\Cascade.AppHost\Cascade.AppHost.csproj" />
         <Project Path="samples\Cascade\Cascade.Components\Cascade.Components.csproj" />
         <Project Path="samples\Cascade\Cascade.Server\Cascade.Server.csproj" />
-        <Project Path="samples\Cascade\Cascade.WebApi\Cascade.WebApi.csproj" />
-        <Project Path="samples\Cascade\Cascade.WebApi.Client\Cascade.WebApi.Client.csproj" />
         <Project Path="samples\Cascade\Cascade.Domain\Cascade.Domain.csproj" />
         <Project Path="samples\Cascade\Cascade.Domain.L0Tests\Cascade.Domain.L0Tests.csproj" />
         <Project Path="samples\Cascade\Cascade.L2Tests\Cascade.L2Tests.csproj" />
@@ -27,6 +25,9 @@
 
     <Folder Name="/Framework/Core/">
         <Project Path="src\AspNetCore.Orleans\AspNetCore.Orleans.csproj" />
+        <Project Path="src\AspNetCore.SignalR.Orleans.Abstractions\AspNetCore.SignalR.Orleans.Abstractions.csproj" />
+        <Project Path="src\AspNetCore.SignalR.Orleans.Grains\AspNetCore.SignalR.Orleans.Grains.csproj" />
+        <Project Path="src\AspNetCore.SignalR.Orleans\AspNetCore.SignalR.Orleans.csproj" />
         <Project Path="src\Core.Abstractions\Core.Abstractions.csproj" />
         <Project Path="src\Core\Core.csproj" />
         <Project Path="src\Core.Cosmos\Core.Cosmos.csproj" />
@@ -57,8 +58,9 @@
         <Project Path="src\Ripples.Abstractions\Ripples.Abstractions.csproj" />
         <Project Path="src\Ripples\Ripples.csproj" />
         <Project Path="src\Ripples.Blazor\Ripples.Blazor.csproj" />
-        <Project Path="src\Ripples.Client\Ripples.Client.csproj" />
         <Project Path="src\Ripples.Generators\Ripples.Generators.csproj" />
+        <Project Path="src\Ripples.Orleans\Ripples.Orleans.csproj" />
+        <Project Path="src\Ripples.Orleans.SignalR\Ripples.Orleans.SignalR.csproj" />
         <Project Path="src\Ripples.Server\Ripples.Server.csproj" />
     </Folder>
 
@@ -95,7 +97,6 @@
         <Project Path="tests\Ripples.Abstractions.L0Tests\Ripples.Abstractions.L0Tests.csproj" />
         <Project Path="tests\Ripples.L0Tests\Ripples.L0Tests.csproj" />
         <Project Path="tests\Ripples.Blazor.L0Tests\Ripples.Blazor.L0Tests.csproj" />
-        <Project Path="tests\Ripples.Client.L0Tests\Ripples.Client.L0Tests.csproj" />
         <Project Path="tests\Ripples.Generators.L0Tests\Ripples.Generators.L0Tests.csproj" />
         <Project Path="tests\Ripples.Server.L0Tests\Ripples.Server.L0Tests.csproj" />
     </Folder>

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.UxProjections.SignalR.Grains;
 
@@ -30,10 +31,12 @@ public sealed class UxClientGrainTests
     )
     {
         Mock<IGrainContext> context = new();
+        Mock<IOptions<OrleansBackplaneOptions>> options = new();
+        options.Setup(o => o.Value).Returns(new OrleansBackplaneOptions());
         Mock<ILogger<UxClientGrain>> logger = new();
         GrainId grainId = GrainId.Create("ux-client", grainKey);
         context.SetupGet(c => c.GrainId).Returns(grainId);
-        return new(context.Object, logger.Object);
+        return new(context.Object, options.Object, logger.Object);
     }
 
     private const string HubName = "TestHub";
@@ -93,10 +96,12 @@ public sealed class UxClientGrainTests
     public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
+        Mock<IOptions<OrleansBackplaneOptions>> options = new();
+        options.Setup(o => o.Value).Returns(new OrleansBackplaneOptions());
         Mock<ILogger<UxClientGrain>> logger = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UxClientGrain(null!, logger.Object));
+        Assert.Throws<ArgumentNullException>(() => new UxClientGrain(null!, options.Object, logger.Object));
     }
 
     /// <summary>
@@ -107,9 +112,25 @@ public sealed class UxClientGrainTests
     {
         // Arrange
         Mock<IGrainContext> context = new();
+        Mock<IOptions<OrleansBackplaneOptions>> options = new();
+        options.Setup(o => o.Value).Returns(new OrleansBackplaneOptions());
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UxClientGrain(context.Object, null!));
+        Assert.Throws<ArgumentNullException>(() => new UxClientGrain(context.Object, options.Object, null!));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when options is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenOptionsIsNull()
+    {
+        // Arrange
+        Mock<IGrainContext> context = new();
+        Mock<ILogger<UxClientGrain>> logger = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new UxClientGrain(context.Object, null!, logger.Object));
     }
 
     /// <summary>
