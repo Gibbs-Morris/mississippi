@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Cascade.Components.Services;
 using Cascade.Domain.User;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
@@ -22,7 +23,7 @@ namespace Cascade.Server.Services;
 ///         In production, use ASP.NET Core authentication and authorization.
 ///     </para>
 /// </remarks>
-internal sealed class UserSession
+internal sealed class UserSession : IUserContext
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="UserSession" /> class.

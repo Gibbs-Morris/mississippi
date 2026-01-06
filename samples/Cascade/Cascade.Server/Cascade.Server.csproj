@@ -32,6 +32,9 @@
 
     <!-- Domain -->
     <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj" />
+
+    <!-- Shared Components -->
+    <ProjectReference Include="..\Cascade.Components\Cascade.Components.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Cascade.Components.Services;
 using Cascade.Domain.Channel;
 using Cascade.Domain.Conversation;
 using Cascade.Domain.User;

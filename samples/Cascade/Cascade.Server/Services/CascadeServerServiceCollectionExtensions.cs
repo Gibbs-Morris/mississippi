@@ -1,5 +1,6 @@
 using System;
 
+using Cascade.Components.Services;
 using Cascade.Domain.Projections.ChannelMemberList;
 using Cascade.Domain.Projections.ChannelMessages;
 using Cascade.Domain.Projections.UserProfile;
@@ -29,7 +30,9 @@ internal static class CascadeServerServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         // Register UserSession as scoped (one per Blazor circuit)
+        // Also register as IUserContext for shared components
         services.AddScoped<UserSession>();
+        services.AddScoped<IUserContext>(sp => sp.GetRequiredService<UserSession>());
 
         // Register ChatService as scoped (one per Blazor circuit)
         services.AddScoped<IChatService, ChatService>();

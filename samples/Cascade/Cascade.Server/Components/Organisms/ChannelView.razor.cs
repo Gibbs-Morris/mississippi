@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Cascade.Components.Services;
 using Cascade.Domain.Projections.ChannelMemberList;
 using Cascade.Domain.Projections.ChannelMessages;
 using Cascade.Server.Services;

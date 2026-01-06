@@ -59,8 +59,10 @@ internal sealed class WasmProjectionCache : IProjectionCache
             .WithAutomaticReconnect()
             .Build();
         hubConnection.Reconnected += OnReconnectedAsync;
+
+        // Subscribe to the hub's client callback method (OnProjectionChangedAsync)
         projectionUpdatedSubscription = hubConnection.On<string, string, long>(
-            RippleHubConstants.ProjectionUpdatedMethod,
+            "OnProjectionChangedAsync",
             OnProjectionUpdatedAsync);
     }
 
@@ -177,15 +179,20 @@ internal sealed class WasmProjectionCache : IProjectionCache
             subscriptionKey,
             _ => new SubscriptionGroup(projectionType, entityId));
 
-        // Subscribe on the hub
+        // Subscribe on the hub using the actual hub method signature
+        // The UxProjectionHub expects: SubscribeToProjectionAsync(projectionType, brookType, entityId)
+        // Returns the subscription ID for later unsubscription
         if (hubConnection.State == HubConnectionState.Connected)
         {
-            await hubConnection.InvokeAsync(
-                    RippleHubConstants.SubscribeMethod,
+            string brookType = GetBrookTypeForProjection(projectionType);
+            string hubSubscriptionId = await hubConnection.InvokeAsync<string>(
+                    "SubscribeToProjectionAsync",
                     projectionType,
+                    brookType,
                     entityId,
                     cancellationToken)
                 .ConfigureAwait(false);
+            group.HubSubscriptionId = hubSubscriptionId;
         }
 
         // Fetch initial data if not cached
@@ -241,12 +248,18 @@ internal sealed class WasmProjectionCache : IProjectionCache
         string subscriptionKey = CreateSubscriptionKey(projectionType, entityId);
         if (subscriptions.TryGetValue(subscriptionKey, out SubscriptionGroup? group))
         {
+            string? subscriptionIdFromHub = group.HubSubscriptionId;
             group.Remove(subscriptionId);
-            if (group.IsEmpty && subscriptions.TryRemove(subscriptionKey, out _))
+
+            // Unsubscribe from hub using the actual hub method signature
+            // The UxProjectionHub expects: UnsubscribeFromProjectionAsync(subscriptionId, projectionType, entityId)
+            if (group.IsEmpty &&
+                subscriptions.TryRemove(subscriptionKey, out _) &&
+                !string.IsNullOrEmpty(subscriptionIdFromHub))
             {
-                // Unsubscribe from hub
                 _ = hubConnection.InvokeAsync(
-                    RippleHubConstants.UnsubscribeMethod,
+                    "UnsubscribeFromProjectionAsync",
+                    subscriptionIdFromHub,
                     projectionType,
                     entityId);
             }
@@ -263,6 +276,25 @@ internal sealed class WasmProjectionCache : IProjectionCache
         string entityId
     ) =>
         $"{projectionType}:{entityId}";
+
+    /// <summary>
+    ///     Gets the brook type for a given projection type.
+    /// </summary>
+    /// <remarks>
+    ///     This maps projection types to their corresponding brook types for Cascade sample.
+    /// </remarks>
+    private static string GetBrookTypeForProjection(
+        string projectionType
+    ) =>
+        projectionType switch
+        {
+            "ChannelMessagesProjection" => "CASCADE:CHAT:CONVERSATION",
+            "ChannelMemberListProjection" => "CASCADE:CHAT:CHANNEL",
+            "UserProfileProjection" => "CASCADE:CHAT:USER",
+            "UserChannelListProjection" => "CASCADE:CHAT:USER",
+            "OnlineUsersProjection" => "CASCADE:CHAT:USER",
+            _ => "UNKNOWN",
+        };
 
     private async Task EnsureConnectedAsync(
         CancellationToken cancellationToken
@@ -339,11 +371,14 @@ internal sealed class WasmProjectionCache : IProjectionCache
         // Re-subscribe to all active subscriptions
         foreach ((string _, SubscriptionGroup group) in subscriptions)
         {
-            await hubConnection.InvokeAsync(
-                    RippleHubConstants.SubscribeMethod,
+            string brookType = GetBrookTypeForProjection(group.ProjectionType);
+            string hubSubscriptionId = await hubConnection.InvokeAsync<string>(
+                    "SubscribeToProjectionAsync",
                     group.ProjectionType,
+                    brookType,
                     group.EntityId)
                 .ConfigureAwait(false);
+            group.HubSubscriptionId = hubSubscriptionId;
         }
     }
 
@@ -376,6 +411,11 @@ internal sealed class WasmProjectionCache : IProjectionCache
         }
 
         public string EntityId { get; }
+
+        /// <summary>
+        ///     Gets or sets the subscription ID returned from the SignalR hub.
+        /// </summary>
+        public string? HubSubscriptionId { get; set; }
 
         public bool IsEmpty => callbacks.IsEmpty;
 
