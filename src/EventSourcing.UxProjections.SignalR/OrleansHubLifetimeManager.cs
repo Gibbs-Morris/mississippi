@@ -171,7 +171,7 @@ internal sealed class OrleansHubLifetimeManager<THub>
     {
         ArgumentNullException.ThrowIfNull(connection);
         Logger.ConnectionDisconnecting(connection.ConnectionId, hubName);
-        _ = connections.TryRemove(connection.ConnectionId, out HubConnectionContext _);
+        _ = connections.TryRemove(connection.ConnectionId, out _);
         IUxClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.DisconnectAsync();
         Logger.ConnectionUnregistered(connection.ConnectionId, hubName);
