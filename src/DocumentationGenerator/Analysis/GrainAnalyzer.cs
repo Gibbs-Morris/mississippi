@@ -181,7 +181,10 @@ public sealed partial class GrainAnalyzer
 
         foreach (Match match in GrainFactoryCallRegex.Matches(content))
         {
-            grainCalls.Add(match.Groups[1].Value);
+            // Factory method names like GetBrookReaderGrain capture "BrookReaderGrain"
+            // Prefix with 'I' to match interface naming convention
+            string grainName = match.Groups[1].Value;
+            grainCalls.Add("I" + grainName);
         }
 
         return new GrainInfo

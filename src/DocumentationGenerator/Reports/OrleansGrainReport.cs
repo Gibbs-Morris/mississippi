@@ -175,7 +175,9 @@ public sealed class OrleansGrainReport : IDocumentationReport
 
             foreach (string call in grain.GrainCalls)
             {
-                string targetId = SanitizeNodeId(call.Replace("I", string.Empty, StringComparison.Ordinal));
+                // Strip 'I' prefix from interface name to get grain class name
+                string grainName = call.StartsWith("I", StringComparison.Ordinal) ? call.Substring(1) : call;
+                string targetId = SanitizeNodeId(grainName);
                 string edge = $"    {nodeId} --> {targetId}";
                 if (!edges.Contains(edge, StringComparer.Ordinal))
                 {
