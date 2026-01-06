@@ -1,0 +1,92 @@
+// <copyright file="OrleansSignalROptionsTests.cs" company="Gibbs-Morris">
+// Proprietary and Confidential.
+// All rights reserved.
+// </copyright>
+
+using Allure.Xunit.Attributes;
+
+
+namespace Mississippi.Viaduct.L0Tests;
+
+/// <summary>
+///     Tests for <see cref="OrleansSignalROptions" /> configuration.
+/// </summary>
+[AllureParentSuite("ASP.NET Core")]
+[AllureSuite("SignalR Orleans")]
+[AllureSubSuite("Configuration")]
+public sealed class OrleansSignalROptionsTests
+{
+    /// <summary>
+    ///     Tests that default all clients stream namespace is set correctly.
+    /// </summary>
+    [Fact(DisplayName = "AllClientsStreamNamespace Defaults to SignalR.AllClients")]
+    public void AllClientsStreamNamespaceShouldDefaultToSignalRAllClients()
+    {
+        // Arrange & Act
+        OrleansSignalROptions options = new();
+
+        // Assert
+        Assert.Equal("SignalR.AllClients", options.AllClientsStreamNamespace);
+    }
+
+    /// <summary>
+    ///     Tests that properties can be set to custom values.
+    /// </summary>
+    [Fact(DisplayName = "All Properties Can Be Customized")]
+    public void AllPropertiesShouldBeCustomizable()
+    {
+        // Arrange
+        OrleansSignalROptions options = new()
+        {
+            StreamProviderName = "CustomProvider",
+            ServerStreamNamespace = "CustomServers",
+            AllClientsStreamNamespace = "CustomAllClients",
+            HeartbeatIntervalMinutes = 5,
+        };
+
+        // Assert
+        Assert.Equal("CustomProvider", options.StreamProviderName);
+        Assert.Equal("CustomServers", options.ServerStreamNamespace);
+        Assert.Equal("CustomAllClients", options.AllClientsStreamNamespace);
+        Assert.Equal(5, options.HeartbeatIntervalMinutes);
+    }
+
+    /// <summary>
+    ///     Tests that default heartbeat interval is set correctly.
+    /// </summary>
+    [Fact(DisplayName = "HeartbeatIntervalMinutes Defaults to 1")]
+    public void HeartbeatIntervalMinutesShouldDefaultToOne()
+    {
+        // Arrange & Act
+        OrleansSignalROptions options = new();
+
+        // Assert
+        Assert.Equal(1, options.HeartbeatIntervalMinutes);
+    }
+
+    /// <summary>
+    ///     Tests that default server stream namespace is set correctly.
+    /// </summary>
+    [Fact(DisplayName = "ServerStreamNamespace Defaults to SignalR.Server")]
+    public void ServerStreamNamespaceShouldDefaultToSignalRServer()
+    {
+        // Arrange & Act
+        OrleansSignalROptions options = new();
+
+        // Assert
+        Assert.Equal("SignalR.Server", options.ServerStreamNamespace);
+    }
+
+    /// <summary>
+    ///     Tests that default stream provider name is set correctly.
+    /// </summary>
+    [Fact(DisplayName = "StreamProviderName Defaults to SignalRStreams")]
+    public void StreamProviderNameShouldDefaultToSignalRStreams()
+    {
+        // Arrange & Act
+        OrleansSignalROptions options = new();
+
+        // Assert
+        Assert.Equal("SignalRStreams", options.StreamProviderName);
+    }
+}

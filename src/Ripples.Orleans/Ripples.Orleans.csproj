@@ -7,7 +7,7 @@
 		<PackageReference Include="Microsoft.Orleans.Streaming" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\AspNetCore.SignalR.Orleans.Abstractions\AspNetCore.SignalR.Orleans.Abstractions.csproj" />
+		<ProjectReference Include="..\Viaduct.Abstractions\Viaduct.Abstractions.csproj" />
 		<ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
 		<ProjectReference Include="..\Ripples.Abstractions\Ripples.Abstractions.csproj" />
 	</ItemGroup>

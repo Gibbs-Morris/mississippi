@@ -24,11 +24,11 @@
     </Folder>
 
     <Folder Name="/Framework/Core/">
-        <Project Path="src\AspNetCore.SignalR.Orleans.Abstractions\AspNetCore.SignalR.Orleans.Abstractions.csproj" />
-        <Project Path="src\AspNetCore.SignalR.Orleans.Grains\AspNetCore.SignalR.Orleans.Grains.csproj" />
-        <Project Path="src\AspNetCore.SignalR.Orleans\AspNetCore.SignalR.Orleans.csproj" />
         <Project Path="src\Common.Abstractions\Common.Abstractions.csproj" />
         <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
+        <Project Path="src\Viaduct.Abstractions\Viaduct.Abstractions.csproj" />
+        <Project Path="src\Viaduct.Grains\Viaduct.Grains.csproj" />
+        <Project Path="src\Viaduct\Viaduct.csproj" />
     </Folder>
     <Folder Name="/Framework/EventSourcing/">
         <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />

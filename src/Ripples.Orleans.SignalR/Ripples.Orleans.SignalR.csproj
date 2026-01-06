@@ -6,7 +6,7 @@
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\AspNetCore.SignalR.Orleans\AspNetCore.SignalR.Orleans.csproj" />
+		<ProjectReference Include="..\Viaduct\Viaduct.csproj" />
 		<ProjectReference Include="..\Ripples.Orleans\Ripples.Orleans.csproj" />
 	</ItemGroup>
 </Project>

@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.AspNetCore.SignalR.Orleans.Grains;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.Viaduct.Grains;
 
 using Orleans;
 using Orleans.Runtime;

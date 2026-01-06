@@ -749,20 +749,6 @@
           "xunit.abstractions": "2.0.3"
         }
       },
-      "Mississippi.AspNetCore.SignalR.Orleans": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[9.2.1, )",
-          "Microsoft.Orleans.Streaming": "[9.2.1, )",
-          "Mississippi.AspNetCore.SignalR.Orleans.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.AspNetCore.SignalR.Orleans.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
-        }
-      },
       "Mississippi.EventSourcing.Brooks.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -786,9 +772,9 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
-          "Mississippi.AspNetCore.SignalR.Orleans": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
+          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
+          "Mississippi.Viaduct": "[1.0.0, )"
         }
       },
       "Mississippi.Testing.Utilities": {
@@ -799,6 +785,20 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Moq": "[4.20.72, )",
           "xunit": "[2.9.3, )"
+        }
+      },
+      "Mississippi.Viaduct": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Viaduct.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Viaduct.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
       "CloudNative.CloudEvents": {

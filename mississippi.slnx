@@ -1,12 +1,12 @@
 <Solution>
 
   <Folder Name="/Framework/Core/">
-    <Project Path="src\AspNetCore.SignalR.Orleans.Abstractions\AspNetCore.SignalR.Orleans.Abstractions.csproj" />
-    <Project Path="src\AspNetCore.SignalR.Orleans.Grains\AspNetCore.SignalR.Orleans.Grains.csproj" />
-    <Project Path="src\AspNetCore.SignalR.Orleans\AspNetCore.SignalR.Orleans.csproj" />
     <Project Path="src\Common.Abstractions\Common.Abstractions.csproj" />
     <Project Path="src\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
     <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
+    <Project Path="src\Viaduct.Abstractions\Viaduct.Abstractions.csproj" />
+    <Project Path="src\Viaduct.Grains\Viaduct.Grains.csproj" />
+    <Project Path="src\Viaduct\Viaduct.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/">
     <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
@@ -39,11 +39,11 @@
 
   <Folder Name="/Tests/Core/">
     <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />
-    <Project Path="tests\AspNetCore.SignalR.Orleans.Abstractions.L0Tests\AspNetCore.SignalR.Orleans.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\AspNetCore.SignalR.Orleans.L0Tests\AspNetCore.SignalR.Orleans.L0Tests.csproj" />
     <Project Path="tests\Common.Abstractions.L0Tests\Common.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Common.Cosmos.L0Tests\Common.Cosmos.L0Tests.csproj" />
     <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
+    <Project Path="tests\Viaduct.Abstractions.L0Tests\Viaduct.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Viaduct.L0Tests\Viaduct.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/">
     <Project Path="tests\EventSourcing.Aggregates.Abstractions.L0Tests\EventSourcing.Aggregates.Abstractions.L0Tests.csproj" />

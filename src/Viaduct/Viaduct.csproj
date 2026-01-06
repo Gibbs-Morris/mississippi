@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Orleans-SignalR bridge for ASP.NET pods. Provides OrleansHubLifetimeManager which uses Orleans grains and streams for distributed SignalR messaging. Deploy to ASP.NET web servers hosting SignalR hubs. For silo hosts, also reference Viaduct.Grains.</Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Orleans.Sdk"/>
+        <PackageReference Include="Microsoft.Orleans.Streaming"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Viaduct.Abstractions\Viaduct.Abstractions.csproj"/>
+    </ItemGroup>
+</Project>
