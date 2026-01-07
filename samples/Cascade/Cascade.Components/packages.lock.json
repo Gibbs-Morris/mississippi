@@ -552,6 +552,7 @@
         "type": "Project",
         "dependencies": {
           "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
+          "Mississippi.EventSourcing.Aggregates.Api": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )"
@@ -574,6 +575,12 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Aggregates.Api": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.Brooks": {

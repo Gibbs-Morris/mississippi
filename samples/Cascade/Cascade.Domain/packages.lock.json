@@ -521,6 +521,12 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.EventSourcing.Aggregates.Api": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Brooks": {
         "type": "Project",
         "dependencies": {

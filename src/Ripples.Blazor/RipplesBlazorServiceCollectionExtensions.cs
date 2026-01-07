@@ -28,7 +28,7 @@ public static class RipplesBlazorServiceCollectionExtensions
     ///         <code>
     /// // Register reducers with DI:
     /// services.AddReducer&lt;ToggleSidebarAction, SidebarState, ToggleSidebarReducer&gt;();
-    ///
+    /// 
     /// // Then register the store:
     /// services.AddRippleStore(store =&gt;
     /// {

@@ -959,6 +959,7 @@
         "type": "Project",
         "dependencies": {
           "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
+          "Mississippi.EventSourcing.Aggregates.Api": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )"
