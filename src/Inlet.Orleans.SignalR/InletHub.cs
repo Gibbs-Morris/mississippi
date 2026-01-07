@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Orleans.Grains;
-using Mississippi.Viaduct.Abstractions.Grains;
+using Mississippi.Aqueduct.Abstractions.Grains;
 
 using Orleans;
 

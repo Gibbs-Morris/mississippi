@@ -965,6 +965,20 @@
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )"
         }
       },
+      "Mississippi.Aqueduct": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Aqueduct.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+        }
+      },
       "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -1152,17 +1166,17 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
-          "Mississippi.Viaduct.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Orleans.SignalR": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Inlet.Orleans": "[1.0.0, )",
-          "Mississippi.Viaduct": "[1.0.0, )"
+          "Mississippi.Aqueduct": "[1.0.0, )",
+          "Mississippi.Inlet.Orleans": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir": {
@@ -1180,20 +1194,6 @@
         "dependencies": {
           "Mississippi.Reservoir": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Viaduct": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[9.2.1, )",
-          "Microsoft.Orleans.Streaming": "[9.2.1, )",
-          "Mississippi.Viaduct.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Viaduct.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
       "Azure.Storage.Blobs": {

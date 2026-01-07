@@ -6,10 +6,10 @@
     <Project Path="src\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
     <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
   </Folder>
-  <Folder Name="/Framework/Viaduct/">
-    <Project Path="src\Viaduct.Abstractions\Viaduct.Abstractions.csproj" />
-    <Project Path="src\Viaduct\Viaduct.csproj" />
-    <Project Path="src\Viaduct.Grains\Viaduct.Grains.csproj" />
+  <Folder Name="/Framework/Aqueduct/">
+    <Project Path="src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
+    <Project Path="src\Aqueduct\Aqueduct.csproj" />
+    <Project Path="src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/">
     <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
@@ -52,9 +52,9 @@
     <Project Path="tests\Common.Cosmos.L0Tests\Common.Cosmos.L0Tests.csproj" />
     <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
   </Folder>
-  <Folder Name="/Tests/Viaduct/">
-    <Project Path="tests\Viaduct.Abstractions.L0Tests\Viaduct.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Viaduct.L0Tests\Viaduct.L0Tests.csproj" />
+  <Folder Name="/Tests/Aqueduct/">
+    <Project Path="tests\Aqueduct.Abstractions.L0Tests\Aqueduct.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Aqueduct.L0Tests\Aqueduct.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/">
     <Project Path="tests\EventSourcing.Aggregates.Abstractions.L0Tests\EventSourcing.Aggregates.Abstractions.L0Tests.csproj" />

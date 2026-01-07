@@ -9,7 +9,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
-using Mississippi.Viaduct.Grains;
+using Mississippi.Aqueduct.Grains;
 
 using Orleans;
 using Orleans.Runtime;

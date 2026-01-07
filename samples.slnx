@@ -4,6 +4,7 @@
         <File Path="Directory.Packages.props" />
         <File Path="global.json" />
     </Folder>
+    <Folder Name="/Samples/" />
 
     <Folder Name="/Samples/Cascade/">
         <Project Path="samples\Cascade\Cascade.AppHost\Cascade.AppHost.csproj" />
@@ -22,15 +23,16 @@
         <Project Path="samples\Crescent\ConsoleApp.L0Tests\ConsoleApp.L0Tests.csproj" />
         <Project Path="samples\Crescent\WebApp.L0Tests\WebApp.L0Tests.csproj" />
     </Folder>
+    <Folder Name="/Framework/" />
 
     <Folder Name="/Framework/Core/">
         <Project Path="src\Common.Abstractions\Common.Abstractions.csproj" />
         <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
     </Folder>
-    <Folder Name="/Framework/Viaduct/">
-        <Project Path="src\Viaduct.Abstractions\Viaduct.Abstractions.csproj" />
-        <Project Path="src\Viaduct\Viaduct.csproj" />
-        <Project Path="src\Viaduct.Grains\Viaduct.Grains.csproj" />
+    <Folder Name="/Framework/Aqueduct/">
+        <Project Path="src/Aqueduct.Abstractions/Aqueduct.Abstractions.csproj" />
+        <Project Path="src/Aqueduct.Grains/Aqueduct.Grains.csproj" />
+        <Project Path="src/Aqueduct/Aqueduct.csproj" />
     </Folder>
     <Folder Name="/Framework/EventSourcing/">
         <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
@@ -64,6 +66,7 @@
         <Project Path="src\Inlet.Orleans\Inlet.Orleans.csproj" />
         <Project Path="src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
     </Folder>
+    <Folder Name="/Tests/" />
 
     <Folder Name="/Tests/Core/">
         <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />

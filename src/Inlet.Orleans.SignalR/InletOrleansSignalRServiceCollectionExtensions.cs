@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.Viaduct;
-using Mississippi.Viaduct.Abstractions;
+using Mississippi.Aqueduct;
+using Mississippi.Aqueduct.Abstractions;
 
 
 namespace Mississippi.Inlet.Orleans.SignalR;

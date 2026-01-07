@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Orleans.TestingHost"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj"/>
+        <ProjectReference Include="..\..\src\Aqueduct\Aqueduct.csproj"/>
+        <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj"/>
+    </ItemGroup>
+</Project>

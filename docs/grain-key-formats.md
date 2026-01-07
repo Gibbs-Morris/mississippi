@@ -289,9 +289,9 @@ public readonly record struct UxProjectionVersionedCacheKey(string BrookName, st
 
 ---
 
-### 5. SignalR Grains (Viaduct)
+### 5. SignalR Grains (Aqueduct)
 
-> **Note**: SignalR grains were moved from `EventSourcing.UxProjections.SignalR` to `Viaduct` and `Viaduct.Abstractions`.
+> **Note**: SignalR grains were moved from `EventSourcing.UxProjections.SignalR` to `Aqueduct` and `Aqueduct.Abstractions`.
 > All SignalR key types now use the `|` (pipe) separator for consistency with other Mississippi keys.
 
 #### 5.1 `ISignalRClientGrain`
@@ -305,7 +305,7 @@ public readonly record struct UxProjectionVersionedCacheKey(string BrookName, st
 - **Max Length**: 4192 characters (combined)
 - **Behavior**: Tracks a single SignalR connection for recovery and messaging.
 - **Construction**: `new SignalRClientKey(hubName, connectionId)`.
-- **Location**: `Mississippi.Viaduct.SignalRClientKey`
+- **Location**: `Mississippi.Aqueduct.SignalRClientKey`
 
 #### 5.2 `ISignalRGroupGrain`
 
@@ -318,7 +318,7 @@ public readonly record struct UxProjectionVersionedCacheKey(string BrookName, st
 - **Max Length**: 4192 characters (combined)
 - **Behavior**: Maintains membership lists for a SignalR group.
 - **Construction**: `new SignalRGroupKey(hubName, groupName)`.
-- **Location**: `Mississippi.Viaduct.SignalRGroupKey`
+- **Location**: `Mississippi.Aqueduct.SignalRGroupKey`
 
 #### 5.3 `ISignalRServerDirectoryGrain`
 
@@ -327,7 +327,7 @@ public readonly record struct UxProjectionVersionedCacheKey(string BrookName, st
 - **Components**: Constant placeholder identifying the singleton grain.
 - **Behavior**: Tracks active SignalR servers for failure detection.
 - **Construction**: `SignalRServerDirectoryKey.Default` or `new SignalRServerDirectoryKey(name)`.
-- **Location**: `Mississippi.Viaduct.SignalRServerDirectoryKey`
+- **Location**: `Mississippi.Aqueduct.SignalRServerDirectoryKey`
 
 ---
 
@@ -352,7 +352,7 @@ UxProjectionCursorKey (BrookName|EntityId)
 UxProjectionVersionedCacheKey (BrookName|EntityId|Version)
 └── Used by: IUxProjectionVersionedCacheGrain<T>
 
-SignalR keys (Viaduct)
+SignalR keys (Aqueduct)
 ├── SignalRClientKey (HubName|ConnectionId) → ISignalRClientGrain
 ├── SignalRGroupKey (HubName|GroupName) → ISignalRGroupGrain
 └── SignalRServerDirectoryKey (Constant) → ISignalRServerDirectoryGrain
@@ -435,7 +435,7 @@ sequenceDiagram
 
 ### 1. Separator Consistency ✅ RESOLVED
 
-All Mississippi keys now use `|` (pipe) as the separator, including SignalR keys in Viaduct.
+All Mississippi keys now use `|` (pipe) as the separator, including SignalR keys in Aqueduct.
 
 ### 2. Key Component Naming ✅ RESOLVED
 
@@ -488,7 +488,7 @@ The factory now exposes only entity ID-based methods:
 | 16 | Simplify `UxProjectionKey` to `{EntityId}` only | ✅ Done |
 | 17 | Max key length: 4192 characters | ✅ Done |
 | 18 | SignalR separator changed from `:` to `\|` | ✅ Done |
-| 19 | SignalR grains moved to Viaduct project | ✅ Done |
+| 19 | SignalR grains moved to Aqueduct project | ✅ Done |
 | 20 | Create strongly-typed SignalR key types | ✅ Done |
 
 ---
@@ -544,7 +544,7 @@ All planned code changes have been implemented:
 
 - [x] Create strongly-typed SignalR key types (`SignalRClientKey`, `SignalRGroupKey`, `SignalRServerDirectoryKey`)
 - [x] Change SignalR separator from `:` to `|` for consistency
-- [x] Move SignalR grains from `EventSourcing.UxProjections.SignalR` to `Viaduct`
+- [x] Move SignalR grains from `EventSourcing.UxProjections.SignalR` to `Aqueduct`
 - [x] Delete `EventSourcing.UxProjections.SignalR` project
 - [x] Enforce max key length of 4192 characters on all key types
 
@@ -563,16 +563,16 @@ All planned code changes have been implemented:
 - [UxProjectionCursorKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionCursorKey.cs)
 - [UxProjectionVersionedCacheKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionVersionedCacheKey.cs)
 - [AggregateKey.cs](../src/EventSourcing.Aggregates.Abstractions/AggregateKey.cs) — Simplified to `{EntityId}` only
-- [SignalRClientKey.cs](../src/Viaduct.Abstractions/Keys/SignalRClientKey.cs)
-- [SignalRGroupKey.cs](../src/Viaduct.Abstractions/Keys/SignalRGroupKey.cs)
-- [SignalRServerDirectoryKey.cs](../src/Viaduct.Abstractions/Keys/SignalRServerDirectoryKey.cs)
+- [SignalRClientKey.cs](../src/Aqueduct.Abstractions/Keys/SignalRClientKey.cs)
+- [SignalRGroupKey.cs](../src/Aqueduct.Abstractions/Keys/SignalRGroupKey.cs)
+- [SignalRServerDirectoryKey.cs](../src/Aqueduct.Abstractions/Keys/SignalRServerDirectoryKey.cs)
 
 ### Grain Interfaces
 
 - [IGenericAggregateGrain.cs](../src/EventSourcing.Aggregates.Abstractions/IGenericAggregateGrain.cs)
-- [ISignalRClientGrain.cs](../src/Viaduct.Abstractions/Grains/ISignalRClientGrain.cs)
-- [ISignalRGroupGrain.cs](../src/Viaduct.Abstractions/Grains/ISignalRGroupGrain.cs)
-- [ISignalRServerDirectoryGrain.cs](../src/Viaduct.Abstractions/Grains/ISignalRServerDirectoryGrain.cs)
+- [ISignalRClientGrain.cs](../src/Aqueduct.Abstractions/Grains/ISignalRClientGrain.cs)
+- [ISignalRGroupGrain.cs](../src/Aqueduct.Abstractions/Grains/ISignalRGroupGrain.cs)
+- [ISignalRServerDirectoryGrain.cs](../src/Aqueduct.Abstractions/Grains/ISignalRServerDirectoryGrain.cs)
 
 ### Factories
 

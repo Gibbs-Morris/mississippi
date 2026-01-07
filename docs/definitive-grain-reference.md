@@ -43,15 +43,15 @@ Comprehensive reference of all Orleans grains in the Mississippi framework and s
 | `IUxProjectionVersionedCacheGrain<T>` | EventSourcing.UxProjections.Abstractions | `UxProjectionVersionedCacheKey` | `{BrookName}\|{EntityId}\|{Version}` | `CASCADE.CHAT.CHANNEL\|abc123\|42` |
 | `IUxProjectionSubscriptionGrain` | EventSourcing.UxProjections.Abstractions | `string` | `{ConnectionId}` | `conn-xyz-789` |
 
-### Viaduct (SignalR Backplane)
+### Aqueduct (SignalR Backplane)
 
 | Grain Interface | Project | Key Type | Key Format | Example |
 | --------------- | ------- | -------- | ---------- | ------- |
-| `ISignalRClientGrain` | Viaduct.Abstractions | `SignalRClientKey` | `{HubName}\|{ConnectionId}` | `ChatHub\|conn-xyz-789` |
-| `ISignalRGroupGrain` | Viaduct.Abstractions | `SignalRGroupKey` | `{HubName}\|{GroupName}` | `ChatHub\|room-42` |
-| `ISignalRServerDirectoryGrain` | Viaduct.Abstractions | `SignalRServerDirectoryKey` | `{Constant}` | `default` |
+| `ISignalRClientGrain` | Aqueduct.Abstractions | `SignalRClientKey` | `{HubName}\|{ConnectionId}` | `ChatHub\|conn-xyz-789` |
+| `ISignalRGroupGrain` | Aqueduct.Abstractions | `SignalRGroupKey` | `{HubName}\|{GroupName}` | `ChatHub\|room-42` |
+| `ISignalRServerDirectoryGrain` | Aqueduct.Abstractions | `SignalRServerDirectoryKey` | `{Constant}` | `default` |
 
-> **Note**: SignalR grains were moved from `EventSourcing.UxProjections.SignalR` to `Viaduct`. All SignalR keys now use strongly-typed key types with `|` separator for consistency with other Mississippi keys.
+> **Note**: SignalR grains were moved from `EventSourcing.UxProjections.SignalR` to `Aqueduct`. All SignalR keys now use strongly-typed key types with `|` separator for consistency with other Mississippi keys.
 
 ### Ripples (Real-Time Subscriptions)
 
@@ -84,9 +84,9 @@ Comprehensive reference of all Orleans grains in the Mississippi framework and s
 | `UxProjectionCursorKey` | EventSourcing.UxProjections.Abstractions | `{BrookName}\|{EntityId}` | 4192 |
 | `UxProjectionVersionedCacheKey` | EventSourcing.UxProjections.Abstractions | `{BrookName}\|{EntityId}\|{Version}` | 4192 |
 | `UxProjectionNotificationKey` | EventSourcing.UxProjections.Abstractions | `{ProjectionType}\|{BrookName}\|{EntityId}` | 4192 |
-| `SignalRClientKey` | Viaduct.Abstractions | `{HubName}\|{ConnectionId}` | 4192 |
-| `SignalRGroupKey` | Viaduct.Abstractions | `{HubName}\|{GroupName}` | 4192 |
-| `SignalRServerDirectoryKey` | Viaduct.Abstractions | `{Name}` | 4192 |
+| `SignalRClientKey` | Aqueduct.Abstractions | `{HubName}\|{ConnectionId}` | 4192 |
+| `SignalRGroupKey` | Aqueduct.Abstractions | `{HubName}\|{GroupName}` | 4192 |
+| `SignalRServerDirectoryKey` | Aqueduct.Abstractions | `{Name}` | 4192 |
 
 ## Key Hierarchy
 
@@ -112,7 +112,7 @@ Snapshot keys
 └── SnapshotKey (BrookName|EntityId|Version|SnapshotStorageName|ReducersHash)
     └── Used by: ISnapshotCacheGrain<T>, ISnapshotPersisterGrain
 
-SignalR keys (Viaduct)
+SignalR keys (Aqueduct)
 ├── SignalRClientKey (HubName|ConnectionId) → ISignalRClientGrain
 ├── SignalRGroupKey (HubName|GroupName) → ISignalRGroupGrain
 └── SignalRServerDirectoryKey (Constant) → ISignalRServerDirectoryGrain
