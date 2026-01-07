@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
@@ -12,6 +13,7 @@ namespace Cascade.Domain.User;
 ///     Exposes domain operations for managing user profiles.
 /// </summary>
 [Alias("Cascade.Domain.User.IUserAggregateGrain")]
+[BrookName("CASCADE", "CHAT", "USER")]
 internal interface IUserAggregateGrain : IAggregateGrain
 {
     /// <summary>

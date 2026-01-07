@@ -21,7 +21,6 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 // using connection strings from Aspire AppHost references
 builder.AddAzureCosmosClient("cosmos");
 builder.AddAzureBlobServiceClient("blobs");
-builder.AddAzureTableServiceClient("clustering");
 
 // Add Blazor services with Interactive Server rendering
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
@@ -40,8 +39,20 @@ builder.Services.AddCascadeServerServices();
 builder.Services.AddJsonSerialization();
 builder.Services.AddEventSourcingByService();
 
-// Configure Orleans silo - Aspire handles clustering configuration
-builder.UseOrleans(silo => { silo.AddMemoryGrainStorage("PubSubStore").AddEventSourcing(); });
+// Configure Orleans silo
+// Use localhost clustering for local development (single-node cluster)
+// For production, configure Azure Table Storage clustering
+builder.UseOrleans(silo =>
+{
+    // Use localhost clustering for local development
+    silo.UseLocalhostClustering();
+
+    // Add memory storage for PubSub (required for Orleans Streams)
+    silo.AddMemoryGrainStorage("PubSubStore");
+
+    // Add Mississippi event sourcing streams (SMS provider for real-time projections)
+    silo.AddEventSourcing();
+});
 
 // Add Cosmos storage providers for event sourcing
 // These use the CosmosClient and BlobServiceClient registered by Aspire

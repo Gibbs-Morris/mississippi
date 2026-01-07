@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
@@ -12,6 +13,7 @@ namespace Cascade.Domain.Conversation;
 ///     Exposes domain operations for managing chat conversations (message threads).
 /// </summary>
 [Alias("Cascade.Domain.Conversation.IConversationAggregateGrain")]
+[BrookName("CASCADE", "CHAT", "CONVERSATION")]
 internal interface IConversationAggregateGrain : IAggregateGrain
 {
     /// <summary>

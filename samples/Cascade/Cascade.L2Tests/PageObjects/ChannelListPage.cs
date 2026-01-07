@@ -30,10 +30,21 @@ internal sealed class ChannelListPage
         string name
     )
     {
-        // Click the create channel button in the header
-        await page.ClickAsync(".channel-list-header button");
+        // Wait for the channel list container to appear first
+        await page.WaitForSelectorAsync(".channel-list", new() { Timeout = 60000 });
 
-        // Fill in the channel name
+        // Wait for the loading state to finish (no "Loading channels..." visible)
+        await page.Locator(".channel-list .loading").WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 60000 });
+
+        // Now wait for either the header button or empty-state button
+        ILocator createButton = page.Locator(".channel-list-header button, .channel-list .empty-state button").First;
+        await createButton.WaitForAsync(new() { Timeout = 30000 });
+
+        // Click the create channel button
+        await createButton.ClickAsync();
+
+        // Wait for modal to appear and fill in the channel name
+        await page.WaitForSelectorAsync(".modal input[name='Name'], input[name='Name']");
         await page.FillAsync("input[name='Name']", name);
 
         // Click create button

@@ -17,7 +17,9 @@ public sealed class PlaywrightFixture
       IDisposable
 #pragma warning restore CA1515
 {
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(180);
+    // Cosmos DB emulator cold start can take several minutes (11 partitions)
+    // The emulator needs ~2-3 min for a cold start, plus time for the server to initialize Orleans
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(10);
 
     private DistributedApplication? app;
 
