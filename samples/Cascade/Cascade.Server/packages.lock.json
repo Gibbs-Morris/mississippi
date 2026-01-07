@@ -952,7 +952,7 @@
         "dependencies": {
           "Cascade.Domain": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Web": "[9.0.11, )",
-          "Mississippi.Ripples.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
       "cascade.domain": {
@@ -1115,47 +1115,71 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Ripples": {
+      "Mississippi.Inlet": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
-          "Mississippi.Ripples.Abstractions": "[1.0.0, )"
+          "Microsoft.Extensions.Options": "[9.0.11, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Ripples.Abstractions": {
+      "Mississippi.Inlet.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Ripples.Blazor": {
+      "Mississippi.Inlet.Blazor": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Ripples": "[1.0.0, )",
-          "Mississippi.Ripples.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet": "[1.0.0, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
         }
       },
-      "Mississippi.Ripples.InProcess": {
+      "Mississippi.Inlet.InProcess": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Ripples.Abstractions": "[1.0.0, )"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.1, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Ripples.Orleans": {
+      "Mississippi.Inlet.Orleans": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Ripples.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Viaduct.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Ripples.Orleans.SignalR": {
+      "Mississippi.Inlet.Orleans.SignalR": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Ripples.Orleans": "[1.0.0, )",
+          "Mississippi.Inlet.Orleans": "[1.0.0, )",
           "Mississippi.Viaduct": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Reservoir.Blazor": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Viaduct": {

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Orleans grains for Inlet projection subscription management. Provides InletSubscriptionGrain for per-connection subscription tracking with brook stream deduplication. Safe for silo deployment - no SignalR dependencies.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Orleans.Sdk" />
+        <PackageReference Include="Microsoft.Orleans.Streaming" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Viaduct.Abstractions\Viaduct.Abstractions.csproj" />
+        <ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
+        <ProjectReference Include="..\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
+        <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

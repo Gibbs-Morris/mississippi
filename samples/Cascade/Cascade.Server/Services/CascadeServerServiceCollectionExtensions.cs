@@ -5,9 +5,9 @@ using Cascade.Components.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.UxProjections.Abstractions;
-using Mississippi.Ripples;
-using Mississippi.Ripples.Abstractions;
-using Mississippi.Ripples.InProcess;
+using Mississippi.Inlet;
+using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.InProcess;
 
 
 namespace Cascade.Server.Services;
@@ -36,17 +36,17 @@ internal static class CascadeServerServiceCollectionExtensions
         // Register ChatService as scoped (one per Blazor circuit)
         services.AddScoped<IChatService, ChatService>();
 
-        // Register Ripples Server infrastructure (IProjectionUpdateNotifier)
-        services.AddRipplesServer();
+        // Register Inlet InProcess infrastructure (IServerProjectionNotifier)
+        services.AddInletInProcess();
 
-        // Register RippleStore with the subscription effect
+        // Register InletStore with the subscription effect
         // The effect needs the store to dispatch real-time updates, so we create them together.
-        // RippleStore.CreateWithEffect takes ownership of the effect and disposes it on store disposal.
-        services.AddScoped<IRippleStore>(sp =>
+        // InletStore.CreateWithEffect takes ownership of the effect and disposes it on store disposal.
+        services.AddScoped<IInletStore>(sp =>
         {
             IUxProjectionGrainFactory grainFactory = sp.GetRequiredService<IUxProjectionGrainFactory>();
-            IProjectionUpdateNotifier notifier = sp.GetRequiredService<IProjectionUpdateNotifier>();
-            return RippleStore.CreateWithEffect(store =>
+            IServerProjectionNotifier notifier = sp.GetRequiredService<IServerProjectionNotifier>();
+            return InletStore.CreateWithEffect(store =>
                 new ServerProjectionSubscriptionEffect(store, grainFactory, notifier));
         });
         return services;

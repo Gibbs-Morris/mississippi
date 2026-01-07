@@ -29,14 +29,18 @@
     <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
     <Project Path="src\EventSourcing.UxProjections.Api.Generators\EventSourcing.UxProjections.Api.Generators.csproj" />
   </Folder>
-  <Folder Name="/Framework/Ripples/">
-    <Project Path="src\Ripples.Abstractions\Ripples.Abstractions.csproj" />
-    <Project Path="src\Ripples\Ripples.csproj" />
-    <Project Path="src\Ripples.Blazor\Ripples.Blazor.csproj" />
-    <Project Path="src\Ripples.Generators\Ripples.Generators.csproj" />
-    <Project Path="src\Ripples.Orleans\Ripples.Orleans.csproj" />
-    <Project Path="src\Ripples.Orleans.SignalR\Ripples.Orleans.SignalR.csproj" />
-    <Project Path="src\Ripples.InProcess\Ripples.InProcess.csproj" />
+  <Folder Name="/Framework/Reservoir/">
+    <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
+    <Project Path="src\Reservoir\Reservoir.csproj" />
+    <Project Path="src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
+  </Folder>
+  <Folder Name="/Framework/Inlet/">
+    <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+    <Project Path="src\Inlet\Inlet.csproj" />
+    <Project Path="src\Inlet.Blazor\Inlet.Blazor.csproj" />
+    <Project Path="src\Inlet.InProcess\Inlet.InProcess.csproj" />
+    <Project Path="src\Inlet.Orleans\Inlet.Orleans.csproj" />
+    <Project Path="src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
   </Folder>
   <Folder Name="/Tests/" />
 
@@ -68,12 +72,11 @@
     <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.Api.Generators.L0Tests\EventSourcing.UxProjections.Api.Generators.L0Tests.csproj" />
   </Folder>
-  <Folder Name="/Tests/Ripples/">
-    <Project Path="tests\Ripples.Abstractions.L0Tests\Ripples.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Ripples.L0Tests\Ripples.L0Tests.csproj" />
-    <Project Path="tests\Ripples.Blazor.L0Tests\Ripples.Blazor.L0Tests.csproj" />
-    <Project Path="tests\Ripples.Generators.L0Tests\Ripples.Generators.L0Tests.csproj" />
-    <Project Path="tests\Ripples.InProcess.L0Tests\Ripples.InProcess.L0Tests.csproj" />
+  <Folder Name="/Tests/Reservoir/">
+    <Project Path="tests\Reservoir.L0Tests\Reservoir.L0Tests.csproj" />
+  </Folder>
+  <Folder Name="/Tests/Inlet/">
+    <Project Path="tests\Inlet.L0Tests\Inlet.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Workflows/">

@@ -11,7 +11,7 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 ///         Apply this attribute to a projection class to:
 ///         <list type="bullet">
 ///             <item>Generate an HTTP API controller via the ProjectionApiGenerator.</item>
-///             <item>Register IRipple/IRipplePool services via the RipplesGenerator (if using Ripples).</item>
+///             <item>Enable subscription via Inlet/Reservoir (if using Inlet).</item>
 ///             <item>Generate route helpers in the RouteRegistry.</item>
 ///         </list>
 ///     </para>

@@ -353,9 +353,6 @@ namespace {aggregate.Namespace};
     private static string GetMethodName(
         string commandTypeName
     ) =>
-        // Remove common verb prefixes that would be redundant in method name
-        // e.g., "RegisterUser" -> "Register", "JoinChannel" -> "JoinChannel"
-        // The method will be called "{MethodName}Async"
         commandTypeName;
 
     /// <inheritdoc />

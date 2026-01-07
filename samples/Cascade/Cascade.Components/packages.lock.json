@@ -657,11 +657,14 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Ripples.Abstractions": {
+      "Mississippi.Inlet.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
+      },
+      "Mississippi.Reservoir.Abstractions": {
+        "type": "Project"
       },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",

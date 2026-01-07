@@ -5,8 +5,8 @@ using Cascade.Server.Services;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Ripples.Abstractions.State;
-using Mississippi.Ripples.Blazor;
+using Mississippi.Inlet.Abstractions.State;
+using Mississippi.Inlet.Blazor;
 
 
 namespace Cascade.Server.Components.Shared;
@@ -14,7 +14,7 @@ namespace Cascade.Server.Components.Shared;
 /// <summary>
 ///     Component for displaying a list of channels the user belongs to.
 /// </summary>
-public sealed partial class ChannelList : RippleComponent
+public sealed partial class ChannelList : InletComponent
 {
     private bool showCreateModal;
 

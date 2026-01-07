@@ -10,8 +10,8 @@ using Cascade.Server.ViewModels;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Ripples.Abstractions.State;
-using Mississippi.Ripples.Blazor;
+using Mississippi.Inlet.Abstractions.State;
+using Mississippi.Inlet.Blazor;
 
 
 namespace Cascade.Server.Components.Organisms;
@@ -19,7 +19,7 @@ namespace Cascade.Server.Components.Organisms;
 /// <summary>
 ///     Organism component that owns state and dispatches commands.
 /// </summary>
-public sealed partial class ChannelView : RippleComponent
+public sealed partial class ChannelView : InletComponent
 {
     private readonly List<MemberViewModel> members = [];
 

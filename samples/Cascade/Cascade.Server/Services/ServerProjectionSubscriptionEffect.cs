@@ -7,8 +7,10 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.UxProjections.Abstractions;
-using Mississippi.Ripples.Abstractions;
-using Mississippi.Ripples.Abstractions.Actions;
+using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Abstractions.Actions;
+using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Abstractions.Actions;
 
 
 namespace Cascade.Server.Services;
@@ -26,13 +28,13 @@ internal sealed class ServerProjectionSubscriptionEffect
     /// <summary>
     ///     Initializes a new instance of the <see cref="ServerProjectionSubscriptionEffect" /> class.
     /// </summary>
-    /// <param name="store">The ripple store for dispatching update actions.</param>
+    /// <param name="store">The inlet store for dispatching update actions.</param>
     /// <param name="grainFactory">The grain factory for accessing UX projection grains.</param>
-    /// <param name="notifier">The projection update notifier for real-time updates.</param>
+    /// <param name="notifier">The server projection notifier for real-time updates.</param>
     public ServerProjectionSubscriptionEffect(
-        IRippleStore store,
+        IInletStore store,
         IUxProjectionGrainFactory grainFactory,
-        IProjectionUpdateNotifier notifier
+        IServerProjectionNotifier notifier
     )
     {
         ArgumentNullException.ThrowIfNull(store);
@@ -45,9 +47,9 @@ internal sealed class ServerProjectionSubscriptionEffect
 
     private IUxProjectionGrainFactory GrainFactory { get; }
 
-    private IProjectionUpdateNotifier Notifier { get; }
+    private IServerProjectionNotifier Notifier { get; }
 
-    private IRippleStore Store { get; }
+    private IInletStore Store { get; }
 
     private static IAction CreateErrorAction(
         Type projectionType,
@@ -120,7 +122,7 @@ internal sealed class ServerProjectionSubscriptionEffect
     /// <inheritdoc />
     public async IAsyncEnumerable<IAction> HandleAsync(
         IAction action,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default
+        [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
         Type actionType = action.GetType();
@@ -130,7 +132,7 @@ internal sealed class ServerProjectionSubscriptionEffect
         {
             await foreach (IAction resultAction in HandleSubscribeAsync(
                                projectionType,
-                               (IRippleAction)action,
+                               (IInletAction)action,
                                cancellationToken))
             {
                 yield return resultAction;
@@ -138,7 +140,7 @@ internal sealed class ServerProjectionSubscriptionEffect
         }
         else if (genericDef == typeof(UnsubscribeFromProjectionAction<>))
         {
-            HandleUnsubscribe(projectionType, (IRippleAction)action);
+            HandleUnsubscribe(projectionType, (IInletAction)action);
         }
     }
 
@@ -182,7 +184,7 @@ internal sealed class ServerProjectionSubscriptionEffect
 
     private async IAsyncEnumerable<IAction> HandleSubscribeAsync(
         Type projectionType,
-        IRippleAction action,
+        IInletAction action,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
@@ -248,7 +250,7 @@ internal sealed class ServerProjectionSubscriptionEffect
 
     private void HandleUnsubscribe(
         Type projectionType,
-        IRippleAction action
+        IInletAction action
     )
     {
         (Type, string) key = (projectionType, action.EntityId);

@@ -10,7 +10,7 @@ using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
-using Mississippi.Ripples.Orleans.SignalR;
+using Mississippi.Inlet.Orleans.SignalR;
 
 using Orleans.Hosting;
 
@@ -26,7 +26,7 @@ builder.AddAzureBlobServiceClient("blobs");
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 // Add SignalR with Orleans backplane for real-time projections
-builder.Services.AddRipplesOrleansWithSignalR();
+builder.Services.AddInletOrleansWithSignalR();
 
 // Add domain services (aggregates, handlers, reducers, projections)
 builder.Services.AddCascadeDomain();
@@ -77,7 +77,7 @@ app.UseRouting();
 app.UseAntiforgery();
 
 // Map SignalR hub for real-time UX projections
-app.MapRippleHub();
+app.MapInletHub();
 
 // Map Blazor components
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
