@@ -26,9 +26,11 @@
     <Folder Name="/Framework/Core/">
         <Project Path="src\Common.Abstractions\Common.Abstractions.csproj" />
         <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
+    </Folder>
+    <Folder Name="/Framework/Viaduct/">
         <Project Path="src\Viaduct.Abstractions\Viaduct.Abstractions.csproj" />
-        <Project Path="src\Viaduct.Grains\Viaduct.Grains.csproj" />
         <Project Path="src\Viaduct\Viaduct.csproj" />
+        <Project Path="src\Viaduct.Grains\Viaduct.Grains.csproj" />
     </Folder>
     <Folder Name="/Framework/EventSourcing/">
         <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
