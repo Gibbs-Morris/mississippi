@@ -28,13 +28,13 @@ namespace Mississippi.Ripples.Blazor;
 /// <example>
 ///     <code>
 ///         @inherits RippleComponent
-/// 
+///
 ///         @code {
 ///             [Parameter]
 ///             public string OrderId { get; set; } = string.Empty;
-/// 
-///             private IProjectionState&lt;OrderProjection&gt;? OrderState => GetProjectionState&lt;OrderProjection&gt;(OrderId);
-/// 
+///
+///             private IProjectionState&lt;OrderProjection&gt;? OrderState =&gt; GetProjectionState&lt;OrderProjection&gt;(OrderId);
+///
 ///             protected override void OnParametersSet()
 ///             {
 ///                 SubscribeToProjection&lt;OrderProjection&gt;(OrderId);
