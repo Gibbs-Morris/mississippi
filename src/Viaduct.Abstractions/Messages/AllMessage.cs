@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using Orleans;
 
 
-namespace Mississippi.Viaduct.Messages;
+namespace Mississippi.Viaduct.Abstractions.Messages;
 
 /// <summary>
 ///     Represents a broadcast message to all connections on a hub via the Orleans backplane.

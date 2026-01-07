@@ -1,9 +1,11 @@
 using System;
 
+using Mississippi.Viaduct.Abstractions.Grains;
+
 using Orleans;
 
 
-namespace Mississippi.Viaduct.Grains.State;
+namespace Mississippi.Viaduct.Grains.Grains.State;
 
 /// <summary>
 ///     Persisted state for a client grain implementing <see cref="ISignalRClientGrain" />.

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Viaduct.Grains;
+namespace Mississippi.Viaduct.Grains.Grains;
 
 /// <summary>
 ///     Logger extensions for <see cref="SignalRGroupGrain" />.

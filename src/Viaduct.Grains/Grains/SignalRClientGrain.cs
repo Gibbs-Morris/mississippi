@@ -6,15 +6,17 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Viaduct.Grains.State;
-using Mississippi.Viaduct.Messages;
+using Mississippi.Viaduct.Abstractions;
+using Mississippi.Viaduct.Abstractions.Grains;
+using Mississippi.Viaduct.Abstractions.Messages;
+using Mississippi.Viaduct.Grains.Grains.State;
 
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Streams;
 
 
-namespace Mississippi.Viaduct.Grains;
+namespace Mississippi.Viaduct.Grains.Grains;
 
 /// <summary>
 ///     Orleans grain implementation that tracks a single SignalR connection.

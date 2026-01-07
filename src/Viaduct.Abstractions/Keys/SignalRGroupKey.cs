@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.Viaduct;
+namespace Mississippi.Viaduct.Abstractions.Keys;
 
 /// <summary>
 ///     Represents a strongly-typed key for identifying SignalR group grains.

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Viaduct;
+using Mississippi.Viaduct.Abstractions;
 
 
 namespace Mississippi.Inlet.Orleans.SignalR;

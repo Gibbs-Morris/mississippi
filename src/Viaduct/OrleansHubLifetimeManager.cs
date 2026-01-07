@@ -16,8 +16,9 @@ using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Viaduct.Grains;
-using Mississippi.Viaduct.Messages;
+using Mississippi.Viaduct.Abstractions;
+using Mississippi.Viaduct.Abstractions.Grains;
+using Mississippi.Viaduct.Abstractions.Messages;
 
 using Orleans;
 using Orleans.Runtime;

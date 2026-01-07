@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using Orleans;
 
 
-namespace Mississippi.Viaduct.Messages;
+namespace Mississippi.Viaduct.Abstractions.Messages;
 
 /// <summary>
 ///     Represents a message targeted at a specific SignalR connection via the Orleans backplane.

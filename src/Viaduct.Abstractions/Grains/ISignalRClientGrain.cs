@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Orleans;
 
 
-namespace Mississippi.Viaduct.Grains;
+namespace Mississippi.Viaduct.Abstractions.Grains;
 
 /// <summary>
 ///     Orleans grain interface that tracks a single SignalR connection.

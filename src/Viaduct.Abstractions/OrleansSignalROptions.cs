@@ -3,7 +3,7 @@
 // All rights reserved.
 // </copyright>
 
-namespace Mississippi.Viaduct;
+namespace Mississippi.Viaduct.Abstractions;
 
 /// <summary>
 ///     Configuration options for the Orleans-SignalR bridge.

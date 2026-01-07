@@ -7,8 +7,10 @@ using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Mississippi.Viaduct.Abstractions.Grains;
 
-namespace Mississippi.Viaduct;
+
+namespace Mississippi.Viaduct.Abstractions;
 
 /// <summary>
 ///     Provides an abstraction for ASP.NET-hosted services to send messages to SignalR clients.
@@ -21,7 +23,7 @@ namespace Mississippi.Viaduct;
 ///     </para>
 ///     <para>
 ///         <strong>For grains:</strong> Grains that need to send SignalR messages should call
-///         <see cref="Mississippi.Viaduct.Grains.ISignalRGroupGrain.SendMessageAsync" />
+///         <see cref="ISignalRGroupGrain.SendMessageAsync" />
 ///         directly. The group grain publishes to an Orleans stream that ASP.NET pods subscribe to,
 ///         properly bridging the silo-to-web deployment boundary.
 ///     </para>

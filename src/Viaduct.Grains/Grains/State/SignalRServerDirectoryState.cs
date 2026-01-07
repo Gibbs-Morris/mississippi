@@ -1,9 +1,11 @@
 using System.Collections.Immutable;
 
+using Mississippi.Viaduct.Abstractions.Grains;
+
 using Orleans;
 
 
-namespace Mississippi.Viaduct.Grains.State;
+namespace Mississippi.Viaduct.Grains.Grains.State;
 
 /// <summary>
 ///     Persisted state for a server directory grain implementing <see cref="ISignalRServerDirectoryGrain" />.
