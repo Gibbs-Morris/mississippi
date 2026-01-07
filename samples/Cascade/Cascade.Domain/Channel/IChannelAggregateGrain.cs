@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
@@ -13,8 +12,7 @@ namespace Cascade.Domain.Channel;
 ///     Exposes domain operations for managing chat channels.
 /// </summary>
 [Alias("Cascade.Domain.Channel.IChannelAggregateGrain")]
-[BrookName("CASCADE", "CHAT", "CHANNEL")]
-internal interface IChannelAggregateGrain : IAggregateGrain
+internal interface IChannelAggregateGrain : IGrainWithStringKey
 {
     /// <summary>
     ///     Adds a member to the channel.

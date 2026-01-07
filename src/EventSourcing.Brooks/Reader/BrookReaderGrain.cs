@@ -105,7 +105,7 @@ internal class BrookReaderGrain
     /// <returns>A task that represents the asynchronous deactivation operation.</returns>
     public Task DeactivateAsync()
     {
-        BrookKey brookId = this.GetPrimaryKeyString();
+        BrookKey brookId = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.Deactivating(brookId);
         this.DeactivateOnIdle();
         return Task.CompletedTask;
@@ -120,7 +120,7 @@ internal class BrookReaderGrain
         CancellationToken token
     )
     {
-        BrookKey brookId = this.GetPrimaryKeyString();
+        BrookKey brookId = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.Activated(brookId);
         return Task.CompletedTask;
     }
@@ -139,7 +139,7 @@ internal class BrookReaderGrain
         CancellationToken cancellationToken = default
     )
     {
-        BrookKey brookId = this.GetPrimaryKeyString();
+        BrookKey brookId = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.ReadingEventsBatch(brookId, readFrom?.Value, readTo?.Value);
         Stopwatch sw = Stopwatch.StartNew();
         BrookPosition start = readFrom ?? new BrookPosition(0);

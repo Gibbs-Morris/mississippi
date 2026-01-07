@@ -10,7 +10,7 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 
 /// <summary>
 ///     Represents a composite key for identifying a versioned UX projection,
-///     consisting of a projection key and a specific version.
+///     consisting of a projection key (entity ID) and a specific version.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -19,21 +19,21 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 ///         requesting the same version to share a cached grain instance.
 ///     </para>
 ///     <para>
-///         The string format is "{projectionTypeName}|{brookType}|{brookId}|{version}".
+///         The string format is "{entityId}|{version}".
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.UxProjections.Abstractions.UxProjectionVersionedKey")]
 public readonly record struct UxProjectionVersionedKey
 {
-    private const int MaxLength = 2048;
+    private const int MaxLength = 4192;
 
     private const char Separator = '|';
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="UxProjectionVersionedKey" /> struct.
     /// </summary>
-    /// <param name="projectionKey">The base projection key.</param>
+    /// <param name="projectionKey">The base projection key (entity ID).</param>
     /// <param name="version">The specific version of the projection.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when version is negative.</exception>
     /// <exception cref="ArgumentException">
@@ -61,7 +61,7 @@ public readonly record struct UxProjectionVersionedKey
     }
 
     /// <summary>
-    ///     Gets the base projection key.
+    ///     Gets the base projection key (entity ID).
     /// </summary>
     [Id(0)]
     public UxProjectionKey ProjectionKey { get; }
@@ -71,28 +71,6 @@ public readonly record struct UxProjectionVersionedKey
     /// </summary>
     [Id(1)]
     public BrookPosition Version { get; }
-
-    /// <summary>
-    ///     Creates a versioned UX projection key for a specific projection type, grain, and version.
-    /// </summary>
-    /// <typeparam name="TProjection">The projection type.</typeparam>
-    /// <typeparam name="TGrain">
-    ///     The grain type decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
-    /// </typeparam>
-    /// <param name="entityId">The entity identifier within the brook.</param>
-    /// <param name="version">The specific version.</param>
-    /// <returns>A versioned UX projection key for the specified projection, grain's brook, and version.</returns>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when <typeparamref name="TGrain" /> is not decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
-    /// </exception>
-    public static UxProjectionVersionedKey ForGrain<TProjection, TGrain>(
-        string entityId,
-        BrookPosition version
-    )
-        where TGrain : class =>
-        new(UxProjectionKey.ForGrain<TProjection, TGrain>(entityId), version);
 
     /// <summary>
     ///     Creates a versioned UX projection key from its string representation.
@@ -112,18 +90,17 @@ public readonly record struct UxProjectionVersionedKey
         if (lastSeparator < 0)
         {
             throw new FormatException(
-                $"Versioned UX projection key must be in the form " +
-                $"'<projectionTypeName>{Separator}<brookType>{Separator}<brookId>{Separator}<version>'.");
+                $"Versioned UX projection key must be in the form '<entityId>{Separator}<version>'.");
         }
 
-        string projectionKeyPart = value[..lastSeparator];
+        string entityIdPart = value[..lastSeparator];
         string versionPart = value[(lastSeparator + 1)..];
         if (!long.TryParse(versionPart, NumberStyles.None, CultureInfo.InvariantCulture, out long versionValue))
         {
             throw new FormatException($"Version '{versionPart}' is not a valid non-negative integer.");
         }
 
-        UxProjectionKey projectionKey = UxProjectionKey.FromString(projectionKeyPart);
+        UxProjectionKey projectionKey = UxProjectionKey.FromString(entityIdPart);
         return new(projectionKey, new(versionValue));
     }
 
@@ -131,7 +108,7 @@ public readonly record struct UxProjectionVersionedKey
     ///     Converts a versioned UX projection key to its string representation.
     /// </summary>
     /// <param name="key">The versioned UX projection key to convert.</param>
-    /// <returns>A string representation in the format "projectionTypeName|brookType|brookId|version".</returns>
+    /// <returns>A string representation in the format "entityId|version".</returns>
     public static string FromUxProjectionVersionedKey(
         UxProjectionVersionedKey key
     ) =>
@@ -141,7 +118,7 @@ public readonly record struct UxProjectionVersionedKey
     ///     Implicitly converts a <see cref="UxProjectionVersionedKey" /> to its string representation.
     /// </summary>
     /// <param name="key">The versioned UX projection key to convert.</param>
-    /// <returns>A string representation in the format "projectionTypeName|brookType|brookId|version".</returns>
+    /// <returns>A string representation in the format "entityId|version".</returns>
     public static implicit operator string(
         UxProjectionVersionedKey key
     ) =>

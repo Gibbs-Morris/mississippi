@@ -14,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
@@ -26,7 +27,6 @@ using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
-using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
 
@@ -248,14 +248,14 @@ await ReadHelpers.LogStreamReadAsync(logger, runId, brookFactory, brookKey);
 // ============================================================================
 // Aggregate Scenarios - Testing command/event aggregate patterns
 // ============================================================================
-IGrainFactory grainFactory = host.Services.GetRequiredService<IGrainFactory>();
+IAggregateGrainFactory aggregateGrainFactory = host.Services.GetRequiredService<IAggregateGrainFactory>();
 
 // Scenario 9: Basic aggregate lifecycle (init → increment → decrement → reset)
 logger.ScenarioAggregateBasicLifecycle();
 ScenarioResult aggLifecycleResult = await AggregateScenario.RunBasicLifecycleAsync(
     logger,
     runId,
-    grainFactory,
+    aggregateGrainFactory,
     $"counter-{Guid.NewGuid():N}");
 LogScenarioResult(logger, aggLifecycleResult);
 
@@ -264,7 +264,7 @@ logger.ScenarioAggregateValidation();
 ScenarioResult aggValidationResult = await AggregateScenario.RunValidationScenarioAsync(
     logger,
     runId,
-    grainFactory,
+    aggregateGrainFactory,
     $"counter-validation-{Guid.NewGuid():N}");
 LogScenarioResult(logger, aggValidationResult);
 
@@ -273,7 +273,7 @@ logger.ScenarioAggregateConcurrency();
 ScenarioResult aggConcurrencyResult = await AggregateScenario.RunConcurrencyScenarioAsync(
     logger,
     runId,
-    grainFactory,
+    aggregateGrainFactory,
     $"counter-concurrency-{Guid.NewGuid():N}");
 LogScenarioResult(logger, aggConcurrencyResult);
 
@@ -282,7 +282,7 @@ logger.ScenarioAggregateThroughput();
 ScenarioResult aggThroughputResult = await AggregateScenario.RunThroughputScenarioAsync(
     logger,
     runId,
-    grainFactory,
+    aggregateGrainFactory,
     $"counter-throughput-{Guid.NewGuid():N}");
 LogScenarioResult(logger, aggThroughputResult);
 
@@ -300,7 +300,7 @@ IRootReducer<CounterAggregate> counterRootReducer = host.Services.GetRequiredSer
 ScenarioResult verificationResult = await VerificationScenario.RunEndToEndVerificationAsync(
     logger,
     runId,
-    grainFactory,
+    aggregateGrainFactory,
     brookStorageProvider,
     snapshotStorageProvider,
     snapshotStateConverter,
@@ -318,7 +318,7 @@ IUxProjectionGrainFactory uxProjectionGrainFactory = host.Services.GetRequiredSe
 ScenarioResult simpleUxResult = await SimpleUxProjectionScenario.RunAsync(
     logger,
     runId,
-    grainFactory,
+    aggregateGrainFactory,
     uxProjectionGrainFactory);
 LogScenarioResult(logger, simpleUxResult);
 
@@ -335,7 +335,7 @@ IRootReducer<CounterSummaryProjection> summaryRootReducer =
 ScenarioResult uxProjectionResult = await UxProjectionScenario.RunEndToEndUxProjectionAsync(
     logger,
     runId,
-    grainFactory,
+    aggregateGrainFactory,
     uxProjectionGrainFactory,
     snapshotStorageProvider,
     summarySnapshotStateConverter,
@@ -351,7 +351,7 @@ LogScenarioResult(logger, uxProjectionResult);
 ScenarioResult e2eSuiteResult = await ComprehensiveE2EScenarios.RunAllAsync(
     logger,
     runId,
-    grainFactory,
+    aggregateGrainFactory,
     uxProjectionGrainFactory);
 LogScenarioResult(logger, e2eSuiteResult);
 (int e2ePassed, int e2eFailed, int e2eTotal) = ComprehensiveE2EScenarios.GetCounts(e2eSuiteResult);

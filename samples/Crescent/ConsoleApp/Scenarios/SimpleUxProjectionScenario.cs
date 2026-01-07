@@ -9,10 +9,7 @@ using Crescent.ConsoleApp.CounterSummary;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
-
-using Orleans;
 
 
 namespace Crescent.ConsoleApp.Scenarios;
@@ -34,14 +31,14 @@ internal static class SimpleUxProjectionScenario
     /// </summary>
     /// <param name="logger">Logger for output.</param>
     /// <param name="runId">Run correlation ID.</param>
-    /// <param name="grainFactory">Orleans grain factory.</param>
+    /// <param name="aggregateGrainFactory">Aggregate grain factory for resolving aggregate grains.</param>
     /// <param name="uxProjectionGrainFactory">UX projection grain factory.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A scenario result indicating success or failure.</returns>
     public static async Task<ScenarioResult> RunAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken = default
     )
@@ -50,14 +47,13 @@ internal static class SimpleUxProjectionScenario
 
         // Create a fresh ID for this run to ensure we're working with an empty stream
         string counterId = $"simple-ux-{Guid.NewGuid():N}";
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
         logger.SimpleUxScenarioStart(runId, counterId);
 
         // ==============================================================
         // Step 1: Execute commands on the aggregate (writes events)
         // ==============================================================
         logger.SimpleUxStep(runId, 1, "Execute commands on aggregate to write events to brook");
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Initialize with value 10
         OperationResult initResult = await counter.InitializeAsync(10);

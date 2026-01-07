@@ -19,10 +19,10 @@ public sealed class SnapshotStreamKeyTests
     [Fact]
     public void ConstructorEnforcesMaxLength()
     {
-        // Sum of lengths plus three separators must not exceed 2048; exceed by one to trigger.
+        // Sum of lengths plus three separators must not exceed 4192; exceed by one to trigger.
         const string brookName = "brook";
-        string snapshotStorageName = new('a', 1024);
-        string entityId = new('b', 1024);
+        string snapshotStorageName = new('a', 2100);
+        string entityId = new('b', 2100);
         const string reducersHash = "h";
         Assert.Throws<ArgumentException>(() => new SnapshotStreamKey(
             brookName,

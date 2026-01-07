@@ -10,7 +10,7 @@ using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
-using Mississippi.EventSourcing.UxProjections.SignalR;
+using Mississippi.Ripples.Orleans.SignalR;
 
 using Orleans.Hosting;
 
@@ -25,9 +25,8 @@ builder.AddAzureBlobServiceClient("blobs");
 // Add Blazor services with Interactive Server rendering
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
-// Add SignalR for real-time projections
-builder.Services.AddSignalR();
-builder.Services.AddUxProjectionSignalR();
+// Add SignalR with Orleans backplane for real-time projections
+builder.Services.AddRipplesOrleansWithSignalR();
 
 // Add domain services (aggregates, handlers, reducers, projections)
 builder.Services.AddCascadeDomain();
@@ -78,7 +77,7 @@ app.UseRouting();
 app.UseAntiforgery();
 
 // Map SignalR hub for real-time UX projections
-app.MapUxProjectionHub();
+app.MapRippleHub();
 
 // Map Blazor components
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();

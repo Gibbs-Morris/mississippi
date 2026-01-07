@@ -14,7 +14,7 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions;
 [Alias("Mississippi.EventSourcing.Abstractions.BrookRangeKey")]
 public readonly record struct BrookRangeKey
 {
-    private const int MaxLength = 1024;
+    private const int MaxLength = 4192;
 
     private const char Separator = '|';
 

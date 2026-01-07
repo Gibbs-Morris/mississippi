@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
@@ -114,8 +113,7 @@ internal sealed class UxProjectionSubscriptionGrain
     {
         ArgumentNullException.ThrowIfNull(request);
         string subscriptionId = Guid.NewGuid().ToString("N");
-        BrookKey brookKey = new(request.BrookType, request.EntityId);
-        UxProjectionKey projectionKey = new(request.ProjectionType, brookKey);
+        UxProjectionKey projectionKey = new(request.EntityId);
         string connectionId = this.GetPrimaryKeyString();
         Logger.SubscribingToProjection(connectionId, subscriptionId, projectionKey);
         ActiveSubscription subscription = new()

@@ -12,7 +12,7 @@ namespace Crescent.ConsoleApp.Counter;
 ///     Exposes domain operations for managing a counter.
 /// </summary>
 [Alias("Crescent.ConsoleApp.Counter.ICounterAggregateGrain")]
-internal interface ICounterAggregateGrain : IAggregateGrain
+internal interface ICounterAggregateGrain : IGrainWithStringKey
 {
     /// <summary>
     ///     Decrements the counter by the specified amount.

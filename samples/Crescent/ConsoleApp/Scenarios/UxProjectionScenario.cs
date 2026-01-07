@@ -8,13 +8,10 @@ using Crescent.ConsoleApp.CounterSummary;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
-
-using Orleans;
 
 
 namespace Crescent.ConsoleApp.Scenarios;
@@ -34,7 +31,7 @@ internal static class UxProjectionScenario
     /// </summary>
     /// <param name="logger">Logger for structured messages.</param>
     /// <param name="runId">Correlation identifier for the current run.</param>
-    /// <param name="grainFactory">Orleans grain factory for resolving grains.</param>
+    /// <param name="aggregateGrainFactory">Aggregate grain factory for resolving aggregate grains.</param>
     /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains.</param>
     /// <param name="snapshotStorageProvider">Direct storage provider for reading snapshots.</param>
     /// <param name="snapshotStateConverter">Converter for deserializing projection snapshot state.</param>
@@ -45,7 +42,7 @@ internal static class UxProjectionScenario
     public static async Task<ScenarioResult> RunEndToEndUxProjectionAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         ISnapshotStorageProvider snapshotStorageProvider,
         ISnapshotStateConverter<CounterSummaryProjection> snapshotStateConverter,
@@ -58,9 +55,8 @@ internal static class UxProjectionScenario
         Stopwatch sw = Stopwatch.StartNew();
         bool allPassed = true;
 
-        // Step 1: Build the grain key and perform aggregate operations
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        // Step 1: Get the aggregate and perform operations
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
         logger.UxProjectionStep(runId, 1, "Execute aggregate commands to generate events for projection");
 
         // Initialize with value 25

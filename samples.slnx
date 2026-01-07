@@ -33,6 +33,7 @@
     <Folder Name="/Framework/EventSourcing/">
         <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
         <Project Path="src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+        <Project Path="src\EventSourcing.Aggregates.Generators\EventSourcing.Aggregates.Generators.csproj" />
         <Project Path="src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
         <Project Path="src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
         <Project Path="src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
@@ -47,7 +48,6 @@
         <Project Path="src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
         <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
         <Project Path="src\EventSourcing.UxProjections.Api.Generators\EventSourcing.UxProjections.Api.Generators.csproj" />
-        <Project Path="src\EventSourcing.UxProjections.SignalR\EventSourcing.UxProjections.SignalR.csproj" />
     </Folder>
     <Folder Name="/Framework/Ripples/">
         <Project Path="src\Ripples.Abstractions\Ripples.Abstractions.csproj" />
@@ -83,7 +83,6 @@
         <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.UxProjections.Api.Generators.L0Tests\EventSourcing.UxProjections.Api.Generators.L0Tests.csproj" />
-        <Project Path="tests\EventSourcing.UxProjections.SignalR.L0Tests\EventSourcing.UxProjections.SignalR.L0Tests.csproj" />
     </Folder>
     <Folder Name="/Tests/Ripples/">
         <Project Path="tests\Ripples.Abstractions.L0Tests\Ripples.Abstractions.L0Tests.csproj" />

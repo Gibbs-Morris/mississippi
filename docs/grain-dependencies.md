@@ -22,7 +22,7 @@ flowchart LR
   end
 
   subgraph Aggregates["Mississippi.EventSourcing.Aggregates"]
-    Aggregate["AggregateGrainBase / IAggregateGrain"]
+    Aggregate["AggregateGrainBase / IGenericAggregateGrain&lt;T&gt;"]
   end
 
   subgraph UX["Mississippi.EventSourcing.UxProjections"]

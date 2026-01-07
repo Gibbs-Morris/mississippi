@@ -21,39 +21,45 @@ This order ensures:
 
 ## Summary Table
 
-| Grain Interface | Key Type | Current Key Format (in code) | Example (current) | Agreed Format |
+| Grain Interface | Key Type | Format | Example | Factory Method |
 | ----------------- | ---------- | ------------------------------ | ------------------- | --------------- |
-| `IBrookWriterGrain` | `BrookKey` | `{Type}\|{Id}` | `CRESCENT.CHAT\|abc123` | `{BrookName}\|{EntityId}` |
-| `IBrookCursorGrain` | `BrookKey` | `{Type}\|{Id}` | `CRESCENT.CHAT\|abc123` | `{BrookName}\|{EntityId}` |
-| `IBrookReaderGrain` | `BrookKey` | `{Type}\|{Id}` | `CRESCENT.CHAT\|abc123` | `{BrookName}\|{EntityId}` |
-| `IBrookAsyncReaderGrain` | `BrookAsyncReaderKey` | `{Type}\|{Id}\|{InstanceId}` | `CRESCENT.CHAT\|abc123\|a1b2...` | `{BrookName}\|{EntityId}\|{InstanceId}` |
-| `IBrookSliceReaderGrain` | `BrookRangeKey` | `{Type}\|{Id}\|{Start}\|{Count}` | `CRESCENT.CHAT\|abc123\|0\|1000` | `{BrookName}\|{EntityId}\|{Start}\|{Count}` |
-| `IAggregateGrain` | *(simple string)* | `{Type}\|{Id}` | `CRESCENT.CHAT\|abc123` | `{EntityId}` (brook from `[BrookName]`) |
-| `ISnapshotCacheGrain<T>` | `SnapshotKey` | `{brookName}\|{entityId}\|{version}\|{snapshotStorageName}\|{reducersHash}` | `CRESCENT.CHAT\|abc123\|42\|ChatProj\|ab12` | `{BrookName}\|{EntityId}\|{Version}\|{SnapshotStorageName}\|{ReducersHash}` |
-| `ISnapshotPersisterGrain` | `SnapshotKey` | `{brookName}\|{entityId}\|{version}\|{snapshotStorageName}\|{reducersHash}` | `CRESCENT.CHAT\|abc123\|42\|ChatProj\|ab12` | `{BrookName}\|{EntityId}\|{Version}\|{SnapshotStorageName}\|{ReducersHash}` |
-| `IUxProjectionGrain<T>` | *(simple string)* | `{ProjectionTypeName}\|{BrookKey.Type}\|{BrookKey.Id}` | `ChatProj\|CRESCENT.CHAT\|abc123` | `{EntityId}` (brook from `[BrookName]`) |
-| `IUxProjectionCursorGrain` | `UxProjectionCursorKey` *(new)* | `{ProjectionTypeName}\|{BrookKey.Type}\|{BrookKey.Id}` | `ChatProj\|CRESCENT.CHAT\|abc123` | `{BrookName}\|{EntityId}` |
-| `IUxProjectionVersionedCacheGrain<T>` | `UxProjectionVersionedCacheKey` *(new)* | `{ProjectionTypeName}\|{BrookKey.Type}\|{BrookKey.Id}\|{Version}` | `ChatProj\|CRESCENT.CHAT\|abc123\|42` | `{BrookName}\|{EntityId}\|{Version}` |
-| `IUxProjectionSubscriptionGrain` | `string` | `{connectionId}` | `conn-xyz-789` | `{ConnectionId}` |
-| `IUxClientGrain` | `string` | `{hubName}:{connectionId}` | `ChatHub:conn-xyz-789` | `{HubName}:{ConnectionId}` |
-| `IUxGroupGrain` | `string` | `{hubName}:{groupName}` | `ChatHub:room-42` | `{HubName}:{GroupName}` |
-| `IUxServerDirectoryGrain` | `string` | `{constant}` | `default` | `{Constant}` |
+| `IBrookWriterGrain` | `BrookKey` | `{BrookName}\|{EntityId}` | `CRESCENT.CHAT\|abc123` | `IBrookGrainFactory.GetBrookWriterGrain(BrookKey)` |
+| `IBrookCursorGrain` | `BrookKey` | `{BrookName}\|{EntityId}` | `CRESCENT.CHAT\|abc123` | `IBrookGrainFactory.GetBrookCursorGrain(BrookKey)` |
+| `IBrookReaderGrain` | `BrookKey` | `{BrookName}\|{EntityId}` | `CRESCENT.CHAT\|abc123` | `IBrookGrainFactory.GetBrookReaderGrain(BrookKey)` |
+| `IBrookAsyncReaderGrain` | `BrookAsyncReaderKey` | `{BrookName}\|{EntityId}\|{InstanceId}` | `CRESCENT.CHAT\|abc123\|a1b2...` | `IBrookGrainFactory.GetBrookAsyncReaderGrain(BrookKey)` |
+| `IBrookSliceReaderGrain` | `BrookRangeKey` | `{BrookName}\|{EntityId}\|{Start}\|{Count}` | `CRESCENT.CHAT\|abc123\|0\|1000` | `IBrookGrainFactory.GetBrookSliceReaderGrain(BrookRangeKey)` |
+| `IGenericAggregateGrain<T>` | `string` | `{EntityId}` | `abc123` | `IAggregateGrainFactory.GetGenericAggregate<T>(entityId)` ✅ |
+| Custom `IGrainWithStringKey` | `string` | `{EntityId}` | `abc123` | `IAggregateGrainFactory.GetAggregate<TGrain>(entityId)` ✅ |
+| `ISnapshotCacheGrain<T>` | `SnapshotKey` | `{BrookName}\|{EntityId}\|{Version}\|{SnapshotStorageName}\|{ReducersHash}` | `CRESCENT.CHAT\|abc123\|42\|ChatProj\|ab12` | `ISnapshotGrainFactory.GetSnapshotCacheGrain<T>(SnapshotKey)` |
+| `ISnapshotPersisterGrain` | `SnapshotKey` | `{BrookName}\|{EntityId}\|{Version}\|{SnapshotStorageName}\|{ReducersHash}` | `CRESCENT.CHAT\|abc123\|42\|ChatProj\|ab12` | `ISnapshotGrainFactory.GetSnapshotPersisterGrain(SnapshotKey)` |
+| `IUxProjectionGrain<T>` | `string` | `{EntityId}` | `abc123` | `IUxProjectionGrainFactory.GetUxProjectionGrain<T>(entityId)` ✅ |
+| `IUxProjectionCursorGrain` | `UxProjectionCursorKey` | `{BrookName}\|{EntityId}` | `CRESCENT.CHAT\|abc123` | `IUxProjectionGrainFactory.GetUxProjectionCursorGrain<T>(entityId)` ✅ |
+| `IUxProjectionVersionedCacheGrain<T>` | `UxProjectionVersionedCacheKey` | `{BrookName}\|{EntityId}\|{Version}` | `CRESCENT.CHAT\|abc123\|42` | `IUxProjectionGrainFactory.GetUxProjectionVersionedCacheGrain<T>(entityId, version)` ✅ |
+| `IUxProjectionSubscriptionGrain` | `string` | `{ConnectionId}` | `conn-xyz-789` | `GrainFactory.GetGrain<...>(connectionId)` |
+| `IRippleSubscriptionGrain` | `string` | `{ConnectionId}` | `conn-xyz-789` | `GrainFactory.GetGrain<...>(connectionId)` |
+| `IUxProjectionNotificationGrain` | `UxProjectionNotificationKey` | `{ProjectionType}\|{BrookName}\|{EntityId}` | `ChatProj\|CRESCENT.CHAT\|abc123` | Direct `GetGrain<...>(key)` |
+| `ISignalRClientGrain` | `SignalRClientKey` | `{HubName}\|{ConnectionId}` | `ChatHub\|conn-xyz-789` | Direct `GetGrain<...>(key)` |
+| `ISignalRGroupGrain` | `SignalRGroupKey` | `{HubName}\|{GroupName}` | `ChatHub\|room-42` | Direct `GetGrain<...>(key)` |
+| `ISignalRServerDirectoryGrain` | `SignalRServerDirectoryKey` | `{Constant}` | `default` | Direct `GetGrain<...>("default")` |
+
+> **Note**: ✅ marks preferred factory methods that use `entityId` only (brook derived from `[BrookName]` attribute).
+>
+> **Max Key Length**: All keys have a maximum length of **4192 characters**.
 
 ---
 
-## Property Rename Plan
+## Property Rename Plan ✅ COMPLETED
 
-The following properties will be renamed for consistency:
+The following properties were renamed for consistency:
 
-| Type | Current Property | New Property | Notes |
+| Type | Previous Property | Current Property | Status |
 | ------ | ------------------ | -------------- | ------- |
-| `BrookKey` | `Type` | `BrookName` | ✅ Agreed |
-| `BrookKey` | `Id` | `EntityId` | ✅ Agreed |
-| `SnapshotStreamKey` | `ProjectionType` | `SnapshotStorageName` | ✅ Agreed |
-| `SnapshotStreamKey` | `ProjectionId` | `EntityId` | ✅ Agreed |
-| `UxProjectionKey` | `ProjectionTypeName` | *(dropped)* | Redundant with `TProjection` |
-| `UxProjectionKey` | `BrookKey.Type` | `BrookName` | Via `BrookKey` rename |
-| `UxProjectionKey` | `BrookKey.Id` | `EntityId` | Via `BrookKey` rename |
+| `BrookKey` | `Type` | `BrookName` | ✅ Done |
+| `BrookKey` | `Id` | `EntityId` | ✅ Done |
+| `SnapshotStreamKey` | `ProjectionType` | `SnapshotStorageName` | ✅ Done |
+| `SnapshotStreamKey` | `ProjectionId` | `EntityId` | ✅ Done |
+| `UxProjectionKey` | *(composite key)* | `EntityId` only | ✅ Done (simplified) |
+| `AggregateKey` | *(composite key)* | `EntityId` only | ✅ Done (simplified) |
 
 ---
 
@@ -156,16 +162,30 @@ public readonly record struct UxProjectionVersionedCacheKey(string BrookName, st
 
 ### 2. Aggregate Grains (EventSourcing.Aggregates)
 
-#### 2.1 `IAggregateGrain`
+#### 2.1 `IGenericAggregateGrain<TAggregate>`
 
-- **Key Type**: `BrookKey`
-- **Current Format**: `{Type}|{Id}`
-- **Components (current)**:
-  - `Type` – Derived from the `[BrookName]` attribute on the aggregate class.
-  - `Id` – The identity of the aggregate instance.
-- **Proposed Format**: `{EntityId}` only, with brook name inferred from the `[BrookName]` attribute.
-- **Construction**: `BrookKey.ForGrain<TGrain>(entityId)` builds the key today using the attribute-provided brook name plus the supplied `entityId`; a future helper would accept only `entityId`.
-- **Factory Method**: `IAggregateGrainFactory.GetAggregate<TGrain>(BrookKey)`.
+- **Key Type**: `string` (simple entity ID)
+- **Format**: `{EntityId}`
+- **Components**:
+  - `EntityId` – The identity of the aggregate instance.
+- **Brook Name**: Derived from the `[BrookName]` attribute on the `TAggregate` type.
+- **Construction**: Just the entity ID string.
+- **Factory Method**: `IAggregateGrainFactory.GetGenericAggregate<TAggregate>(entityId)` ✅ **Preferred**
+- **Notes**: This is the preferred pattern for new aggregates. The grain executes commands via `IRootCommandHandler<TAggregate>`.
+
+#### 2.2 Custom Aggregate Grain Interface Pattern
+
+- **Key Type**: `string` (simple entity ID)
+- **Format**: `{EntityId}`
+- **Components**:
+  - `EntityId` – The identity of the aggregate instance.
+- **Brook Name**: Derived from the `[BrookName]` attribute on the grain interface.
+- **Factory Method**: `IAggregateGrainFactory.GetAggregate<TGrain>(entityId)` ✅ **Preferred**
+- **Notes**: Use this pattern when you need a custom aggregate grain interface with domain-specific
+  methods (e.g., `ICounterAggregateGrain` with `IncrementAsync`, `DecrementAsync`).
+
+> **Breaking Change**: The `IAggregateGrain` base interface and `GetAggregate<TGrain>(BrookKey)` overload
+> have been removed. All aggregate grains are now keyed by entity ID only.
 
 ---
 
@@ -269,37 +289,45 @@ public readonly record struct UxProjectionVersionedCacheKey(string BrookName, st
 
 ---
 
-### 5. SignalR Grains (EventSourcing.UxProjections.SignalR)
+### 5. SignalR Grains (Viaduct)
 
-#### 5.1 `IUxClientGrain`
+> **Note**: SignalR grains were moved from `EventSourcing.UxProjections.SignalR` to `Viaduct` and `Viaduct.Abstractions`.
+> All SignalR key types now use the `|` (pipe) separator for consistency with other Mississippi keys.
 
-- **Key Type**: `string` (raw)
-- **Format**: `{hubName}:{connectionId}`
+#### 5.1 `ISignalRClientGrain`
+
+- **Key Type**: `SignalRClientKey`
+- **Format**: `{HubName}|{ConnectionId}`
 - **Components**:
-  - `hubName` – SignalR hub name.
-  - `connectionId` – SignalR connection identifier.
-- **Separator**: `:` (colon)
+  - `HubName` – SignalR hub name.
+  - `ConnectionId` – SignalR connection identifier.
+- **Separator**: `|` (pipe)
+- **Max Length**: 4192 characters (combined)
 - **Behavior**: Tracks a single SignalR connection for recovery and messaging.
-- **Construction**: Concatenate `hubName` and `connectionId` with a colon.
+- **Construction**: `new SignalRClientKey(hubName, connectionId)`.
+- **Location**: `Mississippi.Viaduct.SignalRClientKey`
 
-#### 5.2 `IUxGroupGrain`
+#### 5.2 `ISignalRGroupGrain`
 
-- **Key Type**: `string` (raw)
-- **Format**: `{hubName}:{groupName}`
+- **Key Type**: `SignalRGroupKey`
+- **Format**: `{HubName}|{GroupName}`
 - **Components**:
-  - `hubName` – SignalR hub name.
-  - `groupName` – SignalR group identifier.
-- **Separator**: `:` (colon)
+  - `HubName` – SignalR hub name.
+  - `GroupName` – SignalR group identifier.
+- **Separator**: `|` (pipe)
+- **Max Length**: 4192 characters (combined)
 - **Behavior**: Maintains membership lists for a SignalR group.
-- **Construction**: `{hubName}:{groupName}` string.
+- **Construction**: `new SignalRGroupKey(hubName, groupName)`.
+- **Location**: `Mississippi.Viaduct.SignalRGroupKey`
 
-#### 5.3 `IUxServerDirectoryGrain`
+#### 5.3 `ISignalRServerDirectoryGrain`
 
-- **Key Type**: `string` (raw)
-- **Format**: `{constant}` (typically `"default"`)
+- **Key Type**: `SignalRServerDirectoryKey`
+- **Format**: `{Constant}` (typically `"default"`)
 - **Components**: Constant placeholder identifying the singleton grain.
 - **Behavior**: Tracks active SignalR servers for failure detection.
-- **Construction**: Constant string value.
+- **Construction**: `SignalRServerDirectoryKey.Default` or `new SignalRServerDirectoryKey(name)`.
+- **Location**: `Mississippi.Viaduct.SignalRServerDirectoryKey`
 
 ---
 
@@ -318,19 +346,23 @@ SnapshotStreamKey (BrookName|EntityId|SnapshotStorageName|ReducersHash)
     └── Format: BrookName|EntityId|Version|SnapshotStorageName|ReducersHash
     └── Used by: ISnapshotCacheGrain<T>, ISnapshotPersisterGrain
 
-UxProjectionCursorKey (BrookName|EntityId) [NEW]
+UxProjectionCursorKey (BrookName|EntityId)
 └── Used by: IUxProjectionCursorGrain
 
-UxProjectionVersionedCacheKey (BrookName|EntityId|Version) [NEW]
+UxProjectionVersionedCacheKey (BrookName|EntityId|Version)
 └── Used by: IUxProjectionVersionedCacheGrain<T>
 
+SignalR keys (Viaduct)
+├── SignalRClientKey (HubName|ConnectionId) → ISignalRClientGrain
+├── SignalRGroupKey (HubName|GroupName) → ISignalRGroupGrain
+└── SignalRServerDirectoryKey (Constant) → ISignalRServerDirectoryGrain
+
 Simple string keys
-├── {EntityId} → IAggregateGrain, IUxProjectionGrain<T>
-├── {ConnectionId} → IUxProjectionSubscriptionGrain
-├── {HubName}:{ConnectionId} → IUxClientGrain
-├── {HubName}:{GroupName} → IUxGroupGrain
-└── {Constant} → IUxServerDirectoryGrain
+├── {EntityId} → IGenericAggregateGrain<T>, Custom aggregate grains, IUxProjectionGrain<T>
+└── {ConnectionId} → IUxProjectionSubscriptionGrain, IRippleSubscriptionGrain
 ```
+
+> **Max Key Length**: All key types enforce a maximum length of **4192 characters**.
 
 ---
 
@@ -401,15 +433,13 @@ sequenceDiagram
 
 ## Identified Inconsistencies and Issues
 
-### 1. Separator Inconsistency
+### 1. Separator Consistency ✅ RESOLVED
 
-- **Framework grains** (Brook, snapshot, UX) use `|`.
-- **SignalR grains** use `:`.
-- Any shared helper must respect each separator to avoid collisions.
+All Mississippi keys now use `|` (pipe) as the separator, including SignalR keys in Viaduct.
 
 ### 2. Key Component Naming ✅ RESOLVED
 
-Property renames agreed:
+Property renames completed:
 
 - `BrookKey.Type` → `BrookName`
 - `BrookKey.Id` → `EntityId`
@@ -420,11 +450,19 @@ Property renames agreed:
 
 Standard order established: `BrookName` → `EntityId` → `Version` → Additional context.
 
-### 4. Raw String Keys for SignalR Grains
+### 4. SignalR Key Types ✅ RESOLVED
 
-- Client/group/server grains rely on raw strings with no validation or type safety.
-- They also use a different separator from the rest of the system.
-- Introducing lightweight value types for these keys could improve discoverability and correctness.
+SignalR grains now use strongly-typed key types (`SignalRClientKey`, `SignalRGroupKey`, `SignalRServerDirectoryKey`)
+with proper validation, max length enforcement (4192), and consistent `|` separator.
+
+### 5. BrookKey Exposed in Aggregate Factory ✅ RESOLVED
+
+The `GetAggregate<TGrain>(BrookKey)` overload has been removed from `IAggregateGrainFactory`.
+The factory now exposes only entity ID-based methods:
+
+- `GetAggregate<TGrain>(string entityId)` – For custom aggregate interfaces
+- `GetGenericAggregate<TAggregate>(string entityId)` – For generic aggregate pattern
+- `GetGenericAggregate<TAggregate>(AggregateKey aggregateKey)` – For typed key convenience
 
 ---
 
@@ -432,22 +470,32 @@ Standard order established: `BrookName` → `EntityId` → `Version` → Additio
 
 | # | Decision | Status |
 | --- | ---------- | -------- |
-| 1 | Rename `BrookKey.Type` → `BrookName`, `BrookKey.Id` → `EntityId` | ✅ Agreed |
-| 2 | Rename `SnapshotStreamKey.ProjectionType` → `SnapshotStorageName` | ✅ Agreed |
-| 3 | Rename `SnapshotStreamKey.ProjectionId` → `EntityId` | ✅ Agreed |
-| 4 | Drop `ProjectionTypeName` from UX projection keys | ✅ Agreed |
-| 5 | Create `UxProjectionCursorKey` for `IUxProjectionCursorGrain` | ✅ Agreed |
-| 6 | Create `UxProjectionVersionedCacheKey` for `IUxProjectionVersionedCacheGrain<T>` | ✅ Agreed |
-| 7 | `IUxProjectionGrain<T>` keyed by `{EntityId}` only, brook from `[BrookName]` | ✅ Agreed |
-| 8 | `IAggregateGrain` keyed by `{EntityId}` only, brook from `[BrookName]` | ✅ Agreed |
-| 9 | Standard key order: `BrookName` → `EntityId` → `Version` → Additional context | ✅ Agreed |
+| 1 | Rename `BrookKey.Type` → `BrookName`, `BrookKey.Id` → `EntityId` | ✅ Done |
+| 2 | Rename `SnapshotStreamKey.ProjectionType` → `SnapshotStorageName` | ✅ Done |
+| 3 | Rename `SnapshotStreamKey.ProjectionId` → `EntityId` | ✅ Done |
+| 4 | Drop `ProjectionTypeName` from UX projection keys | ✅ Done |
+| 5 | Create `UxProjectionCursorKey` for `IUxProjectionCursorGrain` | ✅ Done |
+| 6 | Create `UxProjectionVersionedCacheKey` for `IUxProjectionVersionedCacheGrain<T>` | ✅ Done |
+| 7 | `IUxProjectionGrain<T>` keyed by `{EntityId}` only, brook from `[BrookName]` | ✅ Done |
+| 8 | Aggregate grains keyed by `{EntityId}` only, brook from `[BrookName]` | ✅ Done |
+| 9 | Standard key order: `BrookName` → `EntityId` → `Version` → Additional context | ✅ Done |
 | 10 | Breaking changes acceptable (not yet released) | ✅ Agreed |
+| 11 | Add `IGenericAggregateGrain<T>` for generic aggregate pattern | ✅ Done |
+| 12 | Add `GetAggregate<TGrain>(entityId)` to `IAggregateGrainFactory` | ✅ Done |
+| 13 | Remove `GetAggregate<TGrain>(BrookKey)` from `IAggregateGrainFactory` | ✅ Done |
+| 14 | Remove `IAggregateGrain` base interface (replaced by pattern) | ✅ Done |
+| 15 | Simplify `AggregateKey` to `{EntityId}` only | ✅ Done |
+| 16 | Simplify `UxProjectionKey` to `{EntityId}` only | ✅ Done |
+| 17 | Max key length: 4192 characters | ✅ Done |
+| 18 | SignalR separator changed from `:` to `\|` | ✅ Done |
+| 19 | SignalR grains moved to Viaduct project | ✅ Done |
+| 20 | Create strongly-typed SignalR key types | ✅ Done |
 
 ---
 
-## Implementation Tasks
+## Implementation Tasks ✅ ALL COMPLETED
 
-The following code changes are required to implement the agreed key formats:
+All planned code changes have been implemented:
 
 ### Phase 1: Property Renames ✅ COMPLETED
 
@@ -464,14 +512,14 @@ The following code changes are required to implement the agreed key formats:
 - [x] Create `UxProjectionVersionedCacheKey` record struct in `EventSourcing.UxProjections.Abstractions`
 - [x] Update `IUxProjectionCursorGrain` to use `UxProjectionCursorKey`
 - [x] Update `IUxProjectionVersionedCacheGrain<T>` to use `UxProjectionVersionedCacheKey`
-- [x] Remove or deprecate `UxProjectionKey` and `UxProjectionVersionedKey`
+- [x] Simplify `UxProjectionKey` to `{EntityId}` only
 
 ### Phase 3: Grain Key Simplification ✅ COMPLETED
 
 - [x] Update `IUxProjectionGrain<T>` to be keyed by `{EntityId}` only
 - [x] Update `UxProjectionGrainBase` to read brook name from `[BrookName]` attribute
 - [x] Update `UxProjectionGrainBase` to construct `UxProjectionCursorKey` and `UxProjectionVersionedCacheKey`
-- [x] Update `IAggregateGrain` to be keyed by `{EntityId}` only (if not already)
+- [x] Simplify `AggregateKey` to `{EntityId}` only
 - [x] Update factories to use new key types
 
 ### Phase 4: Snapshot Key Reorder ✅ COMPLETED
@@ -480,20 +528,56 @@ The following code changes are required to implement the agreed key formats:
 - [x] Update parsing logic in `FromString` method
 - [x] Update all snapshot key tests
 
+### Phase 5: Generic Aggregate Pattern ✅ COMPLETED
+
+- [x] Create `IGenericAggregateGrain<TAggregate>` interface
+- [x] Add `GetGenericAggregate<TAggregate>(entityId)` to `IAggregateGrainFactory`
+- [x] Add `GetAggregate<TGrain>(entityId)` to `IAggregateGrainFactory`
+
+### Phase 6: Remove BrookKey from Aggregate Factory ✅ COMPLETED
+
+- [x] Remove `IAggregateGrain` base interface
+- [x] Remove `GetAggregate<TGrain>(BrookKey)` from `IAggregateGrainFactory`
+- [x] Update Samples to use `GetAggregate<TGrain>(entityId)` instead
+
+### Phase 7: SignalR Consolidation ✅ COMPLETED
+
+- [x] Create strongly-typed SignalR key types (`SignalRClientKey`, `SignalRGroupKey`, `SignalRServerDirectoryKey`)
+- [x] Change SignalR separator from `:` to `|` for consistency
+- [x] Move SignalR grains from `EventSourcing.UxProjections.SignalR` to `Viaduct`
+- [x] Delete `EventSourcing.UxProjections.SignalR` project
+- [x] Enforce max key length of 4192 characters on all key types
+
 ---
 
 ## File References
+
+### Key Types
 
 - [BrookKey.cs](../src/EventSourcing.Brooks.Abstractions/BrookKey.cs)
 - [BrookRangeKey.cs](../src/EventSourcing.Brooks.Abstractions/BrookRangeKey.cs)
 - [BrookAsyncReaderKey.cs](../src/EventSourcing.Brooks.Abstractions/BrookAsyncReaderKey.cs)
 - [SnapshotKey.cs](../src/EventSourcing.Snapshots.Abstractions/SnapshotKey.cs)
 - [SnapshotStreamKey.cs](../src/EventSourcing.Snapshots.Abstractions/SnapshotStreamKey.cs)
-- [UxProjectionKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionKey.cs) *(deprecated)*
-- [UxProjectionVersionedKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionVersionedKey.cs) *(deprecated)*
-- [UxProjectionCursorKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionCursorKey.cs) *(new)*
-- [UxProjectionVersionedCacheKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionVersionedCacheKey.cs) *(new)*
-- [BrookGrainFactory.cs](../src/EventSourcing.Brooks/Factory/BrookGrainFactory.cs)
+- [UxProjectionKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionKey.cs) — Simplified to `{EntityId}` only
+- [UxProjectionCursorKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionCursorKey.cs)
+- [UxProjectionVersionedCacheKey.cs](../src/EventSourcing.UxProjections.Abstractions/UxProjectionVersionedCacheKey.cs)
+- [AggregateKey.cs](../src/EventSourcing.Aggregates.Abstractions/AggregateKey.cs) — Simplified to `{EntityId}` only
+- [SignalRClientKey.cs](../src/Viaduct.Abstractions/Keys/SignalRClientKey.cs)
+- [SignalRGroupKey.cs](../src/Viaduct.Abstractions/Keys/SignalRGroupKey.cs)
+- [SignalRServerDirectoryKey.cs](../src/Viaduct.Abstractions/Keys/SignalRServerDirectoryKey.cs)
+
+### Grain Interfaces
+
+- [IGenericAggregateGrain.cs](../src/EventSourcing.Aggregates.Abstractions/IGenericAggregateGrain.cs)
+- [ISignalRClientGrain.cs](../src/Viaduct.Abstractions/Grains/ISignalRClientGrain.cs)
+- [ISignalRGroupGrain.cs](../src/Viaduct.Abstractions/Grains/ISignalRGroupGrain.cs)
+- [ISignalRServerDirectoryGrain.cs](../src/Viaduct.Abstractions/Grains/ISignalRServerDirectoryGrain.cs)
+
+### Factories
+
+- [IAggregateGrainFactory.cs](../src/EventSourcing.Aggregates.Abstractions/IAggregateGrainFactory.cs)
 - [AggregateGrainFactory.cs](../src/EventSourcing.Aggregates/AggregateGrainFactory.cs)
+- [BrookGrainFactory.cs](../src/EventSourcing.Brooks/Factory/BrookGrainFactory.cs)
 - [SnapshotGrainFactory.cs](../src/EventSourcing.Snapshots/SnapshotGrainFactory.cs)
 - [UxProjectionGrainFactory.cs](../src/EventSourcing.UxProjections/UxProjectionGrainFactory.cs)

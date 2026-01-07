@@ -22,8 +22,7 @@ public sealed class UxProjectionSubscriptionTypesTests
     [Fact]
     public void UxProjectionChangedEventCreatesWithAllProperties()
     {
-        BrookKey brookKey = new("UserEvents", "user-123");
-        UxProjectionKey projectionKey = new("UserProfile", brookKey);
+        UxProjectionKey projectionKey = new("user-123");
         BrookPosition newVersion = new(42);
         DateTimeOffset timestamp = DateTimeOffset.UtcNow;
         UxProjectionChangedEvent changedEvent = new()
@@ -43,8 +42,7 @@ public sealed class UxProjectionSubscriptionTypesTests
     [Fact]
     public void UxProjectionChangedEventDetectsInequalityOnVersion()
     {
-        BrookKey brookKey = new("UserEvents", "user-123");
-        UxProjectionKey projectionKey = new("UserProfile", brookKey);
+        UxProjectionKey projectionKey = new("user-123");
         DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
         UxProjectionChangedEvent event1 = new()
         {
@@ -68,8 +66,7 @@ public sealed class UxProjectionSubscriptionTypesTests
     [Fact]
     public void UxProjectionChangedEventSupportsEquality()
     {
-        BrookKey brookKey = new("UserEvents", "user-123");
-        UxProjectionKey projectionKey = new("UserProfile", brookKey);
+        UxProjectionKey projectionKey = new("user-123");
         BrookPosition newVersion = new(42);
         DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
         UxProjectionChangedEvent event1 = new()

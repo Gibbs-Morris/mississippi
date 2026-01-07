@@ -14,7 +14,7 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 [Alias("Mississippi.EventSourcing.Snapshots.Abstractions.SnapshotStreamKey")]
 public readonly record struct SnapshotStreamKey
 {
-    private const int MaxLength = 2048;
+    private const int MaxLength = 4192;
 
     private const char Separator = '|';
 

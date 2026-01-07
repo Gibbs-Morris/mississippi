@@ -86,8 +86,7 @@ internal sealed class UserSession : IUserContext
         string userId = $"user-{normalizedName}";
 
         // Get the user aggregate grain
-        AggregateKey aggregateKey = AggregateKey.ForAggregate<IUserAggregateGrain>(userId);
-        IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(aggregateKey);
+        IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(userId);
 
         // Register the user (idempotent - returns error if already registered, which we ignore)
         OperationResult result = await userGrain.RegisterAsync(userId, displayName);
@@ -119,8 +118,7 @@ internal sealed class UserSession : IUserContext
         if (!string.IsNullOrEmpty(UserId))
         {
             // Set user offline
-            AggregateKey aggregateKey = AggregateKey.ForAggregate<IUserAggregateGrain>(UserId);
-            IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(aggregateKey);
+            IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(UserId);
             await userGrain.SetOnlineStatusAsync(false);
         }
 

@@ -27,7 +27,7 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 [Alias("Mississippi.EventSourcing.UxProjections.Abstractions.UxProjectionVersionedCacheKey")]
 public readonly record struct UxProjectionVersionedCacheKey
 {
-    private const int MaxLength = 2048;
+    private const int MaxLength = 4192;
 
     private const char Separator = '|';
 

@@ -1,185 +1,102 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-
 using Orleans;
 
 
 namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 
 /// <summary>
-///     Represents a composite key for identifying UX projections, consisting of a projection type name and brook key.
+///     Represents a strongly-typed key for identifying UX projections by entity ID.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         UX projections are keyed by both the projection type and the brook they consume.
-///         This allows multiple different projection types to consume the same brook independently,
-///         each maintaining its own cursor and cached state.
+///         UX projection grains are keyed by entity ID only. The brook name is derived
+///         from the projection type parameter's <c>[BrookName]</c> attribute at runtime.
 ///     </para>
 ///     <para>
-///         The string format is "{projectionTypeName}|{brookKey}" where brookKey itself is "{brookType}|{brookId}".
+///         This key provides type safety while maintaining a simple string representation.
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.UxProjections.Abstractions.UxProjectionKey")]
 public readonly record struct UxProjectionKey
 {
-    private const int MaxLength = 2048;
-
-    private const char Separator = '|';
+    private const int MaxLength = 4192;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="UxProjectionKey" /> struct.
     /// </summary>
-    /// <param name="projectionTypeName">The name of the projection type.</param>
-    /// <param name="brookKey">The brook key identifying the source event stream.</param>
-    /// <exception cref="ArgumentNullException">Thrown when projectionTypeName is null.</exception>
-    /// <exception cref="ArgumentException">
-    ///     Thrown when the composite key exceeds the maximum length or contains invalid characters.
-    /// </exception>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <exception cref="ArgumentNullException">Thrown when entityId is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when entityId exceeds the maximum length.</exception>
     public UxProjectionKey(
-        string projectionTypeName,
-        BrookKey brookKey
+        string entityId
     )
     {
-        ValidateProjectionTypeName(projectionTypeName);
-        string brookKeyString = brookKey;
-        if ((projectionTypeName.Length + brookKeyString.Length + 1) > MaxLength)
+        ArgumentNullException.ThrowIfNull(entityId);
+        if (entityId.Length > MaxLength)
         {
-            throw new ArgumentException($"Composite key exceeds the {MaxLength}-character limit.");
+            throw new ArgumentException($"Entity ID exceeds the {MaxLength}-character limit.", nameof(entityId));
         }
 
-        ProjectionTypeName = projectionTypeName;
-        BrookKey = brookKey;
+        EntityId = entityId;
     }
 
     /// <summary>
-    ///     Gets the brook key identifying the source event stream.
-    /// </summary>
-    [Id(1)]
-    public BrookKey BrookKey { get; }
-
-    /// <summary>
-    ///     Gets the name of the projection type.
+    ///     Gets the entity identifier.
     /// </summary>
     [Id(0)]
-    public string ProjectionTypeName { get; }
+    public string EntityId { get; }
 
     /// <summary>
-    ///     Creates a UX projection key for a specific projection type and grain with a brook name attribute.
+    ///     Creates a <see cref="UxProjectionKey" /> from its string representation.
+    ///     This method satisfies CA2225 as an alternate for the implicit string conversion operator.
     /// </summary>
-    /// <typeparam name="TProjection">The projection type.</typeparam>
-    /// <typeparam name="TGrain">
-    ///     The grain type decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
-    /// </typeparam>
-    /// <param name="entityId">The entity identifier within the brook.</param>
-    /// <returns>A UX projection key for the specified projection and grain's brook.</returns>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when <typeparamref name="TGrain" /> is not decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
-    /// </exception>
-    public static UxProjectionKey ForGrain<TProjection, TGrain>(
-        string entityId
-    )
-        where TGrain : class =>
-        new(typeof(TProjection).Name, BrookKey.ForGrain<TGrain>(entityId));
-
-    /// <summary>
-    ///     Creates a UX projection key for a projection type that is decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
-    /// </summary>
-    /// <typeparam name="TProjection">
-    ///     The projection type decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
-    /// </typeparam>
-    /// <param name="entityId">The entity identifier within the brook.</param>
-    /// <returns>A UX projection key for the specified projection type's brook.</returns>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when <typeparamref name="TProjection" /> is not decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
-    /// </exception>
-    public static UxProjectionKey ForProjection<TProjection>(
-        string entityId
-    )
-        where TProjection : class =>
-        new(typeof(TProjection).Name, BrookKey.ForType<TProjection>(entityId));
-
-    /// <summary>
-    ///     Creates a UX projection key from its string representation.
-    /// </summary>
-    /// <param name="value">The string value to convert.</param>
-    /// <returns>A UX projection key parsed from the string.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
-    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
+    /// <param name="entityId">The entity ID string to convert.</param>
+    /// <returns>A new <see cref="UxProjectionKey" /> instance.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when entityId is null.</exception>
     public static UxProjectionKey FromString(
+        string entityId
+    ) =>
+        Parse(entityId);
+
+    /// <summary>
+    ///     Parses a string into a <see cref="UxProjectionKey" />.
+    /// </summary>
+    /// <param name="value">The string to parse.</param>
+    /// <returns>A new <see cref="UxProjectionKey" /> instance.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
+    public static UxProjectionKey Parse(
         string value
     )
     {
         ArgumentNullException.ThrowIfNull(value);
-        int firstSeparator = value.IndexOf(Separator, StringComparison.Ordinal);
-        if (firstSeparator < 0)
-        {
-            throw new FormatException(
-                $"UX projection key must be in the form '<projectionTypeName>{Separator}<brookType>{Separator}<brookId>'.");
-        }
-
-        string projectionTypeName = value[..firstSeparator];
-        string brookKeyPart = value[(firstSeparator + 1)..];
-
-        // Parse the brook key from the remaining part
-        BrookKey brookKey = BrookKey.FromString(brookKeyPart);
-        return new(projectionTypeName, brookKey);
+        return new(value);
     }
-
-    /// <summary>
-    ///     Converts a UX projection key to its string representation.
-    /// </summary>
-    /// <param name="key">The UX projection key to convert.</param>
-    /// <returns>A string representation of the key in the format "projectionTypeName|brookType|brookId".</returns>
-    public static string FromUxProjectionKey(
-        UxProjectionKey key
-    ) =>
-        key;
 
     /// <summary>
     ///     Implicitly converts a <see cref="UxProjectionKey" /> to its string representation.
     /// </summary>
-    /// <param name="key">The UX projection key to convert.</param>
-    /// <returns>A string representation in the format "projectionTypeName|brookType|brookId".</returns>
+    /// <param name="key">The key to convert.</param>
+    /// <returns>The entity ID string.</returns>
     public static implicit operator string(
         UxProjectionKey key
     ) =>
-        $"{key.ProjectionTypeName}{Separator}{(string)key.BrookKey}";
+        key.EntityId;
 
     /// <summary>
     ///     Implicitly converts a string to a <see cref="UxProjectionKey" />.
     /// </summary>
-    /// <param name="value">The string value to convert.</param>
-    /// <returns>A UX projection key parsed from the string.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
-    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
+    /// <param name="entityId">The entity ID string.</param>
+    /// <returns>A new <see cref="UxProjectionKey" /> instance.</returns>
     public static implicit operator UxProjectionKey(
-        string value
+        string entityId
     ) =>
-        FromString(value);
-
-    private static void ValidateProjectionTypeName(
-        string value
-    )
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        if (value.Contains(Separator, StringComparison.Ordinal))
-        {
-            throw new ArgumentException(
-                $"Projection type name cannot contain the separator character '{Separator}'.",
-                nameof(value));
-        }
-    }
+        new(entityId);
 
     /// <summary>
-    ///     Returns the string representation of this UX projection key.
+    ///     Returns the string representation of this key.
     /// </summary>
-    /// <returns>A string representation in the format "projectionTypeName|brookType|brookId".</returns>
-    public override string ToString() => this;
+    /// <returns>The entity ID.</returns>
+    public override string ToString() => EntityId;
 }

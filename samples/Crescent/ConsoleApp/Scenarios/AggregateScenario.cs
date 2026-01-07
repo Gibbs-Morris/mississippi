@@ -8,9 +8,6 @@ using Crescent.ConsoleApp.Counter;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-
-using Orleans;
 
 
 namespace Crescent.ConsoleApp.Scenarios;
@@ -26,14 +23,14 @@ internal static class AggregateScenario
     /// </summary>
     /// <param name="logger">Logger for structured messages.</param>
     /// <param name="runId">Correlation identifier for the current run.</param>
-    /// <param name="grainFactory">Orleans grain factory.</param>
+    /// <param name="aggregateGrainFactory">Aggregate grain factory for resolving aggregate grains.</param>
     /// <param name="counterId">The counter entity identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A scenario result indicating success or failure.</returns>
     public static async Task<ScenarioResult> RunBasicLifecycleAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         string counterId,
         CancellationToken cancellationToken = default
     )
@@ -42,9 +39,8 @@ internal static class AggregateScenario
         logger.AggregateScenarioStart(runId, scenarioName, counterId);
         Stopwatch sw = Stopwatch.StartNew();
 
-        // Build the grain key using the brook name constant
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        // Resolve the aggregate using the factory - brook name derived from [BrookName] attribute
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Initialize
         OperationResult initResult = await counter.InitializeAsync();
@@ -133,14 +129,14 @@ internal static class AggregateScenario
     /// </summary>
     /// <param name="logger">Logger for structured messages.</param>
     /// <param name="runId">Correlation identifier for the current run.</param>
-    /// <param name="grainFactory">Orleans grain factory.</param>
+    /// <param name="aggregateGrainFactory">Aggregate grain factory for resolving aggregate grains.</param>
     /// <param name="counterId">The counter entity identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A scenario result indicating success or failure.</returns>
     public static async Task<ScenarioResult> RunConcurrencyScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         string counterId,
         CancellationToken cancellationToken = default
     )
@@ -148,8 +144,7 @@ internal static class AggregateScenario
         const string scenarioName = "ConcurrencyConflict";
         logger.AggregateScenarioStart(runId, scenarioName, counterId);
         Stopwatch sw = Stopwatch.StartNew();
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Initialize
         OperationResult initResult = await counter.InitializeAsync(50);
@@ -188,7 +183,7 @@ internal static class AggregateScenario
     /// </summary>
     /// <param name="logger">Logger for structured messages.</param>
     /// <param name="runId">Correlation identifier for the current run.</param>
-    /// <param name="grainFactory">Orleans grain factory.</param>
+    /// <param name="aggregateGrainFactory">Aggregate grain factory for resolving aggregate grains.</param>
     /// <param name="counterId">The counter entity identifier.</param>
     /// <param name="operationCount">Number of operations to perform.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -196,7 +191,7 @@ internal static class AggregateScenario
     public static async Task<ScenarioResult> RunThroughputScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         string counterId,
         int operationCount = 100,
         CancellationToken cancellationToken = default
@@ -205,8 +200,7 @@ internal static class AggregateScenario
         string scenarioName = $"Throughput({operationCount})";
         logger.AggregateScenarioStart(runId, scenarioName, counterId);
         Stopwatch sw = Stopwatch.StartNew();
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Initialize
         OperationResult initResult = await counter.InitializeAsync();
@@ -264,14 +258,14 @@ internal static class AggregateScenario
     /// </summary>
     /// <param name="logger">Logger for structured messages.</param>
     /// <param name="runId">Correlation identifier for the current run.</param>
-    /// <param name="grainFactory">Orleans grain factory.</param>
+    /// <param name="aggregateGrainFactory">Aggregate grain factory for resolving aggregate grains.</param>
     /// <param name="counterId">The counter entity identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A scenario result indicating success or failure.</returns>
     public static async Task<ScenarioResult> RunValidationScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         string counterId,
         CancellationToken cancellationToken = default
     )
@@ -279,8 +273,7 @@ internal static class AggregateScenario
         const string scenarioName = "ValidationErrors";
         logger.AggregateScenarioStart(runId, scenarioName, counterId);
         Stopwatch sw = Stopwatch.StartNew();
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Attempt increment before initialization (should fail)
         OperationResult incResult = await counter.IncrementAsync();

@@ -1,173 +1,102 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-
 using Orleans;
 
 
 namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 
 /// <summary>
-///     Represents a composite key for identifying aggregates, consisting of an aggregate type name and entity ID.
+///     Represents a strongly-typed key for identifying aggregates by entity ID.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This type provides a domain-level abstraction over <see cref="BrookKey" />, allowing application code
-///         to work with aggregate keys without directly depending on the Brooks (event stream) infrastructure.
+///         Aggregate grains are keyed by entity ID only. The brook name is derived
+///         from the aggregate type parameter's <c>[BrookName]</c> attribute at runtime.
 ///     </para>
 ///     <para>
-///         The key format is compatible with <see cref="BrookKey" /> and can be implicitly converted for use
-///         with framework internals that require brook keys.
+///         This key provides type safety while maintaining a simple string representation.
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Aggregates.Abstractions.AggregateKey")]
 public readonly record struct AggregateKey
 {
-    private const int MaxLength = 1024;
-
-    private const char Separator = '|';
+    private const int MaxLength = 4192;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="AggregateKey" /> struct.
     /// </summary>
-    /// <param name="aggregateTypeName">The aggregate type name component of the key.</param>
-    /// <param name="entityId">The entity ID component of the key.</param>
-    /// <exception cref="ArgumentNullException">Thrown when aggregateTypeName or entityId is null.</exception>
-    /// <exception cref="ArgumentException">
-    ///     Thrown when the composite key exceeds the maximum length or contains invalid characters.
-    /// </exception>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <exception cref="ArgumentNullException">Thrown when entityId is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when entityId exceeds the maximum length.</exception>
     public AggregateKey(
-        string aggregateTypeName,
         string entityId
     )
     {
-        ValidateComponent(aggregateTypeName, nameof(aggregateTypeName));
-        ValidateComponent(entityId, nameof(entityId));
-        if ((aggregateTypeName.Length + entityId.Length + 1) > MaxLength)
+        ArgumentNullException.ThrowIfNull(entityId);
+        if (entityId.Length > MaxLength)
         {
-            throw new ArgumentException($"Composite key exceeds the {MaxLength}-character limit.");
+            throw new ArgumentException($"Entity ID exceeds the {MaxLength}-character limit.", nameof(entityId));
         }
 
-        AggregateTypeName = aggregateTypeName;
         EntityId = entityId;
     }
 
     /// <summary>
-    ///     Gets the aggregate type name component of the key.
+    ///     Gets the entity identifier.
     /// </summary>
-    /// <remarks>
-    ///     This corresponds to the brook name used by the underlying event stream.
-    /// </remarks>
     [Id(0)]
-    public string AggregateTypeName { get; }
-
-    /// <summary>
-    ///     Gets the entity ID component of the key.
-    /// </summary>
-    [Id(1)]
     public string EntityId { get; }
 
     /// <summary>
-    ///     Creates an aggregate key for the specified grain type and entity identifier.
+    ///     Creates an <see cref="AggregateKey" /> from its string representation.
+    ///     This method satisfies CA2225 as an alternate for the implicit string conversion operator.
     /// </summary>
-    /// <typeparam name="TGrain">
-    ///     The aggregate grain interface type, which must be decorated with a brook name attribute.
-    /// </typeparam>
-    /// <param name="entityId">The unique identifier for the entity.</param>
-    /// <returns>An aggregate key for the specified grain type and entity.</returns>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when <typeparamref name="TGrain" /> is not decorated with a brook name attribute.
-    /// </exception>
-    public static AggregateKey ForAggregate<TGrain>(
+    /// <param name="entityId">The entity ID string to convert.</param>
+    /// <returns>A new <see cref="AggregateKey" /> instance.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when entityId is null.</exception>
+    public static AggregateKey FromString(
         string entityId
-    )
-        where TGrain : class
-    {
-        BrookKey brookKey = BrookKey.ForGrain<TGrain>(entityId);
-        return new(brookKey.BrookName, brookKey.EntityId);
-    }
+    ) =>
+        Parse(entityId);
 
     /// <summary>
-    ///     Creates an aggregate key from its string representation.
+    ///     Parses a string into an <see cref="AggregateKey" />.
     /// </summary>
-    /// <param name="value">The string value to convert.</param>
-    /// <returns>An aggregate key parsed from the string.</returns>
+    /// <param name="value">The string to parse.</param>
+    /// <returns>A new <see cref="AggregateKey" /> instance.</returns>
     /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
-    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
-    public static AggregateKey FromString(
+    public static AggregateKey Parse(
         string value
     )
     {
         ArgumentNullException.ThrowIfNull(value);
-        int idx = value.IndexOf(Separator, StringComparison.Ordinal);
-        if (idx < 0)
-        {
-            throw new FormatException($"Aggregate key must be in the form '<aggregateTypeName>{Separator}<entityId>'.");
-        }
-
-        string aggregateTypeName = value[..idx];
-        string entityId = value[(idx + 1)..];
-        return new(aggregateTypeName, entityId);
+        return new(value);
     }
-
-    /// <summary>
-    ///     Implicitly converts an <see cref="AggregateKey" /> to a <see cref="BrookKey" />.
-    /// </summary>
-    /// <param name="key">The aggregate key to convert.</param>
-    /// <returns>A <see cref="BrookKey" /> with the same aggregate type name and entity ID.</returns>
-    public static implicit operator BrookKey(
-        AggregateKey key
-    ) =>
-        key.ToBrookKey();
 
     /// <summary>
     ///     Implicitly converts an <see cref="AggregateKey" /> to its string representation.
     /// </summary>
     /// <param name="key">The aggregate key to convert.</param>
-    /// <returns>A string representation of the aggregate key in the format "aggregateTypeName|entityId".</returns>
+    /// <returns>The entity ID string.</returns>
     public static implicit operator string(
         AggregateKey key
     ) =>
-        $"{key.AggregateTypeName}{Separator}{key.EntityId}";
+        key.EntityId;
 
     /// <summary>
     ///     Implicitly converts a string to an <see cref="AggregateKey" />.
     /// </summary>
-    /// <param name="value">The string value to convert.</param>
-    /// <returns>An aggregate key parsed from the string.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
-    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
+    /// <param name="entityId">The entity ID string.</param>
+    /// <returns>A new <see cref="AggregateKey" /> instance.</returns>
     public static implicit operator AggregateKey(
-        string value
+        string entityId
     ) =>
-        FromString(value);
-
-    private static void ValidateComponent(
-        string value,
-        string paramName
-    )
-    {
-        if (value is null)
-        {
-            throw new ArgumentNullException(paramName);
-        }
-
-        if (value.Contains(Separator, StringComparison.Ordinal))
-        {
-            throw new ArgumentException($"Value cannot contain the separator character '{Separator}'.", paramName);
-        }
-    }
+        new(entityId);
 
     /// <summary>
-    ///     Converts the aggregate key to its underlying <see cref="BrookKey" /> representation.
+    ///     Returns the string representation of this key.
     /// </summary>
-    /// <returns>A <see cref="BrookKey" /> with the same aggregate type name and entity ID.</returns>
-    public BrookKey ToBrookKey() => new(AggregateTypeName, EntityId);
-
-    /// <summary>
-    ///     Returns the string representation of this aggregate key.
-    /// </summary>
-    /// <returns>A string representation of the aggregate key in the format "aggregateTypeName|entityId".</returns>
-    public override string ToString() => this;
+    /// <returns>The entity ID.</returns>
+    public override string ToString() => EntityId;
 }

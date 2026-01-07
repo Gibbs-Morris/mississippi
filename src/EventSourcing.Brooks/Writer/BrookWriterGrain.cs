@@ -73,7 +73,7 @@ internal sealed class BrookWriterGrain
         CancellationToken cancellationToken = default
     )
     {
-        BrookKey key = this.GetPrimaryKeyString();
+        BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.AppendingEvents(key, events.Length, expectedCursorPosition?.Value);
         Stopwatch sw = Stopwatch.StartNew();
         BrookPosition newPosition = await BrookWriterService.AppendEventsAsync(
@@ -101,7 +101,7 @@ internal sealed class BrookWriterGrain
         CancellationToken token
     )
     {
-        BrookKey key = this.GetPrimaryKeyString();
+        BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.Activated(key);
         return Task.CompletedTask;
     }

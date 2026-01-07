@@ -38,7 +38,7 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///     </para>
 /// </remarks>
 public abstract class AggregateGrainBase<TSnapshot>
-    : IAggregateGrain,
+    : IGrainWithStringKey,
       IGrainBase
     where TSnapshot : class
 {

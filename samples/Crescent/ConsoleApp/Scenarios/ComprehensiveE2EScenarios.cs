@@ -10,10 +10,7 @@ using Crescent.ConsoleApp.CounterSummary;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
-
-using Orleans;
 
 
 namespace Crescent.ConsoleApp.Scenarios;
@@ -51,14 +48,14 @@ internal static class ComprehensiveE2EScenarios
     /// </summary>
     /// <param name="logger">Logger for output.</param>
     /// <param name="runId">Run correlation ID.</param>
-    /// <param name="grainFactory">Orleans grain factory.</param>
+    /// <param name="aggregateGrainFactory">Aggregate grain factory for resolving aggregate grains.</param>
     /// <param name="uxProjectionGrainFactory">UX projection grain factory.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A scenario result with pass/fail counts in the Data property.</returns>
     public static async Task<ScenarioResult> RunAllAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken = default
     )
@@ -71,56 +68,56 @@ internal static class ComprehensiveE2EScenarios
                 () => RunIsolatedAggregatesScenarioAsync(
                     logger,
                     runId,
-                    grainFactory,
+                    aggregateGrainFactory,
                     uxProjectionGrainFactory,
                     cancellationToken)),
             ("ConcurrentCommands",
                 () => RunConcurrentCommandsScenarioAsync(
                     logger,
                     runId,
-                    grainFactory,
+                    aggregateGrainFactory,
                     uxProjectionGrainFactory,
                     cancellationToken)),
             ("ProjectionRereadConsistency",
                 () => RunProjectionRereadConsistencyScenarioAsync(
                     logger,
                     runId,
-                    grainFactory,
+                    aggregateGrainFactory,
                     uxProjectionGrainFactory,
                     cancellationToken)),
             ("LargeOperationSequence",
                 () => RunLargeOperationSequenceScenarioAsync(
                     logger,
                     runId,
-                    grainFactory,
+                    aggregateGrainFactory,
                     uxProjectionGrainFactory,
                     cancellationToken)),
             ("ResetAndRecovery",
                 () => RunResetAndRecoveryScenarioAsync(
                     logger,
                     runId,
-                    grainFactory,
+                    aggregateGrainFactory,
                     uxProjectionGrainFactory,
                     cancellationToken)),
             ("BoundaryConditions",
                 () => RunBoundaryConditionsScenarioAsync(
                     logger,
                     runId,
-                    grainFactory,
+                    aggregateGrainFactory,
                     uxProjectionGrainFactory,
                     cancellationToken)),
             ("RapidSequentialUpdates",
                 () => RunRapidSequentialUpdatesScenarioAsync(
                     logger,
                     runId,
-                    grainFactory,
+                    aggregateGrainFactory,
                     uxProjectionGrainFactory,
                     cancellationToken)),
             ("ProjectionAfterDeactivation",
                 () => RunProjectionAfterDeactivationScenarioAsync(
                     logger,
                     runId,
-                    grainFactory,
+                    aggregateGrainFactory,
                     uxProjectionGrainFactory,
                     cancellationToken)),
         ];
@@ -182,14 +179,13 @@ internal static class ComprehensiveE2EScenarios
     private static async Task<bool> RunBoundaryConditionsScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken
     )
     {
         string counterId = $"boundary-{Guid.NewGuid():N}";
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Initialize with 0
         await counter.InitializeAsync();
@@ -260,14 +256,13 @@ internal static class ComprehensiveE2EScenarios
     private static async Task<bool> RunConcurrentCommandsScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken
     )
     {
         string counterId = $"concurrent-{Guid.NewGuid():N}";
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Initialize
         OperationResult initResult = await counter.InitializeAsync();
@@ -338,7 +333,7 @@ internal static class ComprehensiveE2EScenarios
     private static async Task<bool> RunIsolatedAggregatesScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken
     )
@@ -346,10 +341,8 @@ internal static class ComprehensiveE2EScenarios
         // Create two independent counters
         string counterId1 = $"isolated-1-{Guid.NewGuid():N}";
         string counterId2 = $"isolated-2-{Guid.NewGuid():N}";
-        BrookKey brookKey1 = new(BrookNames.Counter, counterId1);
-        BrookKey brookKey2 = new(BrookNames.Counter, counterId2);
-        ICounterAggregateGrain counter1 = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey1);
-        ICounterAggregateGrain counter2 = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey2);
+        ICounterAggregateGrain counter1 = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId1);
+        ICounterAggregateGrain counter2 = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId2);
 
         // Initialize counter1 with 100, counter2 with 200
         OperationResult init1 = await counter1.InitializeAsync(100);
@@ -407,14 +400,13 @@ internal static class ComprehensiveE2EScenarios
     private static async Task<bool> RunLargeOperationSequenceScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken
     )
     {
         string counterId = $"large-seq-{Guid.NewGuid():N}";
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Initialize
         await counter.InitializeAsync();
@@ -466,14 +458,13 @@ internal static class ComprehensiveE2EScenarios
     private static async Task<bool> RunProjectionAfterDeactivationScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken
     )
     {
         string counterId = $"deactivate-{Guid.NewGuid():N}";
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Setup: Initialize and perform operations
         await counter.InitializeAsync(25);
@@ -547,14 +538,13 @@ internal static class ComprehensiveE2EScenarios
     private static async Task<bool> RunProjectionRereadConsistencyScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken
     )
     {
         string counterId = $"reread-{Guid.NewGuid():N}";
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Setup: Initialize and perform some operations
         await counter.InitializeAsync(50);
@@ -615,14 +605,13 @@ internal static class ComprehensiveE2EScenarios
     private static async Task<bool> RunRapidSequentialUpdatesScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken
     )
     {
         string counterId = $"rapid-{Guid.NewGuid():N}";
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Initialize
         await counter.InitializeAsync();
@@ -680,14 +669,13 @@ internal static class ComprehensiveE2EScenarios
     private static async Task<bool> RunResetAndRecoveryScenarioAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IUxProjectionGrainFactory uxProjectionGrainFactory,
         CancellationToken cancellationToken
     )
     {
         string counterId = $"reset-{Guid.NewGuid():N}";
-        BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
 
         // Initialize and increment
         await counter.InitializeAsync(10);

@@ -12,7 +12,7 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions;
 [Alias("Mississippi.EventSourcing.Abstractions.BrookKey")]
 public readonly record struct BrookKey
 {
-    private const int MaxLength = 1024;
+    private const int MaxLength = 4192;
 
     private const char Separator = '|';
 
@@ -135,18 +135,6 @@ public readonly record struct BrookKey
         BrookKey key
     ) =>
         $"{key.BrookName}{Separator}{key.EntityId}";
-
-    /// <summary>
-    ///     Implicitly converts a string to a <see cref="BrookKey" />.
-    /// </summary>
-    /// <param name="value">The string value to convert.</param>
-    /// <returns>A brook key parsed from the string.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
-    /// <exception cref="FormatException">Thrown when the string is not in the correct format.</exception>
-    public static implicit operator BrookKey(
-        string value
-    ) =>
-        FromString(value);
 
     private static void ValidateComponent(
         string value,

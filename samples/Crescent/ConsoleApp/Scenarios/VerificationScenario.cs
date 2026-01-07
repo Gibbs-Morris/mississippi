@@ -13,8 +13,6 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 
-using Orleans;
-
 
 namespace Crescent.ConsoleApp.Scenarios;
 
@@ -33,7 +31,7 @@ internal static class VerificationScenario
     /// </summary>
     /// <param name="logger">Logger for structured messages.</param>
     /// <param name="runId">Correlation identifier for the current run.</param>
-    /// <param name="grainFactory">Orleans grain factory.</param>
+    /// <param name="aggregateGrainFactory">Aggregate grain factory for resolving aggregate grains.</param>
     /// <param name="brookStorageProvider">Direct storage provider for reading events.</param>
     /// <param name="snapshotStorageProvider">Direct storage provider for reading snapshots.</param>
     /// <param name="snapshotStateConverter">Converter for deserializing snapshot state.</param>
@@ -44,7 +42,7 @@ internal static class VerificationScenario
     public static async Task<ScenarioResult> RunEndToEndVerificationAsync(
         ILogger logger,
         string runId,
-        IGrainFactory grainFactory,
+        IAggregateGrainFactory aggregateGrainFactory,
         IBrookStorageProvider brookStorageProvider,
         ISnapshotStorageProvider snapshotStorageProvider,
         ISnapshotStateConverter<CounterAggregate> snapshotStateConverter,
@@ -57,9 +55,10 @@ internal static class VerificationScenario
         Stopwatch sw = Stopwatch.StartNew();
         bool allPassed = true;
 
-        // Step 1: Build the grain key and perform aggregate operations
+        // Step 1: Get the aggregate and perform operations
+        // Build a BrookKey for direct storage access (verification only)
         BrookKey brookKey = new(BrookNames.Counter, counterId);
-        ICounterAggregateGrain counter = grainFactory.GetGrain<ICounterAggregateGrain>(brookKey);
+        ICounterAggregateGrain counter = aggregateGrainFactory.GetAggregate<ICounterAggregateGrain>(counterId);
         logger.VerificationStep(runId, 1, "Execute aggregate commands to generate events");
 
         // Initialize with value 10
