@@ -38,6 +38,107 @@ public class DataFlowIntegrityTests : TestBase
     }
 
     /// <summary>
+    ///     Verifies that channel creation flows through the aggregate and appears in the channel list.
+    ///     This tests the Channel aggregate → UserChannelList projection pipeline.
+    /// </summary>
+    /// <returns>A task representing the async test.</returns>
+    [Fact]
+    [AllureFeature("Channel Data Flow")]
+    public async Task ChannelCreationFlowsThroughAggregateToProjection()
+    {
+        // Arrange
+        IPage page = await CreatePageAndLoginAsync("ChannelCreator");
+        ChannelListPage channelList = new(page);
+        string uniqueId = Guid.NewGuid().ToString("N")[..8];
+        string channelName = $"flow-test-{uniqueId}";
+
+        // Act - Create channel (triggers: UX → CreateChannel command → ChannelAggregate → ChannelCreated event)
+        await channelList.CreateChannelAsync(channelName);
+
+        // Assert - Channel appears in list (verifies: Brook → UserChannelListProjection → UX)
+        IReadOnlyList<string> channels = await channelList.GetChannelNamesAsync();
+        Assert.Contains(channels, c => c.Contains(uniqueId, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Verifies that data persists in the brook by refreshing the page
+    ///     and confirming the data is still available from the projection.
+    /// </summary>
+    /// <returns>A task representing the async test.</returns>
+    [Fact]
+    [AllureFeature("Data Persistence")]
+    public async Task DataPersistsInBrookAndSurvivesPageRefresh()
+    {
+        // Arrange - Create channel and send message
+        IPage page = await CreatePageAndLoginAsync("PersistenceUser");
+        ChannelListPage channelList = new(page);
+        string persistenceId = Guid.NewGuid().ToString("N")[..8];
+        string channelName = $"persist-{persistenceId}";
+        ChannelViewPage channelView = await channelList.CreateChannelAsync(channelName);
+        string messageContent = $"Persistence test [{persistenceId}]";
+        await channelView.SendMessageAsync(messageContent);
+        await channelView.WaitForMessageAsync(messageContent, 15000);
+
+        // Act - Refresh the page (forces re-reading from projection/brook)
+        await page.ReloadAsync();
+
+        // Wait for page to load and navigate back to channel
+        await page.WaitForURLAsync(
+            "**/channels/**",
+            new()
+            {
+                Timeout = 10000,
+            });
+        channelList = new(page);
+        channelView = await channelList.SelectChannelAsync(channelName);
+
+        // Assert - Message should still be visible (confirms brook persistence)
+        await channelView.WaitForMessageAsync(messageContent, 15000);
+        IReadOnlyList<string> messages = await channelView.GetMessagesAsync();
+        Assert.Contains(messages, m => m.Contains(persistenceId, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Verifies message content integrity through the entire pipeline.
+    ///     Checks that special characters, unicode, and whitespace are preserved.
+    /// </summary>
+    /// <returns>A task representing the async test.</returns>
+    [Fact]
+    [AllureFeature("Content Integrity")]
+    public async Task MessageContentIntegrityThroughPipeline()
+    {
+        // Arrange
+        IPage page = await CreatePageAndLoginAsync("ContentUser");
+        ChannelListPage channelList = new(page);
+        string channelName = $"content-{Guid.NewGuid():N}"[..24];
+        ChannelViewPage channelView = await channelList.CreateChannelAsync(channelName);
+
+        // Test messages with various content that could be corrupted
+        string[] testMessages =
+        [
+            "Simple message",
+            "Message with numbers 12345",
+            "Message with punctuation! @#$%^&*()",
+            "Message with unicode: café, naïve, résumé",
+            "Message with emoji: Hello 👋 World 🌍",
+        ];
+
+        // Act & Assert - Each message should round-trip correctly
+        foreach (string originalMessage in testMessages)
+        {
+            await channelView.SendMessageAsync(originalMessage);
+            await channelView.WaitForMessageAsync(originalMessage, 15000);
+        }
+
+        // Verify all messages are present
+        IReadOnlyList<string> displayedMessages = await channelView.GetMessagesAsync();
+        foreach (string expected in testMessages)
+        {
+            Assert.Contains(displayedMessages, m => m.Contains(expected, StringComparison.Ordinal));
+        }
+    }
+
+    /// <summary>
     ///     Verifies that a message sent from the UI flows through the aggregate,
     ///     is persisted in the brook, and appears in the UI via the projection.
     /// </summary>
@@ -83,7 +184,6 @@ public class DataFlowIntegrityTests : TestBase
         ChannelListPage channelList = new(page);
         string channelName = $"order-test-{Guid.NewGuid():N}"[..24];
         ChannelViewPage channelView = await channelList.CreateChannelAsync(channelName);
-
         string batchId = Guid.NewGuid().ToString("N")[..8];
         string[] expectedMessages =
         [
@@ -103,11 +203,12 @@ public class DataFlowIntegrityTests : TestBase
         IReadOnlyList<string> displayedMessages = await channelView.GetMessagesAsync();
 
         // Find our test messages and check their relative order
-        int[] indices = expectedMessages
-            .Select(expected => displayedMessages
-                .Select((msg, idx) => (msg, idx))
-                .Where(tuple => tuple.msg.Contains(batchId, StringComparison.Ordinal)
-                                && tuple.msg.Contains(expected, StringComparison.Ordinal))
+        int[] indices = expectedMessages.Select(expected => displayedMessages.Select((
+                    msg,
+                    idx
+                ) => (msg, idx))
+                .Where(tuple => tuple.msg.Contains(batchId, StringComparison.Ordinal) &&
+                                tuple.msg.Contains(expected, StringComparison.Ordinal))
                 .Select(tuple => tuple.idx)
                 .FirstOrDefault(-1))
             .ToArray();
@@ -121,95 +222,34 @@ public class DataFlowIntegrityTests : TestBase
     }
 
     /// <summary>
-    ///     Verifies that channel creation flows through the aggregate and appears in the channel list.
-    ///     This tests the Channel aggregate → UserChannelList projection pipeline.
+    ///     Verifies that the message count in the projection matches the number
+    ///     of messages sent, confirming no events are lost or duplicated.
     /// </summary>
     /// <returns>A task representing the async test.</returns>
     [Fact]
-    [AllureFeature("Channel Data Flow")]
-    public async Task ChannelCreationFlowsThroughAggregateToProjection()
+    [AllureFeature("Event Counting")]
+    public async Task ProjectionMessageCountMatchesSentMessages()
     {
         // Arrange
-        IPage page = await CreatePageAndLoginAsync("ChannelCreator");
+        IPage page = await CreatePageAndLoginAsync("CountUser");
         ChannelListPage channelList = new(page);
-        string uniqueId = Guid.NewGuid().ToString("N")[..8];
-        string channelName = $"flow-test-{uniqueId}";
-
-        // Act - Create channel (triggers: UX → CreateChannel command → ChannelAggregate → ChannelCreated event)
-        await channelList.CreateChannelAsync(channelName);
-
-        // Assert - Channel appears in list (verifies: Brook → UserChannelListProjection → UX)
-        IReadOnlyList<string> channels = await channelList.GetChannelNamesAsync();
-        Assert.Contains(channels, c => c.Contains(uniqueId, StringComparison.Ordinal));
-    }
-
-    /// <summary>
-    ///     Verifies that data persists in the brook by refreshing the page
-    ///     and confirming the data is still available from the projection.
-    /// </summary>
-    /// <returns>A task representing the async test.</returns>
-    [Fact]
-    [AllureFeature("Data Persistence")]
-    public async Task DataPersistsInBrookAndSurvivesPageRefresh()
-    {
-        // Arrange - Create channel and send message
-        IPage page = await CreatePageAndLoginAsync("PersistenceUser");
-        ChannelListPage channelList = new(page);
-        string persistenceId = Guid.NewGuid().ToString("N")[..8];
-        string channelName = $"persist-{persistenceId}";
+        string channelName = $"count-{Guid.NewGuid():N}"[..24];
         ChannelViewPage channelView = await channelList.CreateChannelAsync(channelName);
+        const int expectedCount = 5;
+        string countId = Guid.NewGuid().ToString("N")[..8];
 
-        string messageContent = $"Persistence test [{persistenceId}]";
-        await channelView.SendMessageAsync(messageContent);
-        await channelView.WaitForMessageAsync(messageContent, 15000);
+        // Act - Send exactly N messages
+        for (int i = 1; i <= expectedCount; i++)
+        {
+            string message = $"[{countId}] Count test message {i}";
+            await channelView.SendMessageAsync(message);
+            await channelView.WaitForMessageAsync(message, 15000);
+        }
 
-        // Act - Refresh the page (forces re-reading from projection/brook)
-        await page.ReloadAsync();
-
-        // Wait for page to load and navigate back to channel
-        await page.WaitForURLAsync("**/channels/**", new() { Timeout = 10000 });
-        channelList = new ChannelListPage(page);
-        channelView = await channelList.SelectChannelAsync(channelName);
-
-        // Assert - Message should still be visible (confirms brook persistence)
-        await channelView.WaitForMessageAsync(messageContent, 15000);
+        // Assert - Exactly N messages with our ID should be in the projection
         IReadOnlyList<string> messages = await channelView.GetMessagesAsync();
-        Assert.Contains(messages, m => m.Contains(persistenceId, StringComparison.Ordinal));
-    }
-
-    /// <summary>
-    ///     Verifies that a second user can see messages sent by the first user,
-    ///     confirming the projection is shared across clients.
-    /// </summary>
-    /// <returns>A task representing the async test.</returns>
-    [Fact]
-    [AllureFeature("Multi-User Data Flow")]
-    public async Task SecondUserSeesMessagesFromFirstUser()
-    {
-        // Arrange - First user creates channel and sends message
-        IPage page1 = await CreatePageAndLoginAsync("Sender");
-        ChannelListPage channelList1 = new(page1);
-        string sharedId = Guid.NewGuid().ToString("N")[..8];
-        string channelName = $"shared-{sharedId}";
-        ChannelViewPage channelView1 = await channelList1.CreateChannelAsync(channelName);
-
-        string messageFromUser1 = $"Hello from User1 [{sharedId}]";
-        await channelView1.SendMessageAsync(messageFromUser1);
-        await channelView1.WaitForMessageAsync(messageFromUser1, 15000);
-
-        // Act - Second user joins the same channel
-        IPage page2 = await CreatePageAndLoginAsync("Receiver");
-        ChannelListPage channelList2 = new(page2);
-
-        // Second user needs to join/select the same channel
-        // Wait for channel to appear in list (via projection)
-        await page2.WaitForSelectorAsync($".channel-item:has-text('{channelName}')", new() { Timeout = 15000 });
-        ChannelViewPage channelView2 = await channelList2.SelectChannelAsync(channelName);
-
-        // Assert - Second user should see the message from first user
-        await channelView2.WaitForMessageAsync(messageFromUser1, 15000);
-        IReadOnlyList<string> messages = await channelView2.GetMessagesAsync();
-        Assert.Contains(messages, m => m.Contains(sharedId, StringComparison.Ordinal));
+        int actualCount = messages.Count(m => m.Contains(countId, StringComparison.Ordinal));
+        Assert.Equal(expectedCount, actualCount);
     }
 
     /// <summary>
@@ -231,7 +271,12 @@ public class DataFlowIntegrityTests : TestBase
         // Second user joins
         IPage page2 = await CreatePageAndLoginAsync("RealTimeReceiver");
         ChannelListPage channelList2 = new(page2);
-        await page2.WaitForSelectorAsync($".channel-item:has-text('{channelName}')", new() { Timeout = 15000 });
+        await page2.WaitForSelectorAsync(
+            $".channel-item:has-text('{channelName}')",
+            new()
+            {
+                Timeout = 15000,
+            });
         ChannelViewPage channelView2 = await channelList2.SelectChannelAsync(channelName);
 
         // Act - First user sends a NEW message while second user is watching
@@ -246,74 +291,41 @@ public class DataFlowIntegrityTests : TestBase
     }
 
     /// <summary>
-    ///     Verifies message content integrity through the entire pipeline.
-    ///     Checks that special characters, unicode, and whitespace are preserved.
+    ///     Verifies that a second user can see messages sent by the first user,
+    ///     confirming the projection is shared across clients.
     /// </summary>
     /// <returns>A task representing the async test.</returns>
     [Fact]
-    [AllureFeature("Content Integrity")]
-    public async Task MessageContentIntegrityThroughPipeline()
+    [AllureFeature("Multi-User Data Flow")]
+    public async Task SecondUserSeesMessagesFromFirstUser()
     {
-        // Arrange
-        IPage page = await CreatePageAndLoginAsync("ContentUser");
-        ChannelListPage channelList = new(page);
-        string channelName = $"content-{Guid.NewGuid():N}"[..24];
-        ChannelViewPage channelView = await channelList.CreateChannelAsync(channelName);
+        // Arrange - First user creates channel and sends message
+        IPage page1 = await CreatePageAndLoginAsync("Sender");
+        ChannelListPage channelList1 = new(page1);
+        string sharedId = Guid.NewGuid().ToString("N")[..8];
+        string channelName = $"shared-{sharedId}";
+        ChannelViewPage channelView1 = await channelList1.CreateChannelAsync(channelName);
+        string messageFromUser1 = $"Hello from User1 [{sharedId}]";
+        await channelView1.SendMessageAsync(messageFromUser1);
+        await channelView1.WaitForMessageAsync(messageFromUser1, 15000);
 
-        // Test messages with various content that could be corrupted
-        string[] testMessages =
-        [
-            "Simple message",
-            "Message with numbers 12345",
-            "Message with punctuation! @#$%^&*()",
-            "Message with unicode: café, naïve, résumé",
-            "Message with emoji: Hello 👋 World 🌍",
-        ];
+        // Act - Second user joins the same channel
+        IPage page2 = await CreatePageAndLoginAsync("Receiver");
+        ChannelListPage channelList2 = new(page2);
 
-        // Act & Assert - Each message should round-trip correctly
-        foreach (string originalMessage in testMessages)
-        {
-            await channelView.SendMessageAsync(originalMessage);
-            await channelView.WaitForMessageAsync(originalMessage, 15000);
-        }
+        // Second user needs to join/select the same channel
+        // Wait for channel to appear in list (via projection)
+        await page2.WaitForSelectorAsync(
+            $".channel-item:has-text('{channelName}')",
+            new()
+            {
+                Timeout = 15000,
+            });
+        ChannelViewPage channelView2 = await channelList2.SelectChannelAsync(channelName);
 
-        // Verify all messages are present
-        IReadOnlyList<string> displayedMessages = await channelView.GetMessagesAsync();
-        foreach (string expected in testMessages)
-        {
-            Assert.Contains(displayedMessages, m => m.Contains(expected, StringComparison.Ordinal));
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that the message count in the projection matches the number
-    ///     of messages sent, confirming no events are lost or duplicated.
-    /// </summary>
-    /// <returns>A task representing the async test.</returns>
-    [Fact]
-    [AllureFeature("Event Counting")]
-    public async Task ProjectionMessageCountMatchesSentMessages()
-    {
-        // Arrange
-        IPage page = await CreatePageAndLoginAsync("CountUser");
-        ChannelListPage channelList = new(page);
-        string channelName = $"count-{Guid.NewGuid():N}"[..24];
-        ChannelViewPage channelView = await channelList.CreateChannelAsync(channelName);
-
-        const int expectedCount = 5;
-        string countId = Guid.NewGuid().ToString("N")[..8];
-
-        // Act - Send exactly N messages
-        for (int i = 1; i <= expectedCount; i++)
-        {
-            string message = $"[{countId}] Count test message {i}";
-            await channelView.SendMessageAsync(message);
-            await channelView.WaitForMessageAsync(message, 15000);
-        }
-
-        // Assert - Exactly N messages with our ID should be in the projection
-        IReadOnlyList<string> messages = await channelView.GetMessagesAsync();
-        int actualCount = messages.Count(m => m.Contains(countId, StringComparison.Ordinal));
-        Assert.Equal(expectedCount, actualCount);
+        // Assert - Second user should see the message from first user
+        await channelView2.WaitForMessageAsync(messageFromUser1, 15000);
+        IReadOnlyList<string> messages = await channelView2.GetMessagesAsync();
+        Assert.Contains(messages, m => m.Contains(sharedId, StringComparison.Ordinal));
     }
 }

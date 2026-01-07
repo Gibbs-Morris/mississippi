@@ -12,6 +12,7 @@
   <Folder Name="/Framework/EventSourcing/">
     <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+    <Project Path="src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
     <Project Path="src\EventSourcing.Aggregates.Generators\EventSourcing.Aggregates.Generators.csproj" />
     <Project Path="src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />

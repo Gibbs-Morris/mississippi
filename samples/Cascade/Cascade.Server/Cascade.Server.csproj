@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <!-- Mississippi framework -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />

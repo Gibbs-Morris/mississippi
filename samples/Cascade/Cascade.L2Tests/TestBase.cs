@@ -39,11 +39,25 @@ public abstract class TestBase
         // Navigate directly to login page with extended timeout for Blazor Server startup
         await page.GotoAsync(
             Fixture.BaseUrl + "/login",
-            new() { Timeout = 60000, WaitUntil = WaitUntilState.DOMContentLoaded });
+            new()
+            {
+                Timeout = 60000,
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+            });
 
         // Wait for login page to load completely (including Blazor circuit)
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle, new() { Timeout = 60000 });
-        await page.WaitForSelectorAsync("[id='displayName']", new() { Timeout = 60000 });
+        await page.WaitForLoadStateAsync(
+            LoadState.NetworkIdle,
+            new()
+            {
+                Timeout = 60000,
+            });
+        await page.WaitForSelectorAsync(
+            "[id='displayName']",
+            new()
+            {
+                Timeout = 60000,
+            });
 
         // Small delay to ensure Blazor circuit is fully established
         await page.WaitForTimeoutAsync(500);
@@ -59,15 +73,29 @@ public abstract class TestBase
 
         // Take debug screenshot to see what happened after submit
         string debugPath = Path.Combine(Path.GetTempPath(), $"cascade-login-{Guid.NewGuid()}.png");
-        await page.ScreenshotAsync(new() { Path = debugPath, FullPage = true });
+        await page.ScreenshotAsync(
+            new()
+            {
+                Path = debugPath,
+                FullPage = true,
+            });
 
         // Wait for the channels page to render with the chat container and channel list
         // This confirms: 1) navigation happened, 2) user is authenticated, 3) ChannelList rendered
-        await page.WaitForSelectorAsync(".chat-container", new() { Timeout = 60000 });
+        await page.WaitForSelectorAsync(
+            ".chat-container",
+            new()
+            {
+                Timeout = 60000,
+            });
 
         // Verify the channel list component is present (inside chat-container)
-        await page.WaitForSelectorAsync(".channel-list", new() { Timeout = 60000 });
-
+        await page.WaitForSelectorAsync(
+            ".channel-list",
+            new()
+            {
+                Timeout = 60000,
+            });
         return page;
     }
 }

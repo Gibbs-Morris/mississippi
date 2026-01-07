@@ -163,13 +163,12 @@ public sealed class AggregateServiceGenerator : IIncrementalGenerator
     [HttpPost(""{command.MethodName.ToLowerInvariant()}"")]
     [ProducesResponseType(typeof(OperationResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(OperationResult), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<OperationResult>> {command.MethodName}Async(
+    public virtual async Task<ActionResult<OperationResult>> {command.MethodName}Async(
         [FromRoute] string entityId,
         [FromBody] {command.FullTypeName} command,
         CancellationToken cancellationToken = default)
     {{
-        OperationResult result = await Service.{command.MethodName}Async(entityId, command, cancellationToken);
-        return result.Success ? Ok(result) : BadRequest(result);
+        return await ExecuteCommandAsync(entityId, command, cancellationToken);
     }}");
         }
 
@@ -186,31 +185,41 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Aggregates.Api;
 
 namespace {aggregate.Namespace};
 
 /// <summary>
 ///     Generated API controller for <see cref=""{aggregate.TypeName}""/> aggregate.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This controller was auto-generated from the <c>[AggregateService]</c> attribute.
+///         To customize behavior, create a partial class with additional methods or
+///         override the command endpoint methods.
+///     </para>
+/// </remarks>
 [GeneratedCode(""Mississippi.EventSourcing.Aggregates.Generators"", ""1.0.0"")]
 [Route(""api/aggregates/{aggregate.Route}/{{entityId}}"")]{authorizeAttribute}
-[ApiController]
 [Produces(""application/json"")]
-public sealed partial class {aggregate.ServiceName}Controller : ControllerBase
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+public partial class {aggregate.ServiceName}Controller
+    : AggregateControllerBase<{aggregate.FullTypeName}>
 {{
     /// <summary>
     ///     Initializes a new instance of the <see cref=""{aggregate.ServiceName}Controller""/> class.
     /// </summary>
-    /// <param name=""service"">The aggregate service.</param>
+    /// <param name=""aggregateGrainFactory"">Factory for resolving aggregate grains.</param>
+    /// <param name=""logger"">The logger instance.</param>
     public {aggregate.ServiceName}Controller(
-        I{aggregate.ServiceName}Service service)
+        IAggregateGrainFactory aggregateGrainFactory,
+        ILogger<AggregateControllerBase<{aggregate.FullTypeName}>> logger)
+        : base(aggregateGrainFactory, logger)
     {{
-        Service = service ?? throw new ArgumentNullException(nameof(service));
-    }}
-
-    private I{aggregate.ServiceName}Service Service {{ get; }}{commandEndpoints}
+    }}{commandEndpoints}
 }}
 ";
     }
@@ -329,11 +338,13 @@ namespace {aggregate.Namespace};
 
     private static string GetMethodName(
         string commandTypeName
-    ) =>
+    )
+    {
         // Remove common verb prefixes that would be redundant in method name
         // e.g., "RegisterUser" -> "Register", "JoinChannel" -> "JoinChannel"
         // The method will be called "{MethodName}Async"
-        commandTypeName;
+        return commandTypeName;
+    }
 
     /// <inheritdoc />
     public void Initialize(

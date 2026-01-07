@@ -178,6 +178,7 @@ public sealed class BrookRangeKeyTests
     public void FromStringWhenNullAndConstructorEnforceLength()
     {
         Assert.Throws<ArgumentNullException>(() => BrookRangeKey.FromString(null!));
+
         // Combined key exceeds 4192: 4192 (type) + 1 (separator) + ... > 4192
         string longType = new('x', 4192);
         Assert.Throws<ArgumentException>(() => new BrookRangeKey(longType, string.Empty, 0, 0));

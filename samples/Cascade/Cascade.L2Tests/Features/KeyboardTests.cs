@@ -27,6 +27,38 @@ public class KeyboardTests : TestBase
     }
 
     /// <summary>
+    ///     Verifies that Enter key sends a message.
+    /// </summary>
+    /// <returns>A task representing the async test.</returns>
+    [Fact]
+    public async Task EnterKeySendsMessage()
+    {
+        // Arrange
+        IPage page = await CreatePageAndLoginAsync("EnterMsgUser");
+        ChannelListPage channelList = new(page);
+        string channelName = $"enter-msg-{Guid.NewGuid():N}"[..24];
+        await channelList.CreateChannelAsync(channelName);
+        await channelList.SelectChannelAsync(channelName);
+        await page.WaitForSelectorAsync(
+            ".message-input-field",
+            new()
+            {
+                Timeout = 5000,
+            });
+
+        // Act - type message and press Enter
+        string message = "Message sent with Enter key";
+        await page.FillAsync(".message-input-field", message);
+        await page.PressAsync(".message-input-field", "Enter");
+
+        // Assert - message should appear
+        ChannelViewPage channelView = new(page);
+        await channelView.WaitForMessageAsync(message, 10000);
+        IReadOnlyList<string> messages = await channelView.GetMessagesAsync();
+        Assert.Contains(messages, m => m.Contains(message, StringComparison.Ordinal));
+    }
+
+    /// <summary>
     ///     Verifies that Enter key submits the login form.
     /// </summary>
     /// <returns>A task representing the async test.</returns>
@@ -42,59 +74,13 @@ public class KeyboardTests : TestBase
         await page.PressAsync("[id='displayName']", "Enter");
 
         // Assert - should redirect to channels
-        await page.WaitForURLAsync("**/channels", new() { Timeout = 10000 });
+        await page.WaitForURLAsync(
+            "**/channels",
+            new()
+            {
+                Timeout = 10000,
+            });
         Assert.Contains("/channels", page.Url, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Verifies that Enter key sends a message.
-    /// </summary>
-    /// <returns>A task representing the async test.</returns>
-    [Fact]
-    public async Task EnterKeySendsMessage()
-    {
-        // Arrange
-        IPage page = await CreatePageAndLoginAsync("EnterMsgUser");
-        ChannelListPage channelList = new(page);
-        string channelName = $"enter-msg-{Guid.NewGuid():N}"[..24];
-
-        await channelList.CreateChannelAsync(channelName);
-        await channelList.SelectChannelAsync(channelName);
-        await page.WaitForSelectorAsync(".message-input-field", new() { Timeout = 5000 });
-
-        // Act - type message and press Enter
-        string message = "Message sent with Enter key";
-        await page.FillAsync(".message-input-field", message);
-        await page.PressAsync(".message-input-field", "Enter");
-
-        // Assert - message should appear
-        ChannelViewPage channelView = new(page);
-        await channelView.WaitForMessageAsync(message, 10000);
-        IReadOnlyList<string> messages = await channelView.GetMessagesAsync();
-        Assert.Contains(messages, m => m.Contains(message, StringComparison.Ordinal));
-    }
-
-    /// <summary>
-    ///     Verifies that Tab key navigates through form elements.
-    /// </summary>
-    /// <returns>A task representing the async test.</returns>
-    [Fact]
-    public async Task TabKeyNavigatesThroughLoginForm()
-    {
-        // Arrange
-        IPage page = await Fixture.CreatePageAsync();
-        await page.GotoAsync(Fixture.BaseUrl + "/login");
-        await page.WaitForSelectorAsync("[id='displayName']", new() { Timeout = 5000 });
-
-        // Act - focus input and tab to button
-        await page.FocusAsync("[id='displayName']");
-        await page.Keyboard.PressAsync("Tab");
-
-        // Assert - submit button should now be focused
-        IElementHandle? focusedElement = await page.EvaluateHandleAsync("document.activeElement") as IElementHandle;
-        Assert.NotNull(focusedElement);
-        string? tagName = await focusedElement.GetAttributeAsync("type");
-        Assert.Equal("submit", tagName);
     }
 
     /// <summary>
@@ -109,7 +95,12 @@ public class KeyboardTests : TestBase
 
         // Open create channel modal
         await page.ClickAsync(".channel-list-header button");
-        await page.WaitForSelectorAsync("input[name='Name']", new() { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "input[name='Name']",
+            new()
+            {
+                Timeout = 5000,
+            });
 
         // Act - press Escape
         await page.Keyboard.PressAsync("Escape");
@@ -125,7 +116,12 @@ public class KeyboardTests : TestBase
             // Modal might need a close button click instead - try to click Cancel if it exists
             try
             {
-                await page.ClickAsync("button:has-text('Cancel')", new() { Timeout = 1000 });
+                await page.ClickAsync(
+                    "button:has-text('Cancel')",
+                    new()
+                    {
+                        Timeout = 1000,
+                    });
             }
             catch (TimeoutException)
             {
@@ -135,5 +131,33 @@ public class KeyboardTests : TestBase
 
         // Accept either outcome - modal may or may not close on Escape
         Assert.True(true, "Modal escape behavior verified");
+    }
+
+    /// <summary>
+    ///     Verifies that Tab key navigates through form elements.
+    /// </summary>
+    /// <returns>A task representing the async test.</returns>
+    [Fact]
+    public async Task TabKeyNavigatesThroughLoginForm()
+    {
+        // Arrange
+        IPage page = await Fixture.CreatePageAsync();
+        await page.GotoAsync(Fixture.BaseUrl + "/login");
+        await page.WaitForSelectorAsync(
+            "[id='displayName']",
+            new()
+            {
+                Timeout = 5000,
+            });
+
+        // Act - focus input and tab to button
+        await page.FocusAsync("[id='displayName']");
+        await page.Keyboard.PressAsync("Tab");
+
+        // Assert - submit button should now be focused
+        IElementHandle? focusedElement = await page.EvaluateHandleAsync("document.activeElement") as IElementHandle;
+        Assert.NotNull(focusedElement);
+        string? tagName = await focusedElement.GetAttributeAsync("type");
+        Assert.Equal("submit", tagName);
     }
 }

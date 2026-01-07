@@ -27,58 +27,6 @@ public class NavigationTests : TestBase
     }
 
     /// <summary>
-    ///     Verifies that the home page displays landing content with login link.
-    /// </summary>
-    /// <returns>A task representing the async test.</returns>
-    [Fact]
-    public async Task HomePageDisplaysLandingWithLoginLink()
-    {
-        // Arrange
-        IPage page = await Fixture.CreatePageAsync();
-
-        // Act
-        await page.GotoAsync(Fixture.BaseUrl);
-
-        // Assert - home page shows welcome and has link to login
-        await page.WaitForSelectorAsync("a[href='login']");
-        IElementHandle? loginLink = await page.QuerySelectorAsync("a[href='login']");
-        Assert.NotNull(loginLink);
-    }
-
-    /// <summary>
-    ///     Verifies that the login page has proper page title.
-    /// </summary>
-    /// <returns>A task representing the async test.</returns>
-    [Fact]
-    public async Task LoginPageHasCorrectTitle()
-    {
-        // Arrange
-        IPage page = await Fixture.CreatePageAsync();
-
-        // Act
-        await page.GotoAsync(Fixture.BaseUrl + "/login");
-
-        // Assert
-        string title = await page.TitleAsync();
-        Assert.Contains("Login", title, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    ///     Verifies that the channels page has proper page title after login.
-    /// </summary>
-    /// <returns>A task representing the async test.</returns>
-    [Fact]
-    public async Task ChannelsPageHasCorrectTitle()
-    {
-        // Arrange
-        IPage page = await CreatePageAndLoginAsync("TitleChecker");
-
-        // Assert
-        string title = await page.TitleAsync();
-        Assert.Contains("Cascade", title, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
     ///     Verifies that browser back button works correctly after login.
     /// </summary>
     /// <returns>A task representing the async test.</returns>
@@ -99,6 +47,21 @@ public class NavigationTests : TestBase
 
         // Assert - should still be on channels page
         Assert.Contains("/channels", page.Url, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies that the channels page has proper page title after login.
+    /// </summary>
+    /// <returns>A task representing the async test.</returns>
+    [Fact]
+    public async Task ChannelsPageHasCorrectTitle()
+    {
+        // Arrange
+        IPage page = await CreatePageAndLoginAsync("TitleChecker");
+
+        // Assert
+        string title = await page.TitleAsync();
+        Assert.Contains("Cascade", title, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -135,5 +98,42 @@ public class NavigationTests : TestBase
         // Assert - page should load (may have error content or redirect)
         IResponse? response = await page.GotoAsync(Fixture.BaseUrl + "/Error");
         Assert.NotNull(response);
+    }
+
+    /// <summary>
+    ///     Verifies that the home page displays landing content with login link.
+    /// </summary>
+    /// <returns>A task representing the async test.</returns>
+    [Fact]
+    public async Task HomePageDisplaysLandingWithLoginLink()
+    {
+        // Arrange
+        IPage page = await Fixture.CreatePageAsync();
+
+        // Act
+        await page.GotoAsync(Fixture.BaseUrl);
+
+        // Assert - home page shows welcome and has link to login
+        await page.WaitForSelectorAsync("a[href='login']");
+        IElementHandle? loginLink = await page.QuerySelectorAsync("a[href='login']");
+        Assert.NotNull(loginLink);
+    }
+
+    /// <summary>
+    ///     Verifies that the login page has proper page title.
+    /// </summary>
+    /// <returns>A task representing the async test.</returns>
+    [Fact]
+    public async Task LoginPageHasCorrectTitle()
+    {
+        // Arrange
+        IPage page = await Fixture.CreatePageAsync();
+
+        // Act
+        await page.GotoAsync(Fixture.BaseUrl + "/login");
+
+        // Assert
+        string title = await page.TitleAsync();
+        Assert.Contains("Login", title, StringComparison.OrdinalIgnoreCase);
     }
 }
