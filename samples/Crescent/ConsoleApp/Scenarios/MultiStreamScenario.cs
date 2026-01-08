@@ -9,9 +9,9 @@ using Crescent.ConsoleApp.Shared;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Factory;
-using Mississippi.EventSourcing.Brooks.Reader;
-using Mississippi.EventSourcing.Brooks.Writer;
+using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
+using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
 
 
 namespace Crescent.ConsoleApp.Scenarios;

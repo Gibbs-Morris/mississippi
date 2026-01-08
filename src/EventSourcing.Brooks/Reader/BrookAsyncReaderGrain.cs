@@ -6,7 +6,8 @@ using System.Threading;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
 using Mississippi.EventSourcing.Brooks.Factory;
 
 using Orleans;
@@ -27,7 +28,7 @@ namespace Mississippi.EventSourcing.Brooks.Reader;
 ///         <c>EnumerationAbortedException</c>.
 ///     </para>
 ///     <para>
-///         To achieve parallelism, the <see cref="IBrookGrainFactory" /> creates unique grain keys
+///         To achieve parallelism, the <see cref="Abstractions.Factory.IBrookGrainFactory" /> creates unique grain keys
 ///         with random suffixes for each streaming request. After streaming completes, the grain
 ///         is eventually garbage-collected by Orleans' idle deactivation policy.
 ///     </para>
@@ -40,11 +41,11 @@ internal class BrookAsyncReaderGrain
     ///     Initializes a new instance of the <see cref="BrookAsyncReaderGrain" /> class.
     ///     Sets up the grain with required dependencies for brook reading operations.
     /// </summary>
-    /// <param name="brookGrainFactory">Factory for creating related brook grains.</param>
+    /// <param name="brookGrainFactory">Factory for creating related brook grains (including internal slice readers).</param>
     /// <param name="options">Configuration options for brook reader behavior.</param>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     public BrookAsyncReaderGrain(
-        IBrookGrainFactory brookGrainFactory,
+        IInternalBrookGrainFactory brookGrainFactory,
         IOptions<BrookReaderOptions> options,
         IGrainContext grainContext
     )
@@ -61,7 +62,7 @@ internal class BrookAsyncReaderGrain
     /// <value>The grain context instance.</value>
     public IGrainContext GrainContext { get; }
 
-    private IBrookGrainFactory BrookGrainFactory { get; }
+    private IInternalBrookGrainFactory BrookGrainFactory { get; }
 
     private IOptions<BrookReaderOptions> Options { get; }
 

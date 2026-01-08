@@ -1,14 +1,17 @@
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Brooks.Reader;
-using Mississippi.EventSourcing.Brooks.Writer;
+using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
 
 
-namespace Mississippi.EventSourcing.Brooks.Factory;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.Factory;
 
 /// <summary>
-///     Defines a factory for resolving Orleans grains for writing, reading, slicing, and cursor retrieval.
+///     Defines a factory for resolving Orleans grains for writing, reading, and cursor retrieval.
 /// </summary>
+/// <remarks>
+///     This is the public factory interface for consumers (e.g., aggregate grains, snapshot grains).
+///     Internal grain access should use <c>IInternalBrookGrainFactory</c> instead.
+/// </remarks>
 public interface IBrookGrainFactory
 {
     /// <summary>
@@ -43,15 +46,6 @@ public interface IBrookGrainFactory
     /// <returns>An <see cref="IBrookReaderGrain" /> instance for batch reads.</returns>
     IBrookReaderGrain GetBrookReaderGrain(
         BrookKey brookKey
-    );
-
-    /// <summary>
-    ///     Retrieves an <see cref="IBrookSliceReaderGrain" /> for the specified Brook composite range key.
-    /// </summary>
-    /// <param name="brookRangeKey">The key and range identifying the Brook slice.</param>
-    /// <returns>An <see cref="IBrookSliceReaderGrain" /> instance for the Brook slice.</returns>
-    IBrookSliceReaderGrain GetBrookSliceReaderGrain(
-        BrookRangeKey brookRangeKey
     );
 
     /// <summary>

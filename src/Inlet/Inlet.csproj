@@ -3,7 +3,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
         <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
-        <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>

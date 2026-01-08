@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
 using Mississippi.EventSourcing.Brooks.Factory;
 
 using Orleans;
@@ -43,12 +44,12 @@ internal class BrookReaderGrain
     ///     Initializes a new instance of the <see cref="BrookReaderGrain" /> class.
     ///     Sets up the grain with required dependencies for brook reading operations.
     /// </summary>
-    /// <param name="brookGrainFactory">Factory for creating related brook grains.</param>
+    /// <param name="brookGrainFactory">Factory for creating related brook grains (including internal slice readers).</param>
     /// <param name="options">Configuration options for brook reader behavior.</param>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     /// <param name="logger">Logger instance for logging reader operations.</param>
     public BrookReaderGrain(
-        IBrookGrainFactory brookGrainFactory,
+        IInternalBrookGrainFactory brookGrainFactory,
         IOptions<BrookReaderOptions> options,
         IGrainContext grainContext,
         ILogger<BrookReaderGrain> logger
@@ -67,7 +68,7 @@ internal class BrookReaderGrain
     /// <value>The grain context instance.</value>
     public IGrainContext GrainContext { get; }
 
-    private IBrookGrainFactory BrookGrainFactory { get; }
+    private IInternalBrookGrainFactory BrookGrainFactory { get; }
 
     private ILogger<BrookReaderGrain> Logger { get; }
 

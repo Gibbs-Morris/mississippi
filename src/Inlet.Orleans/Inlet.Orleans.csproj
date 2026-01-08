@@ -11,7 +11,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
-        <ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
         <ProjectReference Include="..\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
         <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     </ItemGroup>

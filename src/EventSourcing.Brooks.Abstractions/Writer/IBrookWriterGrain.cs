@@ -2,13 +2,12 @@ using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Brooks.Writer;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.Writer;
 
 /// <summary>
 ///     Orleans grain contract that provides append (write) operations for a Mississippi brook.

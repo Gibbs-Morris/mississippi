@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Factory;
-using Mississippi.EventSourcing.Brooks.Writer;
+using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
+using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
 
 
 namespace Crescent.ConsoleApp.Scenarios;

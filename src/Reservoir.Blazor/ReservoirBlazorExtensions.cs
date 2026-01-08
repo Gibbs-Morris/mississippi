@@ -28,7 +28,7 @@ public static class ReservoirBlazorExtensions
     ///         <code>
     /// // Register reducers with DI:
     /// services.AddReducer&lt;ToggleSidebarAction, SidebarState, ToggleSidebarReducer&gt;();
-    /// 
+    ///
     /// // Then register the store:
     /// services.AddReservoirBlazor(store =&gt;
     /// {

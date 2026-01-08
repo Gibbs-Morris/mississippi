@@ -41,7 +41,6 @@
     <Project Path="src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
     <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
     <Project Path="src\EventSourcing.UxProjections.Api.Generators\EventSourcing.UxProjections.Api.Generators.csproj" />
-    <Project Path="src\EventSourcing.UxProjections.SignalR\EventSourcing.UxProjections.SignalR.csproj" />
   </Folder>
   <Folder Name="/Framework/Reservoir/">
     <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />

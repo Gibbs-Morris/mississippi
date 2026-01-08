@@ -17,24 +17,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Mississippi framework -->
-    <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
-    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+    <!-- Domain and Components -->
+    <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj" />
+    <ProjectReference Include="..\Cascade.Components\Cascade.Components.csproj" />
+    <!-- Mississippi framework - directly used in Program.cs and Services -->
     <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
-    <ProjectReference Include="..\..\..\src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
-    <ProjectReference Include="..\..\..\src\Common.Cosmos\Common.Cosmos.csproj" />
-
-    <!-- Inlet Blazor for UI projection subscriptions -->
     <ProjectReference Include="..\..\..\src\Inlet.Blazor\Inlet.Blazor.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.InProcess\Inlet.InProcess.csproj" />
-
-    <!-- Domain -->
-    <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj" />
-
-    <!-- Shared Components -->
-    <ProjectReference Include="..\Cascade.Components\Cascade.Components.csproj" />
+    <ProjectReference Include="..\..\..\src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
   </ItemGroup>
 
 </Project>

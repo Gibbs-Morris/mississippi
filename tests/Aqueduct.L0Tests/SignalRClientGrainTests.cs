@@ -3,7 +3,6 @@
 using Allure.Xunit.Attributes;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
-using Mississippi.Aqueduct.Grains;
 using Mississippi.Aqueduct.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
 

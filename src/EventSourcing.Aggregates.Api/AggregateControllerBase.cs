@@ -27,14 +27,14 @@ namespace Mississippi.EventSourcing.Aggregates.Api;
 ///             public class UserController : AggregateControllerBase&lt;UserAggregate&gt;
 ///             {
 ///                 private readonly IUserService _service;
-/// 
+///
 ///                 public UserController(
 ///                     IUserService service,
 ///                     ILogger&lt;UserController&gt; logger) : base(logger)
 ///                 {
 ///                     _service = service;
 ///                 }
-/// 
+///
 ///                 [HttpPost("register")]
 ///                 public Task&lt;ActionResult&lt;OperationResult&gt;&gt; RegisterAsync(
 ///                     [FromRoute] string entityId,

@@ -6,7 +6,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
-        <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

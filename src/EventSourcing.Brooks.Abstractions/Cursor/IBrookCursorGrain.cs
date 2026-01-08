@@ -1,12 +1,10 @@
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-
 using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cursor;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
 
 /// <summary>
 ///     Orleans grain contract that exposes the cursor (latest version) of a Mississippi brook.

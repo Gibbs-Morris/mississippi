@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
+using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
 
 using Orleans;
 using Orleans.Runtime;

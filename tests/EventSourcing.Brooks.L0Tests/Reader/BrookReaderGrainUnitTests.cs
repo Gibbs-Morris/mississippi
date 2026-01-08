@@ -34,7 +34,7 @@ public sealed class BrookReaderGrainUnitTests
     public async Task DeactivateAsyncCallsDeactivateOnIdle()
     {
         // Arrange
-        Mock<IBrookGrainFactory> factory = new();
+        Mock<IInternalBrookGrainFactory> factory = new();
         IOptions<BrookReaderOptions> options = Options.Create(new BrookReaderOptions());
         IGrainContext context = GrainContextMockBuilder.Create()
             .WithBrookGrainKey("TEST.BROOK", "test-entity-id")

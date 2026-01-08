@@ -1,6 +1,5 @@
 ﻿using Allure.Xunit.Attributes;
 
-using Mississippi.Aqueduct.Abstractions;
 
 namespace Mississippi.Aqueduct.Abstractions.L0Tests;
 

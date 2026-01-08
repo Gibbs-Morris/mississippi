@@ -3,6 +3,7 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Brooks.Reader;
@@ -64,7 +65,10 @@ public static class EventSourcingRegistrations
     )
     {
         // Register the grain factory for accessing Orleans grains
-        services.AddSingleton<IBrookGrainFactory, BrookGrainFactory>();
+        // Register as singleton and expose both public (abstractions) and internal interfaces
+        services.AddSingleton<BrookGrainFactory>();
+        services.AddSingleton<IBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
+        services.AddSingleton<IInternalBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
 
         // Register the stream ID factory for Orleans streams
         services.AddSingleton<IStreamIdFactory, StreamIdFactory>();

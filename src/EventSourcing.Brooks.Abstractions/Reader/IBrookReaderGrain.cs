@@ -2,13 +2,11 @@ using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-
 using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.Brooks.Reader;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.Reader;
 
 /// <summary>
 ///     Main entry point grain for reading events from a brook (event stream) using batch operations.
