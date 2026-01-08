@@ -11,7 +11,7 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions;
 ///     components.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Abstractions.BrookRangeKey")]
+[Alias("Mississippi.EventSourcing.Brooks.Abstractions.BrookRangeKey")]
 public readonly record struct BrookRangeKey
 {
     private const int MaxLength = 4192;

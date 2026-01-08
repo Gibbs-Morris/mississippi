@@ -14,7 +14,7 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
 ///     <see cref="BrookKey" /> to provide
 ///     a unique identifier for each Mississippi brook.
 /// </remarks>
-[Alias("Mississippi.Core.IBrookCursorGrain")]
+[Alias("Mississippi.EventSourcing.Brooks.Abstractions.Cursor.IBrookCursorGrain")]
 public interface IBrookCursorGrain : IGrainWithStringKey
 {
     /// <summary>

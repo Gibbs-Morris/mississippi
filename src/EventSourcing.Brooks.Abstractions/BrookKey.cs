@@ -9,7 +9,7 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions;
 ///     Represents a composite key for identifying brooks, consisting of a brook name and entity id component.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Abstractions.BrookKey")]
+[Alias("Mississippi.EventSourcing.Brooks.Abstractions.BrookKey")]
 public readonly record struct BrookKey
 {
     private const int MaxLength = 4192;

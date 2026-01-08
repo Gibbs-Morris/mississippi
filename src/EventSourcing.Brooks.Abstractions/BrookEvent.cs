@@ -10,7 +10,7 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions;
 ///     Represents an event used by the Mississippi event-sourcing subsystem.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.Core.Idea.BrookEvent")]
+[Alias("Mississippi.EventSourcing.Brooks.Abstractions.BrookEvent")]
 public sealed record BrookEvent
 {
     /// <summary>
