@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
+using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Orleans.Grains;
-using Mississippi.Aqueduct.Abstractions.Grains;
 
 using Orleans;
 

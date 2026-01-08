@@ -15,13 +15,8 @@
         <Project Path="samples\Cascade\Cascade.L2Tests\Cascade.L2Tests.csproj" />
     </Folder>
     <Folder Name="/Samples/Crescent/">
-        <Project Path="samples\Crescent\ApiApp\ApiApp.csproj" />
         <Project Path="samples\Crescent\ConsoleApp\ConsoleApp.csproj" />
-        <Project Path="samples\Crescent\WebApp\WebApp.Client\WebApp.Client.csproj" />
-        <Project Path="samples\Crescent\WebApp\WebApp\WebApp.csproj" />
-        <Project Path="samples\Crescent\ApiApp.L0Tests\ApiApp.L0Tests.csproj" />
         <Project Path="samples\Crescent\ConsoleApp.L0Tests\ConsoleApp.L0Tests.csproj" />
-        <Project Path="samples\Crescent\WebApp.L0Tests\WebApp.L0Tests.csproj" />
     </Folder>
     <Folder Name="/Framework/" />
 

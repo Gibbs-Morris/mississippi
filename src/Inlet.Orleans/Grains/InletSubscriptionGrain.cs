@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Aqueduct.Abstractions.Grains;
 
 using Orleans;
 using Orleans.Runtime;
