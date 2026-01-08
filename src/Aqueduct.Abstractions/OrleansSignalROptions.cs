@@ -1,9 +1,4 @@
-// <copyright file="OrleansSignalROptions.cs" company="Gibbs-Morris">
-// Proprietary and Confidential.
-// All rights reserved.
-// </copyright>
-
-namespace Mississippi.Aqueduct.Abstractions;
+﻿namespace Mississippi.Aqueduct.Abstractions;
 
 /// <summary>
 ///     Configuration options for the Orleans-SignalR bridge.

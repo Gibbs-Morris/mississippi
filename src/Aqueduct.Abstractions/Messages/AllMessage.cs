@@ -1,9 +1,4 @@
-// <copyright file="AllMessage.cs" company="Gibbs-Morris">
-// Proprietary and Confidential.
-// All rights reserved.
-// </copyright>
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using Orleans;
 

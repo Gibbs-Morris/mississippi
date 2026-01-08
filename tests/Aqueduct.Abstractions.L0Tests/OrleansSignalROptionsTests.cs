@@ -1,9 +1,4 @@
-// <copyright file="OrleansSignalROptionsTests.cs" company="Gibbs-Morris">
-// Proprietary and Confidential.
-// All rights reserved.
-// </copyright>
-
-using Allure.Xunit.Attributes;
+﻿using Allure.Xunit.Attributes;
 
 using Mississippi.Aqueduct.Abstractions;
 

@@ -1,9 +1,4 @@
-// <copyright file="ISignalRGroupGrain.cs" company="Gibbs-Morris">
-// Proprietary and Confidential.
-// All rights reserved.
-// </copyright>
-
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Threading.Tasks;
 
 using Orleans;

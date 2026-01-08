@@ -1,9 +1,4 @@
-// <copyright file="OrleansSignalRGrainObserverLoggerExtensions.cs" company="Gibbs-Morris">
-// Proprietary and Confidential.
-// All rights reserved.
-// </copyright>
-
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 
 namespace Mississippi.Aqueduct;

@@ -1,9 +1,4 @@
-// <copyright file="SignalRClientGrainTests.cs" company="Gibbs-Morris">
-// Proprietary and Confidential.
-// All rights reserved.
-// </copyright>
-
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 

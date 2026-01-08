@@ -1,9 +1,4 @@
-// <copyright file="ISignalRServerDirectoryGrain.cs" company="Gibbs-Morris">
-// Proprietary and Confidential.
-// All rights reserved.
-// </copyright>
-
-using System;
+﻿using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 

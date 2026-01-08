@@ -1,9 +1,4 @@
-// <copyright file="OrleansHubLifetimeManagerLoggerExtensions.cs" company="Gibbs-Morris">
-// Proprietary and Confidential.
-// All rights reserved.
-// </copyright>
-
-using System;
+﻿using System;
 
 using Microsoft.Extensions.Logging;
 
