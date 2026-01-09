@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Exclude Allure reporting for this integration test project.
+         Allure.Xunit crashes when tests fail during IAsyncLifetime.InitializeAsync
+         (before the test context is established). -->
+    <ExcludeAllure>true</ExcludeAllure>
+  </PropertyGroup>
+
+  <!-- Remove Allure.Xunit that was added by Directory.Build.props -->
+  <ItemGroup>
+    <PackageReference Remove="Allure.Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Aspire Testing Infrastructure -->
+    <PackageReference Include="Aspire.Hosting.Testing" />
+
+    <!-- Azure SDK clients for direct resource access in tests -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
+    <PackageReference Include="Azure.Storage.Blobs" />
+
+    <!-- FluentAssertions for readable assertions -->
+    <PackageReference Include="FluentAssertions" />
+
+    <!-- Orleans for in-process silo hosting -->
+    <PackageReference Include="Microsoft.Orleans.Server" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Mississippi Event Sourcing Framework -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Aspire.AppHost\Aspire.AppHost.csproj" />
+  </ItemGroup>
+</Project>

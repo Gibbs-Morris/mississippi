@@ -138,14 +138,16 @@ public abstract class AggregateGrainBase<TSnapshot>
         // Validate that the attribute is present on the concrete grain type (fail-fast)
         // This call will throw InvalidOperationException if the attribute is missing
         _ = BrookNameHelper.GetDefinition(GetType());
-        string primaryKey = this.GetPrimaryKeyString();
-        brookKey = BrookKey.FromString(primaryKey);
+
+        // Key is just entityId; brookKey includes the brook name for storage operations
+        string entityId = this.GetPrimaryKeyString();
+        brookKey = new BrookKey(BrookName, entityId);
         snapshotStreamKey = new(
             BrookName,
             SnapshotStorageNameHelper.GetStorageName<TSnapshot>(),
             brookKey.EntityId,
             ReducersHash);
-        Logger.Activated(primaryKey);
+        Logger.Activated(brookKey);
         return Task.CompletedTask;
     }
 
