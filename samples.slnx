@@ -15,8 +15,8 @@
         <Project Path="samples\Cascade\Cascade.L2Tests\Cascade.L2Tests.csproj" />
     </Folder>
     <Folder Name="/Samples/Crescent/">
-        <Project Path="samples\Crescent\Aspire.AppHost\Aspire.AppHost.csproj" />
-        <Project Path="samples\Crescent\Aspire.L2Tests\Aspire.L2Tests.csproj" />
+        <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
+        <Project Path="samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj" />
     </Folder>
     <Folder Name="/Framework/" />
 
