@@ -13,6 +13,7 @@ using Mississippi.EventSourcing.Snapshots.Abstractions;
 
 using Orleans.Runtime;
 
+#pragma warning disable CS0618 // Type or member is obsolete - migrating to GenericAggregateGrain pattern
 
 namespace Cascade.Domain.Channel;
 

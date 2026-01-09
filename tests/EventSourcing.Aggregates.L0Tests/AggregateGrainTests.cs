@@ -20,6 +20,7 @@ using Moq;
 
 using Orleans.Runtime;
 
+#pragma warning disable CS0618 // Type or member is obsolete - testing legacy AggregateGrainBase
 
 namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 
