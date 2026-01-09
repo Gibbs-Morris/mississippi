@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Exclude Allure reporting for this integration test project.
+         Allure.Xunit crashes when tests fail during IAsyncLifetime.InitializeAsync
+         (before the test context is established). -->
+    <ExcludeAllure>true</ExcludeAllure>
+  </PropertyGroup>
+
+  <!-- Remove Allure.Xunit that was added by Directory.Build.props -->
+  <ItemGroup>
+    <PackageReference Remove="Allure.Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Aspire Testing Infrastructure -->
+    <PackageReference Include="Aspire.Hosting.Testing" />
+
+    <!-- FluentAssertions for readable assertions -->
+    <PackageReference Include="FluentAssertions" />
+
+    <!-- Orleans for in-process silo hosting -->
+    <PackageReference Include="Microsoft.Orleans.Server" />
+    <PackageReference Include="Microsoft.Orleans.Streaming" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Aqueduct projects under test -->
+    <ProjectReference Include="..\..\..\src\Aqueduct\Aqueduct.csproj" />
+    <ProjectReference Include="..\..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Aqueduct.AppHost\Aqueduct.AppHost.csproj" />
+  </ItemGroup>
+</Project>

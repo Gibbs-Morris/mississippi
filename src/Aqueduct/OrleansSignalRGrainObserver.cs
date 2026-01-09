@@ -75,7 +75,7 @@ public sealed class OrleansSignalRGrainObserver : ISignalRGrainObserver
         AllMessage message = new()
         {
             MethodName = method,
-            Args = [.. args],
+            Args = args.AsSpan().ToArray(),
         };
         await stream.OnNextAsync(message).ConfigureAwait(false);
     }

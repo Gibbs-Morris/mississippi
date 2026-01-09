@@ -142,7 +142,7 @@ internal sealed class SignalRClientGrain
         {
             ConnectionId = connectionId,
             MethodName = method,
-            Args = [.. args],
+            Args = args.AsSpan().ToArray(),
         };
         await stream.OnNextAsync(message).ConfigureAwait(false);
     }

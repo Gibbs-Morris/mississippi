@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Inlet.InProcess\Inlet.InProcess.csproj" />
+    </ItemGroup>
+
+</Project>

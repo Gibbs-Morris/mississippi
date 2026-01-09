@@ -84,4 +84,33 @@ public sealed class OrleansSignalROptionsTests
         // Assert
         Assert.Equal("SignalRStreams", options.StreamProviderName);
     }
+
+    /// <summary>
+    ///     Tests that default dead server timeout multiplier is set correctly.
+    /// </summary>
+    [Fact(DisplayName = "DeadServerTimeoutMultiplier Defaults to 3")]
+    public void DeadServerTimeoutMultiplierShouldDefaultToThree()
+    {
+        // Arrange & Act
+        OrleansSignalROptions options = new();
+
+        // Assert
+        Assert.Equal(3, options.DeadServerTimeoutMultiplier);
+    }
+
+    /// <summary>
+    ///     Tests that dead server timeout multiplier can be customized.
+    /// </summary>
+    [Fact(DisplayName = "DeadServerTimeoutMultiplier Can Be Customized")]
+    public void DeadServerTimeoutMultiplierShouldBeCustomizable()
+    {
+        // Arrange
+        OrleansSignalROptions options = new()
+        {
+            DeadServerTimeoutMultiplier = 5,
+        };
+
+        // Assert
+        Assert.Equal(5, options.DeadServerTimeoutMultiplier);
+    }
 }

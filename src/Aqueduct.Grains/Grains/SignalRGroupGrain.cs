@@ -137,15 +137,25 @@ internal sealed class SignalRGroupGrain
     {
         ArgumentException.ThrowIfNullOrEmpty(method);
         string groupKey = this.GetPrimaryKeyString();
+        string hubName = ExtractHubName(groupKey);
         Logger.SendingToGroup(groupKey, method, state.ConnectionIds.Count);
 
         // Fan out to each connection
         foreach (string connectionId in state.ConnectionIds)
         {
-            ISignalRClientGrain clientGrain = GrainFactory.GetGrain<ISignalRClientGrain>(connectionId);
+            ISignalRClientGrain clientGrain = GrainFactory.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
             await clientGrain.SendMessageAsync(method, args).ConfigureAwait(false);
         }
 
         Logger.SentToGroup(groupKey, method, state.ConnectionIds.Count);
+    }
+
+    private static string ExtractHubName(
+        string groupKey
+    )
+    {
+        // Group key format: "HubName:GroupName"
+        int separatorIndex = groupKey.IndexOf(':', StringComparison.Ordinal);
+        return separatorIndex >= 0 ? groupKey[..separatorIndex] : groupKey;
     }
 }
