@@ -33,17 +33,6 @@ internal sealed class AggregateGrainFactory : IAggregateGrainFactory
     private ILogger<AggregateGrainFactory> Logger { get; }
 
     /// <inheritdoc />
-    public TGrain GetAggregate<TGrain>(
-        string entityId
-    )
-        where TGrain : IGrainWithStringKey
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
-        Logger.AggregateGrainFactoryResolvingAggregate(typeof(TGrain).Name, entityId);
-        return GrainFactory.GetGrain<TGrain>(entityId);
-    }
-
-    /// <inheritdoc />
     public IGenericAggregateGrain<TAggregate> GetGenericAggregate<TAggregate>(
         string entityId
     )

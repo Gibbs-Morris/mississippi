@@ -1,6 +1,3 @@
-using Orleans;
-
-
 namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 
 /// <summary>
@@ -16,26 +13,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 /// </remarks>
 public interface IAggregateGrainFactory
 {
-    /// <summary>
-    ///     Retrieves a custom aggregate grain interface using an entity ID.
-    /// </summary>
-    /// <typeparam name="TGrain">
-    ///     The custom aggregate grain interface type that implements <see cref="IGrainWithStringKey" />.
-    /// </typeparam>
-    /// <param name="entityId">The entity identifier.</param>
-    /// <returns>The aggregate grain instance.</returns>
-    /// <remarks>
-    ///     <para>
-    ///         Use this overload when you have a custom aggregate grain interface with domain-specific
-    ///         methods (e.g., <c>ICounterAggregateGrain</c> with <c>IncrementAsync</c>, <c>DecrementAsync</c>).
-    ///         The grain is keyed by entity ID only.
-    ///     </para>
-    /// </remarks>
-    TGrain GetAggregate<TGrain>(
-        string entityId
-    )
-        where TGrain : IGrainWithStringKey;
-
     /// <summary>
     ///     Retrieves a generic aggregate grain for the specified aggregate type using an entity ID.
     /// </summary>
