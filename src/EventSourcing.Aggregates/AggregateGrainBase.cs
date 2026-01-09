@@ -37,6 +37,12 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///         activate with an exception.
 ///     </para>
 /// </remarks>
+#pragma warning disable S1133 // Deprecated code - removal tracked; still used by Cascade/Crescent samples
+[Obsolete(
+    "Use GenericAggregateGrain via IAggregateGrainFactory.GetGenericAggregate<TAggregate>(entityId) instead. " +
+    "Place the [BrookName] attribute on the aggregate type rather than the grain class. " +
+    "This base class will be removed in a future release.")]
+#pragma warning restore S1133
 public abstract class AggregateGrainBase<TSnapshot>
     : IGrainWithStringKey,
       IGrainBase

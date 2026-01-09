@@ -9,6 +9,7 @@ namespace Crescent.Aspire.L2Tests.Domain.Counter;
 ///     Internal aggregate state for the counter.
 ///     This is never exposed externally; use projections for read queries.
 /// </summary>
+[BrookName("CRESCENT", "SAMPLE", "COUNTER")]
 [SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSTATE")]
 [GenerateSerializer]
 [Alias("Crescent.Aspire.L2Tests.Domain.Counter.CounterAggregate")]

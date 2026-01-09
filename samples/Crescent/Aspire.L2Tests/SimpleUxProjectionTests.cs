@@ -1,4 +1,5 @@
 using Crescent.Aspire.L2Tests.Domain.Counter;
+using Crescent.Aspire.L2Tests.Domain.Counter.Commands;
 using Crescent.Aspire.L2Tests.Domain.CounterSummary;
 
 using FluentAssertions;
@@ -54,19 +55,20 @@ public sealed class SimpleUxProjectionTests
         string entityId = NewEntityId();
         output.WriteLine($"[Test] Starting with entity ID: {entityId}");
 
-        ICounterAggregateGrain counter = fixture.AggregateGrainFactory
-            .GetAggregate<ICounterAggregateGrain>(entityId);
+        // Use the generic aggregate grain pattern - brook name derived from [BrookName] on CounterAggregate
+        IGenericAggregateGrain<CounterAggregate> counter = fixture.AggregateGrainFactory
+            .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Step 1: Execute commands on aggregate (writes events)
         output.WriteLine("[Test] Step 1: Execute commands on aggregate to write events to brook");
 
-        OperationResult initResult = await counter.InitializeAsync(10);
+        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter(10));
         initResult.Success.Should().BeTrue("Initialize should succeed");
         output.WriteLine("[Test] Command executed: Initialize(10)");
 
         for (int i = 0; i < 5; i++)
         {
-            OperationResult incResult = await counter.IncrementAsync();
+            OperationResult incResult = await counter.ExecuteAsync(new IncrementCounter());
             incResult.Success.Should().BeTrue($"Increment[{i + 1}] should succeed");
         }
 
@@ -74,7 +76,7 @@ public sealed class SimpleUxProjectionTests
 
         for (int i = 0; i < 2; i++)
         {
-            OperationResult decResult = await counter.DecrementAsync();
+            OperationResult decResult = await counter.ExecuteAsync(new DecrementCounter());
             decResult.Success.Should().BeTrue($"Decrement[{i + 1}] should succeed");
         }
 
@@ -154,16 +156,16 @@ public sealed class SimpleUxProjectionTests
         string entityId = NewEntityId();
         output.WriteLine($"[Test] Testing re-initialization prevention: {entityId}");
 
-        ICounterAggregateGrain counter = fixture.AggregateGrainFactory
-            .GetAggregate<ICounterAggregateGrain>(entityId);
+        IGenericAggregateGrain<CounterAggregate> counter = fixture.AggregateGrainFactory
+            .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - First initialization should succeed
-        OperationResult firstInit = await counter.InitializeAsync(100);
+        OperationResult firstInit = await counter.ExecuteAsync(new InitializeCounter(100));
         firstInit.Success.Should().BeTrue("First initialization should succeed");
         output.WriteLine("[Test] First Initialize(100) succeeded");
 
         // Act - Second initialization should fail
-        OperationResult secondInit = await counter.InitializeAsync(200);
+        OperationResult secondInit = await counter.ExecuteAsync(new InitializeCounter(200));
         secondInit.Success.Should().BeFalse("Second initialization should fail");
         secondInit.ErrorCode.Should().Be(AggregateErrorCodes.AlreadyExists);
         output.WriteLine($"[Test] Second Initialize(200) failed as expected: {secondInit.ErrorMessage}");
