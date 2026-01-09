@@ -11,6 +11,7 @@ namespace Cascade.Domain.Conversation;
 /// <summary>
 ///     Represents the state of a conversation aggregate.
 /// </summary>
+[BrookName("CASCADE", "CHAT", "CONVERSATION")]
 [SnapshotStorageName("CASCADE", "CHAT", "CONVERSATIONSTATE")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Conversation.ConversationAggregate")]

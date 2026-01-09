@@ -5,8 +5,11 @@ using System.Threading.Tasks;
 
 using Cascade.Components.Services;
 using Cascade.Domain.Channel;
+using Cascade.Domain.Channel.Commands;
 using Cascade.Domain.Conversation;
+using Cascade.Domain.Conversation.Commands;
 using Cascade.Domain.User;
+using Cascade.Domain.User.Commands;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
@@ -21,6 +24,9 @@ namespace Cascade.Server.Services;
 ///         This service provides a clean abstraction layer between Blazor components
 ///         and Orleans grains. It handles the grain resolution and operation result
 ///         processing, throwing descriptive exceptions on failure.
+///     </para>
+///     <para>
+///         Uses GenericAggregateGrain pattern with ExecuteAsync for all commands.
 ///     </para>
 /// </remarks>
 internal sealed class ChatService : IChatService
@@ -74,15 +80,28 @@ internal sealed class ChatService : IChatService
         string channelId = GenerateChannelId(name);
 
         // Get the channel grain and create the channel
-        IChannelAggregateGrain channelGrain = AggregateGrainFactory.GetAggregate<IChannelAggregateGrain>(channelId);
-        OperationResult result = await channelGrain.CreateAsync(channelId, name, Session.UserId!);
+        IGenericAggregateGrain<ChannelAggregate> channelGrain =
+            AggregateGrainFactory.GetGenericAggregate<ChannelAggregate>(channelId);
+        OperationResult result = await channelGrain.ExecuteAsync(
+            new CreateChannel
+            {
+                ChannelId = channelId,
+                Name = name,
+                CreatedBy = Session.UserId!,
+            },
+            cancellationToken);
         if (!result.Success)
         {
             throw new ChatOperationException(result.ErrorMessage ?? "Failed to create channel", result.ErrorCode);
         }
 
         // Add the creator as a member
-        OperationResult memberResult = await channelGrain.AddMemberAsync(Session.UserId!);
+        OperationResult memberResult = await channelGrain.ExecuteAsync(
+            new AddMember
+            {
+                UserId = Session.UserId!,
+            },
+            cancellationToken);
         if (!memberResult.Success)
         {
             throw new ChatOperationException(
@@ -91,8 +110,14 @@ internal sealed class ChatService : IChatService
         }
 
         // Also update the user's channel list
-        IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(Session.UserId!);
-        await userGrain.JoinChannelAsync(channelId);
+        IGenericAggregateGrain<UserAggregate> userGrain =
+            AggregateGrainFactory.GetGenericAggregate<UserAggregate>(Session.UserId!);
+        await userGrain.ExecuteAsync(
+            new JoinChannel
+            {
+                ChannelId = channelId,
+            },
+            cancellationToken);
         return channelId;
     }
 
@@ -106,16 +131,28 @@ internal sealed class ChatService : IChatService
         EnsureAuthenticated();
 
         // Add user to channel
-        IChannelAggregateGrain channelGrain = AggregateGrainFactory.GetAggregate<IChannelAggregateGrain>(channelId);
-        OperationResult result = await channelGrain.AddMemberAsync(Session.UserId!);
+        IGenericAggregateGrain<ChannelAggregate> channelGrain =
+            AggregateGrainFactory.GetGenericAggregate<ChannelAggregate>(channelId);
+        OperationResult result = await channelGrain.ExecuteAsync(
+            new AddMember
+            {
+                UserId = Session.UserId!,
+            },
+            cancellationToken);
         if (!result.Success && (result.ErrorCode != AggregateErrorCodes.InvalidState))
         {
             throw new ChatOperationException(result.ErrorMessage ?? "Failed to join channel", result.ErrorCode);
         }
 
         // Update user's channel list
-        IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(Session.UserId!);
-        OperationResult userResult = await userGrain.JoinChannelAsync(channelId);
+        IGenericAggregateGrain<UserAggregate> userGrain =
+            AggregateGrainFactory.GetGenericAggregate<UserAggregate>(Session.UserId!);
+        OperationResult userResult = await userGrain.ExecuteAsync(
+            new JoinChannel
+            {
+                ChannelId = channelId,
+            },
+            cancellationToken);
         if (!userResult.Success && (userResult.ErrorCode != AggregateErrorCodes.InvalidState))
         {
             throw new ChatOperationException(
@@ -134,16 +171,28 @@ internal sealed class ChatService : IChatService
         EnsureAuthenticated();
 
         // Remove user from channel
-        IChannelAggregateGrain channelGrain = AggregateGrainFactory.GetAggregate<IChannelAggregateGrain>(channelId);
-        OperationResult result = await channelGrain.RemoveMemberAsync(Session.UserId!);
+        IGenericAggregateGrain<ChannelAggregate> channelGrain =
+            AggregateGrainFactory.GetGenericAggregate<ChannelAggregate>(channelId);
+        OperationResult result = await channelGrain.ExecuteAsync(
+            new RemoveMember
+            {
+                UserId = Session.UserId!,
+            },
+            cancellationToken);
         if (!result.Success && (result.ErrorCode != AggregateErrorCodes.InvalidState))
         {
             throw new ChatOperationException(result.ErrorMessage ?? "Failed to leave channel", result.ErrorCode);
         }
 
         // Update user's channel list
-        IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(Session.UserId!);
-        OperationResult userResult = await userGrain.LeaveChannelAsync(channelId);
+        IGenericAggregateGrain<UserAggregate> userGrain =
+            AggregateGrainFactory.GetGenericAggregate<UserAggregate>(Session.UserId!);
+        OperationResult userResult = await userGrain.ExecuteAsync(
+            new LeaveChannel
+            {
+                ChannelId = channelId,
+            },
+            cancellationToken);
         if (!userResult.Success && (userResult.ErrorCode != AggregateErrorCodes.InvalidState))
         {
             throw new ChatOperationException(
@@ -167,14 +216,20 @@ internal sealed class ChatService : IChatService
         string conversationId = channelId;
 
         // Get the conversation grain
-        IConversationAggregateGrain conversationGrain =
-            AggregateGrainFactory.GetAggregate<IConversationAggregateGrain>(conversationId);
+        IGenericAggregateGrain<ConversationAggregate> conversationGrain =
+            AggregateGrainFactory.GetGenericAggregate<ConversationAggregate>(conversationId);
 
         // Generate a unique message ID
         string messageId = GenerateMessageId();
 
         // First, ensure the conversation is started (idempotent operation)
-        OperationResult startResult = await conversationGrain.StartAsync(conversationId, channelId);
+        OperationResult startResult = await conversationGrain.ExecuteAsync(
+            new StartConversation
+            {
+                ConversationId = conversationId,
+                ChannelId = channelId,
+            },
+            cancellationToken);
         if (!startResult.Success && (startResult.ErrorCode != AggregateErrorCodes.InvalidState))
         {
             throw new ChatOperationException(
@@ -183,7 +238,14 @@ internal sealed class ChatService : IChatService
         }
 
         // Send the message
-        OperationResult result = await conversationGrain.SendMessageAsync(messageId, content, Session.UserId!);
+        OperationResult result = await conversationGrain.ExecuteAsync(
+            new SendMessage
+            {
+                MessageId = messageId,
+                Content = content,
+                SentBy = Session.UserId!,
+            },
+            cancellationToken);
         if (!result.Success)
         {
             throw new ChatOperationException(result.ErrorMessage ?? "Failed to send message", result.ErrorCode);

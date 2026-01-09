@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using Cascade.Components.Services;
 using Cascade.Domain.User;
+using Cascade.Domain.User.Commands;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
@@ -86,10 +87,17 @@ internal sealed class UserSession : IUserContext
         string userId = $"user-{normalizedName}";
 
         // Get the user aggregate grain
-        IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(userId);
+        IGenericAggregateGrain<UserAggregate> userGrain =
+            AggregateGrainFactory.GetGenericAggregate<UserAggregate>(userId);
 
         // Register the user (idempotent - returns error if already registered, which we ignore)
-        OperationResult result = await userGrain.RegisterAsync(userId, displayName);
+        OperationResult result = await userGrain.ExecuteAsync(
+            new RegisterUser
+            {
+                UserId = userId,
+                DisplayName = displayName,
+            },
+            cancellationToken);
 
         // Allow "already registered" error (InvalidState) - that's fine for login
         if (!result.Success && (result.ErrorCode != AggregateErrorCodes.InvalidState))
@@ -98,7 +106,12 @@ internal sealed class UserSession : IUserContext
         }
 
         // Set user online
-        await userGrain.SetOnlineStatusAsync(true);
+        await userGrain.ExecuteAsync(
+            new SetOnlineStatus
+            {
+                IsOnline = true,
+            },
+            cancellationToken);
 
         // Store in session
         UserId = userId;
@@ -118,8 +131,14 @@ internal sealed class UserSession : IUserContext
         if (!string.IsNullOrEmpty(UserId))
         {
             // Set user offline
-            IUserAggregateGrain userGrain = AggregateGrainFactory.GetAggregate<IUserAggregateGrain>(UserId);
-            await userGrain.SetOnlineStatusAsync(false);
+            IGenericAggregateGrain<UserAggregate> userGrain =
+                AggregateGrainFactory.GetGenericAggregate<UserAggregate>(UserId);
+            await userGrain.ExecuteAsync(
+                new SetOnlineStatus
+                {
+                    IsOnline = false,
+                },
+                cancellationToken);
         }
 
         UserId = null;
