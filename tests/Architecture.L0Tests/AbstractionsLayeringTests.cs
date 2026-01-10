@@ -38,20 +38,13 @@ public sealed class AbstractionsLayeringTests : ArchitectureTestBase
     /// </summary>
     /// <remarks>
     ///     Per abstractions-projects.instructions.md: "abstractions MUST NOT depend on implementations".
-    ///     Known violations documented in <see cref="KnownViolations.AbstractionImplementationDependencies"/>.
     /// </remarks>
     [Fact]
     public void AbstractionsShouldNotDependOnImplementations()
     {
-        // Note: ICosmosRepository and ISnapshotContainerOperations are known violations - see KnownViolations
-        // The rule is still enforced for all new code
         IArchRule rule = Types()
             .That()
             .Are(AbstractionsTypes)
-            .And()
-            .DoNotHaveNameContaining("ICosmosRepository") // Known violation - see KnownViolations
-            .And()
-            .DoNotHaveNameContaining("ISnapshotContainerOperations") // Known violation - see KnownViolations
             .Should()
             .NotDependOnAny(ImplementationTypes)
             .Because("abstractions MUST NOT depend on implementations per abstractions-projects.instructions.md");
