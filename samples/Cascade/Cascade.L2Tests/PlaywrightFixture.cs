@@ -9,13 +9,9 @@ namespace Cascade.L2Tests;
 /// <summary>
 ///     xUnit fixture that starts the Aspire AppHost and Playwright browser for E2E tests.
 /// </summary>
-#pragma warning disable CA1515 // Types can be made internal - xUnit fixture must be public
-#pragma warning disable IDISP002 // Dispose member - disposed in DisposeAsync
-#pragma warning disable IDISP003 // Dispose previous before re-assigning - fields are null initially
 public sealed class PlaywrightFixture
     : IAsyncLifetime,
       IDisposable
-#pragma warning restore CA1515
 {
     // Cosmos DB emulator cold start can take 2-3 minutes for 11 partitions
     // 5 minutes is sufficient buffer for emulator + Orleans initialization
@@ -30,9 +26,7 @@ public sealed class PlaywrightFixture
     /// <summary>
     ///     Gets the base URL of the Cascade.Server resource.
     /// </summary>
-#pragma warning disable CA1056 // URI properties should not be strings - simpler for test usage
     public string BaseUrl { get; private set; } = string.Empty;
-#pragma warning restore CA1056
 
     /// <summary>
     ///     Gets the Playwright browser instance.
@@ -87,10 +81,8 @@ public sealed class PlaywrightFixture
     public async Task InitializeAsync()
     {
         // Start Aspire AppHost
-#pragma warning disable IDISP001 // Dispose created - appHost not disposed directly, BuildAsync returns different app instance
         IDistributedApplicationTestingBuilder appHost = await DistributedApplicationTestingBuilder
             .CreateAsync<Cascade_AppHost>();
-#pragma warning restore IDISP001
         appHost.Services.AddLogging(logging =>
         {
             logging.SetMinimumLevel(LogLevel.Information);

@@ -6,9 +6,7 @@ namespace Cascade.L2Tests.PageObjects;
 /// <summary>
 ///     Page object for the channel view page.
 /// </summary>
-#pragma warning disable CA1515 // Types can be made internal - used by public test classes
 internal sealed class ChannelViewPage
-#pragma warning restore CA1515
 {
     private readonly IPage page;
 

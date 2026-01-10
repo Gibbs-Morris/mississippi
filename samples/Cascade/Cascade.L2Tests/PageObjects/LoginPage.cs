@@ -6,9 +6,7 @@ namespace Cascade.L2Tests.PageObjects;
 /// <summary>
 ///     Page object for the login page.
 /// </summary>
-#pragma warning disable CA1515 // Types can be made internal - used by public test classes
 internal sealed class LoginPage
-#pragma warning restore CA1515
 {
     private readonly IPage page;
 

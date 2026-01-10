@@ -23,6 +23,7 @@ public class RealTimeTests : TestBase
     ///     Format: prefix (8-10 chars) + partial GUID (14-16 chars) = 24 total.
     /// </summary>
     private const int MaxChannelNameLength = 24;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="RealTimeTests" /> class.
     /// </summary>
