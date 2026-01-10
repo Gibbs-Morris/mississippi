@@ -53,23 +53,33 @@ public abstract class TestBase
                 Timeout = 60000,
             });
         await page.WaitForSelectorAsync(
-            "[id='displayName']",
+            "#displayName",
             new()
             {
                 Timeout = 60000,
             });
 
-        // Small delay to ensure Blazor circuit is fully established
-        await page.WaitForTimeoutAsync(500);
+        // Wait for the submit button to become enabled to ensure the login form is interactive
+        await page.WaitForSelectorAsync(
+            "button[type='submit']:not([disabled])",
+            new()
+            {
+                Timeout = 60000,
+            });
 
         // Enter display name
-        await page.FillAsync("[id='displayName']", displayName);
+        await page.FillAsync("#displayName", displayName);
 
         // Click submit button
         await page.ClickAsync("button[type='submit']");
 
-        // Small delay for Blazor to process the form and navigate
-        await page.WaitForTimeoutAsync(1000);
+        // Wait for Blazor to process the form and navigate by waiting for network to become idle
+        await page.WaitForLoadStateAsync(
+            LoadState.NetworkIdle,
+            new()
+            {
+                Timeout = 60000,
+            });
 
         // Take debug screenshot to see what happened after submit
         string debugPath = Path.Combine(Path.GetTempPath(), $"cascade-login-{Guid.NewGuid()}.png");
