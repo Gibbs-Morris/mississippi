@@ -53,10 +53,10 @@ internal sealed class ChatService : IChatService
         string name
     )
     {
-        // Generate a predictable but unique ID based on name and timestamp
-        string normalizedName = name.ToUpperInvariant().Replace(" ", "-", StringComparison.Ordinal);
-        string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
-        return $"channel-{normalizedName}-{timestamp}";
+        // Generate a unique ID based on normalized name and GUID suffix for uniqueness
+        string normalizedName = name.Replace(" ", "-", StringComparison.Ordinal).ToUpperInvariant();
+        string suffix = Guid.NewGuid().ToString("N")[..8];
+        return $"channel-{normalizedName}-{suffix}";
     }
 
     private static string GenerateMessageId()
