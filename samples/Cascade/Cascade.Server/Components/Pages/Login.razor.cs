@@ -37,7 +37,6 @@ public sealed partial class Login : ComponentBase
         }
     }
 
-#pragma warning disable CA1031 // Catch general exception for UI error display
     private async Task HandleLoginAsync()
     {
         isLoading = true;
@@ -56,7 +55,6 @@ public sealed partial class Login : ComponentBase
             isLoading = false;
         }
     }
-#pragma warning restore CA1031
 
     private sealed class LoginModel
     {

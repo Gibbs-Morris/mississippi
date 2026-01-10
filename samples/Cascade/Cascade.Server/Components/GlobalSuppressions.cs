@@ -39,3 +39,13 @@ using System.Diagnostics.CodeAnalysis;
         Justification = ".NET Remoting is obsolete and not used in Blazor Server apps.",
         Scope = "type",
         Target = "~T:Cascade.Server.Components.Pages.Channels")]
+
+// UI components catch general exceptions to display user-friendly error messages.
+// The exception is logged and displayed to the user, not swallowed silently.
+[assembly:
+    SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "UI error display - exceptions are shown to users as error messages.",
+        Scope = "namespaceanddescendants",
+        Target = "~N:Cascade.Server.Components")]

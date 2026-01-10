@@ -50,9 +50,7 @@ public sealed partial class CreateChannelModal : ComponentBase
         {
             error = ex.Message;
         }
-#pragma warning disable CA1031 // Catch general exception for UI error display
         catch (Exception ex)
-#pragma warning restore CA1031
         {
             error = $"An unexpected error occurred: {ex.Message}";
         }
