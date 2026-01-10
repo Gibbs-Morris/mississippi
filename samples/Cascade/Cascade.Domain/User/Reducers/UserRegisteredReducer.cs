@@ -12,6 +12,11 @@ namespace Cascade.Domain.User.Reducers;
 /// </summary>
 internal sealed class UserRegisteredReducer : ReducerBase<UserRegistered, UserAggregate>
 {
+    /// <summary>
+    ///     The default state for a new user aggregate.
+    /// </summary>
+    private static readonly UserAggregate DefaultState = new();
+
     /// <inheritdoc />
     protected override UserAggregate ReduceCore(
         UserAggregate state,
@@ -19,7 +24,7 @@ internal sealed class UserRegisteredReducer : ReducerBase<UserRegistered, UserAg
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-        return (state ?? new()) with
+        return (state ?? DefaultState) with
         {
             IsRegistered = true,
             UserId = @event.UserId,
