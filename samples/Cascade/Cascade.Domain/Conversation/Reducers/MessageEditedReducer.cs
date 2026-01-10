@@ -19,9 +19,7 @@ internal sealed class MessageEditedReducer : ReducerBase<MessageEdited, Conversa
         int index = state.Messages.FindIndex(m => m.MessageId == eventData.MessageId);
         if (index < 0)
         {
-            return state with
-            {
-            };
+            return state;
         }
 
         Message existingMessage = state.Messages[index];
