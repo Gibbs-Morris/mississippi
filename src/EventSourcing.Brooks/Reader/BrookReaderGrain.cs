@@ -36,7 +36,7 @@ namespace Mississippi.EventSourcing.Brooks.Reader;
 ///     </para>
 /// </remarks>
 [StatelessWorker]
-internal class BrookReaderGrain
+internal sealed class BrookReaderGrain
     : IBrookReaderGrain,
       IGrainBase
 {

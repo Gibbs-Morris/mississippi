@@ -33,7 +33,7 @@ namespace Mississippi.EventSourcing.Brooks.Reader;
 ///         is eventually garbage-collected by Orleans' idle deactivation policy.
 ///     </para>
 /// </remarks>
-internal class BrookAsyncReaderGrain
+internal sealed class BrookAsyncReaderGrain
     : IBrookAsyncReaderGrain,
       IGrainBase
 {
