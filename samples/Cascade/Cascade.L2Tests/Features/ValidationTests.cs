@@ -66,11 +66,12 @@ public class ValidationTests : TestBase
         await page.GotoAsync(Fixture.BaseUrl + "/login");
 
         // Act - try to submit with empty name
-        await page.FillAsync("[id='displayName']", string.Empty);
+        await page.FillAsync("#displayName", string.Empty);
         await page.ClickAsync("button[type='submit']");
 
         // Assert - should still be on login page (validation prevents submission)
-        await Task.Delay(500); // Wait for potential navigation
+        // Wait for any navigation to complete, then verify URL
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         Assert.Contains("/login", page.Url, StringComparison.Ordinal);
     }
 
@@ -174,7 +175,14 @@ public class ValidationTests : TestBase
 
         // Act - enter a message
         await page.FillAsync(".message-input-field", "Test message");
-        await Task.Delay(100); // Wait for state update
+
+        // Wait for send button to become enabled
+        await page.WaitForSelectorAsync(
+            ".send-button:not([disabled])",
+            new()
+            {
+                Timeout = 5000,
+            });
 
         // Assert - send button should be enabled
         bool isDisabled = await page.IsDisabledAsync(".send-button");
