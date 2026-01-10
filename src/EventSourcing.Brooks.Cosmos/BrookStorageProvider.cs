@@ -13,23 +13,23 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos;
 /// <summary>
 ///     Cosmos DB implementation of the Brook storage provider for event sourcing.
 /// </summary>
-internal class BrookStorageProvider : IBrookStorageProvider
+internal sealed class BrookStorageProvider : IBrookStorageProvider
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookStorageProvider" /> class.
     /// </summary>
     /// <param name="recoveryService">The brook recovery service for managing cursor positions.</param>
     /// <param name="eventReader">The event reader for reading events from brooks.</param>
-    /// <param name="eventAppender">The event appender for writing events to brooks.</param>
+    /// <param name="eventWriter">The event writer for writing events to brooks.</param>
     public BrookStorageProvider(
         IBrookRecoveryService recoveryService,
         IEventBrookReader eventReader,
-        IEventBrookAppender eventAppender
+        IEventBrookWriter eventWriter
     )
     {
         RecoveryService = recoveryService ?? throw new ArgumentNullException(nameof(recoveryService));
         EventReader = eventReader ?? throw new ArgumentNullException(nameof(eventReader));
-        EventAppender = eventAppender ?? throw new ArgumentNullException(nameof(eventAppender));
+        EventWriter = eventWriter ?? throw new ArgumentNullException(nameof(eventWriter));
     }
 
     /// <summary>
@@ -38,14 +38,14 @@ internal class BrookStorageProvider : IBrookStorageProvider
     public string Format => "cosmos-db";
 
     /// <summary>
-    ///     Gets the event appender for writing events to brooks.
-    /// </summary>
-    private IEventBrookAppender EventAppender { get; }
-
-    /// <summary>
     ///     Gets the event reader for reading events from brooks.
     /// </summary>
     private IEventBrookReader EventReader { get; }
+
+    /// <summary>
+    ///     Gets the event writer for writing events to brooks.
+    /// </summary>
+    private IEventBrookWriter EventWriter { get; }
 
     /// <summary>
     ///     Gets the brook recovery service for managing cursor positions.
@@ -72,7 +72,7 @@ internal class BrookStorageProvider : IBrookStorageProvider
             throw new ArgumentException("Events collection cannot be null or empty", nameof(events));
         }
 
-        return await EventAppender.AppendEventsAsync(brookId, events, expectedVersion, cancellationToken);
+        return await EventWriter.AppendEventsAsync(brookId, events, expectedVersion, cancellationToken);
     }
 
     /// <summary>

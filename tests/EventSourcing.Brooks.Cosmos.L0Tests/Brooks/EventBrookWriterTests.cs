@@ -23,13 +23,13 @@ using Moq;
 namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Brooks;
 
 /// <summary>
-///     Unit tests for <see cref="EventBrookAppender" /> covering validation, single/large batch flows,
+///     Unit tests for <see cref="EventBrookWriter" /> covering validation, single/large batch flows,
 ///     rollback behavior, and lease renewal.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Brooks Cosmos")]
 [AllureSubSuite("Event Brook Appender")]
-public sealed class EventBrookAppenderTests
+public sealed class EventBrookWriterTests
 {
     /// <summary>
     ///     A minimal fake read-only list that reports a custom Count without allocating elements.
@@ -54,7 +54,7 @@ public sealed class EventBrookAppenderTests
     }
 
     /// <summary>
-    ///     Verifies <see cref="EventBrookAppender.AppendEventsAsync" /> creates a pending cursor entry before appending events
+    ///     Verifies <see cref="EventBrookWriter.AppendEventsAsync" /> creates a pending cursor entry before appending events
     ///     and commits the cursor afterwards.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
@@ -112,8 +112,8 @@ public sealed class EventBrookAppenderTests
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
             .ReturnsAsync(cursor);
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repository.Object,
             lockManager.Object,
             sizeEstimator.Object,
@@ -249,8 +249,8 @@ public sealed class EventBrookAppenderTests
             .Returns(Task.FromResult(false));
         repository.Setup(r => r.EventExistsAsync(brook, 102, It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(false));
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repository.Object,
             lockManager.Object,
             sizeEstimator.Object,
@@ -278,7 +278,7 @@ public sealed class EventBrookAppenderTests
     }
 
     /// <summary>
-    ///     Verifies <see cref="EventBrookAppender.AppendEventsAsync" /> throws when events is null or empty.
+    ///     Verifies <see cref="EventBrookWriter.AppendEventsAsync" /> throws when events is null or empty.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
@@ -301,9 +301,9 @@ public sealed class EventBrookAppenderTests
             ) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        Mock<ILogger<EventBrookAppender>> logger = new();
+        Mock<ILogger<EventBrookWriter>> logger = new();
         BrookStorageOptions options = new();
-        EventBrookAppender sut = new(
+        EventBrookWriter sut = new(
             repository.Object,
             lockManager.Object,
             sizeEstimator.Object,
@@ -386,8 +386,8 @@ public sealed class EventBrookAppenderTests
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(cursor));
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repository.Object,
             lockManager.Object,
             sizeEstimator.Object,
@@ -403,7 +403,7 @@ public sealed class EventBrookAppenderTests
     }
 
     /// <summary>
-    ///     Verifies <see cref="EventBrookAppender.AppendEventsAsync" /> throws when events.Count exceeds hard safety limit.
+    ///     Verifies <see cref="EventBrookWriter.AppendEventsAsync" /> throws when events.Count exceeds hard safety limit.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
@@ -417,8 +417,8 @@ public sealed class EventBrookAppenderTests
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repository.Object,
             lockManager.Object,
             sizeEstimator.Object,
@@ -463,8 +463,8 @@ public sealed class EventBrookAppenderTests
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new BrookPosition(5)));
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repository.Object,
             lockManager.Object,
             sizeEstimator.Object,
@@ -601,8 +601,8 @@ public sealed class EventBrookAppenderTests
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.CommitCursorPositionAsync(brook, final, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repository.Object,
             lockManager.Object,
             sizeEstimator.Object,
@@ -707,8 +707,8 @@ public sealed class EventBrookAppenderTests
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.CommitCursorPositionAsync(brook, final, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repository.Object,
             lockManager.Object,
             sizeEstimator.Object,
@@ -814,8 +814,8 @@ public sealed class EventBrookAppenderTests
 
         repository.Setup(r => r.CommitCursorPositionAsync(brook, final, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repository.Object,
             lockManager.Object,
             sizeEstimator.Object,

@@ -7,7 +7,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 /// <summary>
 ///     Maps event documents to event storage models.
 /// </summary>
-internal class EventDocumentToStorageMapper : IMapper<EventDocument, EventStorageModel>
+internal sealed class EventDocumentToStorageMapper : IMapper<EventDocument, EventStorageModel>
 {
     /// <summary>
     ///     Maps an event document to an event storage model.

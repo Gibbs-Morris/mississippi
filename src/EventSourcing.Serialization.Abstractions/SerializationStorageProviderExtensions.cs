@@ -9,7 +9,7 @@ namespace Mississippi.EventSourcing.Serialization.Abstractions;
 /// <summary>
 ///     Provides extension methods for registering serialization storage providers in dependency injection containers.
 /// </summary>
-public static class SerializationStorageProviderHelpers
+public static class SerializationStorageProviderExtensions
 {
     /// <summary>
     ///     Registers a serialization storage provider in the service collection.

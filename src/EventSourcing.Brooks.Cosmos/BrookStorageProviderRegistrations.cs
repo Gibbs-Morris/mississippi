@@ -43,7 +43,7 @@ public static class BrookStorageProviderRegistrations
         services.AddSingleton<IBrookStorageProvider, BrookStorageProvider>();
         services.AddSingleton<IBrookRecoveryService, BrookRecoveryService>();
         services.AddSingleton<IEventBrookReader, EventBrookReader>();
-        services.AddSingleton<IEventBrookAppender, EventBrookAppender>();
+        services.AddSingleton<IEventBrookWriter, EventBrookWriter>();
         services.AddSingleton<ICosmosRepository, CosmosRepository>();
         services.AddSingleton<IDistributedLockManager, BlobDistributedLockManager>();
         services.AddSingleton<IBlobLeaseClientFactory, BlobLeaseClientFactory>();

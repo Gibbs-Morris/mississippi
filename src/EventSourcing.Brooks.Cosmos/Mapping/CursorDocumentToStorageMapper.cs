@@ -8,7 +8,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 /// <summary>
 ///     Maps cursor documents to cursor storage models.
 /// </summary>
-internal class CursorDocumentToStorageMapper : IMapper<CursorDocument, CursorStorageModel>
+internal sealed class CursorDocumentToStorageMapper : IMapper<CursorDocument, CursorStorageModel>
 {
     /// <summary>
     ///     Maps a cursor document to a cursor storage model.

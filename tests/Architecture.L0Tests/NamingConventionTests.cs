@@ -3,6 +3,7 @@ using ArchUnitNET.xUnit;
 
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
+
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
@@ -18,67 +19,6 @@ namespace Mississippi.Architecture.L0Tests;
 /// </remarks>
 public sealed class NamingConventionTests : ArchitectureTestBase
 {
-    /// <summary>
-    ///     Verifies that all interfaces start with I prefix.
-    /// </summary>
-    /// <remarks>
-    ///     Per naming.instructions.md: "interfaces MUST prefix I".
-    /// </remarks>
-    [Fact]
-    public void InterfacesShouldStartWithI()
-    {
-        IArchRule rule = Interfaces()
-            .Should()
-            .HaveNameStartingWith("I")
-            .Because("interfaces MUST prefix I per naming.instructions.md");
-
-        rule.Check(ArchitectureModel);
-    }
-
-    /// <summary>
-    ///     Verifies that namespaces do not contain generic silo names like Services or Models.
-    /// </summary>
-    /// <remarks>
-    ///     Per naming.instructions.md: "Namespaces MUST be feature-oriented (no Services/Models silos)".
-    /// </remarks>
-    [Fact]
-    public void NamespacesShouldNotContainGenericSilos()
-    {
-        IArchRule rule = Types()
-            .That()
-            .ResideInNamespaceMatching(@"Mississippi\..*")
-            .Should()
-            .NotResideInNamespaceMatching(@".*\.Services\..*")
-            .AndShould()
-            .NotResideInNamespaceMatching(@".*\.Models\..*")
-            .AndShould()
-            .NotResideInNamespaceMatching(@".*\.Helpers\..*")
-            .AndShould()
-            .NotResideInNamespaceMatching(@".*\.Utilities\..*")
-            .Because("namespaces must be feature-oriented, not generic silos per naming.instructions.md");
-
-        rule.Check(ArchitectureModel);
-    }
-
-    /// <summary>
-    ///     Verifies that Options classes follow the {Feature}Options naming convention.
-    /// </summary>
-    /// <remarks>
-    ///     Per service-registration.instructions.md: "options classes MUST be named {Feature}Options".
-    /// </remarks>
-    [Fact]
-    public void OptionsClassesShouldFollowNamingConvention()
-    {
-        IArchRule rule = Classes()
-            .That()
-            .HaveNameEndingWith("Options")
-            .Should()
-            .HaveNameEndingWith("Options")
-            .Because("options classes must be named {Feature}Options per service-registration.instructions.md");
-
-        rule.Check(ArchitectureModel);
-    }
-
     /// <summary>
     ///     Verifies that abstract base classes intended for inheritance end with Base.
     /// </summary>
@@ -104,57 +44,8 @@ public sealed class NamingConventionTests : ArchitectureTestBase
             .HaveNameEndingWith("Base")
             .OrShould()
             .BeAbstract() // Accept abstract classes that aren't meant for inheritance
-            .Because("abstract base classes for inheritance should end with Base per abstractions-projects.instructions.md");
-
-        rule.Check(ArchitectureModel);
-    }
-
-    /// <summary>
-    ///     Verifies that namespaces have at most 5 segments.
-    /// </summary>
-    /// <remarks>
-    ///     Per naming.instructions.md: "namespaces max five PascalCase segments".
-    ///     Example valid: Mississippi.EventSourcing.Brooks.Cosmos.Abstractions (5 segments).
-    ///     Example invalid: Mississippi.EventSourcing.Brooks.Cosmos.Internal.Helpers (6 segments).
-    /// </remarks>
-    [Fact]
-    public void NamespacesShouldHaveAtMostFiveSegments()
-    {
-        // Pattern matches namespaces with more than 5 segments (6+ dots)
-        // 6 segments example: A.B.C.D.E.F has 5 dots
-        IArchRule rule = Types()
-            .That()
-            .ResideInNamespaceMatching(@"Mississippi\..*")
-            .And()
-            .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
-            .Should()
-            .NotResideInNamespaceMatching(@"^[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+.*$") // 6+ segments
-            .Because("namespaces MUST have max five PascalCase segments per naming.instructions.md")
-            .WithoutRequiringPositiveResults();
-
-        rule.Check(ArchitectureModel);
-    }
-
-    /// <summary>
-    ///     Verifies that namespaces do not contain underscores.
-    /// </summary>
-    /// <remarks>
-    ///     Per naming.instructions.md: "namespaces max five PascalCase segments, no underscores".
-    ///     Underscores are forbidden in namespace segments; use PascalCase instead.
-    /// </remarks>
-    [Fact]
-    public void NamespacesShouldNotContainUnderscores()
-    {
-        IArchRule rule = Types()
-            .That()
-            .ResideInNamespaceMatching(@"Mississippi\..*")
-            .And()
-            .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
-            .Should()
-            .NotResideInNamespaceMatching(@".*_.*") // Any namespace containing underscore
-            .Because("namespaces MUST NOT contain underscores per naming.instructions.md")
-            .WithoutRequiringPositiveResults();
-
+            .Because(
+                "abstract base classes for inheritance should end with Base per abstractions-projects.instructions.md");
         rule.Check(ArchitectureModel);
     }
 
@@ -189,7 +80,111 @@ public sealed class NamingConventionTests : ArchitectureTestBase
             .NotHaveNameEndingWith("Categories")
             .Because("enums MUST be singular per naming.instructions.md")
             .WithoutRequiringPositiveResults();
+        rule.Check(ArchitectureModel);
+    }
 
+    /// <summary>
+    ///     Verifies that all interfaces start with I prefix.
+    /// </summary>
+    /// <remarks>
+    ///     Per naming.instructions.md: "interfaces MUST prefix I".
+    /// </remarks>
+    [Fact]
+    public void InterfacesShouldStartWithI()
+    {
+        IArchRule rule = Interfaces()
+            .Should()
+            .HaveNameStartingWith("I")
+            .Because("interfaces MUST prefix I per naming.instructions.md");
+        rule.Check(ArchitectureModel);
+    }
+
+    /// <summary>
+    ///     Verifies that namespaces have at most 5 segments.
+    /// </summary>
+    /// <remarks>
+    ///     Per naming.instructions.md: "namespaces max five PascalCase segments".
+    ///     Example valid: Mississippi.EventSourcing.Brooks.Cosmos.Abstractions (5 segments).
+    ///     Example invalid: Mississippi.EventSourcing.Brooks.Cosmos.Internal.Helpers (6 segments).
+    /// </remarks>
+    [Fact]
+    public void NamespacesShouldHaveAtMostFiveSegments()
+    {
+        // Pattern matches namespaces with more than 5 segments (6+ dots)
+        // 6 segments example: A.B.C.D.E.F has 5 dots
+        IArchRule rule = Types()
+            .That()
+            .ResideInNamespaceMatching(@"Mississippi\..*")
+            .And()
+            .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
+            .Should()
+            .NotResideInNamespaceMatching(@"^[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+.*$") // 6+ segments
+            .Because("namespaces MUST have max five PascalCase segments per naming.instructions.md")
+            .WithoutRequiringPositiveResults();
+        rule.Check(ArchitectureModel);
+    }
+
+    /// <summary>
+    ///     Verifies that namespaces do not contain generic silo names like Services or Models.
+    /// </summary>
+    /// <remarks>
+    ///     Per naming.instructions.md: "Namespaces MUST be feature-oriented (no Services/Models silos)".
+    /// </remarks>
+    [Fact]
+    public void NamespacesShouldNotContainGenericSilos()
+    {
+        IArchRule rule = Types()
+            .That()
+            .ResideInNamespaceMatching(@"Mississippi\..*")
+            .Should()
+            .NotResideInNamespaceMatching(@".*\.Services\..*")
+            .AndShould()
+            .NotResideInNamespaceMatching(@".*\.Models\..*")
+            .AndShould()
+            .NotResideInNamespaceMatching(@".*\.Helpers\..*")
+            .AndShould()
+            .NotResideInNamespaceMatching(@".*\.Utilities\..*")
+            .Because("namespaces must be feature-oriented, not generic silos per naming.instructions.md");
+        rule.Check(ArchitectureModel);
+    }
+
+    /// <summary>
+    ///     Verifies that namespaces do not contain underscores.
+    /// </summary>
+    /// <remarks>
+    ///     Per naming.instructions.md: "namespaces max five PascalCase segments, no underscores".
+    ///     Underscores are forbidden in namespace segments; use PascalCase instead.
+    /// </remarks>
+    [Fact]
+    public void NamespacesShouldNotContainUnderscores()
+    {
+        IArchRule rule = Types()
+            .That()
+            .ResideInNamespaceMatching(@"Mississippi\..*")
+            .And()
+            .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
+            .Should()
+            .NotResideInNamespaceMatching(@".*_.*") // Any namespace containing underscore
+            .Because("namespaces MUST NOT contain underscores per naming.instructions.md")
+            .WithoutRequiringPositiveResults();
+        rule.Check(ArchitectureModel);
+    }
+
+    /// <summary>
+    ///     Verifies that Options classes follow the {Feature}Options naming convention.
+    /// </summary>
+    /// <remarks>
+    ///     Per service-registration.instructions.md: "options classes MUST be named {Feature}Options".
+    /// </remarks>
+    [Fact]
+    public void OptionsClassesShouldFollowNamingConvention()
+    {
+        IArchRule rule = Classes()
+            .That()
+            .HaveNameEndingWith("Options")
+            .Should()
+            .HaveNameEndingWith("Options")
+            .Because("options classes must be named {Feature}Options per service-registration.instructions.md");
         rule.Check(ArchitectureModel);
     }
 }

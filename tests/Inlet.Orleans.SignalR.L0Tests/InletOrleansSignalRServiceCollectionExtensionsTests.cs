@@ -124,9 +124,7 @@ public sealed class InletOrleansSignalRServiceCollectionExtensionsTests
         ServiceCollection services = new();
 
         // Act - chain multiple extensions
-        IServiceCollection result = services
-            .AddInletOrleansWithSignalR()
-            .AddSingleton(_ => "test-value");
+        IServiceCollection result = services.AddInletOrleansWithSignalR().AddSingleton(_ => "test-value");
 
         // Assert
         Assert.Same(services, result);

@@ -16,7 +16,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 /// <summary>
 ///     Distributed lock manager implementation using Azure Blob Storage.
 /// </summary>
-internal class BlobDistributedLockManager : IDistributedLockManager
+internal sealed class BlobDistributedLockManager : IDistributedLockManager
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="BlobDistributedLockManager" /> class.

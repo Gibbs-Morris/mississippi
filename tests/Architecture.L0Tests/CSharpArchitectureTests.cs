@@ -3,6 +3,7 @@ using ArchUnitNET.xUnit;
 
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
+
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
@@ -48,9 +49,9 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                     .DoNotHaveNameEndingWith("LoggerExtensions")) // Exclude LoggerExtensions classes entirely
             .Should()
             .NotExist()
-            .Because("private fields MUST NOT use underscore prefix; use get-only properties for DI per csharp.instructions.md")
+            .Because(
+                "private fields MUST NOT use underscore prefix; use get-only properties for DI per csharp.instructions.md")
             .WithoutRequiringPositiveResults();
-
         rule.Check(ArchitectureModel);
     }
 
@@ -79,7 +80,6 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             .BeValueTypes()
             .Because("structs should be immutable value types per csharp.instructions.md")
             .WithoutRequiringPositiveResults();
-
         rule.Check(ArchitectureModel);
     }
 }

@@ -3,6 +3,7 @@ using ArchUnitNET.xUnit;
 
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
+
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
@@ -17,6 +18,25 @@ namespace Mississippi.Architecture.L0Tests;
 /// </remarks>
 public sealed class AccessControlArchitectureTests : ArchitectureTestBase
 {
+    /// <summary>
+    ///     Verifies that interfaces in Abstractions namespaces are public.
+    /// </summary>
+    /// <remarks>
+    ///     Per abstractions-projects.instructions.md: abstractions expose public contracts.
+    ///     Internal interfaces for implementation details should be in non-Abstractions namespaces.
+    /// </remarks>
+    [Fact]
+    public void AbstractionsInterfacesShouldBePublic()
+    {
+        IArchRule rule = Interfaces()
+            .That()
+            .ResideInNamespaceMatching(@"Mississippi\..*\.Abstractions.*")
+            .Should()
+            .BePublic()
+            .Because("abstractions interfaces should be public per abstractions-projects.instructions.md");
+        rule.Check(ArchitectureModel);
+    }
+
     /// <summary>
     ///     Verifies that non-abstract classes in implementation namespaces are internal.
     /// </summary>
@@ -119,27 +139,6 @@ public sealed class AccessControlArchitectureTests : ArchitectureTestBase
             .Should()
             .BeInternal()
             .Because("implementation types should default to internal per csharp.instructions.md");
-
-        rule.Check(ArchitectureModel);
-    }
-
-    /// <summary>
-    ///     Verifies that interfaces in Abstractions namespaces are public.
-    /// </summary>
-    /// <remarks>
-    ///     Per abstractions-projects.instructions.md: abstractions expose public contracts.
-    ///     Internal interfaces for implementation details should be in non-Abstractions namespaces.
-    /// </remarks>
-    [Fact]
-    public void AbstractionsInterfacesShouldBePublic()
-    {
-        IArchRule rule = Interfaces()
-            .That()
-            .ResideInNamespaceMatching(@"Mississippi\..*\.Abstractions.*")
-            .Should()
-            .BePublic()
-            .Because("abstractions interfaces should be public per abstractions-projects.instructions.md");
-
         rule.Check(ArchitectureModel);
     }
 }

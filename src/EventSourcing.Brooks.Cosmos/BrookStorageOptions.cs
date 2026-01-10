@@ -3,7 +3,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos;
 /// <summary>
 ///     Configuration options for the Cosmos DB brook storage provider.
 /// </summary>
-public class BrookStorageOptions
+public sealed class BrookStorageOptions
 {
     /// <summary>
     ///     Gets the Cosmos DB container identifier for storing brooks.

@@ -4,7 +4,7 @@ namespace Mississippi.EventSourcing.Brooks.Reader;
 ///     Configuration options for brook reader operations.
 ///     Contains settings that control how brooks are read and processed.
 /// </summary>
-public class BrookReaderOptions
+public sealed class BrookReaderOptions
 {
     /// <summary>
     ///     Gets or initializes the number of events to read in each brook slice operation.

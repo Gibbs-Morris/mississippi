@@ -3,7 +3,7 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos;
 /// <summary>
 ///     Options controlling Cosmos snapshot persistence.
 /// </summary>
-public class SnapshotStorageOptions
+public sealed class SnapshotStorageOptions
 {
     /// <summary>
     ///     Gets or sets the Cosmos container identifier for snapshots.

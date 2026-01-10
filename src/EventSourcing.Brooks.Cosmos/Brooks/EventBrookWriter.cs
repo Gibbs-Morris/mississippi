@@ -19,9 +19,9 @@ using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 namespace Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
 
 /// <summary>
-///     Cosmos DB implementation of the event brook appender for writing events to brooks.
+///     Cosmos DB implementation of the event brook writer for writing events to brooks.
 /// </summary>
-internal class EventBrookAppender : IEventBrookAppender
+internal sealed class EventBrookWriter : IEventBrookWriter
 {
     private static readonly Action<ILogger, BrookKey, int, long, long, long, Exception?> LogAppenderSummary =
         LoggerMessage.Define<BrookKey, int, long, long, long>(
@@ -78,7 +78,7 @@ internal class EventBrookAppender : IEventBrookAppender
             "CosmosAppender: SingleBatch brook={Brook} count={Count} estSize={Size}B startPos={Start} final={Final}");
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="EventBrookAppender" /> class.
+    ///     Initializes a new instance of the <see cref="EventBrookWriter" /> class.
     /// </summary>
     /// <param name="repository">The Cosmos repository for low-level operations.</param>
     /// <param name="lockManager">The distributed lock manager for concurrency control.</param>
@@ -88,7 +88,7 @@ internal class EventBrookAppender : IEventBrookAppender
     /// <param name="eventMapper">The mapper for converting events to storage models.</param>
     /// <param name="recoveryService">The brook recovery service for cursor position management.</param>
     /// <param name="logger">The logger used to record operational diagnostics.</param>
-    public EventBrookAppender(
+    public EventBrookWriter(
         ICosmosRepository repository,
         IDistributedLockManager lockManager,
         IBatchSizeEstimator sizeEstimator,
@@ -96,7 +96,7 @@ internal class EventBrookAppender : IEventBrookAppender
         IOptions<BrookStorageOptions> options,
         IMapper<BrookEvent, EventStorageModel> eventMapper,
         IBrookRecoveryService recoveryService,
-        ILogger<EventBrookAppender> logger
+        ILogger<EventBrookWriter> logger
     )
     {
         Repository = repository;
@@ -113,7 +113,7 @@ internal class EventBrookAppender : IEventBrookAppender
 
     private IDistributedLockManager LockManager { get; }
 
-    private ILogger<EventBrookAppender> Logger { get; }
+    private ILogger<EventBrookWriter> Logger { get; }
 
     private BrookStorageOptions Options { get; }
 

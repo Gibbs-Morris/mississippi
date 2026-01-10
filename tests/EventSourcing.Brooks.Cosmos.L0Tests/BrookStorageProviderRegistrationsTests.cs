@@ -56,7 +56,7 @@ public sealed class BrookStorageProviderRegistrationsTests
             typeof(IBrookStorageProvider),
             typeof(IBrookRecoveryService),
             typeof(IEventBrookReader),
-            typeof(IEventBrookAppender),
+            typeof(IEventBrookWriter),
             typeof(ICosmosRepository),
             typeof(IDistributedLockManager),
             typeof(IBlobLeaseClientFactory),

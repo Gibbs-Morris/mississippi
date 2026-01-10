@@ -8,12 +8,16 @@ using ArchUnitNET.Loader;
 
 using ArchUnitArchitecture = ArchUnitNET.Domain.Architecture;
 
+
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
 ///     Base class providing the shared architecture model for all architecture tests.
 /// </summary>
-[SuppressMessage("Performance", "CA1515:Because an application's API isn't typically referenced from outside the assembly, types can be made internal", Justification = "xUnit requires public test classes")]
+[SuppressMessage(
+    "Performance",
+    "CA1515:Because an application's API isn't typically referenced from outside the assembly, types can be made internal",
+    Justification = "xUnit requires public test classes")]
 public abstract class ArchitectureTestBase
 {
     /// <summary>
@@ -23,17 +27,25 @@ public abstract class ArchitectureTestBase
         .LoadAssemblies(GetMississippiAssemblies())
         .Build();
 
-    [SuppressMessage("Reliability", "CA2022:Avoid inexact read with 'Stream.Read'", Justification = "Assembly loading is best-effort")]
-    [SuppressMessage("Major Code Smell", "S3885:\"Assembly.LoadFrom\" should not be used", Justification = "Required for runtime assembly discovery")]
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort assembly loading")]
+    [SuppressMessage(
+        "Reliability",
+        "CA2022:Avoid inexact read with 'Stream.Read'",
+        Justification = "Assembly loading is best-effort")]
+    [SuppressMessage(
+        "Major Code Smell",
+        "S3885:\"Assembly.LoadFrom\" should not be used",
+        Justification = "Required for runtime assembly discovery")]
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Best-effort assembly loading")]
     private static Assembly[] GetMississippiAssemblies()
     {
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
 
         // Load all Mississippi.*.dll assemblies from the output directory
         string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
-
-        var assemblies = new List<Assembly>();
+        List<Assembly> assemblies = new();
         foreach (string path in assemblyPaths)
         {
             if (path.Contains(".L0Tests.", StringComparison.Ordinal) ||

@@ -21,7 +21,7 @@ namespace Mississippi.EventSourcing.Brooks.Factory;
 ///     internal <see cref="IInternalBrookGrainFactory" /> interfaces. External consumers should
 ///     depend on the abstractions interface; internal grains can use the internal interface.
 /// </remarks>
-internal class BrookGrainFactory : IInternalBrookGrainFactory
+internal sealed class BrookGrainFactory : IInternalBrookGrainFactory
 {
     private static readonly Action<ILogger, string, BrookAsyncReaderKey, Exception?> LogResolvingAsyncReaderGrain =
         LoggerMessage.Define<string, BrookAsyncReaderKey>(

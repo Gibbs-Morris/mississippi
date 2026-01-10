@@ -16,12 +16,12 @@ using Mississippi.EventSourcing.Serialization.Abstractions;
 namespace Mississippi.EventSourcing.Serialization.L0Tests;
 
 /// <summary>
-///     Tests covering <see cref="SerializationStorageProviderHelpers" /> registrations.
+///     Tests covering <see cref="SerializationStorageProviderExtensions" /> registrations.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Serialization")]
 [AllureSubSuite("Serialization Storage Provider Helpers")]
-public sealed class SerializationStorageProviderHelpersTests
+public sealed class SerializationStorageProviderExtensionsTests
 {
     private sealed class TestOptions
     {

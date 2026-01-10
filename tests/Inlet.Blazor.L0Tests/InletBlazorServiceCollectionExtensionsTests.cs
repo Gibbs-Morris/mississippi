@@ -12,8 +12,8 @@ namespace Mississippi.Inlet.Blazor.L0Tests;
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.Blazor")]
 [AllureSuite("Extensions")]
-[AllureSubSuite("InletBlazorExtensions")]
-public sealed class InletBlazorExtensionsTests
+[AllureSubSuite("InletBlazorServiceCollectionExtensions")]
+public sealed class InletBlazorServiceCollectionExtensionsTests
 {
     /// <summary>
     ///     AddInletBlazor can be called multiple times without error.

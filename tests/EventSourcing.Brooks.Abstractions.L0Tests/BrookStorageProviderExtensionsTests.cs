@@ -15,12 +15,12 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="BrookStorageProviderHelpers" /> registration helpers.
+///     Tests for <see cref="BrookStorageProviderExtensions" /> registration helpers.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Brooks Abstractions")]
 [AllureSubSuite("Brook Storage Provider Helpers")]
-public sealed class BrookStorageProviderHelpersTests
+public sealed class BrookStorageProviderExtensionsTests
 {
     private sealed class FakeOptions
     {

@@ -19,7 +19,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 /// <summary>
 ///     Repository implementation for Cosmos DB operations on brooks and events.
 /// </summary>
-internal class CosmosRepository : ICosmosRepository
+internal sealed class CosmosRepository : ICosmosRepository
 {
     private const string CursorDocumentId = "cursor";
 

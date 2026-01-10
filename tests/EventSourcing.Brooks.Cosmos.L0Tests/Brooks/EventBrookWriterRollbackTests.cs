@@ -24,12 +24,12 @@ using Moq;
 namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Brooks;
 
 /// <summary>
-///     Tests for rollback behavior in <see cref="EventBrookAppender" />.
+///     Tests for rollback behavior in <see cref="EventBrookWriter" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Brooks Cosmos")]
 [AllureSubSuite("Event Brook Appender Rollback")]
-public sealed class EventBrookAppenderRollbackTests
+public sealed class EventBrookWriterRollbackTests
 {
     /// <summary>
     ///     When initial append fails with no processed events, rollback should clean up the pending cursor entry without
@@ -66,8 +66,8 @@ public sealed class EventBrookAppenderRollbackTests
         Mock<IBrookRecoveryService> recovery = new();
         recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repo.Object,
             lockMgr.Object,
             sizeEstimator,
@@ -145,8 +145,8 @@ public sealed class EventBrookAppenderRollbackTests
         Mock<IBrookRecoveryService> recovery = new();
         recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
-        Mock<ILogger<EventBrookAppender>> logger = new();
-        EventBrookAppender sut = new(
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        EventBrookWriter sut = new(
             repo.Object,
             lockMgr.Object,
             sizeEstimator,

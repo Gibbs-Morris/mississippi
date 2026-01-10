@@ -19,7 +19,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
 /// <summary>
 ///     Service for recovering and managing brook cursor positions in Cosmos DB.
 /// </summary>
-internal class BrookRecoveryService : IBrookRecoveryService
+internal sealed class BrookRecoveryService : IBrookRecoveryService
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookRecoveryService" /> class.

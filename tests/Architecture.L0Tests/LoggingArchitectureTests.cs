@@ -4,6 +4,7 @@ using ArchUnitNET.xUnit;
 
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
+
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
@@ -38,7 +39,6 @@ public sealed class LoggingArchitectureTests : ArchitectureTestBase
             .Should()
             .BeInternal()
             .Because("LoggerExtensions should be internal per logging-rules.instructions.md");
-
         rule.Check(ArchitectureModel);
     }
 
@@ -54,7 +54,6 @@ public sealed class LoggingArchitectureTests : ArchitectureTestBase
             .Should()
             .BeSealed()
             .Because("LoggerExtensions must be static (sealed) per logging-rules.instructions.md");
-
         rule.Check(ArchitectureModel);
     }
 
@@ -70,7 +69,6 @@ public sealed class LoggingArchitectureTests : ArchitectureTestBase
             .Should()
             .HaveNameEndingWith("LoggerExtensions")
             .Because("logging classes must be suffixed LoggerExtensions per logging-rules.instructions.md");
-
         rule.Check(ArchitectureModel);
     }
 
@@ -94,9 +92,9 @@ public sealed class LoggingArchitectureTests : ArchitectureTestBase
             .HaveNameMatching(@"_[Ll]og.*")
             .Should()
             .NotExist()
-            .Because("ILogger<T> MUST use get-only property pattern, not underscore-prefixed fields per logging-rules.instructions.md")
+            .Because(
+                "ILogger<T> MUST use get-only property pattern, not underscore-prefixed fields per logging-rules.instructions.md")
             .WithoutRequiringPositiveResults();
-
         rule.Check(ArchitectureModel);
     }
 }

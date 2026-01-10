@@ -10,7 +10,7 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 /// <summary>
 ///     Provides helper methods for registering snapshot storage providers and their options.
 /// </summary>
-public static class SnapshotStorageProviderHelpers
+public static class SnapshotStorageProviderExtensions
 {
     /// <summary>
     ///     Registers a snapshot storage provider that implements <see cref="ISnapshotStorageProvider" />.

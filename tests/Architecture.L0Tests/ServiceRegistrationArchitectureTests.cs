@@ -4,6 +4,7 @@ using ArchUnitNET.xUnit;
 
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
+
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
@@ -26,25 +27,6 @@ public sealed class ServiceRegistrationArchitectureTests : ArchitectureTestBase
         .As("Service registration types");
 
     /// <summary>
-    ///     Verifies that service registration classes are static (sealed).
-    /// </summary>
-    /// <remarks>
-    ///     Per service-registration.instructions.md: registration classes expose static extension methods.
-    /// </remarks>
-    [Fact]
-    public void ServiceRegistrationClassesShouldBeStatic()
-    {
-        IArchRule rule = Classes()
-            .That()
-            .Are(ServiceRegistrationClasses)
-            .Should()
-            .BeSealed() // Static classes are sealed
-            .Because("ServiceRegistration classes must be static per service-registration.instructions.md");
-
-        rule.Check(ArchitectureModel);
-    }
-
-    /// <summary>
     ///     Verifies that service registration classes are public (they provide the DI entry point).
     /// </summary>
     /// <remarks>
@@ -63,7 +45,24 @@ public sealed class ServiceRegistrationArchitectureTests : ArchitectureTestBase
             .Should()
             .BePublic()
             .Because("public service registrations provide DI entry points per service-registration.instructions.md");
+        rule.Check(ArchitectureModel);
+    }
 
+    /// <summary>
+    ///     Verifies that service registration classes are static (sealed).
+    /// </summary>
+    /// <remarks>
+    ///     Per service-registration.instructions.md: registration classes expose static extension methods.
+    /// </remarks>
+    [Fact]
+    public void ServiceRegistrationClassesShouldBeStatic()
+    {
+        IArchRule rule = Classes()
+            .That()
+            .Are(ServiceRegistrationClasses)
+            .Should()
+            .BeSealed() // Static classes are sealed
+            .Because("ServiceRegistration classes must be static per service-registration.instructions.md");
         rule.Check(ArchitectureModel);
     }
 }

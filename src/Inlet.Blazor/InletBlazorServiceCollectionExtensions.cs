@@ -8,7 +8,7 @@ namespace Mississippi.Inlet.Blazor;
 /// <summary>
 ///     Extension methods for adding Inlet Blazor services.
 /// </summary>
-public static class InletBlazorExtensions
+public static class InletBlazorServiceCollectionExtensions
 {
     /// <summary>
     ///     Adds Inlet Blazor services to the service collection.

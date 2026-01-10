@@ -8,9 +8,9 @@ using Mississippi.EventSourcing.Brooks.Abstractions;
 namespace Mississippi.EventSourcing.Brooks.Cosmos;
 
 /// <summary>
-///     Provides functionality for appending events to Cosmos DB event brooks.
+///     Provides functionality for writing events to Cosmos DB event brooks.
 /// </summary>
-internal interface IEventBrookAppender
+internal interface IEventBrookWriter
 {
     /// <summary>
     ///     Appends a collection of events to the specified brook.

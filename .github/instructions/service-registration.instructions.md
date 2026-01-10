@@ -37,7 +37,24 @@ Developers adding or modifying DI registration in Mississippi/Samples, including
 - Async work belongs in hosted services/lifecycle hooks, not registration.
 - Internal-by-default access reduces public API churn.
 
+## Domain Registration Patterns (Event Sourcing)
+
+For domain models using Mississippi event sourcing:
+
+| Method Pattern | Purpose | Example |
+|----------------|---------|---------|
+| `Add{Domain}Domain()` | Public entry point | `AddCascadeDomain()` |
+| `Add{Aggregate}Aggregate()` | Private per-aggregate | `AddChannelAggregate()` |
+| `Add{Projection}Projection()` | Private per-projection | `AddUserProfileProjection()` |
+
+Registration order within aggregates/projections:
+1. `AddEventType<TEvent>()` - Register event types
+2. `AddCommandHandler<TCommand, TAggregate, THandler>()` - Register handlers
+3. `AddReducer<TEvent, TState, TReducer>()` - Register reducers
+4. `AddSnapshotStateConverter<TState>()` - Register snapshot converter
+
 ## References
 
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - Orleans lifecycle: `.github/instructions/orleans.instructions.md`
+- Domain modeling: `.github/instructions/domain-modeling.instructions.md`

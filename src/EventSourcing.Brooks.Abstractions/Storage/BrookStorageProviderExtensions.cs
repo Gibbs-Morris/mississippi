@@ -10,7 +10,7 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 ///     Provides extension methods for registering brook storage providers in the dependency injection container.
 ///     Simplifies the configuration of storage providers with various configuration options.
 /// </summary>
-public static class BrookStorageProviderHelpers
+public static class BrookStorageProviderExtensions
 {
     /// <summary>
     ///     Registers a brook storage provider in the service collection without additional configuration.

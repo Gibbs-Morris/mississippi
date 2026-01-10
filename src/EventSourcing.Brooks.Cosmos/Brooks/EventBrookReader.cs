@@ -17,7 +17,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
 /// <summary>
 ///     Cosmos DB implementation of the event brook reader for reading events from brooks.
 /// </summary>
-internal class EventBrookReader : IEventBrookReader
+internal sealed class EventBrookReader : IEventBrookReader
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="EventBrookReader" /> class.

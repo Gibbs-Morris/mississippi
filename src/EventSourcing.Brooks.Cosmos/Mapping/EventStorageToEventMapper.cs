@@ -10,7 +10,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 /// <summary>
 ///     Maps event storage models to brook events.
 /// </summary>
-internal class EventStorageToEventMapper : IMapper<EventStorageModel, BrookEvent>
+internal sealed class EventStorageToEventMapper : IMapper<EventStorageModel, BrookEvent>
 {
     /// <summary>
     ///     Maps an event storage model to a brook event.

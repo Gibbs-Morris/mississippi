@@ -39,7 +39,7 @@ public sealed class BrookStorageProviderTests
     }
 
     /// <summary>
-    ///     Verifies appending delegates to the appender and returns its result.
+    ///     Verifies appending delegates to the writer and returns its result.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
@@ -47,7 +47,7 @@ public sealed class BrookStorageProviderTests
     {
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
+        Mock<IEventBrookWriter> writer = new(MockBehavior.Strict);
         BrookKey brookId = new("type", "id");
         BrookPosition expected = new(7);
         BrookEvent[] events = new[]
@@ -61,20 +61,20 @@ public sealed class BrookStorageProviderTests
             },
         };
         BrookPosition? expectedVersion = new BrookPosition(6);
-        appender.Setup(a => a.AppendEventsAsync(
+        writer.Setup(a => a.AppendEventsAsync(
                 brookId,
                 It.Is<IReadOnlyList<BrookEvent>>(l => l.Count == 1),
                 expectedVersion,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, writer.Object);
         BrookPosition result = await provider.AppendEventsAsync(
             brookId,
             events,
             expectedVersion,
             CancellationToken.None);
         Assert.Equal(expected, result);
-        appender.Verify(
+        writer.Verify(
             a => a.AppendEventsAsync(
                 brookId,
                 It.Is<IReadOnlyList<BrookEvent>>(l => l.Count == 1),
@@ -83,7 +83,7 @@ public sealed class BrookStorageProviderTests
             Times.Once);
         recovery.VerifyNoOtherCalls();
         reader.VerifyNoOtherCalls();
-        appender.VerifyNoOtherCalls();
+        writer.VerifyNoOtherCalls();
     }
 
     /// <summary>
@@ -95,8 +95,8 @@ public sealed class BrookStorageProviderTests
     {
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        Mock<IEventBrookWriter> writer = new(MockBehavior.Strict);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, writer.Object);
         await Assert.ThrowsAsync<ArgumentException>(async () => await provider.AppendEventsAsync(
             new("t", "i"),
             Array.Empty<BrookEvent>(),
@@ -113,14 +113,14 @@ public sealed class BrookStorageProviderTests
     {
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        Mock<IEventBrookWriter> writer = new(MockBehavior.Strict);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, writer.Object);
         await Assert.ThrowsAsync<ArgumentException>(async () =>
             await provider.AppendEventsAsync(new("t", "i"), null!, null, CancellationToken.None));
     }
 
     /// <summary>
-    ///     Verifies constructor throws when the event appender is null.
+    ///     Verifies constructor throws when the event writer is null.
     /// </summary>
     [Fact]
     public void ConstructorThrowsWhenEventAppenderIsNull()
@@ -137,8 +137,8 @@ public sealed class BrookStorageProviderTests
     public void ConstructorThrowsWhenEventReaderIsNull()
     {
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        Assert.Throws<ArgumentNullException>(() => new BrookStorageProvider(recovery.Object, null!, appender.Object));
+        Mock<IEventBrookWriter> writer = new(MockBehavior.Strict);
+        Assert.Throws<ArgumentNullException>(() => new BrookStorageProvider(recovery.Object, null!, writer.Object));
     }
 
     /// <summary>
@@ -148,8 +148,8 @@ public sealed class BrookStorageProviderTests
     public void ConstructorThrowsWhenRecoveryServiceIsNull()
     {
         Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        Assert.Throws<ArgumentNullException>(() => new BrookStorageProvider(null!, reader.Object, appender.Object));
+        Mock<IEventBrookWriter> writer = new(MockBehavior.Strict);
+        Assert.Throws<ArgumentNullException>(() => new BrookStorageProvider(null!, reader.Object, writer.Object));
     }
 
     /// <summary>
@@ -160,8 +160,8 @@ public sealed class BrookStorageProviderTests
     {
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        Mock<IEventBrookWriter> writer = new(MockBehavior.Strict);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, writer.Object);
         Assert.Equal("cosmos-db", provider.Format);
     }
 
@@ -174,18 +174,18 @@ public sealed class BrookStorageProviderTests
     {
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
+        Mock<IEventBrookWriter> writer = new(MockBehavior.Strict);
         BrookKey brookId = new("type", "id");
         BrookPosition expected = new(42);
         recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, writer.Object);
         BrookPosition result = await provider.ReadCursorPositionAsync(brookId, CancellationToken.None);
         Assert.Equal(expected, result);
         recovery.Verify(r => r.GetOrRecoverCursorPositionAsync(brookId, It.IsAny<CancellationToken>()), Times.Once);
         recovery.VerifyNoOtherCalls();
         reader.VerifyNoOtherCalls();
-        appender.VerifyNoOtherCalls();
+        writer.VerifyNoOtherCalls();
     }
 
     /// <summary>
@@ -197,7 +197,7 @@ public sealed class BrookStorageProviderTests
     {
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         Mock<IEventBrookReader> reader = new(MockBehavior.Strict);
-        Mock<IEventBrookAppender> appender = new(MockBehavior.Strict);
+        Mock<IEventBrookWriter> writer = new(MockBehavior.Strict);
         BrookRangeKey range = new("type", "id", 0, 3);
         List<BrookEvent> events = new()
         {
@@ -225,7 +225,7 @@ public sealed class BrookStorageProviderTests
         };
         reader.Setup(r => r.ReadEventsAsync(range, It.IsAny<CancellationToken>()))
             .Returns(AsAsyncEnumerableAsync(events));
-        BrookStorageProvider provider = new(recovery.Object, reader.Object, appender.Object);
+        BrookStorageProvider provider = new(recovery.Object, reader.Object, writer.Object);
         List<BrookEvent> collected = new();
         await foreach (BrookEvent e in provider.ReadEventsAsync(range, CancellationToken.None))
         {
@@ -237,6 +237,6 @@ public sealed class BrookStorageProviderTests
         reader.Verify(r => r.ReadEventsAsync(range, It.IsAny<CancellationToken>()), Times.Once);
         recovery.VerifyNoOtherCalls();
         reader.VerifyNoOtherCalls();
-        appender.VerifyNoOtherCalls();
+        writer.VerifyNoOtherCalls();
     }
 }
