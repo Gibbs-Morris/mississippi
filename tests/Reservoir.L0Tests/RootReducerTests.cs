@@ -18,6 +18,26 @@ namespace Mississippi.Reservoir.L0Tests;
 public sealed class RootReducerTests
 {
     /// <summary>
+    ///     A fallback reducer that increments for any action.
+    /// </summary>
+    private sealed class FallbackReducer : IReducer<TestState>
+    {
+        /// <inheritdoc />
+        public bool TryReduce(
+            TestState state,
+            IAction action,
+            out TestState newState
+        )
+        {
+            newState = state with
+            {
+                Counter = state.Counter + 1,
+            };
+            return true;
+        }
+    }
+
+    /// <summary>
     ///     Test action for unit tests.
     /// </summary>
     private sealed record IncrementAction : IAction;
@@ -69,6 +89,27 @@ public sealed class RootReducerTests
     }
 
     /// <summary>
+    ///     RootReducer should apply both indexed and fallback reducers.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Reduction")]
+    public void ReduceAppliesBothIndexedAndFallbackReducers()
+    {
+        // Arrange
+        RootReducer<TestState> sut = new([new IncrementReducer(), new FallbackReducer()]);
+        TestState initialState = new()
+        {
+            Counter = 0,
+        };
+
+        // Act
+        TestState result = sut.Reduce(initialState, new IncrementAction());
+
+        // Assert - should increment twice (once by indexed, once by fallback)
+        Assert.Equal(2, result.Counter);
+    }
+
+    /// <summary>
     ///     RootReducer should apply matching reducer.
     /// </summary>
     [Fact]
@@ -111,6 +152,27 @@ public sealed class RootReducerTests
     }
 
     /// <summary>
+    ///     RootReducer should handle fallback reducers (IReducer without specific TAction).
+    /// </summary>
+    [Fact]
+    [AllureFeature("Reduction")]
+    public void ReduceHandlesFallbackReducers()
+    {
+        // Arrange
+        RootReducer<TestState> sut = new([new FallbackReducer()]);
+        TestState initialState = new()
+        {
+            Counter = 5,
+        };
+
+        // Act
+        TestState result = sut.Reduce(initialState, new IncrementAction());
+
+        // Assert
+        Assert.Equal(6, result.Counter);
+    }
+
+    /// <summary>
     ///     RootReducer should return same state when no reducers match.
     /// </summary>
     [Fact]
@@ -129,5 +191,23 @@ public sealed class RootReducerTests
 
         // Assert
         Assert.Same(initialState, result);
+    }
+
+    /// <summary>
+    ///     Reduce should throw ArgumentNullException when action is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    public void ReduceWithNullActionThrowsArgumentNullException()
+    {
+        // Arrange
+        RootReducer<TestState> sut = new([]);
+        TestState initialState = new()
+        {
+            Counter = 5,
+        };
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => sut.Reduce(initialState, null!));
     }
 }

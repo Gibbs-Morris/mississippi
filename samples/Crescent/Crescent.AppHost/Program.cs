@@ -3,10 +3,10 @@
 // </copyright>
 
 #pragma warning disable ASPIRECOSMOSDB001 // RunAsPreviewEmulator is experimental
-
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
+
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
@@ -27,5 +27,4 @@ IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmo
     });
 IResourceBuilder<AzureCosmosDBDatabaseResource> database = cosmos.AddCosmosDatabase("testdb");
 _ = database.AddContainer("testcontainer", "/id");
-
 await builder.Build().RunAsync();

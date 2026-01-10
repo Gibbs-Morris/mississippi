@@ -39,26 +39,6 @@ public sealed class SignalRGroupGrainTests
     }
 
     /// <summary>
-    ///     Tests that adding the same connection twice is idempotent.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact(DisplayName = "AddConnectionAsync Is Idempotent")]
-    public async Task AddConnectionAsyncShouldBeIdempotent()
-    {
-        // Arrange
-        ISignalRGroupGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRGroupGrain>("TestHub:group2");
-
-        // Act
-        await grain.AddConnectionAsync("conn-idem");
-        await grain.AddConnectionAsync("conn-idem");
-        ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
-
-        // Assert
-        Assert.Single(connections);
-        Assert.Contains("conn-idem", connections);
-    }
-
-    /// <summary>
     ///     Tests that multiple connections can be added to a group.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -82,22 +62,40 @@ public sealed class SignalRGroupGrainTests
     }
 
     /// <summary>
-    ///     Tests that a connection can be removed from a group.
+    ///     Tests that adding the same connection twice is idempotent.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact(DisplayName = "RemoveConnectionAsync Removes Connection")]
-    public async Task RemoveConnectionAsyncShouldRemoveConnection()
+    [Fact(DisplayName = "AddConnectionAsync Is Idempotent")]
+    public async Task AddConnectionAsyncShouldBeIdempotent()
     {
         // Arrange
-        ISignalRGroupGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRGroupGrain>("TestHub:group4");
-        await grain.AddConnectionAsync("conn-remove");
+        ISignalRGroupGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRGroupGrain>("TestHub:group2");
 
         // Act
-        await grain.RemoveConnectionAsync("conn-remove");
+        await grain.AddConnectionAsync("conn-idem");
+        await grain.AddConnectionAsync("conn-idem");
         ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
 
         // Assert
-        Assert.DoesNotContain("conn-remove", connections);
+        Assert.Single(connections);
+        Assert.Contains("conn-idem", connections);
+    }
+
+    /// <summary>
+    ///     Tests that GetConnectionsAsync returns empty set for new group.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "GetConnectionsAsync Returns Empty For New Group")]
+    public async Task GetConnectionsAsyncShouldReturnEmptyForNewGroup()
+    {
+        // Arrange
+        ISignalRGroupGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRGroupGrain>("TestHub:new-group");
+
+        // Act
+        ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
+
+        // Assert
+        Assert.Empty(connections);
     }
 
     /// <summary>
@@ -120,20 +118,22 @@ public sealed class SignalRGroupGrainTests
     }
 
     /// <summary>
-    ///     Tests that GetConnectionsAsync returns empty set for new group.
+    ///     Tests that a connection can be removed from a group.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact(DisplayName = "GetConnectionsAsync Returns Empty For New Group")]
-    public async Task GetConnectionsAsyncShouldReturnEmptyForNewGroup()
+    [Fact(DisplayName = "RemoveConnectionAsync Removes Connection")]
+    public async Task RemoveConnectionAsyncShouldRemoveConnection()
     {
         // Arrange
-        ISignalRGroupGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRGroupGrain>("TestHub:new-group");
+        ISignalRGroupGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRGroupGrain>("TestHub:group4");
+        await grain.AddConnectionAsync("conn-remove");
 
         // Act
+        await grain.RemoveConnectionAsync("conn-remove");
         ImmutableHashSet<string> connections = await grain.GetConnectionsAsync();
 
         // Assert
-        Assert.Empty(connections);
+        Assert.DoesNotContain("conn-remove", connections);
     }
 
     /// <summary>
@@ -149,7 +149,9 @@ public sealed class SignalRGroupGrainTests
         ISignalRGroupGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRGroupGrain>("TestHub:empty-group");
 
         // Act - Empty group should not invoke any client grains or streams
-        Exception? exception = await Record.ExceptionAsync(() => grain.SendMessageAsync("TestMethod", ImmutableArray.Create<object?>("arg1")));
+        Exception? exception = await Record.ExceptionAsync(() => grain.SendMessageAsync(
+            "TestMethod",
+            ImmutableArray.Create<object?>("arg1")));
 
         // Assert
         Assert.Null(exception);

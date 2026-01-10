@@ -2,6 +2,9 @@
 // Licensed under the Gibbs-Morris commercial license.
 // </copyright>
 
+using Newtonsoft.Json;
+
+
 namespace Crescent.L2Tests;
 
 /// <summary>
@@ -15,10 +18,12 @@ public sealed class CosmosDbTests : IAsyncDisposable
     private readonly CosmosClient cosmosClient;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="CosmosDbTests"/> class.
+    ///     Initializes a new instance of the <see cref="CosmosDbTests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Aspire fixture.</param>
-    public CosmosDbTests(CrescentFixture fixture)
+    public CosmosDbTests(
+        CrescentFixture fixture
+    )
     {
         Console.WriteLine("=== CosmosDbTests CONSTRUCTOR ===");
         ArgumentNullException.ThrowIfNull(fixture);
@@ -36,97 +41,95 @@ public sealed class CosmosDbTests : IAsyncDisposable
     }
 
     /// <summary>
-    ///     Verifies that a document can be written to Cosmos DB.
+    ///     Gets or creates the test container, ensuring the database exists.
+    ///     Uses retry with timeout to handle emulator startup race conditions.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task WriteDocumentShouldSucceed()
+    private async Task<Container> GetOrCreateContainerAsync()
     {
-        // Arrange
-        string testId = Guid.NewGuid().ToString();
-        TestDocument document = new()
+        Console.WriteLine("=== GetOrCreateContainerAsync DEBUG ===");
+        Console.WriteLine($"[GetOrCreateContainerAsync] Starting, endpoint: {cosmosClient.Endpoint}");
+
+        // Retry up to 10 times with 5s delay (total ~90s wait for emulator readiness)
+        const int MaxRetries = 10;
+        const int RetryDelayMs = 5000;
+        const int TimeoutSeconds = 30;
+        Database? database = null;
+        for (int attempt = 1; attempt <= MaxRetries; attempt++)
         {
-            Id = testId,
-            Name = "Test Document",
-            Value = 42,
-            CreatedAt = DateTime.UtcNow,
-        };
+            Console.WriteLine(
+                $"[GetOrCreateContainerAsync] Attempt {attempt}/{MaxRetries} to create database 'testdb'...");
+            try
+            {
+                using CancellationTokenSource cts = new(TimeSpan.FromSeconds(TimeoutSeconds));
+                database = await cosmosClient.CreateDatabaseIfNotExistsAsync("testdb", cancellationToken: cts.Token);
+                Console.WriteLine($"[GetOrCreateContainerAsync] Database obtained: {database.Id}");
+                break;
+            }
+            catch (OperationCanceledException) when (attempt < MaxRetries)
+            {
+                Console.WriteLine(
+                    $"[GetOrCreateContainerAsync] Timeout after {TimeoutSeconds}s, retrying in {RetryDelayMs / 1000}s...");
+                await Task.Delay(RetryDelayMs);
+            }
+            catch (CosmosException ex) when ((attempt < MaxRetries) &&
+                                             (ex.StatusCode >= HttpStatusCode.InternalServerError))
+            {
+                Console.WriteLine(
+                    $"[GetOrCreateContainerAsync] Cosmos error {ex.StatusCode}: {ex.Message}, retrying in {RetryDelayMs / 1000}s...");
+                await Task.Delay(RetryDelayMs);
+            }
+        }
 
-        Container container = await GetOrCreateContainerAsync();
+        if (database is null)
+        {
+            throw new InvalidOperationException("Failed to create database after maximum retries");
+        }
 
-        // Act
-        ItemResponse<TestDocument> response = await container.CreateItemAsync(
-            document,
-            new PartitionKey(testId));
-
-        // Assert
-        response.StatusCode.Should().Be(
-            HttpStatusCode.Created,
-            because: "the document should be created successfully");
-        response.Resource.Should().NotBeNull();
-        response.Resource.Id.Should().Be(testId);
-        response.Resource.Name.Should().Be("Test Document");
+        Console.WriteLine("[GetOrCreateContainerAsync] Creating container 'testcontainer'...");
+        using CancellationTokenSource containerCts = new(TimeSpan.FromSeconds(TimeoutSeconds));
+        ContainerResponse containerResponse = await database.CreateContainerIfNotExistsAsync(
+            "testcontainer",
+            "/id",
+            400,
+            cancellationToken: containerCts.Token);
+        Console.WriteLine(
+            $"[GetOrCreateContainerAsync] Container obtained: {containerResponse.Container.Id}, StatusCode: {containerResponse.StatusCode}");
+        Console.WriteLine("=== END GetOrCreateContainerAsync DEBUG ===");
+        return containerResponse.Container;
     }
 
     /// <summary>
-    ///     Verifies that a document can be read from Cosmos DB.
+    ///     Test document model for Cosmos DB operations.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ReadDocumentShouldReturnWrittenDocument()
+    /// <remarks>
+    ///     The Cosmos SDK uses Newtonsoft.Json by default, so we use
+    ///     <see cref="Newtonsoft.Json.JsonPropertyAttribute" /> for serialization.
+    /// </remarks>
+    private sealed class TestDocument
     {
-        // Arrange
-        string testId = Guid.NewGuid().ToString();
-        TestDocument document = new()
-        {
-            Id = testId,
-            Name = "Read Test Document",
-            Value = 123,
-            CreatedAt = DateTime.UtcNow,
-        };
+        /// <summary>
+        ///     Gets or sets the creation timestamp.
+        /// </summary>
+        [JsonProperty("createdAt")]
+        public DateTime CreatedAt { get; set; }
 
-        Container container = await GetOrCreateContainerAsync();
+        /// <summary>
+        ///     Gets or sets the document ID.
+        /// </summary>
+        [JsonProperty("id")]
+        public string Id { get; set; } = string.Empty;
 
-        // Write the document first
-        await container.CreateItemAsync(
-            document,
-            new PartitionKey(testId));
+        /// <summary>
+        ///     Gets or sets the document name.
+        /// </summary>
+        [JsonProperty("name")]
+        public string Name { get; set; } = string.Empty;
 
-        // Act
-        ItemResponse<TestDocument> readResponse = await container.ReadItemAsync<TestDocument>(
-            testId,
-            new PartitionKey(testId));
-
-        // Assert
-        readResponse.StatusCode.Should().Be(
-            HttpStatusCode.OK,
-            because: "the document should be read successfully");
-        readResponse.Resource.Should().NotBeNull();
-        readResponse.Resource.Id.Should().Be(testId);
-        readResponse.Resource.Name.Should().Be("Read Test Document");
-        readResponse.Resource.Value.Should().Be(123);
-    }
-
-    /// <summary>
-    ///     Verifies that reading a non-existent document throws an appropriate exception.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ReadNonExistentDocumentShouldThrowNotFoundException()
-    {
-        // Arrange
-        string nonExistentId = Guid.NewGuid().ToString();
-        Container container = await GetOrCreateContainerAsync();
-
-        // Act
-        Func<Task> act = async () => await container.ReadItemAsync<TestDocument>(
-            nonExistentId,
-            new PartitionKey(nonExistentId));
-
-        // Assert
-        await act.Should()
-            .ThrowAsync<CosmosException>(because: "the document does not exist")
-            .Where(e => e.StatusCode == HttpStatusCode.NotFound);
+        /// <summary>
+        ///     Gets or sets a numeric value.
+        /// </summary>
+        [JsonProperty("value")]
+        public int Value { get; set; }
     }
 
     /// <summary>
@@ -150,15 +153,12 @@ public sealed class CosmosDbTests : IAsyncDisposable
                 Value = i * 10,
                 CreatedAt = DateTime.UtcNow,
             };
-            await container.CreateItemAsync(
-                doc,
-                new PartitionKey(doc.Id));
+            await container.CreateItemAsync(doc, new PartitionKey(doc.Id));
         }
 
         // Act
         string query = $"SELECT * FROM c WHERE STARTSWITH(c.name, 'Query Test {uniquePrefix}')";
         List<TestDocument> results = new();
-
         using FeedIterator<TestDocument> iterator = container.GetItemQueryIterator<TestDocument>(query);
         while (iterator.HasMoreResults)
         {
@@ -167,102 +167,87 @@ public sealed class CosmosDbTests : IAsyncDisposable
         }
 
         // Assert
-        results.Should().HaveCount(
-            3,
-            because: "we created 3 documents with the matching prefix");
-        results.Should().AllSatisfy(doc =>
-        {
-            doc.Name.Should().StartWith($"Query Test {uniquePrefix}");
-        });
+        results.Should().HaveCount(3, "we created 3 documents with the matching prefix");
+        results.Should().AllSatisfy(doc => { doc.Name.Should().StartWith($"Query Test {uniquePrefix}"); });
     }
 
     /// <summary>
-    ///     Gets or creates the test container, ensuring the database exists.
-    ///     Uses retry with timeout to handle emulator startup race conditions.
+    ///     Verifies that a document can be read from Cosmos DB.
     /// </summary>
-    private async Task<Container> GetOrCreateContainerAsync()
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ReadDocumentShouldReturnWrittenDocument()
     {
-        Console.WriteLine("=== GetOrCreateContainerAsync DEBUG ===");
-        Console.WriteLine($"[GetOrCreateContainerAsync] Starting, endpoint: {cosmosClient.Endpoint}");
-
-        // Retry up to 10 times with 5s delay (total ~90s wait for emulator readiness)
-        const int MaxRetries = 10;
-        const int RetryDelayMs = 5000;
-        const int TimeoutSeconds = 30;
-
-        Database? database = null;
-
-        for (int attempt = 1; attempt <= MaxRetries; attempt++)
+        // Arrange
+        string testId = Guid.NewGuid().ToString();
+        TestDocument document = new()
         {
-            Console.WriteLine($"[GetOrCreateContainerAsync] Attempt {attempt}/{MaxRetries} to create database 'testdb'...");
-            try
-            {
-                using CancellationTokenSource cts = new(TimeSpan.FromSeconds(TimeoutSeconds));
-                database = await cosmosClient.CreateDatabaseIfNotExistsAsync("testdb", cancellationToken: cts.Token);
-                Console.WriteLine($"[GetOrCreateContainerAsync] Database obtained: {database.Id}");
-                break;
-            }
-            catch (OperationCanceledException) when (attempt < MaxRetries)
-            {
-                Console.WriteLine($"[GetOrCreateContainerAsync] Timeout after {TimeoutSeconds}s, retrying in {RetryDelayMs / 1000}s...");
-                await Task.Delay(RetryDelayMs);
-            }
-            catch (CosmosException ex) when (attempt < MaxRetries && ex.StatusCode >= HttpStatusCode.InternalServerError)
-            {
-                Console.WriteLine($"[GetOrCreateContainerAsync] Cosmos error {ex.StatusCode}: {ex.Message}, retrying in {RetryDelayMs / 1000}s...");
-                await Task.Delay(RetryDelayMs);
-            }
-        }
+            Id = testId,
+            Name = "Read Test Document",
+            Value = 123,
+            CreatedAt = DateTime.UtcNow,
+        };
+        Container container = await GetOrCreateContainerAsync();
 
-        if (database is null)
-        {
-            throw new InvalidOperationException("Failed to create database after maximum retries");
-        }
+        // Write the document first
+        await container.CreateItemAsync(document, new PartitionKey(testId));
 
-        Console.WriteLine("[GetOrCreateContainerAsync] Creating container 'testcontainer'...");
-        using CancellationTokenSource containerCts = new(TimeSpan.FromSeconds(TimeoutSeconds));
-        ContainerResponse containerResponse = await database.CreateContainerIfNotExistsAsync(
-            "testcontainer",
-            "/id",
-            throughput: 400,
-            cancellationToken: containerCts.Token);
-        Console.WriteLine($"[GetOrCreateContainerAsync] Container obtained: {containerResponse.Container.Id}, StatusCode: {containerResponse.StatusCode}");
-        Console.WriteLine("=== END GetOrCreateContainerAsync DEBUG ===");
+        // Act
+        ItemResponse<TestDocument> readResponse = await container.ReadItemAsync<TestDocument>(testId, new(testId));
 
-        return containerResponse.Container;
+        // Assert
+        readResponse.StatusCode.Should().Be(HttpStatusCode.OK, "the document should be read successfully");
+        readResponse.Resource.Should().NotBeNull();
+        readResponse.Resource.Id.Should().Be(testId);
+        readResponse.Resource.Name.Should().Be("Read Test Document");
+        readResponse.Resource.Value.Should().Be(123);
     }
 
     /// <summary>
-    ///     Test document model for Cosmos DB operations.
+    ///     Verifies that reading a non-existent document throws an appropriate exception.
     /// </summary>
-    /// <remarks>
-    ///     The Cosmos SDK uses Newtonsoft.Json by default, so we use
-    ///     <see cref="Newtonsoft.Json.JsonPropertyAttribute"/> for serialization.
-    /// </remarks>
-    private sealed class TestDocument
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ReadNonExistentDocumentShouldThrowNotFoundException()
     {
-        /// <summary>
-        ///     Gets or sets the document ID.
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("id")]
-        public string Id { get; set; } = string.Empty;
+        // Arrange
+        string nonExistentId = Guid.NewGuid().ToString();
+        Container container = await GetOrCreateContainerAsync();
 
-        /// <summary>
-        ///     Gets or sets the document name.
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("name")]
-        public string Name { get; set; } = string.Empty;
+        // Act
+        Func<Task> act = async () => await container.ReadItemAsync<TestDocument>(nonExistentId, new(nonExistentId));
 
-        /// <summary>
-        ///     Gets or sets a numeric value.
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("value")]
-        public int Value { get; set; }
+        // Assert
+        await act.Should()
+            .ThrowAsync<CosmosException>("the document does not exist")
+            .Where(e => e.StatusCode == HttpStatusCode.NotFound);
+    }
 
-        /// <summary>
-        ///     Gets or sets the creation timestamp.
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("createdAt")]
-        public DateTime CreatedAt { get; set; }
+    /// <summary>
+    ///     Verifies that a document can be written to Cosmos DB.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task WriteDocumentShouldSucceed()
+    {
+        // Arrange
+        string testId = Guid.NewGuid().ToString();
+        TestDocument document = new()
+        {
+            Id = testId,
+            Name = "Test Document",
+            Value = 42,
+            CreatedAt = DateTime.UtcNow,
+        };
+        Container container = await GetOrCreateContainerAsync();
+
+        // Act
+        ItemResponse<TestDocument> response = await container.CreateItemAsync(document, new PartitionKey(testId));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created, "the document should be created successfully");
+        response.Resource.Should().NotBeNull();
+        response.Resource.Id.Should().Be(testId);
+        response.Resource.Name.Should().Be("Test Document");
     }
 }

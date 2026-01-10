@@ -537,6 +537,7 @@
       "Mississippi.Inlet.Abstractions": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },

@@ -14,81 +14,6 @@ namespace Mississippi.Aqueduct.Abstractions.L0Tests.Messages;
 public sealed class AllMessageTests
 {
     /// <summary>
-    ///     Verifies that default values are set correctly.
-    /// </summary>
-    [Fact(DisplayName = "Default Values Are Set Correctly")]
-    public void DefaultValuesShouldBeSetCorrectly()
-    {
-        // Act
-        AllMessage message = new();
-
-        // Assert
-        Assert.Equal(string.Empty, message.MethodName);
-        Assert.Empty(message.Args);
-        Assert.Null(message.ExcludedConnectionIds);
-    }
-
-    /// <summary>
-    ///     Verifies that MethodName can be set.
-    /// </summary>
-    [Fact(DisplayName = "MethodName Can Be Set")]
-    public void MethodNameShouldBeSettable()
-    {
-        // Act
-        AllMessage message = new()
-        {
-            MethodName = "ReceiveMessage",
-        };
-
-        // Assert
-        Assert.Equal("ReceiveMessage", message.MethodName);
-    }
-
-    /// <summary>
-    ///     Verifies that Args can be set.
-    /// </summary>
-    [Fact(DisplayName = "Args Can Be Set")]
-    public void ArgsShouldBeSettable()
-    {
-        // Arrange
-        object?[] args = ["hello", 42, null];
-
-        // Act
-        AllMessage message = new()
-        {
-            Args = args,
-        };
-
-        // Assert
-        Assert.Equal(3, message.Args.Count);
-        Assert.Equal("hello", message.Args[0]);
-        Assert.Equal(42, message.Args[1]);
-        Assert.Null(message.Args[2]);
-    }
-
-    /// <summary>
-    ///     Verifies that ExcludedConnectionIds can be set.
-    /// </summary>
-    [Fact(DisplayName = "ExcludedConnectionIds Can Be Set")]
-    public void ExcludedConnectionIdsShouldBeSettable()
-    {
-        // Arrange
-        string[] excluded = ["conn1", "conn2"];
-
-        // Act
-        AllMessage message = new()
-        {
-            ExcludedConnectionIds = excluded,
-        };
-
-        // Assert
-        Assert.NotNull(message.ExcludedConnectionIds);
-        Assert.Equal(2, message.ExcludedConnectionIds.Count);
-        Assert.Equal("conn1", message.ExcludedConnectionIds[0]);
-        Assert.Equal("conn2", message.ExcludedConnectionIds[1]);
-    }
-
-    /// <summary>
     ///     Verifies that all properties can be set together.
     /// </summary>
     [Fact(DisplayName = "All Properties Can Be Set Together")]
@@ -114,6 +39,43 @@ public sealed class AllMessageTests
     }
 
     /// <summary>
+    ///     Verifies that Args can be set.
+    /// </summary>
+    [Fact(DisplayName = "Args Can Be Set")]
+    public void ArgsShouldBeSettable()
+    {
+        // Arrange
+        object?[] args = ["hello", 42, null];
+
+        // Act
+        AllMessage message = new()
+        {
+            Args = args,
+        };
+
+        // Assert
+        Assert.Equal(3, message.Args.Count);
+        Assert.Equal("hello", message.Args[0]);
+        Assert.Equal(42, message.Args[1]);
+        Assert.Null(message.Args[2]);
+    }
+
+    /// <summary>
+    ///     Verifies that default values are set correctly.
+    /// </summary>
+    [Fact(DisplayName = "Default Values Are Set Correctly")]
+    public void DefaultValuesShouldBeSetCorrectly()
+    {
+        // Act
+        AllMessage message = new();
+
+        // Assert
+        Assert.Equal(string.Empty, message.MethodName);
+        Assert.Empty(message.Args);
+        Assert.Null(message.ExcludedConnectionIds);
+    }
+
+    /// <summary>
     ///     Verifies record equality works correctly.
     /// </summary>
     [Fact(DisplayName = "Equality Works For Equal Messages")]
@@ -134,6 +96,28 @@ public sealed class AllMessageTests
     }
 
     /// <summary>
+    ///     Verifies that ExcludedConnectionIds can be set.
+    /// </summary>
+    [Fact(DisplayName = "ExcludedConnectionIds Can Be Set")]
+    public void ExcludedConnectionIdsShouldBeSettable()
+    {
+        // Arrange
+        string[] excluded = ["conn1", "conn2"];
+
+        // Act
+        AllMessage message = new()
+        {
+            ExcludedConnectionIds = excluded,
+        };
+
+        // Assert
+        Assert.NotNull(message.ExcludedConnectionIds);
+        Assert.Equal(2, message.ExcludedConnectionIds.Count);
+        Assert.Equal("conn1", message.ExcludedConnectionIds[0]);
+        Assert.Equal("conn2", message.ExcludedConnectionIds[1]);
+    }
+
+    /// <summary>
     ///     Verifies record inequality works correctly.
     /// </summary>
     [Fact(DisplayName = "Inequality Works For Different Messages")]
@@ -151,6 +135,22 @@ public sealed class AllMessageTests
 
         // Assert
         Assert.NotEqual(message1, message2);
+    }
+
+    /// <summary>
+    ///     Verifies that MethodName can be set.
+    /// </summary>
+    [Fact(DisplayName = "MethodName Can Be Set")]
+    public void MethodNameShouldBeSettable()
+    {
+        // Act
+        AllMessage message = new()
+        {
+            MethodName = "ReceiveMessage",
+        };
+
+        // Assert
+        Assert.Equal("ReceiveMessage", message.MethodName);
     }
 
     /// <summary>

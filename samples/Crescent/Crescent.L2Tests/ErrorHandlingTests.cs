@@ -4,6 +4,7 @@
 
 using Azure;
 
+
 namespace Crescent.L2Tests;
 
 /// <summary>
@@ -17,105 +18,33 @@ public sealed class ErrorHandlingTests
     private readonly CrescentFixture fixture;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ErrorHandlingTests"/> class.
+    ///     Initializes a new instance of the <see cref="ErrorHandlingTests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Aspire fixture.</param>
-    public ErrorHandlingTests(CrescentFixture fixture)
-    {
+    public ErrorHandlingTests(
+        CrescentFixture fixture
+    ) =>
         this.fixture = fixture;
-    }
 
     /// <summary>
-    ///     Verifies that attempting to use an invalid Cosmos connection string fails gracefully.
+    ///     Verifies that Blob operations timeout appropriately rather than hanging.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task InvalidCosmosConnectionShouldThrowMeaningfulError()
+    public async Task BlobOperationWithTimeoutShouldNotHangIndefinitely()
     {
         // Arrange
-        string invalidConnectionString = "AccountEndpoint=https://invalid-endpoint.documents.azure.com:443/;AccountKey=dGVzdGtleQ==;";
-
-        using CosmosClient invalidClient = new(
-            invalidConnectionString,
-            new CosmosClientOptions
-            {
-                ConnectionMode = ConnectionMode.Gateway,
-                RequestTimeout = TimeSpan.FromSeconds(5),
-            });
-
-        // Act
-        Func<Task> act = async () =>
-        {
-            Database database = invalidClient.GetDatabase("test");
-            _ = await database.ReadAsync();
-        };
-
-        // Assert - Should throw a meaningful exception, not hang indefinitely
-        await act.Should()
-            .ThrowAsync<Exception>(because: "invalid connection should fail with a clear error");
-    }
-
-    /// <summary>
-    ///     Verifies that attempting to use an invalid Blob connection string fails gracefully.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task InvalidBlobConnectionShouldThrowMeaningfulError()
-    {
-        // Arrange
-        string invalidConnectionString = "DefaultEndpointsProtocol=https;AccountName=invalid;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
-
-        BlobServiceClient invalidClient = new(invalidConnectionString);
-
-        // Act
-        Func<Task> act = async () =>
-        {
-            BlobContainerClient container = invalidClient.GetBlobContainerClient("test");
-            _ = await container.ExistsAsync();
-        };
-
-        // Assert - Should throw a meaningful exception, not hang indefinitely
-        await act.Should()
-            .ThrowAsync<RequestFailedException>(because: "invalid connection should fail with a clear error");
-    }
-
-    /// <summary>
-    ///     Verifies that the fixture properly captures initialization errors.
-    /// </summary>
-    [Fact]
-    public void FixtureShouldHaveNoInitializationError()
-    {
-        // Assert
-        fixture.InitializationError.Should().BeNull(
-            because: "a successful fixture should have no initialization error");
-    }
-
-    /// <summary>
-    ///     Verifies that accessing Cosmos DB before initialization throws a clear error.
-    /// </summary>
-    [Fact]
-    public void CreateCosmosClientWhenFixtureInitializedShouldSucceed()
-    {
-        // Act
-        using CosmosClient client = fixture.CreateCosmosClient();
-
-        // Assert
-        client.Should().NotBeNull(
-            because: "the fixture should provide a valid client when initialized");
-    }
-
-    /// <summary>
-    ///     Verifies that accessing Blob storage before initialization throws a clear error.
-    /// </summary>
-    [Fact]
-    public void CreateBlobServiceClientWhenFixtureInitializedShouldSucceed()
-    {
-        // Act
         BlobServiceClient client = fixture.CreateBlobServiceClient();
 
+        // Set a reasonable timeout using CancellationToken
+        using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
+
+        // Act - Perform a real operation to verify it completes within timeout
+        BlobContainerClient container = client.GetBlobContainerClient($"timeout-test-{Guid.NewGuid():N}");
+        AzureResponseBool response = await container.ExistsAsync(cts.Token);
+
         // Assert
-        client.Should().NotBeNull(
-            because: "the fixture should provide a valid client when initialized");
+        response.Should().NotBeNull();
     }
 
     /// <summary>
@@ -145,23 +74,90 @@ public sealed class ErrorHandlingTests
     }
 
     /// <summary>
-    ///     Verifies that Blob operations timeout appropriately rather than hanging.
+    ///     Verifies that accessing Blob storage before initialization throws a clear error.
+    /// </summary>
+    [Fact]
+    public void CreateBlobServiceClientWhenFixtureInitializedShouldSucceed()
+    {
+        // Act
+        BlobServiceClient client = fixture.CreateBlobServiceClient();
+
+        // Assert
+        client.Should().NotBeNull("the fixture should provide a valid client when initialized");
+    }
+
+    /// <summary>
+    ///     Verifies that accessing Cosmos DB before initialization throws a clear error.
+    /// </summary>
+    [Fact]
+    public void CreateCosmosClientWhenFixtureInitializedShouldSucceed()
+    {
+        // Act
+        using CosmosClient client = fixture.CreateCosmosClient();
+
+        // Assert
+        client.Should().NotBeNull("the fixture should provide a valid client when initialized");
+    }
+
+    /// <summary>
+    ///     Verifies that the fixture properly captures initialization errors.
+    /// </summary>
+    [Fact]
+    public void FixtureShouldHaveNoInitializationError()
+    {
+        // Assert
+        fixture.InitializationError.Should().BeNull("a successful fixture should have no initialization error");
+    }
+
+    /// <summary>
+    ///     Verifies that attempting to use an invalid Blob connection string fails gracefully.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task BlobOperationWithTimeoutShouldNotHangIndefinitely()
+    public async Task InvalidBlobConnectionShouldThrowMeaningfulError()
     {
         // Arrange
-        BlobServiceClient client = fixture.CreateBlobServiceClient();
+        string invalidConnectionString =
+            "DefaultEndpointsProtocol=https;AccountName=invalid;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
+        BlobServiceClient invalidClient = new(invalidConnectionString);
 
-        // Set a reasonable timeout using CancellationToken
-        using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
+        // Act
+        Func<Task> act = async () =>
+        {
+            BlobContainerClient container = invalidClient.GetBlobContainerClient("test");
+            _ = await container.ExistsAsync();
+        };
 
-        // Act - Perform a real operation to verify it completes within timeout
-        BlobContainerClient container = client.GetBlobContainerClient($"timeout-test-{Guid.NewGuid():N}");
-        Azure.Response<bool> response = await container.ExistsAsync(cts.Token);
+        // Assert - Should throw a meaningful exception, not hang indefinitely
+        await act.Should().ThrowAsync<RequestFailedException>("invalid connection should fail with a clear error");
+    }
 
-        // Assert
-        response.Should().NotBeNull();
+    /// <summary>
+    ///     Verifies that attempting to use an invalid Cosmos connection string fails gracefully.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task InvalidCosmosConnectionShouldThrowMeaningfulError()
+    {
+        // Arrange
+        string invalidConnectionString =
+            "AccountEndpoint=https://invalid-endpoint.documents.azure.com:443/;AccountKey=dGVzdGtleQ==;";
+        using CosmosClient invalidClient = new(
+            invalidConnectionString,
+            new()
+            {
+                ConnectionMode = ConnectionMode.Gateway,
+                RequestTimeout = TimeSpan.FromSeconds(5),
+            });
+
+        // Act
+        Func<Task> act = async () =>
+        {
+            Database database = invalidClient.GetDatabase("test");
+            _ = await database.ReadAsync();
+        };
+
+        // Assert - Should throw a meaningful exception, not hang indefinitely
+        await act.Should().ThrowAsync<Exception>("invalid connection should fail with a clear error");
     }
 }

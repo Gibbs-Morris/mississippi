@@ -1,5 +1,6 @@
 using Mississippi.Aqueduct.Abstractions.Grains;
 
+
 namespace Aqueduct.L2Tests;
 
 /// <summary>
@@ -19,10 +20,10 @@ public sealed class ClientGrainStreamingTests
     ///     Initializes a new instance of the <see cref="ClientGrainStreamingTests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Aqueduct fixture.</param>
-    public ClientGrainStreamingTests(AqueductFixture fixture)
-    {
+    public ClientGrainStreamingTests(
+        AqueductFixture fixture
+    ) =>
         this.fixture = fixture;
-    }
 
     /// <summary>
     ///     Verifies that a connected client grain has the expected server ID.
@@ -35,7 +36,6 @@ public sealed class ClientGrainStreamingTests
         string hubName = "TestHub";
         string connectionId = Guid.NewGuid().ToString("N");
         string serverId = Guid.NewGuid().ToString("N");
-
         ISignalRClientGrain clientGrain = fixture.GetClientGrain(hubName, connectionId);
 
         // Act
@@ -44,26 +44,6 @@ public sealed class ClientGrainStreamingTests
 
         // Assert
         retrievedServerId.Should().Be(serverId);
-    }
-
-    /// <summary>
-    ///     Verifies that a disconnected client grain returns null server ID.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task DisconnectedClientHasNullServerId()
-    {
-        // Arrange
-        string hubName = "TestHub";
-        string connectionId = Guid.NewGuid().ToString("N");
-
-        ISignalRClientGrain clientGrain = fixture.GetClientGrain(hubName, connectionId);
-
-        // Act - grain was never connected
-        string? serverId = await clientGrain.GetServerIdAsync();
-
-        // Assert
-        serverId.Should().BeNull();
     }
 
     /// <summary>
@@ -77,7 +57,6 @@ public sealed class ClientGrainStreamingTests
         string hubName = "TestHub";
         string connectionId = Guid.NewGuid().ToString("N");
         string serverId = Guid.NewGuid().ToString("N");
-
         ISignalRClientGrain clientGrain = fixture.GetClientGrain(hubName, connectionId);
         await clientGrain.ConnectAsync(hubName, serverId);
 
@@ -94,6 +73,25 @@ public sealed class ClientGrainStreamingTests
     }
 
     /// <summary>
+    ///     Verifies that a disconnected client grain returns null server ID.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task DisconnectedClientHasNullServerId()
+    {
+        // Arrange
+        string hubName = "TestHub";
+        string connectionId = Guid.NewGuid().ToString("N");
+        ISignalRClientGrain clientGrain = fixture.GetClientGrain(hubName, connectionId);
+
+        // Act - grain was never connected
+        string? serverId = await clientGrain.GetServerIdAsync();
+
+        // Assert
+        serverId.Should().BeNull();
+    }
+
+    /// <summary>
     ///     Verifies that multiple connections on same grain key update the state.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -105,7 +103,6 @@ public sealed class ClientGrainStreamingTests
         string connectionId = Guid.NewGuid().ToString("N");
         string serverId1 = Guid.NewGuid().ToString("N");
         string serverId2 = Guid.NewGuid().ToString("N");
-
         ISignalRClientGrain clientGrain = fixture.GetClientGrain(hubName, connectionId);
 
         // Act - connect to server1, then reconnect to server2

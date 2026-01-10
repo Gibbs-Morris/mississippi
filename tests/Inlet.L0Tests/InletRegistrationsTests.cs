@@ -200,4 +200,30 @@ public sealed class InletRegistrationsTests
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => services!.AddProjectionRoute<TestProjection>("/api/test"));
     }
+
+    /// <summary>
+    ///     AddProjectionRoute configuration should register route in registry.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Service Registration")]
+    public void ProjectionRouteConfigurationRegistersRouteInRegistry()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        services.AddInlet();
+        services.AddProjectionRoute<TestProjection>("/api/test");
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Act - Get the config and registry, then call Configure
+        IEnumerable<IConfigureProjectionRegistry> configs = provider.GetServices<IConfigureProjectionRegistry>();
+        IProjectionRegistry registry = provider.GetRequiredService<IProjectionRegistry>();
+        foreach (IConfigureProjectionRegistry config in configs)
+        {
+            config.Configure(registry);
+        }
+
+        // Assert - The route should now be registered
+        string route = registry.GetRoute(typeof(TestProjection));
+        Assert.Equal("/api/test", route);
+    }
 }

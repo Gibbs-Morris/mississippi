@@ -14,50 +14,26 @@ namespace Mississippi.Aqueduct.Abstractions.L0Tests.Messages;
 public sealed class ServerMessageTests
 {
     /// <summary>
-    ///     Verifies that default values are set correctly.
+    ///     Verifies that all properties can be set together.
     /// </summary>
-    [Fact(DisplayName = "Default Values Are Set Correctly")]
-    public void DefaultValuesShouldBeSetCorrectly()
+    [Fact(DisplayName = "All Properties Can Be Set Together")]
+    public void AllPropertiesShouldBeSettableTogether()
     {
-        // Act
-        ServerMessage message = new();
+        // Arrange
+        object?[] args = ["data"];
 
-        // Assert
-        Assert.Equal(string.Empty, message.ConnectionId);
-        Assert.Equal(string.Empty, message.MethodName);
-        Assert.Empty(message.Args);
-    }
-
-    /// <summary>
-    ///     Verifies that ConnectionId can be set.
-    /// </summary>
-    [Fact(DisplayName = "ConnectionId Can Be Set")]
-    public void ConnectionIdShouldBeSettable()
-    {
         // Act
         ServerMessage message = new()
         {
             ConnectionId = "conn123",
+            MethodName = "Notify",
+            Args = args,
         };
 
         // Assert
         Assert.Equal("conn123", message.ConnectionId);
-    }
-
-    /// <summary>
-    ///     Verifies that MethodName can be set.
-    /// </summary>
-    [Fact(DisplayName = "MethodName Can Be Set")]
-    public void MethodNameShouldBeSettable()
-    {
-        // Act
-        ServerMessage message = new()
-        {
-            MethodName = "ReceiveMessage",
-        };
-
-        // Assert
-        Assert.Equal("ReceiveMessage", message.MethodName);
+        Assert.Equal("Notify", message.MethodName);
+        Assert.Single(message.Args);
     }
 
     /// <summary>
@@ -83,26 +59,34 @@ public sealed class ServerMessageTests
     }
 
     /// <summary>
-    ///     Verifies that all properties can be set together.
+    ///     Verifies that ConnectionId can be set.
     /// </summary>
-    [Fact(DisplayName = "All Properties Can Be Set Together")]
-    public void AllPropertiesShouldBeSettableTogether()
+    [Fact(DisplayName = "ConnectionId Can Be Set")]
+    public void ConnectionIdShouldBeSettable()
     {
-        // Arrange
-        object?[] args = ["data"];
-
         // Act
         ServerMessage message = new()
         {
             ConnectionId = "conn123",
-            MethodName = "Notify",
-            Args = args,
         };
 
         // Assert
         Assert.Equal("conn123", message.ConnectionId);
-        Assert.Equal("Notify", message.MethodName);
-        Assert.Single(message.Args);
+    }
+
+    /// <summary>
+    ///     Verifies that default values are set correctly.
+    /// </summary>
+    [Fact(DisplayName = "Default Values Are Set Correctly")]
+    public void DefaultValuesShouldBeSetCorrectly()
+    {
+        // Act
+        ServerMessage message = new();
+
+        // Assert
+        Assert.Equal(string.Empty, message.ConnectionId);
+        Assert.Equal(string.Empty, message.MethodName);
+        Assert.Empty(message.Args);
     }
 
     /// <summary>
@@ -145,6 +129,22 @@ public sealed class ServerMessageTests
 
         // Assert
         Assert.NotEqual(message1, message2);
+    }
+
+    /// <summary>
+    ///     Verifies that MethodName can be set.
+    /// </summary>
+    [Fact(DisplayName = "MethodName Can Be Set")]
+    public void MethodNameShouldBeSettable()
+    {
+        // Act
+        ServerMessage message = new()
+        {
+            MethodName = "ReceiveMessage",
+        };
+
+        // Assert
+        Assert.Equal("ReceiveMessage", message.MethodName);
     }
 
     /// <summary>

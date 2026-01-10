@@ -39,6 +39,45 @@ public sealed class SignalRClientGrainTests
     }
 
     /// <summary>
+    ///     Tests that connect can be called multiple times to update server.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "ConnectAsync Can Update Server")]
+    public async Task ConnectAsyncShouldUpdateServer()
+    {
+        // Arrange
+        ISignalRClientGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRClientGrain>("TestHub:conn3");
+        await grain.ConnectAsync("TestHub", "server1");
+
+        // Act
+        await grain.ConnectAsync("TestHub", "server2");
+        string? serverId = await grain.GetServerIdAsync();
+
+        // Assert
+        Assert.Equal("server2", serverId);
+    }
+
+    /// <summary>
+    ///     Tests that disconnect after disconnect is a no-op.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "DisconnectAsync Is Idempotent")]
+    public async Task DisconnectAsyncShouldBeIdempotent()
+    {
+        // Arrange
+        ISignalRClientGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRClientGrain>("TestHub:conn5");
+        await grain.ConnectAsync("TestHub", "server1");
+
+        // Act
+        await grain.DisconnectAsync();
+        await grain.DisconnectAsync();
+        string? serverId = await grain.GetServerIdAsync();
+
+        // Assert
+        Assert.Null(serverId);
+    }
+
+    /// <summary>
     ///     Tests that disconnect clears the connected state.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -75,25 +114,6 @@ public sealed class SignalRClientGrainTests
     }
 
     /// <summary>
-    ///     Tests that connect can be called multiple times to update server.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact(DisplayName = "ConnectAsync Can Update Server")]
-    public async Task ConnectAsyncShouldUpdateServer()
-    {
-        // Arrange
-        ISignalRClientGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRClientGrain>("TestHub:conn3");
-        await grain.ConnectAsync("TestHub", "server1");
-
-        // Act
-        await grain.ConnectAsync("TestHub", "server2");
-        string? serverId = await grain.GetServerIdAsync();
-
-        // Assert
-        Assert.Equal("server2", serverId);
-    }
-
-    /// <summary>
     ///     Tests that SendMessageAsync does not throw when not connected.
     ///     Note: When connected, testing SendMessageAsync requires full stream provider
     ///     configuration which is beyond the scope of L0 unit tests.
@@ -107,29 +127,11 @@ public sealed class SignalRClientGrainTests
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRClientGrain>("TestHub:not-connected");
 
         // Act - not connected, so the grain should skip sending without error
-        Exception? exception = await Record.ExceptionAsync(() => grain.SendMessageAsync("TestMethod", ImmutableArray.Create<object?>("arg1", "arg2")));
+        Exception? exception = await Record.ExceptionAsync(() => grain.SendMessageAsync(
+            "TestMethod",
+            ImmutableArray.Create<object?>("arg1", "arg2")));
 
         // Assert
         Assert.Null(exception);
-    }
-
-    /// <summary>
-    ///     Tests that disconnect after disconnect is a no-op.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact(DisplayName = "DisconnectAsync Is Idempotent")]
-    public async Task DisconnectAsyncShouldBeIdempotent()
-    {
-        // Arrange
-        ISignalRClientGrain grain = TestClusterAccess.Cluster.Client.GetGrain<ISignalRClientGrain>("TestHub:conn5");
-        await grain.ConnectAsync("TestHub", "server1");
-
-        // Act
-        await grain.DisconnectAsync();
-        await grain.DisconnectAsync();
-        string? serverId = await grain.GetServerIdAsync();
-
-        // Assert
-        Assert.Null(serverId);
     }
 }

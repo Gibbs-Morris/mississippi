@@ -64,6 +64,15 @@ internal sealed class SignalRGroupGrain
 
     private ILogger<SignalRGroupGrain> Logger { get; }
 
+    private static string ExtractHubName(
+        string groupKey
+    )
+    {
+        // Group key format: "HubName:GroupName"
+        int separatorIndex = groupKey.IndexOf(':', StringComparison.Ordinal);
+        return separatorIndex >= 0 ? groupKey[..separatorIndex] : groupKey;
+    }
+
     /// <inheritdoc />
     public Task AddConnectionAsync(
         string connectionId
@@ -148,14 +157,5 @@ internal sealed class SignalRGroupGrain
         }
 
         Logger.SentToGroup(groupKey, method, state.ConnectionIds.Count);
-    }
-
-    private static string ExtractHubName(
-        string groupKey
-    )
-    {
-        // Group key format: "HubName:GroupName"
-        int separatorIndex = groupKey.IndexOf(':', StringComparison.Ordinal);
-        return separatorIndex >= 0 ? groupKey[..separatorIndex] : groupKey;
     }
 }

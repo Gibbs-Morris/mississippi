@@ -29,6 +29,16 @@ public sealed class SignalRServerDirectoryKeyTests
     }
 
     /// <summary>
+    ///     Verifies that keys exceeding max length throw ArgumentException.
+    /// </summary>
+    [Fact(DisplayName = "Constructor Throws When Key Exceeds Max Length")]
+    public void ConstructorShouldThrowWhenKeyExceedsMaxLength()
+    {
+        string longValue = new('a', 5000);
+        Assert.Throws<ArgumentException>(() => new SignalRServerDirectoryKey(longValue));
+    }
+
+    /// <summary>
     ///     Verifies that null value throws ArgumentNullException.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Value Is Null")]
@@ -38,13 +48,17 @@ public sealed class SignalRServerDirectoryKeyTests
     }
 
     /// <summary>
-    ///     Verifies that keys exceeding max length throw ArgumentException.
+    ///     Verifies Default is equal to a key created with "default".
     /// </summary>
-    [Fact(DisplayName = "Constructor Throws When Key Exceeds Max Length")]
-    public void ConstructorShouldThrowWhenKeyExceedsMaxLength()
+    [Fact(DisplayName = "Default Equals Key With Default Value")]
+    public void DefaultShouldEqualKeyWithDefaultValue()
     {
-        string longValue = new('a', 5000);
-        Assert.Throws<ArgumentException>(() => new SignalRServerDirectoryKey(longValue));
+        // Arrange
+        SignalRServerDirectoryKey defaultKey = SignalRServerDirectoryKey.Default;
+        SignalRServerDirectoryKey constructedKey = new("default");
+
+        // Assert
+        Assert.Equal(defaultKey, constructedKey);
     }
 
     /// <summary>
@@ -61,25 +75,17 @@ public sealed class SignalRServerDirectoryKeyTests
     }
 
     /// <summary>
-    ///     Verifies that Parse correctly parses a valid key string.
+    ///     Verifies record equality works correctly.
     /// </summary>
-    [Fact(DisplayName = "Parse Returns Valid Key")]
-    public void ParseShouldReturnValidKey()
+    [Fact(DisplayName = "Equality Works For Equal Keys")]
+    public void EqualityShouldWorkForEqualKeys()
     {
-        // Act
-        SignalRServerDirectoryKey key = SignalRServerDirectoryKey.Parse("custom");
+        // Arrange
+        SignalRServerDirectoryKey key1 = new("custom");
+        SignalRServerDirectoryKey key2 = new("custom");
 
         // Assert
-        Assert.Equal("custom", key.Value);
-    }
-
-    /// <summary>
-    ///     Verifies that Parse throws when value is null.
-    /// </summary>
-    [Fact(DisplayName = "Parse Throws When Value Is Null")]
-    public void ParseShouldThrowWhenValueIsNull()
-    {
-        Assert.Throws<ArgumentNullException>(() => SignalRServerDirectoryKey.Parse(null!));
+        Assert.Equal(key1, key2);
     }
 
     /// <summary>
@@ -96,36 +102,6 @@ public sealed class SignalRServerDirectoryKeyTests
 
         // Assert
         Assert.Equal("custom", result);
-    }
-
-    /// <summary>
-    ///     Verifies ToString returns correct value.
-    /// </summary>
-    [Fact(DisplayName = "ToString Returns Value")]
-    public void ToStringShouldReturnValue()
-    {
-        // Arrange
-        SignalRServerDirectoryKey key = new("custom");
-
-        // Act
-        string result = key.ToString();
-
-        // Assert
-        Assert.Equal("custom", result);
-    }
-
-    /// <summary>
-    ///     Verifies record equality works correctly.
-    /// </summary>
-    [Fact(DisplayName = "Equality Works For Equal Keys")]
-    public void EqualityShouldWorkForEqualKeys()
-    {
-        // Arrange
-        SignalRServerDirectoryKey key1 = new("custom");
-        SignalRServerDirectoryKey key2 = new("custom");
-
-        // Assert
-        Assert.Equal(key1, key2);
     }
 
     /// <summary>
@@ -159,16 +135,40 @@ public sealed class SignalRServerDirectoryKeyTests
     }
 
     /// <summary>
-    ///     Verifies Default is equal to a key created with "default".
+    ///     Verifies that Parse correctly parses a valid key string.
     /// </summary>
-    [Fact(DisplayName = "Default Equals Key With Default Value")]
-    public void DefaultShouldEqualKeyWithDefaultValue()
+    [Fact(DisplayName = "Parse Returns Valid Key")]
+    public void ParseShouldReturnValidKey()
     {
-        // Arrange
-        SignalRServerDirectoryKey defaultKey = SignalRServerDirectoryKey.Default;
-        SignalRServerDirectoryKey constructedKey = new("default");
+        // Act
+        SignalRServerDirectoryKey key = SignalRServerDirectoryKey.Parse("custom");
 
         // Assert
-        Assert.Equal(defaultKey, constructedKey);
+        Assert.Equal("custom", key.Value);
+    }
+
+    /// <summary>
+    ///     Verifies that Parse throws when value is null.
+    /// </summary>
+    [Fact(DisplayName = "Parse Throws When Value Is Null")]
+    public void ParseShouldThrowWhenValueIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => SignalRServerDirectoryKey.Parse(null!));
+    }
+
+    /// <summary>
+    ///     Verifies ToString returns correct value.
+    /// </summary>
+    [Fact(DisplayName = "ToString Returns Value")]
+    public void ToStringShouldReturnValue()
+    {
+        // Arrange
+        SignalRServerDirectoryKey key = new("custom");
+
+        // Act
+        string result = key.ToString();
+
+        // Assert
+        Assert.Equal("custom", result);
     }
 }

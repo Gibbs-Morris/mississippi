@@ -1,5 +1,6 @@
 using Aspire.Hosting;
 
+
 // Aqueduct AppHost - Minimal Aspire host for Aqueduct L2 testing.
 // Unlike Crescent, Aqueduct does not require Cosmos DB or Blob storage
 // because SignalR grains are ephemeral (no persistent state).

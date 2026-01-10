@@ -55,7 +55,8 @@ public sealed class InletHub : Hub<IInletHubClient>
     public override async Task OnConnectedAsync()
     {
         Logger.ClientConnected(Context.ConnectionId);
-        ISignalRClientGrain clientGrain = GrainFactory.GetGrain<ISignalRClientGrain>($"{InletHubConstants.HubName}:{Context.ConnectionId}");
+        ISignalRClientGrain clientGrain =
+            GrainFactory.GetGrain<ISignalRClientGrain>($"{InletHubConstants.HubName}:{Context.ConnectionId}");
         await clientGrain.ConnectAsync(InletHubConstants.HubName, GetServerId());
         await base.OnConnectedAsync();
     }
@@ -69,7 +70,8 @@ public sealed class InletHub : Hub<IInletHubClient>
         IInletSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IInletSubscriptionGrain>(Context.ConnectionId);
         await subscriptionGrain.ClearAllAsync();
-        ISignalRClientGrain clientGrain = GrainFactory.GetGrain<ISignalRClientGrain>($"{InletHubConstants.HubName}:{Context.ConnectionId}");
+        ISignalRClientGrain clientGrain =
+            GrainFactory.GetGrain<ISignalRClientGrain>($"{InletHubConstants.HubName}:{Context.ConnectionId}");
         await clientGrain.DisconnectAsync();
         await base.OnDisconnectedAsync(exception);
     }

@@ -1,5 +1,6 @@
 using Mississippi.Aqueduct.Abstractions.Grains;
 
+
 namespace Aqueduct.L2Tests;
 
 /// <summary>
@@ -20,10 +21,10 @@ public sealed class GroupGrainIntegrationTests
     ///     Initializes a new instance of the <see cref="GroupGrainIntegrationTests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Aqueduct fixture.</param>
-    public GroupGrainIntegrationTests(AqueductFixture fixture)
-    {
+    public GroupGrainIntegrationTests(
+        AqueductFixture fixture
+    ) =>
         this.fixture = fixture;
-    }
 
     /// <summary>
     ///     Verifies that adding a connection to a group succeeds.
@@ -36,7 +37,6 @@ public sealed class GroupGrainIntegrationTests
         string hubName = "TestHub";
         string groupName = Guid.NewGuid().ToString("N");
         string connectionId = Guid.NewGuid().ToString("N");
-
         ISignalRGroupGrain groupGrain = fixture.GetGroupGrain(hubName, groupName);
 
         // Act
@@ -44,6 +44,51 @@ public sealed class GroupGrainIntegrationTests
 
         // Assert
         await act.Should().NotThrowAsync();
+    }
+
+    /// <summary>
+    ///     Verifies that duplicate adds don't create duplicate connections.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task DuplicateAddDoesNotCreateDuplicates()
+    {
+        // Arrange
+        string hubName = "TestHub";
+        string groupName = Guid.NewGuid().ToString("N");
+        string connectionId = Guid.NewGuid().ToString("N");
+        ISignalRGroupGrain groupGrain = fixture.GetGroupGrain(hubName, groupName);
+
+        // Add the same connection multiple times
+        await groupGrain.AddConnectionAsync(connectionId);
+        await groupGrain.AddConnectionAsync(connectionId);
+        await groupGrain.AddConnectionAsync(connectionId);
+
+        // Act
+        ImmutableHashSet<string> connections = await groupGrain.GetConnectionsAsync();
+
+        // Assert - should only have one entry
+        connections.Should().HaveCount(1);
+        connections.Should().Contain(connectionId);
+    }
+
+    /// <summary>
+    ///     Verifies that an empty group returns empty connections.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task EmptyGroupReturnsNoConnections()
+    {
+        // Arrange
+        string hubName = "TestHub";
+        string groupName = Guid.NewGuid().ToString("N");
+        ISignalRGroupGrain groupGrain = fixture.GetGroupGrain(hubName, groupName);
+
+        // Act
+        ImmutableHashSet<string> connections = await groupGrain.GetConnectionsAsync();
+
+        // Assert
+        connections.Should().BeEmpty();
     }
 
     /// <summary>
@@ -58,7 +103,6 @@ public sealed class GroupGrainIntegrationTests
         string groupName = Guid.NewGuid().ToString("N");
         string connectionId1 = Guid.NewGuid().ToString("N");
         string connectionId2 = Guid.NewGuid().ToString("N");
-
         ISignalRGroupGrain groupGrain = fixture.GetGroupGrain(hubName, groupName);
         await groupGrain.AddConnectionAsync(connectionId1);
         await groupGrain.AddConnectionAsync(connectionId2);
@@ -84,7 +128,6 @@ public sealed class GroupGrainIntegrationTests
         string groupName = Guid.NewGuid().ToString("N");
         string connectionId1 = Guid.NewGuid().ToString("N");
         string connectionId2 = Guid.NewGuid().ToString("N");
-
         ISignalRGroupGrain groupGrain = fixture.GetGroupGrain(hubName, groupName);
         await groupGrain.AddConnectionAsync(connectionId1);
         await groupGrain.AddConnectionAsync(connectionId2);
@@ -100,22 +143,23 @@ public sealed class GroupGrainIntegrationTests
     }
 
     /// <summary>
-    ///     Verifies that an empty group returns empty connections.
+    ///     Verifies that removing a non-existent connection doesn't throw.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task EmptyGroupReturnsNoConnections()
+    public async Task RemoveNonExistentConnectionDoesNotThrow()
     {
         // Arrange
         string hubName = "TestHub";
         string groupName = Guid.NewGuid().ToString("N");
+        string connectionId = Guid.NewGuid().ToString("N");
         ISignalRGroupGrain groupGrain = fixture.GetGroupGrain(hubName, groupName);
 
-        // Act
-        ImmutableHashSet<string> connections = await groupGrain.GetConnectionsAsync();
+        // Act - remove connection that was never added
+        Func<Task> act = () => groupGrain.RemoveConnectionAsync(connectionId);
 
         // Assert
-        connections.Should().BeEmpty();
+        await act.Should().NotThrowAsync();
     }
 
     /// <summary>
@@ -132,54 +176,6 @@ public sealed class GroupGrainIntegrationTests
 
         // Act
         Func<Task> act = () => groupGrain.SendMessageAsync("Method", []);
-
-        // Assert
-        await act.Should().NotThrowAsync();
-    }
-
-    /// <summary>
-    ///     Verifies that duplicate adds don't create duplicate connections.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task DuplicateAddDoesNotCreateDuplicates()
-    {
-        // Arrange
-        string hubName = "TestHub";
-        string groupName = Guid.NewGuid().ToString("N");
-        string connectionId = Guid.NewGuid().ToString("N");
-
-        ISignalRGroupGrain groupGrain = fixture.GetGroupGrain(hubName, groupName);
-
-        // Add the same connection multiple times
-        await groupGrain.AddConnectionAsync(connectionId);
-        await groupGrain.AddConnectionAsync(connectionId);
-        await groupGrain.AddConnectionAsync(connectionId);
-
-        // Act
-        ImmutableHashSet<string> connections = await groupGrain.GetConnectionsAsync();
-
-        // Assert - should only have one entry
-        connections.Should().HaveCount(1);
-        connections.Should().Contain(connectionId);
-    }
-
-    /// <summary>
-    ///     Verifies that removing a non-existent connection doesn't throw.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task RemoveNonExistentConnectionDoesNotThrow()
-    {
-        // Arrange
-        string hubName = "TestHub";
-        string groupName = Guid.NewGuid().ToString("N");
-        string connectionId = Guid.NewGuid().ToString("N");
-
-        ISignalRGroupGrain groupGrain = fixture.GetGroupGrain(hubName, groupName);
-
-        // Act - remove connection that was never added
-        Func<Task> act = () => groupGrain.RemoveConnectionAsync(connectionId);
 
         // Assert
         await act.Should().NotThrowAsync();

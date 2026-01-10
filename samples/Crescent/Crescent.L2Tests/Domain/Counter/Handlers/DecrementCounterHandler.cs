@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 using Crescent.L2Tests.Domain.Counter.Commands;
 using Crescent.L2Tests.Domain.Counter.Events;
 

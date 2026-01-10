@@ -30,12 +30,12 @@ public sealed class SignalRGroupKeyTests
     }
 
     /// <summary>
-    ///     Verifies that null hub name throws ArgumentNullException.
+    ///     Verifies that group name containing separator throws ArgumentException.
     /// </summary>
-    [Fact(DisplayName = "Constructor Throws When HubName Is Null")]
-    public void ConstructorShouldThrowWhenHubNameIsNull()
+    [Fact(DisplayName = "Constructor Throws When GroupName Contains Separator")]
+    public void ConstructorShouldThrowWhenGroupNameContainsSeparator()
     {
-        Assert.Throws<ArgumentNullException>(() => new SignalRGroupKey(null!, "group1"));
+        Assert.Throws<ArgumentException>(() => new SignalRGroupKey("TestHub", "group|1"));
     }
 
     /// <summary>
@@ -57,12 +57,12 @@ public sealed class SignalRGroupKeyTests
     }
 
     /// <summary>
-    ///     Verifies that group name containing separator throws ArgumentException.
+    ///     Verifies that null hub name throws ArgumentNullException.
     /// </summary>
-    [Fact(DisplayName = "Constructor Throws When GroupName Contains Separator")]
-    public void ConstructorShouldThrowWhenGroupNameContainsSeparator()
+    [Fact(DisplayName = "Constructor Throws When HubName Is Null")]
+    public void ConstructorShouldThrowWhenHubNameIsNull()
     {
-        Assert.Throws<ArgumentException>(() => new SignalRGroupKey("TestHub", "group|1"));
+        Assert.Throws<ArgumentNullException>(() => new SignalRGroupKey(null!, "group1"));
     }
 
     /// <summary>
@@ -77,35 +77,17 @@ public sealed class SignalRGroupKeyTests
     }
 
     /// <summary>
-    ///     Verifies that Parse correctly parses a valid key string.
+    ///     Verifies record equality works correctly.
     /// </summary>
-    [Fact(DisplayName = "Parse Returns Valid Key")]
-    public void ParseShouldReturnValidKey()
+    [Fact(DisplayName = "Equality Works For Equal Keys")]
+    public void EqualityShouldWorkForEqualKeys()
     {
-        // Act
-        SignalRGroupKey key = SignalRGroupKey.Parse("TestHub|group1");
+        // Arrange
+        SignalRGroupKey key1 = new("TestHub", "group1");
+        SignalRGroupKey key2 = new("TestHub", "group1");
 
         // Assert
-        Assert.Equal("TestHub", key.HubName);
-        Assert.Equal("group1", key.GroupName);
-    }
-
-    /// <summary>
-    ///     Verifies that Parse throws when value is null.
-    /// </summary>
-    [Fact(DisplayName = "Parse Throws When Value Is Null")]
-    public void ParseShouldThrowWhenValueIsNull()
-    {
-        Assert.Throws<ArgumentNullException>(() => SignalRGroupKey.Parse(null!));
-    }
-
-    /// <summary>
-    ///     Verifies that Parse throws when separator is missing.
-    /// </summary>
-    [Fact(DisplayName = "Parse Throws When Separator Is Missing")]
-    public void ParseShouldThrowWhenSeparatorIsMissing()
-    {
-        Assert.Throws<FormatException>(() => SignalRGroupKey.Parse("TestHubgroup1"));
+        Assert.Equal(key1, key2);
     }
 
     /// <summary>
@@ -122,36 +104,6 @@ public sealed class SignalRGroupKeyTests
 
         // Assert
         Assert.Equal("TestHub|group1", result);
-    }
-
-    /// <summary>
-    ///     Verifies ToString returns correct format.
-    /// </summary>
-    [Fact(DisplayName = "ToString Returns Correct Format")]
-    public void ToStringShouldReturnCorrectFormat()
-    {
-        // Arrange
-        SignalRGroupKey key = new("TestHub", "group1");
-
-        // Act
-        string result = key.ToString();
-
-        // Assert
-        Assert.Equal("TestHub|group1", result);
-    }
-
-    /// <summary>
-    ///     Verifies record equality works correctly.
-    /// </summary>
-    [Fact(DisplayName = "Equality Works For Equal Keys")]
-    public void EqualityShouldWorkForEqualKeys()
-    {
-        // Arrange
-        SignalRGroupKey key1 = new("TestHub", "group1");
-        SignalRGroupKey key2 = new("TestHub", "group1");
-
-        // Assert
-        Assert.Equal(key1, key2);
     }
 
     /// <summary>
@@ -182,5 +134,53 @@ public sealed class SignalRGroupKeyTests
 
         // Assert
         Assert.Equal(original, parsed);
+    }
+
+    /// <summary>
+    ///     Verifies that Parse correctly parses a valid key string.
+    /// </summary>
+    [Fact(DisplayName = "Parse Returns Valid Key")]
+    public void ParseShouldReturnValidKey()
+    {
+        // Act
+        SignalRGroupKey key = SignalRGroupKey.Parse("TestHub|group1");
+
+        // Assert
+        Assert.Equal("TestHub", key.HubName);
+        Assert.Equal("group1", key.GroupName);
+    }
+
+    /// <summary>
+    ///     Verifies that Parse throws when separator is missing.
+    /// </summary>
+    [Fact(DisplayName = "Parse Throws When Separator Is Missing")]
+    public void ParseShouldThrowWhenSeparatorIsMissing()
+    {
+        Assert.Throws<FormatException>(() => SignalRGroupKey.Parse("TestHubgroup1"));
+    }
+
+    /// <summary>
+    ///     Verifies that Parse throws when value is null.
+    /// </summary>
+    [Fact(DisplayName = "Parse Throws When Value Is Null")]
+    public void ParseShouldThrowWhenValueIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => SignalRGroupKey.Parse(null!));
+    }
+
+    /// <summary>
+    ///     Verifies ToString returns correct format.
+    /// </summary>
+    [Fact(DisplayName = "ToString Returns Correct Format")]
+    public void ToStringShouldReturnCorrectFormat()
+    {
+        // Arrange
+        SignalRGroupKey key = new("TestHub", "group1");
+
+        // Act
+        string result = key.ToString();
+
+        // Assert
+        Assert.Equal("TestHub|group1", result);
     }
 }

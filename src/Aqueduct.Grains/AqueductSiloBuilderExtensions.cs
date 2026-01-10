@@ -52,7 +52,6 @@ public static class AqueductSiloBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(siloBuilder);
         ArgumentNullException.ThrowIfNull(configureOptions);
-
         AqueductSiloOptions options = new(siloBuilder);
         configureOptions(options);
 
@@ -65,7 +64,6 @@ public static class AqueductSiloBuilderExtensions
             orleanOptions.HeartbeatIntervalMinutes = options.HeartbeatIntervalMinutes;
             orleanOptions.DeadServerTimeoutMultiplier = options.DeadServerTimeoutMultiplier;
         });
-
         return siloBuilder;
     }
 

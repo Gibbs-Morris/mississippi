@@ -30,12 +30,12 @@ public sealed class SignalRClientKeyTests
     }
 
     /// <summary>
-    ///     Verifies that null hub name throws ArgumentNullException.
+    ///     Verifies that connection ID containing separator throws ArgumentException.
     /// </summary>
-    [Fact(DisplayName = "Constructor Throws When HubName Is Null")]
-    public void ConstructorShouldThrowWhenHubNameIsNull()
+    [Fact(DisplayName = "Constructor Throws When ConnectionId Contains Separator")]
+    public void ConstructorShouldThrowWhenConnectionIdContainsSeparator()
     {
-        Assert.Throws<ArgumentNullException>(() => new SignalRClientKey(null!, "conn123"));
+        Assert.Throws<ArgumentException>(() => new SignalRClientKey("TestHub", "conn|123"));
     }
 
     /// <summary>
@@ -57,12 +57,12 @@ public sealed class SignalRClientKeyTests
     }
 
     /// <summary>
-    ///     Verifies that connection ID containing separator throws ArgumentException.
+    ///     Verifies that null hub name throws ArgumentNullException.
     /// </summary>
-    [Fact(DisplayName = "Constructor Throws When ConnectionId Contains Separator")]
-    public void ConstructorShouldThrowWhenConnectionIdContainsSeparator()
+    [Fact(DisplayName = "Constructor Throws When HubName Is Null")]
+    public void ConstructorShouldThrowWhenHubNameIsNull()
     {
-        Assert.Throws<ArgumentException>(() => new SignalRClientKey("TestHub", "conn|123"));
+        Assert.Throws<ArgumentNullException>(() => new SignalRClientKey(null!, "conn123"));
     }
 
     /// <summary>
@@ -77,35 +77,17 @@ public sealed class SignalRClientKeyTests
     }
 
     /// <summary>
-    ///     Verifies that Parse correctly parses a valid key string.
+    ///     Verifies record equality works correctly.
     /// </summary>
-    [Fact(DisplayName = "Parse Returns Valid Key")]
-    public void ParseShouldReturnValidKey()
+    [Fact(DisplayName = "Equality Works For Equal Keys")]
+    public void EqualityShouldWorkForEqualKeys()
     {
-        // Act
-        SignalRClientKey key = SignalRClientKey.Parse("TestHub|conn123");
+        // Arrange
+        SignalRClientKey key1 = new("TestHub", "conn123");
+        SignalRClientKey key2 = new("TestHub", "conn123");
 
         // Assert
-        Assert.Equal("TestHub", key.HubName);
-        Assert.Equal("conn123", key.ConnectionId);
-    }
-
-    /// <summary>
-    ///     Verifies that Parse throws when value is null.
-    /// </summary>
-    [Fact(DisplayName = "Parse Throws When Value Is Null")]
-    public void ParseShouldThrowWhenValueIsNull()
-    {
-        Assert.Throws<ArgumentNullException>(() => SignalRClientKey.Parse(null!));
-    }
-
-    /// <summary>
-    ///     Verifies that Parse throws when separator is missing.
-    /// </summary>
-    [Fact(DisplayName = "Parse Throws When Separator Is Missing")]
-    public void ParseShouldThrowWhenSeparatorIsMissing()
-    {
-        Assert.Throws<FormatException>(() => SignalRClientKey.Parse("TestHubconn123"));
+        Assert.Equal(key1, key2);
     }
 
     /// <summary>
@@ -122,36 +104,6 @@ public sealed class SignalRClientKeyTests
 
         // Assert
         Assert.Equal("TestHub|conn123", result);
-    }
-
-    /// <summary>
-    ///     Verifies ToString returns correct format.
-    /// </summary>
-    [Fact(DisplayName = "ToString Returns Correct Format")]
-    public void ToStringShouldReturnCorrectFormat()
-    {
-        // Arrange
-        SignalRClientKey key = new("TestHub", "conn123");
-
-        // Act
-        string result = key.ToString();
-
-        // Assert
-        Assert.Equal("TestHub|conn123", result);
-    }
-
-    /// <summary>
-    ///     Verifies record equality works correctly.
-    /// </summary>
-    [Fact(DisplayName = "Equality Works For Equal Keys")]
-    public void EqualityShouldWorkForEqualKeys()
-    {
-        // Arrange
-        SignalRClientKey key1 = new("TestHub", "conn123");
-        SignalRClientKey key2 = new("TestHub", "conn123");
-
-        // Assert
-        Assert.Equal(key1, key2);
     }
 
     /// <summary>
@@ -182,5 +134,53 @@ public sealed class SignalRClientKeyTests
 
         // Assert
         Assert.Equal(original, parsed);
+    }
+
+    /// <summary>
+    ///     Verifies that Parse correctly parses a valid key string.
+    /// </summary>
+    [Fact(DisplayName = "Parse Returns Valid Key")]
+    public void ParseShouldReturnValidKey()
+    {
+        // Act
+        SignalRClientKey key = SignalRClientKey.Parse("TestHub|conn123");
+
+        // Assert
+        Assert.Equal("TestHub", key.HubName);
+        Assert.Equal("conn123", key.ConnectionId);
+    }
+
+    /// <summary>
+    ///     Verifies that Parse throws when separator is missing.
+    /// </summary>
+    [Fact(DisplayName = "Parse Throws When Separator Is Missing")]
+    public void ParseShouldThrowWhenSeparatorIsMissing()
+    {
+        Assert.Throws<FormatException>(() => SignalRClientKey.Parse("TestHubconn123"));
+    }
+
+    /// <summary>
+    ///     Verifies that Parse throws when value is null.
+    /// </summary>
+    [Fact(DisplayName = "Parse Throws When Value Is Null")]
+    public void ParseShouldThrowWhenValueIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => SignalRClientKey.Parse(null!));
+    }
+
+    /// <summary>
+    ///     Verifies ToString returns correct format.
+    /// </summary>
+    [Fact(DisplayName = "ToString Returns Correct Format")]
+    public void ToStringShouldReturnCorrectFormat()
+    {
+        // Arrange
+        SignalRClientKey key = new("TestHub", "conn123");
+
+        // Act
+        string result = key.ToString();
+
+        // Assert
+        Assert.Equal("TestHub|conn123", result);
     }
 }

@@ -5,8 +5,6 @@ using Crescent.L2Tests.Domain.Counter.Reducers;
 using Crescent.L2Tests.Domain.CounterSummary;
 using Crescent.L2Tests.Domain.CounterSummary.Reducers;
 
-using Microsoft.Extensions.DependencyInjection;
-
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Reducers;
 using Mississippi.EventSourcing.Snapshots;

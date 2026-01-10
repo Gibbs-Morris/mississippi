@@ -15,25 +15,23 @@ public sealed class SampleTests
     private readonly CrescentFixture fixture;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="SampleTests"/> class.
+    ///     Initializes a new instance of the <see cref="SampleTests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Aspire fixture.</param>
-    public SampleTests(CrescentFixture fixture)
-    {
+    public SampleTests(
+        CrescentFixture fixture
+    ) =>
         this.fixture = fixture;
-    }
 
     /// <summary>
-    ///     Verifies the Crescent fixture initializes successfully with all resources.
+    ///     Verifies Blob storage connection string is available.
     /// </summary>
     [Fact]
-    public void FixtureShouldBeInitialized()
+    public void BlobConnectionStringShouldBeAvailable()
     {
         // Assert
-        fixture.IsInitialized.Should().BeTrue(
-            because: "the Crescent AppHost should start successfully with all emulators");
-        fixture.InitializationError.Should().BeNull(
-            because: "there should be no initialization errors");
+        fixture.BlobConnectionString.Should()
+            .NotBeNullOrEmpty("the Azurite emulator should provide a connection string");
     }
 
     /// <summary>
@@ -43,21 +41,20 @@ public sealed class SampleTests
     public void CosmosConnectionStringShouldBeAvailable()
     {
         // Assert
-        fixture.CosmosConnectionString.Should().NotBeNullOrEmpty(
-            because: "the Cosmos DB emulator should provide a connection string");
-        fixture.CosmosConnectionString.Should().Contain(
-            "AccountEndpoint=",
-            because: "the connection string should contain an account endpoint");
+        fixture.CosmosConnectionString.Should()
+            .NotBeNullOrEmpty("the Cosmos DB emulator should provide a connection string");
+        fixture.CosmosConnectionString.Should()
+            .Contain("AccountEndpoint=", "the connection string should contain an account endpoint");
     }
 
     /// <summary>
-    ///     Verifies Blob storage connection string is available.
+    ///     Verifies the Crescent fixture initializes successfully with all resources.
     /// </summary>
     [Fact]
-    public void BlobConnectionStringShouldBeAvailable()
+    public void FixtureShouldBeInitialized()
     {
         // Assert
-        fixture.BlobConnectionString.Should().NotBeNullOrEmpty(
-            because: "the Azurite emulator should provide a connection string");
+        fixture.IsInitialized.Should().BeTrue("the Crescent AppHost should start successfully with all emulators");
+        fixture.InitializationError.Should().BeNull("there should be no initialization errors");
     }
 }

@@ -25,10 +25,8 @@ public sealed class AqueductSiloOptions
     /// <param name="siloBuilder">The silo builder to configure.</param>
     internal AqueductSiloOptions(
         ISiloBuilder siloBuilder
-    )
-    {
+    ) =>
         this.siloBuilder = siloBuilder ?? throw new ArgumentNullException(nameof(siloBuilder));
-    }
 
     /// <summary>
     ///     Gets or sets the stream namespace for broadcasting to all clients.
@@ -85,10 +83,7 @@ public sealed class AqueductSiloOptions
     ///         or Apache Kafka.
     ///     </para>
     /// </remarks>
-    public AqueductSiloOptions UseMemoryStreams()
-    {
-        return UseMemoryStreams(StreamProviderName, "PubSubStore");
-    }
+    public AqueductSiloOptions UseMemoryStreams() => UseMemoryStreams(StreamProviderName, "PubSubStore");
 
     /// <summary>
     ///     Configures in-memory streams with custom names for development and testing scenarios.
@@ -110,11 +105,9 @@ public sealed class AqueductSiloOptions
     {
         ArgumentException.ThrowIfNullOrEmpty(streamProviderName);
         ArgumentException.ThrowIfNullOrEmpty(pubSubStoreName);
-
         StreamProviderName = streamProviderName;
         siloBuilder.AddMemoryStreams(streamProviderName);
         siloBuilder.AddMemoryGrainStorage(pubSubStoreName);
-
         return this;
     }
 }

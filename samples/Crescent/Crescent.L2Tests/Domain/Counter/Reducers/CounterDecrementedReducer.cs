@@ -1,5 +1,3 @@
-using System;
-
 using Crescent.L2Tests.Domain.Counter.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
