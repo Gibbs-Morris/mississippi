@@ -17,9 +17,9 @@ public sealed class PlaywrightFixture
       IDisposable
 #pragma warning restore CA1515
 {
-    // Cosmos DB emulator cold start can take several minutes (11 partitions)
-    // The emulator needs ~2-3 min for a cold start, plus time for the server to initialize Orleans
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(10);
+    // Cosmos DB emulator cold start can take 2-3 minutes for 11 partitions
+    // 5 minutes is sufficient buffer for emulator + Orleans initialization
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
 
     private DistributedApplication? app;
 
@@ -84,10 +84,10 @@ public sealed class PlaywrightFixture
     }
 
     /// <inheritdoc />
-#pragma warning disable IDISP001 // Dispose created - appHost not disposed directly, BuildAsync returns different app instance that is disposed
     public async Task InitializeAsync()
     {
         // Start Aspire AppHost
+#pragma warning disable IDISP001 // Dispose created - appHost not disposed directly, BuildAsync returns different app instance
         IDistributedApplicationTestingBuilder appHost = await DistributedApplicationTestingBuilder
             .CreateAsync<Cascade_AppHost>();
 #pragma warning restore IDISP001
@@ -101,8 +101,7 @@ public sealed class PlaywrightFixture
         {
             clientBuilder.AddStandardResilienceHandler();
         });
-        DistributedApplication builtApp = await appHost.BuildAsync().WaitAsync(DefaultTimeout);
-        app = builtApp;
+        app = await appHost.BuildAsync().WaitAsync(DefaultTimeout);
         await app.StartAsync().WaitAsync(DefaultTimeout);
 
         // Wait for container resources to be healthy first (cosmos emulator takes ~30+ seconds)
