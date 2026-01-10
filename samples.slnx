@@ -110,4 +110,22 @@
         <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
         <Project Path="tests\EventSourcing.UxProjections.Api.Generators.L0Tests\EventSourcing.UxProjections.Api.Generators.L0Tests.csproj" />
     </Folder>
+    <Folder Name="/Tests/Aqueduct/">
+        <Project Path="tests\Aqueduct.Abstractions.L0Tests\Aqueduct.Abstractions.L0Tests.csproj" />
+        <Project Path="tests\Aqueduct.Grains.L0Tests\Aqueduct.Grains.L0Tests.csproj" />
+        <Project Path="tests\Aqueduct.L0Tests\Aqueduct.L0Tests.csproj" />
+    </Folder>
+    <Folder Name="/Tests/Reservoir/">
+        <Project Path="tests\Reservoir.Abstractions.L0Tests\Reservoir.Abstractions.L0Tests.csproj" />
+        <Project Path="tests\Reservoir.Blazor.L0Tests\Reservoir.Blazor.L0Tests.csproj" />
+        <Project Path="tests\Reservoir.L0Tests\Reservoir.L0Tests.csproj" />
+    </Folder>
+    <Folder Name="/Tests/Inlet/">
+        <Project Path="tests\Inlet.Abstractions.L0Tests\Inlet.Abstractions.L0Tests.csproj" />
+        <Project Path="tests\Inlet.Blazor.L0Tests\Inlet.Blazor.L0Tests.csproj" />
+        <Project Path="tests\Inlet.InProcess.L0Tests\Inlet.InProcess.L0Tests.csproj" />
+        <Project Path="tests\Inlet.L0Tests\Inlet.L0Tests.csproj" />
+        <Project Path="tests\Inlet.Orleans.L0Tests\Inlet.Orleans.L0Tests.csproj" />
+        <Project Path="tests\Inlet.Orleans.SignalR.L0Tests\Inlet.Orleans.SignalR.L0Tests.csproj" />
+    </Folder>
 </Solution>

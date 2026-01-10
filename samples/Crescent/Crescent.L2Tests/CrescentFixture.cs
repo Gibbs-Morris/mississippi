@@ -230,7 +230,7 @@ public sealed class CrescentFixture
         {
             Console.WriteLine("[CreateCosmosClient] Using HTTPS - adding certificate bypass for self-signed cert");
 #pragma warning disable CA5400 // HttpClient certificate check - emulator uses self-signed cert
-#pragma warning disable IDISP014 // Use a single instance of HttpClient - CosmosClient manages its own lifecycle
+#pragma warning disable IDISP014, IDISP001 // Use a single instance of HttpClient - CosmosClient manages its own lifecycle
             options.HttpClientFactory = () =>
             {
                 Console.WriteLine("[CreateCosmosClient] HttpClientFactory invoked - creating handler with cert bypass");
@@ -241,7 +241,7 @@ public sealed class CrescentFixture
                 };
                 return new(handler);
             };
-#pragma warning restore IDISP014
+#pragma warning restore IDISP014, IDISP001
 #pragma warning restore CA5400
         }
         else
