@@ -79,15 +79,6 @@ public abstract class TestBase
                 Timeout = 60000,
             });
 
-        // Take debug screenshot to see what happened after submit
-        string debugPath = Path.Combine(Path.GetTempPath(), $"cascade-login-{Guid.NewGuid()}.png");
-        await page.ScreenshotAsync(
-            new()
-            {
-                Path = debugPath,
-                FullPage = true,
-            });
-
         // Wait for the channels page to render with the chat container and channel list
         // This confirms: 1) navigation happened, 2) user is authenticated, 3) ChannelList rendered
         await page.WaitForSelectorAsync(
