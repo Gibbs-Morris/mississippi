@@ -1100,14 +1100,6 @@
           "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
-      "Mississippi.Aqueduct.AppHost": {
-        "type": "Project",
-        "dependencies": {
-          "Aspire.Dashboard.Sdk.win-x64": "[13.1.0, )",
-          "Aspire.Hosting.AppHost": "[13.1.0, )",
-          "Aspire.Hosting.Orchestration.win-x64": "[13.1.0, )"
-        }
-      },
       "Mississippi.Aqueduct.Grains": {
         "type": "Project",
         "dependencies": {
@@ -1115,6 +1107,14 @@
           "Microsoft.Orleans.Server": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Aqueduct.L2Tests.AppHost": {
+        "type": "Project",
+        "dependencies": {
+          "Aspire.Dashboard.Sdk.win-x64": "[13.1.0, )",
+          "Aspire.Hosting.AppHost": "[13.1.0, )",
+          "Aspire.Hosting.Orchestration.win-x64": "[13.1.0, )"
         }
       },
       "Aspire.Hosting.AppHost": {

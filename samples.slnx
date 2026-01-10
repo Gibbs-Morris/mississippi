@@ -18,10 +18,6 @@
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
         <Project Path="samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj" />
     </Folder>
-    <Folder Name="/Samples/Aqueduct/">
-        <Project Path="samples\Aqueduct\Aqueduct.AppHost\Aqueduct.AppHost.csproj" />
-        <Project Path="samples\Aqueduct\Aqueduct.L2Tests\Aqueduct.L2Tests.csproj" />
-    </Folder>
     <Folder Name="/Framework/" />
 
     <Folder Name="/Framework/Core/">

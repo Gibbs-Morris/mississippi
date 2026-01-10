@@ -28,12 +28,12 @@
 
   <ItemGroup>
     <!-- Aqueduct projects under test -->
-    <ProjectReference Include="..\..\..\src\Aqueduct\Aqueduct.csproj" />
-    <ProjectReference Include="..\..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+    <ProjectReference Include="..\..\src\Aqueduct\Aqueduct.csproj" />
+    <ProjectReference Include="..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Aqueduct.AppHost\Aqueduct.AppHost.csproj" />
+    <ProjectReference Include="..\Aqueduct.L2Tests.AppHost\Aqueduct.L2Tests.AppHost.csproj" />
   </ItemGroup>
 </Project>

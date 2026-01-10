@@ -1,7 +1,7 @@
 using Mississippi.Aqueduct.Abstractions.Grains;
 
 
-namespace Aqueduct.L2Tests;
+namespace Mississippi.Aqueduct.L2Tests;
 
 /// <summary>
 ///     Integration tests for SignalR group grain behavior.

@@ -98,7 +98,7 @@ internal sealed class InProcessProjectionNotifier : IServerProjectionNotifier
             collection.Remove(subscription);
             if (collection.IsEmpty)
             {
-                Subscriptions.TryRemove(key, out SubscriptionCollection _);
+                Subscriptions.TryRemove(key, out SubscriptionCollection? _);
             }
         }
     }
