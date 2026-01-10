@@ -20,7 +20,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         They are discovered at aggregate activation time.
 ///     </para>
 /// </remarks>
-public abstract class CommandHandler<TCommand, TSnapshot> : ICommandHandler<TCommand, TSnapshot>
+public abstract class CommandHandlerBase<TCommand, TSnapshot> : ICommandHandler<TCommand, TSnapshot>
 {
     /// <inheritdoc />
     public OperationResult<IReadOnlyList<object>> Handle(

@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.OnlineUsers.Reducers;
 ///     Reduces the <see cref="UserWentOnline" /> event to update the online status
 ///     in the <see cref="OnlineUsersProjection" />.
 /// </summary>
-internal sealed class UserWentOnlineProjectionReducer : Reducer<UserWentOnline, OnlineUsersProjection>
+internal sealed class UserWentOnlineProjectionReducer : ReducerBase<UserWentOnline, OnlineUsersProjection>
 {
     /// <inheritdoc />
     protected override OnlineUsersProjection ReduceCore(

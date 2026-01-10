@@ -9,7 +9,7 @@ namespace Crescent.L2Tests.Domain.CounterSummary.Reducers;
 ///     Reducer that transforms <see cref="CounterInitialized" /> events into
 ///     <see cref="CounterSummaryProjection" /> state.
 /// </summary>
-internal sealed class CounterSummaryInitializedReducer : Reducer<CounterInitialized, CounterSummaryProjection>
+internal sealed class CounterSummaryInitializedReducer : ReducerBase<CounterInitialized, CounterSummaryProjection>
 {
     /// <inheritdoc />
     protected override CounterSummaryProjection ReduceCore(

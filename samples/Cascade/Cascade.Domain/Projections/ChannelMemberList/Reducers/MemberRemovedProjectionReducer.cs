@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.ChannelMemberList.Reducers;
 ///     Reduces the <see cref="MemberRemoved" /> event to remove a member
 ///     from the <see cref="ChannelMemberListProjection" />.
 /// </summary>
-internal sealed class MemberRemovedProjectionReducer : Reducer<MemberRemoved, ChannelMemberListProjection>
+internal sealed class MemberRemovedProjectionReducer : ReducerBase<MemberRemoved, ChannelMemberListProjection>
 {
     /// <inheritdoc />
     protected override ChannelMemberListProjection ReduceCore(

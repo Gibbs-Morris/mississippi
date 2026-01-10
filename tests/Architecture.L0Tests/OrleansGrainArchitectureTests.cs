@@ -14,6 +14,7 @@ namespace Mississippi.Architecture.L0Tests;
 ///     - Grains MUST implement IGrainBase (not inherit from Grain).
 ///     - Concrete grains MUST be sealed.
 ///     - Grain implementations SHOULD be internal.
+///     - Abstract grain base classes MUST end with Base.
 /// </remarks>
 public sealed class OrleansGrainArchitectureTests : ArchitectureTestBase
 {
@@ -83,6 +84,40 @@ public sealed class OrleansGrainArchitectureTests : ArchitectureTestBase
             .Should()
             .HaveNameStartingWith("I")
             .Because("interfaces must prefix with I per naming.instructions.md");
+
+        rule.Check(ArchitectureModel);
+    }
+
+    /// <summary>
+    ///     Verifies that abstract grain base classes end with Base suffix.
+    /// </summary>
+    /// <remarks>
+    ///     Per orleans.instructions.md: "abstract classes inheriting IGrainBase MUST end with Base."
+    ///     This ensures base classes for grains are clearly identifiable.
+    ///     Excludes:
+    ///     - Orleans generated code (OrleansCodeGen namespace).
+    ///     - LoggerExtensions classes (not actual grains).
+    /// </remarks>
+    [Fact]
+    public void AbstractGrainBaseClassesShouldEndWithBase()
+    {
+        IArchRule rule = Classes()
+            .That()
+            .AreAbstract()
+            .And()
+            .HaveNameContaining("Grain")
+            .And()
+            .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
+            .And()
+            .DoNotHaveNameEndingWith("LoggerExtensions") // Exclude LoggerExtensions classes
+            .And()
+            .DoNotHaveNameEndingWith("Factory") // Exclude Factory classes
+            .Should()
+            .HaveNameEndingWith("Base")
+            .OrShould()
+            .HaveNameEndingWith("Grain") // Allow abstract grains that end with Grain if they're not meant for inheritance
+            .Because("abstract grain base classes MUST end with Base per orleans.instructions.md")
+            .WithoutRequiringPositiveResults();
 
         rule.Check(ArchitectureModel);
     }

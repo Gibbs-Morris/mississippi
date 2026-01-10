@@ -21,24 +21,4 @@ internal static class KnownViolations
         "ICosmosRepository",
         "ISnapshotContainerOperations"
     ];
-
-    /// <summary>
-    ///     Gets the interfaces in Abstractions namespaces that are internal (should be public).
-    ///     See abstractions-projects.instructions.md: abstractions expose public contracts.
-    ///     These are intentionally internal for implementation-detail contracts.
-    /// </summary>
-    internal static IReadOnlyList<string> InternalAbstractionInterfaces { get; } =
-    [
-        "IStorageItemSerializer",
-        "IStorageReader",
-        "IStorageItem",
-        "IStorageQueryExecutor",
-        "ISnapshotContainer",
-        "ISnapshotContainerFactory",
-        "ISnapshotCosmosRepository",
-        "IBrookRecoveryService",
-        "ICosmosRepository",
-        "IEventBrookAppender",
-        "IEventBrookReader"
-    ];
 }

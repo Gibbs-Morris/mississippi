@@ -8,7 +8,6 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 
 using Moq;
 

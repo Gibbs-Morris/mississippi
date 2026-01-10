@@ -9,7 +9,7 @@ namespace Crescent.L2Tests.Domain.Counter.Handlers;
 /// <summary>
 ///     Command handler for decrementing a counter.
 /// </summary>
-internal sealed class DecrementCounterHandler : CommandHandler<DecrementCounter, CounterAggregate>
+internal sealed class DecrementCounterHandler : CommandHandlerBase<DecrementCounter, CounterAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

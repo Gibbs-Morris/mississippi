@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
+namespace Mississippi.EventSourcing.Snapshots.Cosmos;
 
 /// <summary>
 ///     Defines Cosmos-backed snapshot persistence operations.

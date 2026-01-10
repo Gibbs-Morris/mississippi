@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.ChannelMessages.Reducers;
 ///     Reduces the <see cref="MessageSent" /> event to add a message
 ///     to the <see cref="ChannelMessagesProjection" />.
 /// </summary>
-internal sealed class MessageSentProjectionReducer : Reducer<MessageSent, ChannelMessagesProjection>
+internal sealed class MessageSentProjectionReducer : ReducerBase<MessageSent, ChannelMessagesProjection>
 {
     /// <inheritdoc />
     protected override ChannelMessagesProjection ReduceCore(

@@ -4,7 +4,7 @@ using System.Threading;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
+namespace Mississippi.EventSourcing.Brooks.Cosmos;
 
 /// <summary>
 ///     Provides functionality for reading events from Cosmos DB event brooks.

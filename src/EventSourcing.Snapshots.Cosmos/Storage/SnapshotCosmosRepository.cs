@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;

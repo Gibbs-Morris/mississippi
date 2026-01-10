@@ -12,7 +12,7 @@ namespace Cascade.Domain.User.Handlers;
 /// <summary>
 ///     Command handler for recording that a user left a channel.
 /// </summary>
-internal sealed class LeaveChannelHandler : CommandHandler<LeaveChannel, UserAggregate>
+internal sealed class LeaveChannelHandler : CommandHandlerBase<LeaveChannel, UserAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

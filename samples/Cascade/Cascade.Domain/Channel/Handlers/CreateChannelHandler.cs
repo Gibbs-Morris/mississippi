@@ -12,7 +12,7 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="CreateChannel" /> command.
 /// </summary>
-internal sealed class CreateChannelHandler : CommandHandler<CreateChannel, ChannelAggregate>
+internal sealed class CreateChannelHandler : CommandHandlerBase<CreateChannel, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

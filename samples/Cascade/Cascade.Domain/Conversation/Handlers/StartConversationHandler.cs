@@ -12,7 +12,7 @@ namespace Cascade.Domain.Conversation.Handlers;
 /// <summary>
 ///     Handles the <see cref="StartConversation" /> command.
 /// </summary>
-internal sealed class StartConversationHandler : CommandHandler<StartConversation, ConversationAggregate>
+internal sealed class StartConversationHandler : CommandHandlerBase<StartConversation, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.ChannelMemberList.Reducers;
 ///     Reduces the <see cref="ChannelCreated" /> event to produce an initial
 ///     <see cref="ChannelMemberListProjection" />.
 /// </summary>
-internal sealed class ChannelCreatedProjectionReducer : Reducer<ChannelCreated, ChannelMemberListProjection>
+internal sealed class ChannelCreatedProjectionReducer : ReducerBase<ChannelCreated, ChannelMemberListProjection>
 {
     /// <inheritdoc />
     protected override ChannelMemberListProjection ReduceCore(

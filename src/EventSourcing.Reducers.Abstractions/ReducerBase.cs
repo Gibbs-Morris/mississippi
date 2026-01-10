@@ -8,7 +8,7 @@ namespace Mississippi.EventSourcing.Reducers.Abstractions;
 /// </summary>
 /// <typeparam name="TEvent">The event type consumed by the reducer.</typeparam>
 /// <typeparam name="TProjection">The projection type produced by the reducer.</typeparam>
-public abstract class Reducer<TEvent, TProjection> : IReducer<TEvent, TProjection>
+public abstract class ReducerBase<TEvent, TProjection> : IReducer<TEvent, TProjection>
 {
     /// <inheritdoc />
     public TProjection Reduce(

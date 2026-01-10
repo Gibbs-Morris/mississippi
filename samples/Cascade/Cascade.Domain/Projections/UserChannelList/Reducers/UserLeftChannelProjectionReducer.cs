@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.UserChannelList.Reducers;
 ///     Reduces the <see cref="UserLeftChannel" /> event to remove a channel
 ///     from the <see cref="UserChannelListProjection" />.
 /// </summary>
-internal sealed class UserLeftChannelProjectionReducer : Reducer<UserLeftChannel, UserChannelListProjection>
+internal sealed class UserLeftChannelProjectionReducer : ReducerBase<UserLeftChannel, UserChannelListProjection>
 {
     /// <inheritdoc />
     protected override UserChannelListProjection ReduceCore(

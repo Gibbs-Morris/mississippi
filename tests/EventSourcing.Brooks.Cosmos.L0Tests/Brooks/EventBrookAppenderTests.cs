@@ -12,7 +12,6 @@ using Microsoft.Extensions.Options;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cosmos.Batching;
 using Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos.Locking;

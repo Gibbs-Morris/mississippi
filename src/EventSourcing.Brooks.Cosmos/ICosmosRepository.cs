@@ -8,7 +8,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
+namespace Mississippi.EventSourcing.Brooks.Cosmos;
 
 /// <summary>
 ///     Provides low-level Cosmos DB operations for event brook management.

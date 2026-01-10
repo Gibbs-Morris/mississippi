@@ -12,7 +12,7 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="ArchiveChannel" /> command.
 /// </summary>
-internal sealed class ArchiveChannelHandler : CommandHandler<ArchiveChannel, ChannelAggregate>
+internal sealed class ArchiveChannelHandler : CommandHandlerBase<ArchiveChannel, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

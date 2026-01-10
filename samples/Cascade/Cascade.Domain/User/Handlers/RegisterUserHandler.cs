@@ -12,7 +12,7 @@ namespace Cascade.Domain.User.Handlers;
 /// <summary>
 ///     Command handler for registering a new user.
 /// </summary>
-internal sealed class RegisterUserHandler : CommandHandler<RegisterUser, UserAggregate>
+internal sealed class RegisterUserHandler : CommandHandlerBase<RegisterUser, UserAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

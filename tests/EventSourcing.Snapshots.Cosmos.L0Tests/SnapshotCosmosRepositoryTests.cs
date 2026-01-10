@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
 using Moq;

@@ -10,7 +10,7 @@ namespace Cascade.Domain.User.Reducers;
 /// <summary>
 ///     Reducer for <see cref="DisplayNameUpdated" /> events.
 /// </summary>
-internal sealed class DisplayNameUpdatedReducer : Reducer<DisplayNameUpdated, UserAggregate>
+internal sealed class DisplayNameUpdatedReducer : ReducerBase<DisplayNameUpdated, UserAggregate>
 {
     /// <inheritdoc />
     protected override UserAggregate ReduceCore(

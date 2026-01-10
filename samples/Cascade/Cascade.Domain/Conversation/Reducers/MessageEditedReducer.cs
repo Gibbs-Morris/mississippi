@@ -8,7 +8,7 @@ namespace Cascade.Domain.Conversation.Reducers;
 /// <summary>
 ///     Reduces the <see cref="MessageEdited" /> event to produce a new <see cref="ConversationAggregate" />.
 /// </summary>
-internal sealed class MessageEditedReducer : Reducer<MessageEdited, ConversationAggregate>
+internal sealed class MessageEditedReducer : ReducerBase<MessageEdited, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override ConversationAggregate ReduceCore(

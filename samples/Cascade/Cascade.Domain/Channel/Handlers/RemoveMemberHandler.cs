@@ -12,7 +12,7 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="RemoveMember" /> command.
 /// </summary>
-internal sealed class RemoveMemberHandler : CommandHandler<RemoveMember, ChannelAggregate>
+internal sealed class RemoveMemberHandler : CommandHandlerBase<RemoveMember, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

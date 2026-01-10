@@ -8,7 +8,7 @@ namespace Cascade.Domain.Conversation.Reducers;
 /// <summary>
 ///     Reduces the <see cref="MessageDeleted" /> event to produce a new <see cref="ConversationAggregate" />.
 /// </summary>
-internal sealed class MessageDeletedReducer : Reducer<MessageDeleted, ConversationAggregate>
+internal sealed class MessageDeletedReducer : ReducerBase<MessageDeleted, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override ConversationAggregate ReduceCore(

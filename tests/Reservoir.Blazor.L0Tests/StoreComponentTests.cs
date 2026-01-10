@@ -77,7 +77,7 @@ public sealed class StoreComponentTests : IDisposable
     /// <summary>
     ///     Test reducer for unit tests.
     /// </summary>
-    private sealed class TestReducer : Reducer<TestAction, TestFeatureState>
+    private sealed class TestReducer : ReducerBase<TestAction, TestFeatureState>
     {
         /// <inheritdoc />
         public override TestFeatureState Reduce(

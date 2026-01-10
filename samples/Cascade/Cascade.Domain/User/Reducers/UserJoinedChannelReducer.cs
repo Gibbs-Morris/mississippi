@@ -10,7 +10,7 @@ namespace Cascade.Domain.User.Reducers;
 /// <summary>
 ///     Reducer for <see cref="UserJoinedChannel" /> events.
 /// </summary>
-internal sealed class UserJoinedChannelReducer : Reducer<UserJoinedChannel, UserAggregate>
+internal sealed class UserJoinedChannelReducer : ReducerBase<UserJoinedChannel, UserAggregate>
 {
     /// <inheritdoc />
     protected override UserAggregate ReduceCore(

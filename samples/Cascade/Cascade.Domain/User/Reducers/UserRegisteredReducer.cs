@@ -10,7 +10,7 @@ namespace Cascade.Domain.User.Reducers;
 /// <summary>
 ///     Reducer for <see cref="UserRegistered" /> events.
 /// </summary>
-internal sealed class UserRegisteredReducer : Reducer<UserRegistered, UserAggregate>
+internal sealed class UserRegisteredReducer : ReducerBase<UserRegistered, UserAggregate>
 {
     /// <inheritdoc />
     protected override UserAggregate ReduceCore(

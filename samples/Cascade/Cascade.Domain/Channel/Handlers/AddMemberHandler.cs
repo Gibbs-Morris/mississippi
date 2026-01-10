@@ -12,7 +12,7 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="AddMember" /> command.
 /// </summary>
-internal sealed class AddMemberHandler : CommandHandler<AddMember, ChannelAggregate>
+internal sealed class AddMemberHandler : CommandHandlerBase<AddMember, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

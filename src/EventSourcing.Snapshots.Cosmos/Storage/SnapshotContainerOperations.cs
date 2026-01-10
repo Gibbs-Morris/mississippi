@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Common.Cosmos.Abstractions.Retry;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 
 using Newtonsoft.Json;
 

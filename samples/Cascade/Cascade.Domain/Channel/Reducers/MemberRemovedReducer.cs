@@ -8,7 +8,7 @@ namespace Cascade.Domain.Channel.Reducers;
 /// <summary>
 ///     Reduces the <see cref="MemberRemoved" /> event to produce a new <see cref="ChannelAggregate" />.
 /// </summary>
-internal sealed class MemberRemovedReducer : Reducer<MemberRemoved, ChannelAggregate>
+internal sealed class MemberRemovedReducer : ReducerBase<MemberRemoved, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override ChannelAggregate ReduceCore(

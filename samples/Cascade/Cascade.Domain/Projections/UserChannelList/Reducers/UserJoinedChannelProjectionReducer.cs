@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.UserChannelList.Reducers;
 ///     Reduces the <see cref="UserJoinedChannel" /> event to add a channel
 ///     to the <see cref="UserChannelListProjection" />.
 /// </summary>
-internal sealed class UserJoinedChannelProjectionReducer : Reducer<UserJoinedChannel, UserChannelListProjection>
+internal sealed class UserJoinedChannelProjectionReducer : ReducerBase<UserJoinedChannel, UserChannelListProjection>
 {
     /// <inheritdoc />
     protected override UserChannelListProjection ReduceCore(

@@ -10,7 +10,7 @@ namespace Cascade.Domain.User.Reducers;
 /// <summary>
 ///     Reducer for <see cref="UserWentOffline" /> events.
 /// </summary>
-internal sealed class UserWentOfflineReducer : Reducer<UserWentOffline, UserAggregate>
+internal sealed class UserWentOfflineReducer : ReducerBase<UserWentOffline, UserAggregate>
 {
     /// <inheritdoc />
     protected override UserAggregate ReduceCore(

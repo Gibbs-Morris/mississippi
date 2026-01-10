@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
+namespace Mississippi.EventSourcing.Snapshots.Cosmos;
 
 /// <summary>
 ///     Represents a snapshot identifier paired with its version number.

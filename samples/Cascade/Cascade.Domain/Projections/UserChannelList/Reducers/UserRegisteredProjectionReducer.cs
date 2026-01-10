@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.UserChannelList.Reducers;
 ///     Reduces the <see cref="UserRegistered" /> event to produce an initial
 ///     <see cref="UserChannelListProjection" />.
 /// </summary>
-internal sealed class UserRegisteredProjectionReducer : Reducer<UserRegistered, UserChannelListProjection>
+internal sealed class UserRegisteredProjectionReducer : ReducerBase<UserRegistered, UserChannelListProjection>
 {
     /// <inheritdoc />
     protected override UserChannelListProjection ReduceCore(

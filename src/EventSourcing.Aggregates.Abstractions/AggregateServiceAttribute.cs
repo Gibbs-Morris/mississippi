@@ -11,7 +11,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         When applied to an aggregate type, the source generator will:
 ///         <list type="number">
 ///             <item>
-///                 Scan for <see cref="CommandHandler{TCommand, TSnapshot}" /> implementations
+///                 Scan for <see cref="CommandHandlerBase{TCommand, TSnapshot}" /> implementations
 ///                 where TSnapshot matches the decorated aggregate type.
 ///             </item>
 ///             <item>

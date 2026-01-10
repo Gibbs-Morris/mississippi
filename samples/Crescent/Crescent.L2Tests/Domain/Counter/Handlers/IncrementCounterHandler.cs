@@ -9,7 +9,7 @@ namespace Crescent.L2Tests.Domain.Counter.Handlers;
 /// <summary>
 ///     Command handler for incrementing a counter.
 /// </summary>
-internal sealed class IncrementCounterHandler : CommandHandler<IncrementCounter, CounterAggregate>
+internal sealed class IncrementCounterHandler : CommandHandlerBase<IncrementCounter, CounterAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

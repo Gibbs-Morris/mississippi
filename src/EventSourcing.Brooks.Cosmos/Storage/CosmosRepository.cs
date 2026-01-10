@@ -12,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;

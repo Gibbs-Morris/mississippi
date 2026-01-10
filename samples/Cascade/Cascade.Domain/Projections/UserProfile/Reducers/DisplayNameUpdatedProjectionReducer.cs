@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.UserProfile.Reducers;
 ///     Reduces the <see cref="DisplayNameUpdated" /> event to update the display name
 ///     in the <see cref="UserProfileProjection" />.
 /// </summary>
-internal sealed class DisplayNameUpdatedProjectionReducer : Reducer<DisplayNameUpdated, UserProfileProjection>
+internal sealed class DisplayNameUpdatedProjectionReducer : ReducerBase<DisplayNameUpdated, UserProfileProjection>
 {
     /// <inheritdoc />
     protected override UserProfileProjection ReduceCore(

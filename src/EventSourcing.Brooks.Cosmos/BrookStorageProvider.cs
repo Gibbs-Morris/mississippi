@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Brooks.Cosmos;

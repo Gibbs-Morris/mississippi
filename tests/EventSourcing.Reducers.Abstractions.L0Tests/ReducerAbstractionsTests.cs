@@ -21,7 +21,7 @@ public sealed class ReducerAbstractionsTests
         public string Value { get; set; } = string.Empty;
     }
 
-    private sealed class MutatingReducer : Reducer<MutableEvent, MutableProjection>
+    private sealed class MutatingReducer : ReducerBase<MutableEvent, MutableProjection>
     {
         protected override MutableProjection ReduceCore(
             MutableProjection state,
@@ -33,7 +33,7 @@ public sealed class ReducerAbstractionsTests
         }
     }
 
-    private sealed class NonMutatingReducer : Reducer<MutableEvent, MutableProjection>
+    private sealed class NonMutatingReducer : ReducerBase<MutableEvent, MutableProjection>
     {
         protected override MutableProjection ReduceCore(
             MutableProjection state,
@@ -45,7 +45,7 @@ public sealed class ReducerAbstractionsTests
             };
     }
 
-    private sealed class NullProjectionReducer : Reducer<MutableEvent, MutableProjection?>
+    private sealed class NullProjectionReducer : ReducerBase<MutableEvent, MutableProjection?>
     {
         protected override MutableProjection? ReduceCore(
             MutableProjection? state,
@@ -115,7 +115,7 @@ public sealed class ReducerAbstractionsTests
     [Fact]
     public void ReducerBaseClassShouldBeAbstractAndImplementIReducer()
     {
-        Type reducerType = typeof(Reducer<,>);
+        Type reducerType = typeof(ReducerBase<,>);
         Assert.True(reducerType.IsPublic);
         Assert.True(reducerType.IsClass);
         Assert.True(reducerType.IsAbstract);

@@ -13,7 +13,7 @@ namespace Cascade.Domain.Conversation.Handlers;
 /// <summary>
 ///     Handles the <see cref="DeleteMessage" /> command.
 /// </summary>
-internal sealed class DeleteMessageHandler : CommandHandler<DeleteMessage, ConversationAggregate>
+internal sealed class DeleteMessageHandler : CommandHandlerBase<DeleteMessage, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

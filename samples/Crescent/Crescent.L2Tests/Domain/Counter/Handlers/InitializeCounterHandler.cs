@@ -9,7 +9,7 @@ namespace Crescent.L2Tests.Domain.Counter.Handlers;
 /// <summary>
 ///     Command handler for initializing a counter.
 /// </summary>
-internal sealed class InitializeCounterHandler : CommandHandler<InitializeCounter, CounterAggregate>
+internal sealed class InitializeCounterHandler : CommandHandlerBase<InitializeCounter, CounterAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

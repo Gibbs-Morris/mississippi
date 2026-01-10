@@ -10,7 +10,7 @@ namespace Cascade.Domain.User.Reducers;
 /// <summary>
 ///     Reducer for <see cref="UserLeftChannel" /> events.
 /// </summary>
-internal sealed class UserLeftChannelReducer : Reducer<UserLeftChannel, UserAggregate>
+internal sealed class UserLeftChannelReducer : ReducerBase<UserLeftChannel, UserAggregate>
 {
     /// <inheritdoc />
     protected override UserAggregate ReduceCore(

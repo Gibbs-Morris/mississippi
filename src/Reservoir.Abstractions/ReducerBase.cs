@@ -18,7 +18,7 @@ namespace Mississippi.Reservoir.Abstractions;
 ///         type checking and delegates to your <see cref="Reduce" /> method.
 ///     </para>
 /// </remarks>
-public abstract class Reducer<TAction, TState> : IReducer<TAction, TState>
+public abstract class ReducerBase<TAction, TState> : IReducer<TAction, TState>
     where TAction : IAction
     where TState : class
 {

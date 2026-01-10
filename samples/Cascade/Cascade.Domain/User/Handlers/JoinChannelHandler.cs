@@ -12,7 +12,7 @@ namespace Cascade.Domain.User.Handlers;
 /// <summary>
 ///     Command handler for recording that a user joined a channel.
 /// </summary>
-internal sealed class JoinChannelHandler : CommandHandler<JoinChannel, UserAggregate>
+internal sealed class JoinChannelHandler : CommandHandlerBase<JoinChannel, UserAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

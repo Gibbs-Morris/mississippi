@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.ChannelMessages.Reducers;
 ///     Reduces the <see cref="MessageDeleted" /> event to mark a message as deleted
 ///     in the <see cref="ChannelMessagesProjection" />.
 /// </summary>
-internal sealed class MessageDeletedProjectionReducer : Reducer<MessageDeleted, ChannelMessagesProjection>
+internal sealed class MessageDeletedProjectionReducer : ReducerBase<MessageDeleted, ChannelMessagesProjection>
 {
     /// <inheritdoc />
     protected override ChannelMessagesProjection ReduceCore(

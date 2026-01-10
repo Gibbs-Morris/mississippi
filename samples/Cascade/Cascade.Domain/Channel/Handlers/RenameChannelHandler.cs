@@ -11,7 +11,7 @@ namespace Cascade.Domain.Channel.Handlers;
 /// <summary>
 ///     Handles the <see cref="RenameChannel" /> command.
 /// </summary>
-internal sealed class RenameChannelHandler : CommandHandler<RenameChannel, ChannelAggregate>
+internal sealed class RenameChannelHandler : CommandHandlerBase<RenameChannel, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

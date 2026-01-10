@@ -81,7 +81,7 @@ public sealed class ReservoirRegistrationsTests
     /// <summary>
     ///     Test reducer implementation.
     /// </summary>
-    private sealed class TestReducer : Reducer<TestAction, TestFeatureState>
+    private sealed class TestReducer : ReducerBase<TestAction, TestFeatureState>
     {
         /// <inheritdoc />
         public override TestFeatureState Reduce(

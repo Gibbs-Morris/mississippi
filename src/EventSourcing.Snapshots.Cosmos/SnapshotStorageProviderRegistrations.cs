@@ -14,7 +14,6 @@ using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.Common.Cosmos.Retry;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Mapping;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 

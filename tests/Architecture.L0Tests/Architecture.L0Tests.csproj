@@ -1,5 +1,40 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="TngTech.ArchUnitNET.xUnit"/>
+        <PackageReference Include="TngTech.ArchUnitNET.xUnit" />
+    </ItemGroup>
+
+    <!-- Reference all src projects to include them in architecture analysis -->
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Aqueduct\Aqueduct.csproj" />
+        <ProjectReference Include="..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+        <ProjectReference Include="..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Common.Cosmos\Common.Cosmos.csproj" />
+        <ProjectReference Include="..\..\src\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
+        <ProjectReference Include="..\..\src\Inlet\Inlet.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Blazor\Inlet.Blazor.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.InProcess\Inlet.InProcess.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Orleans\Inlet.Orleans.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir\Reservoir.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
     </ItemGroup>
 </Project>

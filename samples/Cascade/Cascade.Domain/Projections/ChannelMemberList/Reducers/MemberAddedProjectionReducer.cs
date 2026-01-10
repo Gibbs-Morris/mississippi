@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.ChannelMemberList.Reducers;
 ///     Reduces the <see cref="MemberAdded" /> event to add a member
 ///     to the <see cref="ChannelMemberListProjection" />.
 /// </summary>
-internal sealed class MemberAddedProjectionReducer : Reducer<MemberAdded, ChannelMemberListProjection>
+internal sealed class MemberAddedProjectionReducer : ReducerBase<MemberAdded, ChannelMemberListProjection>
 {
     /// <inheritdoc />
     protected override ChannelMemberListProjection ReduceCore(

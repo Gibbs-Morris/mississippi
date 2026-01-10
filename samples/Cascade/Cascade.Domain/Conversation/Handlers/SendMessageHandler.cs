@@ -12,7 +12,7 @@ namespace Cascade.Domain.Conversation.Handlers;
 /// <summary>
 ///     Handles the <see cref="SendMessage" /> command.
 /// </summary>
-internal sealed class SendMessageHandler : CommandHandler<SendMessage, ConversationAggregate>
+internal sealed class SendMessageHandler : CommandHandlerBase<SendMessage, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

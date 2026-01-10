@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.OnlineUsers.Reducers;
 ///     Reduces the <see cref="UserRegistered" /> event to produce an initial
 ///     <see cref="OnlineUsersProjection" />.
 /// </summary>
-internal sealed class UserRegisteredProjectionReducer : Reducer<UserRegistered, OnlineUsersProjection>
+internal sealed class UserRegisteredProjectionReducer : ReducerBase<UserRegistered, OnlineUsersProjection>
 {
     /// <inheritdoc />
     protected override OnlineUsersProjection ReduceCore(

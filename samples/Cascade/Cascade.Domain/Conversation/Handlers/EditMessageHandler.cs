@@ -13,7 +13,7 @@ namespace Cascade.Domain.Conversation.Handlers;
 /// <summary>
 ///     Handles the <see cref="EditMessage" /> command.
 /// </summary>
-internal sealed class EditMessageHandler : CommandHandler<EditMessage, ConversationAggregate>
+internal sealed class EditMessageHandler : CommandHandlerBase<EditMessage, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

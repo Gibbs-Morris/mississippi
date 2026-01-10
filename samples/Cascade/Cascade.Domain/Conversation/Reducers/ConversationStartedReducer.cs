@@ -10,7 +10,7 @@ namespace Cascade.Domain.Conversation.Reducers;
 /// <summary>
 ///     Reduces the <see cref="ConversationStarted" /> event to produce a new <see cref="ConversationAggregate" />.
 /// </summary>
-internal sealed class ConversationStartedReducer : Reducer<ConversationStarted, ConversationAggregate>
+internal sealed class ConversationStartedReducer : ReducerBase<ConversationStarted, ConversationAggregate>
 {
     /// <inheritdoc />
     protected override ConversationAggregate ReduceCore(

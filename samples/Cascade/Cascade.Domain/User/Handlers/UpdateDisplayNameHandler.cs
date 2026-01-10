@@ -11,7 +11,7 @@ namespace Cascade.Domain.User.Handlers;
 /// <summary>
 ///     Command handler for updating a user's display name.
 /// </summary>
-internal sealed class UpdateDisplayNameHandler : CommandHandler<UpdateDisplayName, UserAggregate>
+internal sealed class UpdateDisplayNameHandler : CommandHandlerBase<UpdateDisplayName, UserAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(

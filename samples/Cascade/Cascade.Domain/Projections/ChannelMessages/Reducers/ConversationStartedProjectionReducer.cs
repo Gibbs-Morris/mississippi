@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.ChannelMessages.Reducers;
 ///     Reduces the <see cref="ConversationStarted" /> event to produce an initial
 ///     <see cref="ChannelMessagesProjection" />.
 /// </summary>
-internal sealed class ConversationStartedProjectionReducer : Reducer<ConversationStarted, ChannelMessagesProjection>
+internal sealed class ConversationStartedProjectionReducer : ReducerBase<ConversationStarted, ChannelMessagesProjection>
 {
     /// <inheritdoc />
     protected override ChannelMessagesProjection ReduceCore(

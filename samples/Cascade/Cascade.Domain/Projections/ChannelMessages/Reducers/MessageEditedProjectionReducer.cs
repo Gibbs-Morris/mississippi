@@ -11,7 +11,7 @@ namespace Cascade.Domain.Projections.ChannelMessages.Reducers;
 ///     Reduces the <see cref="MessageEdited" /> event to update a message
 ///     in the <see cref="ChannelMessagesProjection" />.
 /// </summary>
-internal sealed class MessageEditedProjectionReducer : Reducer<MessageEdited, ChannelMessagesProjection>
+internal sealed class MessageEditedProjectionReducer : ReducerBase<MessageEdited, ChannelMessagesProjection>
 {
     /// <inheritdoc />
     protected override ChannelMessagesProjection ReduceCore(

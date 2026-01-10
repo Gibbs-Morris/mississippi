@@ -155,7 +155,7 @@ public sealed class StoreTests : IDisposable
     /// <summary>
     ///     Test feature reducer.
     /// </summary>
-    private sealed class TestFeatureReducer : Reducer<IncrementAction, TestFeatureState>
+    private sealed class TestFeatureReducer : ReducerBase<IncrementAction, TestFeatureState>
     {
         /// <inheritdoc />
         public override TestFeatureState Reduce(

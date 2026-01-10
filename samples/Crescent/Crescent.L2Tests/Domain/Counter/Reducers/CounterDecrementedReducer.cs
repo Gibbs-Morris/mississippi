@@ -8,7 +8,7 @@ namespace Crescent.L2Tests.Domain.Counter.Reducers;
 /// <summary>
 ///     Reducer for <see cref="CounterDecremented" /> events.
 /// </summary>
-internal sealed class CounterDecrementedReducer : Reducer<CounterDecremented, CounterAggregate>
+internal sealed class CounterDecrementedReducer : ReducerBase<CounterDecremented, CounterAggregate>
 {
     /// <inheritdoc />
     protected override CounterAggregate ReduceCore(

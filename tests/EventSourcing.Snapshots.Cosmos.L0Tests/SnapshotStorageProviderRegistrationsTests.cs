@@ -16,7 +16,6 @@ using Microsoft.Extensions.Options;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
 using Moq;

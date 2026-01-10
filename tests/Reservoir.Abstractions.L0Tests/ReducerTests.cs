@@ -7,7 +7,7 @@ using Mississippi.Reservoir.Abstractions.State;
 namespace Mississippi.Reservoir.Abstractions.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="Reducer{TAction,TState}" />.
+///     Tests for <see cref="ReducerBase{TAction,TState}" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Reservoir.Abstractions")]
 [AllureSuite("Core")]
@@ -22,7 +22,7 @@ public sealed class ReducerTests
     /// <summary>
     ///     Test reducer implementation.
     /// </summary>
-    private sealed class IncrementReducer : Reducer<IncrementAction, TestState>
+    private sealed class IncrementReducer : ReducerBase<IncrementAction, TestState>
     {
         /// <inheritdoc />
         public override TestState Reduce(
