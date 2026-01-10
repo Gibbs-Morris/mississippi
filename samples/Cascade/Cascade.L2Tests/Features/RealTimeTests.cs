@@ -18,6 +18,12 @@ namespace Cascade.L2Tests.Features;
 public class RealTimeTests : TestBase
 {
     /// <summary>
+    ///     Maximum channel name length for test channels.
+    ///     Truncated to 24 chars to ensure uniqueness while keeping names readable.
+    ///     Format: prefix (8-10 chars) + partial GUID (14-16 chars) = 24 total.
+    /// </summary>
+    private const int MaxChannelNameLength = 24;
+    /// <summary>
     ///     Initializes a new instance of the <see cref="RealTimeTests" /> class.
     /// </summary>
     /// <param name="fixture">The Playwright fixture.</param>
@@ -38,7 +44,7 @@ public class RealTimeTests : TestBase
         // Arrange
         IPage page = await CreatePageAndLoginAsync("SpeedTester");
         ChannelListPage channelList = new(page);
-        string channelName = $"speed-test-{Guid.NewGuid():N}"[..24];
+        string channelName = $"speed-test-{Guid.NewGuid():N}"[..MaxChannelNameLength];
         await channelList.CreateChannelAsync(channelName);
         ChannelViewPage channelView = await channelList.SelectChannelAsync(channelName);
         string messageContent = $"Speed test {DateTime.UtcNow:HH:mm:ss.fff}";
@@ -65,7 +71,7 @@ public class RealTimeTests : TestBase
 
         // Alice creates channel
         ChannelListPage aliceChannelList = new(pageAlice);
-        string channelName = $"realtime-{Guid.NewGuid():N}"[..24];
+        string channelName = $"realtime-{Guid.NewGuid():N}"[..MaxChannelNameLength];
         await aliceChannelList.CreateChannelAsync(channelName);
         ChannelViewPage aliceChannelView = await aliceChannelList.SelectChannelAsync(channelName);
 
