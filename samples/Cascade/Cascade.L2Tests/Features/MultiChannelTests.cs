@@ -101,9 +101,16 @@ public class MultiChannelTests : TestBase
         await view1.SendMessageAsync(message1);
         await view1.WaitForMessageAsync(message1, 10000);
 
-        // Switch to channel 2 and back to channel 1
+        // Switch to channel 2 and wait for view to update
         await channelList.SelectChannelAsync(channel2);
-        await Task.Delay(500); // Wait for view switch
+        await page.WaitForSelectorAsync(
+            ".channel-view",
+            new()
+            {
+                Timeout = 5000,
+            });
+
+        // Switch back to channel 1
         await channelList.SelectChannelAsync(channel1);
         await view1.WaitForMessageAsync(message1, 10000);
 
