@@ -47,7 +47,12 @@ public sealed class SignalRConnectivityTests : TestBase
             });
 
         // Wait for SignalR to connect
-        await page.WaitForSelectorAsync("text=Connected", new() { Timeout = 30000 });
+        await page.WaitForSelectorAsync(
+            "text=Connected",
+            new()
+            {
+                Timeout = 30000,
+            });
 
         // Assert
         ILocator status = page.Locator("text=Connected");
@@ -73,7 +78,12 @@ public sealed class SignalRConnectivityTests : TestBase
             });
 
         // Wait for SignalR to connect
-        await page.WaitForSelectorAsync("text=Connected", new() { Timeout = 30000 });
+        await page.WaitForSelectorAsync(
+            "text=Connected",
+            new()
+            {
+                Timeout = 30000,
+            });
 
         // Act
         string testMessage = $"Test message {Guid.NewGuid():N}";
@@ -81,7 +91,12 @@ public sealed class SignalRConnectivityTests : TestBase
         await page.ClickAsync("button:has-text('Send')");
 
         // Wait for message to appear
-        await page.WaitForSelectorAsync($"text={testMessage}", new() { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            $"text={testMessage}",
+            new()
+            {
+                Timeout = 10000,
+            });
 
         // Assert
         ILocator message = page.Locator($"li:has-text('{testMessage}')");

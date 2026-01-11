@@ -6,12 +6,12 @@ namespace Cascade.Web.Contracts;
 public sealed record BlobItem
 {
     /// <summary>
-    ///     Gets the blob name.
-    /// </summary>
-    public required string Name { get; init; }
-
-    /// <summary>
     ///     Gets the blob content.
     /// </summary>
     public required string Content { get; init; }
+
+    /// <summary>
+    ///     Gets the blob name.
+    /// </summary>
+    public required string Name { get; init; }
 }

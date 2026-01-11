@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 using Cascade.Web.Contracts;
@@ -13,10 +14,9 @@ namespace Cascade.Web.Server.Services;
 /// </summary>
 internal sealed class CosmosService : ICosmosService
 {
-    private const string DatabaseId = "cascade-web-db";
     private const string ContainerId = "items";
 
-    private CosmosClient CosmosClient { get; }
+    private const string DatabaseId = "cascade-web-db";
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="CosmosService" /> class.
@@ -26,6 +26,8 @@ internal sealed class CosmosService : ICosmosService
         CosmosClient cosmosClient
     ) =>
         CosmosClient = cosmosClient;
+
+    private CosmosClient CosmosClient { get; }
 
     /// <inheritdoc />
     public async Task CreateItemAsync(
@@ -42,20 +44,17 @@ internal sealed class CosmosService : ICosmosService
     {
         Database database = CosmosClient.GetDatabase(DatabaseId);
         Container container = database.GetContainer(ContainerId);
-
         List<CosmosItem> items = [];
-
         try
         {
             using FeedIterator<CosmosItem> iterator = container.GetItemQueryIterator<CosmosItem>("SELECT * FROM c");
-
             while (iterator.HasMoreResults)
             {
                 FeedResponse<CosmosItem> response = await iterator.ReadNextAsync();
                 items.AddRange(response);
             }
         }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             // Database or container doesn't exist yet
         }

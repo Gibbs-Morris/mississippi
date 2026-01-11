@@ -20,7 +20,9 @@ namespace Cascade.Web.Silo.Grains;
 ///     The grain is keyed by the name being greeted.
 /// </remarks>
 [Alias("Cascade.Web.Silo.GreeterGrain")]
-internal sealed class GreeterGrain : IGrainBase, IGreeterGrain
+internal sealed class GreeterGrain
+    : IGrainBase,
+      IGreeterGrain
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="GreeterGrain" /> class.
@@ -46,28 +48,24 @@ internal sealed class GreeterGrain : IGrainBase, IGreeterGrain
     {
         string name = this.GetPrimaryKeyString();
         string greeting = $"Hello, {name}!";
-
         Logger.LogGreetingGenerated(name, greeting);
-
         GreetResponse response = new()
         {
             Greeting = greeting,
             UppercaseName = name.ToUpperInvariant(),
             GeneratedAt = DateTime.UtcNow,
         };
-
         return Task.FromResult(response);
     }
 
     /// <inheritdoc />
-    public Task<string> ToUpperAsync(string input)
+    public Task<string> ToUpperAsync(
+        string input
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(input);
-
         string result = input.ToUpperInvariant();
-
         Logger.LogToUpperConversion(input, result);
-
         return Task.FromResult(result);
     }
 }

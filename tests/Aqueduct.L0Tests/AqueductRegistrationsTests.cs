@@ -63,8 +63,7 @@ public sealed class AqueductRegistrationsTests
     [Fact(DisplayName = "AddAqueductNotifier Throws When Services Is Null")]
     public void AddAqueductNotifierShouldThrowWhenServicesIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() =>
-            AqueductRegistrations.AddAqueductNotifier(null!));
+        Assert.Throws<ArgumentNullException>(() => AqueductRegistrations.AddAqueductNotifier(null!));
     }
 
     /// <summary>
@@ -127,8 +126,7 @@ public sealed class AqueductRegistrationsTests
     [Fact(DisplayName = "AddAqueduct Throws When Services Is Null")]
     public void AddAqueductShouldThrowWhenServicesIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() =>
-            AqueductRegistrations.AddAqueduct<TestHub>(null!));
+        Assert.Throws<ArgumentNullException>(() => AqueductRegistrations.AddAqueduct<TestHub>(null!));
     }
 
     /// <summary>
@@ -224,7 +222,6 @@ public sealed class AqueductRegistrationsTests
     [Fact(DisplayName = "AddAqueduct With Options Throws When Services Is Null")]
     public void AddAqueductWithOptionsShouldThrowWhenServicesIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() =>
-            AqueductRegistrations.AddAqueduct<TestHub>(null!, _ => { }));
+        Assert.Throws<ArgumentNullException>(() => AqueductRegistrations.AddAqueduct<TestHub>(null!, _ => { }));
     }
 }

@@ -20,7 +20,9 @@ internal sealed class MessageDeletedReducer : ReducerBase<MessageDeleted, Conver
         if (index < 0)
         {
             // Must return new instance per ReducerBase requirements
-            return state with { };
+            return state with
+            {
+            };
         }
 
         Message existingMessage = state.Messages[index];

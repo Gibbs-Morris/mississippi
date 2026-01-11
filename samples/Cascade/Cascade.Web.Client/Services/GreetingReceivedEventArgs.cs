@@ -26,6 +26,11 @@ internal sealed class GreetingReceivedEventArgs : EventArgs
     }
 
     /// <summary>
+    ///     Gets the timestamp when the greeting was generated.
+    /// </summary>
+    public DateTimeOffset GeneratedAt { get; }
+
+    /// <summary>
     ///     Gets the greeting message.
     /// </summary>
     public string Greeting { get; }
@@ -34,9 +39,4 @@ internal sealed class GreetingReceivedEventArgs : EventArgs
     ///     Gets the uppercase name.
     /// </summary>
     public string UppercaseName { get; }
-
-    /// <summary>
-    ///     Gets the timestamp when the greeting was generated.
-    /// </summary>
-    public DateTimeOffset GeneratedAt { get; }
 }

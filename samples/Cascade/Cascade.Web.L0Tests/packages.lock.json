@@ -1072,6 +1072,16 @@
           "xunit.abstractions": "2.0.3"
         }
       },
+      "cascade.domain": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
+          "Mississippi.EventSourcing.Aggregates.Api": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
+          "Mississippi.EventSourcing.UxProjections": "[1.0.0, )"
+        }
+      },
       "cascade.web.client": {
         "type": "Project",
         "dependencies": {
@@ -1109,13 +1119,19 @@
         "dependencies": {
           "Aspire.Azure.Data.Tables": "[13.1.0, )",
           "Aspire.Azure.Storage.Blobs": "[13.1.0, )",
+          "Aspire.Microsoft.Azure.Cosmos": "[13.1.0, )",
+          "Cascade.Domain": "[1.0.0, )",
           "Cascade.Web.Contracts": "[1.0.0, )",
           "Microsoft.Orleans.Clustering.AzureStorage": "[9.2.1, )",
           "Microsoft.Orleans.Persistence.AzureStorage": "[9.2.1, )",
           "Microsoft.Orleans.Server": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
-          "Mississippi.Aqueduct.Grains": "[1.0.0, )"
+          "Mississippi.Aqueduct.Grains": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Cosmos": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Json": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Cosmos": "[1.0.0, )"
         }
       },
       "Mississippi.Aqueduct": {
@@ -1139,6 +1155,156 @@
           "Microsoft.Orleans.Server": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+        }
+      },
+      "Mississippi.Common.Cosmos": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Azure.Cosmos": "[3.54.1, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.1, )",
+          "Mississippi.Common.Cosmos.Abstractions": "[1.0.0, )",
+          "Newtonsoft.Json": "[13.0.4, )"
+        }
+      },
+      "Mississippi.Common.Cosmos.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.EventSourcing.Aggregates": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Aggregates.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Aggregates.Api": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Brooks": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Hosting.Abstractions": "[9.0.11, )",
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Brooks.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "CloudNative.CloudEvents": "[2.8.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )",
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )"
+        }
+      },
+      "Mississippi.EventSourcing.Brooks.Cosmos": {
+        "type": "Project",
+        "dependencies": {
+          "Azure.Storage.Blobs": "[12.26.0, )",
+          "Microsoft.Azure.Cosmos": "[3.54.1, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Options": "[9.0.11, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Cosmos": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
+          "Newtonsoft.Json": "[13.0.4, )"
+        }
+      },
+      "Mississippi.EventSourcing.Reducers": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.1, )",
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Reducers.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.EventSourcing.Serialization.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )"
+        }
+      },
+      "Mississippi.EventSourcing.Serialization.Json": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Snapshots": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Snapshots.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Snapshots.Cosmos": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Azure.Cosmos": "[3.54.1, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Options": "[9.0.11, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Cosmos": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )",
+          "Newtonsoft.Json": "[13.0.4, )"
+        }
+      },
+      "Mississippi.EventSourcing.UxProjections": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.UxProjections.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir": {
@@ -1233,6 +1399,12 @@
           "Azure.Storage.Common": "12.25.0"
         }
       },
+      "CloudNative.CloudEvents": {
+        "type": "CentralTransitive",
+        "requested": "[2.8.0, )",
+        "resolved": "2.8.0",
+        "contentHash": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA=="
+      },
       "Microsoft.AspNetCore.Components": {
         "type": "CentralTransitive",
         "requested": "[9.0.11, )",
@@ -1288,8 +1460,8 @@
       "Microsoft.Azure.Cosmos": {
         "type": "CentralTransitive",
         "requested": "[3.54.1, )",
-        "resolved": "3.54.0",
-        "contentHash": "0mvySKvhmrOlYhXYZh3kVX14PBbJ+xOI4ifVQJyK2viv9l4grKmfDkT/A64k5AgeTcHm+7RVFrWJyWAyhi7Qaw==",
+        "resolved": "3.54.1",
+        "contentHash": "AD/HvzCeHpLGWCysh3fpTHdmgnOh/+le9D7cjzvqJjxsbWW98vAWcaBxRDNjcudTnNBM0uLjy6oRQNqVm3aUNQ==",
         "dependencies": {
           "Azure.Core": "1.44.1",
           "Microsoft.Bcl.AsyncInterfaces": "6.0.0",
@@ -1421,14 +1593,14 @@
       "Microsoft.Extensions.Options.ConfigurationExtensions": {
         "type": "CentralTransitive",
         "requested": "[9.0.11, )",
-        "resolved": "9.0.0",
-        "contentHash": "Ob3FXsXkcSMQmGZi7qP07EQ39kZpSBlTcAZLbJLdI4FIf0Jug8biv2HTavWmnTirchctPlq9bl/26CXtQRguzA==",
+        "resolved": "9.0.11",
+        "contentHash": "HUzr4c1eMXCQN8Yre2JdCzYmLJAecFGVXfByVhjEY4jBaHIs8EAxdv72WMUa2GcROlkYPbYNzMbcqJPMiznHxw==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "9.0.0",
-          "Microsoft.Extensions.Configuration.Binder": "9.0.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0",
-          "Microsoft.Extensions.Options": "9.0.0",
-          "Microsoft.Extensions.Primitives": "9.0.0"
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.11",
+          "Microsoft.Extensions.Configuration.Binder": "9.0.11",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.11",
+          "Microsoft.Extensions.Options": "9.0.11",
+          "Microsoft.Extensions.Primitives": "9.0.11"
         }
       },
       "Microsoft.Orleans.Client": {

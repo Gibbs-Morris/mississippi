@@ -34,7 +34,7 @@ builder.AddAzureCosmosClient(
         // Bypass SSL certificate validation for emulator's self-signed cert
 #pragma warning disable CA5400, S4830 // HttpClient certificate check - emulator uses self-signed cert
 #pragma warning disable IDISP014, IDISP001 // Use a single instance of HttpClient - CosmosClient manages its own lifecycle
-        options.HttpClientFactory = () => new HttpClient(
+        options.HttpClientFactory = () => new(
             new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback =
@@ -64,13 +64,11 @@ builder.Services.AddAqueduct<MessageHub>(options =>
 // Add storage services
 builder.Services.AddSingleton<ICosmosService, CosmosService>();
 builder.Services.AddSingleton<IBlobService, BlobService>();
-
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
-
 app.UseRouting();
 
 // Map SignalR hub
@@ -79,16 +77,28 @@ app.MapHub<MessageHub>("/hubs/messages");
 // Map API endpoints
 app.MapGet(
     "/api/health",
-    () => new HealthResponse { Status = "Healthy", Timestamp = DateTime.UtcNow });
-
+    () => new HealthResponse
+    {
+        Status = "Healthy",
+        Timestamp = DateTime.UtcNow,
+    });
 app.MapGet(
     "/api/echo",
-    (string message) => new EchoResponse { Message = message, ReceivedAt = DateTime.UtcNow });
+    (
+        string message
+    ) => new EchoResponse
+    {
+        Message = message,
+        ReceivedAt = DateTime.UtcNow,
+    });
 
 // Orleans grain endpoint - demonstrates WebAssembly → API → Orleans grain flow
 app.MapGet(
     "/api/greet/{name}",
-    async (string name, IGrainFactory grainFactory) =>
+    async (
+        string name,
+        IGrainFactory grainFactory
+    ) =>
     {
         IGreeterGrain grain = grainFactory.GetGrain<IGreeterGrain>(name);
         GreetResponse response = await grain.GreetAsync();
@@ -106,7 +116,10 @@ app.MapGet(
 // Orleans grain endpoint - uppercase conversion
 app.MapPost(
     "/api/toupper",
-    async (ToUpperRequest request, IGrainFactory grainFactory) =>
+    async (
+        ToUpperRequest request,
+        IGrainFactory grainFactory
+    ) =>
     {
         IGreeterGrain grain = grainFactory.GetGrain<IGreeterGrain>("converter");
         string result = await grain.ToUpperAsync(request.Input);
@@ -117,39 +130,54 @@ app.MapPost(
 // The message flows: API → BroadcasterGrain → Orleans Stream → StreamBridgeService → SignalR → Clients
 app.MapPost(
     "/api/broadcast",
-    async (BroadcastRequest request, IGrainFactory grainFactory) =>
+    async (
+        BroadcastRequest request,
+        IGrainFactory grainFactory
+    ) =>
     {
         IBroadcasterGrain grain = grainFactory.GetGrain<IBroadcasterGrain>("default");
         await grain.BroadcastAsync(request.Message);
-        return Results.Ok(new { Message = request.Message, Status = "Broadcast sent" });
+        return Results.Ok(
+            new
+            {
+                request.Message,
+                Status = "Broadcast sent",
+            });
     });
 
 // Products endpoint for Reservoir effect demo - returns a static list of products
 app.MapGet("/api/products", () => AvailableProducts);
-
 app.MapGet(
     "/api/cosmos",
-    async (ICosmosService cosmosService) => await cosmosService.GetItemsAsync());
-
+    async (
+        ICosmosService cosmosService
+    ) => await cosmosService.GetItemsAsync());
 app.MapPost(
     "/api/cosmos",
-    async (CosmosItem item, ICosmosService cosmosService) =>
+    async (
+        CosmosItem item,
+        ICosmosService cosmosService
+    ) =>
     {
         await cosmosService.CreateItemAsync(item);
         return Results.Created($"/api/cosmos/{item.Id}", item);
     });
-
 app.MapGet(
     "/api/blob/{name}",
-    async (string name, IBlobService blobService) =>
+    async (
+        string name,
+        IBlobService blobService
+    ) =>
     {
         BlobItemDto? item = await blobService.GetBlobAsync(name);
         return item is not null ? Results.Ok(item) : Results.NotFound();
     });
-
 app.MapPost(
     "/api/blob",
-    async (BlobItemDto item, IBlobService blobService) =>
+    async (
+        BlobItemDto item,
+        IBlobService blobService
+    ) =>
     {
         await blobService.UploadBlobAsync(item);
         return Results.Created($"/api/blob/{item.Name}", item);
@@ -157,7 +185,6 @@ app.MapPost(
 
 // Fallback to index.html for client-side routing
 app.MapFallbackToFile("index.html");
-
 await app.RunAsync();
 
 /// <summary>

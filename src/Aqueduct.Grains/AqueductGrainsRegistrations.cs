@@ -68,7 +68,6 @@ public static class AqueductGrainsRegistrations
 
         // Register the Aqueduct grain factory
         siloBuilder.Services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
-
         return siloBuilder;
     }
 

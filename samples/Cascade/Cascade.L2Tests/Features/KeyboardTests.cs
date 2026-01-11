@@ -112,12 +112,12 @@ public class KeyboardTests : TestBase
 
         // Wait for modal to potentially close
         await page.WaitForSelectorAsync(
-            "input[name='Name']",
-            new()
-            {
-                State = WaitForSelectorState.Hidden,
-                Timeout = 1000,
-            })
+                "input[name='Name']",
+                new()
+                {
+                    State = WaitForSelectorState.Hidden,
+                    Timeout = 1000,
+                })
             .ContinueWith(
                 t =>
                 {

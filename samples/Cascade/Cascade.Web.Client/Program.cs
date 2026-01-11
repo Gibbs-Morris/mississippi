@@ -1,4 +1,3 @@
-using System;
 using System.Net.Http;
 
 using Cascade.Web.Client;
@@ -20,7 +19,10 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // Blazor WASM scoped lifetime acts as a singleton; this is the official Microsoft pattern.
 // See: https://learn.microsoft.com/aspnet/core/blazor/call-web-api#add-the-httpclient-service
 #pragma warning disable IDISP014 // Blazor WASM DI manages HttpClient lifecycle
-builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+builder.Services.AddScoped(_ => new HttpClient
+{
+    BaseAddress = new(builder.HostEnvironment.BaseAddress),
+});
 #pragma warning restore IDISP014
 
 // Add SignalR message service
@@ -39,5 +41,4 @@ builder.Services.AddEffect<LoadProductsEffect>();
 
 // Initialize the store with feature states
 builder.Services.AddReservoir(store => store.RegisterState<CartState>());
-
 await builder.Build().RunAsync();

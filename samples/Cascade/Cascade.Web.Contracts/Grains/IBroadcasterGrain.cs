@@ -21,5 +21,7 @@ public interface IBroadcasterGrain : IGrainWithStringKey
     /// <param name="message">The message to broadcast.</param>
     /// <returns>A task that completes when the message has been published to the stream.</returns>
     [Alias("BroadcastAsync")]
-    Task BroadcastAsync(string message);
+    Task BroadcastAsync(
+        string message
+    );
 }

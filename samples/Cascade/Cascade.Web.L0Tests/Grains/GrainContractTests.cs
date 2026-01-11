@@ -4,8 +4,6 @@ using Allure.Xunit.Attributes;
 
 using Cascade.Web.Contracts.Grains;
 
-using Xunit;
-
 
 namespace Cascade.Web.L0Tests.Grains;
 

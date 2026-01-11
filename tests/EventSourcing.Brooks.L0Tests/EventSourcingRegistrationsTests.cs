@@ -23,6 +23,19 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests;
 public sealed class EventSourcingRegistrationsTests
 {
     /// <summary>
+    ///     Verifies that <c>AddEventSourcingByService</c> uses default stream provider name.
+    /// </summary>
+    [Fact]
+    public void AddEventSourcingByServiceUsesDefaultStreamProviderName()
+    {
+        ServiceCollection services = new();
+        services.AddEventSourcingByService();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        BrookProviderOptions options = provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
+        Assert.Equal("MississippiBrookStreamProvider", options.OrleansStreamProviderName);
+    }
+
+    /// <summary>
     ///     Verifies that calling <c>AddEventSourcingByService</c> registers the expected singletons and options.
     /// </summary>
     [Fact]
@@ -48,6 +61,19 @@ public sealed class EventSourcingRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies that the HostApplicationBuilder extension accepts custom stream provider configuration.
+    /// </summary>
+    [Fact]
+    public void HostApplicationBuilderAddEventSourcingAcceptsCustomStreamProviderName()
+    {
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
+        builder.AddEventSourcing(options => options.OrleansStreamProviderName = "CustomStreams");
+        using IHost host = builder.Build();
+        BrookProviderOptions options = host.Services.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
+        Assert.Equal("CustomStreams", options.OrleansStreamProviderName);
+    }
+
+    /// <summary>
     ///     Verifies that the HostApplicationBuilder extension registers services (sanity smoke test).
     /// </summary>
     [Fact]
@@ -56,6 +82,7 @@ public sealed class EventSourcingRegistrationsTests
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
 
         // The extension method should complete and register services
+        // Note: Host is responsible for configuring streams before calling this
         builder.AddEventSourcing();
         IServiceCollection services = builder.Services;
         Assert.Contains(services, d => d.ServiceType == typeof(IBrookGrainFactory));

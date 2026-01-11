@@ -27,41 +27,12 @@ public sealed class StorageOperationsTests : TestBase
     }
 
     /// <summary>
-    ///     Verifies Cosmos DB write operation succeeds.
+    ///     Verifies Blob Storage read operation succeeds after write.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    [AllureId("web-storage-001")]
-    public async Task CosmosDbWriteSucceeds()
-    {
-        // Arrange
-        IPage page = await CreatePageAsync();
-        await page.GotoAsync(
-            Fixture.BaseUrl,
-            new()
-            {
-                WaitUntil = WaitUntilState.NetworkIdle,
-                Timeout = 60000,
-            });
-
-        // Act
-        await page.ClickAsync("button:has-text('Write to Cosmos')");
-
-        // Wait for success message
-        await page.WaitForSelectorAsync("text=Written successfully", new() { Timeout = 30000 });
-
-        // Assert
-        ILocator result = page.Locator("text=Written successfully");
-        await Assertions.Expect(result).ToBeVisibleAsync();
-    }
-
-    /// <summary>
-    ///     Verifies Cosmos DB read operation succeeds after write.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    [AllureId("web-storage-002")]
-    public async Task CosmosDbReadAfterWriteReturnsData()
+    [AllureId("web-storage-004")]
+    public async Task BlobStorageReadAfterWriteReturnsContent()
     {
         // Arrange
         IPage page = await CreatePageAsync();
@@ -74,17 +45,27 @@ public sealed class StorageOperationsTests : TestBase
             });
 
         // Write first
-        await page.ClickAsync("button:has-text('Write to Cosmos')");
-        await page.WaitForSelectorAsync("text=Written successfully", new() { Timeout = 30000 });
+        await page.ClickAsync("button:has-text('Write to Blob')");
+        await page.WaitForSelectorAsync(
+            "text=Written successfully",
+            new()
+            {
+                Timeout = 30000,
+            });
 
         // Act - Read
-        await page.ClickAsync("button:has-text('Read from Cosmos')");
+        await page.ClickAsync("button:has-text('Read from Blob')");
 
-        // Wait for data
-        await page.WaitForSelectorAsync("text=Found", new() { Timeout = 30000 });
+        // Wait for content
+        await page.WaitForSelectorAsync(
+            "text=Content:",
+            new()
+            {
+                Timeout = 30000,
+            });
 
         // Assert
-        ILocator result = page.Locator("text=Found");
+        ILocator result = page.Locator("text=Content:");
         await Assertions.Expect(result).ToBeVisibleAsync();
     }
 
@@ -110,20 +91,30 @@ public sealed class StorageOperationsTests : TestBase
         await page.ClickAsync("button:has-text('Write to Blob')");
 
         // Wait for success message
-        await page.WaitForSelectorAsync("text=Written successfully", new() { Timeout = 30000 });
+        await page.WaitForSelectorAsync(
+            "text=Written successfully",
+            new()
+            {
+                Timeout = 30000,
+            });
 
         // Assert - Check blob result specifically
         ILocator result = page.Locator("p:has-text('Blob Result') + p >> text=Written successfully");
-        await Assertions.Expect(result).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(result)
+            .ToBeVisibleAsync(
+                new()
+                {
+                    Timeout = 5000,
+                });
     }
 
     /// <summary>
-    ///     Verifies Blob Storage read operation succeeds after write.
+    ///     Verifies Cosmos DB read operation succeeds after write.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    [AllureId("web-storage-004")]
-    public async Task BlobStorageReadAfterWriteReturnsContent()
+    [AllureId("web-storage-002")]
+    public async Task CosmosDbReadAfterWriteReturnsData()
     {
         // Arrange
         IPage page = await CreatePageAsync();
@@ -136,17 +127,61 @@ public sealed class StorageOperationsTests : TestBase
             });
 
         // Write first
-        await page.ClickAsync("button:has-text('Write to Blob')");
-        await page.WaitForSelectorAsync("text=Written successfully", new() { Timeout = 30000 });
+        await page.ClickAsync("button:has-text('Write to Cosmos')");
+        await page.WaitForSelectorAsync(
+            "text=Written successfully",
+            new()
+            {
+                Timeout = 30000,
+            });
 
         // Act - Read
-        await page.ClickAsync("button:has-text('Read from Blob')");
+        await page.ClickAsync("button:has-text('Read from Cosmos')");
 
-        // Wait for content
-        await page.WaitForSelectorAsync("text=Content:", new() { Timeout = 30000 });
+        // Wait for data
+        await page.WaitForSelectorAsync(
+            "text=Found",
+            new()
+            {
+                Timeout = 30000,
+            });
 
         // Assert
-        ILocator result = page.Locator("text=Content:");
+        ILocator result = page.Locator("text=Found");
+        await Assertions.Expect(result).ToBeVisibleAsync();
+    }
+
+    /// <summary>
+    ///     Verifies Cosmos DB write operation succeeds.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    [AllureId("web-storage-001")]
+    public async Task CosmosDbWriteSucceeds()
+    {
+        // Arrange
+        IPage page = await CreatePageAsync();
+        await page.GotoAsync(
+            Fixture.BaseUrl,
+            new()
+            {
+                WaitUntil = WaitUntilState.NetworkIdle,
+                Timeout = 60000,
+            });
+
+        // Act
+        await page.ClickAsync("button:has-text('Write to Cosmos')");
+
+        // Wait for success message
+        await page.WaitForSelectorAsync(
+            "text=Written successfully",
+            new()
+            {
+                Timeout = 30000,
+            });
+
+        // Assert
+        ILocator result = page.Locator("text=Written successfully");
         await Assertions.Expect(result).ToBeVisibleAsync();
     }
 }

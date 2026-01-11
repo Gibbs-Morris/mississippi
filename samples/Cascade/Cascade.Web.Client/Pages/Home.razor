@@ -1,8 +1,6 @@
 @page "/"
 @using Cascade.Web.Client.Cart
-@using Cascade.Web.Client.Services
-@using Mississippi.Reservoir.Blazor
-@inherits StoreComponent
+@inherits Mississippi.Reservoir.Blazor.StoreComponent
 @inject HttpClient Http
 @inject IMessageService MessageService
 
@@ -22,7 +20,7 @@
     <h2>SignalR Messaging</h2>
     <p>Connection: @connectionStatus</p>
     <div>
-        <input @bind="messageInput" placeholder="Enter message" />
+        <input @bind="messageInput" placeholder="Enter message"/>
         <button @onclick="SendMessageAsync" disabled="@(!isConnected)">Send</button>
     </div>
     <h3>Messages</h3>
@@ -38,19 +36,19 @@
     <h2>Orleans Grain Operations</h2>
     <h3>API → Grain</h3>
     <div>
-        <input @bind="greetNameInput" placeholder="Enter name to greet" />
+        <input @bind="greetNameInput" placeholder="Enter name to greet"/>
         <button @onclick="CallGreetApiAsync">Greet via API</button>
     </div>
     <p>API Greet Result: @greetApiResult</p>
     <div>
-        <input @bind="toUpperApiInput" placeholder="Enter text to uppercase" />
+        <input @bind="toUpperApiInput" placeholder="Enter text to uppercase"/>
         <button @onclick="CallToUpperApiAsync">ToUpper via API</button>
     </div>
     <p>API ToUpper Result: @toUpperApiResult</p>
 
     <h3>SignalR → Grain</h3>
     <div>
-        <input @bind="greetSignalRInput" placeholder="Enter name to greet" />
+        <input @bind="greetSignalRInput" placeholder="Enter name to greet"/>
         <button @onclick="CallGreetSignalRAsync" disabled="@(!isConnected)">Greet via SignalR</button>
     </div>
     <h4>Greeting Results</h4>
@@ -61,7 +59,7 @@
         }
     </ul>
     <div>
-        <input @bind="toUpperSignalRInput" placeholder="Enter text to uppercase" />
+        <input @bind="toUpperSignalRInput" placeholder="Enter text to uppercase"/>
         <button @onclick="CallToUpperSignalRAsync" disabled="@(!isConnected)">ToUpper via SignalR</button>
     </div>
     <p>SignalR ToUpper Result: @toUpperSignalRResult</p>
@@ -71,7 +69,7 @@
     <h2>Orleans Streaming</h2>
     <p>Demonstrates: API → BroadcasterGrain → Orleans Stream → StreamBridgeService → SignalR → Client</p>
     <div>
-        <input @bind="broadcastMessageInput" placeholder="Enter message to broadcast" />
+        <input @bind="broadcastMessageInput" placeholder="Enter message to broadcast"/>
         <button @onclick="BroadcastMessageAsync">Broadcast via Stream</button>
     </div>
     <p>Broadcast Result: @broadcastResult</p>
@@ -124,14 +122,16 @@
 
     <h3>Manual Add</h3>
     <div>
-        <input @bind="newItemName" placeholder="Enter item name" />
+        <input @bind="newItemName" placeholder="Enter item name"/>
         <button @onclick="AddItemToCart">Add to Cart</button>
     </div>
 
     <h3>Cart Items (@Cart.Items.Count)</h3>
     @if (Cart.Items.Count == 0)
     {
-        <p><em>Cart is empty</em></p>
+        <p>
+            <em>Cart is empty</em>
+        </p>
     }
     else
     {
@@ -148,12 +148,19 @@
 </section>
 
 @code {
+
     private string apiStatus = "Not checked";
+
     private string echoResponse = string.Empty;
+
     private string connectionStatus = "Disconnected";
+
     private string messageInput = string.Empty;
+
     private string cosmosResult = string.Empty;
+
     private string blobResult = string.Empty;
+
     private bool isConnected;
 
     // SignalR Messaging section - self-contained
@@ -161,21 +168,31 @@
 
     // Orleans Grain Operations section - self-contained
     private string greetNameInput = string.Empty;
+
     private string greetApiResult = string.Empty;
+
     private string toUpperApiInput = string.Empty;
+
     private string toUpperApiResult = string.Empty;
+
     private string greetSignalRInput = string.Empty;
+
     private string toUpperSignalRInput = string.Empty;
+
     private string toUpperSignalRResult = string.Empty;
+
     private readonly List<string> greetingMessages = [];
 
     // Orleans Streaming section - self-contained
     private string broadcastMessageInput = string.Empty;
+
     private string broadcastResult = string.Empty;
+
     private readonly List<string> streamMessages = [];
 
     // Reservoir Cart section - self-contained
     private string newItemName = string.Empty;
+
     private CartState Cart => GetState<CartState>();
 
     protected override async Task OnInitializedAsync()
@@ -192,7 +209,6 @@
         {
             HealthResponse? health = await Http.GetFromJsonAsync<HealthResponse>("api/health");
             apiStatus = health?.Status ?? "Unknown";
-
             EchoResponse? echo = await Http.GetFromJsonAsync<EchoResponse>("api/echo?message=Hello");
             echoResponse = echo?.Message ?? "No response";
         }
@@ -237,9 +253,7 @@
         try
         {
             GreetApiResponse? response = await Http.GetFromJsonAsync<GreetApiResponse>($"api/greet/{Uri.EscapeDataString(greetNameInput)}");
-            greetApiResult = response is not null
-                ? $"{response.Greeting} (Uppercase: {response.UppercaseName}, Time: {response.Timestamp:HH:mm:ss})"
-                : "No response";
+            greetApiResult = response is not null ? $"{response.Greeting} (Uppercase: {response.UppercaseName}, Time: {response.Timestamp:HH:mm:ss})" : "No response";
         }
         catch (Exception ex)
         {
@@ -257,7 +271,12 @@
 
         try
         {
-            HttpResponseMessage response = await Http.PostAsJsonAsync("api/toupper", new ToUpperRequest { Input = toUpperApiInput });
+            HttpResponseMessage response = await Http.PostAsJsonAsync(
+                "api/toupper",
+                new ToUpperRequest
+                {
+                    Input = toUpperApiInput,
+                });
             if (response.IsSuccessStatusCode)
             {
                 toUpperApiResult = await response.Content.ReadAsStringAsync();
@@ -322,8 +341,10 @@
         {
             HttpResponseMessage response = await Http.PostAsJsonAsync(
                 "api/broadcast",
-                new BroadcastRequest { Message = broadcastMessageInput });
-
+                new BroadcastRequest
+                {
+                    Message = broadcastMessageInput,
+                });
             if (response.IsSuccessStatusCode)
             {
                 broadcastResult = "Broadcast sent successfully";
@@ -340,20 +361,29 @@
         }
     }
 
-    private void HandleMessageReceived(object? sender, MessageReceivedEventArgs e)
+    private void HandleMessageReceived(
+        object? sender,
+        MessageReceivedEventArgs e
+    )
     {
         signalRMessages.Add(e.Message);
         InvokeAsync(StateHasChanged);
     }
 
-    private void HandleGreetingReceived(object? sender, GreetingReceivedEventArgs e)
+    private void HandleGreetingReceived(
+        object? sender,
+        GreetingReceivedEventArgs e
+    )
     {
         string formattedMessage = $"[{e.GeneratedAt:HH:mm:ss}] {e.Greeting} (Uppercase: {e.UppercaseName})";
         greetingMessages.Add(formattedMessage);
         InvokeAsync(StateHasChanged);
     }
 
-    private void HandleStreamMessageReceived(object? sender, StreamMessageReceivedEventArgs e)
+    private void HandleStreamMessageReceived(
+        object? sender,
+        StreamMessageReceivedEventArgs e
+    )
     {
         string formattedMessage = $"[{e.Timestamp:HH:mm:ss}] From {e.Sender}: {e.Content}";
         streamMessages.Add(formattedMessage);
@@ -366,7 +396,11 @@
         {
             HttpResponseMessage response = await Http.PostAsJsonAsync(
                 "api/cosmos",
-                new CosmosItem { Id = Guid.NewGuid().ToString(), Data = $"Test data at {DateTime.UtcNow:O}" });
+                new CosmosItem
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Data = $"Test data at {DateTime.UtcNow:O}",
+                });
             cosmosResult = response.IsSuccessStatusCode ? "Written successfully" : $"Error: {response.StatusCode}";
         }
         catch (Exception ex)
@@ -380,9 +414,7 @@
         try
         {
             CosmosItem[]? items = await Http.GetFromJsonAsync<CosmosItem[]>("api/cosmos");
-            cosmosResult = items is { Length: > 0 }
-                ? $"Found {items.Length} item(s): {items[0].Data}"
-                : "No items found";
+            cosmosResult = items is { Length: > 0 } ? $"Found {items.Length} item(s): {items[0].Data}" : "No items found";
         }
         catch (Exception ex)
         {
@@ -396,7 +428,11 @@
         {
             HttpResponseMessage response = await Http.PostAsJsonAsync(
                 "api/blob",
-                new BlobItem { Name = "test-blob", Content = $"Blob content at {DateTime.UtcNow:O}" });
+                new BlobItem
+                {
+                    Name = "test-blob",
+                    Content = $"Blob content at {DateTime.UtcNow:O}",
+                });
             blobResult = response.IsSuccessStatusCode ? "Written successfully" : $"Error: {response.StatusCode}";
         }
         catch (Exception ex)
@@ -447,4 +483,5 @@
     {
         Dispatch(new LoadProductsAction());
     }
+
 }

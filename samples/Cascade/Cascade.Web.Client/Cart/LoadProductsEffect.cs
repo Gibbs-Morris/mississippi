@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
@@ -42,10 +41,8 @@ internal sealed class LoadProductsEffect : IEffect
     {
         // Signal that loading has started
         yield return new ProductsLoadingAction();
-
         string[]? products = null;
         string? errorMessage = null;
-
         try
         {
             products = await Http.GetFromJsonAsync<string[]>("api/products", cancellationToken);

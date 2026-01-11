@@ -18,13 +18,6 @@ namespace Cascade.L2Tests.Features;
 public class RealTimeTests : TestBase
 {
     /// <summary>
-    ///     Maximum channel name length for test channels.
-    ///     Truncated to 24 chars to ensure uniqueness while keeping names readable.
-    ///     Format: prefix (8-10 chars) + partial GUID (14-16 chars) = 24 total.
-    /// </summary>
-    private const int MaxChannelNameLength = 24;
-
-    /// <summary>
     ///     Initializes a new instance of the <see cref="RealTimeTests" /> class.
     /// </summary>
     /// <param name="fixture">The Playwright fixture.</param>
@@ -34,6 +27,13 @@ public class RealTimeTests : TestBase
         : base(fixture)
     {
     }
+
+    /// <summary>
+    ///     Maximum channel name length for test channels.
+    ///     Truncated to 24 chars to ensure uniqueness while keeping names readable.
+    ///     Format: prefix (8-10 chars) + partial GUID (14-16 chars) = 24 total.
+    /// </summary>
+    private const int MaxChannelNameLength = 24;
 
     /// <summary>
     ///     Verifies that real-time updates work with message delivery under 5 seconds.

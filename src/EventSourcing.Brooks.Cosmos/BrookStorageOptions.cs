@@ -6,9 +6,9 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos;
 public sealed class BrookStorageOptions
 {
     /// <summary>
-    ///     Gets the Cosmos DB container identifier for storing brooks.
+    ///     Gets or sets the Cosmos DB container identifier for storing brooks.
     /// </summary>
-    public string ContainerId { get; } = "brooks";
+    public string ContainerId { get; set; } = "brooks";
 
     /// <summary>
     ///     Gets or sets the Cosmos DB database identifier.

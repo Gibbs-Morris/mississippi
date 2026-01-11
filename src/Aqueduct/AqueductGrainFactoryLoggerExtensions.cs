@@ -1,5 +1,3 @@
-using System;
-
 using Microsoft.Extensions.Logging;
 
 
@@ -32,10 +30,7 @@ internal static partial class AqueductGrainFactoryLoggerExtensions
         string groupName
     );
 
-    [LoggerMessage(
-        EventId = 3,
-        Level = LogLevel.Debug,
-        Message = "Resolving {GrainType} with key '{DirectoryKey}'")]
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "Resolving {GrainType} with key '{DirectoryKey}'")]
     public static partial void ResolvingServerDirectoryGrain(
         this ILogger logger,
         string grainType,

@@ -14,6 +14,9 @@
     <PackageReference Include="Aspire.Azure.Data.Tables" />
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
 
+    <!-- Aspire Cosmos DB integration for event sourcing storage -->
+    <PackageReference Include="Aspire.Microsoft.Azure.Cosmos" />
+
     <!-- Orleans Server -->
     <PackageReference Include="Microsoft.Orleans.Server" />
     <PackageReference Include="Microsoft.Orleans.Clustering.AzureStorage" />
@@ -22,9 +25,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Cascade Domain with aggregates, projections, and UX projections -->
+    <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj" />
     <ProjectReference Include="..\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
+
+    <!-- Aqueduct for real-time projection streaming -->
     <ProjectReference Include="..\..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+
+    <!-- Event Sourcing infrastructure -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
   </ItemGroup>
 
 </Project>

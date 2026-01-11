@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,17 +31,19 @@ namespace Cascade.Web.Silo.Grains;
 ///     </para>
 /// </remarks>
 [Alias("Cascade.Web.Silo.BroadcasterGrain")]
-internal sealed class BroadcasterGrain : IGrainBase, IBroadcasterGrain
+internal sealed class BroadcasterGrain
+    : IGrainBase,
+      IBroadcasterGrain
 {
-    /// <summary>
-    ///     The hub name used for group grain key construction. Must match the SignalR hub type name.
-    /// </summary>
-    private const string HubName = "MessageHub";
-
     /// <summary>
     ///     Well-known group name for broadcast messages. Must match MessageHub.BroadcastGroupName.
     /// </summary>
     private const string BroadcastGroupName = "broadcast";
+
+    /// <summary>
+    ///     The hub name used for group grain key construction. Must match the SignalR hub type name.
+    /// </summary>
+    private const string HubName = "MessageHub";
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BroadcasterGrain" /> class.
@@ -69,15 +70,9 @@ internal sealed class BroadcasterGrain : IGrainBase, IBroadcasterGrain
     private ILogger<BroadcasterGrain> Logger { get; }
 
     /// <inheritdoc />
-    public Task OnActivateAsync(CancellationToken token)
-    {
-        string grainKey = this.GetPrimaryKeyString();
-        Logger.LogBroadcasterActivated(grainKey);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public async Task BroadcastAsync(string message)
+    public async Task BroadcastAsync(
+        string message
+    )
     {
         string grainKey = this.GetPrimaryKeyString();
         Logger.LogBroadcastingSent(grainKey, message);
@@ -85,9 +80,16 @@ internal sealed class BroadcasterGrain : IGrainBase, IBroadcasterGrain
         // Get the broadcast group grain and send the message
         // The group grain fans out to individual client grains, which publish to their server streams
         ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
+        await groupGrain.SendMessageAsync("ReceiveStreamMessage", [message, grainKey, DateTime.UtcNow]);
+    }
 
-        await groupGrain.SendMessageAsync(
-            "ReceiveStreamMessage",
-            [message, grainKey, DateTime.UtcNow]);
+    /// <inheritdoc />
+    public Task OnActivateAsync(
+        CancellationToken token
+    )
+    {
+        string grainKey = this.GetPrimaryKeyString();
+        Logger.LogBroadcasterActivated(grainKey);
+        return Task.CompletedTask;
     }
 }

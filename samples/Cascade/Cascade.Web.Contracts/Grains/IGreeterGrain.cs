@@ -29,5 +29,7 @@ public interface IGreeterGrain : IGrainWithStringKey
     /// <param name="input">The string to convert.</param>
     /// <returns>The input string in uppercase.</returns>
     [Alias("ToUpperAsync")]
-    Task<string> ToUpperAsync(string input);
+    Task<string> ToUpperAsync(
+        string input
+    );
 }

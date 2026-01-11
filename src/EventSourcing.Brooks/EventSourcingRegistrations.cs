@@ -20,16 +20,40 @@ public static class EventSourcingRegistrations
 {
     /// <summary>
     ///     Configures Orleans silo to support event sourcing grains.
-    ///     This must be called when setting up the Orleans silo.
     /// </summary>
     /// <param name="builder">The Orleans silo builder.</param>
+    /// <param name="configureOptions">
+    ///     Optional action to configure <see cref="BrookProviderOptions" />.
+    ///     Use this to specify which stream provider name Brooks should use.
+    /// </param>
     /// <returns>The modified silo builder for chaining.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         This method does NOT configure streams or storage - the host application
+    ///         is responsible for that. Use <paramref name="configureOptions" /> to tell
+    ///         Brooks which stream provider to use:
+    ///     </para>
+    ///     <code>
+    ///     // Host configures infrastructure
+    ///     siloBuilder.AddMemoryStreams("MyStreams");
+    ///     siloBuilder.AddMemoryGrainStorage("PubSubStore");
+    ///
+    ///     // Tell Brooks which stream provider to use
+    ///     siloBuilder.AddEventSourcing(options =&gt;
+    ///         options.OrleansStreamProviderName = "MyStreams");
+    ///     </code>
+    /// </remarks>
     public static ISiloBuilder AddEventSourcing(
-        this ISiloBuilder builder
+        this ISiloBuilder builder,
+        Action<BrookProviderOptions>? configureOptions = null
     )
     {
-        // Register memory streams for communication between grains
-        builder.AddMemoryStreams("MississippiBrookStreamProvider");
+        ArgumentNullException.ThrowIfNull(builder);
+        if (configureOptions != null)
+        {
+            builder.Services.Configure(configureOptions);
+        }
+
         return builder;
     }
 
@@ -39,9 +63,21 @@ public static class EventSourcingRegistrations
     ///     and configures the Orleans silo.
     /// </summary>
     /// <param name="builder">The host application builder.</param>
+    /// <param name="configureOptions">
+    ///     Optional action to configure <see cref="BrookProviderOptions" />.
+    ///     Use this to specify which stream provider name Brooks should use.
+    /// </param>
     /// <returns>The modified host builder for chaining.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         The host is responsible for configuring Orleans streams before calling this method.
+    ///         Use <paramref name="configureOptions" /> to specify the stream provider name that
+    ///         Brooks should use for event notifications.
+    ///     </para>
+    /// </remarks>
     public static HostApplicationBuilder AddEventSourcing(
-        this HostApplicationBuilder builder
+        this HostApplicationBuilder builder,
+        Action<BrookProviderOptions>? configureOptions = null
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -49,8 +85,8 @@ public static class EventSourcingRegistrations
         // Add services to DI container
         builder.Services.AddEventSourcingByService();
 
-        // Configure Orleans silo
-        builder.UseOrleans(silo => silo.AddEventSourcing());
+        // Configure Orleans silo with options
+        builder.UseOrleans(silo => silo.AddEventSourcing(configureOptions));
         return builder;
     }
 

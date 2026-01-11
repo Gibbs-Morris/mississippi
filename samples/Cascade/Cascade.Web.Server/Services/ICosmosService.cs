@@ -12,12 +12,6 @@ namespace Cascade.Web.Server.Services;
 internal interface ICosmosService
 {
     /// <summary>
-    ///     Gets all items from the container.
-    /// </summary>
-    /// <returns>A list of items.</returns>
-    Task<IReadOnlyList<CosmosItem>> GetItemsAsync();
-
-    /// <summary>
     ///     Creates a new item in the container.
     /// </summary>
     /// <param name="item">The item to create.</param>
@@ -25,4 +19,10 @@ internal interface ICosmosService
     Task CreateItemAsync(
         CosmosItem item
     );
+
+    /// <summary>
+    ///     Gets all items from the container.
+    /// </summary>
+    /// <returns>A list of items.</returns>
+    Task<IReadOnlyList<CosmosItem>> GetItemsAsync();
 }

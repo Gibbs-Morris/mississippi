@@ -7,6 +7,4 @@ namespace Cascade.Web.Client.Cart;
 ///     Action dispatched when product loading fails.
 /// </summary>
 /// <param name="Error">The error message.</param>
-internal sealed record ProductsLoadFailedAction(
-    string Error
-) : IAction;
+internal sealed record ProductsLoadFailedAction(string Error) : IAction;

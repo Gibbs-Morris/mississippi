@@ -74,6 +74,29 @@ public static class AqueductRegistrations
     }
 
     /// <summary>
+    ///     Adds the <see cref="IAqueductGrainFactory" /> implementation for resolving
+    ///     SignalR grains by strongly-typed keys.
+    /// </summary>
+    /// <param name="services">The service collection to configure.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Register this to allow code to obtain SignalR grain references
+    ///         without knowing the internal key format. The factory is automatically
+    ///         registered by <see cref="AddAqueduct{THub}(IServiceCollection)" />
+    ///         and <see cref="AddAqueductNotifier" />.
+    ///     </para>
+    /// </remarks>
+    public static IServiceCollection AddAqueductGrainFactory(
+        this IServiceCollection services
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
+        return services;
+    }
+
+    /// <summary>
     ///     Adds the <see cref="IAqueductNotifier" /> implementation for sending
     ///     real-time notifications from Orleans grains.
     /// </summary>
@@ -96,29 +119,6 @@ public static class AqueductRegistrations
         ArgumentNullException.ThrowIfNull(services);
         services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
         services.TryAddSingleton<IAqueductNotifier, AqueductNotifier>();
-        return services;
-    }
-
-    /// <summary>
-    ///     Adds the <see cref="IAqueductGrainFactory" /> implementation for resolving
-    ///     SignalR grains by strongly-typed keys.
-    /// </summary>
-    /// <param name="services">The service collection to configure.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <remarks>
-    ///     <para>
-    ///         Register this to allow code to obtain SignalR grain references
-    ///         without knowing the internal key format. The factory is automatically
-    ///         registered by <see cref="AddAqueduct{THub}(IServiceCollection)" />
-    ///         and <see cref="AddAqueductNotifier" />.
-    ///     </para>
-    /// </remarks>
-    public static IServiceCollection AddAqueductGrainFactory(
-        this IServiceCollection services
-    )
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
         return services;
     }
 }

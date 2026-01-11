@@ -23,8 +23,9 @@ internal sealed class ServerProjectionSubscriptionEffect
     : IEffect,
       IDisposable
 {
-    private static readonly ConcurrentDictionary<Type, (MethodInfo GetGrain, MethodInfo GetAsync, MethodInfo GetVersion, PropertyInfo
-        Result)> ReflectionCache = new();
+    private static readonly
+        ConcurrentDictionary<Type, (MethodInfo GetGrain, MethodInfo GetAsync, MethodInfo GetVersion, PropertyInfo Result
+            )> ReflectionCache = new();
 
     private readonly ConcurrentDictionary<(Type, string), IDisposable> activeSubscriptions = new();
 
@@ -95,6 +96,36 @@ internal sealed class ServerProjectionSubscriptionEffect
         return (IAction)Activator.CreateInstance(actionType, entityId, data, version)!;
     }
 
+    private static (MethodInfo GetGrain, MethodInfo GetAsync, MethodInfo GetVersion, PropertyInfo Result)
+        GetOrCreateReflectionCache(
+            Type projectionType
+        ) =>
+        ReflectionCache.GetOrAdd(
+            projectionType,
+            static type =>
+            {
+                MethodInfo getGrainMethod =
+                    typeof(IUxProjectionGrainFactory).GetMethod(nameof(IUxProjectionGrainFactory.GetUxProjectionGrain))
+                        ?.MakeGenericMethod(type) ??
+                    throw new InvalidOperationException($"GetUxProjectionGrain method not found for {type.Name}");
+
+                // The grain interface is IUxProjectionGrain<T>
+                Type grainInterfaceType = typeof(IUxProjectionGrain<>).MakeGenericType(type);
+                MethodInfo getAsyncMethod = grainInterfaceType.GetMethod("GetAsync") ??
+                                            throw new InvalidOperationException(
+                                                $"GetAsync method not found for {type.Name}");
+                MethodInfo getVersionMethod = grainInterfaceType.GetMethod("GetVersionAsync") ??
+                                              throw new InvalidOperationException(
+                                                  $"GetVersionAsync method not found for {type.Name}");
+
+                // Result property is on Task<T> - create the expected task type
+                Type taskResultType = typeof(Task<>).MakeGenericType(type);
+                PropertyInfo resultProp = taskResultType.GetProperty("Result") ??
+                                          throw new InvalidOperationException(
+                                              $"Result property not found for Task<{type.Name}>");
+                return (getGrainMethod, getAsyncMethod, getVersionMethod, resultProp);
+            });
+
     /// <inheritdoc />
     public bool CanHandle(
         IAction action
@@ -152,12 +183,11 @@ internal sealed class ServerProjectionSubscriptionEffect
         string entityId
     )
     {
-        (MethodInfo getGrainMethod, MethodInfo getAsyncMethod, _, PropertyInfo resultProp) =
+        (MethodInfo getGrainMethod, MethodInfo getAsyncMethod, var _, PropertyInfo resultProp) =
             GetOrCreateReflectionCache(projectionType);
-
-        object grain = getGrainMethod.Invoke(GrainFactory, [entityId])
-                       ?? throw new InvalidOperationException($"GetUxProjectionGrain returned null for {projectionType.Name}");
-
+        object grain = getGrainMethod.Invoke(GrainFactory, [entityId]) ??
+                       throw new InvalidOperationException(
+                           $"GetUxProjectionGrain returned null for {projectionType.Name}");
         object? taskObj = getAsyncMethod.Invoke(grain, null);
         if (taskObj is not Task task)
         {
@@ -173,11 +203,11 @@ internal sealed class ServerProjectionSubscriptionEffect
         string entityId
     )
     {
-        (MethodInfo getGrainMethod, _, MethodInfo getVersionMethod, _) = GetOrCreateReflectionCache(projectionType);
-
-        object grain = getGrainMethod.Invoke(GrainFactory, [entityId])
-                       ?? throw new InvalidOperationException($"GetUxProjectionGrain returned null for {projectionType.Name}");
-
+        (MethodInfo getGrainMethod, var _, MethodInfo getVersionMethod, var _) =
+            GetOrCreateReflectionCache(projectionType);
+        object grain = getGrainMethod.Invoke(GrainFactory, [entityId]) ??
+                       throw new InvalidOperationException(
+                           $"GetUxProjectionGrain returned null for {projectionType.Name}");
         object? taskObj = getVersionMethod.Invoke(grain, null);
         if (taskObj is not Task<long> task)
         {
@@ -186,33 +216,6 @@ internal sealed class ServerProjectionSubscriptionEffect
 
         return await task.ConfigureAwait(false);
     }
-
-    private static (MethodInfo GetGrain, MethodInfo GetAsync, MethodInfo GetVersion, PropertyInfo Result) GetOrCreateReflectionCache(
-        Type projectionType
-    ) =>
-        ReflectionCache.GetOrAdd(
-            projectionType,
-            static type =>
-            {
-                MethodInfo getGrainMethod =
-                    typeof(IUxProjectionGrainFactory).GetMethod(nameof(IUxProjectionGrainFactory.GetUxProjectionGrain))
-                        ?.MakeGenericMethod(type)
-                    ?? throw new InvalidOperationException($"GetUxProjectionGrain method not found for {type.Name}");
-
-                // The grain interface is IUxProjectionGrain<T>
-                Type grainInterfaceType = typeof(IUxProjectionGrain<>).MakeGenericType(type);
-                MethodInfo getAsyncMethod = grainInterfaceType.GetMethod("GetAsync")
-                                            ?? throw new InvalidOperationException($"GetAsync method not found for {type.Name}");
-                MethodInfo getVersionMethod = grainInterfaceType.GetMethod("GetVersionAsync")
-                                              ?? throw new InvalidOperationException($"GetVersionAsync method not found for {type.Name}");
-
-                // Result property is on Task<T> - create the expected task type
-                Type taskResultType = typeof(Task<>).MakeGenericType(type);
-                PropertyInfo resultProp = taskResultType.GetProperty("Result")
-                                          ?? throw new InvalidOperationException($"Result property not found for Task<{type.Name}>");
-
-                return (getGrainMethod, getAsyncMethod, getVersionMethod, resultProp);
-            });
 
     private async IAsyncEnumerable<IAction> HandleSubscribeAsync(
         Type projectionType,

@@ -27,6 +27,40 @@ public sealed class ApiConnectivityTests : TestBase
     }
 
     /// <summary>
+    ///     Verifies the API health endpoint returns healthy status.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    [AllureId("web-api-002")]
+    public async Task CallApiReturnsHealthyStatus()
+    {
+        // Arrange
+        IPage page = await CreatePageAsync();
+        await page.GotoAsync(
+            Fixture.BaseUrl,
+            new()
+            {
+                WaitUntil = WaitUntilState.NetworkIdle,
+                Timeout = 60000,
+            });
+
+        // Act
+        await page.ClickAsync("button:has-text('Call API')");
+
+        // Wait for response
+        await page.WaitForSelectorAsync(
+            "text=Healthy",
+            new()
+            {
+                Timeout = 30000,
+            });
+
+        // Assert
+        ILocator status = page.Locator("text=Healthy");
+        await Assertions.Expect(status).ToBeVisibleAsync();
+    }
+
+    /// <summary>
     ///     Verifies the home page loads and displays the app title.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -49,34 +83,5 @@ public sealed class ApiConnectivityTests : TestBase
         // Assert
         ILocator title = page.Locator("h1");
         await Assertions.Expect(title).ToContainTextAsync("Cascade Web");
-    }
-
-    /// <summary>
-    ///     Verifies the API health endpoint returns healthy status.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    [AllureId("web-api-002")]
-    public async Task CallApiReturnsHealthyStatus()
-    {
-        // Arrange
-        IPage page = await CreatePageAsync();
-        await page.GotoAsync(
-            Fixture.BaseUrl,
-            new()
-            {
-                WaitUntil = WaitUntilState.NetworkIdle,
-                Timeout = 60000,
-            });
-
-        // Act
-        await page.ClickAsync("button:has-text('Call API')");
-
-        // Wait for response
-        await page.WaitForSelectorAsync("text=Healthy", new() { Timeout = 30000 });
-
-        // Assert
-        ILocator status = page.Locator("text=Healthy");
-        await Assertions.Expect(status).ToBeVisibleAsync();
     }
 }

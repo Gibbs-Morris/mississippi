@@ -2,8 +2,6 @@ using Allure.Xunit.Attributes;
 
 using Cascade.Web.Contracts;
 
-using Xunit;
-
 
 namespace Cascade.Web.L0Tests.Contracts;
 

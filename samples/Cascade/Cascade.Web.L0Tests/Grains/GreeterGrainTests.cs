@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
@@ -9,10 +10,7 @@ using Microsoft.Extensions.Logging;
 
 using NSubstitute;
 
-using Orleans;
 using Orleans.Runtime;
-
-using Xunit;
 
 
 namespace Cascade.Web.L0Tests.Grains;
@@ -37,7 +35,6 @@ public sealed class GreeterGrainTests
         IGrainContext grainContext = Substitute.For<IGrainContext>();
         grainContext.GrainId.Returns(GrainId.Create("greeter", "TestUser"));
         ILogger<GreeterGrain> logger = Substitute.For<ILogger<GreeterGrain>>();
-
         GreeterGrain grain = new(grainContext, logger);
 
         // Act
@@ -60,7 +57,6 @@ public sealed class GreeterGrainTests
         IGrainContext grainContext = Substitute.For<IGrainContext>();
         grainContext.GrainId.Returns(GrainId.Create("greeter", "converter"));
         ILogger<GreeterGrain> logger = Substitute.For<ILogger<GreeterGrain>>();
-
         GreeterGrain grain = new(grainContext, logger);
 
         // Act
@@ -80,16 +76,17 @@ public sealed class GreeterGrainTests
     [InlineData("")]
     [InlineData("   ")]
     [AllureId("web-grains-012")]
-    public async Task ToUpperAsyncThrowsForInvalidInput(string? input)
+    public async Task ToUpperAsyncThrowsForInvalidInput(
+        string? input
+    )
     {
         // Arrange
         IGrainContext grainContext = Substitute.For<IGrainContext>();
         grainContext.GrainId.Returns(GrainId.Create("greeter", "converter"));
         ILogger<GreeterGrain> logger = Substitute.For<ILogger<GreeterGrain>>();
-
         GreeterGrain grain = new(grainContext, logger);
 
         // Act & Assert - ArgumentNullException (for null) and ArgumentException (for empty/whitespace) are expected
-        await Assert.ThrowsAnyAsync<System.ArgumentException>(() => grain.ToUpperAsync(input!));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => grain.ToUpperAsync(input!));
     }
 }

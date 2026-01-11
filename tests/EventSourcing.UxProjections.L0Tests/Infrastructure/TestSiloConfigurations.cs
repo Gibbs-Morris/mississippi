@@ -20,7 +20,11 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         ISiloBuilder siloBuilder
     )
     {
+        // Host configures stream infrastructure
         siloBuilder.AddMemoryStreams("MississippiBrookStreamProvider");
+
+        // Tell Brooks which stream provider to use
+        siloBuilder.AddEventSourcing();
         siloBuilder.ConfigureServices(services =>
         {
             services.AddUxProjections();

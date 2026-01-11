@@ -28,10 +28,7 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         // Configure Aqueduct options
         siloBuilder.ConfigureServices(services =>
         {
-            services.Configure<AqueductOptions>(options =>
-            {
-                options.StreamProviderName = "SignalRStreams";
-            });
+            services.Configure<AqueductOptions>(options => { options.StreamProviderName = "SignalRStreams"; });
         });
     }
 }

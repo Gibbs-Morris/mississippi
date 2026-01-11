@@ -13,6 +13,12 @@ namespace Cascade.Web.Contracts.Grains;
 public sealed record GreetResponse
 {
     /// <summary>
+    ///     Gets the timestamp when the greeting was generated.
+    /// </summary>
+    [Id(2)]
+    public required DateTime GeneratedAt { get; init; }
+
+    /// <summary>
     ///     Gets the greeting message.
     /// </summary>
     [Id(0)]
@@ -23,10 +29,4 @@ public sealed record GreetResponse
     /// </summary>
     [Id(1)]
     public required string UppercaseName { get; init; }
-
-    /// <summary>
-    ///     Gets the timestamp when the greeting was generated.
-    /// </summary>
-    [Id(2)]
-    public required DateTime GeneratedAt { get; init; }
 }

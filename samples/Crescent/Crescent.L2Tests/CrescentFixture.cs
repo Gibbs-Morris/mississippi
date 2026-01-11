@@ -114,8 +114,8 @@ public sealed class CrescentFixture
         builder.Logging.AddFilter("Orleans", LogLevel.Warning);
         builder.Logging.AddFilter("Mississippi", LogLevel.Debug);
 
-        // Add Mississippi event sourcing infrastructure
-        builder.AddEventSourcing();
+        // Add Mississippi event sourcing services
+        builder.Services.AddEventSourcingByService();
 
         // Add JSON serialization for event sourcing
         builder.Services.AddJsonSerialization();
@@ -131,8 +131,14 @@ public sealed class CrescentFixture
                 {
                     opt.ClusterId = "aspire-l2tests";
                     opt.ServiceId = "CrescentTests";
-                })
-                .AddMemoryGrainStorage("PubSubStore");
+                });
+
+            // Host configures stream infrastructure
+            silo.AddMemoryStreams("MississippiBrookStreamProvider");
+            silo.AddMemoryGrainStorage("PubSubStore");
+
+            // Tell Brooks which stream provider to use
+            silo.AddEventSourcing();
         });
 
         // Pre-register CosmosClient with Gateway mode for Aspire emulator compatibility

@@ -29,6 +29,5 @@ public abstract class TestBase
     ///     Creates a new Playwright page.
     /// </summary>
     /// <returns>The new page.</returns>
-    protected Task<IPage> CreatePageAsync() =>
-        Fixture.CreatePageAsync();
+    protected Task<IPage> CreatePageAsync() => Fixture.CreatePageAsync();
 }

@@ -20,7 +20,9 @@ internal sealed class MessageEditedReducer : ReducerBase<MessageEdited, Conversa
         if (index < 0)
         {
             // Must return new instance per ReducerBase requirements
-            return state with { };
+            return state with
+            {
+            };
         }
 
         Message existingMessage = state.Messages[index];

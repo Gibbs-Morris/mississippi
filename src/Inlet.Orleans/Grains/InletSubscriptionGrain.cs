@@ -80,6 +80,8 @@ internal sealed class InletSubscriptionGrain
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
 
+    private IAqueductGrainFactory AqueductGrainFactory { get; }
+
     private Dictionary<string, BrookPosition> BrookPositions { get; } = [];
 
     private IBrookStorageReader BrookStorageReader { get; }
@@ -93,8 +95,6 @@ internal sealed class InletSubscriptionGrain
     private ILogger<InletSubscriptionGrain> Logger { get; }
 
     private IProjectionBrookRegistry ProjectionBrookRegistry { get; }
-
-    private IAqueductGrainFactory AqueductGrainFactory { get; }
 
     private IStreamIdFactory StreamIdFactory { get; }
 
@@ -186,7 +186,9 @@ internal sealed class InletSubscriptionGrain
                 string groupName = $"projection:{entry.ProjectionType}:{entry.EntityId}";
                 try
                 {
-                    ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(InletHubConstants.HubName, groupName);
+                    ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(
+                        InletHubConstants.HubName,
+                        groupName);
                     await groupGrain.SendMessageAsync(
                         InletHubConstants.ProjectionUpdatedMethod,
                         [entry.ProjectionType, entry.EntityId, item.NewPosition.Value]);

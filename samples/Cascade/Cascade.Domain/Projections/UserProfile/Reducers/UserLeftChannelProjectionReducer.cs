@@ -26,7 +26,9 @@ internal sealed class UserLeftChannelProjectionReducer : ReducerBase<UserLeftCha
         if (!state.ChannelIds.Contains(eventData.ChannelId))
         {
             // Must return new instance per ReducerBase requirements
-            return state with { };
+            return state with
+            {
+            };
         }
 
         return state with

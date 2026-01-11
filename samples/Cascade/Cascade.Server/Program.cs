@@ -23,8 +23,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 // Add OpenTelemetry for metrics and tracing
 // Aspire sets OTEL_EXPORTER_OTLP_ENDPOINT for automatic dashboard integration
 // Note: In OpenTelemetry 1.14.0+, exporters are added inside WithMetrics/WithTracing
-var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
-
+string? otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
 builder.Services.AddOpenTelemetry()
     .WithMetrics(metrics =>
     {
