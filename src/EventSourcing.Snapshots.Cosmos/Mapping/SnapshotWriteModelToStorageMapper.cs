@@ -1,6 +1,6 @@
 using System.Linq;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
 

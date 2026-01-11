@@ -28,7 +28,7 @@ Developers creating or changing Orleans-serialized types.
 
 ## At-a-Glance Quick-Start
 
-- Add `[GenerateSerializer]`, `[Alias("Company.Feature.Type")]`, `[Id(n)]` (starting at 0) to members.
+- Add `[GenerateSerializer]`, `[Alias("Namespace.TypeName")]` (fully qualified type name), `[Id(n)]` (starting at 0) to members.
 - Keep IDs stable; add new members with new IDs; prefer widening/nullability changes.
 - Include Orleans SDK/codegen packages; treat analyzer warnings as errors.
 
@@ -41,3 +41,4 @@ Developers creating or changing Orleans-serialized types.
 
 - Orleans serialization docs: <https://learn.microsoft.com/dotnet/orleans/serialization>
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
+- Domain modeling: `.github/instructions/domain-modeling.instructions.md`

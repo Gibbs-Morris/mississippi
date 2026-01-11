@@ -32,7 +32,18 @@ Applies to all test authors across Mississippi and Samples solutions, including 
 - Add mutation (Mississippi): `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name>`
 - Build-only during iteration: `dotnet build ./tests/<Name>/<Name>.csproj -c Release -warnaserror`
 - Full pipeline (Mississippi): `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` then `mutation-test-mississippi-solution.ps1`
+- Integration tests (Samples L2+): `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1`
 - Summaries/tasks: rerun `summarize-coverage-gaps.ps1` and `summarize-mutation-survivors.ps1` (use `-SkipMutationRun` when reusing reports)
+
+## Test Level Filtering
+
+Unit test scripts default to running L0 and L1 tests only; L2+ tests (integration, E2E, Playwright) are excluded from PR gates to keep feedback fast.
+
+- **Default behavior**: `unit-test-mississippi-solution.ps1` and `unit-test-sample-solution.ps1` run L0Tests and L1Tests.
+- **Override**: Pass `-TestLevels @('L0Tests','L1Tests','L2Tests')` to include additional levels.
+- **Integration tests**: Use `integration-test-sample-solution.ps1` for L2+, or pass custom levels.
+
+Filter uses `FullyQualifiedName` matching on project naming convention (e.g., `*.L0Tests`, `*.L2Tests`).
 
 ## Core Principles
 

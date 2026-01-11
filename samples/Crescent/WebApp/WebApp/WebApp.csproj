@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
-
-
-    <ItemGroup>
-        <ProjectReference Include="..\WebApp.Client\WebApp.Client.csproj"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
-    </ItemGroup>
-
-</Project>

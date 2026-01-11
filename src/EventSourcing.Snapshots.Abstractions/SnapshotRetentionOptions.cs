@@ -51,7 +51,7 @@ public sealed class SnapshotRetentionOptions
     ///     For example, complex aggregates with expensive state computation might use a smaller
     ///     modulus (e.g., 50) to reduce replay cost, while simple aggregates might use a larger
     ///     modulus (e.g., 200) to reduce storage overhead.
-    ///     Keys should be the <see cref="SnapshotNameAttribute.SnapshotName" /> value
+    ///     Keys should be the <see cref="SnapshotStorageNameAttribute.StorageName" /> value
     ///     (e.g., "MYAPP.DOMAIN.COUNTERSTATE.V1") for refactoring safety.
     /// </remarks>
     /// <example>
@@ -130,7 +130,7 @@ public sealed class SnapshotRetentionOptions
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="stateType" /> is null.</exception>
     /// <remarks>
-    ///     Looks up by <see cref="SnapshotNameAttribute.SnapshotName" /> first if the type
+    ///     Looks up by <see cref="SnapshotStorageNameAttribute.StorageName" /> first if the type
     ///     is decorated with the attribute; falls back to <see cref="Type.FullName" /> for
     ///     backward compatibility.
     /// </remarks>
@@ -141,7 +141,7 @@ public sealed class SnapshotRetentionOptions
         ArgumentNullException.ThrowIfNull(stateType);
 
         // Prefer the stable snapshot name when available
-        if (SnapshotNameHelper.TryGetSnapshotName(stateType, out string? snapshotName) &&
+        if (SnapshotStorageNameHelper.TryGetStorageName(stateType, out string? snapshotName) &&
             StateTypeOverrides.TryGetValue(snapshotName!, out int modulusBySnapshotName))
         {
             return modulusBySnapshotName;

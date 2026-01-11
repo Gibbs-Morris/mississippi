@@ -10,7 +10,7 @@ Governing thought: Split stable public contracts into `{Vendor}.{Area}[.{Feature
 
 ## Rules (RFC 2119)
 
-- `*.Abstractions` projects **MUST** contain only public contracts (interfaces, abstract bases with documented justification, DTOs, domain exceptions, CQRS requests); no infrastructure/DI/persistence/hosting code. Why: Keeps packages lightweight.
+- `*.Abstractions` projects **MUST** contain only public contracts (interfaces, abstract bases with documented justification, DTOs, domain exceptions, CQRS requests); no infrastructure/persistence/hosting code, and DI **MUST NOT** embed concrete dependencies. Generic DI helpers that only register the abstraction to a caller-supplied implementation type and add no new package dependencies **MAY** live in abstractions to keep consumers lightweight. Why: Keeps packages slim while enabling opt-in registration.
 - Main projects **MUST** own all implementations/infrastructure and reference their abstractions; abstractions **MUST NOT** depend on implementations; downstream consumers **SHOULD** reference abstractions unless implementation is required. Why: Preserves clean layering.
 - When all mandatory triggers apply (cross-assembly/service contracts, multiple implementations exist/expected, stable public API), contributors **MUST** create an abstractions project before adding/modifying contracts. Why: Enforces required separation early.
 - When any optional trigger applies (dependency minimization, testing/mocking, cross-team reuse, versioning flexibility), contributors **SHOULD** create an abstractions project unless deliberately documented otherwise. Why: Encourages reuse when valuable.

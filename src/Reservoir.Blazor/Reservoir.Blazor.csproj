@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

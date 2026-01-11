@@ -8,7 +8,6 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 
 using Moq;
 
@@ -23,7 +22,7 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 [AllureSubSuite("Storage Provider")]
 public sealed class SnapshotStorageProviderTests
 {
-    private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
+    private static readonly SnapshotStreamKey StreamKey = new("TEST.BROOK", "type", "id", "hash");
 
     private static readonly SnapshotKey SnapshotKey = new(StreamKey, 5);
 

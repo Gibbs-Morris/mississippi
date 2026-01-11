@@ -6,7 +6,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 /// <summary>
 ///     Document model for storing brook cursor position information in Cosmos DB.
 /// </summary>
-internal class CursorDocument
+internal sealed class CursorDocument
 {
     /// <summary>
     ///     Gets or sets the partition key value for the document. Must match container partition key path

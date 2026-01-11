@@ -18,7 +18,7 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 [AllureSubSuite("Snapshot Mapping")]
 public sealed class SnapshotMappingTests
 {
-    private static readonly SnapshotStreamKey StreamKey = new("type", "id", "hash");
+    private static readonly SnapshotStreamKey StreamKey = new("TEST.BROOK", "type", "id", "hash");
 
     /// <summary>
     ///     Ensures documents map to envelopes.
@@ -46,8 +46,9 @@ public sealed class SnapshotMappingTests
         {
             Data = new byte[] { 3 },
             DataContentType = "json",
-            ProjectionType = StreamKey.ProjectionType,
-            ProjectionId = StreamKey.ProjectionId,
+            BrookName = StreamKey.BrookName,
+            ProjectionType = StreamKey.SnapshotStorageName,
+            ProjectionId = StreamKey.EntityId,
             ReducersHash = StreamKey.ReducersHash,
             Version = 5,
         };
@@ -75,8 +76,9 @@ public sealed class SnapshotMappingTests
         Assert.Equal("7", document.Id);
         Assert.Equal("snapshot", document.Type);
         Assert.Equal(StreamKey.ToString(), document.SnapshotPartitionKey);
-        Assert.Equal(StreamKey.ProjectionType, document.ProjectionType);
-        Assert.Equal(StreamKey.ProjectionId, document.ProjectionId);
+        Assert.Equal(StreamKey.BrookName, document.BrookName);
+        Assert.Equal(StreamKey.SnapshotStorageName, document.ProjectionType);
+        Assert.Equal(StreamKey.EntityId, document.ProjectionId);
         Assert.Equal(StreamKey.ReducersHash, document.ReducersHash);
         Assert.Equal(storage.Data, document.Data);
         Assert.Equal(storage.DataContentType, document.DataContentType);
@@ -117,8 +119,8 @@ public sealed class SnapshotMappingTests
         SnapshotDocument document = new SnapshotWriteModelToDocumentMapper().Map(writeModel);
         Assert.Equal("11", document.Id);
         Assert.Equal(StreamKey.ToString(), document.SnapshotPartitionKey);
-        Assert.Equal(StreamKey.ProjectionType, document.ProjectionType);
-        Assert.Equal(StreamKey.ProjectionId, document.ProjectionId);
+        Assert.Equal(StreamKey.SnapshotStorageName, document.ProjectionType);
+        Assert.Equal(StreamKey.EntityId, document.ProjectionId);
         Assert.Equal(StreamKey.ReducersHash, document.ReducersHash);
         Assert.Equal(11, document.Version);
         Assert.Equal(new byte[] { 7 }, document.Data);

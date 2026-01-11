@@ -12,15 +12,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Common.Cosmos.Abstractions.Retry;
+using Mississippi.Common.Cosmos.Retry;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cosmos.Batching;
 using Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
-using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
@@ -43,8 +44,11 @@ public static class BrookStorageProviderRegistrations
         services.AddSingleton<IBrookStorageProvider, BrookStorageProvider>();
         services.AddSingleton<IBrookRecoveryService, BrookRecoveryService>();
         services.AddSingleton<IEventBrookReader, EventBrookReader>();
-        services.AddSingleton<IEventBrookAppender, EventBrookAppender>();
+        services.AddSingleton<IEventBrookWriter, EventBrookWriter>();
         services.AddSingleton<ICosmosRepository, CosmosRepository>();
+
+        // BlobDistributedLockManager uses [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)] for BlobServiceClient
+        // Caller must register a keyed BlobServiceClient with that key
         services.AddSingleton<IDistributedLockManager, BlobDistributedLockManager>();
         services.AddSingleton<IBlobLeaseClientFactory, BlobLeaseClientFactory>();
         services.AddSingleton<IBatchSizeEstimator, BatchSizeEstimator>();
@@ -62,7 +66,7 @@ public static class BrookStorageProviderRegistrations
 
         // Configure Cosmos DB Container factory using keyed service to avoid conflicts with other Cosmos providers
         services.AddKeyedSingleton<Container>(
-            CosmosContainerKeys.Brooks,
+            MississippiDefaults.ServiceKeys.CosmosBrooks,
             (
                 provider,
                 _

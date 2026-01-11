@@ -1,5 +1,7 @@
 using Allure.Xunit.Attributes;
 
+using Mississippi.Common.Abstractions;
+
 
 namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 
@@ -54,7 +56,7 @@ public sealed class SnapshotStorageOptionsTests
     public void DatabaseIdShouldReturnDefaultValue()
     {
         SnapshotStorageOptions options = new();
-        Assert.Equal("mississippi", options.DatabaseId);
+        Assert.Equal(MississippiDefaults.DatabaseId, options.DatabaseId);
     }
 
     /// <summary>

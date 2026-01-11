@@ -1,0 +1,207 @@
+@page "/event-sourcing"
+@using System.Net
+@using Cascade.Web.Contracts
+@using Mississippi.Inlet.Abstractions
+@using Mississippi.Inlet.Abstractions.Actions
+@using Mississippi.Reservoir.Blazor
+@inherits StoreComponent
+@inject IInletStore InletStore
+@inject HttpClient Http
+
+<h1>Event Sourcing Demo</h1>
+<p>Demonstrates: Blazor Client → SignalR → Orleans Aggregate/Projection Grains → Cosmos DB</p>
+<p><strong>Real-time updates via Inlet:</strong> Open this page in multiple browser tabs and watch messages appear in real-time!</p>
+
+<section>
+    <h2>Conversation</h2>
+    <div>
+        <label>Conversation ID:</label>
+        <input @bind="conversationId" @bind:after="OnConversationIdChanged" placeholder="Enter conversation ID"/>
+    </div>
+    <button @onclick="StartConversationAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId))">
+        Start Conversation
+    </button>
+    <p>Start Result: @startResult</p>
+</section>
+
+<section>
+    <h2>Send Message</h2>
+    <div>
+        <label>Your Name:</label>
+        <input @bind="senderName" placeholder="Enter your name"/>
+    </div>
+    <div>
+        <label>Message:</label>
+        <input @bind="messageContent" placeholder="Enter message" @onkeypress="OnMessageKeyPress"/>
+    </div>
+    <button @onclick="SendMessageAsync"
+            disabled="@(string.IsNullOrWhiteSpace(conversationId) || string.IsNullOrWhiteSpace(messageContent) || string.IsNullOrWhiteSpace(senderName))">
+        Send Message
+    </button>
+    <p>Send Result: @sendResult</p>
+</section>
+
+<section>
+    <h2>Messages (Real-time Projection)</h2>
+    @if (InletStore.IsProjectionLoading<ConversationMessagesResponse>(conversationId))
+    {
+        <p>⏳ Loading...</p>
+    }
+    else if (InletStore.GetProjectionError<ConversationMessagesResponse>(conversationId) is { } error)
+    {
+        <p>❌ Error: @error.Message</p>
+        <button @onclick="RefreshProjection">Retry</button>
+    }
+    else if (projection is { Messages.Count: > 0 })
+    {
+        <p>✅ Connected - Total Messages: @projection.MessageCount</p>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Sender</th>
+                <th>Content</th>
+                <th>Sent At</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (ConversationMessageItem message in projection.Messages)
+            {
+                <tr style="@(message.IsDeleted ? "text-decoration: line-through; color: gray;" : "")">
+                    <td>@message.MessageId[..12]...</td>
+                    <td>@message.SentBy</td>
+                    <td>@message.Content</td>
+                    <td>@message.SentAt.ToString("HH:mm:ss")</td>
+                    <td>
+                        @if (message.IsDeleted)
+                        {
+                            <span>Deleted</span>
+                        }
+                        else if (message.EditedAt.HasValue)
+                        {
+                            <span>Edited @message.EditedAt.Value.ToString("HH:mm:ss")</span>
+                        }
+                        else
+                        {
+                            <span>✓</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else if (projection is not null)
+    {
+        <p>✅ Connected - <em>No messages yet. Send one above!</em></p>
+    }
+    else
+    {
+        <p>📡 Connecting to projection...</p>
+    }
+</section>
+
+@code {
+
+    private string conversationId = "demo-conversation";
+
+    private string senderName = "Demo User";
+
+    private string messageContent = string.Empty;
+
+    private string startResult = string.Empty;
+
+    private string sendResult = string.Empty;
+
+    private string? previousConversationId;
+
+    private ConversationMessagesResponse? projection => InletStore.GetProjection<ConversationMessagesResponse>(conversationId);
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        // Subscribe to the projection for the initial conversation ID
+        if (!string.IsNullOrWhiteSpace(conversationId))
+        {
+            Dispatch(new SubscribeToProjectionAction<ConversationMessagesResponse>(conversationId));
+            previousConversationId = conversationId;
+        }
+    }
+
+    private void OnConversationIdChanged()
+    {
+        // Unsubscribe from old conversation and subscribe to new one
+        if (!string.IsNullOrWhiteSpace(previousConversationId) && previousConversationId != conversationId)
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<ConversationMessagesResponse>(previousConversationId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(conversationId) && previousConversationId != conversationId)
+        {
+            Dispatch(new SubscribeToProjectionAction<ConversationMessagesResponse>(conversationId));
+            previousConversationId = conversationId;
+        }
+    }
+
+    private void RefreshProjection()
+    {
+        Dispatch(new RefreshProjectionAction<ConversationMessagesResponse>(conversationId));
+    }
+
+    private async Task StartConversationAsync()
+    {
+        startResult = "Starting...";
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/start", null);
+            string content = await response.Content.ReadAsStringAsync();
+            startResult = response.IsSuccessStatusCode ? $"✓ Started: {content}" : $"✗ Error: {content}";
+
+            // Refresh projection after starting conversation
+            if (response.IsSuccessStatusCode)
+            {
+                Dispatch(new RefreshProjectionAction<ConversationMessagesResponse>(conversationId));
+            }
+        }
+        catch (Exception ex)
+        {
+            startResult = $"✗ Exception: {ex.Message}";
+        }
+    }
+
+    private async Task OnMessageKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SendMessageAsync();
+        }
+    }
+
+    private async Task SendMessageAsync()
+    {
+        sendResult = "Sending...";
+        try
+        {
+            SendMessageRequest request = new()
+            {
+                Content = messageContent,
+                SentBy = senderName,
+            };
+            HttpResponseMessage response = await Http.PostAsJsonAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/messages", request);
+            string content = await response.Content.ReadAsStringAsync();
+            sendResult = response.IsSuccessStatusCode ? $"✓ Sent: {content}" : $"✗ Error: {content}";
+
+            // Clear message input - projection will auto-update via SignalR
+            if (response.IsSuccessStatusCode)
+            {
+                messageContent = string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            sendResult = $"✗ Exception: {ex.Message}";
+        }
+    }
+
+}

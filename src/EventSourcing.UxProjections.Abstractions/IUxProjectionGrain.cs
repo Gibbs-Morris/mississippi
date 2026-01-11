@@ -12,7 +12,10 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 /// <summary>
 ///     A stateless worker grain that provides read access to a UX projection.
 /// </summary>
-/// <typeparam name="TProjection">The projection state type.</typeparam>
+/// <typeparam name="TProjection">
+///     The projection state type, decorated with
+///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+/// </typeparam>
 /// <remarks>
 ///     <para>
 ///         UX projection grains are stateless workers that serve as the entry point to the
@@ -20,8 +23,9 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 ///         cache grains.
 ///     </para>
 ///     <para>
-///         The grain is keyed by <see cref="UxProjectionKey" /> in the format
-///         "projectionTypeName|brookType|brookId".
+///         The grain is keyed by just the entity ID. The brook name is obtained from
+///         the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         on the <typeparamref name="TProjection" /> type itself.
 ///     </para>
 ///     <para>
 ///         All projection reads are served via versioned cache grains to maintain single

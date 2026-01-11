@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

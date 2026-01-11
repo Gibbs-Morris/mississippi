@@ -9,7 +9,7 @@ using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Tests;
+namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateRegistrations" />.
@@ -58,7 +58,7 @@ public class AggregateRegistrationsTests
     /// <summary>
     ///     Test event class.
     /// </summary>
-    [EventName("TEST", "APP", "TESTEVENT")]
+    [EventStorageName("TEST", "APP", "TESTEVENT")]
     private sealed class TestEvent;
 
     /// <summary>
@@ -198,7 +198,7 @@ public class AggregateRegistrationsTests
         services.AddEventType<TestEvent>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
-        string eventName = EventNameHelper.GetEventName<TestEvent>();
+        string eventName = EventStorageNameHelper.GetStorageName<TestEvent>();
         Assert.Equal(typeof(TestEvent), registry.ResolveType(eventName));
     }
 

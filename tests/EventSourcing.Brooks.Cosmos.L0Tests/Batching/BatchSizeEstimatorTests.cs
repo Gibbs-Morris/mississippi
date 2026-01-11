@@ -14,7 +14,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 using Newtonsoft.Json;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests.Batching;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Batching;
 
 /// <summary>
 ///     Test class for BatchSizeEstimator functionality.

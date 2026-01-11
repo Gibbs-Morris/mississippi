@@ -12,12 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Cosmos;
-
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests.Registrations;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Registrations;
 
 /// <summary>
 ///     Tests for Cosmos container/database initialization wiring.

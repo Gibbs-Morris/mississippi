@@ -1,7 +1,3 @@
-// <copyright file="UxProjectionControllerLoggerExtensions.cs" company="Gibbs-Morris">
-// Copyright (c) Gibbs-Morris. All rights reserved.
-// </copyright>
-
 using Microsoft.Extensions.Logging;
 
 
@@ -109,6 +105,19 @@ internal static partial class UxProjectionControllerLoggerExtensions
     public static partial void ProjectionNotFound(
         this ILogger logger,
         string entityId,
+        string projectionType
+    );
+
+    /// <summary>
+    ///     Logs when returning 304 Not Modified due to matching ETag.
+    /// </summary>
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message = "Returning 304 Not Modified for entity '{EntityId}' at version {Version} of type {ProjectionType}")]
+    public static partial void ProjectionNotModified(
+        this ILogger logger,
+        string entityId,
+        long version,
         string projectionType
     );
 

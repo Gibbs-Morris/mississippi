@@ -13,10 +13,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Mapping;
-using Mississippi.Core.Cosmos.Retry;
+using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
 using Moq;
@@ -58,7 +58,8 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotWriteModel, SnapshotStorageModel>>());
         Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotStorageModel, SnapshotDocument>>());
         Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotDocument, SnapshotEnvelope>>());
-        Container resolved = provider.GetRequiredKeyedService<Container>(CosmosContainerKeys.Snapshots);
+        Container resolved =
+            provider.GetRequiredKeyedService<Container>(MississippiDefaults.ServiceKeys.CosmosSnapshots);
         Assert.Same(container.Object, resolved);
     }
 

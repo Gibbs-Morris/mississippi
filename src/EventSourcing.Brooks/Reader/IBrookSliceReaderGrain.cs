@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +16,7 @@ namespace Mississippi.EventSourcing.Brooks.Reader;
 ///     Keeps a portion of the brook in memory rather than loading millions of events at once.
 ///     Used internally by the main brook reader grain to handle large event streams.
 /// </summary>
-[Alias("Mississippi.Core.IBrookSliceReaderGrain")]
+[Alias("Mississippi.EventSourcing.Brooks.Reader.IBrookSliceReaderGrain")]
 public interface IBrookSliceReaderGrain : IGrainWithStringKey
 {
     /// <summary>

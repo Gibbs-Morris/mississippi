@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,8 +8,8 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
+using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
 
 using Orleans;
 using Orleans.Runtime;
@@ -74,7 +74,7 @@ internal sealed class BrookWriterGrain
         CancellationToken cancellationToken = default
     )
     {
-        BrookKey key = this.GetPrimaryKeyString();
+        BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.AppendingEvents(key, events.Length, expectedCursorPosition?.Value);
         Stopwatch sw = Stopwatch.StartNew();
         BrookPosition newPosition = await BrookWriterService.AppendEventsAsync(
@@ -102,7 +102,7 @@ internal sealed class BrookWriterGrain
         CancellationToken token
     )
     {
-        BrookKey key = this.GetPrimaryKeyString();
+        BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.Activated(key);
         return Task.CompletedTask;
     }

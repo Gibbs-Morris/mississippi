@@ -123,10 +123,11 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Checking for modifications after cleanup..."
-          $changes = git status --porcelain
+          # Exclude packages.lock.json files as Aspire dependencies may differ between platforms
+          $changes = git status --porcelain | Where-Object { $_ -notmatch 'packages\.lock\.json$' }
           if ($changes) {
             Write-Host "ERROR: ReSharper cleanup modified files. The following changes are required:"
-            git diff --color=always
+            git diff --color=always -- . ':!**/packages.lock.json'
             Write-Host ""
             Write-Host "To resolve this locally run:"
             $slnFileName = $env:SLN_FILE_NAME

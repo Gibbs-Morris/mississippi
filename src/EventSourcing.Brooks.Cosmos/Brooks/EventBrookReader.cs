@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -6,10 +6,9 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
@@ -18,7 +17,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
 /// <summary>
 ///     Cosmos DB implementation of the event brook reader for reading events from brooks.
 /// </summary>
-internal class EventBrookReader : IEventBrookReader
+internal sealed class EventBrookReader : IEventBrookReader
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="EventBrookReader" /> class.

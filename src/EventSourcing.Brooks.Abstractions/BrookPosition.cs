@@ -9,7 +9,7 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions;
 ///     Represents a position within a brook.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Abstractions.BrookPosition")]
+[Alias("Mississippi.EventSourcing.Brooks.Abstractions.BrookPosition")]
 public readonly record struct BrookPosition
 {
     /// <summary>

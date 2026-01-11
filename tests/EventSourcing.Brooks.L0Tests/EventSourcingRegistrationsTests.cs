@@ -7,12 +7,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks;
-using Mississippi.EventSourcing.Brooks.Factory;
+using Mississippi.Common.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.Brooks.Reader;
 
 
-namespace Mississippi.EventSourcing.Tests;
+namespace Mississippi.EventSourcing.Brooks.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="EventSourcingRegistrations" /> extension methods.
@@ -22,6 +23,19 @@ namespace Mississippi.EventSourcing.Tests;
 [AllureSubSuite("Event Sourcing Registrations")]
 public sealed class EventSourcingRegistrationsTests
 {
+    /// <summary>
+    ///     Verifies that <c>AddEventSourcingByService</c> uses default stream provider name.
+    /// </summary>
+    [Fact]
+    public void AddEventSourcingByServiceUsesDefaultStreamProviderName()
+    {
+        ServiceCollection services = new();
+        services.AddEventSourcingByService();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        BrookProviderOptions options = provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
+        Assert.Equal(MississippiDefaults.StreamProviderName, options.OrleansStreamProviderName);
+    }
+
     /// <summary>
     ///     Verifies that calling <c>AddEventSourcingByService</c> registers the expected singletons and options.
     /// </summary>
@@ -48,6 +62,19 @@ public sealed class EventSourcingRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies that the HostApplicationBuilder extension accepts custom stream provider configuration.
+    /// </summary>
+    [Fact]
+    public void HostApplicationBuilderAddEventSourcingAcceptsCustomStreamProviderName()
+    {
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
+        builder.AddEventSourcing(options => options.OrleansStreamProviderName = "CustomStreams");
+        using IHost host = builder.Build();
+        BrookProviderOptions options = host.Services.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
+        Assert.Equal("CustomStreams", options.OrleansStreamProviderName);
+    }
+
+    /// <summary>
     ///     Verifies that the HostApplicationBuilder extension registers services (sanity smoke test).
     /// </summary>
     [Fact]
@@ -56,6 +83,7 @@ public sealed class EventSourcingRegistrationsTests
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
 
         // The extension method should complete and register services
+        // Note: Host is responsible for configuring streams before calling this
         builder.AddEventSourcing();
         IServiceCollection services = builder.Services;
         Assert.Contains(services, d => d.ServiceType == typeof(IBrookGrainFactory));

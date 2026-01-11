@@ -12,7 +12,7 @@ using Moq;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Tests;
+namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotPersisterGrain" />.
@@ -25,11 +25,14 @@ public sealed class SnapshotPersisterGrainTests
     private static Mock<IGrainContext> CreateDefaultGrainContext()
     {
         Mock<IGrainContext> mock = new();
-        mock.Setup(c => c.GrainId).Returns(GrainId.Create("test", "TEST.SNAPSHOTS.TestBrook|entity-1|abc123|5"));
+
+        // Key format: brookName|entityId|version|snapshotStorageName|reducersHash
+        mock.Setup(c => c.GrainId)
+            .Returns(GrainId.Create("test", "TEST.BROOK|entity-1|5|TEST.SNAPSHOTS.TestBrook|abc123"));
         return mock;
     }
 
-    private static TestableSnapshotPersisterGrain CreateGrain(
+    private static SnapshotPersisterGrain CreateGrain(
         Mock<IGrainContext>? grainContextMock = null,
         Mock<ISnapshotStorageWriter>? snapshotStorageWriterMock = null,
         Mock<ILogger<SnapshotPersisterGrain>>? loggerMock = null
@@ -42,27 +45,6 @@ public sealed class SnapshotPersisterGrainTests
     }
 
     /// <summary>
-    ///     Testable snapshot persister grain that exposes internal type for testing.
-    /// </summary>
-    private sealed class TestableSnapshotPersisterGrain : SnapshotPersisterGrain
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="TestableSnapshotPersisterGrain" /> class.
-        /// </summary>
-        /// <param name="grainContext">The grain context.</param>
-        /// <param name="snapshotStorageWriter">The snapshot storage writer.</param>
-        /// <param name="logger">The logger.</param>
-        public TestableSnapshotPersisterGrain(
-            IGrainContext grainContext,
-            ISnapshotStorageWriter snapshotStorageWriter,
-            ILogger<SnapshotPersisterGrain> logger
-        )
-            : base(grainContext, snapshotStorageWriter, logger)
-        {
-        }
-    }
-
-    /// <summary>
     ///     Verifies that activation correctly parses the grain key.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
@@ -72,8 +54,11 @@ public sealed class SnapshotPersisterGrainTests
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = new();
-        grainContextMock.Setup(c => c.GrainId).Returns(GrainId.Create("test", "MyProjection|entity-123|hashValue|42"));
-        TestableSnapshotPersisterGrain grain = CreateGrain(grainContextMock);
+
+        // Key format: brookName|entityId|version|snapshotStorageName|reducersHash
+        grainContextMock.Setup(c => c.GrainId)
+            .Returns(GrainId.Create("test", "TEST.BROOK|entity-123|42|MyProjection|hashValue"));
+        SnapshotPersisterGrain grain = CreateGrain(grainContextMock);
 
         // Act - should not throw
         await grain.OnActivateAsync(CancellationToken.None);
@@ -99,7 +84,7 @@ public sealed class SnapshotPersisterGrainTests
             ReducerHash = reducerHash,
         };
         Mock<ISnapshotStorageWriter> storageWriterMock = new();
-        TestableSnapshotPersisterGrain grain = CreateGrain(snapshotStorageWriterMock: storageWriterMock);
+        SnapshotPersisterGrain grain = CreateGrain(snapshotStorageWriterMock: storageWriterMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act

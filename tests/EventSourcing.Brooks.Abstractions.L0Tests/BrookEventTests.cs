@@ -3,10 +3,8 @@ using System.Collections.Immutable;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
 
-
-namespace Mississippi.EventSourcing.Abstractions.Tests;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for the <see cref="BrookEvent" /> record.

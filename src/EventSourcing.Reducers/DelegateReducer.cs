@@ -13,7 +13,7 @@ namespace Mississippi.EventSourcing.Reducers;
 /// </summary>
 /// <typeparam name="TEvent">The event type consumed by the reducer.</typeparam>
 /// <typeparam name="TProjection">The projection type produced by the reducer.</typeparam>
-public sealed class DelegateReducer<TEvent, TProjection> : Reducer<TEvent, TProjection>
+public sealed class DelegateReducer<TEvent, TProjection> : ReducerBase<TEvent, TProjection>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="DelegateReducer{TEvent, TProjection}" /> class.

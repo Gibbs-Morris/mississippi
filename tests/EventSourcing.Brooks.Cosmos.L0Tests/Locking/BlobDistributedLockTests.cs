@@ -13,7 +13,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests.Locking;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Locking;
 
 /// <summary>
 ///     Tests for <see cref="BlobDistributedLock" /> covering Locking/BlobDistributedLock plan items.

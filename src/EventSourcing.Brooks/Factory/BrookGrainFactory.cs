@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
 using Mississippi.EventSourcing.Brooks.Reader;
-using Mississippi.EventSourcing.Brooks.Writer;
 
 using Orleans;
 
@@ -15,7 +16,12 @@ namespace Mississippi.EventSourcing.Brooks.Factory;
 /// <summary>
 ///     Factory for resolving Orleans grains (writers, readers, slices, and cursor) by key.
 /// </summary>
-internal class BrookGrainFactory : IBrookGrainFactory
+/// <remarks>
+///     Implements both the public <see cref="Abstractions.Factory.IBrookGrainFactory" /> and
+///     internal <see cref="IInternalBrookGrainFactory" /> interfaces. External consumers should
+///     depend on the abstractions interface; internal grains can use the internal interface.
+/// </remarks>
+internal sealed class BrookGrainFactory : IInternalBrookGrainFactory
 {
     private static readonly Action<ILogger, string, BrookAsyncReaderKey, Exception?> LogResolvingAsyncReaderGrain =
         LoggerMessage.Define<string, BrookAsyncReaderKey>(

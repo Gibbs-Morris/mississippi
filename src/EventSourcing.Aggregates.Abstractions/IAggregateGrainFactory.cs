@@ -1,45 +1,50 @@
-using Mississippi.EventSourcing.Brooks.Abstractions;
-
-
 namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 
 /// <summary>
-///     Defines a factory for resolving aggregate grains by their brook definition and entity identifier.
+///     Defines a factory for resolving aggregate grains by their key.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This factory provides type-safe resolution of aggregate grains using the brook definition
-///         to construct the appropriate <see cref="BrookKey" />. This ensures that aggregates are
-///         consistently keyed and can be referenced by projections using the same brook type.
+///         This factory provides resolution of aggregate grains using entity IDs.
+///         The brook name is derived from the
+///         <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         on the aggregate type.
 ///     </para>
 /// </remarks>
 public interface IAggregateGrainFactory
 {
     /// <summary>
-    ///     Retrieves an aggregate grain of the specified type for the given entity identifier.
+    ///     Retrieves a generic aggregate grain for the specified aggregate type using an entity ID.
     /// </summary>
-    /// <typeparam name="TGrain">The aggregate grain interface type.</typeparam>
-    /// <typeparam name="TBrook">The brook definition type that identifies the event stream.</typeparam>
-    /// <param name="entityId">The unique identifier for the aggregate entity.</param>
-    /// <returns>The aggregate grain instance.</returns>
+    /// <typeparam name="TAggregate">
+    ///     The aggregate state type, decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </typeparam>
+    /// <param name="entityId">The entity identifier within the brook.</param>
+    /// <returns>The generic aggregate grain instance.</returns>
     /// <remarks>
-    ///     The grain is keyed using a <see cref="BrookKey" /> constructed from the brook name
-    ///     (from <typeparamref name="TBrook" />) and the <paramref name="entityId" />.
+    ///     <para>
+    ///         This method resolves the grain using entity ID only. The brook name is derived
+    ///         from the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+    ///         on the <typeparamref name="TAggregate" /> type.
+    ///     </para>
     /// </remarks>
-    TGrain GetAggregate<TGrain, TBrook>(
+    IGenericAggregateGrain<TAggregate> GetGenericAggregate<TAggregate>(
         string entityId
     )
-        where TGrain : IAggregateGrain
-        where TBrook : IBrookDefinition;
+        where TAggregate : class;
 
     /// <summary>
-    ///     Retrieves an aggregate grain of the specified type using a pre-constructed brook key.
+    ///     Retrieves a generic aggregate grain for the specified aggregate type using an aggregate key.
     /// </summary>
-    /// <typeparam name="TGrain">The aggregate grain interface type.</typeparam>
-    /// <param name="brookKey">The brook key identifying the aggregate's event stream.</param>
-    /// <returns>The aggregate grain instance.</returns>
-    TGrain GetAggregate<TGrain>(
-        BrookKey brookKey
+    /// <typeparam name="TAggregate">
+    ///     The aggregate state type, decorated with
+    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    /// </typeparam>
+    /// <param name="aggregateKey">The aggregate key identifying the aggregate.</param>
+    /// <returns>The generic aggregate grain instance.</returns>
+    IGenericAggregateGrain<TAggregate> GetGenericAggregate<TAggregate>(
+        AggregateKey aggregateKey
     )
-        where TGrain : IAggregateGrain;
+        where TAggregate : class;
 }

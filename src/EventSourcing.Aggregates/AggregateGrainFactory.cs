@@ -3,7 +3,6 @@ using System;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
 
 using Orleans;
 
@@ -11,16 +10,10 @@ using Orleans;
 namespace Mississippi.EventSourcing.Aggregates;
 
 /// <summary>
-///     Factory for resolving aggregate grains by their brook definition and entity identifier.
+///     Factory for resolving aggregate grains by their aggregate key.
 /// </summary>
 internal sealed class AggregateGrainFactory : IAggregateGrainFactory
 {
-    private static readonly Action<ILogger, string, string, Exception?> LogResolvingAggregate =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Debug,
-            new(1, nameof(GetAggregate)),
-            "Resolving aggregate {GrainType} with key {BrookKey}");
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="AggregateGrainFactory" /> class.
     /// </summary>
@@ -40,23 +33,23 @@ internal sealed class AggregateGrainFactory : IAggregateGrainFactory
     private ILogger<AggregateGrainFactory> Logger { get; }
 
     /// <inheritdoc />
-    public TGrain GetAggregate<TGrain, TBrook>(
+    public IGenericAggregateGrain<TAggregate> GetGenericAggregate<TAggregate>(
         string entityId
     )
-        where TGrain : IAggregateGrain
-        where TBrook : IBrookDefinition
+        where TAggregate : class
     {
-        BrookKey brookKey = BrookKey.For<TBrook>(entityId);
-        return GetAggregate<TGrain>(brookKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+        Logger.AggregateGrainFactoryResolvingGenericAggregate(typeof(TAggregate).Name, entityId);
+        return GrainFactory.GetGrain<IGenericAggregateGrain<TAggregate>>(entityId);
     }
 
     /// <inheritdoc />
-    public TGrain GetAggregate<TGrain>(
-        BrookKey brookKey
+    public IGenericAggregateGrain<TAggregate> GetGenericAggregate<TAggregate>(
+        AggregateKey aggregateKey
     )
-        where TGrain : IAggregateGrain
+        where TAggregate : class
     {
-        LogResolvingAggregate(Logger, typeof(TGrain).Name, brookKey, null);
-        return GrainFactory.GetGrain<TGrain>(brookKey);
+        Logger.AggregateGrainFactoryResolvingGenericAggregate(typeof(TAggregate).Name, aggregateKey.EntityId);
+        return GrainFactory.GetGrain<IGenericAggregateGrain<TAggregate>>(aggregateKey.EntityId);
     }
 }

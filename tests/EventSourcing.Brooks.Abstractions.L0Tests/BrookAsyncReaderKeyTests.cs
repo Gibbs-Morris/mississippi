@@ -2,10 +2,8 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
 
-
-namespace Mississippi.EventSourcing.Abstractions.Tests;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookAsyncReaderKey" /> behavior.
@@ -53,8 +51,8 @@ public sealed class BrookAsyncReaderKeyTests
         BrookAsyncReaderKey key = new(brookKey, instanceId);
         string stringForm = key;
         BrookAsyncReaderKey parsed = BrookAsyncReaderKey.Parse(stringForm);
-        Assert.Equal(string.Empty, parsed.BrookKey.Type);
-        Assert.Equal(string.Empty, parsed.BrookKey.Id);
+        Assert.Equal(string.Empty, parsed.BrookKey.BrookName);
+        Assert.Equal(string.Empty, parsed.BrookKey.EntityId);
         Assert.Equal(instanceId, parsed.InstanceId);
     }
 
@@ -82,8 +80,8 @@ public sealed class BrookAsyncReaderKeyTests
         Guid instanceId = Guid.Parse("12345678-1234-1234-1234-123456789abc");
         string keyString = $"type|id|{instanceId:N}";
         BrookAsyncReaderKey key = BrookAsyncReaderKey.FromString(keyString);
-        Assert.Equal("type", key.BrookKey.Type);
-        Assert.Equal("id", key.BrookKey.Id);
+        Assert.Equal("type", key.BrookKey.BrookName);
+        Assert.Equal("id", key.BrookKey.EntityId);
         Assert.Equal(instanceId, key.InstanceId);
     }
 
@@ -122,8 +120,8 @@ public sealed class BrookAsyncReaderKeyTests
         Guid instanceId = Guid.Parse("12345678-1234-1234-1234-123456789abc");
         string keyString = $"type|id|{instanceId:N}";
         BrookAsyncReaderKey key = keyString;
-        Assert.Equal("type", key.BrookKey.Type);
-        Assert.Equal("id", key.BrookKey.Id);
+        Assert.Equal("type", key.BrookKey.BrookName);
+        Assert.Equal("id", key.BrookKey.EntityId);
         Assert.Equal(instanceId, key.InstanceId);
     }
 
@@ -162,8 +160,8 @@ public sealed class BrookAsyncReaderKeyTests
         Guid instanceId = Guid.Parse("12345678-1234-1234-1234-123456789abc");
         string keyString = $"type|id|{instanceId:N}";
         BrookAsyncReaderKey key = BrookAsyncReaderKey.Parse(keyString);
-        Assert.Equal("type", key.BrookKey.Type);
-        Assert.Equal("id", key.BrookKey.Id);
+        Assert.Equal("type", key.BrookKey.BrookName);
+        Assert.Equal("id", key.BrookKey.EntityId);
         Assert.Equal(instanceId, key.InstanceId);
     }
 

@@ -15,7 +15,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         if a handler can process a given command.
 ///     </para>
 ///     <para>
-///         Implementations should inherit from <see cref="CommandHandler{TCommand, TSnapshot}" />
+///         Implementations should inherit from <see cref="CommandHandlerBase{TCommand, TSnapshot}" />
 ///         rather than implementing this interface directly.
 ///     </para>
 /// </remarks>
@@ -52,7 +52,7 @@ public interface ICommandHandler<in TSnapshot>
 ///         for new aggregates) and return either a success result with events or a failure result.
 ///     </para>
 ///     <para>
-///         Handlers should be stateless and inherit from <see cref="CommandHandler{TCommand, TSnapshot}" />
+///         Handlers should be stateless and inherit from <see cref="CommandHandlerBase{TCommand, TSnapshot}" />
 ///         rather than implementing this interface directly. Register handlers in the DI container
 ///         as <see cref="ICommandHandler{TSnapshot}" /> to enable collection-based dispatch.
 ///     </para>

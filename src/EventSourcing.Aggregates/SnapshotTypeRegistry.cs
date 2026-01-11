@@ -76,13 +76,13 @@ internal sealed class SnapshotTypeRegistry : ISnapshotTypeRegistry
         int registeredCount = 0;
         foreach (Type type in assembly.GetTypes())
         {
-            SnapshotNameAttribute? attribute = type.GetCustomAttribute<SnapshotNameAttribute>(false);
+            SnapshotStorageNameAttribute? attribute = type.GetCustomAttribute<SnapshotStorageNameAttribute>(false);
             if (attribute is null)
             {
                 continue;
             }
 
-            Register(attribute.SnapshotName, type);
+            Register(attribute.StorageName, type);
             registeredCount++;
         }
 

@@ -23,7 +23,7 @@ Member: `IServiceCollection AddEventSourcing(this IServiceCollection)`
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Priority | Type |
-|----|----------|---------------------|----------|------|
+| ---- | ---------- | --------------------- | ---------- | ------ |
 | REG1 | Registers required singletons | empty services -> call -> resolve IBrookGrainFactory, IStreamIdFactory, options registered | H | Unit |
 
 ---
@@ -35,7 +35,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Priority | Type |
-|----|----------|---------------------|----------|------|
+| ---- | ---------- | --------------------- | ---------- | ------ |
 | STRN1 | CursorUpdateStreamName constant valid | value non-empty == "BrookCursorUpdates" | M | Unit |
 
 ---
@@ -46,7 +46,7 @@ Member: `StreamId Create(BrookKey)`
 Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
-|----|----------|-------|------|-----|------|
+| ---- | ---------- | ------- | ------ | ----- | ------ |
 | SID1 | Deterministic creation | same key twice -> same StreamId | Determinism | H | Unit |
 | SID2 | Distinct keys differ | two keys -> StreamIds not equal | Uniqueness | H | Unit |
 
@@ -60,7 +60,7 @@ Members: `GetBrookWriterGrain`, `GetBrookReaderGrain`, `GetBrookSliceReaderGrain
 Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
-|----|----------|-------|------|-----|------|
+| ---- | ---------- | ------- | ------ | ----- | ------ |
 | GF1 | Resolves writer grain | mock grainFactory -> expect GetGrain with IBrookWriterGrain(key) called | DI proxy | M | Unit |
 | GF2 | Resolves reader grain | similar to GF1 | | M | Unit |
 | GF3 | Resolves slice reader grain | range key | | M | Unit |
@@ -77,7 +77,7 @@ State: `TrackedCursorPosition`, token ordering, stream subscription.
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Edge | Pri | Type |
-|----|----------|---------------------|------|-----|------|
+| ---- | ---------- | --------------------- | ------ | ----- | ------ |
 | HG1 | Initial cursor default | new grain -> GetLatestPositionAsync -> -1 | Default | H | Unit |
 | HG2 | OnNext newer updates | start -1 -> OnNext(newPos=5) -> cursor=5 | Monotonic | H | Unit |
 | HG3 | OnNext older ignored | cursor=5 -> OnNext(newPos=3) -> cursor stays 5 | Ordering | H | Unit |
@@ -95,7 +95,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Given / When / Then | Priority | Type |
-|----|----------|---------------------|----------|------|
+| ---- | ---------- | --------------------- | ---------- | ------ |
 | BHME1 | Property value stored | construct with pos -> NewPosition matches | M | Unit |
 | BHME2 | Equality semantics | two with same pos equal; diff pos not equal | M | Unit |
 
@@ -110,7 +110,7 @@ Internal method: `GetSliceReads(start,end,sliceSize)` (static) – target direct
 Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
-|----|----------|-------|------|-----|------|
+| ---- | ---------- | ------- | ------ | ----- | ------ |
 | BRG1 | Single slice exact | start=0 end=9 size=10 -> one slice (0..9) | Boundary | H | Unit |
 | BRG2 | Two slices boundary | start=0 end=10 size=10 -> slices (0..9),(10..10) | Boundary | H | Unit |
 | BRG3 | Mid-range partial | start=5 end=24 size=10 -> buckets (0:5..9),(1:10..19),(2:20..24) | Partitioning | H | Unit |
@@ -129,7 +129,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
-|----|----------|-------|------|-----|------|
+| ---- | ---------- | ------- | ------ | ----- | ------ |
 | BSR1 | Populates cache first read | empty cache -> ReadAsync -> calls storage | Cache | H | Unit |
 | BSR2 | Does not refetch when full | cache full slice -> second ReadAsync no storage call | Cache | M | Unit |
 | BSR3 | Filters below minReadFrom | cached events before start skipped | Range | M | Unit |
@@ -146,7 +146,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
-|----|----------|-------|------|-----|------|
+| ---- | ---------- | ------- | ------ | ----- | ------ |
 | BWG1 | AppendEventsAsync happy path | events-> storage append -> cursor event published | Basic | H | Unit |
 | BWG2 | Expected cursor mismatch propagation | storage throws concurrency -> surface exception | Concurrency | H | Unit |
 | BWG3 | Publishes BrookCursorMovedEvent | append success -> Stream.OnNext invoked | Event | H | Unit |
@@ -159,7 +159,7 @@ Test Cases:
 BrookReaderOptions / BrookProviderOptions
 
 | ID | Scenario | Description | Pri | Type |
-|----|----------|-------------|-----|------|
+| ---- | ---------- | ------------- | ----- | ------ |
 | OPT1 | Defaults | new options -> default values documented | L | Unit |
 
 ## Deferred / Open Questions

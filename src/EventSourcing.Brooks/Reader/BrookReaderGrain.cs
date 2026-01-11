@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
 using Mississippi.EventSourcing.Brooks.Factory;
 
 using Orleans;
@@ -35,7 +36,7 @@ namespace Mississippi.EventSourcing.Brooks.Reader;
 ///     </para>
 /// </remarks>
 [StatelessWorker]
-internal class BrookReaderGrain
+internal sealed class BrookReaderGrain
     : IBrookReaderGrain,
       IGrainBase
 {
@@ -43,12 +44,12 @@ internal class BrookReaderGrain
     ///     Initializes a new instance of the <see cref="BrookReaderGrain" /> class.
     ///     Sets up the grain with required dependencies for brook reading operations.
     /// </summary>
-    /// <param name="brookGrainFactory">Factory for creating related brook grains.</param>
+    /// <param name="brookGrainFactory">Factory for creating related brook grains (including internal slice readers).</param>
     /// <param name="options">Configuration options for brook reader behavior.</param>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     /// <param name="logger">Logger instance for logging reader operations.</param>
     public BrookReaderGrain(
-        IBrookGrainFactory brookGrainFactory,
+        IInternalBrookGrainFactory brookGrainFactory,
         IOptions<BrookReaderOptions> options,
         IGrainContext grainContext,
         ILogger<BrookReaderGrain> logger
@@ -67,7 +68,7 @@ internal class BrookReaderGrain
     /// <value>The grain context instance.</value>
     public IGrainContext GrainContext { get; }
 
-    private IBrookGrainFactory BrookGrainFactory { get; }
+    private IInternalBrookGrainFactory BrookGrainFactory { get; }
 
     private ILogger<BrookReaderGrain> Logger { get; }
 
@@ -105,7 +106,7 @@ internal class BrookReaderGrain
     /// <returns>A task that represents the asynchronous deactivation operation.</returns>
     public Task DeactivateAsync()
     {
-        BrookKey brookId = this.GetPrimaryKeyString();
+        BrookKey brookId = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.Deactivating(brookId);
         this.DeactivateOnIdle();
         return Task.CompletedTask;
@@ -120,7 +121,7 @@ internal class BrookReaderGrain
         CancellationToken token
     )
     {
-        BrookKey brookId = this.GetPrimaryKeyString();
+        BrookKey brookId = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.Activated(brookId);
         return Task.CompletedTask;
     }
@@ -139,7 +140,7 @@ internal class BrookReaderGrain
         CancellationToken cancellationToken = default
     )
     {
-        BrookKey brookId = this.GetPrimaryKeyString();
+        BrookKey brookId = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.ReadingEventsBatch(brookId, readFrom?.Value, readTo?.Value);
         Stopwatch sw = Stopwatch.StartNew();
         BrookPosition start = readFrom ?? new BrookPosition(0);

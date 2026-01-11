@@ -2,6 +2,8 @@ using System;
 
 using Microsoft.Extensions.Configuration;
 
+using Mississippi.Common.Abstractions;
+
 using Orleans.Hosting;
 using Orleans.TestingHost;
 
@@ -9,7 +11,7 @@ using Orleans.TestingHost;
 namespace Mississippi.Testing.Utilities.Orleans;
 
 /// <summary>
-///     Default client configurator that adds memory streams for the MississippiBrookStreamProvider.
+///     Default client configurator that adds memory streams for the default Mississippi stream provider.
 /// </summary>
 public sealed class DefaultClientConfigurator : IClientBuilderConfigurator
 {
@@ -20,6 +22,6 @@ public sealed class DefaultClientConfigurator : IClientBuilderConfigurator
     )
     {
         ArgumentNullException.ThrowIfNull(clientBuilder);
-        clientBuilder.AddMemoryStreams("MississippiBrookStreamProvider");
+        clientBuilder.AddMemoryStreams(MississippiDefaults.StreamProviderName);
     }
 }

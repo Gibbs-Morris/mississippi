@@ -4,6 +4,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+		<ProjectReference Include="..\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
 		<ProjectReference Include="..\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
 		<ProjectReference Include="..\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
 	</ItemGroup>

@@ -2,10 +2,8 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
 
-
-namespace Mississippi.EventSourcing.Abstractions.Tests;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookRangeKey" /> parsing, composite helpers and range calculations.
@@ -23,13 +21,13 @@ public sealed class BrookRangeKeyTests
     {
         BrookKey bk = new("tp", "id");
         BrookRangeKey rk = BrookRangeKey.FromBrookCompositeKey(bk, 2, 5);
-        Assert.Equal("tp", rk.Type);
-        Assert.Equal("id", rk.Id);
+        Assert.Equal("tp", rk.BrookName);
+        Assert.Equal("id", rk.EntityId);
         Assert.Equal(2, rk.Start.Value);
         Assert.Equal(5, rk.Count);
         BrookKey asKey = rk.ToBrookCompositeKey();
-        Assert.Equal(bk.Type, asKey.Type);
-        Assert.Equal(bk.Id, asKey.Id);
+        Assert.Equal(bk.BrookName, asKey.BrookName);
+        Assert.Equal(bk.EntityId, asKey.EntityId);
         string s = rk;
         Assert.Equal(BrookRangeKey.FromBrookRangeKey(rk), s);
     }
@@ -40,14 +38,14 @@ public sealed class BrookRangeKeyTests
     [Fact]
     public void ConstructorAllowsExactMaxLength()
     {
-        // Create components that sum to exactly 1024 characters
-        // type.Length + id.Length + start.ToString().Length + count.ToString().Length + 3 = 1024
-        // Using start=0 (1 char), count=0 (1 char), we need type + id = 1019
-        string type = new('x', 509);
-        string id = new('y', 510);
+        // Create components that sum to exactly 4192 characters
+        // type.Length + id.Length + start.ToString().Length + count.ToString().Length + 3 = 4192
+        // Using start=0 (1 char), count=0 (1 char), we need type + id = 4187
+        string type = new('x', 2093);
+        string id = new('y', 2094);
         BrookRangeKey key = new(type, id, 0, 0);
-        Assert.Equal(type, key.Type);
-        Assert.Equal(id, key.Id);
+        Assert.Equal(type, key.BrookName);
+        Assert.Equal(id, key.EntityId);
     }
 
     /// <summary>
@@ -58,7 +56,7 @@ public sealed class BrookRangeKeyTests
     {
         string type = new('t', 1000);
         BrookRangeKey key = new(type, "i", 12_345, 67_890);
-        Assert.Equal(type, key.Type);
+        Assert.Equal(type, key.BrookName);
     }
 
     /// <summary>
@@ -76,11 +74,11 @@ public sealed class BrookRangeKeyTests
     [Fact]
     public void ConstructorRejectsMaxLengthPlusOne()
     {
-        // Create components that sum to 1025 characters
-        // type.Length + id.Length + start.ToString().Length + count.ToString().Length + 3 = 1025
-        // Using start=0 (1 char), count=0 (1 char), we need type + id = 1020
-        string type = new('x', 510);
-        string id = new('y', 510);
+        // Create components that sum to 4193 characters
+        // type.Length + id.Length + start.ToString().Length + count.ToString().Length + 3 = 4193
+        // Using start=0 (1 char), count=0 (1 char), we need type + id = 4188
+        string type = new('x', 2094);
+        string id = new('y', 2094);
         Assert.Throws<ArgumentException>(() => new BrookRangeKey(type, id, 0, 0));
     }
 
@@ -167,8 +165,8 @@ public sealed class BrookRangeKeyTests
     public void FromStringParsesValidCompositeKey()
     {
         BrookRangeKey parsed = BrookRangeKey.FromString("alpha|beta|7|13");
-        Assert.Equal("alpha", parsed.Type);
-        Assert.Equal("beta", parsed.Id);
+        Assert.Equal("alpha", parsed.BrookName);
+        Assert.Equal("beta", parsed.EntityId);
         Assert.Equal(7, parsed.Start.Value);
         Assert.Equal(13, parsed.Count);
     }
@@ -180,7 +178,9 @@ public sealed class BrookRangeKeyTests
     public void FromStringWhenNullAndConstructorEnforceLength()
     {
         Assert.Throws<ArgumentNullException>(() => BrookRangeKey.FromString(null!));
-        string longType = new('x', 1024);
+
+        // Combined key exceeds 4192: 4192 (type) + 1 (separator) + ... > 4192
+        string longType = new('x', 4192);
         Assert.Throws<ArgumentException>(() => new BrookRangeKey(longType, string.Empty, 0, 0));
     }
 

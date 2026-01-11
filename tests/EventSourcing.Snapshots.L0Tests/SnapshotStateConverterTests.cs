@@ -8,7 +8,7 @@ using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Tests;
+namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotStateConverter{TSnapshot}" />.

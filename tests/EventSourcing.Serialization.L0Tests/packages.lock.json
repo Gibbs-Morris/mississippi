@@ -52,6 +52,16 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.11"
         }
       },
+      "Microsoft.Extensions.Options": {
+        "type": "Direct",
+        "requested": "[9.0.11, )",
+        "resolved": "9.0.11",
+        "contentHash": "HX4M3BLkW1dtByMKHDVq6r7Jy6e4hf8NDzHpIgz7C8BtYk9JQHhfYX5c1UheQTD5Veg1yBhz/cD9C8vtrGrk9w==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.11",
+          "Microsoft.Extensions.Primitives": "9.0.11"
+        }
+      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[17.14.1, )",
@@ -216,11 +226,6 @@
           "System.Collections.Immutable": "8.0.0"
         }
       },
-      "System.Text.Json": {
-        "type": "Transitive",
-        "resolved": "9.0.1",
-        "contentHash": "eqWHDZqYPv1PvuvoIIx5pF74plL3iEOZOl/0kQP+Y0TEbtgNnM2W6k8h8EPYs+LTJZsXuWa92n5W5sHTWvE3VA=="
-      },
       "xunit.abstractions": {
         "type": "Transitive",
         "resolved": "2.0.3",
@@ -269,12 +274,6 @@
           "xunit.abstractions": "2.0.3"
         }
       },
-      "Mississippi.EventSourcing.Serialization": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )"
-        }
-      },
       "Mississippi.EventSourcing.Serialization.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -298,16 +297,6 @@
         "resolved": "9.0.11",
         "contentHash": "+ZxxZzcVU+IEzq12GItUzf/V3mEc5nSLiXijwvDc4zyhbjvSZZ043giSZqGnhakrjwRWjkerIHPrRwm9okEIpw=="
       },
-      "Microsoft.Extensions.Options": {
-        "type": "CentralTransitive",
-        "requested": "[9.0.11, )",
-        "resolved": "9.0.11",
-        "contentHash": "HX4M3BLkW1dtByMKHDVq6r7Jy6e4hf8NDzHpIgz7C8BtYk9JQHhfYX5c1UheQTD5Veg1yBhz/cD9C8vtrGrk9w==",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.11",
-          "Microsoft.Extensions.Primitives": "9.0.11"
-        }
-      },
       "Microsoft.Extensions.Options.ConfigurationExtensions": {
         "type": "CentralTransitive",
         "requested": "[9.0.11, )",
@@ -326,6 +315,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Text.Json": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.5, )",
+        "resolved": "9.0.1",
+        "contentHash": "eqWHDZqYPv1PvuvoIIx5pF74plL3iEOZOl/0kQP+Y0TEbtgNnM2W6k8h8EPYs+LTJZsXuWa92n5W5sHTWvE3VA=="
       }
     }
   }

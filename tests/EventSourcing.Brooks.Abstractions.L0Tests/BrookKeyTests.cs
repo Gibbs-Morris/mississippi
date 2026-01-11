@@ -2,10 +2,8 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
 
-
-namespace Mississippi.EventSourcing.Abstractions.Tests;
+namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookKey" /> behavior.
@@ -31,13 +29,13 @@ public sealed class BrookKeyTests
     [Fact]
     public void ConstructorAllowsExactMaxLength()
     {
-        // Create components that sum to exactly 1024 characters (1023 + 1 separator)
-        // type.Length + id.Length + 1 = 1024
-        string type = new('x', 512);
-        string id = new('y', 511);
+        // Create components that sum to exactly 4192 characters (4191 + 1 separator)
+        // type.Length + id.Length + 1 = 4192
+        string type = new('x', 2096);
+        string id = new('y', 2095);
         BrookKey key = new(type, id);
-        Assert.Equal(type, key.Type);
-        Assert.Equal(id, key.Id);
+        Assert.Equal(type, key.BrookName);
+        Assert.Equal(id, key.EntityId);
     }
 
     /// <summary>
@@ -47,8 +45,8 @@ public sealed class BrookKeyTests
     public void ConstructorCreatesKey()
     {
         BrookKey key = new("type", "id");
-        Assert.Equal("type", key.Type);
-        Assert.Equal("id", key.Id);
+        Assert.Equal("type", key.BrookName);
+        Assert.Equal("id", key.EntityId);
         Assert.Equal("type|id", key.ToString());
     }
 
@@ -74,10 +72,10 @@ public sealed class BrookKeyTests
     [Fact]
     public void ConstructorRejectsMaxLengthPlusOne()
     {
-        // Create components that sum to 1025 characters (1024 + 1 separator)
-        // type.Length + id.Length + 1 = 1025
-        string type = new('x', 512);
-        string id = new('y', 512);
+        // Create components that sum to 4193 characters (4192 + 1 separator)
+        // type.Length + id.Length + 1 = 4193
+        string type = new('x', 2096);
+        string id = new('y', 2096);
         Assert.Throws<ArgumentException>(() => new BrookKey(type, id));
     }
 
@@ -87,7 +85,8 @@ public sealed class BrookKeyTests
     [Fact]
     public void ConstructorWhenCombinedLengthTooLongThrows()
     {
-        string longType = new('x', 1024);
+        // Combined key exceeds 4192: 4192 (type) + 1 (separator) + 0 (id) = 4193
+        string longType = new('x', 4192);
         Assert.Throws<ArgumentException>(() => new BrookKey(longType, string.Empty));
     }
 
@@ -109,8 +108,8 @@ public sealed class BrookKeyTests
     public void FromStringAllowsEmptyType()
     {
         BrookKey key = BrookKey.FromString("|identifier");
-        Assert.Equal(string.Empty, key.Type);
-        Assert.Equal("identifier", key.Id);
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal("identifier", key.EntityId);
     }
 
     /// <summary>
@@ -132,17 +131,17 @@ public sealed class BrookKeyTests
     }
 
     /// <summary>
-    ///     Verifies implicit conversions to/from string.
+    ///     Verifies implicit conversion to string and FromString parsing.
     /// </summary>
     [Fact]
-    public void ImplicitConversionsWork()
+    public void ImplicitToStringAndFromStringWork()
     {
         BrookKey k = new("t", "i");
         string s = k; // implicit to string
         Assert.Equal("t|i", s);
-        BrookKey parsed = "t|i"; // implicit from string
-        Assert.Equal("t", parsed.Type);
-        Assert.Equal("i", parsed.Id);
+        BrookKey parsed = BrookKey.FromString("t|i");
+        Assert.Equal("t", parsed.BrookName);
+        Assert.Equal("i", parsed.EntityId);
     }
 
     /// <summary>

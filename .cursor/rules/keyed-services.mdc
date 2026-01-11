@@ -1,0 +1,82 @@
+---
+description: Keyed Services for Storage Providers
+globs: ["**/*.cs"]
+alwaysApply: false
+---
+# Keyed Services for Storage Providers
+**Source:** .github/instructions/keyed-services.instructions.md
+
+
+# Keyed Services for Storage Providers
+
+Governing thought: Use keyed DI services for storage clients so multiple instances (Cosmos, Blob, Redis, etc.) can coexist in a single host for different purposes.
+
+> Drift check: Review existing `*Keys` classes (e.g., `CosmosContainerKeys`, `BlobServiceClientKeys`) and Aspire registration patterns before adding new keyed services.
+
+## Rules (RFC 2119)
+
+- Library code that consumes cloud clients (BlobServiceClient, CosmosClient, etc.) **MUST** use `[FromKeyedServices(KeyClass.KeyName)]` on constructor parameters rather than expecting an unkeyed registration. Why: Enterprise apps require multiple storage accounts for different purposes (locking, state, uploads, archival).
+- Each library feature **MUST** define its own key constant in a `{ClientType}Keys` class (e.g., `BlobServiceClientKeys.Brooks`, `CosmosContainerKeys.Events`). Why: Prevents key collisions across features.
+- Key constants **MUST** be `public const string` and **MUST** follow the pattern `"{client-type}-{feature}"` (e.g., `"blob-service-client-brooks"`). Why: Provides unique, discoverable identifiers.
+- Registration documentation **MUST** comment which keyed services the library expects callers to provide. Why: Clarifies the DI contract.
+- Host applications **MUST** forward from their registration key (e.g., Aspire's `"blobs"`) to the library's expected key using `AddKeyedSingleton`. Why: Decouples host naming from library requirements.
+- When a host needs both keyed (for library) and unkeyed (for its own services), it **MUST** explicitly forward using `AddSingleton(sp => sp.GetRequiredKeyedService<T>("key"))`. Why: Makes DI resolution explicit.
+- Keys **SHOULD** be placed in the library's main namespace alongside registration code. Why: Keeps discovery simple.
+
+## Scope and Audience
+
+Library authors and host developers integrating Mississippi with cloud storage or external services.
+
+## At-a-Glance Quick-Start
+
+### Library Side
+
+```csharp
+// Define keys
+public static class BlobServiceClientKeys
+{
+    public const string Brooks = "blob-service-client-brooks";
+}
+
+// Use in constructor
+public BlobDistributedLockManager(
+    [FromKeyedServices(BlobServiceClientKeys.Brooks)] BlobServiceClient blobServiceClient,
+    ILogger<BlobDistributedLockManager> logger) { }
+
+// Document in registration
+// Caller must register a keyed BlobServiceClient with BlobServiceClientKeys.Brooks
+services.AddSingleton<IDistributedLockManager, BlobDistributedLockManager>();
+```
+
+### Host Side (Aspire)
+
+```csharp
+// Register with Aspire key
+builder.AddKeyedAzureBlobServiceClient("blobs");
+
+// Forward to library key
+builder.Services.AddKeyedSingleton(
+    BlobServiceClientKeys.Brooks,
+    (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
+
+// If host also needs unkeyed for its own services
+builder.Services.AddSingleton(sp => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
+```
+
+## Core Principles
+
+- One client type, many instances: keyed services enable coexistence.
+- Library keys are stable contracts; host keys are deployment-specific.
+- Explicit forwarding makes the DI graph auditable.
+
+## Existing Key Classes
+
+| Class | Purpose |
+|-------|---------|
+| `CosmosContainerKeys` | Cosmos container registrations for events, snapshots |
+| `BlobServiceClientKeys` | Blob storage for distributed locking, file uploads |
+
+## References
+
+- Service registration: `.github/instructions/service-registration.instructions.md`
+- Shared guardrails: `.github/instructions/shared-policies.instructions.md`

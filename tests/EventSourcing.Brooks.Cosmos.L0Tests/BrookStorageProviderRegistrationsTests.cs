@@ -12,19 +12,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Cosmos;
-using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cosmos.Batching;
 using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
-using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
 
 /// <summary>
 ///     Unit tests for BrookStorageProviderRegistrations extension methods.
@@ -58,7 +56,7 @@ public sealed class BrookStorageProviderRegistrationsTests
             typeof(IBrookStorageProvider),
             typeof(IBrookRecoveryService),
             typeof(IEventBrookReader),
-            typeof(IEventBrookAppender),
+            typeof(IEventBrookWriter),
             typeof(ICosmosRepository),
             typeof(IDistributedLockManager),
             typeof(IBlobLeaseClientFactory),

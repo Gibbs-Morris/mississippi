@@ -92,7 +92,7 @@ Create a test scenario matrix:
 ## Test Scenario Matrix: OrderService
 
 | Scenario | Method | Input | Expected | Test Exists |
-|----------|--------|-------|----------|-------------|
+| ---------- | -------- | ------- | ---------- | ------------- |
 | Create valid order | CreateOrderAsync | Valid request | Order ID | ✅ |
 | Create with no lines | CreateOrderAsync | Empty lines | ValidationException | ❌ |
 | Create for invalid customer | CreateOrderAsync | Unknown customer | NotFoundException | ❌ |
@@ -109,7 +109,7 @@ Generate a coverage report:
 
 ### Summary
 | Metric | Value | Target | Status |
-|--------|-------|--------|--------|
+| -------- | ------- | -------- | -------- |
 | Line Coverage | 87% | ≥80% | ✅ |
 | Branch Coverage | 72% | ≥70% | ✅ |
 | New Code Coverage | 95% | 100% | ⚠️ |
@@ -117,7 +117,7 @@ Generate a coverage report:
 ### Files Below Threshold
 
 | File | Coverage | Gap |
-|------|----------|-----|
+| ------ | ---------- | ----- |
 | OrderService.cs | 65% | Missing error handling tests |
 | OrderValidator.cs | 45% | Missing validation scenarios |
 
@@ -147,7 +147,7 @@ Check each acceptance criterion:
 ### Story: Create Order
 
 | Criterion | Test | Status |
-|-----------|------|--------|
+| ----------- | ------ | -------- |
 | POST /orders creates new order | CreateOrderEndpoint_ValidRequest_Returns201 | ✅ |
 | Returns 201 with order ID | CreateOrderEndpoint_ValidRequest_ReturnsOrderId | ✅ |
 | Order persisted with Draft status | CreateOrder_ValidRequest_PersistsAsDraft | ✅ |

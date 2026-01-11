@@ -6,7 +6,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Mapping;
 
 /// <summary>
 ///     Test class for EventDocumentToStorageMapper functionality.

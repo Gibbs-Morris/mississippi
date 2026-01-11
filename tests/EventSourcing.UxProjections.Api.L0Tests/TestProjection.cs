@@ -11,5 +11,5 @@ namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
 ///     This type is internal but accessible to Moq via the InternalsVisibleTo attribute
 ///     for DynamicProxyGenAssembly2 configured in Directory.Build.props.
 /// </remarks>
-[SnapshotName("TEST", "UXPROJECTIONS.API", "TESTPROJECTION")]
+[SnapshotStorageName("TEST", "UXPROJECTIONS.API", "TESTPROJECTION")]
 internal sealed record TestProjection(int Value);

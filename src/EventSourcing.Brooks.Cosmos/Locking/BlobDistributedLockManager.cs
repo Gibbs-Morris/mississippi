@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,8 +7,11 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using Mississippi.Common.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
@@ -16,7 +19,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 /// <summary>
 ///     Distributed lock manager implementation using Azure Blob Storage.
 /// </summary>
-internal class BlobDistributedLockManager : IDistributedLockManager
+internal sealed class BlobDistributedLockManager : IDistributedLockManager
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="BlobDistributedLockManager" /> class.
@@ -27,6 +30,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
     /// <param name="logger">The logger for diagnostic output.</param>
     /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
     public BlobDistributedLockManager(
+        [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)]
         BlobServiceClient blobServiceClient,
         IOptions<BrookStorageOptions> options,
         IBlobLeaseClientFactory leaseClientFactory,

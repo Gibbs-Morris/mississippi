@@ -1,19 +1,22 @@
-﻿namespace Mississippi.EventSourcing.Brooks.Cosmos;
+using Mississippi.Common.Abstractions;
+
+
+namespace Mississippi.EventSourcing.Brooks.Cosmos;
 
 /// <summary>
 ///     Configuration options for the Cosmos DB brook storage provider.
 /// </summary>
-public class BrookStorageOptions
+public sealed class BrookStorageOptions
 {
     /// <summary>
-    ///     Gets the Cosmos DB container identifier for storing brooks.
+    ///     Gets or sets the Cosmos DB container identifier for storing brooks.
     /// </summary>
-    public string ContainerId { get; } = "brooks";
+    public string ContainerId { get; set; } = MississippiDefaults.ContainerIds.Brooks;
 
     /// <summary>
     ///     Gets or sets the Cosmos DB database identifier.
     /// </summary>
-    public string DatabaseId { get; set; } = "mississippi";
+    public string DatabaseId { get; set; } = MississippiDefaults.DatabaseId;
 
     /// <summary>
     ///     Gets or sets the duration in seconds for lease expiration.
@@ -28,7 +31,7 @@ public class BrookStorageOptions
     /// <summary>
     ///     Gets or sets the name of the container used for distributed locking.
     /// </summary>
-    public string LockContainerName { get; set; } = "brook-locks";
+    public string LockContainerName { get; set; } = MississippiDefaults.ContainerIds.Locks;
 
     /// <summary>
     ///     Gets or sets the maximum number of events per batch operation.

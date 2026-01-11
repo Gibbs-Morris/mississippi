@@ -1,4 +1,5 @@
-﻿using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 
 using Orleans.Runtime;
 
@@ -9,7 +10,7 @@ namespace Mississippi.EventSourcing.Brooks;
 ///     Default implementation of <see cref="IStreamIdFactory" /> that creates Orleans stream identifiers
 ///     from brook keys using the predefined cursor update stream name.
 /// </summary>
-public class StreamIdFactory : IStreamIdFactory
+internal sealed class StreamIdFactory : IStreamIdFactory
 {
     /// <summary>
     ///     Creates an Orleans stream identifier from the specified brook key.

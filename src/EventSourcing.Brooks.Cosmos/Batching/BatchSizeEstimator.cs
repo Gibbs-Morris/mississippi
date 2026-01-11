@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +14,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Batching;
 /// <summary>
 ///     Estimates the size of batches and individual events for Cosmos DB operations.
 /// </summary>
-internal class BatchSizeEstimator : IBatchSizeEstimator
+internal sealed class BatchSizeEstimator : IBatchSizeEstimator
 {
     // More realistic batch overhead based on Cosmos DB transactional batch structure
     // This includes: batch headers, response metadata, and internal overhead

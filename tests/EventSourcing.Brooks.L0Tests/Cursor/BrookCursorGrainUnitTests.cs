@@ -7,17 +7,16 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Brooks.Reader;
 
 using Moq;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Tests.Cursor;
+namespace Mississippi.EventSourcing.Brooks.L0Tests.Cursor;
 
 /// <summary>
 ///     Unit tests for <see cref="BrookCursorGrain" />.
