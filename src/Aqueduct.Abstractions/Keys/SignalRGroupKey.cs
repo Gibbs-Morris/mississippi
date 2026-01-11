@@ -10,7 +10,7 @@ namespace Mississippi.Aqueduct.Abstractions.Keys;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The key format is "{HubName}|{GroupName}".
+///         The key format is "{HubName}:{GroupName}".
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
@@ -19,7 +19,7 @@ public readonly record struct SignalRGroupKey
 {
     private const int MaxLength = 4192;
 
-    private const char Separator = '|';
+    private const char Separator = ':';
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SignalRGroupKey" /> struct.
@@ -86,7 +86,7 @@ public readonly record struct SignalRGroupKey
     ///     Implicitly converts a <see cref="SignalRGroupKey" /> to its string representation.
     /// </summary>
     /// <param name="key">The key to convert.</param>
-    /// <returns>A string representation in the format "hubName|groupName".</returns>
+    /// <returns>A string representation in the format "hubName:groupName".</returns>
     public static implicit operator string(
         SignalRGroupKey key
     ) =>
@@ -111,6 +111,6 @@ public readonly record struct SignalRGroupKey
     /// <summary>
     ///     Returns the string representation of this key.
     /// </summary>
-    /// <returns>A string in the format "hubName|groupName".</returns>
+    /// <returns>A string in the format "hubName:groupName".</returns>
     public override string ToString() => this;
 }

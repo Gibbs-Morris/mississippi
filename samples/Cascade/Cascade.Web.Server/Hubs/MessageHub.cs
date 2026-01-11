@@ -5,6 +5,7 @@ using Cascade.Web.Contracts.Grains;
 
 using Microsoft.AspNetCore.SignalR;
 
+using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 
 using Orleans;
@@ -27,21 +28,33 @@ internal sealed class MessageHub : Hub
     public const string BroadcastGroupName = "broadcast";
 
     /// <summary>
+    ///     The hub name used for SignalR grain keys.
+    /// </summary>
+    public const string HubName = nameof(MessageHub);
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="MessageHub" /> class.
     /// </summary>
     /// <param name="grainFactory">The Orleans grain factory for calling grains.</param>
-    public MessageHub(IGrainFactory grainFactory)
+    /// <param name="signalRGrainFactory">The SignalR grain factory for managing groups.</param>
+    public MessageHub(
+        IGrainFactory grainFactory,
+        ISignalRGrainFactory signalRGrainFactory
+    )
     {
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
+        SignalRGrainFactory = signalRGrainFactory ?? throw new ArgumentNullException(nameof(signalRGrainFactory));
     }
 
     private IGrainFactory GrainFactory { get; }
+
+    private ISignalRGrainFactory SignalRGrainFactory { get; }
 
     /// <inheritdoc />
     public override async Task OnConnectedAsync()
     {
         // Add connection to the broadcast group so grains can send to all clients
-        ISignalRGroupGrain groupGrain = GrainFactory.GetGrain<ISignalRGroupGrain>($"{nameof(MessageHub)}:{BroadcastGroupName}");
+        ISignalRGroupGrain groupGrain = SignalRGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
         await groupGrain.AddConnectionAsync(Context.ConnectionId);
         await base.OnConnectedAsync();
     }
@@ -50,7 +63,7 @@ internal sealed class MessageHub : Hub
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // Remove connection from the broadcast group
-        ISignalRGroupGrain groupGrain = GrainFactory.GetGrain<ISignalRGroupGrain>($"{nameof(MessageHub)}:{BroadcastGroupName}");
+        ISignalRGroupGrain groupGrain = SignalRGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
         await groupGrain.RemoveConnectionAsync(Context.ConnectionId);
         await base.OnDisconnectedAsync(exception);
     }

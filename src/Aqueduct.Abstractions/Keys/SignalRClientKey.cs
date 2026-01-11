@@ -10,7 +10,7 @@ namespace Mississippi.Aqueduct.Abstractions.Keys;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The key format is "{HubName}|{ConnectionId}".
+///         The key format is "{HubName}:{ConnectionId}".
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
@@ -19,7 +19,7 @@ public readonly record struct SignalRClientKey
 {
     private const int MaxLength = 4192;
 
-    private const char Separator = '|';
+    private const char Separator = ':';
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SignalRClientKey" /> struct.
@@ -86,7 +86,7 @@ public readonly record struct SignalRClientKey
     ///     Implicitly converts a <see cref="SignalRClientKey" /> to its string representation.
     /// </summary>
     /// <param name="key">The key to convert.</param>
-    /// <returns>A string representation in the format "hubName|connectionId".</returns>
+    /// <returns>A string representation in the format "hubName:connectionId".</returns>
     public static implicit operator string(
         SignalRClientKey key
     ) =>
@@ -111,6 +111,6 @@ public readonly record struct SignalRClientKey
     /// <summary>
     ///     Returns the string representation of this key.
     /// </summary>
-    /// <returns>A string in the format "hubName|connectionId".</returns>
+    /// <returns>A string in the format "hubName:connectionId".</returns>
     public override string ToString() => this;
 }

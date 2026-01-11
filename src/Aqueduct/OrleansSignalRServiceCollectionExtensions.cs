@@ -40,6 +40,7 @@ public static class OrleansSignalRServiceCollectionExtensions
         where THub : Hub
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<ISignalRGrainFactory, SignalRGrainFactory>();
         services.TryAddSingleton<HubLifetimeManager<THub>, OrleansHubLifetimeManager<THub>>();
         return services;
     }
@@ -67,6 +68,7 @@ public static class OrleansSignalRServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configureOptions);
         services.Configure(configureOptions);
+        services.TryAddSingleton<ISignalRGrainFactory, SignalRGrainFactory>();
         services.TryAddSingleton<HubLifetimeManager<THub>, OrleansHubLifetimeManager<THub>>();
         return services;
     }
@@ -92,7 +94,31 @@ public static class OrleansSignalRServiceCollectionExtensions
     )
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<ISignalRGrainFactory, SignalRGrainFactory>();
         services.TryAddSingleton<ISignalRGrainObserver, OrleansSignalRGrainObserver>();
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds the <see cref="ISignalRGrainFactory" /> implementation for resolving
+    ///     SignalR grains by strongly-typed keys.
+    /// </summary>
+    /// <param name="services">The service collection to configure.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Register this to allow code to obtain SignalR grain references
+    ///         without knowing the internal key format. The factory is automatically
+    ///         registered by <see cref="AddOrleansSignalR{THub}(IServiceCollection)" />
+    ///         and <see cref="AddOrleansSignalRGrainObserver" />.
+    ///     </para>
+    /// </remarks>
+    public static IServiceCollection AddSignalRGrainFactory(
+        this IServiceCollection services
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<ISignalRGrainFactory, SignalRGrainFactory>();
         return services;
     }
 }

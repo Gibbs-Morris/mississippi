@@ -35,7 +35,7 @@ public sealed class SignalRGroupKeyTests
     [Fact(DisplayName = "Constructor Throws When GroupName Contains Separator")]
     public void ConstructorShouldThrowWhenGroupNameContainsSeparator()
     {
-        Assert.Throws<ArgumentException>(() => new SignalRGroupKey("TestHub", "group|1"));
+        Assert.Throws<ArgumentException>(() => new SignalRGroupKey("TestHub", "group:1"));
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public sealed class SignalRGroupKeyTests
     [Fact(DisplayName = "Constructor Throws When HubName Contains Separator")]
     public void ConstructorShouldThrowWhenHubNameContainsSeparator()
     {
-        Assert.Throws<ArgumentException>(() => new SignalRGroupKey("Test|Hub", "group1"));
+        Assert.Throws<ArgumentException>(() => new SignalRGroupKey("Test:Hub", "group1"));
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public sealed class SignalRGroupKeyTests
         string result = key;
 
         // Assert
-        Assert.Equal("TestHub|group1", result);
+        Assert.Equal("TestHub:group1", result);
     }
 
     /// <summary>
@@ -143,7 +143,7 @@ public sealed class SignalRGroupKeyTests
     public void ParseShouldReturnValidKey()
     {
         // Act
-        SignalRGroupKey key = SignalRGroupKey.Parse("TestHub|group1");
+        SignalRGroupKey key = SignalRGroupKey.Parse("TestHub:group1");
 
         // Assert
         Assert.Equal("TestHub", key.HubName);
@@ -181,6 +181,6 @@ public sealed class SignalRGroupKeyTests
         string result = key.ToString();
 
         // Assert
-        Assert.Equal("TestHub|group1", result);
+        Assert.Equal("TestHub:group1", result);
     }
 }

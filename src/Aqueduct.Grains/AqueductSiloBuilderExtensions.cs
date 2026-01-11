@@ -1,6 +1,7 @@
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Aqueduct.Abstractions;
 
@@ -64,6 +65,10 @@ public static class AqueductSiloBuilderExtensions
             orleanOptions.HeartbeatIntervalMinutes = options.HeartbeatIntervalMinutes;
             orleanOptions.DeadServerTimeoutMultiplier = options.DeadServerTimeoutMultiplier;
         });
+
+        // Register the SignalR grain factory
+        siloBuilder.Services.TryAddSingleton<ISignalRGrainFactory, SignalRGrainFactory>();
+
         return siloBuilder;
     }
 

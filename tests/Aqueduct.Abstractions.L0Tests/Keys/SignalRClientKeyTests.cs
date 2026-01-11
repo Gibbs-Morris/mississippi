@@ -35,7 +35,7 @@ public sealed class SignalRClientKeyTests
     [Fact(DisplayName = "Constructor Throws When ConnectionId Contains Separator")]
     public void ConstructorShouldThrowWhenConnectionIdContainsSeparator()
     {
-        Assert.Throws<ArgumentException>(() => new SignalRClientKey("TestHub", "conn|123"));
+        Assert.Throws<ArgumentException>(() => new SignalRClientKey("TestHub", "conn:123"));
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public sealed class SignalRClientKeyTests
     [Fact(DisplayName = "Constructor Throws When HubName Contains Separator")]
     public void ConstructorShouldThrowWhenHubNameContainsSeparator()
     {
-        Assert.Throws<ArgumentException>(() => new SignalRClientKey("Test|Hub", "conn123"));
+        Assert.Throws<ArgumentException>(() => new SignalRClientKey("Test:Hub", "conn123"));
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public sealed class SignalRClientKeyTests
         string result = key;
 
         // Assert
-        Assert.Equal("TestHub|conn123", result);
+        Assert.Equal("TestHub:conn123", result);
     }
 
     /// <summary>
@@ -143,7 +143,7 @@ public sealed class SignalRClientKeyTests
     public void ParseShouldReturnValidKey()
     {
         // Act
-        SignalRClientKey key = SignalRClientKey.Parse("TestHub|conn123");
+        SignalRClientKey key = SignalRClientKey.Parse("TestHub:conn123");
 
         // Assert
         Assert.Equal("TestHub", key.HubName);
@@ -181,6 +181,6 @@ public sealed class SignalRClientKeyTests
         string result = key.ToString();
 
         // Assert
-        Assert.Equal("TestHub|conn123", result);
+        Assert.Equal("TestHub:conn123", result);
     }
 }

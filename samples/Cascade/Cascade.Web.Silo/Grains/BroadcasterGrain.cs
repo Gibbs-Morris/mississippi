@@ -7,6 +7,7 @@ using Cascade.Web.Contracts.Grains;
 
 using Microsoft.Extensions.Logging;
 
+using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 
 using Orleans;
@@ -47,23 +48,23 @@ internal sealed class BroadcasterGrain : IGrainBase, IBroadcasterGrain
     ///     Initializes a new instance of the <see cref="BroadcasterGrain" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
-    /// <param name="grainFactory">The grain factory for creating grain references.</param>
+    /// <param name="signalRGrainFactory">The SignalR grain factory for managing groups.</param>
     /// <param name="logger">The logger instance.</param>
     public BroadcasterGrain(
         IGrainContext grainContext,
-        IGrainFactory grainFactory,
+        ISignalRGrainFactory signalRGrainFactory,
         ILogger<BroadcasterGrain> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
-        GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
+        SignalRGrainFactory = signalRGrainFactory ?? throw new ArgumentNullException(nameof(signalRGrainFactory));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
 
-    private IGrainFactory GrainFactory { get; }
+    private ISignalRGrainFactory SignalRGrainFactory { get; }
 
     private ILogger<BroadcasterGrain> Logger { get; }
 
@@ -83,7 +84,7 @@ internal sealed class BroadcasterGrain : IGrainBase, IBroadcasterGrain
 
         // Get the broadcast group grain and send the message
         // The group grain fans out to individual client grains, which publish to their server streams
-        ISignalRGroupGrain groupGrain = GrainFactory.GetGrain<ISignalRGroupGrain>($"{HubName}:{BroadcastGroupName}");
+        ISignalRGroupGrain groupGrain = SignalRGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
 
         await groupGrain.SendMessageAsync(
             "ReceiveStreamMessage",
