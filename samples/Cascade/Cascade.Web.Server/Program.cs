@@ -120,6 +120,9 @@ app.MapPost(
         return Results.Ok(new { Message = request.Message, Status = "Broadcast sent" });
     });
 
+// Products endpoint for Reservoir effect demo - returns a static list of products
+app.MapGet("/api/products", () => AvailableProducts);
+
 app.MapGet(
     "/api/cosmos",
     async (ICosmosService cosmosService) => await cosmosService.GetItemsAsync());
@@ -152,3 +155,24 @@ app.MapPost(
 app.MapFallbackToFile("index.html");
 
 await app.RunAsync();
+
+/// <summary>
+///     Placeholder class for top-level partial declarations.
+/// </summary>
+internal static partial class Program
+{
+    /// <summary>
+    ///     Static list of available products for the Reservoir effect demo.
+    /// </summary>
+    private static readonly string[] AvailableProducts =
+    [
+        "Apple",
+        "Banana",
+        "Orange",
+        "Milk",
+        "Bread",
+        "Cheese",
+        "Eggs",
+        "Butter",
+    ];
+}

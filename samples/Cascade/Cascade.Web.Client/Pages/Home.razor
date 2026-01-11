@@ -99,11 +99,35 @@
 
 <section>
     <h2>Reservoir (Redux-style State)</h2>
-    <p>Demonstrates: Client-side state management with actions, reducers, and immutable state</p>
+    <p>Demonstrates: Client-side state management with actions, reducers, effects, and immutable state</p>
+
+    <h3>Available Products (Effect Demo)</h3>
+    <button @onclick="LoadProducts" disabled="@Cart.IsLoadingProducts">
+        @(Cart.IsLoadingProducts ? "Loading..." : "Load Products from API")
+    </button>
+    @if (!string.IsNullOrEmpty(Cart.ProductsError))
+    {
+        <p style="color: red;">Error: @Cart.ProductsError</p>
+    }
+    @if (Cart.AvailableProducts.Count > 0)
+    {
+        <ul>
+            @foreach (string product in Cart.AvailableProducts)
+            {
+                <li>
+                    @product
+                    <button @onclick="() => AddProductToCart(product)">Add to Cart</button>
+                </li>
+            }
+        </ul>
+    }
+
+    <h3>Manual Add</h3>
     <div>
         <input @bind="newItemName" placeholder="Enter item name" />
         <button @onclick="AddItemToCart">Add to Cart</button>
     </div>
+
     <h3>Cart Items (@Cart.Items.Count)</h3>
     @if (Cart.Items.Count == 0)
     {
@@ -405,10 +429,22 @@
         newItemName = string.Empty;
     }
 
+    private void AddProductToCart(
+        string productName
+    )
+    {
+        Dispatch(new AddItemAction(productName));
+    }
+
     private void RemoveItemFromCart(
         string itemId
     )
     {
         Dispatch(new RemoveItemAction(itemId));
+    }
+
+    private void LoadProducts()
+    {
+        Dispatch(new LoadProductsAction());
     }
 }

@@ -27,8 +27,17 @@ builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(builder.H
 builder.Services.AddScoped<IMessageService, SignalRMessageService>();
 
 // Configure Reservoir (Redux-style state management)
+// Register reducers for cart actions
 builder.Services.AddReducer<AddItemAction, CartState>(CartReducers.AddItem);
 builder.Services.AddReducer<RemoveItemAction, CartState>(CartReducers.RemoveItem);
+builder.Services.AddReducer<ProductsLoadingAction, CartState>(CartReducers.ProductsLoading);
+builder.Services.AddReducer<ProductsLoadedAction, CartState>(CartReducers.ProductsLoaded);
+builder.Services.AddReducer<ProductsLoadFailedAction, CartState>(CartReducers.ProductsLoadFailed);
+
+// Register effects for async operations
+builder.Services.AddEffect<LoadProductsEffect>();
+
+// Initialize the store with feature states
 builder.Services.AddReservoir(store => store.RegisterState<CartState>());
 
 await builder.Build().RunAsync();
