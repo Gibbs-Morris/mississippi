@@ -6,6 +6,7 @@ using Crescent.L2Tests.Domain.Counter;
 
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Common.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
@@ -134,7 +135,7 @@ public sealed class CrescentFixture
                 });
 
             // Host configures stream infrastructure
-            silo.AddMemoryStreams("MississippiBrookStreamProvider");
+            silo.AddMemoryStreams(MississippiDefaults.StreamProviderName);
             silo.AddMemoryGrainStorage("PubSubStore");
 
             // Tell Brooks which stream provider to use

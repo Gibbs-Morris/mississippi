@@ -1397,7 +1397,8 @@
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Aqueduct.Grains": {
@@ -1470,7 +1471,8 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )",
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
-          "Microsoft.Orleans.Streaming": "[9.2.1, )"
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.Brooks.Cosmos": {
@@ -1610,6 +1612,7 @@
         "type": "Project",
         "dependencies": {
           "Mississippi.Aqueduct": "[1.0.0, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Orleans": "[1.0.0, )"
         }
       },

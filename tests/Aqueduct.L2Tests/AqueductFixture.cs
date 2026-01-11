@@ -1,5 +1,6 @@
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Grains;
+using Mississippi.Common.Abstractions;
 
 
 namespace Mississippi.Aqueduct.L2Tests;
@@ -142,7 +143,7 @@ public sealed class AqueductFixture
     public IStreamProvider GetStreamProvider()
     {
         EnsureInitialized();
-        return ClusterClient.GetStreamProvider("SignalRStreams");
+        return ClusterClient.GetStreamProvider(MississippiDefaults.StreamProviderName);
     }
 
     /// <inheritdoc />

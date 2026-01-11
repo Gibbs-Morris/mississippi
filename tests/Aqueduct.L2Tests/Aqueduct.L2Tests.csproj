@@ -31,6 +31,7 @@
     <ProjectReference Include="..\..\src\Aqueduct\Aqueduct.csproj" />
     <ProjectReference Include="..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+    <ProjectReference Include="..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

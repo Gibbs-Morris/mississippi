@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Aqueduct.Abstractions;
+using Mississippi.Common.Abstractions;
 
 using Orleans.Hosting;
 
@@ -79,7 +80,7 @@ public static class AqueductGrainsRegistrations
     /// <remarks>
     ///     <para>
     ///         This overload uses default <see cref="AqueductOptions" /> values.
-    ///         You must configure the stream provider separately with the name "SignalRStreams".
+    ///         You must configure the stream provider separately using <see cref="MississippiDefaults.StreamProviderName" />.
     ///     </para>
     /// </remarks>
     public static ISiloBuilder UseAqueduct(

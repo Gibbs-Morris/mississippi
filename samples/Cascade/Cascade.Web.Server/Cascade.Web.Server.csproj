@@ -17,12 +17,14 @@
 
     <!-- Aqueduct Orleans-SignalR bridge -->
     <ProjectReference Include="..\..\..\src\Aqueduct\Aqueduct.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
 
     <!-- Blazor WebAssembly hosting -->
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj" />
     <ProjectReference Include="..\Cascade.Web.Client\Cascade.Web.Client.csproj" />
     <ProjectReference Include="..\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
   </ItemGroup>

@@ -1,11 +1,15 @@
+using Azure.Storage.Blobs;
+
 using Cascade.Domain;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Aqueduct.Grains;
+using Mississippi.Common.Abstractions;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
@@ -33,7 +37,14 @@ builder.AddAzureCosmosClient(
     });
 
 // Add Blob client for distributed locking (Brooks)
-builder.AddAzureBlobServiceClient("blobs");
+// Uses the "blobs" connection string from AppHost's WithReference(blobs)
+// Register with the Brooks key so BlobDistributedLockManager can resolve it via [FromKeyedServices]
+builder.AddKeyedAzureBlobServiceClient("blobs");
+
+// Forward the Aspire-registered blob client to the Brooks key used by BlobDistributedLockManager
+builder.Services.AddKeyedSingleton(
+    MississippiDefaults.ServiceKeys.BlobLocking,
+    (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
 
 // Add Cascade domain services (aggregates, handlers, reducers, projections)
 builder.Services.AddCascadeDomain();
@@ -68,7 +79,8 @@ builder.UseOrleans(siloBuilder =>
     siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
 
     // Configure event sourcing to use the same stream provider
-    siloBuilder.AddEventSourcing();
+    // Must match the stream provider name configured in AppHost via WithMemoryStreaming
+    siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
 });
 WebApplication app = builder.Build();
 

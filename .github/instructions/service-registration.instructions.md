@@ -58,3 +58,4 @@ Registration order within aggregates/projections:
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - Orleans lifecycle: `.github/instructions/orleans.instructions.md`
 - Domain modeling: `.github/instructions/domain-modeling.instructions.md`
+- Keyed services for storage: `.github/instructions/keyed-services.instructions.md`

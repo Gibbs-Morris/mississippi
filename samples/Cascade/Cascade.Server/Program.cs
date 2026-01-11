@@ -1,3 +1,5 @@
+using Azure.Storage.Blobs;
+
 using Cascade.Domain;
 using Cascade.Server.Components;
 using Cascade.Server.Services;
@@ -6,6 +8,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Common.Abstractions;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
@@ -57,7 +60,12 @@ builder.Services.AddOpenTelemetry()
 // Add Aspire-managed clients - these register CosmosClient and BlobServiceClient
 // using connection strings from Aspire AppHost references
 builder.AddAzureCosmosClient("cosmos");
-builder.AddAzureBlobServiceClient("blobs");
+
+// Register blob client with Aspire, then forward to Brooks key for BlobDistributedLockManager
+builder.AddKeyedAzureBlobServiceClient("blobs");
+builder.Services.AddKeyedSingleton(
+    MississippiDefaults.ServiceKeys.BlobLocking,
+    (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
 
 // Add Blazor services with Interactive Server rendering
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
@@ -86,7 +94,10 @@ builder.UseOrleans(silo =>
     // Add memory storage for PubSub (required for Orleans Streams)
     silo.AddMemoryGrainStorage("PubSubStore");
 
-    // Add Mississippi event sourcing streams (SMS provider for real-time projections)
+    // Add in-memory streams for event sourcing notifications
+    silo.AddMemoryStreams(MississippiDefaults.StreamProviderName);
+
+    // Add Mississippi event sourcing (uses default stream provider name)
     silo.AddEventSourcing();
 });
 

@@ -183,7 +183,7 @@ internal sealed class ServerProjectionSubscriptionEffect
         string entityId
     )
     {
-        (MethodInfo getGrainMethod, MethodInfo getAsyncMethod, var _, PropertyInfo resultProp) =
+        (MethodInfo getGrainMethod, MethodInfo getAsyncMethod, MethodInfo _, PropertyInfo resultProp) =
             GetOrCreateReflectionCache(projectionType);
         object grain = getGrainMethod.Invoke(GrainFactory, [entityId]) ??
                        throw new InvalidOperationException(
@@ -203,7 +203,7 @@ internal sealed class ServerProjectionSubscriptionEffect
         string entityId
     )
     {
-        (MethodInfo getGrainMethod, var _, MethodInfo getVersionMethod, var _) =
+        (MethodInfo getGrainMethod, MethodInfo _, MethodInfo getVersionMethod, PropertyInfo _) =
             GetOrCreateReflectionCache(projectionType);
         object grain = getGrainMethod.Invoke(GrainFactory, [entityId]) ??
                        throw new InvalidOperationException(

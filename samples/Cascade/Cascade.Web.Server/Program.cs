@@ -1,6 +1,12 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 
+using Azure.Storage.Blobs;
+
+using Cascade.Domain.Conversation;
+using Cascade.Domain.Conversation.Commands;
+using Cascade.Domain.Projections.ChannelMessages;
 using Cascade.Web.Contracts;
 using Cascade.Web.Contracts.Grains;
 using Cascade.Web.Server.Hubs;
@@ -13,6 +19,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Aqueduct;
+using Mississippi.EventSourcing.Aggregates;
+using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Serialization.Json;
+using Mississippi.EventSourcing.UxProjections;
+using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Orleans;
 
@@ -43,7 +54,11 @@ builder.AddAzureCosmosClient(
 #pragma warning restore IDISP014, IDISP001
 #pragma warning restore CA5400, S4830
     });
-builder.AddAzureBlobServiceClient("blobs");
+
+// Add Aspire-managed Blob client for storage operations
+// Register keyed first, then forward to unkeyed for BlobService
+builder.AddKeyedAzureBlobServiceClient("blobs");
+builder.Services.AddSingleton(sp => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
 
 // Add Aspire-managed Azure Table client for Orleans clustering
 // Must use Keyed variant so Orleans can resolve via GetRequiredKeyedService<T>(serviceKey)
@@ -64,6 +79,14 @@ builder.Services.AddAqueduct<MessageHub>(options =>
 // Add storage services
 builder.Services.AddSingleton<ICosmosService, CosmosService>();
 builder.Services.AddSingleton<IBlobService, BlobService>();
+
+// TEMPORARY PLUMBING - TO BE REPLACED BY INLET
+// These registrations enable direct grain access from the BFF server.
+// Once Inlet is integrated, the client will communicate via Inlet's
+// built-in SignalR hub and these registrations may move or be replaced.
+builder.Services.AddJsonSerialization();
+builder.Services.AddAggregateSupport();
+builder.Services.AddUxProjections();
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files
@@ -181,6 +204,119 @@ app.MapPost(
     {
         await blobService.UploadBlobAsync(item);
         return Results.Created($"/api/blob/{item.Name}", item);
+    });
+
+// ┌────────────────────────────────────────────────────────────────────────────────┐
+// │ TEMPORARY PLUMBING - TO BE REPLACED BY INLET                                   │
+// │                                                                                 │
+// │ These endpoints manually bridge the Blazor client to Orleans aggregate/        │
+// │ projection grains. Once Inlet is integrated, it will handle:                   │
+// │   - Automatic projection subscriptions via SignalR                             │
+// │   - Command dispatch without explicit HTTP endpoints                           │
+// │   - Real-time projection updates pushed to clients                             │
+// │                                                                                 │
+// │ Search for "TEMPORARY PLUMBING - TO BE REPLACED BY INLET" to find all          │
+// │ locations that need to be updated when Inlet is integrated.                    │
+// └────────────────────────────────────────────────────────────────────────────────┘
+
+// Start a conversation (idempotent)
+app.MapPost(
+    "/api/conversations/{conversationId}/start",
+    async (
+        string conversationId,
+        IAggregateGrainFactory aggregateGrainFactory
+    ) =>
+    {
+        IGenericAggregateGrain<ConversationAggregate> grain =
+            aggregateGrainFactory.GetGenericAggregate<ConversationAggregate>(conversationId);
+        OperationResult result = await grain.ExecuteAsync(
+            new StartConversation
+            {
+                ConversationId = conversationId,
+                ChannelId = conversationId, // Use same ID for simplicity
+            });
+        return result.Success
+            ? Results.Ok(
+                new
+                {
+                    ConversationId = conversationId,
+                    Status = "Started",
+                })
+            : Results.BadRequest(
+                new
+                {
+                    result.ErrorCode,
+                    result.ErrorMessage,
+                });
+    });
+
+// Send a message to a conversation
+app.MapPost(
+    "/api/conversations/{conversationId}/messages",
+    async (
+        string conversationId,
+        SendMessageRequest request,
+        IAggregateGrainFactory aggregateGrainFactory
+    ) =>
+    {
+        IGenericAggregateGrain<ConversationAggregate> grain =
+            aggregateGrainFactory.GetGenericAggregate<ConversationAggregate>(conversationId);
+        string messageId = $"msg-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}"[..32];
+        OperationResult result = await grain.ExecuteAsync(
+            new SendMessage
+            {
+                MessageId = messageId,
+                Content = request.Content,
+                SentBy = request.SentBy,
+            });
+        return result.Success
+            ? Results.Ok(
+                new
+                {
+                    MessageId = messageId,
+                    Status = "Sent",
+                })
+            : Results.BadRequest(
+                new
+                {
+                    result.ErrorCode,
+                    result.ErrorMessage,
+                });
+    });
+
+// Get messages projection for a conversation
+app.MapGet(
+    "/api/conversations/{conversationId}/messages",
+    async (
+        string conversationId,
+        IUxProjectionGrainFactory uxProjectionGrainFactory
+    ) =>
+    {
+        IUxProjectionGrain<ChannelMessagesProjection> grain =
+            uxProjectionGrainFactory.GetUxProjectionGrain<ChannelMessagesProjection>(conversationId);
+        ChannelMessagesProjection? projection = await grain.GetAsync();
+        if (projection is null)
+        {
+            return Results.NotFound();
+        }
+
+        // Map internal projection to public DTO
+        ConversationMessagesResponse response = new()
+        {
+            ConversationId = conversationId,
+            MessageCount = projection.MessageCount,
+            Messages = projection.Messages.Select(m => new ConversationMessageItem
+                {
+                    MessageId = m.MessageId,
+                    Content = m.Content,
+                    SentBy = m.SentBy,
+                    SentAt = m.SentAt,
+                    EditedAt = m.EditedAt,
+                    IsDeleted = m.IsDeleted,
+                })
+                .ToList(),
+        };
+        return Results.Ok(response);
     });
 
 // Fallback to index.html for client-side routing

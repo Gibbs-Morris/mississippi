@@ -1105,13 +1105,15 @@
           "Aspire.Azure.Data.Tables": "[13.1.0, )",
           "Aspire.Azure.Storage.Blobs": "[13.1.0, )",
           "Aspire.Microsoft.Azure.Cosmos": "[13.1.0, )",
+          "Cascade.Domain": "[1.0.0, )",
           "Cascade.Web.Client": "[1.0.0, )",
           "Cascade.Web.Contracts": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.WebAssembly.Server": "[9.0.11, )",
           "Microsoft.Orleans.Client": "[9.2.1, )",
           "Microsoft.Orleans.Clustering.AzureStorage": "[9.2.1, )",
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
-          "Mississippi.Aqueduct": "[1.0.0, )"
+          "Mississippi.Aqueduct": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Json": "[1.0.0, )"
         }
       },
       "cascade.web.silo": {
@@ -1145,7 +1147,8 @@
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Aqueduct.Grains": {
@@ -1218,7 +1221,8 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )",
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
-          "Microsoft.Orleans.Streaming": "[9.2.1, )"
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.Brooks.Cosmos": {

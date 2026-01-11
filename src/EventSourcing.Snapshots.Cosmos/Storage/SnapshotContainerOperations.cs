@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Common.Abstractions;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 
 using Newtonsoft.Json;
@@ -41,7 +42,7 @@ internal sealed class SnapshotContainerOperations : ISnapshotContainerOperations
     /// <param name="retryPolicy">Retry policy for transient Cosmos errors.</param>
     /// <param name="logger">The logger for diagnostic output.</param>
     public SnapshotContainerOperations(
-        [FromKeyedServices(CosmosContainerKeys.Snapshots)]
+        [FromKeyedServices(MississippiDefaults.ServiceKeys.CosmosSnapshots)]
         Container container,
         IOptions<SnapshotStorageOptions> options,
         IRetryPolicy retryPolicy,

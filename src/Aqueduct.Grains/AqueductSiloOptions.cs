@@ -1,5 +1,7 @@
 using System;
 
+using Mississippi.Common.Abstractions;
+
 using Orleans.Hosting;
 
 
@@ -32,9 +34,9 @@ public sealed class AqueductSiloOptions
     ///     Gets or sets the stream namespace for broadcasting to all clients.
     /// </summary>
     /// <value>
-    ///     The all-clients stream namespace. Defaults to "SignalR.AllClients".
+    ///     The all-clients stream namespace. Defaults to <see cref="MississippiDefaults.StreamNamespaces.AllClients" />.
     /// </value>
-    public string AllClientsStreamNamespace { get; set; } = "SignalR.AllClients";
+    public string AllClientsStreamNamespace { get; set; } = MississippiDefaults.StreamNamespaces.AllClients;
 
     /// <summary>
     ///     Gets or sets the timeout multiplier for considering a server dead.
@@ -56,17 +58,17 @@ public sealed class AqueductSiloOptions
     ///     Gets or sets the stream namespace for server-targeted messages.
     /// </summary>
     /// <value>
-    ///     The server stream namespace. Defaults to "SignalR.Server".
+    ///     The server stream namespace. Defaults to <see cref="MississippiDefaults.StreamNamespaces.Server" />.
     /// </value>
-    public string ServerStreamNamespace { get; set; } = "SignalR.Server";
+    public string ServerStreamNamespace { get; set; } = MississippiDefaults.StreamNamespaces.Server;
 
     /// <summary>
     ///     Gets or sets the name of the Orleans stream provider to use for SignalR message delivery.
     /// </summary>
     /// <value>
-    ///     The stream provider name. Defaults to "SignalRStreams".
+    ///     The stream provider name. Defaults to <see cref="MississippiDefaults.StreamProviderName" />.
     /// </value>
-    public string StreamProviderName { get; set; } = "SignalRStreams";
+    public string StreamProviderName { get; set; } = MississippiDefaults.StreamProviderName;
 
     /// <summary>
     ///     Configures in-memory streams for development and testing scenarios.
@@ -75,8 +77,7 @@ public sealed class AqueductSiloOptions
     /// <remarks>
     ///     <para>
     ///         This method configures Orleans memory streams with the default stream provider
-    ///         name ("SignalRStreams") and PubSub store ("PubSubStore"). Use this for local
-    ///         development and testing.
+    ///         name and PubSub store ("PubSubStore"). Use this for local development and testing.
     ///     </para>
     ///     <para>
     ///         For production scenarios, use a persistent stream provider like Azure Event Hubs

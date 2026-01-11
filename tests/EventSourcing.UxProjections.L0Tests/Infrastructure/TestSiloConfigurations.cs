@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.Testing.Utilities.Storage;
@@ -21,7 +22,7 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
     )
     {
         // Host configures stream infrastructure
-        siloBuilder.AddMemoryStreams("MississippiBrookStreamProvider");
+        siloBuilder.AddMemoryStreams(MississippiDefaults.StreamProviderName);
 
         // Tell Brooks which stream provider to use
         siloBuilder.AddEventSourcing();

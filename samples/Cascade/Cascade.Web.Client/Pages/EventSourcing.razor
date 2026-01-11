@@ -1,0 +1,190 @@
+@page "/event-sourcing"
+@using System.Net
+@inject HttpClient Http
+
+@* ┌────────────────────────────────────────────────────────────────────────────────┐ *@
+@* │ TEMPORARY PLUMBING - TO BE REPLACED BY INLET                                   │ *@
+@* │                                                                                 │ *@
+@* │ This page uses HTTP calls to custom API endpoints for event sourcing.          │ *@
+@* │ Once Inlet is integrated, this will be replaced by:                            │ *@
+@* │   - InletComponent<TProjection> for automatic projection subscription          │ *@
+@* │   - IInletStore for dispatching commands                                       │ *@
+@* │   - Real-time updates pushed via SignalR (no manual refresh needed)            │ *@
+@* │                                                                                 │ *@
+@* │ Search for "TEMPORARY PLUMBING - TO BE REPLACED BY INLET" to find all          │ *@
+@* │ locations that need to be updated when Inlet is integrated.                    │ *@
+@* └────────────────────────────────────────────────────────────────────────────────┘ *@
+
+<h1>Event Sourcing Demo</h1>
+<p>Demonstrates: Blazor Client → API → Orleans Aggregate/Projection Grains → Cosmos DB</p>
+
+<section>
+    <h2>Conversation</h2>
+    <div>
+        <label>Conversation ID:</label>
+        <input @bind="conversationId" placeholder="Enter conversation ID"/>
+    </div>
+    <button @onclick="StartConversationAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId))">
+        Start Conversation
+    </button>
+    <p>Start Result: @startResult</p>
+</section>
+
+<section>
+    <h2>Send Message</h2>
+    <div>
+        <label>Your Name:</label>
+        <input @bind="senderName" placeholder="Enter your name"/>
+    </div>
+    <div>
+        <label>Message:</label>
+        <input @bind="messageContent" placeholder="Enter message"/>
+    </div>
+    <button @onclick="SendMessageAsync"
+            disabled="@(string.IsNullOrWhiteSpace(conversationId) || string.IsNullOrWhiteSpace(messageContent) || string.IsNullOrWhiteSpace(senderName))">
+        Send Message
+    </button>
+    <p>Send Result: @sendResult</p>
+</section>
+
+<section>
+    <h2>Messages (Projection)</h2>
+    <button @onclick="RefreshMessagesAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId))">
+        Refresh Messages
+    </button>
+    <p>Projection Status: @projectionStatus</p>
+
+    @if (messages is not null && (messages.Messages.Count > 0))
+    {
+        <p>Total Messages: @messages.MessageCount</p>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Sender</th>
+                <th>Content</th>
+                <th>Sent At</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (ConversationMessageItem message in messages.Messages)
+            {
+                <tr style="@(message.IsDeleted ? "text-decoration: line-through; color: gray;" : "")">
+                    <td>@message.MessageId[..12]...</td>
+                    <td>@message.SentBy</td>
+                    <td>@message.Content</td>
+                    <td>@message.SentAt.ToString("HH:mm:ss")</td>
+                    <td>
+                        @if (message.IsDeleted)
+                        {
+                            <span>Deleted</span>
+                        }
+                        else if (message.EditedAt.HasValue)
+                        {
+                            <span>Edited @message.EditedAt.Value.ToString("HH:mm:ss")</span>
+                        }
+                        else
+                        {
+                            <span>✓</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else if (messages is not null)
+    {
+        <p>
+            <em>No messages yet.</em>
+        </p>
+    }
+</section>
+
+@code {
+
+    private string conversationId = "demo-conversation";
+
+    private string senderName = "Demo User";
+
+    private string messageContent = string.Empty;
+
+    private string startResult = string.Empty;
+
+    private string sendResult = string.Empty;
+
+    private string projectionStatus = string.Empty;
+
+    private ConversationMessagesResponse? messages;
+
+    private async Task StartConversationAsync()
+    {
+        startResult = "Starting...";
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/start", null);
+            string content = await response.Content.ReadAsStringAsync();
+            startResult = response.IsSuccessStatusCode ? $"✓ Started: {content}" : $"✗ Error: {content}";
+        }
+        catch (Exception ex)
+        {
+            startResult = $"✗ Exception: {ex.Message}";
+        }
+    }
+
+    private async Task SendMessageAsync()
+    {
+        sendResult = "Sending...";
+        try
+        {
+            SendMessageRequest request = new()
+            {
+                Content = messageContent,
+                SentBy = senderName,
+            };
+            HttpResponseMessage response = await Http.PostAsJsonAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/messages", request);
+            string content = await response.Content.ReadAsStringAsync();
+            sendResult = response.IsSuccessStatusCode ? $"✓ Sent: {content}" : $"✗ Error: {content}";
+
+            // Clear message input and auto-refresh
+            if (response.IsSuccessStatusCode)
+            {
+                messageContent = string.Empty;
+                await RefreshMessagesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            sendResult = $"✗ Exception: {ex.Message}";
+        }
+    }
+
+    private async Task RefreshMessagesAsync()
+    {
+        projectionStatus = "Loading...";
+        try
+        {
+            HttpResponseMessage response = await Http.GetAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/messages");
+            if (response.IsSuccessStatusCode)
+            {
+                messages = await response.Content.ReadFromJsonAsync<ConversationMessagesResponse>();
+                projectionStatus = $"✓ Loaded at {DateTime.Now:HH:mm:ss}";
+            }
+            else if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                messages = null;
+                projectionStatus = "No projection found (conversation not started or no events yet)";
+            }
+            else
+            {
+                projectionStatus = $"✗ Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            projectionStatus = $"✗ Exception: {ex.Message}";
+        }
+    }
+
+}

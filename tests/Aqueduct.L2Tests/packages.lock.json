@@ -1097,7 +1097,8 @@
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Aqueduct.Grains": {
@@ -1115,6 +1116,13 @@
           "Aspire.Dashboard.Sdk.win-x64": "[13.1.0, )",
           "Aspire.Hosting.AppHost": "[13.1.0, )",
           "Aspire.Hosting.Orchestration.win-x64": "[13.1.0, )"
+        }
+      },
+      "Mississippi.Common.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
         }
       },
       "Aspire.Hosting.AppHost": {

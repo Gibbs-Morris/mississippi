@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Aqueduct\Aqueduct.csproj" />
+        <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
         <ProjectReference Include="..\Inlet.Orleans\Inlet.Orleans.csproj" />
     </ItemGroup>
 

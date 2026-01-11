@@ -1,5 +1,7 @@
 using Allure.Xunit.Attributes;
 
+using Mississippi.Common.Abstractions;
+
 
 namespace Mississippi.Inlet.Orleans.SignalR.L0Tests;
 
@@ -22,7 +24,7 @@ public sealed class InletOrleansOptionsTests
         InletOrleansOptions options = new();
 
         // Assert
-        Assert.Equal("Inlet.AllClients", options.AllClientsStreamNamespace);
+        Assert.Equal(MississippiDefaults.StreamNamespaces.AllClients, options.AllClientsStreamNamespace);
     }
 
     /// <summary>
@@ -84,7 +86,7 @@ public sealed class InletOrleansOptionsTests
         InletOrleansOptions options = new();
 
         // Assert
-        Assert.Equal("Inlet.Server", options.ServerStreamNamespace);
+        Assert.Equal(MississippiDefaults.StreamNamespaces.Server, options.ServerStreamNamespace);
     }
 
     /// <summary>
@@ -115,7 +117,7 @@ public sealed class InletOrleansOptionsTests
         InletOrleansOptions options = new();
 
         // Assert
-        Assert.Equal("BrookStreams", options.StreamProviderName);
+        Assert.Equal(MississippiDefaults.StreamProviderName, options.StreamProviderName);
     }
 
     /// <summary>

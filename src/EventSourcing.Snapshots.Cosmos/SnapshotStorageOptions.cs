@@ -1,3 +1,6 @@
+using Mississippi.Common.Abstractions;
+
+
 namespace Mississippi.EventSourcing.Snapshots.Cosmos;
 
 /// <summary>
@@ -8,12 +11,12 @@ public sealed class SnapshotStorageOptions
     /// <summary>
     ///     Gets or sets the Cosmos container identifier for snapshots.
     /// </summary>
-    public string ContainerId { get; set; } = "snapshots";
+    public string ContainerId { get; set; } = MississippiDefaults.ContainerIds.Snapshots;
 
     /// <summary>
     ///     Gets or sets the Cosmos database identifier.
     /// </summary>
-    public string DatabaseId { get; set; } = "mississippi";
+    public string DatabaseId { get; set; } = MississippiDefaults.DatabaseId;
 
     /// <summary>
     ///     Gets or sets the batch size for snapshot queries.

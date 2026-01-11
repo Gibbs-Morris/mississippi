@@ -1,5 +1,7 @@
 ﻿using Allure.Xunit.Attributes;
 
+using Mississippi.Common.Abstractions;
+
 
 namespace Mississippi.Aqueduct.Abstractions.L0Tests;
 
@@ -14,14 +16,14 @@ public sealed class AqueductOptionsTests
     /// <summary>
     ///     Tests that default all clients stream namespace is set correctly.
     /// </summary>
-    [Fact(DisplayName = "AllClientsStreamNamespace Defaults to SignalR.AllClients")]
-    public void AllClientsStreamNamespaceShouldDefaultToSignalRAllClients()
+    [Fact(DisplayName = "AllClientsStreamNamespace Defaults to Unified Value")]
+    public void AllClientsStreamNamespaceShouldDefaultToUnifiedValue()
     {
         // Arrange & Act
         AqueductOptions options = new();
 
         // Assert
-        Assert.Equal("SignalR.AllClients", options.AllClientsStreamNamespace);
+        Assert.Equal(MississippiDefaults.StreamNamespaces.AllClients, options.AllClientsStreamNamespace);
     }
 
     /// <summary>
@@ -91,26 +93,26 @@ public sealed class AqueductOptionsTests
     /// <summary>
     ///     Tests that default server stream namespace is set correctly.
     /// </summary>
-    [Fact(DisplayName = "ServerStreamNamespace Defaults to SignalR.Server")]
-    public void ServerStreamNamespaceShouldDefaultToSignalRServer()
+    [Fact(DisplayName = "ServerStreamNamespace Defaults to Unified Value")]
+    public void ServerStreamNamespaceShouldDefaultToUnifiedValue()
     {
         // Arrange & Act
         AqueductOptions options = new();
 
         // Assert
-        Assert.Equal("SignalR.Server", options.ServerStreamNamespace);
+        Assert.Equal(MississippiDefaults.StreamNamespaces.Server, options.ServerStreamNamespace);
     }
 
     /// <summary>
     ///     Tests that default stream provider name is set correctly.
     /// </summary>
-    [Fact(DisplayName = "StreamProviderName Defaults to SignalRStreams")]
-    public void StreamProviderNameShouldDefaultToSignalRStreams()
+    [Fact(DisplayName = "StreamProviderName Defaults to Unified Value")]
+    public void StreamProviderNameShouldDefaultToUnifiedValue()
     {
         // Arrange & Act
         AqueductOptions options = new();
 
         // Assert
-        Assert.Equal("SignalRStreams", options.StreamProviderName);
+        Assert.Equal(MississippiDefaults.StreamProviderName, options.StreamProviderName);
     }
 }

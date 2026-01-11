@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Common.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.Brooks.Reader;
@@ -32,7 +33,7 @@ public sealed class EventSourcingRegistrationsTests
         services.AddEventSourcingByService();
         using ServiceProvider provider = services.BuildServiceProvider();
         BrookProviderOptions options = provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
-        Assert.Equal("MississippiBrookStreamProvider", options.OrleansStreamProviderName);
+        Assert.Equal(MississippiDefaults.StreamProviderName, options.OrleansStreamProviderName);
     }
 
     /// <summary>

@@ -1,4 +1,7 @@
-﻿namespace Mississippi.Aqueduct.Abstractions;
+﻿using Mississippi.Common.Abstractions;
+
+
+namespace Mississippi.Aqueduct.Abstractions;
 
 /// <summary>
 ///     Configuration options for the Aqueduct SignalR backplane.
@@ -9,9 +12,9 @@ public sealed class AqueductOptions
     ///     Gets or sets the stream namespace for broadcasting to all clients.
     /// </summary>
     /// <value>
-    ///     The all-clients stream namespace. Defaults to "SignalR.AllClients".
+    ///     The all-clients stream namespace. Defaults to <see cref="MississippiDefaults.StreamNamespaces.AllClients" />.
     /// </value>
-    public string AllClientsStreamNamespace { get; set; } = "SignalR.AllClients";
+    public string AllClientsStreamNamespace { get; set; } = MississippiDefaults.StreamNamespaces.AllClients;
 
     /// <summary>
     ///     Gets or sets the timeout multiplier for considering a server dead.
@@ -33,15 +36,15 @@ public sealed class AqueductOptions
     ///     Gets or sets the stream namespace for server-targeted messages.
     /// </summary>
     /// <value>
-    ///     The server stream namespace. Defaults to "SignalR.Server".
+    ///     The server stream namespace. Defaults to <see cref="MississippiDefaults.StreamNamespaces.Server" />.
     /// </value>
-    public string ServerStreamNamespace { get; set; } = "SignalR.Server";
+    public string ServerStreamNamespace { get; set; } = MississippiDefaults.StreamNamespaces.Server;
 
     /// <summary>
     ///     Gets or sets the name of the Orleans stream provider to use for SignalR message delivery.
     /// </summary>
     /// <value>
-    ///     The stream provider name. Defaults to "SignalRStreams".
+    ///     The stream provider name. Defaults to <see cref="MississippiDefaults.StreamProviderName" />.
     /// </value>
-    public string StreamProviderName { get; set; } = "SignalRStreams";
+    public string StreamProviderName { get; set; } = MississippiDefaults.StreamProviderName;
 }

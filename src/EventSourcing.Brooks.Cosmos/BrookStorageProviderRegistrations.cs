@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Common.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.Common.Cosmos.Retry;
@@ -45,6 +46,9 @@ public static class BrookStorageProviderRegistrations
         services.AddSingleton<IEventBrookReader, EventBrookReader>();
         services.AddSingleton<IEventBrookWriter, EventBrookWriter>();
         services.AddSingleton<ICosmosRepository, CosmosRepository>();
+
+        // BlobDistributedLockManager uses [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)] for BlobServiceClient
+        // Caller must register a keyed BlobServiceClient with that key
         services.AddSingleton<IDistributedLockManager, BlobDistributedLockManager>();
         services.AddSingleton<IBlobLeaseClientFactory, BlobLeaseClientFactory>();
         services.AddSingleton<IBatchSizeEstimator, BatchSizeEstimator>();
@@ -62,7 +66,7 @@ public static class BrookStorageProviderRegistrations
 
         // Configure Cosmos DB Container factory using keyed service to avoid conflicts with other Cosmos providers
         services.AddKeyedSingleton<Container>(
-            CosmosContainerKeys.Brooks,
+            MississippiDefaults.ServiceKeys.CosmosBrooks,
             (
                 provider,
                 _

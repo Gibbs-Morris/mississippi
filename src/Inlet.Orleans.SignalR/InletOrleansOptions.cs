@@ -1,3 +1,6 @@
+using Mississippi.Common.Abstractions;
+
+
 namespace Mississippi.Inlet.Orleans.SignalR;
 
 /// <summary>
@@ -8,8 +11,8 @@ public sealed class InletOrleansOptions
     /// <summary>
     ///     Gets or sets the Orleans stream namespace for hub-wide broadcasts.
     /// </summary>
-    /// <value>Defaults to "Inlet.AllClients".</value>
-    public string AllClientsStreamNamespace { get; set; } = "Inlet.AllClients";
+    /// <value>Defaults to <see cref="MississippiDefaults.StreamNamespaces.AllClients" />.</value>
+    public string AllClientsStreamNamespace { get; set; } = MississippiDefaults.StreamNamespaces.AllClients;
 
     /// <summary>
     ///     Gets or sets the interval in minutes between server heartbeats.
@@ -20,12 +23,12 @@ public sealed class InletOrleansOptions
     /// <summary>
     ///     Gets or sets the Orleans stream namespace for server-targeted messages.
     /// </summary>
-    /// <value>Defaults to "Inlet.Server".</value>
-    public string ServerStreamNamespace { get; set; } = "Inlet.Server";
+    /// <value>Defaults to <see cref="MississippiDefaults.StreamNamespaces.Server" />.</value>
+    public string ServerStreamNamespace { get; set; } = MississippiDefaults.StreamNamespaces.Server;
 
     /// <summary>
     ///     Gets or sets the name of the Orleans stream provider to use.
     /// </summary>
-    /// <value>Defaults to "BrookStreams".</value>
-    public string StreamProviderName { get; set; } = "BrookStreams";
+    /// <value>Defaults to <see cref="MississippiDefaults.StreamProviderName" />.</value>
+    public string StreamProviderName { get; set; } = MississippiDefaults.StreamProviderName;
 }

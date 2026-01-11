@@ -31,7 +31,7 @@ OrleansService orleans = builder.AddOrleans("default")
 
 // Add Cascade.Web.Silo - Orleans server that hosts grains
 // WithReference cosmos/blobs for event sourcing storage (Brooks + Snapshots)
-builder.AddProject<Cascade_Web_Silo>("cascade-web-silo")
+IResourceBuilder<ProjectResource> silo = builder.AddProject<Cascade_Web_Silo>("cascade-web-silo")
     .WithReference(orleans)
     .WithReference(cosmos)
     .WithReference(blobs)
@@ -47,5 +47,6 @@ builder.AddProject<Cascade_Web_Server>("cascade-web-server")
     .WaitFor(storage)
     .WithReference(cosmos)
     .WaitFor(cosmos)
+    .WaitFor(silo)
     .WithExternalHttpEndpoints();
 await builder.Build().RunAsync();

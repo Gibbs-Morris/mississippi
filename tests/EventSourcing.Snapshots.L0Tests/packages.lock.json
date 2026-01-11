@@ -664,6 +664,13 @@
           "xunit.abstractions": "2.0.3"
         }
       },
+      "Mississippi.Common.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+        }
+      },
       "Mississippi.EventSourcing.Aggregates.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -688,7 +695,8 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )",
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
-          "Microsoft.Orleans.Streaming": "[9.2.1, )"
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.Reducers.Abstractions": {
