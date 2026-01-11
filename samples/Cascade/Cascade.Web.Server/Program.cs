@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http;
 
 using Cascade.Web.Contracts;
 using Cascade.Web.Server.Hubs;
@@ -6,6 +7,7 @@ using Cascade.Web.Server.Services;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -14,8 +16,28 @@ using BlobItemDto = Cascade.Web.Contracts.BlobItem;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Add Aspire-managed clients
-builder.AddAzureCosmosClient("cosmos");
+// Add Aspire-managed clients with emulator-compatible configuration
+// Gateway mode is required for Cosmos DB emulator running in container
+// See: https://github.com/dotnet/aspire/issues/5364
+builder.AddAzureCosmosClient(
+    "cosmos",
+    configureClientOptions: options =>
+    {
+        options.ConnectionMode = ConnectionMode.Gateway;
+        options.LimitToEndpoint = true;
+
+        // Bypass SSL certificate validation for emulator's self-signed cert
+#pragma warning disable CA5400, S4830 // HttpClient certificate check - emulator uses self-signed cert
+#pragma warning disable IDISP014, IDISP001 // Use a single instance of HttpClient - CosmosClient manages its own lifecycle
+        options.HttpClientFactory = () => new HttpClient(
+            new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+            });
+#pragma warning restore IDISP014, IDISP001
+#pragma warning restore CA5400, S4830
+    });
 builder.AddAzureBlobServiceClient("blobs");
 
 // Add SignalR for real-time messaging

@@ -254,7 +254,10 @@
         "contentHash": "I/l6+ntgnHCu2WXop2NFMb3qSFFiB6LMau5244nKrD9RPoutn+Sp7ZGId7fbzAs2aMLvYErV1ilDAh35BKWKQg=="
       },
       "cascade.web.contracts": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Newtonsoft.Json": "[13.0.4, )"
+        }
       },
       "Microsoft.AspNetCore.Components": {
         "type": "CentralTransitive",
@@ -348,6 +351,12 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.11",
           "Microsoft.Extensions.Primitives": "9.0.11"
         }
+      },
+      "Newtonsoft.Json": {
+        "type": "CentralTransitive",
+        "requested": "[13.0.4, )",
+        "resolved": "13.0.4",
+        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
       }
     },
     "net9.0/browser-wasm": {}
