@@ -5,6 +5,8 @@ using Cascade.Web.Contracts.Grains;
 
 using Microsoft.AspNetCore.SignalR;
 
+using Mississippi.Aqueduct.Abstractions.Grains;
+
 using Orleans;
 
 
@@ -20,6 +22,11 @@ namespace Cascade.Web.Server.Hubs;
 internal sealed class MessageHub : Hub
 {
     /// <summary>
+    ///     Well-known group name for broadcast messages. All clients join this group on connect.
+    /// </summary>
+    public const string BroadcastGroupName = "broadcast";
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="MessageHub" /> class.
     /// </summary>
     /// <param name="grainFactory">The Orleans grain factory for calling grains.</param>
@@ -29,6 +36,24 @@ internal sealed class MessageHub : Hub
     }
 
     private IGrainFactory GrainFactory { get; }
+
+    /// <inheritdoc />
+    public override async Task OnConnectedAsync()
+    {
+        // Add connection to the broadcast group so grains can send to all clients
+        ISignalRGroupGrain groupGrain = GrainFactory.GetGrain<ISignalRGroupGrain>($"{nameof(MessageHub)}:{BroadcastGroupName}");
+        await groupGrain.AddConnectionAsync(Context.ConnectionId);
+        await base.OnConnectedAsync();
+    }
+
+    /// <inheritdoc />
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        // Remove connection from the broadcast group
+        ISignalRGroupGrain groupGrain = GrainFactory.GetGrain<ISignalRGroupGrain>($"{nameof(MessageHub)}:{BroadcastGroupName}");
+        await groupGrain.RemoveConnectionAsync(Context.ConnectionId);
+        await base.OnDisconnectedAsync(exception);
+    }
 
     /// <summary>
     ///     Sends a message to all connected clients.
