@@ -1,5 +1,8 @@
 @page "/"
+@using Cascade.Web.Client.Cart
 @using Cascade.Web.Client.Services
+@using Mississippi.Reservoir.Blazor
+@inherits StoreComponent
 @inject HttpClient Http
 @inject IMessageService MessageService
 
@@ -94,6 +97,32 @@
     <p>Blob Result: @blobResult</p>
 </section>
 
+<section>
+    <h2>Reservoir (Redux-style State)</h2>
+    <p>Demonstrates: Client-side state management with actions, reducers, and immutable state</p>
+    <div>
+        <input @bind="newItemName" placeholder="Enter item name" />
+        <button @onclick="AddItemToCart">Add to Cart</button>
+    </div>
+    <h3>Cart Items (@Cart.Items.Count)</h3>
+    @if (Cart.Items.Count == 0)
+    {
+        <p><em>Cart is empty</em></p>
+    }
+    else
+    {
+        <ul>
+            @foreach (CartItem item in Cart.Items)
+            {
+                <li>
+                    @item.Name
+                    <button @onclick="() => RemoveItemFromCart(item.Id)">Remove</button>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
 @code {
     private string apiStatus = "Not checked";
     private string echoResponse = string.Empty;
@@ -120,6 +149,10 @@
     private string broadcastMessageInput = string.Empty;
     private string broadcastResult = string.Empty;
     private readonly List<string> streamMessages = [];
+
+    // Reservoir Cart section - self-contained
+    private string newItemName = string.Empty;
+    private CartState Cart => GetState<CartState>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -359,5 +392,23 @@
         {
             blobResult = $"Error: {ex.Message}";
         }
+    }
+
+    private void AddItemToCart()
+    {
+        if (string.IsNullOrWhiteSpace(newItemName))
+        {
+            return;
+        }
+
+        Dispatch(new AddItemAction(newItemName));
+        newItemName = string.Empty;
+    }
+
+    private void RemoveItemFromCart(
+        string itemId
+    )
+    {
+        Dispatch(new RemoveItemAction(itemId));
     }
 }

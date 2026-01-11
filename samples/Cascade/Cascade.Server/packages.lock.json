@@ -1220,6 +1220,7 @@
       "Mississippi.Reservoir.Blazor": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.AspNetCore.Components": "[9.0.11, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },

@@ -2,11 +2,14 @@ using System;
 using System.Net.Http;
 
 using Cascade.Web.Client;
+using Cascade.Web.Client.Cart;
 using Cascade.Web.Client.Services;
 
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+
+using Mississippi.Reservoir;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -22,5 +25,10 @@ builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(builder.H
 
 // Add SignalR message service
 builder.Services.AddScoped<IMessageService, SignalRMessageService>();
+
+// Configure Reservoir (Redux-style state management)
+builder.Services.AddReducer<AddItemAction, CartState>(CartReducers.AddItem);
+builder.Services.AddReducer<RemoveItemAction, CartState>(CartReducers.RemoveItem);
+builder.Services.AddReservoir(store => store.RegisterState<CartState>());
 
 await builder.Build().RunAsync();
