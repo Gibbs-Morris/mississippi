@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Mississippi.Inlet.Abstractions;
 
 
-namespace Mississippi.Inlet.InProcess;
+namespace Mississippi.Inlet.Blazor.Server;
 
 /// <summary>
 ///     Extension methods for registering Inlet in-process server services.
@@ -27,7 +27,7 @@ public static class InletInProcessRegistrations
     ///         </list>
     ///     </para>
     ///     <para>
-    ///         Use in combination with Inlet.Blazor AddInletBlazor extension method
+    ///         Use in combination with Inlet.Blazor.WebAssembly AddInletBlazor extension method
     ///         for Redux-style state management in Blazor Server applications.
     ///     </para>
     /// </remarks>

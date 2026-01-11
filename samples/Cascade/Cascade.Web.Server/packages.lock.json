@@ -1021,6 +1021,8 @@
           "Cascade.Web.Contracts": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.WebAssembly": "[9.0.11, )",
           "Microsoft.AspNetCore.SignalR.Client": "[9.0.11, )",
+          "Mississippi.Inlet": "[1.0.0, )",
+          "Mississippi.Inlet.Blazor.WebAssembly": "[1.0.0, )",
           "Mississippi.Reservoir": "[1.0.0, )",
           "Mississippi.Reservoir.Blazor": "[1.0.0, )"
         }
@@ -1029,6 +1031,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Inlet.Blazor.WebAssembly": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
       },
@@ -1159,6 +1162,55 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.UxProjections.Api": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Options": "[9.0.11, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Blazor.WebAssembly": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[9.0.11, )",
+          "Microsoft.AspNetCore.SignalR.Client": "[9.0.11, )",
+          "Mississippi.Inlet": "[1.0.0, )",
+          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Orleans": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Orleans.SignalR": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Aqueduct": "[1.0.0, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Orleans": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir": {

@@ -1,28 +1,22 @@
 @page "/event-sourcing"
 @using System.Net
+@using Cascade.Web.Contracts
+@using Mississippi.Inlet.Abstractions
+@using Mississippi.Inlet.Abstractions.Actions
+@using Mississippi.Reservoir.Blazor
+@inherits StoreComponent
+@inject IInletStore InletStore
 @inject HttpClient Http
 
-@* ┌────────────────────────────────────────────────────────────────────────────────┐ *@
-@* │ TEMPORARY PLUMBING - TO BE REPLACED BY INLET                                   │ *@
-@* │                                                                                 │ *@
-@* │ This page uses HTTP calls to custom API endpoints for event sourcing.          │ *@
-@* │ Once Inlet is integrated, this will be replaced by:                            │ *@
-@* │   - InletComponent<TProjection> for automatic projection subscription          │ *@
-@* │   - IInletStore for dispatching commands                                       │ *@
-@* │   - Real-time updates pushed via SignalR (no manual refresh needed)            │ *@
-@* │                                                                                 │ *@
-@* │ Search for "TEMPORARY PLUMBING - TO BE REPLACED BY INLET" to find all          │ *@
-@* │ locations that need to be updated when Inlet is integrated.                    │ *@
-@* └────────────────────────────────────────────────────────────────────────────────┘ *@
-
 <h1>Event Sourcing Demo</h1>
-<p>Demonstrates: Blazor Client → API → Orleans Aggregate/Projection Grains → Cosmos DB</p>
+<p>Demonstrates: Blazor Client → SignalR → Orleans Aggregate/Projection Grains → Cosmos DB</p>
+<p><strong>Real-time updates via Inlet:</strong> Open this page in multiple browser tabs and watch messages appear in real-time!</p>
 
 <section>
     <h2>Conversation</h2>
     <div>
         <label>Conversation ID:</label>
-        <input @bind="conversationId" placeholder="Enter conversation ID"/>
+        <input @bind="conversationId" @bind:after="OnConversationIdChanged" placeholder="Enter conversation ID"/>
     </div>
     <button @onclick="StartConversationAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId))">
         Start Conversation
@@ -38,7 +32,7 @@
     </div>
     <div>
         <label>Message:</label>
-        <input @bind="messageContent" placeholder="Enter message"/>
+        <input @bind="messageContent" placeholder="Enter message" @onkeypress="OnMessageKeyPress"/>
     </div>
     <button @onclick="SendMessageAsync"
             disabled="@(string.IsNullOrWhiteSpace(conversationId) || string.IsNullOrWhiteSpace(messageContent) || string.IsNullOrWhiteSpace(senderName))">
@@ -48,15 +42,19 @@
 </section>
 
 <section>
-    <h2>Messages (Projection)</h2>
-    <button @onclick="RefreshMessagesAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId))">
-        Refresh Messages
-    </button>
-    <p>Projection Status: @projectionStatus</p>
-
-    @if (messages is not null && (messages.Messages.Count > 0))
+    <h2>Messages (Real-time Projection)</h2>
+    @if (InletStore.IsProjectionLoading<ConversationMessagesResponse>(conversationId))
     {
-        <p>Total Messages: @messages.MessageCount</p>
+        <p>⏳ Loading...</p>
+    }
+    else if (InletStore.GetProjectionError<ConversationMessagesResponse>(conversationId) is { } error)
+    {
+        <p>❌ Error: @error.Message</p>
+        <button @onclick="RefreshProjection">Retry</button>
+    }
+    else if (projection is { Messages.Count: > 0 })
+    {
+        <p>✅ Connected - Total Messages: @projection.MessageCount</p>
         <table>
             <thead>
             <tr>
@@ -68,7 +66,7 @@
             </tr>
             </thead>
             <tbody>
-            @foreach (ConversationMessageItem message in messages.Messages)
+            @foreach (ConversationMessageItem message in projection.Messages)
             {
                 <tr style="@(message.IsDeleted ? "text-decoration: line-through; color: gray;" : "")">
                     <td>@message.MessageId[..12]...</td>
@@ -94,11 +92,13 @@
             </tbody>
         </table>
     }
-    else if (messages is not null)
+    else if (projection is not null)
     {
-        <p>
-            <em>No messages yet.</em>
-        </p>
+        <p>✅ Connected - <em>No messages yet. Send one above!</em></p>
+    }
+    else
+    {
+        <p>📡 Connecting to projection...</p>
     }
 </section>
 
@@ -114,9 +114,40 @@
 
     private string sendResult = string.Empty;
 
-    private string projectionStatus = string.Empty;
+    private string? previousConversationId;
 
-    private ConversationMessagesResponse? messages;
+    private ConversationMessagesResponse? projection => InletStore.GetProjection<ConversationMessagesResponse>(conversationId);
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        // Subscribe to the projection for the initial conversation ID
+        if (!string.IsNullOrWhiteSpace(conversationId))
+        {
+            Dispatch(new SubscribeToProjectionAction<ConversationMessagesResponse>(conversationId));
+            previousConversationId = conversationId;
+        }
+    }
+
+    private void OnConversationIdChanged()
+    {
+        // Unsubscribe from old conversation and subscribe to new one
+        if (!string.IsNullOrWhiteSpace(previousConversationId) && previousConversationId != conversationId)
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<ConversationMessagesResponse>(previousConversationId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(conversationId) && previousConversationId != conversationId)
+        {
+            Dispatch(new SubscribeToProjectionAction<ConversationMessagesResponse>(conversationId));
+            previousConversationId = conversationId;
+        }
+    }
+
+    private void RefreshProjection()
+    {
+        Dispatch(new RefreshProjectionAction<ConversationMessagesResponse>(conversationId));
+    }
 
     private async Task StartConversationAsync()
     {
@@ -126,10 +157,24 @@
             HttpResponseMessage response = await Http.PostAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/start", null);
             string content = await response.Content.ReadAsStringAsync();
             startResult = response.IsSuccessStatusCode ? $"✓ Started: {content}" : $"✗ Error: {content}";
+
+            // Refresh projection after starting conversation
+            if (response.IsSuccessStatusCode)
+            {
+                Dispatch(new RefreshProjectionAction<ConversationMessagesResponse>(conversationId));
+            }
         }
         catch (Exception ex)
         {
             startResult = $"✗ Exception: {ex.Message}";
+        }
+    }
+
+    private async Task OnMessageKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SendMessageAsync();
         }
     }
 
@@ -147,43 +192,15 @@
             string content = await response.Content.ReadAsStringAsync();
             sendResult = response.IsSuccessStatusCode ? $"✓ Sent: {content}" : $"✗ Error: {content}";
 
-            // Clear message input and auto-refresh
+            // Clear message input - projection will auto-update via SignalR
             if (response.IsSuccessStatusCode)
             {
                 messageContent = string.Empty;
-                await RefreshMessagesAsync();
             }
         }
         catch (Exception ex)
         {
             sendResult = $"✗ Exception: {ex.Message}";
-        }
-    }
-
-    private async Task RefreshMessagesAsync()
-    {
-        projectionStatus = "Loading...";
-        try
-        {
-            HttpResponseMessage response = await Http.GetAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/messages");
-            if (response.IsSuccessStatusCode)
-            {
-                messages = await response.Content.ReadFromJsonAsync<ConversationMessagesResponse>();
-                projectionStatus = $"✓ Loaded at {DateTime.Now:HH:mm:ss}";
-            }
-            else if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                messages = null;
-                projectionStatus = "No projection found (conversation not started or no events yet)";
-            }
-            else
-            {
-                projectionStatus = $"✗ Error: {response.StatusCode}";
-            }
-        }
-        catch (Exception ex)
-        {
-            projectionStatus = $"✗ Exception: {ex.Message}";
         }
     }
 

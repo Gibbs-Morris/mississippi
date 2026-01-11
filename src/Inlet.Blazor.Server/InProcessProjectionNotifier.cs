@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Mississippi.Inlet.Abstractions;
 
 
-namespace Mississippi.Inlet.InProcess;
+namespace Mississippi.Inlet.Blazor.Server;
 
 /// <summary>
 ///     In-process implementation of <see cref="IServerProjectionNotifier" /> for server-side use.

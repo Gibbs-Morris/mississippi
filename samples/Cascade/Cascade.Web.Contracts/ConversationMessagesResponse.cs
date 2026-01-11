@@ -1,22 +1,30 @@
-using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
+using Mississippi.Inlet.Blazor.WebAssembly.Effects;
 
 
 namespace Cascade.Web.Contracts;
 
-// TEMPORARY PLUMBING - TO BE REPLACED BY INLET
-// This DTO maps the internal ChannelMessagesProjection to a public API contract.
-// Once Inlet is integrated, projections will be pushed directly to clients via
-// SignalR and this mapping layer may be simplified or removed.
-
 /// <summary>
-///     Response containing messages for a conversation.
+///     Response containing messages for a conversation/channel.
 /// </summary>
+/// <remarks>
+///     This contract mirrors <c>ChannelMessagesProjection</c> from the server
+///     and can be deserialized directly from the projection JSON response.
+///     The <see cref="UxProjectionDtoAttribute" /> links this DTO to the server
+///     projection via the route string.
+/// </remarks>
+[UxProjectionDto("channel-messages")]
 public sealed record ConversationMessagesResponse
 {
     /// <summary>
-    ///     Gets the conversation identifier.
+    ///     Gets the channel/conversation identifier.
     /// </summary>
+    /// <remarks>
+    ///     Maps to <c>ChannelId</c> in the server projection.
+    /// </remarks>
+    [JsonPropertyName("channelId")]
     public required string ConversationId { get; init; }
 
     /// <summary>
@@ -28,40 +36,4 @@ public sealed record ConversationMessagesResponse
     ///     Gets the list of messages.
     /// </summary>
     public required IReadOnlyList<ConversationMessageItem> Messages { get; init; }
-}
-
-/// <summary>
-///     Represents a message in a conversation.
-/// </summary>
-public sealed record ConversationMessageItem
-{
-    /// <summary>
-    ///     Gets the message content.
-    /// </summary>
-    public required string Content { get; init; }
-
-    /// <summary>
-    ///     Gets the timestamp when the message was edited, if applicable.
-    /// </summary>
-    public DateTimeOffset? EditedAt { get; init; }
-
-    /// <summary>
-    ///     Gets a value indicating whether the message has been deleted.
-    /// </summary>
-    public bool IsDeleted { get; init; }
-
-    /// <summary>
-    ///     Gets the message identifier.
-    /// </summary>
-    public required string MessageId { get; init; }
-
-    /// <summary>
-    ///     Gets the timestamp when the message was sent.
-    /// </summary>
-    public required DateTimeOffset SentAt { get; init; }
-
-    /// <summary>
-    ///     Gets the user ID of the sender.
-    /// </summary>
-    public required string SentBy { get; init; }
 }

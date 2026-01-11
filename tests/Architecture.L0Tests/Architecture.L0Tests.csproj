@@ -29,8 +29,8 @@
         <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
         <ProjectReference Include="..\..\src\Inlet\Inlet.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\Inlet.Blazor\Inlet.Blazor.csproj" />
-        <ProjectReference Include="..\..\src\Inlet.InProcess\Inlet.InProcess.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Orleans\Inlet.Orleans.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
         <ProjectReference Include="..\..\src\Reservoir\Reservoir.csproj" />

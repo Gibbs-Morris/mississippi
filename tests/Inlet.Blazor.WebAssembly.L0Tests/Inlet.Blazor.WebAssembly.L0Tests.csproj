@@ -5,7 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Inlet.Blazor\Inlet.Blazor.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
     </ItemGroup>
 
 </Project>

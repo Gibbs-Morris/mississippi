@@ -50,8 +50,8 @@
   <Folder Name="/Framework/Inlet/">
     <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     <Project Path="src\Inlet\Inlet.csproj" />
-    <Project Path="src\Inlet.Blazor\Inlet.Blazor.csproj" />
-    <Project Path="src\Inlet.InProcess\Inlet.InProcess.csproj" />
+    <Project Path="src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
+    <Project Path="src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
     <Project Path="src\Inlet.Orleans\Inlet.Orleans.csproj" />
     <Project Path="src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
   </Folder>
@@ -110,8 +110,8 @@
   </Folder>
   <Folder Name="/Tests/Inlet/">
     <Project Path="tests\Inlet.Abstractions.L0Tests\Inlet.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Blazor.L0Tests\Inlet.Blazor.L0Tests.csproj" />
-    <Project Path="tests\Inlet.InProcess.L0Tests\Inlet.InProcess.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Blazor.WebAssembly.L0Tests\Inlet.Blazor.WebAssembly.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Blazor.Server.L0Tests\Inlet.Blazor.Server.L0Tests.csproj" />
     <Project Path="tests\Inlet.L0Tests\Inlet.L0Tests.csproj" />
     <Project Path="tests\Inlet.Orleans.L0Tests\Inlet.Orleans.L0Tests.csproj" />
     <Project Path="tests\Inlet.Orleans.SignalR.L0Tests\Inlet.Orleans.SignalR.L0Tests.csproj" />

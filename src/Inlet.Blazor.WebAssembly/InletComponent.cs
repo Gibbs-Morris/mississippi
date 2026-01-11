@@ -8,7 +8,7 @@ using Mississippi.Inlet.Abstractions.State;
 using Mississippi.Reservoir.Blazor;
 
 
-namespace Mississippi.Inlet.Blazor;
+namespace Mississippi.Inlet.Blazor.WebAssembly;
 
 /// <summary>
 ///     Base component for Blazor components that interact with server-synced projections.

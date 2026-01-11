@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.Inlet;
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.InProcess;
+using Mississippi.Inlet.Blazor.Server;
 
 
 namespace Cascade.Server.Services;

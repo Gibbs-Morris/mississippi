@@ -3,11 +3,14 @@ using System.Net.Http;
 using Cascade.Web.Client;
 using Cascade.Web.Client.Cart;
 using Cascade.Web.Client.Services;
+using Cascade.Web.Contracts;
 
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Inlet;
+using Mississippi.Inlet.Blazor.WebAssembly;
 using Mississippi.Reservoir;
 
 
@@ -27,6 +30,13 @@ builder.Services.AddScoped(_ => new HttpClient
 
 // Add SignalR message service
 builder.Services.AddScoped<IMessageService, SignalRMessageService>();
+
+// Configure Inlet with SignalR effect for real-time projection updates
+// ScanProjectionDtos automatically discovers [UxProjectionDto] types and wires up fetching
+builder.Services.AddInlet();
+builder.Services.AddInletBlazorSignalR(signalR => signalR
+    .WithHubPath("/hubs/inlet")
+    .ScanProjectionDtos(typeof(ConversationMessagesResponse).Assembly));
 
 // Configure Reservoir (Redux-style state management)
 // Register reducers for cart actions

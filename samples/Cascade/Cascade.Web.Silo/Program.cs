@@ -1,6 +1,7 @@
 using Azure.Storage.Blobs;
 
 using Cascade.Domain;
+using Cascade.Domain.Projections.ChannelMessages;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -15,6 +16,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
+using Mississippi.Inlet.Orleans;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -48,6 +50,11 @@ builder.Services.AddKeyedSingleton(
 
 // Add Cascade domain services (aggregates, handlers, reducers, projections)
 builder.Services.AddCascadeDomain();
+
+// Add Inlet Orleans services for projection subscription management
+// The InletSubscriptionGrain needs IProjectionBrookRegistry to map projection types to brooks
+builder.Services.AddInletOrleans();
+builder.Services.ScanProjectionAssemblies(typeof(ChannelMessagesProjection).Assembly);
 
 // Add event sourcing infrastructure
 builder.Services.AddJsonSerialization();

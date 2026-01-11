@@ -9,4 +9,8 @@
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
+  </ItemGroup>
+
 </Project>

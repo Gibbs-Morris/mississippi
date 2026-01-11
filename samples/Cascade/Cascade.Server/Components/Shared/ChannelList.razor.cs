@@ -6,7 +6,7 @@ using Cascade.Server.Services;
 using Microsoft.AspNetCore.Components;
 
 using Mississippi.Inlet.Abstractions.State;
-using Mississippi.Inlet.Blazor;
+using Mississippi.Inlet.Blazor.WebAssembly;
 
 
 namespace Cascade.Server.Components.Shared;

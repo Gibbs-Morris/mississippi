@@ -3,7 +3,7 @@ using System;
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Inlet.InProcess;
+namespace Mississippi.Inlet.Blazor.Server;
 
 /// <summary>
 ///     Logging extension methods for <see cref="InProcessProjectionNotifier" />.

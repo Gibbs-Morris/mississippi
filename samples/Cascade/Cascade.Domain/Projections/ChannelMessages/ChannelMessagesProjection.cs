@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 
 using Orleans;
 
@@ -20,11 +21,12 @@ namespace Cascade.Domain.Projections.ChannelMessages;
 ///         ConversationStarted, MessageSent, MessageEdited, MessageDeleted.
 ///     </para>
 /// </remarks>
+[UxProjection("channel-messages")]
 [BrookName("CASCADE", "CHAT", "CONVERSATION")]
 [SnapshotStorageName("CASCADE", "CHAT", "CHANNELMESSAGES")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.ChannelMessages.ChannelMessagesProjection")]
-internal sealed record ChannelMessagesProjection
+public sealed record ChannelMessagesProjection
 {
     /// <summary>
     ///     Gets the channel or conversation identifier.

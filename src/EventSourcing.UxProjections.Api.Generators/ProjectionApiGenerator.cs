@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
 using System.Threading;
 
 using Microsoft.CodeAnalysis;
@@ -11,13 +13,17 @@ using Mississippi.EventSourcing.UxProjections.Api.Generators.Models;
 namespace Mississippi.EventSourcing.UxProjections.Api.Generators;
 
 /// <summary>
-///     Incremental source generator for UX projection API controllers.
+///     Incremental source generator for UX projection API controllers and DTOs.
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         This generator scans for classes decorated with <c>[UxProjection]</c>
-///         and emits partial controller classes that inherit from
-///         <c>UxProjectionControllerBase&lt;TProjection&gt;</c>.
+///         and emits:
+///         <list type="bullet">
+///             <item>DTO records that mirror projection properties without Orleans attributes.</item>
+///             <item>Mapping extension methods to convert projections to DTOs.</item>
+///             <item>Partial controller classes that return DTOs via HTTP.</item>
+///         </list>
 ///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]
@@ -49,6 +55,103 @@ public sealed class BatchProjectionRequest
 
     private const string UxProjectionAttributeFullName =
         "Mississippi.EventSourcing.UxProjections.Abstractions.Attributes.UxProjectionAttribute";
+
+    private static readonly HashSet<string> PrimitiveTypeNames =
+    [
+        "System.String",
+        "System.Int32",
+        "System.Int64",
+        "System.Int16",
+        "System.Byte",
+        "System.Boolean",
+        "System.Double",
+        "System.Single",
+        "System.Decimal",
+        "System.DateTime",
+        "System.DateTimeOffset",
+        "System.TimeSpan",
+        "System.Guid",
+        "System.Uri",
+    ];
+
+    private static PropertyMetadata ExtractPropertyMetadata(
+        IPropertySymbol property,
+        HashSet<string> nestedTypesToGenerate
+    )
+    {
+        ITypeSymbol propertyType = property.Type;
+        string typeName = propertyType.ToDisplayString();
+        bool isNullable = propertyType.NullableAnnotation == NullableAnnotation.Annotated;
+        bool isRequired = property.IsRequired;
+
+        // Check if it's a collection (ImmutableList, ImmutableArray, List, IReadOnlyList, etc.)
+        bool isCollection = false;
+        string? elementType = null;
+        ITypeSymbol? elementTypeSymbol = null;
+
+        if (propertyType is INamedTypeSymbol namedType && namedType.IsGenericType)
+        {
+            string genericTypeName = namedType.ConstructedFrom.ToDisplayString();
+            if (genericTypeName.Contains("ImmutableList") ||
+                genericTypeName.Contains("ImmutableArray") ||
+                genericTypeName.Contains("List<") ||
+                genericTypeName.Contains("IList<") ||
+                genericTypeName.Contains("IReadOnlyList<") ||
+                genericTypeName.Contains("IEnumerable<") ||
+                genericTypeName.Contains("ICollection<"))
+            {
+                isCollection = true;
+                elementTypeSymbol = namedType.TypeArguments[0];
+                elementType = elementTypeSymbol.Name;
+            }
+        }
+
+        // Determine if the type (or element type for collections) needs a DTO
+        ITypeSymbol typeToCheck = elementTypeSymbol ?? propertyType;
+        if (typeToCheck.NullableAnnotation == NullableAnnotation.Annotated &&
+            typeToCheck is INamedTypeSymbol nullableNamed &&
+            nullableNamed.TypeArguments.Length > 0)
+        {
+            typeToCheck = nullableNamed.TypeArguments[0];
+        }
+
+        string typeToCheckName = typeToCheck.ToDisplayString();
+        bool needsDto = !IsPrimitiveOrBuiltIn(typeToCheckName) && !typeToCheck.TypeKind.HasFlag(TypeKind.Enum);
+
+        if (needsDto && typeToCheck is INamedTypeSymbol)
+        {
+            nestedTypesToGenerate.Add(typeToCheckName);
+        }
+
+        // Build DTO type name
+        string dtoTypeName;
+        if (isCollection)
+        {
+            string dtoElementType = needsDto ? elementType + "Dto" : elementType!;
+            dtoTypeName = $"IReadOnlyList<{dtoElementType}>";
+        }
+        else if (needsDto)
+        {
+            string baseTypeName = typeToCheck.Name + "Dto";
+            dtoTypeName = isNullable ? baseTypeName + "?" : baseTypeName;
+        }
+        else
+        {
+            dtoTypeName = typeName;
+        }
+
+        return new PropertyMetadata
+        {
+            PropertyName = property.Name,
+            TypeName = typeName,
+            DtoTypeName = dtoTypeName,
+            IsCollection = isCollection,
+            CollectionElementType = elementType,
+            NeedsDto = needsDto,
+            Nullable = isNullable,
+            Required = isRequired,
+        };
+    }
 
     private static ProjectionApiInfo? ExtractProjectionInfo(
         GeneratorAttributeSyntaxContext context,
@@ -97,6 +200,48 @@ public sealed class BatchProjectionRequest
             }
         }
 
+        // Extract properties
+        HashSet<string> nestedTypesToGenerate = [];
+        List<PropertyMetadata> properties = [];
+        foreach (ISymbol member in typeSymbol.GetMembers())
+        {
+            if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public, IsStatic: false } prop &&
+                prop.GetMethod is not null)
+            {
+                properties.Add(ExtractPropertyMetadata(prop, nestedTypesToGenerate));
+            }
+        }
+
+        // Extract nested type metadata
+        List<NestedTypeMetadata> nestedTypes = [];
+        foreach (string nestedTypeName in nestedTypesToGenerate)
+        {
+            INamedTypeSymbol? nestedSymbol = context.SemanticModel.Compilation.GetTypeByMetadataName(nestedTypeName);
+            if (nestedSymbol is null)
+            {
+                continue;
+            }
+
+            HashSet<string> deeperNested = [];
+            List<PropertyMetadata> nestedProperties = [];
+            foreach (ISymbol member in nestedSymbol.GetMembers())
+            {
+                if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public, IsStatic: false } prop &&
+                    prop.GetMethod is not null)
+                {
+                    nestedProperties.Add(ExtractPropertyMetadata(prop, deeperNested));
+                }
+            }
+
+            nestedTypes.Add(new NestedTypeMetadata
+            {
+                TypeName = nestedSymbol.Name,
+                FullTypeName = nestedTypeName,
+                Namespace = nestedSymbol.ContainingNamespace.ToDisplayString(),
+                Properties = nestedProperties,
+            });
+        }
+
         return new()
         {
             FullTypeName = typeSymbol.ToDisplayString(),
@@ -105,13 +250,109 @@ public sealed class BatchProjectionRequest
             Route = route,
             IsBatchEnabled = isBatchEnabled,
             Authorize = authorize,
+            Properties = properties,
+            NestedTypes = nestedTypes,
         };
+    }
+
+    private static string GenerateDtoAndMapper(
+        ProjectionApiInfo projection
+    )
+    {
+        StringBuilder sb = new();
+        sb.AppendLine("// <auto-generated/>");
+        sb.AppendLine("// This file was generated by Mississippi.EventSourcing.UxProjections.Api.Generators.");
+        sb.AppendLine("// Do not edit this file directly.");
+        sb.AppendLine("#nullable enable");
+        sb.AppendLine();
+        sb.AppendLine("using System;");
+        sb.AppendLine("using System.CodeDom.Compiler;");
+        sb.AppendLine("using System.Collections.Generic;");
+        sb.AppendLine("using System.Linq;");
+        sb.AppendLine();
+        sb.AppendLine($"namespace {projection.Namespace};");
+        sb.AppendLine();
+
+        // Generate nested type DTOs first
+        foreach (NestedTypeMetadata nested in projection.NestedTypes)
+        {
+            GenerateDtoRecord(sb, nested.TypeName, nested.Properties);
+            sb.AppendLine();
+        }
+
+        // Generate main projection DTO
+        GenerateDtoRecord(sb, projection.TypeName, projection.Properties);
+        sb.AppendLine();
+
+        // Generate mapper extension class
+        sb.AppendLine("/// <summary>");
+        sb.AppendLine($"///     Extension methods for mapping {projection.TypeName} to its DTO.");
+        sb.AppendLine("/// </summary>");
+        sb.AppendLine($"[GeneratedCode(\"Mississippi.EventSourcing.UxProjections.Api.Generators\", \"1.0.0\")]");
+        sb.AppendLine($"public static class {projection.TypeName}MappingExtensions");
+        sb.AppendLine("{");
+
+        // Generate nested type mappers first
+        foreach (NestedTypeMetadata nested in projection.NestedTypes)
+        {
+            GenerateToDto(sb, nested.TypeName, nested.FullTypeName, nested.Properties, "    ");
+            sb.AppendLine();
+        }
+
+        // Generate main projection mapper
+        GenerateToDto(sb, projection.TypeName, projection.FullTypeName, projection.Properties, "    ");
+
+        sb.AppendLine("}");
+
+        return sb.ToString();
+    }
+
+    private static void GenerateDtoRecord(
+        StringBuilder sb,
+        string typeName,
+        List<PropertyMetadata> properties
+    )
+    {
+        sb.AppendLine("/// <summary>");
+        sb.AppendLine($"///     Data transfer object for {typeName}.");
+        sb.AppendLine("/// </summary>");
+        sb.AppendLine($"[GeneratedCode(\"Mississippi.EventSourcing.UxProjections.Api.Generators\", \"1.0.0\")]");
+        sb.AppendLine($"public sealed record {typeName}Dto");
+        sb.AppendLine("{");
+
+        foreach (PropertyMetadata prop in properties.OrderBy(p => p.PropertyName))
+        {
+            // Determine if we need 'required' modifier:
+            // - If the source property is required, the DTO property should be required
+            // - If the source is a non-nullable reference type (string, collection, custom type), make it required
+            bool needsRequired = prop.Required;
+            if (!needsRequired && !prop.Nullable)
+            {
+                // Check if it's a reference type that needs required
+                string dtoType = prop.DtoTypeName.TrimEnd('?');
+                if (dtoType == "string" ||
+                    dtoType.StartsWith("IReadOnlyList<", System.StringComparison.Ordinal) ||
+                    dtoType.EndsWith("Dto", System.StringComparison.Ordinal))
+                {
+                    needsRequired = true;
+                }
+            }
+
+            string requiredModifier = needsRequired ? "required " : string.Empty;
+            sb.AppendLine($"    /// <summary>");
+            sb.AppendLine($"    ///     Gets the {prop.PropertyName} value.");
+            sb.AppendLine($"    /// </summary>");
+            sb.AppendLine($"    public {requiredModifier}{prop.DtoTypeName} {prop.PropertyName} {{ get; init; }}");
+        }
+
+        sb.AppendLine("}");
     }
 
     private static string GenerateProjectionController(
         ProjectionApiInfo projection
     )
     {
+        string dtoTypeName = projection.TypeName + "Dto";
         string authorizeAttribute = projection.Authorize is not null
             ? $"\n    [Authorize(Policy = \"{projection.Authorize}\")]"
             : string.Empty;
@@ -123,14 +364,26 @@ public sealed class BatchProjectionRequest
     /// </summary>
     /// <param name=""request"">The batch request containing entity IDs.</param>
     /// <param name=""cancellationToken"">A token to cancel the operation.</param>
-    /// <returns>A dictionary mapping entity IDs to projections.</returns>
+    /// <returns>A dictionary mapping entity IDs to projection DTOs.</returns>
     [HttpPost(""batch"")]
-    [ProducesResponseType(typeof(Dictionary<string, {projection.TypeName}>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Dictionary<string, {projection.TypeName}>>> GetBatchAsync(
+    [ProducesResponseType(typeof(Dictionary<string, {dtoTypeName}>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Dictionary<string, {dtoTypeName}>>> GetBatchAsync(
         [FromBody] BatchProjectionRequest request,
         CancellationToken cancellationToken = default)
     {{
-        return await GetBatchCoreAsync(request.EntityIds, cancellationToken);
+        ArgumentNullException.ThrowIfNull(request);
+        Dictionary<string, {dtoTypeName}> results = new();
+        foreach (string entityId in request.EntityIds)
+        {{
+            IUxProjectionGrain<{projection.TypeName}> grain = UxProjectionGrainFactory.GetUxProjectionGrain<{projection.TypeName}>(entityId);
+            {projection.TypeName}? projection = await grain.GetAsync(cancellationToken);
+            if (projection is not null)
+            {{
+                results[entityId] = projection.ToDto();
+            }}
+        }}
+
+        return Ok(results);
     }}"
             : string.Empty;
         return $@"// <auto-generated/>
@@ -141,6 +394,7 @@ public sealed class BatchProjectionRequest
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -149,6 +403,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
+using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Api;
 
@@ -162,14 +417,16 @@ namespace {projection.Namespace};
 ///         This controller was auto-generated from the <c>[UxProjection]</c> attribute.
 ///         To customize behavior, create a partial class with additional methods.
 ///     </para>
+///     <para>
+///         Returns <see cref=""{dtoTypeName}""/> which is a clean DTO without Orleans serialization attributes.
+///     </para>
 /// </remarks>
 [GeneratedCode(""Mississippi.EventSourcing.UxProjections.Api.Generators"", ""1.0.0"")]
-[Route(""api/projections/{projection.Route}/{{entityId}}"")]{authorizeAttribute}
+[Route(""api/projections/{projection.Route}"")]{authorizeAttribute}
 [ApiController]
 [Produces(""application/json"")]
 [ProducesResponseType(StatusCodes.Status404NotFound)]
-public sealed partial class {projection.TypeName}Controller
-    : UxProjectionControllerBase<{projection.TypeName}>
+public sealed partial class {projection.TypeName}Controller : ControllerBase
 {{
     /// <summary>
     ///     Initializes a new instance of the <see cref=""{projection.TypeName}Controller""/> class.
@@ -178,12 +435,152 @@ public sealed partial class {projection.TypeName}Controller
     /// <param name=""logger"">The logger instance.</param>
     public {projection.TypeName}Controller(
         IUxProjectionGrainFactory uxProjectionGrainFactory,
-        ILogger<UxProjectionControllerBase<{projection.TypeName}>> logger)
-        : base(uxProjectionGrainFactory, logger)
+        ILogger<{projection.TypeName}Controller> logger)
     {{
+        UxProjectionGrainFactory = uxProjectionGrainFactory ?? throw new ArgumentNullException(nameof(uxProjectionGrainFactory));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }}
+
+    private ILogger<{projection.TypeName}Controller> Logger {{ get; }}
+
+    private IUxProjectionGrainFactory UxProjectionGrainFactory {{ get; }}
+
+    /// <summary>
+    ///     Gets the projection for the specified entity.
+    /// </summary>
+    /// <param name=""entityId"">The entity identifier.</param>
+    /// <param name=""cancellationToken"">A token to cancel the operation.</param>
+    /// <returns>The projection DTO if found.</returns>
+    [HttpGet(""{{entityId}}"")]
+    [ProducesResponseType(typeof({dtoTypeName}), StatusCodes.Status200OK)]
+    public async Task<ActionResult<{dtoTypeName}>> GetAsync(
+        string entityId,
+        CancellationToken cancellationToken = default)
+    {{
+        IUxProjectionGrain<{projection.TypeName}> grain = UxProjectionGrainFactory.GetUxProjectionGrain<{projection.TypeName}>(entityId);
+
+        // Get the latest version first for ETag support
+        BrookPosition position = await grain.GetLatestVersionAsync(cancellationToken);
+        if (position.NotSet)
+        {{
+            return NotFound();
+        }}
+
+        string currentETag = $""\""{{position.Value}}\"""";
+
+        // Check If-None-Match header for conditional GET
+        string? ifNoneMatch = Request.Headers.IfNoneMatch.ToString();
+        if (!string.IsNullOrEmpty(ifNoneMatch) && (ifNoneMatch == currentETag))
+        {{
+            return StatusCode(StatusCodes.Status304NotModified);
+        }}
+
+        // Fetch the projection data
+        {projection.TypeName}? projection = await grain.GetAsync(cancellationToken);
+        if (projection is null)
+        {{
+            return NotFound();
+        }}
+
+        // Set caching headers
+        Response.Headers.ETag = currentETag;
+        Response.Headers.CacheControl = ""private, must-revalidate"";
+        return Ok(projection.ToDto());
+    }}
+
+    /// <summary>
+    ///     Gets the current version of the projection for the specified entity.
+    /// </summary>
+    /// <param name=""entityId"">The entity identifier.</param>
+    /// <param name=""cancellationToken"">A token to cancel the operation.</param>
+    /// <returns>The current version number.</returns>
+    [HttpGet(""{{entityId}}/version"")]
+    [ProducesResponseType(typeof(long), StatusCodes.Status200OK)]
+    public async Task<ActionResult<long>> GetVersionAsync(
+        string entityId,
+        CancellationToken cancellationToken = default)
+    {{
+        IUxProjectionGrain<{projection.TypeName}> grain = UxProjectionGrainFactory.GetUxProjectionGrain<{projection.TypeName}>(entityId);
+        BrookPosition position = await grain.GetLatestVersionAsync(cancellationToken);
+        if (position.NotSet)
+        {{
+            return NotFound();
+        }}
+
+        return Ok(position.Value);
     }}{batchMethod}
 }}
 ";
+    }
+
+    private static void GenerateToDto(
+        StringBuilder sb,
+        string typeName,
+        string fullTypeName,
+        List<PropertyMetadata> properties,
+        string indent
+    )
+    {
+        sb.AppendLine($"{indent}/// <summary>");
+        sb.AppendLine($"{indent}///     Converts a <see cref=\"{typeName}\"/> to its DTO representation.");
+        sb.AppendLine($"{indent}/// </summary>");
+        sb.AppendLine($"{indent}/// <param name=\"source\">The source projection.</param>");
+        sb.AppendLine($"{indent}/// <returns>The DTO representation.</returns>");
+        sb.AppendLine($"{indent}public static {typeName}Dto ToDto(this {fullTypeName} source)");
+        sb.AppendLine($"{indent}{{");
+        sb.AppendLine($"{indent}    return new {typeName}Dto");
+        sb.AppendLine($"{indent}    {{");
+
+        foreach (PropertyMetadata prop in properties.OrderBy(p => p.PropertyName))
+        {
+            string mapping;
+            if (prop.IsCollection && prop.NeedsDto)
+            {
+                mapping = $"source.{prop.PropertyName}.Select(x => x.ToDto()).ToList()";
+            }
+            else if (prop.NeedsDto && prop.Nullable)
+            {
+                mapping = $"source.{prop.PropertyName}?.ToDto()";
+            }
+            else if (prop.NeedsDto)
+            {
+                mapping = $"source.{prop.PropertyName}.ToDto()";
+            }
+            else if (prop.IsCollection)
+            {
+                mapping = $"source.{prop.PropertyName}.ToList()";
+            }
+            else
+            {
+                mapping = $"source.{prop.PropertyName}";
+            }
+
+            sb.AppendLine($"{indent}        {prop.PropertyName} = {mapping},");
+        }
+
+        sb.AppendLine($"{indent}    }};");
+        sb.AppendLine($"{indent}}}");
+    }
+
+    private static bool IsPrimitiveOrBuiltIn(
+        string typeName
+    )
+    {
+        // Remove nullable suffix for checking
+        string checkName = typeName.TrimEnd('?');
+
+        if (PrimitiveTypeNames.Contains(checkName))
+        {
+            return true;
+        }
+
+        // Check for common primitives
+        if (checkName is "string" or "int" or "long" or "short" or "byte" or "bool" or "double" or "float" or "decimal")
+        {
+            return true;
+        }
+
+        return false;
     }
 
     /// <inheritdoc />
@@ -215,8 +612,11 @@ public sealed partial class {projection.TypeName}Controller
                 projection
             ) =>
             {
-                string source = GenerateProjectionController(projection);
-                spc.AddSource($"{projection.TypeName}Controller.g.cs", source);
+                string controllerSource = GenerateProjectionController(projection);
+                spc.AddSource($"{projection.TypeName}Controller.g.cs", controllerSource);
+
+                string dtoSource = GenerateDtoAndMapper(projection);
+                spc.AddSource($"{projection.TypeName}Dto.g.cs", dtoSource);
             });
 
         // Generate shared BatchProjectionRequest class when any projections exist

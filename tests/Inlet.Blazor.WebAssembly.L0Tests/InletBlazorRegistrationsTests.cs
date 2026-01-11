@@ -5,12 +5,12 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 
 
-namespace Mississippi.Inlet.Blazor.L0Tests;
+namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="InletBlazorRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Blazor")]
+[AllureParentSuite("Mississippi.Inlet.Blazor.WebAssembly")]
 [AllureSuite("Extensions")]
 [AllureSubSuite("InletBlazorRegistrations")]
 public sealed class InletBlazorRegistrationsTests

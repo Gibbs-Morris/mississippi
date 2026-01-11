@@ -599,7 +599,33 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Inlet.Blazor.WebAssembly": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
+        }
+      },
+      "Mississippi.Inlet": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Options": "[9.0.11, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Blazor.WebAssembly": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[9.0.11, )",
+          "Microsoft.AspNetCore.SignalR.Client": "[9.0.11, )",
+          "Mississippi.Inlet": "[1.0.0, )",
+          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir": {

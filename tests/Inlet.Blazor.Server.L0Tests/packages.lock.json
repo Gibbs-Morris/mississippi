@@ -656,7 +656,7 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.InProcess": {
+      "Mississippi.Inlet.Blazor.Server": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",

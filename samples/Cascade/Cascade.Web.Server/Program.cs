@@ -24,6 +24,9 @@ using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.UxProjections;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.EventSourcing.UxProjections.Api;
+using Mississippi.Inlet.Orleans;
+using Mississippi.Inlet.Orleans.SignalR;
 
 using Orleans;
 
@@ -76,14 +79,19 @@ builder.Services.AddAqueduct<MessageHub>(options =>
     options.StreamProviderName = "StreamProvider";
 });
 
+// Add Inlet Orleans SignalR services for real-time projection updates
+// This registers the projection brook registry and configures the Inlet hub
+builder.Services.AddInletOrleansWithSignalR();
+builder.Services.ScanProjectionAssemblies(typeof(ChannelMessagesProjection).Assembly);
+
 // Add storage services
 builder.Services.AddSingleton<ICosmosService, CosmosService>();
 builder.Services.AddSingleton<IBlobService, BlobService>();
 
-// TEMPORARY PLUMBING - TO BE REPLACED BY INLET
-// These registrations enable direct grain access from the BFF server.
-// Once Inlet is integrated, the client will communicate via Inlet's
-// built-in SignalR hub and these registrations may move or be replaced.
+// Event sourcing support for aggregate and projection grain access
+// These registrations enable grain access from the BFF server for HTTP endpoints.
+// The Inlet hub provides real-time projection updates; HTTP endpoints serve as
+// fallback for data fetching and command dispatch.
 builder.Services.AddJsonSerialization();
 builder.Services.AddAggregateSupport();
 builder.Services.AddUxProjections();
@@ -94,8 +102,12 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Map SignalR hub
+// Map SignalR hubs
 app.MapHub<MessageHub>("/hubs/messages");
+app.MapInletHub(); // Maps to /hubs/inlet for real-time projection updates
+
+// Map UX Projection endpoints - auto-discovers [UxProjection] types from scanned assemblies
+app.MapUxProjections(typeof(ChannelMessagesProjection).Assembly);
 
 // Map API endpoints
 app.MapGet(
@@ -284,40 +296,9 @@ app.MapPost(
                 });
     });
 
-// Get messages projection for a conversation
-app.MapGet(
-    "/api/conversations/{conversationId}/messages",
-    async (
-        string conversationId,
-        IUxProjectionGrainFactory uxProjectionGrainFactory
-    ) =>
-    {
-        IUxProjectionGrain<ChannelMessagesProjection> grain =
-            uxProjectionGrainFactory.GetUxProjectionGrain<ChannelMessagesProjection>(conversationId);
-        ChannelMessagesProjection? projection = await grain.GetAsync();
-        if (projection is null)
-        {
-            return Results.NotFound();
-        }
-
-        // Map internal projection to public DTO
-        ConversationMessagesResponse response = new()
-        {
-            ConversationId = conversationId,
-            MessageCount = projection.MessageCount,
-            Messages = projection.Messages.Select(m => new ConversationMessageItem
-                {
-                    MessageId = m.MessageId,
-                    Content = m.Content,
-                    SentBy = m.SentBy,
-                    SentAt = m.SentAt,
-                    EditedAt = m.EditedAt,
-                    IsDeleted = m.IsDeleted,
-                })
-                .ToList(),
-        };
-        return Results.Ok(response);
-    });
+// NOTE: Channel messages projection is now served via MapUxProjections at:
+// GET /api/projections/channel-messages/{entityId}
+// The endpoint includes ETag support for caching
 
 // Fallback to index.html for client-side routing
 app.MapFallbackToFile("index.html");

@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+
+
 namespace Mississippi.EventSourcing.UxProjections.Api.Generators.Models;
 
 /// <summary>
@@ -24,6 +27,16 @@ internal sealed class ProjectionApiInfo
     ///     Gets or sets the namespace of the projection type.
     /// </summary>
     public string Namespace { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets the nested types that require DTO generation.
+    /// </summary>
+    public List<NestedTypeMetadata> NestedTypes { get; set; } = [];
+
+    /// <summary>
+    ///     Gets or sets the properties of the projection.
+    /// </summary>
+    public List<PropertyMetadata> Properties { get; set; } = [];
 
     /// <summary>
     ///     Gets or sets the HTTP route for the projection controller.

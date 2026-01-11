@@ -28,8 +28,8 @@
     <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
-    <ProjectReference Include="..\..\..\src\Inlet.Blazor\Inlet.Blazor.csproj" />
-    <ProjectReference Include="..\..\..\src\Inlet.InProcess\Inlet.InProcess.csproj" />
+    <ProjectReference Include="..\..\..\src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
+    <ProjectReference Include="..\..\..\src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
   </ItemGroup>
 

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Inlet.InProcess\Inlet.InProcess.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
     </ItemGroup>
 
     <ItemGroup>

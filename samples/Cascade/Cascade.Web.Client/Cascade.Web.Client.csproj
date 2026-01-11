@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Inlet\Inlet.csproj" />
+    <ProjectReference Include="..\..\..\src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
     <ProjectReference Include="..\..\..\src\Reservoir\Reservoir.csproj" />
     <ProjectReference Include="..\..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
   </ItemGroup>

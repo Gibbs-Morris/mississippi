@@ -10,12 +10,12 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Inlet.Blazor.L0Tests;
+namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="InletComponent" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Blazor")]
+[AllureParentSuite("Mississippi.Inlet.Blazor.WebAssembly")]
 [AllureSuite("Components")]
 [AllureSubSuite("InletComponent")]
 public sealed class InletComponentTests : IDisposable

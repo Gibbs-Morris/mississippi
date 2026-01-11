@@ -8,12 +8,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Inlet.Abstractions;
 
 
-namespace Mississippi.Inlet.InProcess.L0Tests;
+namespace Mississippi.Inlet.Blazor.Server.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="InProcessProjectionNotifier" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.InProcess")]
+[AllureParentSuite("Mississippi.Inlet.Blazor.Server")]
 [AllureSuite("Notifiers")]
 [AllureSubSuite("InProcessProjectionNotifier")]
 public sealed class InProcessProjectionNotifierTests : IDisposable
