@@ -1,4 +1,5 @@
 @page "/"
+@using Cascade.Web.Client.Services
 @inject HttpClient Http
 @inject IMessageService MessageService
 
@@ -23,7 +24,57 @@
     </div>
     <h3>Messages</h3>
     <ul>
-        @foreach (string message in messages)
+        @foreach (string message in signalRMessages)
+        {
+            <li>@message</li>
+        }
+    </ul>
+</section>
+
+<section>
+    <h2>Orleans Grain Operations</h2>
+    <h3>API → Grain</h3>
+    <div>
+        <input @bind="greetNameInput" placeholder="Enter name to greet" />
+        <button @onclick="CallGreetApiAsync">Greet via API</button>
+    </div>
+    <p>API Greet Result: @greetApiResult</p>
+    <div>
+        <input @bind="toUpperApiInput" placeholder="Enter text to uppercase" />
+        <button @onclick="CallToUpperApiAsync">ToUpper via API</button>
+    </div>
+    <p>API ToUpper Result: @toUpperApiResult</p>
+
+    <h3>SignalR → Grain</h3>
+    <div>
+        <input @bind="greetSignalRInput" placeholder="Enter name to greet" />
+        <button @onclick="CallGreetSignalRAsync" disabled="@(!isConnected)">Greet via SignalR</button>
+    </div>
+    <h4>Greeting Results</h4>
+    <ul>
+        @foreach (string greeting in greetingMessages)
+        {
+            <li>@greeting</li>
+        }
+    </ul>
+    <div>
+        <input @bind="toUpperSignalRInput" placeholder="Enter text to uppercase" />
+        <button @onclick="CallToUpperSignalRAsync" disabled="@(!isConnected)">ToUpper via SignalR</button>
+    </div>
+    <p>SignalR ToUpper Result: @toUpperSignalRResult</p>
+</section>
+
+<section>
+    <h2>Orleans Streaming</h2>
+    <p>Demonstrates: API → BroadcasterGrain → Orleans Stream → StreamBridgeService → SignalR → Client</p>
+    <div>
+        <input @bind="broadcastMessageInput" placeholder="Enter message to broadcast" />
+        <button @onclick="BroadcastMessageAsync">Broadcast via Stream</button>
+    </div>
+    <p>Broadcast Result: @broadcastResult</p>
+    <h3>Stream Messages</h3>
+    <ul>
+        @foreach (string message in streamMessages)
         {
             <li>@message</li>
         }
@@ -50,12 +101,31 @@
     private string messageInput = string.Empty;
     private string cosmosResult = string.Empty;
     private string blobResult = string.Empty;
-    private readonly List<string> messages = [];
     private bool isConnected;
+
+    // SignalR Messaging section - self-contained
+    private readonly List<string> signalRMessages = [];
+
+    // Orleans Grain Operations section - self-contained
+    private string greetNameInput = string.Empty;
+    private string greetApiResult = string.Empty;
+    private string toUpperApiInput = string.Empty;
+    private string toUpperApiResult = string.Empty;
+    private string greetSignalRInput = string.Empty;
+    private string toUpperSignalRInput = string.Empty;
+    private string toUpperSignalRResult = string.Empty;
+    private readonly List<string> greetingMessages = [];
+
+    // Orleans Streaming section - self-contained
+    private string broadcastMessageInput = string.Empty;
+    private string broadcastResult = string.Empty;
+    private readonly List<string> streamMessages = [];
 
     protected override async Task OnInitializedAsync()
     {
         MessageService.MessageReceived += HandleMessageReceived;
+        MessageService.GreetingReceived += HandleGreetingReceived;
+        MessageService.StreamMessageReceived += HandleStreamMessageReceived;
         await ConnectToSignalRAsync();
     }
 
@@ -99,9 +169,137 @@
         }
     }
 
+    private async Task CallGreetApiAsync()
+    {
+        if (string.IsNullOrWhiteSpace(greetNameInput))
+        {
+            greetApiResult = "Please enter a name";
+            return;
+        }
+
+        try
+        {
+            GreetApiResponse? response = await Http.GetFromJsonAsync<GreetApiResponse>($"api/greet/{Uri.EscapeDataString(greetNameInput)}");
+            greetApiResult = response is not null
+                ? $"{response.Greeting} (Uppercase: {response.UppercaseName}, Time: {response.Timestamp:HH:mm:ss})"
+                : "No response";
+        }
+        catch (Exception ex)
+        {
+            greetApiResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task CallToUpperApiAsync()
+    {
+        if (string.IsNullOrWhiteSpace(toUpperApiInput))
+        {
+            toUpperApiResult = "Please enter text";
+            return;
+        }
+
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync("api/toupper", new ToUpperRequest { Input = toUpperApiInput });
+            if (response.IsSuccessStatusCode)
+            {
+                toUpperApiResult = await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                toUpperApiResult = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            toUpperApiResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task CallGreetSignalRAsync()
+    {
+        if (string.IsNullOrWhiteSpace(greetSignalRInput))
+        {
+            return;
+        }
+
+        try
+        {
+            await MessageService.GreetAsync(greetSignalRInput);
+            greetSignalRInput = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            greetingMessages.Add($"Greet Error: {ex.Message}");
+            StateHasChanged();
+        }
+    }
+
+    private async Task CallToUpperSignalRAsync()
+    {
+        if (string.IsNullOrWhiteSpace(toUpperSignalRInput))
+        {
+            toUpperSignalRResult = "Please enter text";
+            return;
+        }
+
+        try
+        {
+            toUpperSignalRResult = await MessageService.ToUpperAsync(toUpperSignalRInput);
+        }
+        catch (Exception ex)
+        {
+            toUpperSignalRResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task BroadcastMessageAsync()
+    {
+        if (string.IsNullOrWhiteSpace(broadcastMessageInput))
+        {
+            broadcastResult = "Please enter a message";
+            return;
+        }
+
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync(
+                "api/broadcast",
+                new BroadcastRequest { Message = broadcastMessageInput });
+
+            if (response.IsSuccessStatusCode)
+            {
+                broadcastResult = "Broadcast sent successfully";
+                broadcastMessageInput = string.Empty;
+            }
+            else
+            {
+                broadcastResult = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            broadcastResult = $"Error: {ex.Message}";
+        }
+    }
+
     private void HandleMessageReceived(object? sender, MessageReceivedEventArgs e)
     {
-        messages.Add(e.Message);
+        signalRMessages.Add(e.Message);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleGreetingReceived(object? sender, GreetingReceivedEventArgs e)
+    {
+        string formattedMessage = $"[{e.GeneratedAt:HH:mm:ss}] {e.Greeting} (Uppercase: {e.UppercaseName})";
+        greetingMessages.Add(formattedMessage);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleStreamMessageReceived(object? sender, StreamMessageReceivedEventArgs e)
+    {
+        string formattedMessage = $"[{e.Timestamp:HH:mm:ss}] From {e.Sender}: {e.Content}";
+        streamMessages.Add(formattedMessage);
         InvokeAsync(StateHasChanged);
     }
 

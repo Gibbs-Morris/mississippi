@@ -5,7 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.TestingHost" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
     <ProjectReference Include="..\Cascade.Web.Server\Cascade.Web.Server.csproj" />
+    <ProjectReference Include="..\Cascade.Web.Silo\Cascade.Web.Silo.csproj" />
   </ItemGroup>
 </Project>

@@ -12,10 +12,48 @@ using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.Inlet.Orleans.SignalR;
 
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+
 using Orleans.Hosting;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+// Add OpenTelemetry for metrics and tracing
+// Aspire sets OTEL_EXPORTER_OTLP_ENDPOINT for automatic dashboard integration
+// Note: In OpenTelemetry 1.14.0+, exporters are added inside WithMetrics/WithTracing
+var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(metrics =>
+    {
+        // Metrics provider from OpenTelemetry
+        metrics.AddAspNetCoreInstrumentation();
+
+        // Metrics provides by ASP.NET Core in .NET 9
+        metrics.AddMeter("Microsoft.AspNetCore.Hosting");
+        metrics.AddMeter("Microsoft.AspNetCore.Server.Kestrel");
+
+        // Export via OTLP when endpoint is configured (set by Aspire)
+        if (otlpEndpoint != null)
+        {
+            metrics.AddOtlpExporter();
+        }
+    })
+    .WithTracing(tracing =>
+    {
+        tracing.AddAspNetCoreInstrumentation();
+        tracing.AddHttpClientInstrumentation();
+        tracing.AddSource("Microsoft.Orleans.Runtime");
+        tracing.AddSource("Microsoft.Orleans.Application");
+
+        // Export via OTLP when endpoint is configured (set by Aspire)
+        if (otlpEndpoint != null)
+        {
+            tracing.AddOtlpExporter();
+        }
+    });
 
 // Add Aspire-managed clients - these register CosmosClient and BlobServiceClient
 // using connection strings from Aspire AppHost references

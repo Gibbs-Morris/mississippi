@@ -31,6 +31,10 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.11" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0" />
     <PackageVersion Include="System.Text.Json" Version="9.0.5" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Microsoft.Orleans.Sdk" Version="9.2.1" />
@@ -39,7 +43,9 @@
     <PackageVersion Include="Microsoft.Orleans.Server" Version="9.2.1" />
     <PackageVersion Include="Microsoft.Orleans.Client" Version="9.2.1" />
     <PackageVersion Include="Microsoft.Orleans.Streaming" Version="9.2.1" />
+    <PackageVersion Include="Microsoft.Orleans.Streaming.AzureStorage" Version="9.2.1" />
     <PackageVersion Include="Microsoft.Orleans.Persistence.Memory" Version="9.2.1" />
+    <PackageVersion Include="Microsoft.Orleans.Persistence.AzureStorage" Version="9.2.1" />
     <PackageVersion Include="Microsoft.Orleans.Clustering.AzureStorage" Version="9.2.1" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.11" />
     <!-- .NET Aspire -->
@@ -48,6 +54,7 @@
     <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.1.0" />
     <PackageVersion Include="Aspire.Hosting.Orleans" Version="13.1.0" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Azure.Storage.Queues" Version="13.1.0" />
     <PackageVersion Include="Aspire.Azure.Data.Tables" Version="13.1.0" />
     <PackageVersion Include="Aspire.Microsoft.Azure.Cosmos" Version="13.1.0" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="13.1.0" />

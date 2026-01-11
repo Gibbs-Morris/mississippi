@@ -18,6 +18,7 @@
         <Project Path="samples\Cascade\Cascade.Web.AppHost\Cascade.Web.AppHost.csproj" />
         <Project Path="samples\Cascade\Cascade.Web.Client\Cascade.Web.Client.csproj" />
         <Project Path="samples\Cascade\Cascade.Web.Server\Cascade.Web.Server.csproj" />
+        <Project Path="samples\Cascade\Cascade.Web.Silo\Cascade.Web.Silo.csproj" />
         <Project Path="samples\Cascade\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
         <Project Path="samples\Cascade\Cascade.Web.L0Tests\Cascade.Web.L0Tests.csproj" />
         <Project Path="samples\Cascade\Cascade.Web.L2Tests\Cascade.Web.L2Tests.csproj" />

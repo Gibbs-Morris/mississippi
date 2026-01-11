@@ -2,25 +2,26 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Aspire client integration -->
-    <PackageReference Include="Aspire.Azure.Data.Tables" />
-    <PackageReference Include="Aspire.Azure.Storage.Blobs" />
-    <PackageReference Include="Aspire.Microsoft.Azure.Cosmos" />
-
-    <!-- Orleans Client for connecting to the silo -->
-    <PackageReference Include="Microsoft.Orleans.Client" />
-    <PackageReference Include="Microsoft.Orleans.Clustering.AzureStorage" />
-    <PackageReference Include="Microsoft.Orleans.Streaming" />
-
-    <!-- Blazor WebAssembly hosting -->
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+    <InternalsVisibleTo Include="Cascade.Web.L0Tests" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Cascade.Web.Client\Cascade.Web.Client.csproj" />
+    <!-- Aspire Azure Storage integration for clustering and grain state -->
+    <PackageReference Include="Aspire.Azure.Data.Tables" />
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" />
+
+    <!-- Orleans Server -->
+    <PackageReference Include="Microsoft.Orleans.Server" />
+    <PackageReference Include="Microsoft.Orleans.Clustering.AzureStorage" />
+    <PackageReference Include="Microsoft.Orleans.Persistence.AzureStorage" />
+    <PackageReference Include="Microsoft.Orleans.Streaming" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
   </ItemGroup>
 

@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 
 using Cascade.Web.Contracts;
+using Cascade.Web.Contracts.Grains;
 using Cascade.Web.Server.Hubs;
 using Cascade.Web.Server.Services;
 
@@ -10,6 +11,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
+using Orleans;
 
 using BlobItemDto = Cascade.Web.Contracts.BlobItem;
 
@@ -40,12 +43,23 @@ builder.AddAzureCosmosClient(
     });
 builder.AddAzureBlobServiceClient("blobs");
 
+// Add Aspire-managed Azure Table client for Orleans clustering
+// Must use Keyed variant so Orleans can resolve via GetRequiredKeyedService<T>(serviceKey)
+builder.AddKeyedAzureTableServiceClient("clustering");
+
+// Configure Orleans client to connect to the silo cluster
+// UseOrleansClient() automatically configures clustering based on the Azure Table client
+builder.UseOrleansClient();
+
 // Add SignalR for real-time messaging
 builder.Services.AddSignalR();
 
 // Add storage services
 builder.Services.AddSingleton<ICosmosService, CosmosService>();
 builder.Services.AddSingleton<IBlobService, BlobService>();
+
+// Add Orleans stream to SignalR bridge service
+builder.Services.AddHostedService<StreamBridgeService>();
 
 WebApplication app = builder.Build();
 
@@ -66,6 +80,45 @@ app.MapGet(
 app.MapGet(
     "/api/echo",
     (string message) => new EchoResponse { Message = message, ReceivedAt = DateTime.UtcNow });
+
+// Orleans grain endpoint - demonstrates WebAssembly → API → Orleans grain flow
+app.MapGet(
+    "/api/greet/{name}",
+    async (string name, IGrainFactory grainFactory) =>
+    {
+        IGreeterGrain grain = grainFactory.GetGrain<IGreeterGrain>(name);
+        GreetResponse response = await grain.GreetAsync();
+
+        // Map to API-friendly response (without Orleans serialization attributes)
+        return Results.Ok(
+            new GreetApiResponse
+            {
+                Greeting = response.Greeting,
+                UppercaseName = response.UppercaseName,
+                Timestamp = response.GeneratedAt,
+            });
+    });
+
+// Orleans grain endpoint - uppercase conversion
+app.MapPost(
+    "/api/toupper",
+    async (ToUpperRequest request, IGrainFactory grainFactory) =>
+    {
+        IGreeterGrain grain = grainFactory.GetGrain<IGreeterGrain>("converter");
+        string result = await grain.ToUpperAsync(request.Input);
+        return Results.Text(result);
+    });
+
+// Orleans streaming endpoint - broadcasts a message via Orleans streams
+// The message flows: API → BroadcasterGrain → Orleans Stream → StreamBridgeService → SignalR → Clients
+app.MapPost(
+    "/api/broadcast",
+    async (BroadcastRequest request, IGrainFactory grainFactory) =>
+    {
+        IBroadcasterGrain grain = grainFactory.GetGrain<IBroadcasterGrain>("default");
+        await grain.BroadcastAsync(request.Message);
+        return Results.Ok(new { Message = request.Message, Status = "Broadcast sent" });
+    });
 
 app.MapGet(
     "/api/cosmos",
