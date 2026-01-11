@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
+    <ProjectReference Include="..\Cascade.Web.Server\Cascade.Web.Server.csproj" />
+  </ItemGroup>
+</Project>

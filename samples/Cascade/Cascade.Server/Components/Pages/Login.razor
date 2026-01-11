@@ -2,6 +2,7 @@
    Copyright (c) Gibbs-Morris. All rights reserved.
    </copyright> *@
 @page "/login"
+@rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
 
 <PageTitle>Login - Cascade Chat</PageTitle>
 
@@ -13,7 +14,7 @@
                     <h2 class="mb-0">Welcome to Cascade Chat</h2>
                 </div>
                 <div class="card-body">
-                    <EditForm Model="Model" OnValidSubmit="HandleLoginAsync" FormName="LoginForm">
+                    <EditForm Model="Model" OnValidSubmit="HandleLoginAsync">
                         <DataAnnotationsValidator/>
 
                         <div class="mb-3">

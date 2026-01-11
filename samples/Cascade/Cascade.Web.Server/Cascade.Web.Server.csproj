@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Aspire client integration -->
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" />
+    <PackageReference Include="Aspire.Microsoft.Azure.Cosmos" />
+
+    <!-- Blazor WebAssembly hosting -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cascade.Web.Client\Cascade.Web.Client.csproj" />
+    <ProjectReference Include="..\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
