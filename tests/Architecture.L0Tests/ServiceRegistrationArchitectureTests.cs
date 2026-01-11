@@ -21,8 +21,6 @@ public sealed class ServiceRegistrationArchitectureTests : ArchitectureTestBase
         .That()
         .HaveNameContaining("ServiceRegistration")
         .Or()
-        .HaveNameContaining("ServiceCollectionExtensions")
-        .Or()
         .HaveNameEndingWith("Registrations")
         .As("Service registration types");
 

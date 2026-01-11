@@ -18,7 +18,7 @@ using Orleans.Streams;
 namespace Mississippi.Aqueduct;
 
 /// <summary>
-///     Implementation of <see cref="ISignalRGrainObserver" /> that routes messages
+///     Implementation of <see cref="IAqueductNotifier" /> that routes messages
 ///     through Orleans grains to SignalR clients.
 /// </summary>
 /// <remarks>
@@ -32,18 +32,18 @@ namespace Mississippi.Aqueduct;
 ///         connected SignalR clients.
 ///     </para>
 /// </remarks>
-public sealed class OrleansSignalRGrainObserver : ISignalRGrainObserver
+internal sealed class AqueductNotifier : IAqueductNotifier
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="OrleansSignalRGrainObserver" /> class.
+    ///     Initializes a new instance of the <see cref="AqueductNotifier" /> class.
     /// </summary>
     /// <param name="clusterClient">The Orleans cluster client for grain operations.</param>
-    /// <param name="options">Configuration options for the SignalR backplane.</param>
-    /// <param name="logger">Logger instance for observer operations.</param>
-    public OrleansSignalRGrainObserver(
+    /// <param name="options">Configuration options for the Aqueduct backplane.</param>
+    /// <param name="logger">Logger instance for notifier operations.</param>
+    public AqueductNotifier(
         IClusterClient clusterClient,
-        IOptions<OrleansSignalROptions> options,
-        ILogger<OrleansSignalRGrainObserver> logger
+        IOptions<AqueductOptions> options,
+        ILogger<AqueductNotifier> logger
     )
     {
         ClusterClient = clusterClient ?? throw new ArgumentNullException(nameof(clusterClient));
@@ -53,9 +53,9 @@ public sealed class OrleansSignalRGrainObserver : ISignalRGrainObserver
 
     private IClusterClient ClusterClient { get; }
 
-    private ILogger<OrleansSignalRGrainObserver> Logger { get; }
+    private ILogger<AqueductNotifier> Logger { get; }
 
-    private IOptions<OrleansSignalROptions> Options { get; }
+    private IOptions<AqueductOptions> Options { get; }
 
     /// <inheritdoc />
     public async Task SendToAllAsync(
@@ -67,7 +67,7 @@ public sealed class OrleansSignalRGrainObserver : ISignalRGrainObserver
     {
         ArgumentException.ThrowIfNullOrEmpty(hubName);
         ArgumentException.ThrowIfNullOrEmpty(method);
-        Logger.ObserverSendingToAll(hubName, method);
+        Logger.NotifierSendingToAll(hubName, method);
         string streamProviderName = Options.Value.StreamProviderName;
         IStreamProvider streamProvider = ClusterClient.GetStreamProvider(streamProviderName);
         StreamId streamId = StreamId.Create(Options.Value.AllClientsStreamNamespace, hubName);
@@ -92,7 +92,7 @@ public sealed class OrleansSignalRGrainObserver : ISignalRGrainObserver
         ArgumentException.ThrowIfNullOrEmpty(hubName);
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         ArgumentException.ThrowIfNullOrEmpty(method);
-        Logger.ObserverSendingToConnection(connectionId, hubName, method);
+        Logger.NotifierSendingToConnection(connectionId, hubName, method);
         ISignalRClientGrain clientGrain = GetClientGrain(hubName, connectionId);
         await clientGrain.SendMessageAsync(method, args).ConfigureAwait(false);
     }
@@ -109,7 +109,7 @@ public sealed class OrleansSignalRGrainObserver : ISignalRGrainObserver
         ArgumentException.ThrowIfNullOrEmpty(hubName);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
         ArgumentException.ThrowIfNullOrEmpty(method);
-        Logger.ObserverSendingToGroup(groupName, hubName, method);
+        Logger.NotifierSendingToGroup(groupName, hubName, method);
         ISignalRGroupGrain groupGrain = GetGroupGrain(hubName, groupName);
         await groupGrain.SendMessageAsync(method, args).ConfigureAwait(false);
     }

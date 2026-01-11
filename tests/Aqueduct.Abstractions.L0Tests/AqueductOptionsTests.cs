@@ -4,12 +4,12 @@
 namespace Mississippi.Aqueduct.Abstractions.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="OrleansSignalROptions" /> configuration.
+///     Tests for <see cref="AqueductOptions" /> configuration.
 /// </summary>
 [AllureParentSuite("ASP.NET Core")]
 [AllureSuite("SignalR Orleans")]
 [AllureSubSuite("Configuration")]
-public sealed class OrleansSignalROptionsTests
+public sealed class AqueductOptionsTests
 {
     /// <summary>
     ///     Tests that default all clients stream namespace is set correctly.
@@ -18,7 +18,7 @@ public sealed class OrleansSignalROptionsTests
     public void AllClientsStreamNamespaceShouldDefaultToSignalRAllClients()
     {
         // Arrange & Act
-        OrleansSignalROptions options = new();
+        AqueductOptions options = new();
 
         // Assert
         Assert.Equal("SignalR.AllClients", options.AllClientsStreamNamespace);
@@ -31,7 +31,7 @@ public sealed class OrleansSignalROptionsTests
     public void AllPropertiesShouldBeCustomizable()
     {
         // Arrange
-        OrleansSignalROptions options = new()
+        AqueductOptions options = new()
         {
             StreamProviderName = "CustomProvider",
             ServerStreamNamespace = "CustomServers",
@@ -53,7 +53,7 @@ public sealed class OrleansSignalROptionsTests
     public void DeadServerTimeoutMultiplierShouldBeCustomizable()
     {
         // Arrange
-        OrleansSignalROptions options = new()
+        AqueductOptions options = new()
         {
             DeadServerTimeoutMultiplier = 5,
         };
@@ -69,7 +69,7 @@ public sealed class OrleansSignalROptionsTests
     public void DeadServerTimeoutMultiplierShouldDefaultToThree()
     {
         // Arrange & Act
-        OrleansSignalROptions options = new();
+        AqueductOptions options = new();
 
         // Assert
         Assert.Equal(3, options.DeadServerTimeoutMultiplier);
@@ -82,7 +82,7 @@ public sealed class OrleansSignalROptionsTests
     public void HeartbeatIntervalMinutesShouldDefaultToOne()
     {
         // Arrange & Act
-        OrleansSignalROptions options = new();
+        AqueductOptions options = new();
 
         // Assert
         Assert.Equal(1, options.HeartbeatIntervalMinutes);
@@ -95,7 +95,7 @@ public sealed class OrleansSignalROptionsTests
     public void ServerStreamNamespaceShouldDefaultToSignalRServer()
     {
         // Arrange & Act
-        OrleansSignalROptions options = new();
+        AqueductOptions options = new();
 
         // Assert
         Assert.Equal("SignalR.Server", options.ServerStreamNamespace);
@@ -108,7 +108,7 @@ public sealed class OrleansSignalROptionsTests
     public void StreamProviderNameShouldDefaultToSignalRStreams()
     {
         // Arrange & Act
-        OrleansSignalROptions options = new();
+        AqueductOptions options = new();
 
         // Assert
         Assert.Equal("SignalRStreams", options.StreamProviderName);

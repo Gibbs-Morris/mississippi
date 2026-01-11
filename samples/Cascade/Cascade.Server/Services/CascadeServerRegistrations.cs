@@ -15,7 +15,7 @@ namespace Cascade.Server.Services;
 /// <summary>
 ///     Extension methods for registering Cascade.Server services.
 /// </summary>
-internal static class CascadeServerServiceCollectionExtensions
+internal static class CascadeServerRegistrations
 {
     /// <summary>
     ///     Adds the Cascade.Server services to the dependency injection container.

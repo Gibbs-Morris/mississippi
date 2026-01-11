@@ -48,23 +48,23 @@ internal sealed class BroadcasterGrain : IGrainBase, IBroadcasterGrain
     ///     Initializes a new instance of the <see cref="BroadcasterGrain" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
-    /// <param name="signalRGrainFactory">The SignalR grain factory for managing groups.</param>
+    /// <param name="aqueductGrainFactory">The Aqueduct grain factory for managing groups.</param>
     /// <param name="logger">The logger instance.</param>
     public BroadcasterGrain(
         IGrainContext grainContext,
-        ISignalRGrainFactory signalRGrainFactory,
+        IAqueductGrainFactory aqueductGrainFactory,
         ILogger<BroadcasterGrain> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
-        SignalRGrainFactory = signalRGrainFactory ?? throw new ArgumentNullException(nameof(signalRGrainFactory));
+        AqueductGrainFactory = aqueductGrainFactory ?? throw new ArgumentNullException(nameof(aqueductGrainFactory));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
 
-    private ISignalRGrainFactory SignalRGrainFactory { get; }
+    private IAqueductGrainFactory AqueductGrainFactory { get; }
 
     private ILogger<BroadcasterGrain> Logger { get; }
 
@@ -84,7 +84,7 @@ internal sealed class BroadcasterGrain : IGrainBase, IBroadcasterGrain
 
         // Get the broadcast group grain and send the message
         // The group grain fans out to individual client grains, which publish to their server streams
-        ISignalRGroupGrain groupGrain = SignalRGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
+        ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
 
         await groupGrain.SendMessageAsync(
             "ReceiveStreamMessage",

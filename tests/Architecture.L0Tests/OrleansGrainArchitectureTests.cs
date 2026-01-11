@@ -57,6 +57,8 @@ public sealed class OrleansGrainArchitectureTests : ArchitectureTestBase
             .DoNotHaveNameEndingWith("LoggerExtensions") // Exclude LoggerExtensions classes
             .And()
             .DoNotHaveNameEndingWith("Factory") // Exclude Factory classes
+            .And()
+            .DoNotHaveNameEndingWith("Registrations") // Exclude DI registration classes
             .Should()
             .HaveNameEndingWith("Base")
             .OrShould()

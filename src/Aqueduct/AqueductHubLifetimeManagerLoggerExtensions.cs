@@ -6,9 +6,9 @@ using Microsoft.Extensions.Logging;
 namespace Mississippi.Aqueduct;
 
 /// <summary>
-///     Logger extensions for <see cref="OrleansHubLifetimeManager{THub}" />.
+///     Logger extensions for <see cref="AqueductHubLifetimeManager{THub}" />.
 /// </summary>
-internal static partial class OrleansHubLifetimeManagerLoggerExtensions
+internal static partial class AqueductHubLifetimeManagerLoggerExtensions
 {
     [LoggerMessage(
         EventId = 5,

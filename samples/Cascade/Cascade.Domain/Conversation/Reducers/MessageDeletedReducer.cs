@@ -19,7 +19,8 @@ internal sealed class MessageDeletedReducer : ReducerBase<MessageDeleted, Conver
         int index = state.Messages.FindIndex(m => m.MessageId == eventData.MessageId);
         if (index < 0)
         {
-            return state;
+            // Must return new instance per ReducerBase requirements
+            return state with { };
         }
 
         Message existingMessage = state.Messages[index];

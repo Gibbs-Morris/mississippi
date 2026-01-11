@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Mississippi.Inlet.Blazor.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="InletBlazorServiceCollectionExtensions" />.
+///     Tests for <see cref="InletBlazorRegistrations" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.Blazor")]
 [AllureSuite("Extensions")]

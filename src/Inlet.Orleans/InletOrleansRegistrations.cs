@@ -19,7 +19,7 @@ namespace Mississippi.Inlet.Orleans;
 ///         that serve SignalR hubs, use the extensions from <c>Inlet.Orleans.SignalR</c>.
 ///     </para>
 /// </remarks>
-public static class InletOrleansServiceCollectionExtensions
+public static class InletOrleansRegistrations
 {
     /// <summary>
     ///     Adds Inlet Orleans services to the service collection.

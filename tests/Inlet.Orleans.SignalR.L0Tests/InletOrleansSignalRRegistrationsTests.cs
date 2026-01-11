@@ -11,12 +11,12 @@ using Microsoft.Extensions.Options;
 namespace Mississippi.Inlet.Orleans.SignalR.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="InletOrleansSignalRServiceCollectionExtensions" />.
+///     Tests for <see cref="InletOrleansSignalRRegistrations" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.Orleans.SignalR")]
 [AllureSuite("Extensions")]
-[AllureSubSuite("InletOrleansSignalRServiceCollectionExtensions")]
-public sealed class InletOrleansSignalRServiceCollectionExtensionsTests
+[AllureSubSuite("InletOrleansSignalRRegistrations")]
+public sealed class InletOrleansSignalRRegistrationsTests
 {
     /// <summary>
     ///     AddInletOrleansWithSignalR should accept null configuration action.

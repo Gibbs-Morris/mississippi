@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using Mississippi.Aqueduct.Abstractions;
+using Mississippi.Aqueduct.Grains;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.Inlet.Abstractions;
@@ -23,6 +25,13 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
     )
     {
         siloBuilder.AddMemoryStreams("MississippiBrookStreamProvider");
+
+        // Configure Aqueduct for IAqueductGrainFactory
+        siloBuilder.UseAqueduct(options =>
+        {
+            options.StreamProviderName = "MississippiBrookStreamProvider";
+        });
+
         siloBuilder.ConfigureServices(services =>
         {
             // Register InletOrleans services (IProjectionBrookRegistry)

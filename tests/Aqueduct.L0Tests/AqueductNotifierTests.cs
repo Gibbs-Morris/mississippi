@@ -19,13 +19,13 @@ using Orleans;
 namespace Mississippi.Aqueduct.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="OrleansSignalRGrainObserver" /> operations.
+///     Tests for <see cref="AqueductNotifier" /> operations.
 /// </summary>
 [AllureParentSuite("ASP.NET Core")]
 [AllureSuite("SignalR Orleans")]
-[AllureSubSuite("Grain Observer")]
+[AllureSubSuite("Aqueduct Notifier")]
 [Collection(ClusterTestSuite.Name)]
-public sealed class OrleansSignalRGrainObserverTests
+public sealed class AqueductNotifierTests
 {
     /// <summary>
     ///     Tests that constructor succeeds with valid parameters.
@@ -35,14 +35,14 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
 
         // Act
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Assert
-        Assert.NotNull(observer);
+        Assert.NotNull(notifier);
     }
 
     /// <summary>
@@ -52,11 +52,11 @@ public sealed class OrleansSignalRGrainObserverTests
     public void ConstructorShouldThrowWhenClusterClientIsNull()
     {
         // Arrange
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new OrleansSignalRGrainObserver(null!, options, logger));
+        Assert.Throws<ArgumentNullException>(() => new AqueductNotifier(null!, options, logger));
     }
 
     /// <summary>
@@ -67,10 +67,10 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new OrleansSignalRGrainObserver(clusterClient, options, null!));
+        Assert.Throws<ArgumentNullException>(() => new AqueductNotifier(clusterClient, options, null!));
     }
 
     /// <summary>
@@ -81,10 +81,10 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new OrleansSignalRGrainObserver(clusterClient, null!, logger));
+        Assert.Throws<ArgumentNullException>(() => new AqueductNotifier(clusterClient, null!, logger));
     }
 
     /// <summary>
@@ -96,12 +96,12 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => observer.SendToAllAsync(string.Empty, "method", []));
+        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToAllAsync(string.Empty, "method", []));
     }
 
     /// <summary>
@@ -113,12 +113,12 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => observer.SendToAllAsync(
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToAllAsync(
             null!,
             "method",
             ImmutableArray<object?>.Empty));
@@ -133,12 +133,12 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => observer.SendToAllAsync(
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToAllAsync(
             "TestHub",
             null!,
             ImmutableArray<object?>.Empty));
@@ -155,12 +155,12 @@ public sealed class OrleansSignalRGrainObserverTests
         ISignalRClientGrain mockClientGrain = Substitute.For<ISignalRClientGrain>();
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
         clusterClient.GetGrain<ISignalRClientGrain>("TestHub:conn1").Returns(mockClientGrain);
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act
-        await observer.SendToConnectionAsync("TestHub", "conn1", "Notify", ImmutableArray.Create<object?>("arg1"));
+        await notifier.SendToConnectionAsync("TestHub", "conn1", "Notify", ImmutableArray.Create<object?>("arg1"));
 
         // Assert
         await mockClientGrain.Received(1).SendMessageAsync("Notify", Arg.Any<ImmutableArray<object?>>());
@@ -175,13 +175,13 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<ArgumentException>(() =>
-            observer.SendToConnectionAsync("TestHub", null!, "method", ImmutableArray<object?>.Empty));
+            notifier.SendToConnectionAsync("TestHub", null!, "method", ImmutableArray<object?>.Empty));
     }
 
     /// <summary>
@@ -193,13 +193,13 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<ArgumentException>(() =>
-            observer.SendToConnectionAsync(null!, "conn1", "method", ImmutableArray<object?>.Empty));
+            notifier.SendToConnectionAsync(null!, "conn1", "method", ImmutableArray<object?>.Empty));
     }
 
     /// <summary>
@@ -211,13 +211,13 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<ArgumentException>(() =>
-            observer.SendToConnectionAsync("TestHub", "conn1", null!, ImmutableArray<object?>.Empty));
+            notifier.SendToConnectionAsync("TestHub", "conn1", null!, ImmutableArray<object?>.Empty));
     }
 
     /// <summary>
@@ -231,12 +231,12 @@ public sealed class OrleansSignalRGrainObserverTests
         ISignalRGroupGrain mockGroupGrain = Substitute.For<ISignalRGroupGrain>();
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
         clusterClient.GetGrain<ISignalRGroupGrain>("TestHub:group1").Returns(mockGroupGrain);
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act
-        await observer.SendToGroupAsync("TestHub", "group1", "Notify", ImmutableArray.Create<object?>("arg1"));
+        await notifier.SendToGroupAsync("TestHub", "group1", "Notify", ImmutableArray.Create<object?>("arg1"));
 
         // Assert
         await mockGroupGrain.Received(1).SendMessageAsync("Notify", Arg.Any<ImmutableArray<object?>>());
@@ -251,12 +251,12 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => observer.SendToGroupAsync(
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToGroupAsync(
             "TestHub",
             null!,
             "method",
@@ -272,12 +272,12 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => observer.SendToGroupAsync(
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToGroupAsync(
             null!,
             "group1",
             "method",
@@ -293,12 +293,12 @@ public sealed class OrleansSignalRGrainObserverTests
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<OrleansSignalROptions> options = Options.Create(new OrleansSignalROptions());
-        ILogger<OrleansSignalRGrainObserver> logger = Substitute.For<ILogger<OrleansSignalRGrainObserver>>();
-        OrleansSignalRGrainObserver observer = new(clusterClient, options, logger);
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => observer.SendToGroupAsync(
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToGroupAsync(
             "TestHub",
             "group1",
             null!,

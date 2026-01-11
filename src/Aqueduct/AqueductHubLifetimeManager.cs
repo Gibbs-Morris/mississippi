@@ -23,7 +23,7 @@ using Orleans.Streams;
 namespace Mississippi.Aqueduct;
 
 /// <summary>
-///     A custom <see cref="HubLifetimeManager{THub}" /> implementation that uses Orleans
+///     A custom <see cref="HubLifetimeManager{THub}" /> implementation that uses Aqueduct
 ///     grains as the backplane for distributed SignalR message routing.
 /// </summary>
 /// <typeparam name="THub">The type of hub being managed.</typeparam>
@@ -53,7 +53,7 @@ namespace Mississippi.Aqueduct;
 ///         Each server subscribes to its own stream and the hub's all-clients stream.
 ///     </para>
 /// </remarks>
-public sealed class OrleansHubLifetimeManager<THub>
+public sealed class AqueductHubLifetimeManager<THub>
     : HubLifetimeManager<THub>,
       ILifecycleParticipant<ISiloLifecycle>,
       IDisposable
@@ -76,15 +76,15 @@ public sealed class OrleansHubLifetimeManager<THub>
     private volatile bool streamsInitialized;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="OrleansHubLifetimeManager{THub}" /> class.
+    ///     Initializes a new instance of the <see cref="AqueductHubLifetimeManager{THub}" /> class.
     /// </summary>
     /// <param name="clusterClient">The Orleans cluster client for grain operations.</param>
     /// <param name="options">Configuration options for the backplane.</param>
     /// <param name="logger">Logger instance for backplane operations.</param>
-    public OrleansHubLifetimeManager(
+    public AqueductHubLifetimeManager(
         IClusterClient clusterClient,
-        IOptions<OrleansSignalROptions> options,
-        ILogger<OrleansHubLifetimeManager<THub>> logger
+        IOptions<AqueductOptions> options,
+        ILogger<AqueductHubLifetimeManager<THub>> logger
     )
     {
         ClusterClient = clusterClient ?? throw new ArgumentNullException(nameof(clusterClient));
@@ -96,9 +96,9 @@ public sealed class OrleansHubLifetimeManager<THub>
 
     private IClusterClient ClusterClient { get; }
 
-    private ILogger<OrleansHubLifetimeManager<THub>> Logger { get; }
+    private ILogger<AqueductHubLifetimeManager<THub>> Logger { get; }
 
-    private IOptions<OrleansSignalROptions> Options { get; }
+    private IOptions<AqueductOptions> Options { get; }
 
     private string ServerId { get; }
 
@@ -188,7 +188,7 @@ public sealed class OrleansHubLifetimeManager<THub>
         // Dispose any previous subscription (shouldn't happen, but satisfies analyzer)
         lifecycleSubscription?.Dispose();
         lifecycleSubscription = lifecycle.Subscribe(
-            nameof(OrleansHubLifetimeManager<THub>),
+            nameof(AqueductHubLifetimeManager<THub>),
             ServiceLifecycleStage.Active,
             async ct => await EnsureStreamSetupAsync(ct).ConfigureAwait(false));
     }

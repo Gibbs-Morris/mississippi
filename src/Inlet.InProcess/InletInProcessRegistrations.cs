@@ -11,7 +11,7 @@ namespace Mississippi.Inlet.InProcess;
 /// <summary>
 ///     Extension methods for registering Inlet in-process server services.
 /// </summary>
-public static class InletInProcessServiceCollectionExtensions
+public static class InletInProcessRegistrations
 {
     /// <summary>
     ///     Adds Inlet in-process server services to the service collection.

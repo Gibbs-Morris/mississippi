@@ -23,7 +23,8 @@ internal sealed class MessageDeletedProjectionReducer : ReducerBase<MessageDelet
         int index = state.Messages.FindIndex(m => m.MessageId == eventData.MessageId);
         if (index < 0)
         {
-            return state;
+            // Must return new instance per ReducerBase requirements
+            return state with { };
         }
 
         MessageItem existing = state.Messages[index];

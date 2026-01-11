@@ -13,7 +13,7 @@ namespace Mississippi.Aqueduct.Grains;
 /// <summary>
 ///     Extension methods for configuring Aqueduct on Orleans silos.
 /// </summary>
-public static class AqueductSiloBuilderExtensions
+public static class AqueductGrainsRegistrations
 {
     /// <summary>
     ///     Configures Aqueduct for SignalR backplane support on the silo.
@@ -23,7 +23,7 @@ public static class AqueductSiloBuilderExtensions
     /// <returns>The silo builder for chaining.</returns>
     /// <remarks>
     ///     <para>
-    ///         This method registers the Aqueduct grains and configures the SignalR options.
+    ///         This method registers the Aqueduct grains and configures the options.
     ///         Use the <see cref="AqueductSiloOptions" /> to configure stream providers:
     ///     </para>
     ///     <code>
@@ -56,18 +56,18 @@ public static class AqueductSiloBuilderExtensions
         AqueductSiloOptions options = new(siloBuilder);
         configureOptions(options);
 
-        // Register the Orleans SignalR options
-        siloBuilder.Services.Configure<OrleansSignalROptions>(orleanOptions =>
+        // Register the Aqueduct options
+        siloBuilder.Services.Configure<AqueductOptions>(aqueductOptions =>
         {
-            orleanOptions.StreamProviderName = options.StreamProviderName;
-            orleanOptions.ServerStreamNamespace = options.ServerStreamNamespace;
-            orleanOptions.AllClientsStreamNamespace = options.AllClientsStreamNamespace;
-            orleanOptions.HeartbeatIntervalMinutes = options.HeartbeatIntervalMinutes;
-            orleanOptions.DeadServerTimeoutMultiplier = options.DeadServerTimeoutMultiplier;
+            aqueductOptions.StreamProviderName = options.StreamProviderName;
+            aqueductOptions.ServerStreamNamespace = options.ServerStreamNamespace;
+            aqueductOptions.AllClientsStreamNamespace = options.AllClientsStreamNamespace;
+            aqueductOptions.HeartbeatIntervalMinutes = options.HeartbeatIntervalMinutes;
+            aqueductOptions.DeadServerTimeoutMultiplier = options.DeadServerTimeoutMultiplier;
         });
 
-        // Register the SignalR grain factory
-        siloBuilder.Services.TryAddSingleton<ISignalRGrainFactory, SignalRGrainFactory>();
+        // Register the Aqueduct grain factory
+        siloBuilder.Services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
 
         return siloBuilder;
     }
@@ -79,7 +79,7 @@ public static class AqueductSiloBuilderExtensions
     /// <returns>The silo builder for chaining.</returns>
     /// <remarks>
     ///     <para>
-    ///         This overload uses default <see cref="OrleansSignalROptions" /> values.
+    ///         This overload uses default <see cref="AqueductOptions" /> values.
     ///         You must configure the stream provider separately with the name "SignalRStreams".
     ///     </para>
     /// </remarks>

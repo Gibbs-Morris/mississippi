@@ -18,11 +18,11 @@ namespace Mississippi.Inlet.Orleans.SignalR;
 /// <remarks>
 ///     <para>
 ///         Use these extensions on ASP.NET Core hosts that serve SignalR hubs.
-///         For silo hosts, use <see cref="InletOrleansServiceCollectionExtensions" />
+///         For silo hosts, use <see cref="InletOrleansRegistrations" />
 ///         from the <c>Inlet.Orleans</c> package directly.
 ///     </para>
 /// </remarks>
-public static class InletOrleansSignalRServiceCollectionExtensions
+public static class InletOrleansSignalRRegistrations
 {
     /// <summary>
     ///     Adds Inlet Orleans services with SignalR and the Orleans backplane.
@@ -46,12 +46,12 @@ public static class InletOrleansSignalRServiceCollectionExtensions
         services.AddInletOrleans();
         services.AddSignalR();
         services.Configure(configureOptions ?? (_ => { }));
-        services.TryAddSingleton(typeof(HubLifetimeManager<>), typeof(OrleansHubLifetimeManager<>));
+        services.TryAddSingleton(typeof(HubLifetimeManager<>), typeof(AqueductHubLifetimeManager<>));
         return services;
     }
 
     /// <summary>
-    ///     Adds the <see cref="ISignalRGrainObserver" /> for ASP.NET-hosted services.
+    ///     Adds the <see cref="IAqueductNotifier" /> for ASP.NET-hosted services.
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
     /// <returns>The service collection for chaining.</returns>
@@ -67,7 +67,7 @@ public static class InletOrleansSignalRServiceCollectionExtensions
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        return services.AddOrleansSignalRGrainObserver();
+        return services.AddAqueductNotifier();
     }
 
     /// <summary>

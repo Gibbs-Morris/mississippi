@@ -36,25 +36,25 @@ internal sealed class MessageHub : Hub
     ///     Initializes a new instance of the <see cref="MessageHub" /> class.
     /// </summary>
     /// <param name="grainFactory">The Orleans grain factory for calling grains.</param>
-    /// <param name="signalRGrainFactory">The SignalR grain factory for managing groups.</param>
+    /// <param name="aqueductGrainFactory">The Aqueduct grain factory for managing groups.</param>
     public MessageHub(
         IGrainFactory grainFactory,
-        ISignalRGrainFactory signalRGrainFactory
+        IAqueductGrainFactory aqueductGrainFactory
     )
     {
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
-        SignalRGrainFactory = signalRGrainFactory ?? throw new ArgumentNullException(nameof(signalRGrainFactory));
+        AqueductGrainFactory = aqueductGrainFactory ?? throw new ArgumentNullException(nameof(aqueductGrainFactory));
     }
 
     private IGrainFactory GrainFactory { get; }
 
-    private ISignalRGrainFactory SignalRGrainFactory { get; }
+    private IAqueductGrainFactory AqueductGrainFactory { get; }
 
     /// <inheritdoc />
     public override async Task OnConnectedAsync()
     {
         // Add connection to the broadcast group so grains can send to all clients
-        ISignalRGroupGrain groupGrain = SignalRGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
+        ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
         await groupGrain.AddConnectionAsync(Context.ConnectionId);
         await base.OnConnectedAsync();
     }
@@ -63,7 +63,7 @@ internal sealed class MessageHub : Hub
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // Remove connection from the broadcast group
-        ISignalRGroupGrain groupGrain = SignalRGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
+        ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(HubName, BroadcastGroupName);
         await groupGrain.RemoveConnectionAsync(Context.ConnectionId);
         await base.OnDisconnectedAsync(exception);
     }

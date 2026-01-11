@@ -10,12 +10,12 @@ using Mississippi.Inlet.Abstractions;
 namespace Mississippi.Inlet.Orleans.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="InletOrleansServiceCollectionExtensions" />.
+///     Tests for <see cref="InletOrleansRegistrations" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.Orleans")]
 [AllureSuite("Extensions")]
-[AllureSubSuite("InletOrleansServiceCollectionExtensions")]
-public sealed class InletOrleansServiceCollectionExtensionsTests
+[AllureSubSuite("InletOrleansRegistrations")]
+public sealed class InletOrleansRegistrationsTests
 {
     /// <summary>
     ///     AddInletOrleans can be called multiple times.

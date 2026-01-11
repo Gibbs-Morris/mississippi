@@ -34,7 +34,7 @@ namespace Mississippi.Aqueduct.Grains.Grains;
 ///     <para>
 ///         <b>Deployment Note:</b> This grain runs on Orleans silo hosts. It publishes
 ///         messages to server streams which are consumed by ASP.NET pods running
-///         <c>OrleansHubLifetimeManager</c>.
+///         <c>AqueductHubLifetimeManager</c>.
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.Aqueduct.SignalRClientGrain")]
@@ -52,7 +52,7 @@ internal sealed class SignalRClientGrain
     /// <param name="logger">Logger instance for grain operations.</param>
     public SignalRClientGrain(
         IGrainContext grainContext,
-        IOptions<OrleansSignalROptions> options,
+        IOptions<AqueductOptions> options,
         ILogger<SignalRClientGrain> logger
     )
     {
@@ -66,7 +66,7 @@ internal sealed class SignalRClientGrain
 
     private ILogger<SignalRClientGrain> Logger { get; }
 
-    private IOptions<OrleansSignalROptions> Options { get; }
+    private IOptions<AqueductOptions> Options { get; }
 
     /// <inheritdoc />
     public Task ConnectAsync(

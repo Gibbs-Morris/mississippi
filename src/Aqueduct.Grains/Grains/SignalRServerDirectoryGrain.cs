@@ -29,7 +29,7 @@ namespace Mississippi.Aqueduct.Grains.Grains;
 ///     </para>
 ///     <para>
 ///         <b>Deployment Note:</b> This grain runs on Orleans silo hosts. ASP.NET pods
-///         running <c>OrleansHubLifetimeManager</c> call this grain to register themselves
+///         running <c>AqueductHubLifetimeManager</c> call this grain to register themselves
 ///         and send periodic heartbeats.
 ///     </para>
 /// </remarks>

@@ -49,7 +49,7 @@ internal sealed class InletSubscriptionGrain
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     /// <param name="grainFactory">Factory for creating grain references.</param>
-    /// <param name="signalRGrainFactory">Factory for resolving SignalR grains.</param>
+    /// <param name="aqueductGrainFactory">Factory for resolving Aqueduct grains.</param>
     /// <param name="projectionBrookRegistry">Registry for projection to brook mappings.</param>
     /// <param name="streamProviderOptions">Configuration options for the Orleans stream provider.</param>
     /// <param name="streamIdFactory">Factory for creating Orleans stream identifiers.</param>
@@ -58,7 +58,7 @@ internal sealed class InletSubscriptionGrain
     public InletSubscriptionGrain(
         IGrainContext grainContext,
         IGrainFactory grainFactory,
-        ISignalRGrainFactory signalRGrainFactory,
+        IAqueductGrainFactory aqueductGrainFactory,
         IProjectionBrookRegistry projectionBrookRegistry,
         IOptions<BrookProviderOptions> streamProviderOptions,
         IStreamIdFactory streamIdFactory,
@@ -68,7 +68,7 @@ internal sealed class InletSubscriptionGrain
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
-        SignalRGrainFactory = signalRGrainFactory ?? throw new ArgumentNullException(nameof(signalRGrainFactory));
+        AqueductGrainFactory = aqueductGrainFactory ?? throw new ArgumentNullException(nameof(aqueductGrainFactory));
         ProjectionBrookRegistry =
             projectionBrookRegistry ?? throw new ArgumentNullException(nameof(projectionBrookRegistry));
         StreamProviderOptions = streamProviderOptions ?? throw new ArgumentNullException(nameof(streamProviderOptions));
@@ -94,7 +94,7 @@ internal sealed class InletSubscriptionGrain
 
     private IProjectionBrookRegistry ProjectionBrookRegistry { get; }
 
-    private ISignalRGrainFactory SignalRGrainFactory { get; }
+    private IAqueductGrainFactory AqueductGrainFactory { get; }
 
     private IStreamIdFactory StreamIdFactory { get; }
 
@@ -186,7 +186,7 @@ internal sealed class InletSubscriptionGrain
                 string groupName = $"projection:{entry.ProjectionType}:{entry.EntityId}";
                 try
                 {
-                    ISignalRGroupGrain groupGrain = SignalRGrainFactory.GetGroupGrain(InletHubConstants.HubName, groupName);
+                    ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(InletHubConstants.HubName, groupName);
                     await groupGrain.SendMessageAsync(
                         InletHubConstants.ProjectionUpdatedMethod,
                         [entry.ProjectionType, entry.EntityId, item.NewPosition.Value]);

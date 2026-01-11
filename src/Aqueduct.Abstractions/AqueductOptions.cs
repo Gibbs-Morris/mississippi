@@ -1,9 +1,9 @@
 ﻿namespace Mississippi.Aqueduct.Abstractions;
 
 /// <summary>
-///     Configuration options for the Orleans-SignalR bridge.
+///     Configuration options for the Aqueduct SignalR backplane.
 /// </summary>
-public sealed class OrleansSignalROptions
+public sealed class AqueductOptions
 {
     /// <summary>
     ///     Gets or sets the stream namespace for broadcasting to all clients.

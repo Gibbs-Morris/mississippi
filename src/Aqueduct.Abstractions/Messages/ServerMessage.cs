@@ -15,7 +15,7 @@ namespace Mississippi.Aqueduct.Abstractions.Messages;
 ///     </para>
 ///     <para>
 ///         This message type is used by <c>SignalRClientGrain</c> (on silos) to publish
-///         messages that <c>OrleansHubLifetimeManager</c> (on ASP.NET pods) consumes.
+///         messages that <c>AqueductHubLifetimeManager</c> (on ASP.NET pods) consumes.
 ///     </para>
 /// </remarks>
 [GenerateSerializer]

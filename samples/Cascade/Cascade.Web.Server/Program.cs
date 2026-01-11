@@ -55,7 +55,7 @@ builder.UseOrleansClient();
 
 // Add SignalR for real-time messaging with Orleans backplane
 builder.Services.AddSignalR();
-builder.Services.AddOrleansSignalR<MessageHub>(options =>
+builder.Services.AddAqueduct<MessageHub>(options =>
 {
     // Use the same stream provider configured by Aspire's WithMemoryStreaming
     options.StreamProviderName = "StreamProvider";

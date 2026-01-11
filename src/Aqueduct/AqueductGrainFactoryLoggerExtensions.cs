@@ -6,9 +6,9 @@ using Microsoft.Extensions.Logging;
 namespace Mississippi.Aqueduct;
 
 /// <summary>
-///     Logger extensions for <see cref="SignalRGrainFactory" />.
+///     Logger extensions for <see cref="AqueductGrainFactory" />.
 /// </summary>
-internal static partial class SignalRGrainFactoryLoggerExtensions
+internal static partial class AqueductGrainFactoryLoggerExtensions
 {
     [LoggerMessage(
         EventId = 1,

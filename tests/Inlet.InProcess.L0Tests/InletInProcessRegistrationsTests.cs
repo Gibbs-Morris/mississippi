@@ -10,12 +10,12 @@ using Mississippi.Inlet.Abstractions;
 namespace Mississippi.Inlet.InProcess.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="InletInProcessServiceCollectionExtensions" />.
+///     Tests for <see cref="InletInProcessRegistrations" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.InProcess")]
 [AllureSuite("Extensions")]
-[AllureSubSuite("InletInProcessServiceCollectionExtensions")]
-public sealed class InletInProcessServiceCollectionExtensionsTests
+[AllureSubSuite("InletInProcessRegistrations")]
+public sealed class InletInProcessRegistrationsTests
 {
     /// <summary>
     ///     AddInletInProcess can be called multiple times without error.

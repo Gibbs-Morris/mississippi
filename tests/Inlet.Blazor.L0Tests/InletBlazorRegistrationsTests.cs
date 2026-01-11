@@ -8,12 +8,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Mississippi.Inlet.Blazor.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="InletBlazorServiceCollectionExtensions" />.
+///     Tests for <see cref="InletBlazorRegistrations" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.Blazor")]
 [AllureSuite("Extensions")]
-[AllureSubSuite("InletBlazorServiceCollectionExtensions")]
-public sealed class InletBlazorServiceCollectionExtensionsTests
+[AllureSubSuite("InletBlazorRegistrations")]
+public sealed class InletBlazorRegistrationsTests
 {
     /// <summary>
     ///     AddInletBlazor can be called multiple times without error.

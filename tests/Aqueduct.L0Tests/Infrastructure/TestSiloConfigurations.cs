@@ -25,10 +25,10 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.AddMemoryGrainStorage("signalr-grains");
         siloBuilder.AddMemoryGrainStorage("PubSubStore");
 
-        // Configure SignalR options
+        // Configure Aqueduct options
         siloBuilder.ConfigureServices(services =>
         {
-            services.Configure<OrleansSignalROptions>(options =>
+            services.Configure<AqueductOptions>(options =>
             {
                 options.StreamProviderName = "SignalRStreams";
             });

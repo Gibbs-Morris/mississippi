@@ -5,7 +5,7 @@ using Mississippi.Aqueduct.Abstractions.Keys;
 namespace Mississippi.Aqueduct.Abstractions;
 
 /// <summary>
-///     Defines a factory for resolving Orleans SignalR grains by strongly-typed keys.
+///     Defines a factory for resolving Aqueduct SignalR grains by strongly-typed keys.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -14,7 +14,7 @@ namespace Mississippi.Aqueduct.Abstractions;
 ///         instead of calling <c>IGrainFactory.GetGrain&lt;T&gt;(string key)</c> directly.
 ///     </para>
 /// </remarks>
-public interface ISignalRGrainFactory
+public interface IAqueductGrainFactory
 {
     /// <summary>
     ///     Retrieves an <see cref="ISignalRClientGrain" /> for the specified client key.

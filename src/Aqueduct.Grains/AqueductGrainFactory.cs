@@ -12,7 +12,7 @@ using Orleans;
 namespace Mississippi.Aqueduct.Grains;
 
 /// <summary>
-///     Factory for resolving Orleans SignalR grains by key.
+///     Factory for resolving Aqueduct SignalR grains by key.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -20,16 +20,16 @@ namespace Mississippi.Aqueduct.Grains;
 ///         to obtain SignalR grain references without knowing the internal key structure.
 ///     </para>
 /// </remarks>
-internal sealed class SignalRGrainFactory : ISignalRGrainFactory
+internal sealed class AqueductGrainFactory : IAqueductGrainFactory
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="SignalRGrainFactory" /> class.
+    ///     Initializes a new instance of the <see cref="AqueductGrainFactory" /> class.
     /// </summary>
     /// <param name="grainFactory">The Orleans grain factory for creating grain instances.</param>
     /// <param name="logger">Logger instance for logging grain factory operations.</param>
-    public SignalRGrainFactory(
+    public AqueductGrainFactory(
         IGrainFactory grainFactory,
-        ILogger<SignalRGrainFactory> logger
+        ILogger<AqueductGrainFactory> logger
     )
     {
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
@@ -38,7 +38,7 @@ internal sealed class SignalRGrainFactory : ISignalRGrainFactory
 
     private IGrainFactory GrainFactory { get; }
 
-    private ILogger<SignalRGrainFactory> Logger { get; }
+    private ILogger<AqueductGrainFactory> Logger { get; }
 
     /// <inheritdoc />
     public ISignalRClientGrain GetClientGrain(

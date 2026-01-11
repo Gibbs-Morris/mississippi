@@ -15,7 +15,7 @@ namespace Mississippi.Aqueduct.Abstractions.Messages;
 ///     </para>
 ///     <para>
 ///         This message type is used for hub-wide broadcasts and is consumed by
-///         <c>OrleansHubLifetimeManager</c> instances on all ASP.NET pods.
+///         <c>AqueductHubLifetimeManager</c> instances on all ASP.NET pods.
 ///     </para>
 /// </remarks>
 [GenerateSerializer]

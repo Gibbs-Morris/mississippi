@@ -8,7 +8,7 @@ using Mississippi.Aqueduct.Abstractions.Grains;
 namespace Mississippi.Aqueduct.Abstractions;
 
 /// <summary>
-///     Provides an abstraction for ASP.NET-hosted services to send messages to SignalR clients.
+///     Provides an abstraction for sending real-time notifications to connected clients.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -17,17 +17,17 @@ namespace Mississippi.Aqueduct.Abstractions;
 ///         Orleans grains running on silo pods, as the implementation requires SignalR infrastructure.
 ///     </para>
 ///     <para>
-///         <strong>For grains:</strong> Grains that need to send SignalR messages should call
+///         <strong>For grains:</strong> Grains that need to send messages should call
 ///         <see cref="ISignalRGroupGrain.SendMessageAsync" />
 ///         directly. The group grain publishes to an Orleans stream that ASP.NET pods subscribe to,
 ///         properly bridging the silo-to-web deployment boundary.
 ///     </para>
 ///     <para>
-///         The hub name is used to route messages to the correct SignalR hub
+///         The hub name is used to route messages to the correct hub
 ///         when multiple hubs are registered in the application.
 ///     </para>
 /// </remarks>
-public interface ISignalRGrainObserver
+public interface IAqueductNotifier
 {
     /// <summary>
     ///     Sends a message to all connected clients of a hub.

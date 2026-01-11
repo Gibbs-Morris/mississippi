@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <Description>Orleans-SignalR bridge for ASP.NET pods. Provides OrleansHubLifetimeManager which uses Orleans grains and streams for distributed SignalR messaging. Deploy to ASP.NET web servers hosting SignalR hubs. For silo hosts, also reference Aqueduct.Grains.</Description>
+        <Description>Orleans-SignalR bridge for ASP.NET pods. Provides AqueductHubLifetimeManager which uses Orleans grains and streams for distributed SignalR messaging. Deploy to ASP.NET web servers hosting SignalR hubs. For silo hosts, also reference Aqueduct.Grains.</Description>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App"/>
