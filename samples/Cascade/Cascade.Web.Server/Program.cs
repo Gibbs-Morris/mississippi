@@ -12,6 +12,8 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Aqueduct;
+
 using Orleans;
 
 using BlobItemDto = Cascade.Web.Contracts.BlobItem;
@@ -51,15 +53,17 @@ builder.AddKeyedAzureTableServiceClient("clustering");
 // UseOrleansClient() automatically configures clustering based on the Azure Table client
 builder.UseOrleansClient();
 
-// Add SignalR for real-time messaging
+// Add SignalR for real-time messaging with Orleans backplane
 builder.Services.AddSignalR();
+builder.Services.AddOrleansSignalR<MessageHub>(options =>
+{
+    // Use the same stream provider configured by Aspire's WithMemoryStreaming
+    options.StreamProviderName = "StreamProvider";
+});
 
 // Add storage services
 builder.Services.AddSingleton<ICosmosService, CosmosService>();
 builder.Services.AddSingleton<IBlobService, BlobService>();
-
-// Add Orleans stream to SignalR bridge service
-builder.Services.AddHostedService<StreamBridgeService>();
 
 WebApplication app = builder.Build();
 

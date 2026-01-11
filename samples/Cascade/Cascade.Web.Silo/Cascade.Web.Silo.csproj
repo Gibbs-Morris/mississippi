@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
   </ItemGroup>
 
 </Project>

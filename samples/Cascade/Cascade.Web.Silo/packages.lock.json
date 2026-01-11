@@ -861,6 +861,21 @@
           "Newtonsoft.Json": "[13.0.4, )"
         }
       },
+      "Mississippi.Aqueduct.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+        }
+      },
+      "Mississippi.Aqueduct.Grains": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Server": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+        }
+      },
       "Azure.Storage.Blobs": {
         "type": "CentralTransitive",
         "requested": "[12.26.0, )",
