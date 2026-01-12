@@ -7,18 +7,16 @@
     <Folder Name="/Samples/" />
 
     <Folder Name="/Samples/Cascade/">
-        <Project Path="samples\Cascade\Cascade.Components\Cascade.Components.csproj" />
         <Project Path="samples\Cascade\Cascade.Domain\Cascade.Domain.csproj" />
         <Project Path="samples\Cascade\Cascade.Domain.L0Tests\Cascade.Domain.L0Tests.csproj" />
-    </Folder>
-    <Folder Name="/Samples/Cascade.Web/">
-        <Project Path="samples\Cascade\Cascade.Web.AppHost\Cascade.Web.AppHost.csproj" />
-        <Project Path="samples\Cascade\Cascade.Web.Client\Cascade.Web.Client.csproj" />
-        <Project Path="samples\Cascade\Cascade.Web.Server\Cascade.Web.Server.csproj" />
-        <Project Path="samples\Cascade\Cascade.Web.Silo\Cascade.Web.Silo.csproj" />
-        <Project Path="samples\Cascade\Cascade.Web.Contracts\Cascade.Web.Contracts.csproj" />
-        <Project Path="samples\Cascade\Cascade.Web.L0Tests\Cascade.Web.L0Tests.csproj" />
-        <Project Path="samples\Cascade\Cascade.Web.L2Tests\Cascade.Web.L2Tests.csproj" />
+        <Project Path="samples\Cascade\Cascade.Grains.Abstractions\Cascade.Grains.Abstractions.csproj" />
+        <Project Path="samples\Cascade\Cascade.Contracts\Cascade.Contracts.csproj" />
+        <Project Path="samples\Cascade\Cascade.Client\Cascade.Client.csproj" />
+        <Project Path="samples\Cascade\Cascade.Server\Cascade.Server.csproj" />
+        <Project Path="samples\Cascade\Cascade.Silo\Cascade.Silo.csproj" />
+        <Project Path="samples\Cascade\Cascade.AppHost\Cascade.AppHost.csproj" />
+        <Project Path="samples\Cascade\Cascade.L0Tests\Cascade.L0Tests.csproj" />
+        <Project Path="samples\Cascade\Cascade.L2Tests\Cascade.L2Tests.csproj" />
     </Folder>
     <Folder Name="/Samples/Crescent/">
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />

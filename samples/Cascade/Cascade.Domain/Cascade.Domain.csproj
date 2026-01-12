@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
         <InternalsVisibleTo Include="Cascade.Server" />
-        <InternalsVisibleTo Include="Cascade.Web.Server" />
-        <InternalsVisibleTo Include="Cascade.WebApi" />
     </ItemGroup>
     <ItemGroup>
         <!-- Generator (analyzer reference) -->
