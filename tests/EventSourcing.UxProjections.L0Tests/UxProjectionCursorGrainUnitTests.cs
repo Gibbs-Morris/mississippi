@@ -375,7 +375,7 @@ public sealed class UxProjectionCursorGrainUnitTests
         const long largePosition = 1_000_000_000L;
 
         // Act
-        await sut.OnNextAsync(new(new(largePosition)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(largePosition)));
         BrookPosition position = await sut.GetPositionAsync();
 
         // Assert
@@ -394,8 +394,8 @@ public sealed class UxProjectionCursorGrainUnitTests
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
 
         // Act
-        await sut.OnNextAsync(new(new(10)));
-        await sut.OnNextAsync(new(new(10)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)));
         BrookPosition position = await sut.GetPositionAsync();
 
         // Assert
@@ -414,8 +414,8 @@ public sealed class UxProjectionCursorGrainUnitTests
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
 
         // Act - set position to 10, then try to go backwards to 5
-        await sut.OnNextAsync(new(new(10)));
-        await sut.OnNextAsync(new(new(5)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(5)));
         BrookPosition position = await sut.GetPositionAsync();
 
         // Assert - should still be 10
@@ -449,7 +449,7 @@ public sealed class UxProjectionCursorGrainUnitTests
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
 
         // Act
-        await sut.OnNextAsync(new(new(0)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(0)));
         BrookPosition position = await sut.GetPositionAsync();
 
         // Assert
@@ -469,11 +469,11 @@ public sealed class UxProjectionCursorGrainUnitTests
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
 
         // Act
-        await sut.OnNextAsync(new(new(5)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(5)));
         BrookPosition position1 = await sut.GetPositionAsync();
-        await sut.OnNextAsync(new(new(10)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)));
         BrookPosition position2 = await sut.GetPositionAsync();
-        await sut.OnNextAsync(new(new(15)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(15)));
         BrookPosition position3 = await sut.GetPositionAsync();
 
         // Assert
@@ -492,7 +492,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
-        BrookCursorMovedEvent cursorEvent = new(new(10));
+        BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", new(10));
 
         // Act
         await sut.OnNextAsync(cursorEvent);
@@ -516,7 +516,7 @@ public sealed class UxProjectionCursorGrainUnitTests
         // Act - simulate a sequence of cursor updates
         for (int i = 0; i < 100; i++)
         {
-            await sut.OnNextAsync(new(new(i)));
+            await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(i)));
         }
 
         BrookPosition finalPosition = await sut.GetPositionAsync();

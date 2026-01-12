@@ -335,7 +335,7 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<BrookPosition> result = await controller.GetLatestVersionAsync(TestEntityId);
+        ActionResult<long> result = await controller.GetLatestVersionAsync(TestEntityId);
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
@@ -358,11 +358,11 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<BrookPosition> result = await controller.GetLatestVersionAsync(TestEntityId);
+        ActionResult<long> result = await controller.GetLatestVersionAsync(TestEntityId);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-        BrookPosition position = Assert.IsType<BrookPosition>(okResult.Value);
-        Assert.Equal(42, position.Value);
+        long version = Assert.IsType<long>(okResult.Value);
+        Assert.Equal(42L, version);
     }
 }

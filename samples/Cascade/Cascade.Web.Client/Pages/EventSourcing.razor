@@ -14,47 +14,86 @@
 
 <section>
     <h2>Conversation</h2>
-    <div>
+    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
         <label>Conversation ID:</label>
-        <input @bind="conversationId" @bind:after="OnConversationIdChanged" placeholder="Enter conversation ID"/>
+        <input @bind="conversationId" placeholder="Enter conversation ID" style="width: 250px;"/>
     </div>
-    <button @onclick="StartConversationAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId))">
-        Start Conversation
-    </button>
-    <p>Start Result: @startResult</p>
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <button @onclick="JoinConversationAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId) || isJoined)">
+            📡 Join Conversation
+        </button>
+        <button @onclick="StartConversationAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId))">
+            ➕ Start New Conversation
+        </button>
+        @if (isJoined)
+        {
+            <button @onclick="LeaveConversation" style="background-color: #dc3545; color: white;">
+                🚪 Leave
+            </button>
+        }
+    </div>
+    <p>
+        <strong>Status:</strong>
+        @if (isJoined)
+        {
+            <span style="color: green;">✅ Subscribed to "@currentSubscription"</span>
+        }
+        else
+        {
+            <span style="color: gray;">⚪ Not subscribed</span>
+        }
+    </p>
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <p>@statusMessage</p>
+    }
 </section>
 
 <section>
     <h2>Send Message</h2>
-    <div>
-        <label>Your Name:</label>
-        <input @bind="senderName" placeholder="Enter your name"/>
-    </div>
-    <div>
-        <label>Message:</label>
-        <input @bind="messageContent" placeholder="Enter message" @onkeypress="OnMessageKeyPress"/>
-    </div>
-    <button @onclick="SendMessageAsync"
-            disabled="@(string.IsNullOrWhiteSpace(conversationId) || string.IsNullOrWhiteSpace(messageContent) || string.IsNullOrWhiteSpace(senderName))">
-        Send Message
-    </button>
-    <p>Send Result: @sendResult</p>
+    @if (!isJoined)
+    {
+        <p style="color: gray;"><em>Join a conversation first to send messages.</em></p>
+    }
+    else
+    {
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+            <label>Your Name:</label>
+            <input @bind="senderName" placeholder="Enter your name" style="width: 150px;"/>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+            <label style="width: 85px;">Message:</label>
+            <input @bind="messageContent" placeholder="Enter message" @onkeypress="OnMessageKeyPress" style="flex: 1; max-width: 400px;"/>
+            <button @onclick="SendMessageAsync"
+                    disabled="@(string.IsNullOrWhiteSpace(messageContent) || string.IsNullOrWhiteSpace(senderName))">
+                Send
+            </button>
+        </div>
+        @if (!string.IsNullOrEmpty(sendResult))
+        {
+            <p>@sendResult</p>
+        }
+    }
 </section>
 
 <section>
     <h2>Messages (Real-time Projection)</h2>
-    @if (InletStore.IsProjectionLoading<ConversationMessagesResponse>(conversationId))
+    @if (!isJoined)
     {
-        <p>⏳ Loading...</p>
+        <p style="color: gray;"><em>Join a conversation to see messages.</em></p>
     }
-    else if (InletStore.GetProjectionError<ConversationMessagesResponse>(conversationId) is { } error)
+    else if (InletStore.IsProjectionLoading<ConversationMessagesResponse>(currentSubscription!))
+    {
+        <p>⏳ Loading projection...</p>
+    }
+    else if (InletStore.GetProjectionError<ConversationMessagesResponse>(currentSubscription!) is { } error)
     {
         <p>❌ Error: @error.Message</p>
         <button @onclick="RefreshProjection">Retry</button>
     }
     else if (projection is { Messages.Count: > 0 })
     {
-        <p>✅ Connected - Total Messages: @projection.MessageCount</p>
+        <p>✅ Receiving updates - Total Messages: @projection.MessageCount</p>
         <table>
             <thead>
             <tr>
@@ -94,11 +133,11 @@
     }
     else if (projection is not null)
     {
-        <p>✅ Connected - <em>No messages yet. Send one above!</em></p>
+        <p>✅ Subscribed - <em>No messages yet. Send one above!</em></p>
     }
     else
     {
-        <p>📡 Connecting to projection...</p>
+        <p>📡 Waiting for projection data...</p>
     }
 </section>
 
@@ -110,63 +149,78 @@
 
     private string messageContent = string.Empty;
 
-    private string startResult = string.Empty;
+    private string statusMessage = string.Empty;
 
     private string sendResult = string.Empty;
 
-    private string? previousConversationId;
+    private string? currentSubscription;
 
-    private ConversationMessagesResponse? projection => InletStore.GetProjection<ConversationMessagesResponse>(conversationId);
+    private bool isJoined => !string.IsNullOrWhiteSpace(currentSubscription);
 
-    protected override void OnInitialized()
+    private ConversationMessagesResponse? projection =>
+        isJoined ? InletStore.GetProjection<ConversationMessagesResponse>(currentSubscription!) : null;
+
+    private Task JoinConversationAsync()
     {
-        base.OnInitialized();
-        // Subscribe to the projection for the initial conversation ID
-        if (!string.IsNullOrWhiteSpace(conversationId))
+        if (string.IsNullOrWhiteSpace(conversationId))
         {
-            Dispatch(new SubscribeToProjectionAction<ConversationMessagesResponse>(conversationId));
-            previousConversationId = conversationId;
+            return Task.CompletedTask;
         }
+
+        // Unsubscribe from previous if different
+        if (!string.IsNullOrWhiteSpace(currentSubscription) && currentSubscription != conversationId)
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<ConversationMessagesResponse>(currentSubscription));
+        }
+
+        // Subscribe to the new conversation's projection
+        currentSubscription = conversationId;
+        Dispatch(new SubscribeToProjectionAction<ConversationMessagesResponse>(currentSubscription));
+        statusMessage = $"📡 Joined conversation '{conversationId}' - listening for real-time updates...";
+        return Task.CompletedTask;
     }
 
-    private void OnConversationIdChanged()
+    private void LeaveConversation()
     {
-        // Unsubscribe from old conversation and subscribe to new one
-        if (!string.IsNullOrWhiteSpace(previousConversationId) && previousConversationId != conversationId)
+        if (!string.IsNullOrWhiteSpace(currentSubscription))
         {
-            Dispatch(new UnsubscribeFromProjectionAction<ConversationMessagesResponse>(previousConversationId));
-        }
-
-        if (!string.IsNullOrWhiteSpace(conversationId) && previousConversationId != conversationId)
-        {
-            Dispatch(new SubscribeToProjectionAction<ConversationMessagesResponse>(conversationId));
-            previousConversationId = conversationId;
+            Dispatch(new UnsubscribeFromProjectionAction<ConversationMessagesResponse>(currentSubscription));
+            statusMessage = $"Left conversation '{currentSubscription}'";
+            currentSubscription = null;
         }
     }
 
     private void RefreshProjection()
     {
-        Dispatch(new RefreshProjectionAction<ConversationMessagesResponse>(conversationId));
+        if (isJoined)
+        {
+            Dispatch(new RefreshProjectionAction<ConversationMessagesResponse>(currentSubscription!));
+        }
     }
 
     private async Task StartConversationAsync()
     {
-        startResult = "Starting...";
+        statusMessage = "Starting conversation...";
         try
         {
             HttpResponseMessage response = await Http.PostAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/start", null);
             string content = await response.Content.ReadAsStringAsync();
-            startResult = response.IsSuccessStatusCode ? $"✓ Started: {content}" : $"✗ Error: {content}";
 
-            // Refresh projection after starting conversation
             if (response.IsSuccessStatusCode)
             {
-                Dispatch(new RefreshProjectionAction<ConversationMessagesResponse>(conversationId));
+                statusMessage = $"✓ Conversation '{conversationId}' started successfully!";
+
+                // Auto-join after starting
+                await JoinConversationAsync();
+            }
+            else
+            {
+                statusMessage = $"✗ Failed to start: {content}";
             }
         }
         catch (Exception ex)
         {
-            startResult = $"✗ Exception: {ex.Message}";
+            statusMessage = $"✗ Exception: {ex.Message}";
         }
     }
 
@@ -180,6 +234,11 @@
 
     private async Task SendMessageAsync()
     {
+        if (!isJoined)
+        {
+            return;
+        }
+
         sendResult = "Sending...";
         try
         {
@@ -188,14 +247,22 @@
                 Content = messageContent,
                 SentBy = senderName,
             };
-            HttpResponseMessage response = await Http.PostAsJsonAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/messages", request);
+            HttpResponseMessage response = await Http.PostAsJsonAsync($"/api/conversations/{Uri.EscapeDataString(currentSubscription!)}/messages", request);
             string content = await response.Content.ReadAsStringAsync();
-            sendResult = response.IsSuccessStatusCode ? $"✓ Sent: {content}" : $"✗ Error: {content}";
+            sendResult = response.IsSuccessStatusCode ? $"✓ Sent!" : $"✗ Error: {content}";
 
             // Clear message input - projection will auto-update via SignalR
             if (response.IsSuccessStatusCode)
             {
                 messageContent = string.Empty;
+                // Clear the send result after a moment
+                _ = Task.Delay(2000).ContinueWith(
+                    _ =>
+                    {
+                        sendResult = string.Empty;
+                        InvokeAsync(StateHasChanged);
+                    },
+                    TaskScheduler.Default);
             }
         }
         catch (Exception ex)

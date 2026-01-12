@@ -19,7 +19,8 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configure HttpClient to call the API (base address is the host origin)
-// Blazor WASM scoped lifetime acts as a singleton; this is the official Microsoft pattern.
+// In Blazor WASM, scoped lifetime effectively acts as singleton at runtime.
+// Using scoped follows the Fluxor pattern and is correct for Blazor Server too.
 // See: https://learn.microsoft.com/aspnet/core/blazor/call-web-api#add-the-httpclient-service
 #pragma warning disable IDISP014 // Blazor WASM DI manages HttpClient lifecycle
 builder.Services.AddScoped(_ => new HttpClient
@@ -28,12 +29,13 @@ builder.Services.AddScoped(_ => new HttpClient
 });
 #pragma warning restore IDISP014
 
-// Add SignalR message service
+// Add SignalR message service (scoped to match Fluxor pattern)
 builder.Services.AddScoped<IMessageService, SignalRMessageService>();
 
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [UxProjectionDto] types and wires up fetching
-builder.Services.AddInlet();
+// Configure store with feature states via the configureStore callback
+builder.Services.AddInlet(store => store.RegisterState<CartState>());
 builder.Services.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(ConversationMessagesResponse).Assembly));
@@ -49,6 +51,6 @@ builder.Services.AddReducer<ProductsLoadFailedAction, CartState>(CartReducers.Pr
 // Register effects for async operations
 builder.Services.AddEffect<LoadProductsEffect>();
 
-// Initialize the store with feature states
-builder.Services.AddReservoir(store => store.RegisterState<CartState>());
+// AddReservoir registers remaining Reservoir services (reducers are already registered above)
+builder.Services.AddReservoir();
 await builder.Build().RunAsync();

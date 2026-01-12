@@ -11,20 +11,20 @@ namespace Mississippi.Inlet;
 /// </summary>
 public sealed class ProjectionRegistry : IProjectionRegistry
 {
-    private ConcurrentDictionary<Type, string> Routes { get; } = new();
+    private ConcurrentDictionary<Type, string> Paths { get; } = new();
 
     /// <inheritdoc />
-    public string GetRoute(
+    public string GetPath(
         Type projectionType
     )
     {
         ArgumentNullException.ThrowIfNull(projectionType);
-        if (Routes.TryGetValue(projectionType, out string? route))
+        if (Paths.TryGetValue(projectionType, out string? path))
         {
-            return route;
+            return path;
         }
 
-        throw new InvalidOperationException($"No route registered for projection type {projectionType.Name}.");
+        throw new InvalidOperationException($"No path registered for projection type {projectionType.Name}.");
     }
 
     /// <inheritdoc />
@@ -33,16 +33,16 @@ public sealed class ProjectionRegistry : IProjectionRegistry
     )
     {
         ArgumentNullException.ThrowIfNull(projectionType);
-        return Routes.ContainsKey(projectionType);
+        return Paths.ContainsKey(projectionType);
     }
 
     /// <inheritdoc />
     public void Register<T>(
-        string route
+        string path
     )
         where T : class
     {
-        ArgumentNullException.ThrowIfNull(route);
-        Routes[typeof(T)] = route;
+        ArgumentNullException.ThrowIfNull(path);
+        Paths[typeof(T)] = path;
     }
 }

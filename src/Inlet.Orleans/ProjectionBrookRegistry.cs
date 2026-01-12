@@ -12,9 +12,9 @@ namespace Mississippi.Inlet.Orleans;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This registry maintains a mapping from projection type names to their
+///         This registry maintains a mapping from projection paths to their
 ///         associated brook names. It is populated at application startup by scanning
-///         assemblies for types decorated with <c>[UxProjection]</c> attributes.
+///         assemblies for types decorated with <c>[ProjectionPath]</c> attributes.
 ///     </para>
 ///     <para>
 ///         The registry is designed to be registered as a singleton in the DI container
@@ -24,38 +24,38 @@ namespace Mississippi.Inlet.Orleans;
 /// </remarks>
 internal sealed class ProjectionBrookRegistry : IProjectionBrookRegistry
 {
-    private ConcurrentDictionary<string, string> ProjectionToBrook { get; } = new(StringComparer.Ordinal);
+    private ConcurrentDictionary<string, string> PathToBrook { get; } = new(StringComparer.Ordinal);
 
     /// <inheritdoc />
-    public IEnumerable<string> GetAllProjectionTypes() => ProjectionToBrook.Keys;
+    public IEnumerable<string> GetAllPaths() => PathToBrook.Keys;
 
     /// <inheritdoc />
     public string? GetBrookName(
-        string projectionTypeName
+        string path
     )
     {
-        ArgumentNullException.ThrowIfNull(projectionTypeName);
-        return ProjectionToBrook.TryGetValue(projectionTypeName, out string? brookName) ? brookName : null;
+        ArgumentNullException.ThrowIfNull(path);
+        return PathToBrook.TryGetValue(path, out string? brookName) ? brookName : null;
     }
 
     /// <inheritdoc />
     public void Register(
-        string projectionTypeName,
+        string path,
         string brookName
     )
     {
-        ArgumentNullException.ThrowIfNull(projectionTypeName);
+        ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(brookName);
-        ProjectionToBrook[projectionTypeName] = brookName;
+        PathToBrook[path] = brookName;
     }
 
     /// <inheritdoc />
     public bool TryGetBrookName(
-        string projectionTypeName,
+        string path,
         out string? brookName
     )
     {
-        ArgumentNullException.ThrowIfNull(projectionTypeName);
-        return ProjectionToBrook.TryGetValue(projectionTypeName, out brookName);
+        ArgumentNullException.ThrowIfNull(path);
+        return PathToBrook.TryGetValue(path, out brookName);
     }
 }

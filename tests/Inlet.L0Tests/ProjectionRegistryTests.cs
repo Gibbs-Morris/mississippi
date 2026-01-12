@@ -26,31 +26,31 @@ public sealed class ProjectionRegistryTests
     private sealed record TestProjection(string Name);
 
     /// <summary>
-    ///     GetRoute should throw InvalidOperationException for unregistered type.
+    ///     GetPath should throw InvalidOperationException for unregistered type.
     /// </summary>
     [Fact]
-    [AllureFeature("Route Resolution")]
-    public void GetRouteThrowsForUnregisteredType()
+    [AllureFeature("Path Resolution")]
+    public void GetPathThrowsForUnregisteredType()
     {
         // Arrange
         ProjectionRegistry sut = new();
 
         // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => sut.GetRoute(typeof(TestProjection)));
+        Assert.Throws<InvalidOperationException>(() => sut.GetPath(typeof(TestProjection)));
     }
 
     /// <summary>
-    ///     GetRoute should throw ArgumentNullException for null type.
+    ///     GetPath should throw ArgumentNullException for null type.
     /// </summary>
     [Fact]
     [AllureFeature("Validation")]
-    public void GetRouteWithNullTypeThrowsArgumentNullException()
+    public void GetPathWithNullTypeThrowsArgumentNullException()
     {
         // Arrange
         ProjectionRegistry sut = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => sut.GetRoute(null!));
+        Assert.Throws<ArgumentNullException>(() => sut.GetPath(null!));
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ public sealed class ProjectionRegistryTests
     {
         // Arrange
         ProjectionRegistry sut = new();
-        sut.Register<TestProjection>("/api/test");
+        sut.Register<TestProjection>("cascade/test");
 
         // Act
         bool result = sut.IsRegistered(typeof(TestProjection));
@@ -113,57 +113,57 @@ public sealed class ProjectionRegistryTests
         ProjectionRegistry sut = new();
 
         // Act
-        sut.Register<TestProjection>("/api/test");
-        sut.Register<AnotherProjection>("/api/another");
+        sut.Register<TestProjection>("cascade/test");
+        sut.Register<AnotherProjection>("cascade/another");
 
         // Assert
-        Assert.Equal("/api/test", sut.GetRoute(typeof(TestProjection)));
-        Assert.Equal("/api/another", sut.GetRoute(typeof(AnotherProjection)));
+        Assert.Equal("cascade/test", sut.GetPath(typeof(TestProjection)));
+        Assert.Equal("cascade/another", sut.GetPath(typeof(AnotherProjection)));
     }
 
     /// <summary>
-    ///     Register should overwrite existing route for same type.
+    ///     Register should overwrite existing path for same type.
     /// </summary>
     [Fact]
     [AllureFeature("Registration")]
-    public void RegisterOverwritesExistingRoute()
+    public void RegisterOverwritesExistingPath()
     {
         // Arrange
         ProjectionRegistry sut = new();
-        sut.Register<TestProjection>("/api/old");
+        sut.Register<TestProjection>("cascade/old");
 
         // Act
-        sut.Register<TestProjection>("/api/new");
-        string route = sut.GetRoute(typeof(TestProjection));
+        sut.Register<TestProjection>("cascade/new");
+        string path = sut.GetPath(typeof(TestProjection));
 
         // Assert
-        Assert.Equal("/api/new", route);
+        Assert.Equal("cascade/new", path);
     }
 
     /// <summary>
-    ///     Register should store route for projection type.
+    ///     Register should store path for projection type.
     /// </summary>
     [Fact]
     [AllureFeature("Registration")]
-    public void RegisterStoresRouteForProjectionType()
+    public void RegisterStoresPathForProjectionType()
     {
         // Arrange
         ProjectionRegistry sut = new();
 
         // Act
-        sut.Register<TestProjection>("/api/test");
-        string route = sut.GetRoute(typeof(TestProjection));
+        sut.Register<TestProjection>("cascade/test");
+        string path = sut.GetPath(typeof(TestProjection));
 
         // Assert
-        Assert.Equal("/api/test", route);
+        Assert.Equal("cascade/test", path);
     }
 
     /// <summary>
-    ///     Register should throw ArgumentNullException for null route.
+    ///     Register should throw ArgumentNullException for null path.
     /// </summary>
     [Fact]
     [AllureFeature("Validation")]
-    public void RegisterWithNullRouteThrowsArgumentNullException()
+    public void RegisterWithNullPathThrowsArgumentNullException()
     {
         // Arrange
         ProjectionRegistry sut = new();

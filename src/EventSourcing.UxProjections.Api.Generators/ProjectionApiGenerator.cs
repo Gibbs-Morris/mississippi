@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -73,85 +74,6 @@ public sealed class BatchProjectionRequest
         "System.Guid",
         "System.Uri",
     ];
-
-    private static PropertyMetadata ExtractPropertyMetadata(
-        IPropertySymbol property,
-        HashSet<string> nestedTypesToGenerate
-    )
-    {
-        ITypeSymbol propertyType = property.Type;
-        string typeName = propertyType.ToDisplayString();
-        bool isNullable = propertyType.NullableAnnotation == NullableAnnotation.Annotated;
-        bool isRequired = property.IsRequired;
-
-        // Check if it's a collection (ImmutableList, ImmutableArray, List, IReadOnlyList, etc.)
-        bool isCollection = false;
-        string? elementType = null;
-        ITypeSymbol? elementTypeSymbol = null;
-
-        if (propertyType is INamedTypeSymbol namedType && namedType.IsGenericType)
-        {
-            string genericTypeName = namedType.ConstructedFrom.ToDisplayString();
-            if (genericTypeName.Contains("ImmutableList") ||
-                genericTypeName.Contains("ImmutableArray") ||
-                genericTypeName.Contains("List<") ||
-                genericTypeName.Contains("IList<") ||
-                genericTypeName.Contains("IReadOnlyList<") ||
-                genericTypeName.Contains("IEnumerable<") ||
-                genericTypeName.Contains("ICollection<"))
-            {
-                isCollection = true;
-                elementTypeSymbol = namedType.TypeArguments[0];
-                elementType = elementTypeSymbol.Name;
-            }
-        }
-
-        // Determine if the type (or element type for collections) needs a DTO
-        ITypeSymbol typeToCheck = elementTypeSymbol ?? propertyType;
-        if (typeToCheck.NullableAnnotation == NullableAnnotation.Annotated &&
-            typeToCheck is INamedTypeSymbol nullableNamed &&
-            nullableNamed.TypeArguments.Length > 0)
-        {
-            typeToCheck = nullableNamed.TypeArguments[0];
-        }
-
-        string typeToCheckName = typeToCheck.ToDisplayString();
-        bool needsDto = !IsPrimitiveOrBuiltIn(typeToCheckName) && !typeToCheck.TypeKind.HasFlag(TypeKind.Enum);
-
-        if (needsDto && typeToCheck is INamedTypeSymbol)
-        {
-            nestedTypesToGenerate.Add(typeToCheckName);
-        }
-
-        // Build DTO type name
-        string dtoTypeName;
-        if (isCollection)
-        {
-            string dtoElementType = needsDto ? elementType + "Dto" : elementType!;
-            dtoTypeName = $"IReadOnlyList<{dtoElementType}>";
-        }
-        else if (needsDto)
-        {
-            string baseTypeName = typeToCheck.Name + "Dto";
-            dtoTypeName = isNullable ? baseTypeName + "?" : baseTypeName;
-        }
-        else
-        {
-            dtoTypeName = typeName;
-        }
-
-        return new PropertyMetadata
-        {
-            PropertyName = property.Name,
-            TypeName = typeName,
-            DtoTypeName = dtoTypeName,
-            IsCollection = isCollection,
-            CollectionElementType = elementType,
-            NeedsDto = needsDto,
-            Nullable = isNullable,
-            Required = isRequired,
-        };
-    }
 
     private static ProjectionApiInfo? ExtractProjectionInfo(
         GeneratorAttributeSyntaxContext context,
@@ -233,13 +155,14 @@ public sealed class BatchProjectionRequest
                 }
             }
 
-            nestedTypes.Add(new NestedTypeMetadata
-            {
-                TypeName = nestedSymbol.Name,
-                FullTypeName = nestedTypeName,
-                Namespace = nestedSymbol.ContainingNamespace.ToDisplayString(),
-                Properties = nestedProperties,
-            });
+            nestedTypes.Add(
+                new()
+                {
+                    TypeName = nestedSymbol.Name,
+                    FullTypeName = nestedTypeName,
+                    Namespace = nestedSymbol.ContainingNamespace.ToDisplayString(),
+                    Properties = nestedProperties,
+                });
         }
 
         return new()
@@ -252,6 +175,83 @@ public sealed class BatchProjectionRequest
             Authorize = authorize,
             Properties = properties,
             NestedTypes = nestedTypes,
+        };
+    }
+
+    private static PropertyMetadata ExtractPropertyMetadata(
+        IPropertySymbol property,
+        HashSet<string> nestedTypesToGenerate
+    )
+    {
+        ITypeSymbol propertyType = property.Type;
+        string typeName = propertyType.ToDisplayString();
+        bool isNullable = propertyType.NullableAnnotation == NullableAnnotation.Annotated;
+        bool isRequired = property.IsRequired;
+
+        // Check if it's a collection (ImmutableList, ImmutableArray, List, IReadOnlyList, etc.)
+        bool isCollection = false;
+        string? elementType = null;
+        ITypeSymbol? elementTypeSymbol = null;
+        if (propertyType is INamedTypeSymbol namedType && namedType.IsGenericType)
+        {
+            string genericTypeName = namedType.ConstructedFrom.ToDisplayString();
+            if (genericTypeName.Contains("ImmutableList") ||
+                genericTypeName.Contains("ImmutableArray") ||
+                genericTypeName.Contains("List<") ||
+                genericTypeName.Contains("IList<") ||
+                genericTypeName.Contains("IReadOnlyList<") ||
+                genericTypeName.Contains("IEnumerable<") ||
+                genericTypeName.Contains("ICollection<"))
+            {
+                isCollection = true;
+                elementTypeSymbol = namedType.TypeArguments[0];
+                elementType = elementTypeSymbol.Name;
+            }
+        }
+
+        // Determine if the type (or element type for collections) needs a DTO
+        ITypeSymbol typeToCheck = elementTypeSymbol ?? propertyType;
+        if ((typeToCheck.NullableAnnotation == NullableAnnotation.Annotated) &&
+            typeToCheck is INamedTypeSymbol nullableNamed &&
+            (nullableNamed.TypeArguments.Length > 0))
+        {
+            typeToCheck = nullableNamed.TypeArguments[0];
+        }
+
+        string typeToCheckName = typeToCheck.ToDisplayString();
+        bool needsDto = !IsPrimitiveOrBuiltIn(typeToCheckName) && !typeToCheck.TypeKind.HasFlag(TypeKind.Enum);
+        if (needsDto && typeToCheck is INamedTypeSymbol)
+        {
+            nestedTypesToGenerate.Add(typeToCheckName);
+        }
+
+        // Build DTO type name
+        string dtoTypeName;
+        if (isCollection)
+        {
+            string dtoElementType = needsDto ? elementType + "Dto" : elementType!;
+            dtoTypeName = $"IReadOnlyList<{dtoElementType}>";
+        }
+        else if (needsDto)
+        {
+            string baseTypeName = typeToCheck.Name + "Dto";
+            dtoTypeName = isNullable ? baseTypeName + "?" : baseTypeName;
+        }
+        else
+        {
+            dtoTypeName = typeName;
+        }
+
+        return new()
+        {
+            PropertyName = property.Name,
+            TypeName = typeName,
+            DtoTypeName = dtoTypeName,
+            IsCollection = isCollection,
+            CollectionElementType = elementType,
+            NeedsDto = needsDto,
+            Nullable = isNullable,
+            Required = isRequired,
         };
     }
 
@@ -288,7 +288,7 @@ public sealed class BatchProjectionRequest
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Extension methods for mapping {projection.TypeName} to its DTO.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine($"[GeneratedCode(\"Mississippi.EventSourcing.UxProjections.Api.Generators\", \"1.0.0\")]");
+        sb.AppendLine("[GeneratedCode(\"Mississippi.EventSourcing.UxProjections.Api.Generators\", \"1.0.0\")]");
         sb.AppendLine($"public static class {projection.TypeName}MappingExtensions");
         sb.AppendLine("{");
 
@@ -301,9 +301,7 @@ public sealed class BatchProjectionRequest
 
         // Generate main projection mapper
         GenerateToDto(sb, projection.TypeName, projection.FullTypeName, projection.Properties, "    ");
-
         sb.AppendLine("}");
-
         return sb.ToString();
     }
 
@@ -316,10 +314,9 @@ public sealed class BatchProjectionRequest
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Data transfer object for {typeName}.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine($"[GeneratedCode(\"Mississippi.EventSourcing.UxProjections.Api.Generators\", \"1.0.0\")]");
+        sb.AppendLine("[GeneratedCode(\"Mississippi.EventSourcing.UxProjections.Api.Generators\", \"1.0.0\")]");
         sb.AppendLine($"public sealed record {typeName}Dto");
         sb.AppendLine("{");
-
         foreach (PropertyMetadata prop in properties.OrderBy(p => p.PropertyName))
         {
             // Determine if we need 'required' modifier:
@@ -330,18 +327,18 @@ public sealed class BatchProjectionRequest
             {
                 // Check if it's a reference type that needs required
                 string dtoType = prop.DtoTypeName.TrimEnd('?');
-                if (dtoType == "string" ||
-                    dtoType.StartsWith("IReadOnlyList<", System.StringComparison.Ordinal) ||
-                    dtoType.EndsWith("Dto", System.StringComparison.Ordinal))
+                if ((dtoType == "string") ||
+                    dtoType.StartsWith("IReadOnlyList<", StringComparison.Ordinal) ||
+                    dtoType.EndsWith("Dto", StringComparison.Ordinal))
                 {
                     needsRequired = true;
                 }
             }
 
             string requiredModifier = needsRequired ? "required " : string.Empty;
-            sb.AppendLine($"    /// <summary>");
+            sb.AppendLine("    /// <summary>");
             sb.AppendLine($"    ///     Gets the {prop.PropertyName} value.");
-            sb.AppendLine($"    /// </summary>");
+            sb.AppendLine("    /// </summary>");
             sb.AppendLine($"    public {requiredModifier}{prop.DtoTypeName} {prop.PropertyName} {{ get; init; }}");
         }
 
@@ -530,7 +527,6 @@ public sealed partial class {projection.TypeName}Controller : ControllerBase
         sb.AppendLine($"{indent}{{");
         sb.AppendLine($"{indent}    return new {typeName}Dto");
         sb.AppendLine($"{indent}    {{");
-
         foreach (PropertyMetadata prop in properties.OrderBy(p => p.PropertyName))
         {
             string mapping;
@@ -568,7 +564,6 @@ public sealed partial class {projection.TypeName}Controller : ControllerBase
     {
         // Remove nullable suffix for checking
         string checkName = typeName.TrimEnd('?');
-
         if (PrimitiveTypeNames.Contains(checkName))
         {
             return true;
@@ -614,7 +609,6 @@ public sealed partial class {projection.TypeName}Controller : ControllerBase
             {
                 string controllerSource = GenerateProjectionController(projection);
                 spc.AddSource($"{projection.TypeName}Controller.g.cs", controllerSource);
-
                 string dtoSource = GenerateDtoAndMapper(projection);
                 spc.AddSource($"{projection.TypeName}Dto.g.cs", dtoSource);
             });

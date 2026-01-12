@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
+    <ProjectReference Include="..\..\..\src\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

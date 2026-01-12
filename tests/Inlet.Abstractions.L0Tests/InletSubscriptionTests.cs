@@ -19,11 +19,11 @@ public sealed class InletSubscriptionTests
     public void ConstructorSetsAllProperties()
     {
         // Arrange & Act
-        InletSubscription sut = new("sub-1", "TestProjection", "entity-1");
+        InletSubscription sut = new("sub-1", "cascade/channels", "entity-1");
 
         // Assert
         Assert.Equal("sub-1", sut.SubscriptionId);
-        Assert.Equal("TestProjection", sut.ProjectionType);
+        Assert.Equal("cascade/channels", sut.Path);
         Assert.Equal("entity-1", sut.EntityId);
     }
 
@@ -35,8 +35,8 @@ public sealed class InletSubscriptionTests
     public void DifferentSubscriptionsAreNotEqual()
     {
         // Arrange
-        InletSubscription sub1 = new("sub-1", "TestProjection", "entity-1");
-        InletSubscription sub2 = new("sub-2", "TestProjection", "entity-1");
+        InletSubscription sub1 = new("sub-1", "cascade/channels", "entity-1");
+        InletSubscription sub2 = new("sub-2", "cascade/channels", "entity-1");
 
         // Assert
         Assert.NotEqual(sub1, sub2);
@@ -50,8 +50,8 @@ public sealed class InletSubscriptionTests
     public void EqualSubscriptionsAreEqual()
     {
         // Arrange
-        InletSubscription sub1 = new("sub-1", "TestProjection", "entity-1");
-        InletSubscription sub2 = new("sub-1", "TestProjection", "entity-1");
+        InletSubscription sub1 = new("sub-1", "cascade/channels", "entity-1");
+        InletSubscription sub2 = new("sub-1", "cascade/channels", "entity-1");
 
         // Assert
         Assert.Equal(sub1, sub2);

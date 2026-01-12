@@ -174,6 +174,6 @@ public sealed class InletOrleansRegistrationsTests
 
         // Assert
         Assert.NotNull(registry);
-        Assert.Empty(registry.GetAllProjectionTypes());
+        Assert.Empty(registry.GetAllPaths());
     }
 }

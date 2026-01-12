@@ -4,7 +4,7 @@ using Mississippi.Inlet.Abstractions;
 namespace Mississippi.Inlet;
 
 /// <summary>
-///     Interface for projection route registration during startup.
+///     Interface for projection path registration during startup.
 /// </summary>
 public interface IConfigureProjectionRegistry
 {

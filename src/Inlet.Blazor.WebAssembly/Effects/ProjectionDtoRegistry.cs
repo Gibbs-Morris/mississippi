@@ -2,6 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Reflection;
 
+using Mississippi.Inlet.Projection.Abstractions;
+
 
 namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
 
@@ -10,46 +12,54 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This registry maintains bidirectional mappings between route strings
+///         This registry maintains bidirectional mappings between projection paths
 ///         and DTO types. It is populated at application startup by calling
 ///         <see cref="ScanAssemblies" /> with assemblies containing
-///         <see cref="UxProjectionDtoAttribute" />-decorated types.
+///         <see cref="ProjectionPathAttribute" />-decorated types.
 ///     </para>
 /// </remarks>
 internal sealed class ProjectionDtoRegistry : IProjectionDtoRegistry
 {
-    private ConcurrentDictionary<Type, string> DtoTypeToRoute { get; } = new();
+    private ConcurrentDictionary<Type, string> DtoTypeToPath { get; } = new();
 
-    private ConcurrentDictionary<string, Type> RouteToDtoType { get; } = new(StringComparer.Ordinal);
+    private ConcurrentDictionary<string, Type> PathToDtoType { get; } = new(StringComparer.Ordinal);
 
     /// <inheritdoc />
-    public Type? GetDtoType(string route)
+    public Type? GetDtoType(
+        string path
+    )
     {
-        ArgumentNullException.ThrowIfNull(route);
-        return RouteToDtoType.TryGetValue(route, out Type? dtoType) ? dtoType : null;
+        ArgumentNullException.ThrowIfNull(path);
+        return PathToDtoType.TryGetValue(path, out Type? dtoType) ? dtoType : null;
     }
 
     /// <inheritdoc />
-    public string? GetRoute(Type dtoType)
+    public string? GetPath(
+        Type dtoType
+    )
     {
         ArgumentNullException.ThrowIfNull(dtoType);
-        return DtoTypeToRoute.TryGetValue(dtoType, out string? route) ? route : null;
+        return DtoTypeToPath.TryGetValue(dtoType, out string? path) ? path : null;
     }
 
     /// <inheritdoc />
-    public void Register(string route, Type dtoType)
+    public void Register(
+        string path,
+        Type dtoType
+    )
     {
-        ArgumentNullException.ThrowIfNull(route);
+        ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(dtoType);
-        RouteToDtoType[route] = dtoType;
-        DtoTypeToRoute[dtoType] = route;
+        PathToDtoType[path] = dtoType;
+        DtoTypeToPath[dtoType] = path;
     }
 
     /// <inheritdoc />
-    public void ScanAssemblies(params Assembly[] assemblies)
+    public void ScanAssemblies(
+        params Assembly[] assemblies
+    )
     {
         ArgumentNullException.ThrowIfNull(assemblies);
-
         foreach (Assembly assembly in assemblies)
         {
             ScanAssembly(assembly);
@@ -57,27 +67,35 @@ internal sealed class ProjectionDtoRegistry : IProjectionDtoRegistry
     }
 
     /// <inheritdoc />
-    public bool TryGetDtoType(string route, out Type? dtoType)
+    public bool TryGetDtoType(
+        string path,
+        out Type? dtoType
+    )
     {
-        ArgumentNullException.ThrowIfNull(route);
-        return RouteToDtoType.TryGetValue(route, out dtoType);
+        ArgumentNullException.ThrowIfNull(path);
+        return PathToDtoType.TryGetValue(path, out dtoType);
     }
 
     /// <inheritdoc />
-    public bool TryGetRoute(Type dtoType, out string? route)
+    public bool TryGetPath(
+        Type dtoType,
+        out string? path
+    )
     {
         ArgumentNullException.ThrowIfNull(dtoType);
-        return DtoTypeToRoute.TryGetValue(dtoType, out route);
+        return DtoTypeToPath.TryGetValue(dtoType, out path);
     }
 
-    private void ScanAssembly(Assembly assembly)
+    private void ScanAssembly(
+        Assembly assembly
+    )
     {
         foreach (Type type in assembly.GetTypes())
         {
-            UxProjectionDtoAttribute? attr = type.GetCustomAttribute<UxProjectionDtoAttribute>();
+            ProjectionPathAttribute? attr = type.GetCustomAttribute<ProjectionPathAttribute>();
             if (attr is not null)
             {
-                Register(attr.Route, type);
+                Register(attr.Path, type);
             }
         }
     }

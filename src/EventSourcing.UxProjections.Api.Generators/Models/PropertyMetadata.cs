@@ -19,7 +19,8 @@ internal sealed class PropertyMetadata
     /// <remarks>
     ///     For primitive types, this is the same as <see cref="TypeName" />.
     ///     For custom types that need DTOs, this is the DTO type name (e.g., <c>MessageItemDto</c>).
-    ///     For collections of custom types, this is the collection with DTO element (e.g., <c>IReadOnlyList&lt;MessageItemDto&gt;</c>).
+    ///     For collections of custom types, this is the collection with DTO element (e.g.,
+    ///     <c>IReadOnlyList&lt;MessageItemDto&gt;</c>).
     /// </remarks>
     public string DtoTypeName { get; set; } = string.Empty;
 

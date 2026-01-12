@@ -18,6 +18,8 @@ using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.Inlet.Orleans;
 
+using Orleans.Runtime;
+
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -92,12 +94,20 @@ builder.UseOrleans(siloBuilder =>
 WebApplication app = builder.Build();
 
 // Health check endpoint for Aspire orchestration
+// Only returns healthy when Orleans silo is fully started and accepting requests
 app.MapGet(
     "/health",
-    () => Results.Ok(
-        new
-        {
-            Status = "Healthy",
-            Service = "Cascade.Web.Silo",
-        }));
+    (ISiloStatusOracle siloStatus) =>
+    {
+        SiloStatus status = siloStatus.CurrentStatus;
+        return status == SiloStatus.Active
+            ? Results.Ok(
+                new
+                {
+                    Status = "Healthy",
+                    Service = "Cascade.Web.Silo",
+                    Orleans = status.ToString(),
+                })
+            : Results.StatusCode(503);
+    });
 await app.RunAsync();

@@ -13,5 +13,6 @@
         <ProjectReference Include="..\..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
         <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
         <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
+        <ProjectReference Include="..\..\..\src\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
     </ItemGroup>
 </Project>

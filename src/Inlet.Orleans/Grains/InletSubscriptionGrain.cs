@@ -35,7 +35,7 @@ namespace Mississippi.Inlet.Orleans.Grains;
 ///     <para>
 ///         When a brook cursor moves, the grain fans out notifications to all projection
 ///         subscriptions sharing that brook, notifying SignalR clients with
-///         (projectionType, entityId, newVersion) - never exposing brook details.
+///         (path, entityId, newVersion) - never exposing brook details.
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.Inlet.Orleans.InletSubscriptionGrain")]
@@ -50,7 +50,7 @@ internal sealed class InletSubscriptionGrain
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     /// <param name="grainFactory">Factory for creating grain references.</param>
     /// <param name="aqueductGrainFactory">Factory for resolving Aqueduct grains.</param>
-    /// <param name="projectionBrookRegistry">Registry for projection to brook mappings.</param>
+    /// <param name="projectionBrookRegistry">Registry for projection path to brook mappings.</param>
     /// <param name="streamProviderOptions">Configuration options for the Orleans stream provider.</param>
     /// <param name="streamIdFactory">Factory for creating Orleans stream identifiers.</param>
     /// <param name="brookStorageReader">Brook storage reader for fetching initial cursor position.</param>
@@ -136,7 +136,7 @@ internal sealed class InletSubscriptionGrain
     public Task<ImmutableList<InletSubscription>> GetSubscriptionsAsync()
     {
         ImmutableList<InletSubscription> result = Subscriptions.Values
-            .Select(s => new InletSubscription(s.SubscriptionId, s.ProjectionType, s.EntityId))
+            .Select(s => new InletSubscription(s.SubscriptionId, s.Path, s.EntityId))
             .ToImmutableList();
         return Task.FromResult(result);
     }
@@ -167,69 +167,84 @@ internal sealed class InletSubscriptionGrain
     {
         ArgumentNullException.ThrowIfNull(item);
         string connectionId = this.GetPrimaryKeyString();
-        foreach ((string brookKey, HashSet<string> subscriptionIds) in BrookToSubscriptions)
+        string brookKey = item.BrookKey;
+        Logger.ReceivedCursorMovedEvent(connectionId, brookKey, item.NewPosition.Value);
+
+        // Only process the specific brook that triggered this event
+        if (!BrookToSubscriptions.TryGetValue(brookKey, out HashSet<string>? subscriptionIds))
         {
-            if (BrookPositions.TryGetValue(brookKey, out BrookPosition currentPosition) &&
-                !item.NewPosition.IsNewerThan(currentPosition))
+            // No subscriptions for this brook (shouldn't happen, but be defensive)
+            Logger.NoBrookSubscriptionsFound(connectionId, brookKey, BrookToSubscriptions.Count);
+            return;
+        }
+
+        Logger.FoundBrookSubscriptions(connectionId, brookKey, subscriptionIds.Count);
+
+        // Check if this is a newer position than we've seen
+        if (BrookPositions.TryGetValue(brookKey, out BrookPosition currentPosition) &&
+            !item.NewPosition.IsNewerThan(currentPosition))
+        {
+            Logger.SkippingOlderPosition(connectionId, brookKey, item.NewPosition.Value, currentPosition.Value);
+            return;
+        }
+
+        BrookPositions[brookKey] = item.NewPosition;
+
+        foreach (string subscriptionId in subscriptionIds)
+        {
+            if (!Subscriptions.TryGetValue(subscriptionId, out SubscriptionEntry? entry))
             {
+                Logger.SubscriptionEntryNotFound(connectionId, subscriptionId);
                 continue;
             }
 
-            BrookPositions[brookKey] = item.NewPosition;
-            foreach (string subscriptionId in subscriptionIds)
+            string groupName = $"projection:{entry.Path}:{entry.EntityId}";
+            Logger.SendingToSignalRGroup(connectionId, groupName, entry.Path, entry.EntityId, item.NewPosition.Value);
+            try
             {
-                if (!Subscriptions.TryGetValue(subscriptionId, out SubscriptionEntry? entry))
-                {
-                    continue;
-                }
-
-                string groupName = $"projection:{entry.ProjectionType}:{entry.EntityId}";
-                try
-                {
-                    ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(
-                        InletHubConstants.HubName,
-                        groupName);
-                    await groupGrain.SendMessageAsync(
-                        InletHubConstants.ProjectionUpdatedMethod,
-                        [entry.ProjectionType, entry.EntityId, item.NewPosition.Value]);
-                    Logger.NotificationSent(connectionId, entry.ProjectionType, entry.EntityId, item.NewPosition.Value);
-                }
-                catch (OrleansException ex)
-                {
-                    Logger.FailedToSendNotification(connectionId, entry.ProjectionType, entry.EntityId, ex);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    Logger.FailedToSendNotification(connectionId, entry.ProjectionType, entry.EntityId, ex);
-                }
+                ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(
+                    InletHubConstants.HubName,
+                    groupName);
+                await groupGrain.SendMessageAsync(
+                    InletHubConstants.ProjectionUpdatedMethod,
+                    [entry.Path, entry.EntityId, item.NewPosition.Value]);
+                Logger.NotificationSent(connectionId, entry.Path, entry.EntityId, item.NewPosition.Value);
+            }
+            catch (OrleansException ex)
+            {
+                Logger.FailedToSendNotification(connectionId, entry.Path, entry.EntityId, ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Logger.FailedToSendNotification(connectionId, entry.Path, entry.EntityId, ex);
             }
         }
     }
 
     /// <inheritdoc />
     public async Task<string> SubscribeAsync(
-        string projectionType,
+        string path,
         string entityId
     )
     {
-        ArgumentException.ThrowIfNullOrEmpty(projectionType);
+        ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentException.ThrowIfNullOrEmpty(entityId);
         string connectionId = this.GetPrimaryKeyString();
-        if (!ProjectionBrookRegistry.TryGetBrookName(projectionType, out string? brookName) || brookName is null)
+        if (!ProjectionBrookRegistry.TryGetBrookName(path, out string? brookName) || brookName is null)
         {
-            Logger.ProjectionTypeNotRegistered(connectionId, projectionType);
+            Logger.ProjectionPathNotRegistered(connectionId, path);
             throw new InvalidOperationException(
-                $"Projection type '{projectionType}' is not registered in the projection brook registry.");
+                $"Projection path '{path}' is not registered in the projection brook registry.");
         }
 
         string subscriptionId = Guid.NewGuid().ToString("N");
         BrookKey brookKey = new(brookName, entityId);
         string brookKeyString = brookKey.ToString();
-        Logger.SubscribingToProjection(connectionId, subscriptionId, projectionType, entityId, brookName);
+        Logger.SubscribingToProjection(connectionId, subscriptionId, path, entityId, brookName);
         SubscriptionEntry entry = new()
         {
             SubscriptionId = subscriptionId,
-            ProjectionType = projectionType,
+            Path = path,
             EntityId = entityId,
             BrookKey = brookKeyString,
         };
@@ -246,7 +261,7 @@ internal sealed class InletSubscriptionGrain
             await SubscribeToBrookStreamAsync(brookKey, brookKeyString);
         }
 
-        Logger.SubscribedToProjection(connectionId, subscriptionId, projectionType, entityId);
+        Logger.SubscribedToProjection(connectionId, subscriptionId, path, entityId);
         return subscriptionId;
     }
 
@@ -263,7 +278,7 @@ internal sealed class InletSubscriptionGrain
             return;
         }
 
-        Logger.UnsubscribingFromProjection(connectionId, subscriptionId, entry.ProjectionType, entry.EntityId);
+        Logger.UnsubscribingFromProjection(connectionId, subscriptionId, entry.Path, entry.EntityId);
         Subscriptions.Remove(subscriptionId);
         if (BrookToSubscriptions.TryGetValue(entry.BrookKey, out HashSet<string>? brookSubs))
         {
@@ -329,7 +344,7 @@ internal sealed class InletSubscriptionGrain
 
         public required string EntityId { get; init; }
 
-        public required string ProjectionType { get; init; }
+        public required string Path { get; init; }
 
         public required string SubscriptionId { get; init; }
     }

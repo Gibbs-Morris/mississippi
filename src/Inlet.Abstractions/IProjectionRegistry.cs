@@ -4,18 +4,18 @@ using System;
 namespace Mississippi.Inlet.Abstractions;
 
 /// <summary>
-///     Registry for projection types and their associated routes.
+///     Registry for projection types and their associated paths.
 /// </summary>
 public interface IProjectionRegistry
 {
     /// <summary>
-    ///     Gets the route for a projection type.
+    ///     Gets the path for a projection type.
     /// </summary>
     /// <param name="projectionType">The projection type.</param>
-    /// <returns>The route path for the projection.</returns>
+    /// <returns>The path for the projection.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="projectionType" /> is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when no route is registered for the type.</exception>
-    string GetRoute(
+    /// <exception cref="InvalidOperationException">Thrown when no path is registered for the type.</exception>
+    string GetPath(
         Type projectionType
     );
 
@@ -23,20 +23,20 @@ public interface IProjectionRegistry
     ///     Gets whether a projection type is registered.
     /// </summary>
     /// <param name="projectionType">The projection type.</param>
-    /// <returns>True if the projection type has a registered route.</returns>
+    /// <returns>True if the projection type has a registered path.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="projectionType" /> is null.</exception>
     bool IsRegistered(
         Type projectionType
     );
 
     /// <summary>
-    ///     Registers a route for a projection type.
+    ///     Registers a path for a projection type.
     /// </summary>
     /// <typeparam name="T">The projection type.</typeparam>
-    /// <param name="route">The route path.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="route" /> is null.</exception>
+    /// <param name="path">The projection path.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="path" /> is null.</exception>
     void Register<T>(
-        string route
+        string path
     )
         where T : class;
 }

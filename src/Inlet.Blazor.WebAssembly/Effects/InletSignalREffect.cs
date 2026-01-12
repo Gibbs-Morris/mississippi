@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Abstractions.Actions;
@@ -28,7 +29,7 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
 ///         to update the store.
 ///     </para>
 /// </remarks>
-public sealed class InletSignalREffect
+internal sealed class InletSignalREffect
     : IEffect,
       IAsyncDisposable
 {
@@ -36,28 +37,35 @@ public sealed class InletSignalREffect
 
     private readonly IDisposable hubCallbackRegistration;
 
+    private readonly IServiceProvider serviceProvider;
+
+    private IInletStore? store;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalREffect" /> class.
     /// </summary>
-    /// <param name="store">The inlet store for dispatching update actions.</param>
+    /// <param name="serviceProvider">The service provider for lazy store resolution (avoids circular dependency).</param>
     /// <param name="navigationManager">The navigation manager for resolving hub URL.</param>
     /// <param name="projectionFetcher">The projection fetcher for retrieving projection data.</param>
+    /// <param name="projectionDtoRegistry">The registry mapping DTO types to projection paths.</param>
     /// <param name="options">Options for configuring the effect.</param>
     public InletSignalREffect(
-        IInletStore store,
+        IServiceProvider serviceProvider,
         NavigationManager navigationManager,
         IProjectionFetcher projectionFetcher,
+        IProjectionDtoRegistry projectionDtoRegistry,
         InletSignalREffectOptions? options = null
     )
     {
-        ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
         ArgumentNullException.ThrowIfNull(navigationManager);
         ArgumentNullException.ThrowIfNull(projectionFetcher);
-        Store = store;
+        ArgumentNullException.ThrowIfNull(projectionDtoRegistry);
+        this.serviceProvider = serviceProvider;
         ProjectionFetcher = projectionFetcher;
+        ProjectionDtoRegistry = projectionDtoRegistry;
         Options = options ?? new InletSignalREffectOptions();
-        HubConnection = new HubConnectionBuilder()
-            .WithUrl(navigationManager.ToAbsoluteUri(Options.HubPath))
+        HubConnection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri(Options.HubPath))
             .WithAutomaticReconnect()
             .Build();
 
@@ -74,9 +82,57 @@ public sealed class InletSignalREffect
 
     private InletSignalREffectOptions Options { get; }
 
+    private IProjectionDtoRegistry ProjectionDtoRegistry { get; }
+
     private IProjectionFetcher ProjectionFetcher { get; }
 
-    private IInletStore Store { get; }
+    /// <summary>
+    ///     Gets the store lazily to avoid circular dependency during DI resolution.
+    ///     The store resolves effects during construction, so effects cannot depend
+    ///     on the store directly in their constructor.
+    /// </summary>
+    private IInletStore Store => store ??= serviceProvider.GetRequiredService<IInletStore>();
+
+    private static IAction CreateErrorAction(
+        Type projectionType,
+        string entityId,
+        Exception error
+    )
+    {
+        Type actionType = typeof(ProjectionErrorAction<>).MakeGenericType(projectionType);
+        return (IAction)Activator.CreateInstance(actionType, entityId, error)!;
+    }
+
+    private static IAction CreateLoadedAction(
+        Type projectionType,
+        string entityId,
+        object? data,
+        long version
+    )
+    {
+        Type actionType = typeof(ProjectionLoadedAction<>).MakeGenericType(projectionType);
+        return (IAction)Activator.CreateInstance(actionType, entityId, data, version)!;
+    }
+
+    private static IAction CreateLoadingAction(
+        Type projectionType,
+        string entityId
+    )
+    {
+        Type actionType = typeof(ProjectionLoadingAction<>).MakeGenericType(projectionType);
+        return (IAction)Activator.CreateInstance(actionType, entityId)!;
+    }
+
+    private static IAction CreateUpdatedAction(
+        Type projectionType,
+        string entityId,
+        object? data,
+        long version
+    )
+    {
+        Type actionType = typeof(ProjectionUpdatedAction<>).MakeGenericType(projectionType);
+        return (IAction)Activator.CreateInstance(actionType, entityId, data, version)!;
+    }
 
     /// <inheritdoc />
     public bool CanHandle(
@@ -84,7 +140,6 @@ public sealed class InletSignalREffect
     )
     {
         ArgumentNullException.ThrowIfNull(action);
-
         Type actionType = action.GetType();
         if (!actionType.IsGenericType)
         {
@@ -133,10 +188,7 @@ public sealed class InletSignalREffect
         string entityId = inletAction.EntityId;
         if (genericDef == typeof(SubscribeToProjectionAction<>))
         {
-            await foreach (IAction resultAction in HandleSubscribeAsync(
-                               projectionType,
-                               entityId,
-                               cancellationToken))
+            await foreach (IAction resultAction in HandleSubscribeAsync(projectionType, entityId, cancellationToken))
             {
                 yield return resultAction;
             }
@@ -147,55 +199,11 @@ public sealed class InletSignalREffect
         }
         else if (genericDef == typeof(RefreshProjectionAction<>))
         {
-            await foreach (IAction resultAction in HandleRefreshAsync(
-                               projectionType,
-                               entityId,
-                               cancellationToken))
+            await foreach (IAction resultAction in HandleRefreshAsync(projectionType, entityId, cancellationToken))
             {
                 yield return resultAction;
             }
         }
-    }
-
-    private static IAction CreateErrorAction(
-        Type projectionType,
-        string entityId,
-        Exception error
-    )
-    {
-        Type actionType = typeof(ProjectionErrorAction<>).MakeGenericType(projectionType);
-        return (IAction)Activator.CreateInstance(actionType, entityId, error)!;
-    }
-
-    private static IAction CreateLoadedAction(
-        Type projectionType,
-        string entityId,
-        object? data,
-        long version
-    )
-    {
-        Type actionType = typeof(ProjectionLoadedAction<>).MakeGenericType(projectionType);
-        return (IAction)Activator.CreateInstance(actionType, entityId, data, version)!;
-    }
-
-    private static IAction CreateLoadingAction(
-        Type projectionType,
-        string entityId
-    )
-    {
-        Type actionType = typeof(ProjectionLoadingAction<>).MakeGenericType(projectionType);
-        return (IAction)Activator.CreateInstance(actionType, entityId)!;
-    }
-
-    private static IAction CreateUpdatedAction(
-        Type projectionType,
-        string entityId,
-        object? data,
-        long version
-    )
-    {
-        Type actionType = typeof(ProjectionUpdatedAction<>).MakeGenericType(projectionType);
-        return (IAction)Activator.CreateInstance(actionType, entityId, data, version)!;
     }
 
 #pragma warning disable CA1031 // Effect converts exceptions to error actions instead of crashing
@@ -206,7 +214,6 @@ public sealed class InletSignalREffect
     )
     {
         yield return CreateLoadingAction(projectionType, entityId);
-
         ProjectionFetchResult? result = null;
         Exception? fetchError = null;
         bool cancelled = false;
@@ -260,6 +267,17 @@ public sealed class InletSignalREffect
             yield break;
         }
 
+        // Look up the projection path from the DTO registry
+        string? path = ProjectionDtoRegistry.GetPath(projectionType);
+        if (path is null)
+        {
+            yield return CreateErrorAction(
+                projectionType,
+                entityId,
+                new InvalidOperationException($"No projection path registered for DTO type {projectionType.Name}"));
+            yield break;
+        }
+
         // Yield loading action
         yield return CreateLoadingAction(projectionType, entityId);
 
@@ -271,7 +289,7 @@ public sealed class InletSignalREffect
         {
             subscriptionId = await HubConnection.InvokeAsync<string>(
                 InletHubConstants.SubscribeMethod,
-                projectionType.Name,
+                path,
                 entityId,
                 cancellationToken);
         }
@@ -349,12 +367,20 @@ public sealed class InletSignalREffect
             return;
         }
 
+        // Look up the projection path from the DTO registry
+        string? path = ProjectionDtoRegistry.GetPath(projectionType);
+        if (path is null)
+        {
+            // No path registered - cannot unsubscribe properly, but subscription is removed locally
+            return;
+        }
+
         try
         {
             await HubConnection.InvokeAsync(
                 InletHubConstants.UnsubscribeMethod,
                 subscriptionId,
-                projectionType.Name,
+                path,
                 entityId,
                 cancellationToken);
         }
@@ -369,38 +395,42 @@ public sealed class InletSignalREffect
     }
 
     private async Task OnProjectionUpdatedAsync(
-        string projectionTypeName,
+        string path,
         string entityId,
         long newVersion
     )
     {
-        // Find the subscription and fetch updated data
-        foreach ((Type ProjectionType, string EntityId) key in activeSubscriptions.Keys)
+        // Look up the DTO type for this path
+        Type? dtoType = ProjectionDtoRegistry.GetDtoType(path);
+        if (dtoType is null)
         {
-            if ((key.ProjectionType.Name == projectionTypeName) && (key.EntityId == entityId))
-            {
-                try
-                {
-                    ProjectionFetchResult? result =
-                        await ProjectionFetcher.FetchAsync(key.ProjectionType, entityId, CancellationToken.None);
-                    if (result is not null)
-                    {
-                        IAction action = CreateUpdatedAction(
-                            key.ProjectionType,
-                            entityId,
-                            result.Data,
-                            newVersion);
-                        Store.Dispatch(action);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    IAction action = CreateErrorAction(key.ProjectionType, entityId, ex);
-                    Store.Dispatch(action);
-                }
+            // No DTO registered for this path - ignore the update
+            return;
+        }
 
-                break;
+        (Type, string) key = (dtoType, entityId);
+        if (!activeSubscriptions.ContainsKey(key))
+        {
+            // Not subscribed to this projection - ignore
+            return;
+        }
+
+        try
+        {
+            ProjectionFetchResult? result = await ProjectionFetcher.FetchAsync(
+                dtoType,
+                entityId,
+                CancellationToken.None);
+            if (result is not null)
+            {
+                IAction action = CreateUpdatedAction(dtoType, entityId, result.Data, newVersion);
+                Store.Dispatch(action);
             }
+        }
+        catch (Exception ex)
+        {
+            IAction action = CreateErrorAction(dtoType, entityId, ex);
+            Store.Dispatch(action);
         }
     }
 
@@ -413,25 +443,31 @@ public sealed class InletSignalREffect
         // Re-subscribe to all active subscriptions after reconnection
         foreach ((Type ProjectionType, string EntityId) key in activeSubscriptions.Keys)
         {
+            // Look up the projection path from the DTO registry
+            string? path = ProjectionDtoRegistry.GetPath(key.ProjectionType);
+            if (path is null)
+            {
+                // No path registered - cannot re-subscribe
+                continue;
+            }
+
             try
             {
                 string newSubscriptionId = await HubConnection.InvokeAsync<string>(
                     InletHubConstants.SubscribeMethod,
-                    key.ProjectionType.Name,
+                    path,
                     key.EntityId,
                     CancellationToken.None);
                 activeSubscriptions[key] = newSubscriptionId;
 
                 // Refresh the projection data after reconnection
-                ProjectionFetchResult? result =
-                    await ProjectionFetcher.FetchAsync(key.ProjectionType, key.EntityId, CancellationToken.None);
+                ProjectionFetchResult? result = await ProjectionFetcher.FetchAsync(
+                    key.ProjectionType,
+                    key.EntityId,
+                    CancellationToken.None);
                 if (result is not null)
                 {
-                    IAction action = CreateUpdatedAction(
-                        key.ProjectionType,
-                        key.EntityId,
-                        result.Data,
-                        result.Version);
+                    IAction action = CreateUpdatedAction(key.ProjectionType, key.EntityId, result.Data, result.Version);
                     Store.Dispatch(action);
                 }
             }

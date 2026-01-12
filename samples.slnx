@@ -76,6 +76,7 @@
     <Folder Name="/Framework/Inlet/">
         <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
         <Project Path="src\Inlet\Inlet.csproj" />
+        <Project Path="src\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
         <Project Path="src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
         <Project Path="src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
         <Project Path="src\Inlet.Orleans\Inlet.Orleans.csproj" />

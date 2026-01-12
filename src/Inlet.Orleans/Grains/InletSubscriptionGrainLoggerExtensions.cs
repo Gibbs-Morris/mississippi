@@ -48,12 +48,11 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
     [LoggerMessage(
         EventId = 13,
         Level = LogLevel.Error,
-        Message =
-            "Failed to send notification for projection {ProjectionType}/{EntityId} for connection {ConnectionId}")]
+        Message = "Failed to send notification for projection {Path}/{EntityId} for connection {ConnectionId}")]
     public static partial void FailedToSendNotification(
         this ILogger logger,
         string connectionId,
-        string projectionType,
+        string path,
         string entityId,
         Exception exception
     );
@@ -73,11 +72,11 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
         EventId = 12,
         Level = LogLevel.Debug,
         Message =
-            "Notification sent for projection {ProjectionType}/{EntityId} at version {Version} for connection {ConnectionId}")]
+            "Notification sent for projection {Path}/{EntityId} at version {Version} for connection {ConnectionId}")]
     public static partial void NotificationSent(
         this ILogger logger,
         string connectionId,
-        string projectionType,
+        string path,
         string entityId,
         long version
     );
@@ -86,11 +85,11 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
         EventId = 14,
         Level = LogLevel.Warning,
         Message =
-            "Projection type {ProjectionType} is not registered in the projection brook registry for connection {ConnectionId}")]
-    public static partial void ProjectionTypeNotRegistered(
+            "Projection path {Path} is not registered in the projection brook registry for connection {ConnectionId}")]
+    public static partial void ProjectionPathNotRegistered(
         this ILogger logger,
         string connectionId,
-        string projectionType
+        string path
     );
 
     [LoggerMessage(
@@ -108,12 +107,12 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
         EventId = 3,
         Level = LogLevel.Information,
         Message =
-            "Subscribed to projection {ProjectionType}/{EntityId} with subscriptionId {SubscriptionId} for connection {ConnectionId}")]
+            "Subscribed to projection {Path}/{EntityId} with subscriptionId {SubscriptionId} for connection {ConnectionId}")]
     public static partial void SubscribedToProjection(
         this ILogger logger,
         string connectionId,
         string subscriptionId,
-        string projectionType,
+        string path,
         string entityId
     );
 
@@ -121,12 +120,12 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
         EventId = 2,
         Level = LogLevel.Debug,
         Message =
-            "Subscribing to projection {ProjectionType}/{EntityId} with subscriptionId {SubscriptionId} on brook {BrookName} for connection {ConnectionId}")]
+            "Subscribing to projection {Path}/{EntityId} with subscriptionId {SubscriptionId} on brook {BrookName} for connection {ConnectionId}")]
     public static partial void SubscribingToProjection(
         this ILogger logger,
         string connectionId,
         string subscriptionId,
-        string projectionType,
+        string path,
         string entityId,
         string brookName
     );
@@ -174,12 +173,80 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
         EventId = 4,
         Level = LogLevel.Debug,
         Message =
-            "Unsubscribing from projection {ProjectionType}/{EntityId} with subscriptionId {SubscriptionId} for connection {ConnectionId}")]
+            "Unsubscribing from projection {Path}/{EntityId} with subscriptionId {SubscriptionId} for connection {ConnectionId}")]
     public static partial void UnsubscribingFromProjection(
         this ILogger logger,
         string connectionId,
         string subscriptionId,
-        string projectionType,
+        string path,
         string entityId
+    );
+
+    [LoggerMessage(
+        EventId = 17,
+        Level = LogLevel.Information,
+        Message = "Received cursor moved event for brook '{BrookKey}' at position {Position} for connection {ConnectionId}")]
+    public static partial void ReceivedCursorMovedEvent(
+        this ILogger logger,
+        string connectionId,
+        string brookKey,
+        long position
+    );
+
+    [LoggerMessage(
+        EventId = 18,
+        Level = LogLevel.Warning,
+        Message = "No subscriptions found for brook '{BrookKey}' for connection {ConnectionId}. Total brooks tracked: {TotalBrooks}")]
+    public static partial void NoBrookSubscriptionsFound(
+        this ILogger logger,
+        string connectionId,
+        string brookKey,
+        int totalBrooks
+    );
+
+    [LoggerMessage(
+        EventId = 19,
+        Level = LogLevel.Debug,
+        Message = "Found {SubscriptionCount} subscription(s) for brook '{BrookKey}' for connection {ConnectionId}")]
+    public static partial void FoundBrookSubscriptions(
+        this ILogger logger,
+        string connectionId,
+        string brookKey,
+        int subscriptionCount
+    );
+
+    [LoggerMessage(
+        EventId = 20,
+        Level = LogLevel.Debug,
+        Message = "Skipping older position {NewPosition} (current: {CurrentPosition}) for brook '{BrookKey}' for connection {ConnectionId}")]
+    public static partial void SkippingOlderPosition(
+        this ILogger logger,
+        string connectionId,
+        string brookKey,
+        long newPosition,
+        long currentPosition
+    );
+
+    [LoggerMessage(
+        EventId = 21,
+        Level = LogLevel.Debug,
+        Message = "Subscription entry not found for subscriptionId {SubscriptionId} for connection {ConnectionId}")]
+    public static partial void SubscriptionEntryNotFound(
+        this ILogger logger,
+        string connectionId,
+        string subscriptionId
+    );
+
+    [LoggerMessage(
+        EventId = 22,
+        Level = LogLevel.Debug,
+        Message = "Sending to SignalR group '{GroupName}' for projection {Path}/{EntityId} at version {Version} for connection {ConnectionId}")]
+    public static partial void SendingToSignalRGroup(
+        this ILogger logger,
+        string connectionId,
+        string groupName,
+        string path,
+        string entityId,
+        long version
     );
 }

@@ -101,7 +101,7 @@ public sealed class InletSubscriptionGrainTests
         // Assert
         Assert.Single(subscriptions);
         Assert.Equal(subscriptionId, subscriptions[0].SubscriptionId);
-        Assert.Equal(TestProjections.TestProjection2, subscriptions[0].ProjectionType);
+        Assert.Equal(TestProjections.TestProjection2, subscriptions[0].Path);
         Assert.Equal("entity-1", subscriptions[0].EntityId);
     }
 

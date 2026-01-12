@@ -40,37 +40,37 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     }
 
     /// <summary>
-    ///     GetAllProjectionTypes should return empty for new registry.
+    ///     GetAllPaths should return empty for new registry.
     /// </summary>
     [Fact]
     [AllureFeature("Enumeration")]
-    public void GetAllProjectionTypesReturnsEmptyForNewRegistry()
+    public void GetAllPathsReturnsEmptyForNewRegistry()
     {
         // Act
-        string[] types = registry.GetAllProjectionTypes().ToArray();
+        string[] paths = registry.GetAllPaths().ToArray();
 
         // Assert
-        Assert.Empty(types);
+        Assert.Empty(paths);
     }
 
     /// <summary>
-    ///     GetAllProjectionTypes should return registered projections.
+    ///     GetAllPaths should return registered projections.
     /// </summary>
     [Fact]
     [AllureFeature("Enumeration")]
-    public void GetAllProjectionTypesReturnsRegisteredProjections()
+    public void GetAllPathsReturnsRegisteredProjections()
     {
         // Arrange
-        registry.Register("Projection1", "brook1");
-        registry.Register("Projection2", "brook2");
+        registry.Register("cascade/channels", "brook1");
+        registry.Register("cascade/users", "brook2");
 
         // Act
-        string[] types = registry.GetAllProjectionTypes().ToArray();
+        string[] paths = registry.GetAllPaths().ToArray();
 
         // Assert
-        Assert.Equal(2, types.Length);
-        Assert.Contains("Projection1", types);
-        Assert.Contains("Projection2", types);
+        Assert.Equal(2, paths.Length);
+        Assert.Contains("cascade/channels", paths);
+        Assert.Contains("cascade/users", paths);
     }
 
     /// <summary>
@@ -105,15 +105,15 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     }
 
     /// <summary>
-    ///     GetBrookName should throw when projectionTypeName is null.
+    ///     GetBrookName should throw when path is null.
     /// </summary>
     [Fact]
     [AllureFeature("Argument Validation")]
-    public void GetBrookNameThrowsWhenProjectionTypeNameNull()
+    public void GetBrookNameThrowsWhenPathNull()
     {
         // Act & Assert
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => registry.GetBrookName(null!));
-        Assert.Equal("projectionTypeName", exception.ParamName);
+        Assert.Equal("path", exception.ParamName);
     }
 
     /// <summary>
@@ -163,15 +163,15 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     }
 
     /// <summary>
-    ///     Register should throw when projectionTypeName is null.
+    ///     Register should throw when path is null.
     /// </summary>
     [Fact]
     [AllureFeature("Argument Validation")]
-    public void RegisterThrowsWhenProjectionTypeNameNull()
+    public void RegisterThrowsWhenPathNull()
     {
         // Act & Assert
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => registry.Register(null!, "brook"));
-        Assert.Equal("projectionTypeName", exception.ParamName);
+        Assert.Equal("path", exception.ParamName);
     }
 
     /// <summary>
@@ -208,15 +208,15 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     }
 
     /// <summary>
-    ///     TryGetBrookName should throw when projectionTypeName is null.
+    ///     TryGetBrookName should throw when path is null.
     /// </summary>
     [Fact]
     [AllureFeature("Argument Validation")]
-    public void TryGetBrookNameThrowsWhenProjectionTypeNameNull()
+    public void TryGetBrookNameThrowsWhenPathNull()
     {
         // Act & Assert
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(() => registry.TryGetBrookName(null!, out string? _));
-        Assert.Equal("projectionTypeName", exception.ParamName);
+        Assert.Equal("path", exception.ParamName);
     }
 }

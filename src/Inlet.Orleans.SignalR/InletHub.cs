@@ -20,7 +20,7 @@ namespace Mississippi.Inlet.Orleans.SignalR;
 ///     <para>
 ///         This hub provides a clean abstraction for clients to subscribe to projection
 ///         updates without needing to know about the underlying brook infrastructure.
-///         Clients only provide projection type and entity ID - the server resolves
+///         Clients only provide projection path and entity ID - the server resolves
 ///         the brook mapping internally.
 ///     </para>
 ///     <para>
@@ -79,27 +79,27 @@ public sealed class InletHub : Hub<IInletHubClient>
     /// <summary>
     ///     Subscribes to projection updates for an entity.
     /// </summary>
-    /// <param name="projectionType">The type of projection to subscribe to.</param>
+    /// <param name="path">The projection path (e.g., "cascade/channels").</param>
     /// <param name="entityId">The entity identifier.</param>
     /// <returns>The subscription identifier.</returns>
     /// <remarks>
     ///     The client does not need to know about brook details - the server
-    ///     resolves the brook mapping from the projection type registry.
+    ///     resolves the brook mapping from the projection path registry.
     /// </remarks>
     public async Task<string> SubscribeAsync(
-        string projectionType,
+        string path,
         string entityId
     )
     {
-        ArgumentException.ThrowIfNullOrEmpty(projectionType);
+        ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentException.ThrowIfNullOrEmpty(entityId);
-        Logger.SubscribingToProjection(Context.ConnectionId, projectionType, entityId);
-        string groupName = $"projection:{projectionType}:{entityId}";
+        Logger.SubscribingToProjection(Context.ConnectionId, path, entityId);
+        string groupName = $"projection:{path}:{entityId}";
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         IInletSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IInletSubscriptionGrain>(Context.ConnectionId);
-        string subscriptionId = await subscriptionGrain.SubscribeAsync(projectionType, entityId);
-        Logger.SubscribedToProjection(Context.ConnectionId, subscriptionId, projectionType, entityId);
+        string subscriptionId = await subscriptionGrain.SubscribeAsync(path, entityId);
+        Logger.SubscribedToProjection(Context.ConnectionId, subscriptionId, path, entityId);
         return subscriptionId;
     }
 
@@ -107,20 +107,20 @@ public sealed class InletHub : Hub<IInletHubClient>
     ///     Unsubscribes from projection updates.
     /// </summary>
     /// <param name="subscriptionId">The subscription identifier returned from subscribe.</param>
-    /// <param name="projectionType">The type of projection to unsubscribe from.</param>
+    /// <param name="path">The projection path to unsubscribe from.</param>
     /// <param name="entityId">The entity identifier.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task UnsubscribeAsync(
         string subscriptionId,
-        string projectionType,
+        string path,
         string entityId
     )
     {
         ArgumentException.ThrowIfNullOrEmpty(subscriptionId);
-        ArgumentException.ThrowIfNullOrEmpty(projectionType);
+        ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentException.ThrowIfNullOrEmpty(entityId);
-        Logger.UnsubscribingFromProjection(Context.ConnectionId, subscriptionId, projectionType, entityId);
-        string groupName = $"projection:{projectionType}:{entityId}";
+        Logger.UnsubscribingFromProjection(Context.ConnectionId, subscriptionId, path, entityId);
+        string groupName = $"projection:{path}:{entityId}";
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
         IInletSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IInletSubscriptionGrain>(Context.ConnectionId);
@@ -137,12 +137,12 @@ public interface IInletHubClient
     /// <summary>
     ///     Called when a projection is updated.
     /// </summary>
-    /// <param name="projectionType">The projection type name.</param>
+    /// <param name="path">The projection path.</param>
     /// <param name="entityId">The entity identifier.</param>
     /// <param name="newVersion">The new version number.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task ProjectionUpdatedAsync(
-        string projectionType,
+        string path,
         string entityId,
         long newVersion
     );

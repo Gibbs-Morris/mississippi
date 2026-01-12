@@ -27,23 +27,23 @@ internal static partial class InletHubLoggerExtensions
         EventId = 4,
         Level = LogLevel.Information,
         Message =
-            "Client {ConnectionId} subscribed to projection {ProjectionType}/{EntityId} with subscriptionId {SubscriptionId}")]
+            "Client {ConnectionId} subscribed to projection {Path}/{EntityId} with subscriptionId {SubscriptionId}")]
     public static partial void SubscribedToProjection(
         this ILogger logger,
         string connectionId,
         string subscriptionId,
-        string projectionType,
+        string path,
         string entityId
     );
 
     [LoggerMessage(
         EventId = 3,
         Level = LogLevel.Debug,
-        Message = "Client {ConnectionId} subscribing to projection {ProjectionType}/{EntityId}")]
+        Message = "Client {ConnectionId} subscribing to projection {Path}/{EntityId}")]
     public static partial void SubscribingToProjection(
         this ILogger logger,
         string connectionId,
-        string projectionType,
+        string path,
         string entityId
     );
 
@@ -61,12 +61,12 @@ internal static partial class InletHubLoggerExtensions
         EventId = 5,
         Level = LogLevel.Debug,
         Message =
-            "Client {ConnectionId} unsubscribing from projection {ProjectionType}/{EntityId} with subscriptionId {SubscriptionId}")]
+            "Client {ConnectionId} unsubscribing from projection {Path}/{EntityId} with subscriptionId {SubscriptionId}")]
     public static partial void UnsubscribingFromProjection(
         this ILogger logger,
         string connectionId,
         string subscriptionId,
-        string projectionType,
+        string path,
         string entityId
     );
 }

@@ -126,20 +126,6 @@ public sealed class InletRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInlet with configure should throw ArgumentNullException when configure is null.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    public void AddInletWithNullConfigureThrowsArgumentNullException()
-    {
-        // Arrange
-        ServiceCollection services = [];
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services.AddInlet(null!));
-    }
-
-    /// <summary>
     ///     AddInlet should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
@@ -154,18 +140,18 @@ public sealed class InletRegistrationsTests
     }
 
     /// <summary>
-    ///     AddProjectionRoute should register route in IConfigureProjectionRegistry.
+    ///     AddProjectionPath should register path in IConfigureProjectionRegistry.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddProjectionRouteRegistersConfiguration()
+    public void AddProjectionPathRegistersConfiguration()
     {
         // Arrange
         ServiceCollection services = [];
 
         // Act
         services.AddInlet();
-        services.AddProjectionRoute<TestProjection>("/api/test");
+        services.AddProjectionPath<TestProjection>("cascade/test");
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IConfigureProjectionRegistry> configs = provider.GetServices<IConfigureProjectionRegistry>();
 
@@ -174,44 +160,44 @@ public sealed class InletRegistrationsTests
     }
 
     /// <summary>
-    ///     AddProjectionRoute should throw ArgumentNullException when route is null.
+    ///     AddProjectionPath should throw ArgumentNullException when path is null.
     /// </summary>
     [Fact]
     [AllureFeature("Validation")]
-    public void AddProjectionRouteWithNullRouteThrowsArgumentNullException()
+    public void AddProjectionPathWithNullPathThrowsArgumentNullException()
     {
         // Arrange
         ServiceCollection services = [];
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services.AddProjectionRoute<TestProjection>(null!));
+        Assert.Throws<ArgumentNullException>(() => services.AddProjectionPath<TestProjection>(null!));
     }
 
     /// <summary>
-    ///     AddProjectionRoute should throw ArgumentNullException when services is null.
+    ///     AddProjectionPath should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
     [AllureFeature("Validation")]
-    public void AddProjectionRouteWithNullServicesThrowsArgumentNullException()
+    public void AddProjectionPathWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
         IServiceCollection? services = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddProjectionRoute<TestProjection>("/api/test"));
+        Assert.Throws<ArgumentNullException>(() => services!.AddProjectionPath<TestProjection>("cascade/test"));
     }
 
     /// <summary>
-    ///     AddProjectionRoute configuration should register route in registry.
+    ///     AddProjectionPath configuration should register path in registry.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void ProjectionRouteConfigurationRegistersRouteInRegistry()
+    public void ProjectionPathConfigurationRegistersPathInRegistry()
     {
         // Arrange
         ServiceCollection services = [];
         services.AddInlet();
-        services.AddProjectionRoute<TestProjection>("/api/test");
+        services.AddProjectionPath<TestProjection>("cascade/test");
         using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act - Get the config and registry, then call Configure
@@ -222,8 +208,8 @@ public sealed class InletRegistrationsTests
             config.Configure(registry);
         }
 
-        // Assert - The route should now be registered
-        string route = registry.GetRoute(typeof(TestProjection));
-        Assert.Equal("/api/test", route);
+        // Assert - The path should now be registered
+        string path = registry.GetPath(typeof(TestProjection));
+        Assert.Equal("cascade/test", path);
     }
 }

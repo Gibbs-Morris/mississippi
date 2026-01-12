@@ -61,11 +61,9 @@ public static class InletBlazorRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-
         InletBlazorSignalRBuilder builder = new(services);
         configure?.Invoke(builder);
         builder.Build();
-
         return services;
     }
 }

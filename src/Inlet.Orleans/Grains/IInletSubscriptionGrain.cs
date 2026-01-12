@@ -20,14 +20,14 @@ namespace Mississippi.Inlet.Orleans.Grains;
 ///         share a single stream subscription.
 ///     </para>
 ///     <para>
-///         Clients subscribe by projection type and entity ID only. The grain resolves
+///         Clients subscribe by projection path and entity ID only. The grain resolves
 ///         the brook name from the <see cref="IProjectionBrookRegistry" />
 ///         and manages the underlying Orleans stream subscriptions.
 ///     </para>
 ///     <para>
 ///         When a brook cursor moves, the grain fans out notifications to all projection
 ///         subscriptions that share that brook, notifying SignalR clients with
-///         (projectionType, entityId, newVersion) - never exposing brook details.
+///         (path, entityId, newVersion) - never exposing brook details.
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.Inlet.Orleans.IInletSubscriptionGrain")]
@@ -55,7 +55,7 @@ public interface IInletSubscriptionGrain : IGrainWithStringKey
     /// <summary>
     ///     Subscribes to a projection for version change notifications.
     /// </summary>
-    /// <param name="projectionType">The projection type name.</param>
+    /// <param name="path">The projection path (e.g., "cascade/channels").</param>
     /// <param name="entityId">The entity identifier.</param>
     /// <returns>A server-assigned subscription identifier.</returns>
     /// <remarks>
@@ -64,7 +64,7 @@ public interface IInletSubscriptionGrain : IGrainWithStringKey
     /// </remarks>
     [Alias("SubscribeAsync")]
     Task<string> SubscribeAsync(
-        string projectionType,
+        string path,
         string entityId
     );
 

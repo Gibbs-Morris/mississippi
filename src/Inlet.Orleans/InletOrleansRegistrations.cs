@@ -4,8 +4,9 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Projection.Abstractions;
 
 
 namespace Mississippi.Inlet.Orleans;
@@ -51,8 +52,12 @@ public static class InletOrleansRegistrations
     /// <remarks>
     ///     <para>
     ///         This method scans the provided assemblies for types decorated with
-    ///         <see cref="UxProjectionAttribute" /> and registers their projection-to-brook
+    ///         <see cref="ProjectionPathAttribute" /> and registers their path-to-brook
     ///         mappings in the <see cref="IProjectionBrookRegistry" />.
+    ///     </para>
+    ///     <para>
+    ///         The brook name is determined from <see cref="BrookNameAttribute" /> if present,
+    ///         otherwise defaults to the path from <see cref="ProjectionPathAttribute" />.
     ///     </para>
     ///     <para>
     ///         Call this after <see cref="AddInletOrleans" /> to populate the registry.
@@ -70,15 +75,16 @@ public static class InletOrleansRegistrations
         {
             foreach (Type type in assembly.GetExportedTypes())
             {
-                UxProjectionAttribute? attr = type.GetCustomAttribute<UxProjectionAttribute>();
-                if (attr is null)
+                ProjectionPathAttribute? pathAttr = type.GetCustomAttribute<ProjectionPathAttribute>();
+                if (pathAttr is null)
                 {
                     continue;
                 }
 
-                string brookName = attr.BrookName ?? type.Name;
-                string projectionTypeName = type.Name;
-                registry.Register(projectionTypeName, brookName);
+                // Brook name from BrookNameAttribute, or default to path
+                BrookNameAttribute? brookAttr = type.GetCustomAttribute<BrookNameAttribute>();
+                string brookName = brookAttr?.BrookName ?? pathAttr.Path;
+                registry.Register(pathAttr.Path, brookName);
             }
         }
 

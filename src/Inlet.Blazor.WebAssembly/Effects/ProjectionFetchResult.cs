@@ -17,10 +17,13 @@ public sealed record ProjectionFetchResult(object Data, long Version)
     /// <param name="data">The projection data.</param>
     /// <param name="version">The projection version.</param>
     /// <returns>A new fetch result.</returns>
-    public static ProjectionFetchResult Create<T>(T data, long version)
+    public static ProjectionFetchResult Create<T>(
+        T data,
+        long version
+    )
         where T : notnull
     {
         ArgumentNullException.ThrowIfNull(data);
-        return new ProjectionFetchResult(data, version);
+        return new(data, version);
     }
 }

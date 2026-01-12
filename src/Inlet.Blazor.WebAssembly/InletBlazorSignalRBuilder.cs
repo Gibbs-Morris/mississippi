@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Reservoir;
 
 
@@ -56,7 +57,7 @@ public sealed class InletBlazorSignalRBuilder
 
     /// <summary>
     ///     Scans the specified assemblies for types decorated with
-    ///     <see cref="UxProjectionDtoAttribute" /> and registers them in the
+    ///     <see cref="ProjectionPathAttribute" /> and registers them in the
     ///     <see cref="IProjectionDtoRegistry" />.
     /// </summary>
     /// <param name="assemblies">The assemblies to scan.</param>
@@ -67,23 +68,13 @@ public sealed class InletBlazorSignalRBuilder
     ///         the registry to automatically fetch projections based on DTO type.
     ///     </para>
     /// </remarks>
-    public InletBlazorSignalRBuilder ScanProjectionDtos(params Assembly[] assemblies)
+    public InletBlazorSignalRBuilder ScanProjectionDtos(
+        params Assembly[] assemblies
+    )
     {
         ArgumentNullException.ThrowIfNull(assemblies);
         assembliesToScan.AddRange(assemblies);
         useAutoFetcher = true;
-        return this;
-    }
-
-    /// <summary>
-    ///     Sets the route prefix for projection endpoints.
-    /// </summary>
-    /// <param name="prefix">The route prefix (e.g., "/api/projections").</param>
-    /// <returns>The builder for chaining.</returns>
-    public InletBlazorSignalRBuilder WithRoutePrefix(string prefix)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(prefix);
-        routePrefix = prefix;
         return this;
     }
 
@@ -97,7 +88,24 @@ public sealed class InletBlazorSignalRBuilder
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(hubPath);
-        options = new InletSignalREffectOptions { HubPath = hubPath };
+        options = new()
+        {
+            HubPath = hubPath,
+        };
+        return this;
+    }
+
+    /// <summary>
+    ///     Sets the route prefix for projection endpoints.
+    /// </summary>
+    /// <param name="prefix">The route prefix (e.g., "/api/projections").</param>
+    /// <returns>The builder for chaining.</returns>
+    public InletBlazorSignalRBuilder WithRoutePrefix(
+        string prefix
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(prefix);
+        routePrefix = prefix;
         return this;
     }
 
@@ -121,7 +129,8 @@ public sealed class InletBlazorSignalRBuilder
             return registry;
         });
 
-        // Register the projection fetcher
+        // Register the projection fetcher with scoped lifetime to match Store/Effect pattern (Fluxor style).
+        // In Blazor WASM, scoped = singleton. In Blazor Server, each circuit gets its own fetcher.
         if (useAutoFetcher)
         {
             // Use the auto fetcher with registry

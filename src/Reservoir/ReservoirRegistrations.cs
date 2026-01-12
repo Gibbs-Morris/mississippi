@@ -21,12 +21,17 @@ public static class ReservoirRegistrations
     /// <typeparam name="TEffect">The effect implementation type.</typeparam>
     /// <param name="services">The service collection to add the effect to.</param>
     /// <returns>The updated service collection.</returns>
+    /// <remarks>
+    ///     Effects are registered with scoped lifetime to match the Store's lifetime,
+    ///     following the Fluxor pattern. In Blazor WASM, scoped behaves as singleton.
+    ///     In Blazor Server, each circuit gets its own effect instances.
+    /// </remarks>
     public static IServiceCollection AddEffect<TEffect>(
         this IServiceCollection services
     )
         where TEffect : class, IEffect
     {
-        services.AddTransient<IEffect, TEffect>();
+        services.AddScoped<IEffect, TEffect>();
         return services;
     }
 

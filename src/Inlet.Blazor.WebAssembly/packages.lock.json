@@ -575,6 +575,9 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Inlet.Projection.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Reservoir": {
         "type": "Project",
         "dependencies": {

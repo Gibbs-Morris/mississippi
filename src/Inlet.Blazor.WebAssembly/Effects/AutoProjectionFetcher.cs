@@ -68,15 +68,15 @@ public sealed class AutoProjectionFetcher : IProjectionFetcher
         ArgumentNullException.ThrowIfNull(projectionType);
         ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
 
-        // Look up the route for this DTO type
-        if (!Registry.TryGetRoute(projectionType, out string? route) || route is null)
+        // Look up the path for this DTO type
+        if (!Registry.TryGetPath(projectionType, out string? path) || path is null)
         {
             // Type not registered - unsupported projection
             return null;
         }
 
         // Construct the endpoint URL
-        string url = $"{RoutePrefix}/{route}/{Uri.EscapeDataString(entityId)}";
+        string url = $"{RoutePrefix}/{path}/{Uri.EscapeDataString(entityId)}";
 
         // Fetch with response headers for ETag
         using HttpRequestMessage request = new(HttpMethod.Get, url);
@@ -84,7 +84,6 @@ public sealed class AutoProjectionFetcher : IProjectionFetcher
             request,
             HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
-
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return null;
@@ -102,10 +101,7 @@ public sealed class AutoProjectionFetcher : IProjectionFetcher
         }
 
         // Deserialize to the registered DTO type
-        object? data = await response.Content.ReadFromJsonAsync(
-            projectionType,
-            cancellationToken: cancellationToken);
-
+        object? data = await response.Content.ReadFromJsonAsync(projectionType, cancellationToken);
         if (data is null)
         {
             return null;

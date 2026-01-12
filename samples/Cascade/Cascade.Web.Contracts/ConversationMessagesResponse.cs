@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Projection.Abstractions;
 
 
 namespace Cascade.Web.Contracts;
@@ -12,10 +12,10 @@ namespace Cascade.Web.Contracts;
 /// <remarks>
 ///     This contract mirrors <c>ChannelMessagesProjection</c> from the server
 ///     and can be deserialized directly from the projection JSON response.
-///     The <see cref="UxProjectionDtoAttribute" /> links this DTO to the server
-///     projection via the route string.
+///     The <see cref="ProjectionPathAttribute" /> links this DTO to the server
+///     projection via the shared path.
 /// </remarks>
-[UxProjectionDto("channel-messages")]
+[ProjectionPath("cascade/channels")]
 public sealed record ConversationMessagesResponse
 {
     /// <summary>

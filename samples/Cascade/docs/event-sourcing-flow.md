@@ -142,7 +142,7 @@ internal sealed class SendMessageHandler : CommandHandlerBase<ConversationAggreg
 IAsyncStream<BrookCursorMovedEvent> stream = this
     .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
     .GetStream<BrookCursorMovedEvent>(StreamId.Create("brook-cursor-updates", brookKey));
-await stream.OnNextAsync(new BrookCursorMovedEvent(newPosition));
+await stream.OnNextAsync(new BrookCursorMovedEvent(brookKey, newPosition));
 ```
 
 #### Step 6: EventBrookWriter → Cosmos DB

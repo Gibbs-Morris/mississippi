@@ -181,11 +181,11 @@ public abstract class UxProjectionControllerBase<TProjection> : ControllerBase
     /// <param name="entityId">The entity identifier within the brook.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>
-    ///     An <see cref="ActionResult{BrookPosition}" /> containing the latest version position,
+    ///     An <see cref="ActionResult{T}" /> containing the latest version number,
     ///     or <see cref="NotFoundResult" /> if no events exist for the entity.
     /// </returns>
     [HttpGet("version")]
-    public virtual async Task<ActionResult<BrookPosition>> GetLatestVersionAsync(
+    public virtual async Task<ActionResult<long>> GetLatestVersionAsync(
         [FromRoute] string entityId,
         CancellationToken cancellationToken = default
     )
@@ -200,6 +200,6 @@ public abstract class UxProjectionControllerBase<TProjection> : ControllerBase
         }
 
         Logger.LatestVersionRetrieved(entityId, position.Value, ProjectionTypeName);
-        return Ok(position);
+        return Ok(position.Value);
     }
 }

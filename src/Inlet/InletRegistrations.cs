@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Abstractions.Configuration;
+using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 
 
@@ -26,53 +26,63 @@ public static class InletRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        return services.AddInlet(_ => { });
+        return services.AddInlet(null);
     }
 
     /// <summary>
-    ///     Adds Inlet services to the service collection with configuration.
+    ///     Adds Inlet services to the service collection with store configuration.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="configure">Configuration action for Inlet options.</param>
+    /// <param name="configureStore">
+    ///     Action to configure the store with feature states.
+    ///     This is called each time a new store instance is created.
+    /// </param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="services" /> or <paramref name="configure" /> is null.
+    ///     Thrown when <paramref name="services" /> is null.
     /// </exception>
     public static IServiceCollection AddInlet(
         this IServiceCollection services,
-        Action<InletOptions> configure
+        Action<Store>? configureStore
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configure);
-        services.Configure(configure);
         services.TryAddSingleton<IProjectionRegistry, ProjectionRegistry>();
-        services.TryAddSingleton<InletStore>();
-        services.TryAddSingleton<IStore>(sp => sp.GetRequiredService<InletStore>());
-        services.TryAddSingleton<IInletStore>(sp => sp.GetRequiredService<InletStore>());
-        services.TryAddSingleton<IProjectionUpdateNotifier>(sp => sp.GetRequiredService<InletStore>());
+
+        // Use scoped lifetime to match Fluxor pattern:
+        // - Blazor WASM: scoped = singleton (no difference)
+        // - Blazor Server: scoped = per-circuit (each user gets own store)
+        services.TryAddScoped(sp =>
+        {
+            InletStore store = new(sp);
+            configureStore?.Invoke(store);
+            return store;
+        });
+        services.TryAddScoped<IStore>(sp => sp.GetRequiredService<InletStore>());
+        services.TryAddScoped<IInletStore>(sp => sp.GetRequiredService<InletStore>());
+        services.TryAddScoped<IProjectionUpdateNotifier>(sp => sp.GetRequiredService<InletStore>());
         return services;
     }
 
     /// <summary>
-    ///     Registers a projection route.
+    ///     Registers a projection path.
     /// </summary>
     /// <typeparam name="T">The projection type.</typeparam>
     /// <param name="services">The service collection.</param>
-    /// <param name="route">The route path.</param>
+    /// <param name="path">The projection path.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="services" /> or <paramref name="route" /> is null.
+    ///     Thrown when <paramref name="services" /> or <paramref name="path" /> is null.
     /// </exception>
-    public static IServiceCollection AddProjectionRoute<T>(
+    public static IServiceCollection AddProjectionPath<T>(
         this IServiceCollection services,
-        string route
+        string path
     )
         where T : class
     {
         ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(route);
-        services.AddSingleton<IConfigureProjectionRegistry>(new ProjectionRouteRegistration<T>(route));
+        ArgumentNullException.ThrowIfNull(path);
+        services.AddSingleton<IConfigureProjectionRegistry>(new ProjectionPathRegistration<T>(path));
         return services;
     }
 }

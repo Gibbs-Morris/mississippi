@@ -41,7 +41,7 @@ public sealed class UxProjectionAttributeTests
     public void AuthorizeDefaultsToNull()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("users");
+        UxProjectionAttribute attribute = new();
 
         // Assert
         Assert.Null(attribute.Authorize);
@@ -55,7 +55,7 @@ public sealed class UxProjectionAttributeTests
     public void AuthorizeIsSettable()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("users")
+        UxProjectionAttribute attribute = new()
         {
             Authorize = "AdminPolicy",
         };
@@ -65,62 +65,20 @@ public sealed class UxProjectionAttributeTests
     }
 
     /// <summary>
-    ///     Verifies that BrookName defaults to null.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Properties")]
-    public void BrookNameDefaultsToNull()
-    {
-        // Arrange & Act
-        UxProjectionAttribute attribute = new("users");
-
-        // Assert
-        Assert.Null(attribute.BrookName);
-    }
-
-    /// <summary>
-    ///     Verifies that BrookName is settable.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Properties")]
-    public void BrookNameIsSettable()
-    {
-        // Arrange & Act
-        UxProjectionAttribute attribute = new("users")
-        {
-            BrookName = "user-events",
-        };
-
-        // Assert
-        Assert.Equal("user-events", attribute.BrookName);
-    }
-
-    /// <summary>
-    ///     Verifies that constructor sets Route property.
+    ///     Verifies that parameterless constructor creates valid instance.
     /// </summary>
     [Fact]
     [AllureFeature("Constructor")]
-    public void ConstructorSetsRoute()
+    public void ParameterlessConstructorCreatesValidInstance()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("users");
+        UxProjectionAttribute attribute = new();
 
         // Assert
-        Assert.Equal("users", attribute.Route);
-    }
-
-    /// <summary>
-    ///     Verifies that constructor throws when route is null.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenRouteIsNull()
-    {
-        // Arrange & Act
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => _ = new UxProjectionAttribute(null!));
-
-        // Assert
-        Assert.Equal("route", ex.ParamName);
+        Assert.NotNull(attribute);
+        Assert.Null(attribute.Authorize);
+        Assert.True(attribute.IsBatchEnabled);
+        Assert.Null(attribute.Tags);
     }
 
     /// <summary>
@@ -131,7 +89,7 @@ public sealed class UxProjectionAttributeTests
     public void IsBatchEnabledDefaultsToTrue()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("users");
+        UxProjectionAttribute attribute = new();
 
         // Assert
         Assert.True(attribute.IsBatchEnabled);
@@ -145,7 +103,7 @@ public sealed class UxProjectionAttributeTests
     public void IsBatchEnabledIsSettable()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("users")
+        UxProjectionAttribute attribute = new()
         {
             IsBatchEnabled = false,
         };
@@ -162,7 +120,7 @@ public sealed class UxProjectionAttributeTests
     public void TagsDefaultsToNull()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("users");
+        UxProjectionAttribute attribute = new();
 
         // Assert
         Assert.Null(attribute.Tags);
@@ -176,7 +134,7 @@ public sealed class UxProjectionAttributeTests
     public void TagsIsSettable()
     {
         // Arrange & Act
-        UxProjectionAttribute attribute = new("users")
+        UxProjectionAttribute attribute = new()
         {
             Tags = ["Orders", "Admin"],
         };

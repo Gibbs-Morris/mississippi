@@ -28,10 +28,11 @@ public sealed class UxProjectionCursorGrainTests
     public void BrookCursorMovedEventCanBeCreatedWithPosition()
     {
         // Arrange & Act
-        BrookCursorMovedEvent cursorEvent = new(new(10));
+        BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", new(10));
 
         // Assert
         Assert.Equal(10, cursorEvent.NewPosition.Value);
+        Assert.Equal("TEST.BROOK:entity-1", cursorEvent.BrookKey);
     }
 
     /// <summary>
@@ -45,7 +46,7 @@ public sealed class UxProjectionCursorGrainTests
         BrookPosition position = new(100);
 
         // Act
-        BrookCursorMovedEvent cursorEvent = new(position);
+        BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", position);
 
         // Assert
         Assert.Equal(100, cursorEvent.NewPosition.Value);
@@ -60,7 +61,7 @@ public sealed class UxProjectionCursorGrainTests
     public void BrookCursorMovedEventWithNegativePositionRepresentsNotSet()
     {
         // Arrange & Act
-        BrookCursorMovedEvent cursorEvent = new(new(-1));
+        BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", new(-1));
 
         // Assert
         Assert.True(cursorEvent.NewPosition.NotSet);
