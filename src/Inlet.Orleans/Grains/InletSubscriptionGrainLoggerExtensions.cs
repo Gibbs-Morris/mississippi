@@ -69,6 +69,29 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
     );
 
     [LoggerMessage(
+        EventId = 19,
+        Level = LogLevel.Debug,
+        Message = "Found {SubscriptionCount} subscription(s) for brook '{BrookKey}' for connection {ConnectionId}")]
+    public static partial void FoundBrookSubscriptions(
+        this ILogger logger,
+        string connectionId,
+        string brookKey,
+        int subscriptionCount
+    );
+
+    [LoggerMessage(
+        EventId = 18,
+        Level = LogLevel.Warning,
+        Message =
+            "No subscriptions found for brook '{BrookKey}' for connection {ConnectionId}. Total brooks tracked: {TotalBrooks}")]
+    public static partial void NoBrookSubscriptionsFound(
+        this ILogger logger,
+        string connectionId,
+        string brookKey,
+        int totalBrooks
+    );
+
+    [LoggerMessage(
         EventId = 12,
         Level = LogLevel.Debug,
         Message =
@@ -90,6 +113,45 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
         this ILogger logger,
         string connectionId,
         string path
+    );
+
+    [LoggerMessage(
+        EventId = 17,
+        Level = LogLevel.Information,
+        Message =
+            "Received cursor moved event for brook '{BrookKey}' at position {Position} for connection {ConnectionId}")]
+    public static partial void ReceivedCursorMovedEvent(
+        this ILogger logger,
+        string connectionId,
+        string brookKey,
+        long position
+    );
+
+    [LoggerMessage(
+        EventId = 22,
+        Level = LogLevel.Debug,
+        Message =
+            "Sending to SignalR group '{GroupName}' for projection {Path}/{EntityId} at version {Version} for connection {ConnectionId}")]
+    public static partial void SendingToSignalRGroup(
+        this ILogger logger,
+        string connectionId,
+        string groupName,
+        string path,
+        string entityId,
+        long version
+    );
+
+    [LoggerMessage(
+        EventId = 20,
+        Level = LogLevel.Debug,
+        Message =
+            "Skipping older position {NewPosition} (current: {CurrentPosition}) for brook '{BrookKey}' for connection {ConnectionId}")]
+    public static partial void SkippingOlderPosition(
+        this ILogger logger,
+        string connectionId,
+        string brookKey,
+        long newPosition,
+        long currentPosition
     );
 
     [LoggerMessage(
@@ -128,6 +190,16 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
         string path,
         string entityId,
         string brookName
+    );
+
+    [LoggerMessage(
+        EventId = 21,
+        Level = LogLevel.Debug,
+        Message = "Subscription entry not found for subscriptionId {SubscriptionId} for connection {ConnectionId}")]
+    public static partial void SubscriptionEntryNotFound(
+        this ILogger logger,
+        string connectionId,
+        string subscriptionId
     );
 
     [LoggerMessage(
@@ -180,73 +252,5 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
         string subscriptionId,
         string path,
         string entityId
-    );
-
-    [LoggerMessage(
-        EventId = 17,
-        Level = LogLevel.Information,
-        Message = "Received cursor moved event for brook '{BrookKey}' at position {Position} for connection {ConnectionId}")]
-    public static partial void ReceivedCursorMovedEvent(
-        this ILogger logger,
-        string connectionId,
-        string brookKey,
-        long position
-    );
-
-    [LoggerMessage(
-        EventId = 18,
-        Level = LogLevel.Warning,
-        Message = "No subscriptions found for brook '{BrookKey}' for connection {ConnectionId}. Total brooks tracked: {TotalBrooks}")]
-    public static partial void NoBrookSubscriptionsFound(
-        this ILogger logger,
-        string connectionId,
-        string brookKey,
-        int totalBrooks
-    );
-
-    [LoggerMessage(
-        EventId = 19,
-        Level = LogLevel.Debug,
-        Message = "Found {SubscriptionCount} subscription(s) for brook '{BrookKey}' for connection {ConnectionId}")]
-    public static partial void FoundBrookSubscriptions(
-        this ILogger logger,
-        string connectionId,
-        string brookKey,
-        int subscriptionCount
-    );
-
-    [LoggerMessage(
-        EventId = 20,
-        Level = LogLevel.Debug,
-        Message = "Skipping older position {NewPosition} (current: {CurrentPosition}) for brook '{BrookKey}' for connection {ConnectionId}")]
-    public static partial void SkippingOlderPosition(
-        this ILogger logger,
-        string connectionId,
-        string brookKey,
-        long newPosition,
-        long currentPosition
-    );
-
-    [LoggerMessage(
-        EventId = 21,
-        Level = LogLevel.Debug,
-        Message = "Subscription entry not found for subscriptionId {SubscriptionId} for connection {ConnectionId}")]
-    public static partial void SubscriptionEntryNotFound(
-        this ILogger logger,
-        string connectionId,
-        string subscriptionId
-    );
-
-    [LoggerMessage(
-        EventId = 22,
-        Level = LogLevel.Debug,
-        Message = "Sending to SignalR group '{GroupName}' for projection {Path}/{EntityId} at version {Version} for connection {ConnectionId}")]
-    public static partial void SendingToSignalRGroup(
-        this ILogger logger,
-        string connectionId,
-        string groupName,
-        string path,
-        string entityId,
-        long version
     );
 }

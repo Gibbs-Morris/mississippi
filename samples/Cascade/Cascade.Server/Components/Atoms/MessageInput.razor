@@ -1,9 +1,0 @@
-@* MessageInput.razor - Atom component for text input with enter key support *@
-
-<input type="text"
-       value="@Value"
-       @oninput="HandleInputAsync"
-       @onkeypress="HandleKeyPressAsync"
-       placeholder="@Placeholder"
-       disabled="@IsDisabled"
-       class="message-input-field"/>

@@ -65,23 +65,6 @@ public sealed class UxProjectionAttributeTests
     }
 
     /// <summary>
-    ///     Verifies that parameterless constructor creates valid instance.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Constructor")]
-    public void ParameterlessConstructorCreatesValidInstance()
-    {
-        // Arrange & Act
-        UxProjectionAttribute attribute = new();
-
-        // Assert
-        Assert.NotNull(attribute);
-        Assert.Null(attribute.Authorize);
-        Assert.True(attribute.IsBatchEnabled);
-        Assert.Null(attribute.Tags);
-    }
-
-    /// <summary>
     ///     Verifies that IsBatchEnabled defaults to true.
     /// </summary>
     [Fact]
@@ -110,6 +93,23 @@ public sealed class UxProjectionAttributeTests
 
         // Assert
         Assert.False(attribute.IsBatchEnabled);
+    }
+
+    /// <summary>
+    ///     Verifies that parameterless constructor creates valid instance.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public void ParameterlessConstructorCreatesValidInstance()
+    {
+        // Arrange & Act
+        UxProjectionAttribute attribute = new();
+
+        // Assert
+        Assert.NotNull(attribute);
+        Assert.Null(attribute.Authorize);
+        Assert.True(attribute.IsBatchEnabled);
+        Assert.Null(attribute.Tags);
     }
 
     /// <summary>

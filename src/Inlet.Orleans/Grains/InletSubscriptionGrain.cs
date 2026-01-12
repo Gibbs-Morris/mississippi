@@ -189,7 +189,6 @@ internal sealed class InletSubscriptionGrain
         }
 
         BrookPositions[brookKey] = item.NewPosition;
-
         foreach (string subscriptionId in subscriptionIds)
         {
             if (!Subscriptions.TryGetValue(subscriptionId, out SubscriptionEntry? entry))

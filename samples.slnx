@@ -7,12 +7,9 @@
     <Folder Name="/Samples/" />
 
     <Folder Name="/Samples/Cascade/">
-        <Project Path="samples\Cascade\Cascade.AppHost\Cascade.AppHost.csproj" />
         <Project Path="samples\Cascade\Cascade.Components\Cascade.Components.csproj" />
-        <Project Path="samples\Cascade\Cascade.Server\Cascade.Server.csproj" />
         <Project Path="samples\Cascade\Cascade.Domain\Cascade.Domain.csproj" />
         <Project Path="samples\Cascade\Cascade.Domain.L0Tests\Cascade.Domain.L0Tests.csproj" />
-        <Project Path="samples\Cascade\Cascade.L2Tests\Cascade.L2Tests.csproj" />
     </Folder>
     <Folder Name="/Samples/Cascade.Web/">
         <Project Path="samples\Cascade\Cascade.Web.AppHost\Cascade.Web.AppHost.csproj" />

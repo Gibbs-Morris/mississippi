@@ -48,7 +48,10 @@ builder.AddKeyedAzureBlobServiceClient("blobs");
 // Forward the Aspire-registered blob client to the Brooks key used by BlobDistributedLockManager
 builder.Services.AddKeyedSingleton(
     MississippiDefaults.ServiceKeys.BlobLocking,
-    (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
+    (
+        sp,
+        _
+    ) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
 
 // Add Cascade domain services (aggregates, handlers, reducers, projections)
 builder.Services.AddCascadeDomain();
@@ -97,7 +100,9 @@ WebApplication app = builder.Build();
 // Only returns healthy when Orleans silo is fully started and accepting requests
 app.MapGet(
     "/health",
-    (ISiloStatusOracle siloStatus) =>
+    (
+        ISiloStatusOracle siloStatus
+    ) =>
     {
         SiloStatus status = siloStatus.CurrentStatus;
         return status == SiloStatus.Active

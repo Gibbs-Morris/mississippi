@@ -259,7 +259,7 @@ public static class UxProjectionEndpointExtensions
 
                     // Get version for ETag - interface returns ValueTask<T>
                     object versionResult = getLatestVersionMethod.Invoke(grainObj, [cancellationToken])!;
-                    BrookPosition position = await ((ValueTask<BrookPosition>)versionResult);
+                    BrookPosition position = await (ValueTask<BrookPosition>)versionResult;
                     if (position.NotSet)
                     {
                         return Results.NotFound();
@@ -278,7 +278,8 @@ public static class UxProjectionEndpointExtensions
                     object projectionResult = getAsyncMethod.Invoke(grainObj, [cancellationToken])!;
 
                     // ValueTask doesn't have Result property directly accessible, await it first
-                    Task projectionTask = (Task)projectionResult.GetType().GetMethod("AsTask")!.Invoke(projectionResult, null)!;
+                    Task projectionTask =
+                        (Task)projectionResult.GetType().GetMethod("AsTask")!.Invoke(projectionResult, null)!;
                     await projectionTask;
                     object? projection = projectionTask.GetType().GetProperty("Result")?.GetValue(projectionTask);
                     if (projection is null)
@@ -308,7 +309,7 @@ public static class UxProjectionEndpointExtensions
                     }
 
                     object versionResult = getLatestVersionMethod.Invoke(grainObj, [cancellationToken])!;
-                    BrookPosition position = await ((ValueTask<BrookPosition>)versionResult);
+                    BrookPosition position = await (ValueTask<BrookPosition>)versionResult;
                     return position.NotSet ? Results.NotFound() : Results.Ok(position.Value);
                 })
             .WithName($"Get{projectionType.Name}Version");
@@ -330,12 +331,11 @@ public static class UxProjectionEndpointExtensions
                     }
 
                     BrookPosition brookPosition = new(version);
-                    object projectionResult = getAtVersionMethod.Invoke(
-                        grainObj,
-                        [brookPosition, cancellationToken])!;
+                    object projectionResult = getAtVersionMethod.Invoke(grainObj, [brookPosition, cancellationToken])!;
 
                     // ValueTask doesn't have Result property directly accessible, convert to Task first
-                    Task projectionTask = (Task)projectionResult.GetType().GetMethod("AsTask")!.Invoke(projectionResult, null)!;
+                    Task projectionTask =
+                        (Task)projectionResult.GetType().GetMethod("AsTask")!.Invoke(projectionResult, null)!;
                     await projectionTask;
                     object? projection = projectionTask.GetType().GetProperty("Result")?.GetValue(projectionTask);
                     return projection is null ? Results.NotFound() : Results.Ok(projection);

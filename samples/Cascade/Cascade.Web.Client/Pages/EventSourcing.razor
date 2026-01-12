@@ -1,10 +1,7 @@
 @page "/event-sourcing"
-@using System.Net
-@using Cascade.Web.Contracts
 @using Mississippi.Inlet.Abstractions
 @using Mississippi.Inlet.Abstractions.Actions
-@using Mississippi.Reservoir.Blazor
-@inherits StoreComponent
+@inherits Mississippi.Reservoir.Blazor.StoreComponent
 @inject IInletStore InletStore
 @inject HttpClient Http
 
@@ -53,7 +50,9 @@
     <h2>Send Message</h2>
     @if (!isJoined)
     {
-        <p style="color: gray;"><em>Join a conversation first to send messages.</em></p>
+        <p style="color: gray;">
+            <em>Join a conversation first to send messages.</em>
+        </p>
     }
     else
     {
@@ -80,7 +79,9 @@
     <h2>Messages (Real-time Projection)</h2>
     @if (!isJoined)
     {
-        <p style="color: gray;"><em>Join a conversation to see messages.</em></p>
+        <p style="color: gray;">
+            <em>Join a conversation to see messages.</em>
+        </p>
     }
     else if (InletStore.IsProjectionLoading<ConversationMessagesResponse>(currentSubscription!))
     {
@@ -157,8 +158,7 @@
 
     private bool isJoined => !string.IsNullOrWhiteSpace(currentSubscription);
 
-    private ConversationMessagesResponse? projection =>
-        isJoined ? InletStore.GetProjection<ConversationMessagesResponse>(currentSubscription!) : null;
+    private ConversationMessagesResponse? projection => isJoined ? InletStore.GetProjection<ConversationMessagesResponse>(currentSubscription!) : null;
 
     private Task JoinConversationAsync()
     {
@@ -168,7 +168,7 @@
         }
 
         // Unsubscribe from previous if different
-        if (!string.IsNullOrWhiteSpace(currentSubscription) && currentSubscription != conversationId)
+        if (!string.IsNullOrWhiteSpace(currentSubscription) && (currentSubscription != conversationId))
         {
             Dispatch(new UnsubscribeFromProjectionAction<ConversationMessagesResponse>(currentSubscription));
         }
@@ -205,7 +205,6 @@
         {
             HttpResponseMessage response = await Http.PostAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/start", null);
             string content = await response.Content.ReadAsStringAsync();
-
             if (response.IsSuccessStatusCode)
             {
                 statusMessage = $"✓ Conversation '{conversationId}' started successfully!";
@@ -224,7 +223,9 @@
         }
     }
 
-    private async Task OnMessageKeyPress(KeyboardEventArgs e)
+    private async Task OnMessageKeyPress(
+        KeyboardEventArgs e
+    )
     {
         if (e.Key == "Enter")
         {
@@ -249,20 +250,21 @@
             };
             HttpResponseMessage response = await Http.PostAsJsonAsync($"/api/conversations/{Uri.EscapeDataString(currentSubscription!)}/messages", request);
             string content = await response.Content.ReadAsStringAsync();
-            sendResult = response.IsSuccessStatusCode ? $"✓ Sent!" : $"✗ Error: {content}";
+            sendResult = response.IsSuccessStatusCode ? "✓ Sent!" : $"✗ Error: {content}";
 
             // Clear message input - projection will auto-update via SignalR
             if (response.IsSuccessStatusCode)
             {
                 messageContent = string.Empty;
                 // Clear the send result after a moment
-                _ = Task.Delay(2000).ContinueWith(
-                    _ =>
-                    {
-                        sendResult = string.Empty;
-                        InvokeAsync(StateHasChanged);
-                    },
-                    TaskScheduler.Default);
+                _ = Task.Delay(2000)
+                    .ContinueWith(
+                        _ =>
+                        {
+                            sendResult = string.Empty;
+                            InvokeAsync(StateHasChanged);
+                        },
+                        TaskScheduler.Default);
             }
         }
         catch (Exception ex)
