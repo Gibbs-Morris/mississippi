@@ -4,10 +4,10 @@ using System.Text.Json.Serialization;
 using Mississippi.Inlet.Projection.Abstractions;
 
 
-namespace Cascade.Contracts;
+namespace Cascade.Contracts.Projections;
 
 /// <summary>
-///     Response containing messages for a conversation/channel.
+///     Client DTO for channel message history projection.
 /// </summary>
 /// <remarks>
 ///     This contract mirrors <c>ChannelMessagesProjection</c> from the server
@@ -16,16 +16,13 @@ namespace Cascade.Contracts;
 ///     projection via the shared path.
 /// </remarks>
 [ProjectionPath("cascade/channels")]
-public sealed record ConversationMessagesResponse
+public sealed record ChannelMessagesDto
 {
     /// <summary>
-    ///     Gets the channel/conversation identifier.
+    ///     Gets the channel identifier.
     /// </summary>
-    /// <remarks>
-    ///     Maps to <c>ChannelId</c> in the server projection.
-    /// </remarks>
     [JsonPropertyName("channelId")]
-    public required string ConversationId { get; init; }
+    public required string ChannelId { get; init; }
 
     /// <summary>
     ///     Gets the total count of messages.
@@ -35,5 +32,5 @@ public sealed record ConversationMessagesResponse
     /// <summary>
     ///     Gets the list of messages.
     /// </summary>
-    public required IReadOnlyList<ConversationMessageItem> Messages { get; init; }
+    public required IReadOnlyList<ChannelMessageItem> Messages { get; init; }
 }

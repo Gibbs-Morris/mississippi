@@ -2,7 +2,9 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Cascade.Contracts;
+using Cascade.Contracts.Api;
+using Cascade.Contracts.Projections;
+using Cascade.Contracts.Storage;
 
 
 namespace Cascade.L0Tests.Contracts;
@@ -10,7 +12,7 @@ namespace Cascade.L0Tests.Contracts;
 /// <summary>
 ///     Tests for the contract DTOs.
 /// </summary>
-[AllureParentSuite("Cascade.Web")]
+[AllureParentSuite("Cascade")]
 [AllureSuite("Contracts")]
 [AllureSubSuite("DTOs")]
 public sealed class ContractDtoTests

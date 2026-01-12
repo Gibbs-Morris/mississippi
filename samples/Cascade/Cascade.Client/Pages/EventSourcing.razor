@@ -1,4 +1,6 @@
 @page "/event-sourcing"
+@using Cascade.Contracts.Api
+@using Cascade.Contracts.Projections
 @using Mississippi.Inlet.Abstractions
 @using Mississippi.Inlet.Abstractions.Actions
 @inherits Mississippi.Reservoir.Blazor.StoreComponent
@@ -83,11 +85,11 @@
             <em>Join a conversation to see messages.</em>
         </p>
     }
-    else if (InletStore.IsProjectionLoading<ConversationMessagesResponse>(currentSubscription!))
+    else if (InletStore.IsProjectionLoading<ChannelMessagesDto>(currentSubscription!))
     {
         <p>⏳ Loading projection...</p>
     }
-    else if (InletStore.GetProjectionError<ConversationMessagesResponse>(currentSubscription!) is { } error)
+    else if (InletStore.GetProjectionError<ChannelMessagesDto>(currentSubscription!) is { } error)
     {
         <p>❌ Error: @error.Message</p>
         <button @onclick="RefreshProjection">Retry</button>
@@ -106,7 +108,7 @@
             </tr>
             </thead>
             <tbody>
-            @foreach (ConversationMessageItem message in projection.Messages)
+            @foreach (ChannelMessageItem message in projection.Messages)
             {
                 <tr style="@(message.IsDeleted ? "text-decoration: line-through; color: gray;" : "")">
                     <td>@message.MessageId[..12]...</td>
@@ -158,7 +160,7 @@
 
     private bool isJoined => !string.IsNullOrWhiteSpace(currentSubscription);
 
-    private ConversationMessagesResponse? projection => isJoined ? InletStore.GetProjection<ConversationMessagesResponse>(currentSubscription!) : null;
+    private ChannelMessagesDto? projection => isJoined ? InletStore.GetProjection<ChannelMessagesDto>(currentSubscription!) : null;
 
     private Task JoinConversationAsync()
     {
@@ -170,12 +172,12 @@
         // Unsubscribe from previous if different
         if (!string.IsNullOrWhiteSpace(currentSubscription) && (currentSubscription != conversationId))
         {
-            Dispatch(new UnsubscribeFromProjectionAction<ConversationMessagesResponse>(currentSubscription));
+            Dispatch(new UnsubscribeFromProjectionAction<ChannelMessagesDto>(currentSubscription));
         }
 
         // Subscribe to the new conversation's projection
         currentSubscription = conversationId;
-        Dispatch(new SubscribeToProjectionAction<ConversationMessagesResponse>(currentSubscription));
+        Dispatch(new SubscribeToProjectionAction<ChannelMessagesDto>(currentSubscription));
         statusMessage = $"📡 Joined conversation '{conversationId}' - listening for real-time updates...";
         return Task.CompletedTask;
     }
@@ -184,7 +186,7 @@
     {
         if (!string.IsNullOrWhiteSpace(currentSubscription))
         {
-            Dispatch(new UnsubscribeFromProjectionAction<ConversationMessagesResponse>(currentSubscription));
+            Dispatch(new UnsubscribeFromProjectionAction<ChannelMessagesDto>(currentSubscription));
             statusMessage = $"Left conversation '{currentSubscription}'";
             currentSubscription = null;
         }
@@ -194,7 +196,7 @@
     {
         if (isJoined)
         {
-            Dispatch(new RefreshProjectionAction<ConversationMessagesResponse>(currentSubscription!));
+            Dispatch(new RefreshProjectionAction<ChannelMessagesDto>(currentSubscription!));
         }
     }
 

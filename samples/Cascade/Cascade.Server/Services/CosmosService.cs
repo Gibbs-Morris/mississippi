@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
-using Cascade.Contracts;
+using Cascade.Contracts.Storage;
 
 using Microsoft.Azure.Cosmos;
 

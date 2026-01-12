@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using Cascade.Contracts;
+using Cascade.Contracts.Storage;
 
 
 namespace Cascade.Server.Services;

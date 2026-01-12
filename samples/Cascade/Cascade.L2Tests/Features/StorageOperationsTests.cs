@@ -8,7 +8,7 @@ namespace Cascade.L2Tests.Features;
 /// <summary>
 ///     Tests for storage operations (Cosmos DB and Blob Storage).
 /// </summary>
-[AllureParentSuite("Cascade.Web")]
+[AllureParentSuite("Cascade")]
 [AllureSuite("Storage")]
 [AllureSubSuite("Operations")]
 #pragma warning disable CA1515 // Types can be made internal - xUnit test class must be public

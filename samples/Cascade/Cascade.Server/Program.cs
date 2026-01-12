@@ -3,10 +3,11 @@ using System.Net.Http;
 
 using Azure.Storage.Blobs;
 
+using Cascade.Contracts.Api;
+using Cascade.Contracts.Storage;
 using Cascade.Domain.Conversation;
 using Cascade.Domain.Conversation.Commands;
 using Cascade.Domain.Projections.ChannelMessages;
-using Cascade.Contracts;
 using Cascade.Grains.Abstractions;
 using Cascade.Server.Hubs;
 using Cascade.Server.Services;
@@ -28,7 +29,7 @@ using Mississippi.Inlet.Orleans.SignalR;
 
 using Orleans;
 
-using BlobItemDto = Cascade.Contracts.BlobItem;
+using BlobItemDto = Cascade.Contracts.Storage.BlobItem;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -138,7 +139,7 @@ app.MapGet(
 
         // Map to API-friendly response (without Orleans serialization attributes)
         return Results.Ok(
-            new GreetApiResponse
+            new GreetingResponse
             {
                 Greeting = response.Greeting,
                 UppercaseName = response.UppercaseName,
@@ -217,16 +218,15 @@ app.MapPost(
     });
 
 // ┌────────────────────────────────────────────────────────────────────────────────┐
-// │ TEMPORARY PLUMBING - TO BE REPLACED BY INLET                                   │
+// │ COMMAND ENDPOINTS                                                               │
 // │                                                                                 │
-// │ These endpoints manually bridge the Blazor client to Orleans aggregate/        │
-// │ projection grains. Once Inlet is integrated, it will handle:                   │
-// │   - Automatic projection subscriptions via SignalR                             │
-// │   - Command dispatch without explicit HTTP endpoints                           │
-// │   - Real-time projection updates pushed to clients                             │
+// │ These endpoints dispatch commands to Orleans aggregate grains.                  │
 // │                                                                                 │
-// │ Search for "TEMPORARY PLUMBING - TO BE REPLACED BY INLET" to find all          │
-// │ locations that need to be updated when Inlet is integrated.                    │
+// │ ✅ Projection subscriptions and real-time updates are handled by Inlet.         │
+// │ ✅ MapUxProjections provides HTTP fallback for projection data.                  │
+// │                                                                                 │
+// │ Command dispatch via HTTP is the current pattern. Future Inlet versions may    │
+// │ add SignalR-based command dispatch for reduced latency.                         │
 // └────────────────────────────────────────────────────────────────────────────────┘
 
 // Start a conversation (idempotent)

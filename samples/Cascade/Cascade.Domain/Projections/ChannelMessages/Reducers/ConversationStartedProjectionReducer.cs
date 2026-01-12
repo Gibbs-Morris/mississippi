@@ -22,7 +22,7 @@ internal sealed class ConversationStartedProjectionReducer : ReducerBase<Convers
         ArgumentNullException.ThrowIfNull(eventData);
         return new()
         {
-            ChannelId = eventData.ConversationId,
+            ChannelId = eventData.ChannelId,
             MessageCount = 0,
         };
     }

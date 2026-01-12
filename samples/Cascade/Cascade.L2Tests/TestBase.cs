@@ -6,7 +6,7 @@ namespace Cascade.L2Tests;
 /// <summary>
 ///     Base class for E2E tests providing common helper methods.
 /// </summary>
-[Collection("Cascade.Web L2 Tests")]
+[Collection("Cascade L2 Tests")]
 #pragma warning disable CA1515 // Types can be made internal - xUnit test base must be public
 public abstract class TestBase
 #pragma warning restore CA1515

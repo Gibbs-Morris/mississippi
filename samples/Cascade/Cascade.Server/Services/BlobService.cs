@@ -6,7 +6,7 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
-using BlobItemDto = Cascade.Contracts.BlobItem;
+using BlobItemDto = Cascade.Contracts.Storage.BlobItem;
 
 
 namespace Cascade.Server.Services;

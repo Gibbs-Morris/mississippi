@@ -313,13 +313,16 @@ Events are applied to state via the reducer chain:
 | `SnapshotCacheGrain<T>` | Hydrates state from snapshots/events | SnapshotCacheGrain.cs |
 | `EventBrookReader` | Reads events from Cosmos | EventBrookReader.cs |
 
-## Temporary Plumbing
+## Inlet Integration Status
 
-The current implementation uses manual HTTP endpoints in the BFF server. Search for
-`TEMPORARY PLUMBING - TO BE REPLACED BY INLET` in the codebase to find all locations
-that will be updated when Inlet is integrated.
+Inlet is integrated for projection management:
 
-Inlet will replace:
-- Manual API endpoints → Direct SignalR-based command dispatch
-- Manual projection fetching → Automatic subscription via `InletComponent<T>`
-- Manual refresh button → Real-time push updates
+- ✅ **Projection subscriptions** - `SubscribeToProjectionAction<T>` triggers SignalR subscription
+- ✅ **Real-time updates** - Projection changes push to clients automatically via SignalR
+- ✅ **HTTP fallback** - `MapUxProjections` provides REST endpoints for initial load and caching
+
+Command dispatch uses HTTP endpoints:
+
+- Commands are sent via HTTP POST to `/api/conversations/{id}/...` endpoints
+- The server dispatches to aggregate grains via `IAggregateGrainFactory`
+- Future Inlet versions may add SignalR-based command dispatch for reduced latency

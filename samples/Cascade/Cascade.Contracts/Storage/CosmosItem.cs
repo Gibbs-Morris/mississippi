@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
 
-namespace Cascade.Contracts;
+namespace Cascade.Contracts.Storage;
 
 /// <summary>
 ///     Represents an item stored in Cosmos DB.

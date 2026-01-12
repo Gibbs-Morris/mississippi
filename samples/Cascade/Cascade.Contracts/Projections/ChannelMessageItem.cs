@@ -1,12 +1,12 @@
 using System;
 
 
-namespace Cascade.Contracts;
+namespace Cascade.Contracts.Projections;
 
 /// <summary>
-///     Represents a message in a conversation.
+///     Represents a message in a channel.
 /// </summary>
-public sealed record ConversationMessageItem
+public sealed record ChannelMessageItem
 {
     /// <summary>
     ///     Gets the message content.

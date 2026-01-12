@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-using BlobItemDto = Cascade.Contracts.BlobItem;
+using BlobItemDto = Cascade.Contracts.Storage.BlobItem;
 
 
 namespace Cascade.Server.Services;

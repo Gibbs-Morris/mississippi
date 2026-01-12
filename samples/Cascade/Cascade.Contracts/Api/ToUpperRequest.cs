@@ -1,4 +1,4 @@
-namespace Cascade.Contracts;
+namespace Cascade.Contracts.Api;
 
 /// <summary>
 ///     Request to convert a string to uppercase via the greeter grain.

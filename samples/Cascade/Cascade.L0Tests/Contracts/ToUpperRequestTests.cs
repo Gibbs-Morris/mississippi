@@ -1,6 +1,6 @@
 using Allure.Xunit.Attributes;
 
-using Cascade.Contracts;
+using Cascade.Contracts.Api;
 
 
 namespace Cascade.L0Tests.Contracts;
@@ -8,7 +8,7 @@ namespace Cascade.L0Tests.Contracts;
 /// <summary>
 ///     Tests for the ToUpperRequest DTO.
 /// </summary>
-[AllureParentSuite("Cascade.Web")]
+[AllureParentSuite("Cascade")]
 [AllureSuite("Contracts")]
 [AllureSubSuite("Requests")]
 public sealed class ToUpperRequestTests

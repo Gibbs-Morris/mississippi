@@ -10,7 +10,7 @@ namespace Cascade.L0Tests.Grains;
 /// <summary>
 ///     Tests for the grain contract DTOs.
 /// </summary>
-[AllureParentSuite("Cascade.Web")]
+[AllureParentSuite("Cascade")]
 [AllureSuite("Grains")]
 [AllureSubSuite("Contracts")]
 public sealed class GrainContractTests

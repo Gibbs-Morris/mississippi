@@ -8,7 +8,7 @@ namespace Cascade.L2Tests.Features;
 /// <summary>
 ///     Tests for SignalR messaging from the Blazor WASM client.
 /// </summary>
-[AllureParentSuite("Cascade.Web")]
+[AllureParentSuite("Cascade")]
 [AllureSuite("Connectivity")]
 [AllureSubSuite("SignalR")]
 #pragma warning disable CA1515 // Types can be made internal - xUnit test class must be public

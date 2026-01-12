@@ -1,4 +1,4 @@
-namespace Cascade.Contracts;
+namespace Cascade.Contracts.Storage;
 
 /// <summary>
 ///     Represents a blob item for storage operations.

@@ -1,4 +1,4 @@
-namespace Cascade.Contracts;
+namespace Cascade.Contracts.Api;
 
 /// <summary>
 ///     Request to broadcast a message via Orleans streams.

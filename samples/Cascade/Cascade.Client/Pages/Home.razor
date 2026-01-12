@@ -1,5 +1,7 @@
 @page "/"
 @using Cascade.Client.Cart
+@using Cascade.Contracts.Api
+@using Cascade.Contracts.Storage
 @inherits Mississippi.Reservoir.Blazor.StoreComponent
 @inject HttpClient Http
 @inject IMessageService MessageService
@@ -256,7 +258,7 @@
 
         try
         {
-            GreetApiResponse? response = await Http.GetFromJsonAsync<GreetApiResponse>($"api/greet/{Uri.EscapeDataString(greetNameInput)}");
+            GreetingResponse? response = await Http.GetFromJsonAsync<GreetingResponse>($"api/greet/{Uri.EscapeDataString(greetNameInput)}");
             greetApiResult = response is not null ? $"{response.Greeting} (Uppercase: {response.UppercaseName}, Time: {response.Timestamp:HH:mm:ss})" : "No response";
         }
         catch (Exception ex)

@@ -1,9 +1,4 @@
-namespace Cascade.Contracts;
-
-// TEMPORARY PLUMBING - TO BE REPLACED BY INLET
-// This DTO exists to pass command data via HTTP to the BFF server.
-// Once Inlet is integrated, commands will be dispatched directly via IInletStore
-// and this DTO may no longer be needed.
+namespace Cascade.Contracts.Api;
 
 /// <summary>
 ///     Request to send a message in a conversation.

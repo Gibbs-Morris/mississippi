@@ -3,7 +3,9 @@ using System.Net.Http;
 using Cascade.Client;
 using Cascade.Client.Cart;
 using Cascade.Client.Services;
-using Cascade.Contracts;
+using Cascade.Contracts.Api;
+using Cascade.Contracts.Projections;
+using Cascade.Contracts.Storage;
 
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -38,7 +40,7 @@ builder.Services.AddScoped<IMessageService, SignalRMessageService>();
 builder.Services.AddInlet(store => store.RegisterState<CartState>());
 builder.Services.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
-    .ScanProjectionDtos(typeof(ConversationMessagesResponse).Assembly));
+    .ScanProjectionDtos(typeof(ChannelMessagesDto).Assembly));
 
 // Configure Reservoir (Redux-style state management)
 // Register reducers for cart actions

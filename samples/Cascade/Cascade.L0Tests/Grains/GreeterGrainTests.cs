@@ -18,7 +18,7 @@ namespace Cascade.L0Tests.Grains;
 /// <summary>
 ///     Unit tests for the GreeterGrain implementation.
 /// </summary>
-[AllureParentSuite("Cascade.Web")]
+[AllureParentSuite("Cascade")]
 [AllureSuite("Grains")]
 [AllureSubSuite("GreeterGrain")]
 public sealed class GreeterGrainTests

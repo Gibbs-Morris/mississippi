@@ -1,12 +1,12 @@
 using System;
 
 
-namespace Cascade.Contracts;
+namespace Cascade.Contracts.Api;
 
 /// <summary>
-///     API response for greeting operations (client-friendly version without Orleans dependencies).
+///     API response for greeting operations.
 /// </summary>
-public sealed record GreetApiResponse
+public sealed record GreetingResponse
 {
     /// <summary>
     ///     Gets the greeting message.

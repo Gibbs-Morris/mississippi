@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Cascade.Contracts;
+namespace Cascade.Contracts.Api;
 
 /// <summary>
 ///     Response from the echo endpoint.
