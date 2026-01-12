@@ -102,22 +102,7 @@ public sealed class AqueductHubLifetimeManager<THub>
 
     private string ServerId { get; }
 
-    private static string DeriveHubName()
-    {
-        Type hubType = typeof(THub);
-
-        // Check for strongly-typed hub interface
-        Type? interfaceType = hubType.BaseType?.GenericTypeArguments.FirstOrDefault();
-        if ((interfaceType != null) &&
-            interfaceType.IsInterface &&
-            (interfaceType.Name.Length > 1) &&
-            (interfaceType.Name[0] == 'I'))
-        {
-            return interfaceType.Name[1..];
-        }
-
-        return hubType.Name;
-    }
+    private static string DeriveHubName() => typeof(THub).Name;
 
     /// <inheritdoc />
     public override async Task AddToGroupAsync(
