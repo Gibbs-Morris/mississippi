@@ -131,11 +131,10 @@ internal static partial class InletSubscriptionGrainLoggerExtensions
         EventId = 22,
         Level = LogLevel.Debug,
         Message =
-            "Sending to SignalR group '{GroupName}' for projection {Path}/{EntityId} at version {Version} for connection {ConnectionId}")]
-    public static partial void SendingToSignalRGroup(
+            "Sending to SignalR client for projection {Path}/{EntityId} at version {Version} for connection {ConnectionId}")]
+    public static partial void SendingToSignalRClient(
         this ILogger logger,
         string connectionId,
-        string groupName,
         string path,
         string entityId,
         long version

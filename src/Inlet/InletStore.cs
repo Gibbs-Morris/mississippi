@@ -324,6 +324,37 @@ public class InletStore
             case { } a when IsGenericActionOfType(a.GetType(), typeof(ProjectionLoadedAction<>)):
                 HandleLoadedAction(action);
                 break;
+            case { } a when IsGenericActionOfType(a.GetType(), typeof(ProjectionUpdatedAction<>)):
+                HandleUpdatedAction(action);
+                break;
+        }
+    }
+
+    private void HandleUpdatedAction(
+        IAction action
+    )
+    {
+        Type actionType = action.GetType();
+        Type projectionType = actionType.GenericTypeArguments[0];
+        PropertyInfo? entityIdProperty = actionType.GetProperty(nameof(ProjectionUpdatedAction<object>.EntityId));
+        PropertyInfo? dataProperty = actionType.GetProperty(nameof(ProjectionUpdatedAction<object>.Data));
+        PropertyInfo? versionProperty = actionType.GetProperty(nameof(ProjectionUpdatedAction<object>.Version));
+        string? entityId = entityIdProperty?.GetValue(action) as string;
+        object? data = dataProperty?.GetValue(action);
+        long version = (long)(versionProperty?.GetValue(action) ?? -1L);
+        if (entityId is null)
+        {
+            return;
+        }
+
+        ProjectionKey key = new(projectionType, entityId);
+        Type stateType = typeof(ProjectionState<>).MakeGenericType(projectionType);
+        ConstructorInfo? constructor = stateType.GetConstructor(
+            [projectionType, typeof(long), typeof(bool), typeof(bool), typeof(Exception)]);
+        object? newState = constructor?.Invoke([data, version, false, true, null]);
+        if (newState is not null)
+        {
+            ProjectionStates[key] = newState;
         }
     }
 

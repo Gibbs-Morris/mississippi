@@ -46,7 +46,13 @@ public static class InletOrleansSignalRRegistrations
         services.AddInletOrleans();
         services.AddSignalR();
         services.Configure(configureOptions ?? (_ => { }));
-        services.TryAddSingleton(typeof(HubLifetimeManager<>), typeof(AqueductHubLifetimeManager<>));
+
+        // Register Aqueduct backplane specifically for InletHub
+        // This must be a closed generic registration because AddSignalR() already registers
+        // DefaultHubLifetimeManager<> as the open generic fallback. TryAddSingleton for open
+        // generics would be a no-op if called after AddSignalR().
+        services.TryAddSingleton<HubLifetimeManager<InletHub>, AqueductHubLifetimeManager<InletHub>>();
+        services.AddAqueductGrainFactory();
         return services;
     }
 

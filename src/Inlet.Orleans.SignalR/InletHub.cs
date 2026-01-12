@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
-using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Orleans.Grains;
 
@@ -26,7 +25,8 @@ namespace Mississippi.Inlet.Orleans.SignalR;
 ///     <para>
 ///         Each client connection gets a dedicated <see cref="IInletSubscriptionGrain" />
 ///         that manages all subscriptions for that connection, including brook stream
-///         deduplication and fan-out on cursor move events.
+///         deduplication and fan-out on cursor move events. The subscription grain
+///         sends notifications directly to the client via the SignalR client grain.
 ///     </para>
 /// </remarks>
 public sealed class InletHub : Hub<IInletHubClient>
@@ -49,16 +49,13 @@ public sealed class InletHub : Hub<IInletHubClient>
 
     private ILogger<InletHub> Logger { get; }
 
-    private static string GetServerId() => Environment.MachineName;
-
     /// <inheritdoc />
-    public override async Task OnConnectedAsync()
+    public override Task OnConnectedAsync()
     {
+        // Note: Client grain registration is handled by AqueductHubLifetimeManager.
+        // We just log the connection here.
         Logger.ClientConnected(Context.ConnectionId);
-        ISignalRClientGrain clientGrain =
-            GrainFactory.GetGrain<ISignalRClientGrain>($"{InletHubConstants.HubName}:{Context.ConnectionId}");
-        await clientGrain.ConnectAsync(InletHubConstants.HubName, GetServerId());
-        await base.OnConnectedAsync();
+        return base.OnConnectedAsync();
     }
 
     /// <inheritdoc />
@@ -66,13 +63,12 @@ public sealed class InletHub : Hub<IInletHubClient>
         Exception? exception
     )
     {
+        // Note: Client grain disconnect is handled by AqueductHubLifetimeManager.
+        // We just clean up the subscription grain here.
         Logger.ClientDisconnected(Context.ConnectionId, exception);
         IInletSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IInletSubscriptionGrain>(Context.ConnectionId);
         await subscriptionGrain.ClearAllAsync();
-        ISignalRClientGrain clientGrain =
-            GrainFactory.GetGrain<ISignalRClientGrain>($"{InletHubConstants.HubName}:{Context.ConnectionId}");
-        await clientGrain.DisconnectAsync();
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -94,11 +90,6 @@ public sealed class InletHub : Hub<IInletHubClient>
         ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentException.ThrowIfNullOrEmpty(entityId);
         Logger.SubscribingToProjection(Context.ConnectionId, path, entityId);
-        string groupName = $"projection:{path}:{entityId}";
-
-        // Add to SignalR group - AqueductHubLifetimeManager routes this to the group grain
-        await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-
         IInletSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IInletSubscriptionGrain>(Context.ConnectionId);
         string subscriptionId = await subscriptionGrain.SubscribeAsync(path, entityId);
@@ -123,11 +114,6 @@ public sealed class InletHub : Hub<IInletHubClient>
         ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentException.ThrowIfNullOrEmpty(entityId);
         Logger.UnsubscribingFromProjection(Context.ConnectionId, subscriptionId, path, entityId);
-        string groupName = $"projection:{path}:{entityId}";
-
-        // Remove from SignalR group - AqueductHubLifetimeManager routes this to the group grain
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
-
         IInletSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IInletSubscriptionGrain>(Context.ConnectionId);
         await subscriptionGrain.UnsubscribeAsync(subscriptionId);

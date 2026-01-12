@@ -197,14 +197,13 @@ internal sealed class InletSubscriptionGrain
                 continue;
             }
 
-            string groupName = $"projection:{entry.Path}:{entry.EntityId}";
-            Logger.SendingToSignalRGroup(connectionId, groupName, entry.Path, entry.EntityId, item.NewPosition.Value);
+            Logger.SendingToSignalRClient(connectionId, entry.Path, entry.EntityId, item.NewPosition.Value);
             try
             {
-                ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(
+                ISignalRClientGrain clientGrain = AqueductGrainFactory.GetClientGrain(
                     InletHubConstants.HubName,
-                    groupName);
-                await groupGrain.SendMessageAsync(
+                    connectionId);
+                await clientGrain.SendMessageAsync(
                     InletHubConstants.ProjectionUpdatedMethod,
                     [entry.Path, entry.EntityId, item.NewPosition.Value]);
                 Logger.NotificationSent(connectionId, entry.Path, entry.EntityId, item.NewPosition.Value);
