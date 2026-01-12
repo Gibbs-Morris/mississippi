@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
+using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Orleans.Grains;
@@ -35,15 +36,20 @@ public sealed class InletHub : Hub<IInletHubClient>
     ///     Initializes a new instance of the <see cref="InletHub" /> class.
     /// </summary>
     /// <param name="grainFactory">Factory for creating grain references.</param>
+    /// <param name="aqueductGrainFactory">Factory for resolving Aqueduct grains.</param>
     /// <param name="logger">Logger instance for hub operations.</param>
     public InletHub(
         IGrainFactory grainFactory,
+        IAqueductGrainFactory aqueductGrainFactory,
         ILogger<InletHub> logger
     )
     {
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
+        AqueductGrainFactory = aqueductGrainFactory ?? throw new ArgumentNullException(nameof(aqueductGrainFactory));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    private IAqueductGrainFactory AqueductGrainFactory { get; }
 
     private IGrainFactory GrainFactory { get; }
 
@@ -95,7 +101,16 @@ public sealed class InletHub : Hub<IInletHubClient>
         ArgumentException.ThrowIfNullOrEmpty(entityId);
         Logger.SubscribingToProjection(Context.ConnectionId, path, entityId);
         string groupName = $"projection:{path}:{entityId}";
+
+        // Add to grain-based group for Orleans → SignalR message routing
+        ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(
+            InletHubConstants.HubName,
+            groupName);
+        await groupGrain.AddConnectionAsync(Context.ConnectionId);
+
+        // Also add to ASP.NET Core SignalR group for direct hub broadcasts
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+
         IInletSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IInletSubscriptionGrain>(Context.ConnectionId);
         string subscriptionId = await subscriptionGrain.SubscribeAsync(path, entityId);
@@ -121,7 +136,16 @@ public sealed class InletHub : Hub<IInletHubClient>
         ArgumentException.ThrowIfNullOrEmpty(entityId);
         Logger.UnsubscribingFromProjection(Context.ConnectionId, subscriptionId, path, entityId);
         string groupName = $"projection:{path}:{entityId}";
+
+        // Remove from grain-based group
+        ISignalRGroupGrain groupGrain = AqueductGrainFactory.GetGroupGrain(
+            InletHubConstants.HubName,
+            groupName);
+        await groupGrain.RemoveConnectionAsync(Context.ConnectionId);
+
+        // Also remove from ASP.NET Core SignalR group
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
+
         IInletSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IInletSubscriptionGrain>(Context.ConnectionId);
         await subscriptionGrain.UnsubscribeAsync(subscriptionId);
