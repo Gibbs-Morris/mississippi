@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Orleans.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -168,6 +170,7 @@ internal sealed class InletSubscriptionGrain
         ArgumentNullException.ThrowIfNull(item);
         string connectionId = this.GetPrimaryKeyString();
         string brookKey = item.BrookKey;
+        InletMetrics.RecordCursorEventReceived(brookKey);
         Logger.ReceivedCursorMovedEvent(connectionId, brookKey, item.NewPosition.Value);
 
         // Only process the specific brook that triggered this event
@@ -198,6 +201,7 @@ internal sealed class InletSubscriptionGrain
             }
 
             Logger.SendingToSignalRClient(connectionId, entry.Path, entry.EntityId, item.NewPosition.Value);
+            Stopwatch sw = Stopwatch.StartNew();
             try
             {
                 ISignalRClientGrain clientGrain = AqueductGrainFactory.GetClientGrain(
@@ -206,14 +210,20 @@ internal sealed class InletSubscriptionGrain
                 await clientGrain.SendMessageAsync(
                     InletHubConstants.ProjectionUpdatedMethod,
                     [entry.Path, entry.EntityId, item.NewPosition.Value]);
+                sw.Stop();
+                InletMetrics.RecordNotificationSent(entry.Path, sw.Elapsed.TotalMilliseconds);
                 Logger.NotificationSent(connectionId, entry.Path, entry.EntityId, item.NewPosition.Value);
             }
             catch (OrleansException ex)
             {
+                sw.Stop();
+                InletMetrics.RecordNotificationError(entry.Path, ex.GetType().Name);
                 Logger.FailedToSendNotification(connectionId, entry.Path, entry.EntityId, ex);
             }
             catch (InvalidOperationException ex)
             {
+                sw.Stop();
+                InletMetrics.RecordNotificationError(entry.Path, ex.GetType().Name);
                 Logger.FailedToSendNotification(connectionId, entry.Path, entry.EntityId, ex);
             }
         }
@@ -259,6 +269,7 @@ internal sealed class InletSubscriptionGrain
             await SubscribeToBrookStreamAsync(brookKey, brookKeyString);
         }
 
+        InletMetrics.RecordSubscription(path, "subscribe");
         Logger.SubscribedToProjection(connectionId, subscriptionId, path, entityId);
         return subscriptionId;
     }
@@ -288,6 +299,7 @@ internal sealed class InletSubscriptionGrain
             }
         }
 
+        InletMetrics.RecordSubscription(entry.Path, "unsubscribe");
         Logger.UnsubscribedFromProjection(connectionId, subscriptionId);
     }
 

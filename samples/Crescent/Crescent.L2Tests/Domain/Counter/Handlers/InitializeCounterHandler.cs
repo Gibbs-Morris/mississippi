@@ -1,10 +1,10 @@
-using Crescent.L2Tests.Domain.Counter.Commands;
-using Crescent.L2Tests.Domain.Counter.Events;
+using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
+using Crescent.Crescent.L2Tests.Domain.Counter.Events;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
-namespace Crescent.L2Tests.Domain.Counter.Handlers;
+namespace Crescent.Crescent.L2Tests.Domain.Counter.Handlers;
 
 /// <summary>
 ///     Command handler for initializing a counter.

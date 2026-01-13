@@ -1,3 +1,4 @@
+#pragma warning disable ASPIRECOSMOSDB001 // RunAsPreviewEmulator is experimental
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -18,8 +19,17 @@ IResourceBuilder<AzureTableStorageResource> clusteringTable = storage.AddTables(
 // Add Azure Blob Storage for Orleans grain state
 IResourceBuilder<AzureBlobStorageResource> grainState = storage.AddBlobs("grainstate");
 
-// Add Cosmos DB (emulator)
-IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmos").RunAsEmulator();
+// Add Cosmos DB using PREVIEW emulator (Linux-based) which has proper HTTP health check
+// The preview emulator exposes an HTTP /ready endpoint that properly indicates readiness
+IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmos")
+    .RunAsPreviewEmulator(emulator =>
+    {
+        // Enable Data Explorer for debugging at http://localhost:1234
+        emulator.WithDataExplorer();
+#pragma warning disable ASPIRECERTIFICATES001
+        emulator.WithoutHttpsCertificate();
+#pragma warning restore ASPIRECERTIFICATES001
+    });
 _ = cosmos.AddCosmosDatabase("cascade-web-db");
 
 // Configure Orleans with Azure Storage for clustering, grain state, and in-memory streaming

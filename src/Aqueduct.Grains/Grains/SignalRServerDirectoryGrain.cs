@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
+using Mississippi.Aqueduct.Grains.Diagnostics;
 using Mississippi.Aqueduct.Grains.Grains.State;
 
 using Orleans;
@@ -70,6 +71,7 @@ internal sealed class SignalRServerDirectoryGrain
             .ToImmutableList();
         if (deadServers.Count > 0)
         {
+            AqueductMetrics.RecordDeadServers(deadServers.Count);
             Logger.DeadServersFound(deadServers.Count, timeout);
         }
 
@@ -98,6 +100,7 @@ internal sealed class SignalRServerDirectoryGrain
         {
             ActiveServers = state.ActiveServers.SetItem(serverId, updated),
         };
+        AqueductMetrics.RecordServerHeartbeat();
         Logger.ServerHeartbeat(serverId, connectionCount);
         return Task.CompletedTask;
     }
@@ -128,6 +131,7 @@ internal sealed class SignalRServerDirectoryGrain
         {
             ActiveServers = state.ActiveServers.SetItem(serverId, serverInfo),
         };
+        AqueductMetrics.RecordServerRegister();
         Logger.ServerRegistered(serverId, state.ActiveServers.Count);
         return Task.CompletedTask;
     }

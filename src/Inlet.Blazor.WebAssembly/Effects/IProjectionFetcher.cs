@@ -16,7 +16,7 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
 public interface IProjectionFetcher
 {
     /// <summary>
-    ///     Fetches projection data for the specified projection type and entity.
+    ///     Fetches the latest projection data for the specified projection type and entity.
     /// </summary>
     /// <param name="projectionType">The type of projection to fetch.</param>
     /// <param name="entityId">The entity identifier.</param>
@@ -30,4 +30,34 @@ public interface IProjectionFetcher
         string entityId,
         CancellationToken cancellationToken
     );
+
+    /// <summary>
+    ///     Fetches projection data at a specific version for the specified projection type and entity.
+    /// </summary>
+    /// <param name="projectionType">The type of projection to fetch.</param>
+    /// <param name="entityId">The entity identifier.</param>
+    /// <param name="version">The specific version to fetch.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>
+    ///     The fetch result containing the projection data at the specified version,
+    ///     or null if the projection type is not supported or the version does not exist.
+    /// </returns>
+    /// <remarks>
+    ///     <para>
+    ///         This method enables more efficient fetching when the exact version is known,
+    ///         such as when receiving update notifications. Versioned endpoints are immutable
+    ///         and can benefit from aggressive HTTP caching.
+    ///     </para>
+    ///     <para>
+    ///         The default implementation falls back to <see cref="FetchAsync" /> for
+    ///         backward compatibility with existing implementations.
+    ///     </para>
+    /// </remarks>
+    Task<ProjectionFetchResult?> FetchAtVersionAsync(
+        Type projectionType,
+        string entityId,
+        long version,
+        CancellationToken cancellationToken
+    ) =>
+        FetchAsync(projectionType, entityId, cancellationToken);
 }

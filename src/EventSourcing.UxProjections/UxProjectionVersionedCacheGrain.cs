@@ -8,6 +8,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.EventSourcing.UxProjections.Diagnostics;
 
 using Orleans;
 using Orleans.Concurrency;
@@ -89,6 +90,8 @@ internal sealed class UxProjectionVersionedCacheGrain<TProjection>
     )
     {
         // Cache is populated on activation; this is now a pure read
+        string projectionTypeName = typeof(TProjection).Name;
+        UxProjectionMetrics.RecordVersionCacheHit(projectionTypeName);
         Logger.VersionedCacheHit(versionedKey);
         return new(cachedProjection);
     }

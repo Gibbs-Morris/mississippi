@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,6 +12,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
 using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.EventSourcing.Snapshots.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -136,6 +138,7 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
     )
     {
         string primaryKey = this.GetPrimaryKeyString();
+        string snapshotTypeName = typeof(TSnapshot).Name;
         snapshotKey = SnapshotKey.FromString(primaryKey);
         Logger.Activating(primaryKey);
         string currentReducerHash = RootReducer.GetReducerHash();
@@ -148,16 +151,19 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
             {
                 // Snapshot is valid, use it directly
                 state = SnapshotStateConverter.FromEnvelope(envelope);
+                SnapshotMetrics.RecordCacheHit(snapshotTypeName);
                 Logger.SnapshotLoadedFromStorage(primaryKey);
                 Logger.Activated(primaryKey);
                 return;
             }
 
             // Reducer hash mismatch - need to rebuild
+            SnapshotMetrics.RecordReducerHashMismatch(snapshotTypeName);
             Logger.ReducerHashMismatch(primaryKey, envelope.ReducerHash, currentReducerHash);
         }
         else
         {
+            SnapshotMetrics.RecordCacheMiss(snapshotTypeName);
             Logger.NoSnapshotInStorage(primaryKey);
         }
 
@@ -173,6 +179,9 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
         CancellationToken token
     )
     {
+        Stopwatch sw = Stopwatch.StartNew();
+        string snapshotTypeName = typeof(TSnapshot).Name;
+
         // Brook name is now in the key - use it directly
         string brookName = snapshotKey.Stream.BrookName;
         string entityId = snapshotKey.Stream.EntityId;
@@ -188,6 +197,7 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
         {
             // We have a base snapshot to build from
             long deltaEvents = targetVersion - baseVersion;
+            SnapshotMetrics.RecordBaseUsed(snapshotTypeName);
             Logger.UsingBaseSnapshot(baseVersion, targetVersion, deltaEvents);
 
             // Get state from the base snapshot
@@ -221,6 +231,8 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
             eventCount++;
         }
 
+        sw.Stop();
+        SnapshotMetrics.RecordRebuild(snapshotTypeName, sw.Elapsed.TotalMilliseconds, (int)eventCount);
         Logger.StateRebuilt(eventCount, keyString);
     }
 

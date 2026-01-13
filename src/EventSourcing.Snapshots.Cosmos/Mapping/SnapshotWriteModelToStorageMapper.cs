@@ -20,6 +20,7 @@ internal sealed class SnapshotWriteModelToStorageMapper : IMapper<SnapshotWriteM
             StreamKey = input.Key.Stream,
             Version = input.Key.Version,
             Data = input.Snapshot.Data.ToArray(),
+            DataSizeBytes = input.Snapshot.DataSizeBytes,
             DataContentType = input.Snapshot.DataContentType,
         };
 }

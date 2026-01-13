@@ -26,6 +26,7 @@ internal sealed class SnapshotWriteModelToDocumentMapper : IMapper<SnapshotWrite
             ReducersHash = input.Key.Stream.ReducersHash,
             Version = input.Key.Version,
             Data = input.Snapshot.Data.ToArray(),
+            DataSizeBytes = input.Snapshot.DataSizeBytes,
             DataContentType = input.Snapshot.DataContentType,
         };
 }

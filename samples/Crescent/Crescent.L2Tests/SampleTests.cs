@@ -2,7 +2,7 @@
 // Licensed under the Gibbs-Morris commercial license.
 // </copyright>
 
-namespace Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Sample tests to verify the Crescent test infrastructure is working.

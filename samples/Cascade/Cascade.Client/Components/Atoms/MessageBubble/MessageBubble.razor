@@ -1,0 +1,13 @@
+@* MessageBubble - Atomic component for displaying individual chat messages *@
+
+<div class="message @(IsDeleted ? "message--deleted" : "") @(IsEdited ? "message--edited" : "")"
+     @attributes="AdditionalAttributes">
+    @if (IsDeleted)
+    {
+        <em>This message was deleted</em>
+    }
+    else
+    {
+        @Content
+    }
+</div>

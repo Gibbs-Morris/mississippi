@@ -66,8 +66,12 @@
             <label style="width: 85px;">Message:</label>
             <input @bind="messageContent" placeholder="Enter message" @onkeypress="OnMessageKeyPress" style="flex: 1; max-width: 400px;"/>
             <button @onclick="SendMessageAsync"
-                    disabled="@(string.IsNullOrWhiteSpace(messageContent) || string.IsNullOrWhiteSpace(senderName))">
+                    disabled="@(isSendingBatch || string.IsNullOrWhiteSpace(messageContent) || string.IsNullOrWhiteSpace(senderName))">
                 Send
+            </button>
+            <button @onclick="SendRandomBatchAsync"
+                    disabled="@(isSendingBatch || string.IsNullOrWhiteSpace(senderName))">
+                Send Random Batch
             </button>
         </div>
         @if (!string.IsNullOrEmpty(sendResult))
@@ -156,11 +160,27 @@
 
     private string sendResult = string.Empty;
 
+#pragma warning disable CA5394 // Random is acceptable for demo UI purposes - not security sensitive
+    private readonly Random random = new();
+#pragma warning restore CA5394
+
+    private bool isSendingBatch;
+
     private string? currentSubscription;
 
     private bool isJoined => !string.IsNullOrWhiteSpace(currentSubscription);
 
     private ChannelMessagesDto? projection => isJoined ? InletStore.GetProjection<ChannelMessagesDto>(currentSubscription!) : null;
+
+    private static readonly string[] RandomPhrases = new[] { "quick update from the field", "shipping now, watching metrics", "status green across the board", "rolling out another change", "latency looks calm today", "cache warmed, results stable", "signal is strong in the channel", "deploy complete, monitoring", "sync finished without issues", "handoff done, next up testing" };
+
+    private static readonly string[] RandomAdjectives = new[] { "quiet", "bright", "steady", "curious", "bold", "swift", "gentle", "lively", "calm", "sharp" };
+
+    private static readonly string[] RandomNouns = new[] { "river", "signal", "delta", "thread", "message", "stream", "pulse", "window", "channel", "bridge" };
+
+    private static readonly string[] RandomVerbs = new[] { "drifts", "sparks", "flows", "hums", "glides", "turns", "shifts", "loops", "echoes", "lands" };
+
+    private static readonly string[] RandomEnds = new[] { "at sunrise", "over the delta", "in the stream", "through the wire", "with a soft echo", "under the lights", "across the board", "past the checkpoint", "after the commit", "inside the channel" };
 
     private Task JoinConversationAsync()
     {
@@ -237,7 +257,7 @@
 
     private async Task SendMessageAsync()
     {
-        if (!isJoined)
+        if (!isJoined || isSendingBatch)
         {
             return;
         }
@@ -259,20 +279,106 @@
             {
                 messageContent = string.Empty;
                 // Clear the send result after a moment
-                _ = Task.Delay(2000)
-                    .ContinueWith(
-                        _ =>
-                        {
-                            sendResult = string.Empty;
-                            InvokeAsync(StateHasChanged);
-                        },
-                        TaskScheduler.Default);
+                ClearSendResultAfterDelay();
             }
         }
         catch (Exception ex)
         {
             sendResult = $"✗ Exception: {ex.Message}";
         }
+    }
+
+#pragma warning disable CA5394 // Random is acceptable for demo UI - not security sensitive
+    private async Task SendRandomBatchAsync()
+    {
+        if (!isJoined || isSendingBatch || string.IsNullOrWhiteSpace(senderName))
+        {
+            return;
+        }
+
+        int messageCount = random.Next(1, 251);
+        int sentCount = 0;
+        isSendingBatch = true;
+        sendResult = $"Sending random batch ({messageCount} messages)...";
+        try
+        {
+            for (int i = 0; i < messageCount; i++)
+            {
+                string content = GenerateRandomMessage();
+                if (await TrySendMessageAsync(content))
+                {
+                    sentCount++;
+                }
+
+                sendResult = $"Batch progress: {i + 1}/{messageCount} (sent {sentCount})";
+                await InvokeAsync(StateHasChanged);
+            }
+
+            sendResult = $"Batch complete: sent {sentCount}/{messageCount}.";
+            ClearSendResultAfterDelay();
+        }
+        finally
+        {
+            isSendingBatch = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task<bool> TrySendMessageAsync(
+        string content
+    )
+    {
+        if (!isJoined || string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(senderName))
+        {
+            return false;
+        }
+
+        try
+        {
+            SendMessageRequest request = new()
+            {
+                Content = content,
+                SentBy = senderName,
+            };
+            HttpResponseMessage response = await Http.PostAsJsonAsync($"/api/conversations/{Uri.EscapeDataString(currentSubscription!)}/messages", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private string GenerateRandomMessage()
+    {
+        if (random.Next(0, 3) == 0)
+        {
+            return RandomPhrases[random.Next(RandomPhrases.Length)];
+        }
+
+        string adjective = RandomAdjectives[random.Next(RandomAdjectives.Length)];
+        string noun = RandomNouns[random.Next(RandomNouns.Length)];
+        string verb = RandomVerbs[random.Next(RandomVerbs.Length)];
+        string tail = RandomEnds[random.Next(RandomEnds.Length)];
+        return $"{adjective} {noun} {verb} {tail}";
+    }
+#pragma warning restore CA5394
+
+    private void ClearSendResultAfterDelay()
+    {
+        _ = Task.Delay(2000)
+            .ContinueWith(
+                _ =>
+                {
+                    if (isSendingBatch)
+                    {
+                        return;
+                    }
+
+                    sendResult = string.Empty;
+                    InvokeAsync(StateHasChanged);
+                },
+                TaskScheduler.Default);
     }
 
 }

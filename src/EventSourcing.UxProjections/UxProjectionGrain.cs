@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.EventSourcing.UxProjections.Diagnostics;
 
 using Orleans;
 using Orleans.Concurrency;
@@ -107,19 +109,27 @@ internal sealed class UxProjectionGrain<TProjection>
         CancellationToken cancellationToken = default
     )
     {
+        string projectionTypeName = typeof(TProjection).Name;
+        Stopwatch sw = Stopwatch.StartNew();
+
         // Get current brook position from the projection cursor grain
         BrookPosition latestVersion = await GetLatestVersionAsync(cancellationToken);
 
         // Handle case where brook has no events yet
         if (latestVersion.NotSet)
         {
+            sw.Stop();
+            UxProjectionMetrics.RecordQuery(projectionTypeName, "latest", sw.Elapsed.TotalMilliseconds, false);
             Logger.NoEventsYet(entityId);
             return default;
         }
 
         // Delegate to versioned cache grain for single responsibility
         Logger.GetAsyncDelegatingToVersion(entityId, latestVersion);
-        return await GetAtVersionAsync(latestVersion, cancellationToken);
+        TProjection? result = await GetAtVersionAsync(latestVersion, cancellationToken);
+        sw.Stop();
+        UxProjectionMetrics.RecordQuery(projectionTypeName, "latest", sw.Elapsed.TotalMilliseconds, result is not null);
+        return result;
     }
 
     /// <inheritdoc />

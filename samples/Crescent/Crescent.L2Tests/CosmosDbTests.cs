@@ -5,7 +5,7 @@
 using Newtonsoft.Json;
 
 
-namespace Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Integration tests for Cosmos DB operations using the Crescent emulator.

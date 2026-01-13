@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
 using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
+using Mississippi.EventSourcing.Brooks.Diagnostics;
 using Mississippi.EventSourcing.Brooks.Factory;
 
 using Orleans;
@@ -116,37 +117,47 @@ internal sealed class BrookAsyncReaderGrain
         // Parse the brook key from the grain's primary key (strips the instance suffix)
         BrookAsyncReaderKey asyncReaderKey = this.GetPrimaryKeyString();
         BrookKey brookId = asyncReaderKey.BrookKey;
-        BrookPosition start = readFrom ?? new BrookPosition(0);
-        BrookPosition end;
-        if (!readTo.HasValue)
+        int eventsRead = 0;
+        try
         {
-            IBrookCursorGrain cursorGrain = BrookGrainFactory.GetBrookCursorGrain(brookId);
-            end = await cursorGrain.GetLatestPositionAsync();
-        }
-        else
-        {
-            end = readTo.Value;
-        }
-
-        // If the brook is empty (cursor returns -1) or end < start, there's nothing to read
-        if ((end.Value < 0) || (end.Value < start.Value))
-        {
-            yield break;
-        }
-
-        long sliceSize = Options.Value.BrookSliceSize;
-        List<(long BucketId, long First, long Last)> baseIndexes = GetSliceReads(start.Value, end.Value, sliceSize);
-        foreach ((long BucketId, long First, long Last) l in baseIndexes)
-        {
-            // Construct slice key using the actual slice start and an inclusive end via Count=(Last-First)
-            long sliceStart = l.First;
-            long sliceCount = (l.Last - l.First) + 1; // Count is inclusive so Start + Count - 1 == l.Last
-            IBrookSliceReaderGrain sliceGrain = BrookGrainFactory.GetBrookSliceReaderGrain(
-                BrookRangeKey.FromBrookCompositeKey(brookId, sliceStart, sliceCount));
-            await foreach (BrookEvent mississippiEvent in sliceGrain.ReadAsync(l.First, l.Last, cancellationToken))
+            BrookPosition start = readFrom ?? new BrookPosition(0);
+            BrookPosition end;
+            if (!readTo.HasValue)
             {
-                yield return mississippiEvent;
+                IBrookCursorGrain cursorGrain = BrookGrainFactory.GetBrookCursorGrain(brookId);
+                end = await cursorGrain.GetLatestPositionAsync();
             }
+            else
+            {
+                end = readTo.Value;
+            }
+
+            // If the brook is empty (cursor returns -1) or end < start, there's nothing to read
+            if ((end.Value < 0) || (end.Value < start.Value))
+            {
+                yield break;
+            }
+
+            long sliceSize = Options.Value.BrookSliceSize;
+            List<(long BucketId, long First, long Last)> baseIndexes = GetSliceReads(start.Value, end.Value, sliceSize);
+            foreach ((long BucketId, long First, long Last) l in baseIndexes)
+            {
+                // Construct slice key using the actual slice start and an inclusive end via Count=(Last-First)
+                long sliceStart = l.First;
+                long sliceCount = (l.Last - l.First) + 1; // Count is inclusive so Start + Count - 1 == l.Last
+                IBrookSliceReaderGrain sliceGrain = BrookGrainFactory.GetBrookSliceReaderGrain(
+                    BrookRangeKey.FromBrookCompositeKey(brookId, sliceStart, sliceCount));
+                await foreach (BrookEvent mississippiEvent in sliceGrain.ReadAsync(l.First, l.Last, cancellationToken))
+                {
+                    eventsRead++;
+                    yield return mississippiEvent;
+                }
+            }
+        }
+        finally
+        {
+            // Note: Duration not tracked for streaming reads as events are yielded incrementally
+            BrookMetrics.RecordRead(brookId, eventsRead, 0, "stream");
         }
     }
 }

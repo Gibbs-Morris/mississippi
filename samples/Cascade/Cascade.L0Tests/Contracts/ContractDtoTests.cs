@@ -3,7 +3,6 @@ using System;
 using Allure.Xunit.Attributes;
 
 using Cascade.Contracts.Api;
-using Cascade.Contracts.Projections;
 using Cascade.Contracts.Storage;
 
 

@@ -1,4 +1,4 @@
-namespace Crescent.L2Tests.Domain.Counter;
+namespace Crescent.Crescent.L2Tests.Domain.Counter;
 
 /// <summary>
 ///     Brook name constants for the Crescent sample application.

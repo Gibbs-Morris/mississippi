@@ -21,6 +21,11 @@ internal sealed record SnapshotStorageModel
     public string DataContentType { get; init; } = string.Empty;
 
     /// <summary>
+    ///     Gets the size of the snapshot payload in bytes.
+    /// </summary>
+    public long DataSizeBytes { get; init; }
+
+    /// <summary>
     ///     Gets the stream key for the snapshot.
     /// </summary>
     public SnapshotStreamKey StreamKey { get; init; }

@@ -18,10 +18,38 @@ using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.Inlet.Orleans;
 
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+
+using Orleans.Hosting;
 using Orleans.Runtime;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddSource("Microsoft.Orleans.Runtime")
+        .AddSource("Microsoft.Orleans.Application"))
+    .WithMetrics(metrics => metrics.AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+
+        // Mississippi framework meters
+        .AddMeter("Mississippi.EventSourcing.Brooks")
+        .AddMeter("Mississippi.EventSourcing.Aggregates")
+        .AddMeter("Mississippi.EventSourcing.Snapshots")
+        .AddMeter("Mississippi.EventSourcing.UxProjections")
+        .AddMeter("Mississippi.Aqueduct")
+        .AddMeter("Mississippi.Inlet")
+        .AddMeter("Mississippi.Storage.Cosmos")
+        .AddMeter("Mississippi.Storage.Snapshots")
+
+        // Orleans meters
+        .AddMeter("Microsoft.Orleans"))
+    .WithLogging()
+    .UseOtlpExporter();
 
 // Add Aspire-managed Azure Storage clients for Orleans clustering and grain state
 // These are configured by the AppHost via WithReference
@@ -87,6 +115,9 @@ builder.Services.AddCosmosSnapshotStorageProvider(options =>
 // based on the AppHost configuration (WithClustering, WithGrainStorage, WithMemoryStreaming)
 builder.UseOrleans(siloBuilder =>
 {
+    // Enable distributed tracing context propagation across grain calls
+    siloBuilder.AddActivityPropagation();
+
     // Configure Aqueduct to use the Aspire-configured stream provider
     siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
 

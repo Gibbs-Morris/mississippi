@@ -1,9 +1,9 @@
-using Crescent.L2Tests.Domain.Counter.Commands;
-using Crescent.L2Tests.Domain.Counter.Events;
-using Crescent.L2Tests.Domain.Counter.Handlers;
-using Crescent.L2Tests.Domain.Counter.Reducers;
-using Crescent.L2Tests.Domain.CounterSummary;
-using Crescent.L2Tests.Domain.CounterSummary.Reducers;
+using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
+using Crescent.Crescent.L2Tests.Domain.Counter.Events;
+using Crescent.Crescent.L2Tests.Domain.Counter.Handlers;
+using Crescent.Crescent.L2Tests.Domain.Counter.Reducers;
+using Crescent.Crescent.L2Tests.Domain.CounterSummary;
+using Crescent.Crescent.L2Tests.Domain.CounterSummary.Reducers;
 
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Reducers;
@@ -11,7 +11,7 @@ using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.UxProjections;
 
 
-namespace Crescent.L2Tests.Domain.Counter;
+namespace Crescent.Crescent.L2Tests.Domain.Counter;
 
 /// <summary>
 ///     Extension methods for registering counter aggregate services.

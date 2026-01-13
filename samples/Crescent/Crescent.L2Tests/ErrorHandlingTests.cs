@@ -5,7 +5,7 @@
 using Azure;
 
 
-namespace Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Tests that verify proper error handling when operations fail or resources are unavailable.

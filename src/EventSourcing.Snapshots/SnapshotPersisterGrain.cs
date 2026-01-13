@@ -1,10 +1,12 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.EventSourcing.Snapshots.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -82,14 +84,20 @@ internal sealed class SnapshotPersisterGrain
     {
         ArgumentNullException.ThrowIfNull(envelope);
         string keyString = snapshotKey;
+        string snapshotTypeName = snapshotKey.Stream.SnapshotStorageName;
         Logger.PersistingSnapshot(keyString);
+        Stopwatch sw = Stopwatch.StartNew();
         try
         {
             await SnapshotStorageWriter.WriteAsync(snapshotKey, envelope, cancellationToken);
+            sw.Stop();
+            SnapshotMetrics.RecordPersist(snapshotTypeName, sw.Elapsed.TotalMilliseconds, true);
             Logger.SnapshotPersisted(keyString);
         }
         catch (Exception ex)
         {
+            sw.Stop();
+            SnapshotMetrics.RecordPersist(snapshotTypeName, sw.Elapsed.TotalMilliseconds, false);
             Logger.PersistenceFailed(ex, keyString, ex.Message);
             throw;
         }

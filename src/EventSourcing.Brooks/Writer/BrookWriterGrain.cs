@@ -10,6 +10,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
+using Mississippi.EventSourcing.Brooks.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -83,6 +84,7 @@ internal sealed class BrookWriterGrain
             expectedCursorPosition,
             cancellationToken);
         sw.Stop();
+        BrookMetrics.RecordWrite(key, events.Length, sw.Elapsed.TotalMilliseconds);
         Logger.EventsAppended(key, events.Length, newPosition.Value, sw.ElapsedMilliseconds);
         Logger.PublishingCursorMoved(key, newPosition.Value);
         IAsyncStream<BrookCursorMovedEvent> stream = this

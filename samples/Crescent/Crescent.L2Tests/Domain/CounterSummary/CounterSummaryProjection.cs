@@ -3,7 +3,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Crescent.L2Tests.Domain.CounterSummary;
+namespace Crescent.Crescent.L2Tests.Domain.CounterSummary;
 
 /// <summary>
 ///     A read-optimized projection of counter aggregate state for UX display.

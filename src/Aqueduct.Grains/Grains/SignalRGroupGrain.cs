@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
+using Mississippi.Aqueduct.Grains.Diagnostics;
 using Mississippi.Aqueduct.Grains.Grains.State;
 
 using Orleans;
@@ -91,6 +92,8 @@ internal sealed class SignalRGroupGrain
         {
             ConnectionIds = state.ConnectionIds.Add(connectionId),
         };
+        string hubName = ExtractHubName(groupKey);
+        AqueductMetrics.RecordGroupJoin(hubName);
         Logger.ConnectionAddedToGroup(connectionId, groupKey, state.ConnectionIds.Count);
         return Task.CompletedTask;
     }
@@ -126,6 +129,8 @@ internal sealed class SignalRGroupGrain
         {
             ConnectionIds = state.ConnectionIds.Remove(connectionId),
         };
+        string hubName = ExtractHubName(groupKey);
+        AqueductMetrics.RecordGroupLeave(hubName);
         Logger.ConnectionRemovedFromGroup(connectionId, groupKey, state.ConnectionIds.Count);
 
         // Deactivate if empty
@@ -156,6 +161,7 @@ internal sealed class SignalRGroupGrain
             await clientGrain.SendMessageAsync(method, args).ConfigureAwait(false);
         }
 
+        AqueductMetrics.RecordGroupMessageSent(hubName, method, state.ConnectionIds.Count);
         Logger.SentToGroup(groupKey, method, state.ConnectionIds.Count);
     }
 }

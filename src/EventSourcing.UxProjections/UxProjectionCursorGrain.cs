@@ -9,6 +9,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.EventSourcing.UxProjections.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -85,7 +86,11 @@ internal sealed class UxProjectionCursorGrain
     }
 
     /// <inheritdoc />
-    public Task<BrookPosition> GetPositionAsync() => Task.FromResult(trackedCursorPosition);
+    public Task<BrookPosition> GetPositionAsync()
+    {
+        UxProjectionMetrics.RecordCursorRead(cursorKey.BrookName);
+        return Task.FromResult(trackedCursorPosition);
+    }
 
     /// <summary>
     ///     Subscribes the grain as an observer to the cursor update stream on activation.

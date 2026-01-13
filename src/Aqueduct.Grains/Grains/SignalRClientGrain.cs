@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Abstractions.Messages;
+using Mississippi.Aqueduct.Grains.Diagnostics;
 using Mississippi.Aqueduct.Grains.Grains.State;
 
 using Orleans;
@@ -85,6 +87,7 @@ internal sealed class SignalRClientGrain
             ServerId = serverId,
             ConnectedAt = DateTimeOffset.UtcNow,
         };
+        AqueductMetrics.RecordClientConnect(hubName);
         Logger.ClientConnected(connectionId, hubName, serverId);
         return Task.CompletedTask;
     }
@@ -94,6 +97,11 @@ internal sealed class SignalRClientGrain
     {
         string connectionId = ExtractConnectionId();
         Logger.ClientDisconnecting(connectionId);
+        if (!string.IsNullOrEmpty(state.HubName))
+        {
+            AqueductMetrics.RecordClientDisconnect(state.HubName);
+        }
+
         state = new();
         Logger.ClientDisconnected(connectionId);
         this.DeactivateOnIdle();
@@ -135,6 +143,7 @@ internal sealed class SignalRClientGrain
         }
 
         // Publish message to the server's stream for delivery
+        Stopwatch sw = Stopwatch.StartNew();
         StreamId serverStreamId = StreamId.Create(Options.Value.ServerStreamNamespace, state.ServerId);
         IAsyncStream<ServerMessage> stream = this.GetStreamProvider(Options.Value.StreamProviderName)
             .GetStream<ServerMessage>(serverStreamId);
@@ -145,6 +154,8 @@ internal sealed class SignalRClientGrain
             Args = args.AsSpan().ToArray(),
         };
         await stream.OnNextAsync(message).ConfigureAwait(false);
+        sw.Stop();
+        AqueductMetrics.RecordClientMessageSent(state.HubName, method, sw.Elapsed.TotalMilliseconds);
     }
 
     private string ExtractConnectionId()

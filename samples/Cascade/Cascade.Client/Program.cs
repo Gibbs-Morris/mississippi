@@ -2,10 +2,9 @@ using System.Net.Http;
 
 using Cascade.Client;
 using Cascade.Client.Cart;
+using Cascade.Client.Chat;
 using Cascade.Client.Services;
-using Cascade.Contracts.Api;
 using Cascade.Contracts.Projections;
-using Cascade.Contracts.Storage;
 
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -37,7 +36,11 @@ builder.Services.AddScoped<IMessageService, SignalRMessageService>();
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [UxProjectionDto] types and wires up fetching
 // Configure store with feature states via the configureStore callback
-builder.Services.AddInlet(store => store.RegisterState<CartState>());
+builder.Services.AddInlet(store =>
+{
+    store.RegisterState<CartState>();
+    store.RegisterState<ChatState>();
+});
 builder.Services.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(ChannelMessagesDto).Assembly));
@@ -49,6 +52,17 @@ builder.Services.AddReducer<RemoveItemAction, CartState>(CartReducers.RemoveItem
 builder.Services.AddReducer<ProductsLoadingAction, CartState>(CartReducers.ProductsLoading);
 builder.Services.AddReducer<ProductsLoadedAction, CartState>(CartReducers.ProductsLoaded);
 builder.Services.AddReducer<ProductsLoadFailedAction, CartState>(CartReducers.ProductsLoadFailed);
+
+// Register reducers for chat actions
+builder.Services.AddReducer<LoginInProgressAction, ChatState>(ChatReducers.LoginInProgress);
+builder.Services.AddReducer<LoginSuccessAction, ChatState>(ChatReducers.LoginSuccess);
+builder.Services.AddReducer<LoginFailedAction, ChatState>(ChatReducers.LoginFailed);
+builder.Services.AddReducer<LogoutAction, ChatState>(ChatReducers.Logout);
+builder.Services.AddReducer<SelectChannelAction, ChatState>(ChatReducers.SelectChannel);
+builder.Services.AddReducer<ShowCreateChannelModalAction, ChatState>(ChatReducers.ShowCreateChannelModal);
+builder.Services.AddReducer<HideCreateChannelModalAction, ChatState>(ChatReducers.HideCreateChannelModal);
+builder.Services.AddReducer<ChannelCreatedAction, ChatState>(ChatReducers.ChannelCreated);
+builder.Services.AddReducer<ChannelsLoadedAction, ChatState>(ChatReducers.ChannelsLoaded);
 
 // Register effects for async operations
 builder.Services.AddEffect<LoadProductsEffect>();

@@ -2,7 +2,7 @@
 // Licensed under the Gibbs-Morris commercial license.
 // </copyright>
 
-namespace Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     xUnit collection definition that ensures all Crescent tests share a single AppHost instance.

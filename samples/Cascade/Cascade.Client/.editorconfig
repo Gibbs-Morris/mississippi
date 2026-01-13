@@ -1,0 +1,17 @@
+# EditorConfig for Cascade.Client Blazor WebAssembly Project
+# These rules are disabled for justified Blazor-specific reasons documented below.
+
+[*.cs]
+
+# CA1515: Blazor components and their parameter types must be public for the Razor runtime
+# to discover and render them. Making them internal would break component discovery.
+# Reference: Blazor component model requirements
+dotnet_diagnostic.CA1515.severity = none
+
+# CA1724: The Atomic Design folder structure (Atoms/Molecules/Organisms) with one component
+# per folder is mandated by .github/instructions/blazor-ux-guidelines.instructions.md.
+# Each component folder contains .razor, .razor.cs, styles, and tests following this pattern.
+# This inherently creates namespace-type name conflicts that cannot be avoided without
+# abandoning the established folder structure.
+# Reference: .github/instructions/blazor-ux-guidelines.instructions.md
+dotnet_diagnostic.CA1724.severity = none

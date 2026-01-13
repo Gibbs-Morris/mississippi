@@ -2,7 +2,7 @@
 // Licensed under the Gibbs-Morris commercial license.
 // </copyright>
 
-using Crescent.L2Tests.Domain.Counter;
+using Crescent.Crescent.L2Tests.Domain.Counter;
 
 using Microsoft.Extensions.Hosting;
 
@@ -22,7 +22,7 @@ using Orleans.Hosting;
 using Projects;
 
 
-namespace Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     xUnit fixture that starts the Crescent AppHost with Cosmos DB and Azure Storage emulators.

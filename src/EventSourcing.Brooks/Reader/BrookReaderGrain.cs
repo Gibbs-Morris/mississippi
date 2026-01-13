@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
 using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
+using Mississippi.EventSourcing.Brooks.Diagnostics;
 using Mississippi.EventSourcing.Brooks.Factory;
 
 using Orleans;
@@ -185,6 +186,8 @@ internal sealed class BrookReaderGrain
         }
 
         sw.Stop();
+        BrookMetrics.RecordRead(brookId, allEvents.Count, sw.Elapsed.TotalMilliseconds, "batch");
+        BrookMetrics.RecordSliceFanOut(brookId, baseIndexes.Count);
         Logger.EventsBatchRead(brookId, allEvents.Count, baseIndexes.Count, sw.ElapsedMilliseconds);
         return [..allEvents];
     }

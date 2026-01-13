@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Aggregates.Diagnostics;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
@@ -188,8 +190,10 @@ internal sealed class GenericAggregateGrain<TAggregate>
     {
         ArgumentNullException.ThrowIfNull(command);
         string commandTypeName = command.GetType().Name;
+        string aggregateTypeName = typeof(TAggregate).Name;
         string aggregateKey = brookKey;
         Logger.CommandReceived(commandTypeName, aggregateKey);
+        Stopwatch sw = Stopwatch.StartNew();
 
         // Get the latest brook position - use local cache if available to avoid race conditions
         BrookPosition currentPosition;
@@ -206,13 +210,21 @@ internal sealed class GenericAggregateGrain<TAggregate>
         // Check optimistic concurrency
         if (expectedVersion.HasValue && (expectedVersion.Value != currentPosition))
         {
+            sw.Stop();
             string message =
                 $"Expected version {expectedVersion.Value.Value} but current version is {currentPosition.Value}.";
             Logger.CommandFailed(commandTypeName, aggregateKey, AggregateErrorCodes.ConcurrencyConflict, message);
+            AggregateMetrics.RecordConcurrencyConflict(aggregateTypeName);
+            AggregateMetrics.RecordCommandFailure(
+                aggregateTypeName,
+                commandTypeName,
+                sw.Elapsed.TotalMilliseconds,
+                AggregateErrorCodes.ConcurrencyConflict);
             return OperationResult.Fail(AggregateErrorCodes.ConcurrencyConflict, message);
         }
 
         // Get current state from snapshot grain (single source of truth)
+        Stopwatch stateFetchSw = Stopwatch.StartNew();
         TAggregate? state;
         if (currentPosition.NotSet)
         {
@@ -226,11 +238,20 @@ internal sealed class GenericAggregateGrain<TAggregate>
                 .GetStateAsync(cancellationToken);
         }
 
+        stateFetchSw.Stop();
+        AggregateMetrics.RecordStateFetch(aggregateTypeName, stateFetchSw.Elapsed.TotalMilliseconds);
+
         // Delegate to root command handler
         OperationResult<IReadOnlyList<object>> handlerResult = RootCommandHandler.Handle(command, state);
         if (!handlerResult.Success)
         {
+            sw.Stop();
             Logger.CommandFailed(commandTypeName, aggregateKey, handlerResult.ErrorCode, handlerResult.ErrorMessage);
+            AggregateMetrics.RecordCommandFailure(
+                aggregateTypeName,
+                commandTypeName,
+                sw.Elapsed.TotalMilliseconds,
+                handlerResult.ErrorCode ?? "unknown");
             return handlerResult.ToResult();
         }
 
@@ -249,6 +270,12 @@ internal sealed class GenericAggregateGrain<TAggregate>
             lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
         }
 
+        sw.Stop();
+        AggregateMetrics.RecordCommandSuccess(
+            aggregateTypeName,
+            commandTypeName,
+            sw.Elapsed.TotalMilliseconds,
+            events.Count);
         Logger.CommandExecuted(commandTypeName, aggregateKey);
         return OperationResult.Ok();
     }

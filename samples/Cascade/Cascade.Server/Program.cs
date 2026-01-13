@@ -5,9 +5,13 @@ using Azure.Storage.Blobs;
 
 using Cascade.Contracts.Api;
 using Cascade.Contracts.Storage;
+using Cascade.Domain.Channel;
+using Cascade.Domain.Channel.Commands;
 using Cascade.Domain.Conversation;
 using Cascade.Domain.Conversation.Commands;
 using Cascade.Domain.Projections.ChannelMessages;
+using Cascade.Domain.User;
+using Cascade.Domain.User.Commands;
 using Cascade.Grains.Abstractions;
 using Cascade.Server.Hubs;
 using Cascade.Server.Services;
@@ -27,12 +31,40 @@ using Mississippi.EventSourcing.UxProjections.Api;
 using Mississippi.Inlet.Orleans;
 using Mississippi.Inlet.Orleans.SignalR;
 
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+
 using Orleans;
+using Orleans.Hosting;
 
 using BlobItemDto = Cascade.Contracts.Storage.BlobItem;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddSource("Microsoft.Orleans.Runtime")
+        .AddSource("Microsoft.Orleans.Application"))
+    .WithMetrics(metrics => metrics.AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+
+        // Mississippi framework meters
+        .AddMeter("Mississippi.EventSourcing.Brooks")
+        .AddMeter("Mississippi.EventSourcing.Aggregates")
+        .AddMeter("Mississippi.EventSourcing.Snapshots")
+        .AddMeter("Mississippi.EventSourcing.UxProjections")
+        .AddMeter("Mississippi.Aqueduct")
+        .AddMeter("Mississippi.Inlet")
+        .AddMeter("Mississippi.Storage.Cosmos")
+        .AddMeter("Mississippi.Storage.Snapshots")
+
+        // Orleans meters
+        .AddMeter("Microsoft.Orleans"))
+    .WithLogging()
+    .UseOtlpExporter();
 
 // Add Aspire-managed clients with emulator-compatible configuration
 // Gateway mode is required for Cosmos DB emulator running in container
@@ -67,8 +99,12 @@ builder.Services.AddSingleton(sp => sp.GetRequiredKeyedService<BlobServiceClient
 builder.AddKeyedAzureTableServiceClient("clustering");
 
 // Configure Orleans client to connect to the silo cluster
-// UseOrleansClient() automatically configures clustering based on the Azure Table client
-builder.UseOrleansClient();
+// UseOrleansClient() reads Aspire-injected config and calls UseAzureStorageClustering with the keyed TableServiceClient
+builder.UseOrleansClient(clientBuilder =>
+{
+    // Enable distributed tracing context propagation across grain calls
+    clientBuilder.AddActivityPropagation();
+});
 
 // Add SignalR for real-time messaging with Orleans backplane
 builder.Services.AddSignalR();
@@ -180,7 +216,8 @@ app.MapPost(
     });
 
 // Products endpoint for Reservoir effect demo - returns a static list of products
-app.MapGet("/api/products", () => AvailableProducts);
+app.MapGet("/api/products", () => Cascade.Server.Program.AvailableProducts);
+
 app.MapGet(
     "/api/cosmos",
     async (
@@ -228,6 +265,73 @@ app.MapPost(
 // │ Command dispatch via HTTP is the current pattern. Future Inlet versions may    │
 // │ add SignalR-based command dispatch for reduced latency.                         │
 // └────────────────────────────────────────────────────────────────────────────────┘
+
+// Register a new user (idempotent)
+app.MapPost(
+    "/api/users/{userId}/register",
+    async (
+        string userId,
+        string displayName,
+        IAggregateGrainFactory aggregateGrainFactory
+    ) =>
+    {
+        IGenericAggregateGrain<UserAggregate> grain = aggregateGrainFactory.GetGenericAggregate<UserAggregate>(userId);
+        OperationResult result = await grain.ExecuteAsync(
+            new RegisterUser
+            {
+                UserId = userId,
+                DisplayName = displayName,
+            });
+        return result.Success
+            ? Results.Ok(
+                new
+                {
+                    UserId = userId,
+                    DisplayName = displayName,
+                    Status = "Registered",
+                })
+            : Results.BadRequest(
+                new
+                {
+                    result.ErrorCode,
+                    result.ErrorMessage,
+                });
+    });
+
+// Create a new channel (idempotent)
+app.MapPost(
+    "/api/channels/{channelId}/create",
+    async (
+        string channelId,
+        string name,
+        string createdBy,
+        IAggregateGrainFactory aggregateGrainFactory
+    ) =>
+    {
+        IGenericAggregateGrain<ChannelAggregate> grain =
+            aggregateGrainFactory.GetGenericAggregate<ChannelAggregate>(channelId);
+        OperationResult result = await grain.ExecuteAsync(
+            new CreateChannel
+            {
+                ChannelId = channelId,
+                Name = name,
+                CreatedBy = createdBy,
+            });
+        return result.Success
+            ? Results.Ok(
+                new
+                {
+                    ChannelId = channelId,
+                    Name = name,
+                    Status = "Created",
+                })
+            : Results.BadRequest(
+                new
+                {
+                    result.ErrorCode,
+                    result.ErrorMessage,
+                });
+    });
 
 // Start a conversation (idempotent)
 app.MapPost(
@@ -294,6 +398,52 @@ app.MapPost(
                 });
     });
 
+// Join a channel - adds user to channel and channel to user's list
+app.MapPost(
+    "/api/users/{userId}/channels/{channelId}/join",
+    async (
+        string userId,
+        string channelId,
+        string? channelName,
+        IAggregateGrainFactory aggregateGrainFactory
+    ) =>
+    {
+        // Add user to channel's member list
+        IGenericAggregateGrain<ChannelAggregate> channelGrain =
+            aggregateGrainFactory.GetGenericAggregate<ChannelAggregate>(channelId);
+        OperationResult channelResult = await channelGrain.ExecuteAsync(
+            new AddMember
+            {
+                UserId = userId,
+            });
+
+        // Add channel to user's channel list
+        IGenericAggregateGrain<UserAggregate> userGrain =
+            aggregateGrainFactory.GetGenericAggregate<UserAggregate>(userId);
+        OperationResult userResult = await userGrain.ExecuteAsync(
+            new JoinChannel
+            {
+                ChannelId = channelId,
+            });
+
+        // Both operations should succeed (or be idempotent)
+        return (channelResult.Success || (channelResult.ErrorCode == "AlreadyMember")) &&
+               (userResult.Success || (userResult.ErrorCode == "AlreadyJoined"))
+            ? Results.Ok(
+                new
+                {
+                    UserId = userId,
+                    ChannelId = channelId,
+                    Status = "Joined",
+                })
+            : Results.BadRequest(
+                new
+                {
+                    ChannelError = channelResult.ErrorMessage,
+                    UserError = userResult.ErrorMessage,
+                });
+    });
+
 // NOTE: Channel messages projection is now served via MapUxProjections at:
 // GET /api/projections/channel-messages/{entityId}
 // The endpoint includes ETag support for caching
@@ -302,23 +452,26 @@ app.MapPost(
 app.MapFallbackToFile("index.html");
 await app.RunAsync();
 
-/// <summary>
-///     Placeholder class for top-level partial declarations.
-/// </summary>
-internal static partial class Program
+namespace Cascade.Server
 {
     /// <summary>
-    ///     Static list of available products for the Reservoir effect demo.
+    ///     Placeholder class for top-level partial declarations.
     /// </summary>
-    private static readonly string[] AvailableProducts =
-    [
-        "Apple",
-        "Banana",
-        "Orange",
-        "Milk",
-        "Bread",
-        "Cheese",
-        "Eggs",
-        "Butter",
-    ];
+    internal static partial class Program
+    {
+        /// <summary>
+        ///     Static list of available products for the Reservoir effect demo.
+        /// </summary>
+        internal static readonly string[] AvailableProducts =
+        [
+            "Apple",
+            "Banana",
+            "Orange",
+            "Milk",
+            "Bread",
+            "Cheese",
+            "Eggs",
+            "Butter",
+        ];
+    }
 }

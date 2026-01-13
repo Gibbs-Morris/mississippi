@@ -1,6 +1,6 @@
-using Crescent.L2Tests.Domain.Counter;
-using Crescent.L2Tests.Domain.Counter.Commands;
-using Crescent.L2Tests.Domain.CounterSummary;
+using Crescent.Crescent.L2Tests.Domain.Counter;
+using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
+using Crescent.Crescent.L2Tests.Domain.CounterSummary;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -8,7 +8,7 @@ using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Xunit.Abstractions;
 
 
-namespace Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Tests validating the complete aggregate → events → projection flow.

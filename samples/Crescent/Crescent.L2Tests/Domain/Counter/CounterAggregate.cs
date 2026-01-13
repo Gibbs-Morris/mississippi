@@ -3,7 +3,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Crescent.L2Tests.Domain.Counter;
+namespace Crescent.Crescent.L2Tests.Domain.Counter;
 
 /// <summary>
 ///     Internal aggregate state for the counter.

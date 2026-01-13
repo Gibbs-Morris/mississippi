@@ -1,9 +1,9 @@
-using Crescent.L2Tests.Domain.Counter.Events;
+using Crescent.Crescent.L2Tests.Domain.Counter.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
 
-namespace Crescent.L2Tests.Domain.Counter.Reducers;
+namespace Crescent.Crescent.L2Tests.Domain.Counter.Reducers;
 
 /// <summary>
 ///     Reducer for <see cref="CounterReset" /> events.

@@ -3,7 +3,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Crescent.L2Tests.Domain.Counter.Events;
+namespace Crescent.Crescent.L2Tests.Domain.Counter.Events;
 
 /// <summary>
 ///     Event raised when the counter is incremented.

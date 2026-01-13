@@ -417,9 +417,13 @@ internal sealed class InletSignalREffect
 
         try
         {
-            ProjectionFetchResult? result = await ProjectionFetcher.FetchAsync(
+            // Use versioned fetch - we know exactly which version to get.
+            // This is more efficient (no extra lookup) and enables better caching
+            // since version N of a projection is immutable.
+            ProjectionFetchResult? result = await ProjectionFetcher.FetchAtVersionAsync(
                 dtoType,
                 entityId,
+                newVersion,
                 CancellationToken.None);
             if (result is not null)
             {

@@ -6,7 +6,7 @@ using Azure;
 using Azure.Storage.Blobs.Models;
 
 
-namespace Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Integration tests for Azure Blob Storage operations using the Crescent Azurite emulator.

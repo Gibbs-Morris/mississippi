@@ -9,6 +9,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
+using Mississippi.EventSourcing.Brooks.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -87,10 +88,12 @@ internal sealed class BrookCursorGrain
     ///     Gets the latest position of the brook cursor, loading from storage if not initialized.
     /// </summary>
     /// <returns>The most recent persisted cursor position.</returns>
-    public Task<BrookPosition> GetLatestPositionAsync() =>
-
+    public Task<BrookPosition> GetLatestPositionAsync()
+    {
         // Fast path: return cached cursor. Writers publish updates on success.
-        Task.FromResult(TrackedCursorPosition);
+        BrookMetrics.RecordCursorRead(BrookId, "cached");
+        return Task.FromResult(TrackedCursorPosition);
+    }
 
     /// <summary>
     ///     Gets the latest position by issuing a strongly consistent storage read and updating the cache if newer.
@@ -105,6 +108,7 @@ internal sealed class BrookCursorGrain
             TrackedCursorPosition = storagePosition;
         }
 
+        BrookMetrics.RecordCursorRead(BrookId, "confirmed");
         return TrackedCursorPosition;
     }
 

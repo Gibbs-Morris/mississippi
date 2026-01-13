@@ -29,6 +29,15 @@ internal sealed class SnapshotDocument
     public string DataContentType { get; set; } = string.Empty;
 
     /// <summary>
+    ///     Gets or sets the size of the snapshot payload in bytes.
+    /// </summary>
+    /// <remarks>
+    ///     This denormalized field enables efficient Cosmos DB queries for large snapshots.
+    /// </remarks>
+    [JsonProperty("dataSizeBytes")]
+    public long DataSizeBytes { get; set; }
+
+    /// <summary>
     ///     Gets or sets the document identifier (snapshot version).
     /// </summary>
     [JsonProperty("id")]

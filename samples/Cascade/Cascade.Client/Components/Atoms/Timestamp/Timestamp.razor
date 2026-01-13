@@ -1,0 +1,8 @@
+@* Timestamp - Atomic component for displaying formatted date/time values *@
+
+<time class="timestamp @(ShowRelative ? "timestamp--relative" : "")"
+      datetime="@DateTimeValue.ToString("O")"
+      title="@FullDateTime"
+      @attributes="AdditionalAttributes">
+    @FormattedTime
+</time>

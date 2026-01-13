@@ -75,9 +75,41 @@ public sealed class AutoProjectionFetcher : IProjectionFetcher
             return null;
         }
 
-        // Construct the endpoint URL
+        // Construct the endpoint URL for latest version
         string url = $"{RoutePrefix}/{path}/{Uri.EscapeDataString(entityId)}";
+        return await FetchFromUrlAsync(projectionType, url, cancellationToken);
+    }
 
+    /// <inheritdoc />
+    public async Task<ProjectionFetchResult?> FetchAtVersionAsync(
+        Type projectionType,
+        string entityId,
+        long version,
+        CancellationToken cancellationToken
+    )
+    {
+        ArgumentNullException.ThrowIfNull(projectionType);
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+
+        // Look up the path for this DTO type
+        if (!Registry.TryGetPath(projectionType, out string? path) || path is null)
+        {
+            // Type not registered - unsupported projection
+            return null;
+        }
+
+        // Construct the endpoint URL for specific version
+        // Pattern: {RoutePrefix}/{path}/{entityId}/at/{version}
+        string url = $"{RoutePrefix}/{path}/{Uri.EscapeDataString(entityId)}/at/{version}";
+        return await FetchFromUrlAsync(projectionType, url, cancellationToken);
+    }
+
+    private async Task<ProjectionFetchResult?> FetchFromUrlAsync(
+        Type projectionType,
+        string url,
+        CancellationToken cancellationToken
+    )
+    {
         // Fetch with response headers for ETag
         using HttpRequestMessage request = new(HttpMethod.Get, url);
         using HttpResponseMessage response = await Http.SendAsync(
