@@ -3,40 +3,12 @@ namespace Cascade.Client.Chat;
 /// <summary>
 ///     Contains reducer functions for the chat feature state.
 /// </summary>
+/// <remarks>
+///     Note: Channel and message data now comes from InletStore projections, not reducers.
+///     These reducers handle authentication and UI state only.
+/// </remarks>
 internal static class ChatReducers
 {
-    /// <summary>
-    ///     Reducer for adding a newly created channel.
-    /// </summary>
-    /// <param name="state">The current chat state.</param>
-    /// <param name="action">The channel created action.</param>
-    /// <returns>The new chat state with the channel added.</returns>
-    public static ChatState ChannelCreated(
-        ChatState state,
-        ChannelCreatedAction action
-    ) =>
-        state with
-        {
-            Channels = state.Channels.Add(action.Channel),
-            SelectedChannelId = action.Channel.ChannelId,
-            ShowCreateChannelModal = false,
-        };
-
-    /// <summary>
-    ///     Reducer for loading channels from the server projection.
-    /// </summary>
-    /// <param name="state">The current chat state.</param>
-    /// <param name="action">The channels loaded action.</param>
-    /// <returns>The new chat state with channels replaced.</returns>
-    public static ChatState ChannelsLoaded(
-        ChatState state,
-        ChannelsLoadedAction action
-    ) =>
-        state with
-        {
-            Channels = [..action.Channels],
-        };
-
     /// <summary>
     ///     Reducer for hiding the create channel modal.
     /// </summary>

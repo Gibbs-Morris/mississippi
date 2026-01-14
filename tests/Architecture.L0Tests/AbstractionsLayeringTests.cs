@@ -45,7 +45,7 @@ public sealed class AbstractionsLayeringTests : ArchitectureTestBase
     public void AbstractBaseClassesInAbstractionsShouldEndWithBase()
     {
         // WithoutRequiringPositiveResults() allows the rule to pass when no abstract classes exist.
-        // Use regex pattern to handle generic types (e.g., ReducerBase`2 ends with "Base`2").
+        // Use regex pattern to handle generic types (e.g., ActionReducerBase`2 ends with "Base`2").
         IArchRule rule = Classes()
             .That()
             .ResideInNamespaceMatching(@"Mississippi\..*\.Abstractions.*")

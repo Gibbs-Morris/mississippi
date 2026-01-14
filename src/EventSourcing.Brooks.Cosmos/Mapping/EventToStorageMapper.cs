@@ -28,6 +28,7 @@ internal sealed class EventToStorageMapper : IMapper<BrookEvent, EventStorageMod
             EventType = input.EventType ?? string.Empty,
             DataContentType = input.DataContentType,
             Data = input.Data.ToArray(),
+            DataSizeBytes = input.DataSizeBytes,
             Time = input.Time ?? DateTimeOffset.UtcNow,
         };
 }

@@ -155,7 +155,7 @@ public sealed class StoreTests : IDisposable
     /// <summary>
     ///     Test feature reducer.
     /// </summary>
-    private sealed class TestFeatureReducer : ReducerBase<IncrementAction, TestFeatureState>
+    private sealed class TestFeatureActionReducer : ActionReducerBase<IncrementAction, TestFeatureState>
     {
         /// <inheritdoc />
         public override TestFeatureState Reduce(
@@ -488,7 +488,7 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddTransient<IReducer<TestFeatureState>, TestFeatureReducer>();
+        services.AddTransient<IActionReducer<TestFeatureState>, TestFeatureActionReducer>();
         services.AddTransient<IRootReducer<TestFeatureState>, RootReducer<TestFeatureState>>();
         using ServiceProvider provider = services.BuildServiceProvider();
         using Store diStore = new(provider);
@@ -626,7 +626,7 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddTransient<IReducer<TestFeatureState>, TestFeatureReducer>();
+        services.AddTransient<IActionReducer<TestFeatureState>, TestFeatureActionReducer>();
         services.AddTransient<IRootReducer<TestFeatureState>, RootReducer<TestFeatureState>>();
         using ServiceProvider provider = services.BuildServiceProvider();
         using Store diStore = new(provider);

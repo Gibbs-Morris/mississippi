@@ -18,6 +18,7 @@ internal sealed class SnapshotDocumentToStorageMapper : IMapper<SnapshotDocument
             StreamKey = new(input.BrookName, input.ProjectionType, input.ProjectionId, input.ReducersHash),
             Version = input.Version,
             Data = input.Data,
+            DataSizeBytes = input.DataSizeBytes,
             DataContentType = input.DataContentType,
         };
 }

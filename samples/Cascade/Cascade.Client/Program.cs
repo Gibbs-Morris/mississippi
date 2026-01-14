@@ -54,6 +54,7 @@ builder.Services.AddReducer<ProductsLoadedAction, CartState>(CartReducers.Produc
 builder.Services.AddReducer<ProductsLoadFailedAction, CartState>(CartReducers.ProductsLoadFailed);
 
 // Register reducers for chat actions
+// Note: Channel data now comes from InletStore projections, not reducers.
 builder.Services.AddReducer<LoginInProgressAction, ChatState>(ChatReducers.LoginInProgress);
 builder.Services.AddReducer<LoginSuccessAction, ChatState>(ChatReducers.LoginSuccess);
 builder.Services.AddReducer<LoginFailedAction, ChatState>(ChatReducers.LoginFailed);
@@ -61,8 +62,6 @@ builder.Services.AddReducer<LogoutAction, ChatState>(ChatReducers.Logout);
 builder.Services.AddReducer<SelectChannelAction, ChatState>(ChatReducers.SelectChannel);
 builder.Services.AddReducer<ShowCreateChannelModalAction, ChatState>(ChatReducers.ShowCreateChannelModal);
 builder.Services.AddReducer<HideCreateChannelModalAction, ChatState>(ChatReducers.HideCreateChannelModal);
-builder.Services.AddReducer<ChannelCreatedAction, ChatState>(ChatReducers.ChannelCreated);
-builder.Services.AddReducer<ChannelsLoadedAction, ChatState>(ChatReducers.ChannelsLoaded);
 
 // Register effects for async operations
 builder.Services.AddEffect<LoadProductsEffect>();

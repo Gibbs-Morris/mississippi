@@ -4,8 +4,8 @@ using Mississippi.Reservoir.Abstractions.Actions;
 namespace Mississippi.Reservoir.Abstractions;
 
 /// <summary>
-///     Interface for root-level reducers that process actions and update feature state.
-///     Routes actions to the appropriate typed reducer.
+///     Interface for root-level action reducers that process actions and update feature state.
+///     Routes actions to the appropriate typed action reducer.
 /// </summary>
 /// <typeparam name="TState">The type of the feature state being reduced.</typeparam>
 public interface IRootReducer<TState>
@@ -17,7 +17,7 @@ public interface IRootReducer<TState>
     /// </summary>
     /// <param name="state">The current state before applying the action.</param>
     /// <param name="action">The action to be processed and applied to the state.</param>
-    /// <returns>The new state after applying the action, or the same state if no reducer matched.</returns>
+    /// <returns>The new state after applying the action, or the same state if no action reducer matched.</returns>
     TState Reduce(
         TState state,
         IAction action

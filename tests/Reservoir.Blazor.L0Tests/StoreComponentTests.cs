@@ -61,6 +61,22 @@ public sealed class StoreComponentTests : IDisposable
     private sealed record TestAction : IAction;
 
     /// <summary>
+    ///     Test reducer for unit tests.
+    /// </summary>
+    private sealed class TestActionReducer : ActionReducerBase<TestAction, TestFeatureState>
+    {
+        /// <inheritdoc />
+        public override TestFeatureState Reduce(
+            TestFeatureState state,
+            TestAction action
+        ) =>
+            state with
+            {
+                Counter = state.Counter + 1,
+            };
+    }
+
+    /// <summary>
     ///     Test feature state for unit tests.
     /// </summary>
     private sealed record TestFeatureState : IFeatureState
@@ -72,22 +88,6 @@ public sealed class StoreComponentTests : IDisposable
         ///     Gets the counter.
         /// </summary>
         public int Counter { get; init; }
-    }
-
-    /// <summary>
-    ///     Test reducer for unit tests.
-    /// </summary>
-    private sealed class TestReducer : ReducerBase<TestAction, TestFeatureState>
-    {
-        /// <inheritdoc />
-        public override TestFeatureState Reduce(
-            TestFeatureState state,
-            TestAction action
-        ) =>
-            state with
-            {
-                Counter = state.Counter + 1,
-            };
     }
 
     /// <summary>
@@ -192,7 +192,7 @@ public sealed class StoreComponentTests : IDisposable
         // Arrange
         ServiceCollection services = [];
         services.AddReservoir(s => s.RegisterState<TestFeatureState>());
-        services.AddReducer<TestAction, TestFeatureState, TestReducer>();
+        services.AddReducer<TestAction, TestFeatureState, TestActionReducer>();
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore scopedStore = scope.ServiceProvider.GetRequiredService<IStore>();

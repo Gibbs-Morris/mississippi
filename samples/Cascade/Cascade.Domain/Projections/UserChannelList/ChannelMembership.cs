@@ -19,6 +19,12 @@ internal sealed record ChannelMembership
     public required string ChannelId { get; init; }
 
     /// <summary>
+    ///     Gets the channel name (denormalized for display).
+    /// </summary>
+    [Id(2)]
+    public required string ChannelName { get; init; }
+
+    /// <summary>
     ///     Gets the timestamp when the user joined the channel.
     /// </summary>
     [Id(1)]

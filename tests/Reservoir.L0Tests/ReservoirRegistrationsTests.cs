@@ -29,6 +29,22 @@ public sealed class ReservoirRegistrationsTests
     private sealed record TestAction : IAction;
 
     /// <summary>
+    ///     Test reducer implementation.
+    /// </summary>
+    private sealed class TestActionReducer : ActionReducerBase<TestAction, TestFeatureState>
+    {
+        /// <inheritdoc />
+        public override TestFeatureState Reduce(
+            TestFeatureState state,
+            TestAction action
+        ) =>
+            state with
+            {
+                Counter = state.Counter + 1,
+            };
+    }
+
+    /// <summary>
     ///     Test effect implementation.
     /// </summary>
     private sealed class TestEffect : IEffect
@@ -76,22 +92,6 @@ public sealed class ReservoirRegistrationsTests
             Action<IAction> nextAction
         ) =>
             nextAction(action);
-    }
-
-    /// <summary>
-    ///     Test reducer implementation.
-    /// </summary>
-    private sealed class TestReducer : ReducerBase<TestAction, TestFeatureState>
-    {
-        /// <inheritdoc />
-        public override TestFeatureState Reduce(
-            TestFeatureState state,
-            TestAction action
-        ) =>
-            state with
-            {
-                Counter = state.Counter + 1,
-            };
     }
 
     /// <summary>
@@ -151,7 +151,7 @@ public sealed class ReservoirRegistrationsTests
             Counter = state.Counter + 1,
         });
         using ServiceProvider provider = services.BuildServiceProvider();
-        IReducer<TestFeatureState>? reducer = provider.GetService<IReducer<TestFeatureState>>();
+        IActionReducer<TestFeatureState>? reducer = provider.GetService<IActionReducer<TestFeatureState>>();
 
         // Assert
         Assert.NotNull(reducer);
@@ -182,11 +182,11 @@ public sealed class ReservoirRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        services.AddReducer<TestAction, TestFeatureState, TestReducer>();
+        services.AddReducer<TestAction, TestFeatureState, TestActionReducer>();
         using ServiceProvider provider = services.BuildServiceProvider();
-        IReducer<TestFeatureState>? reducer = provider.GetService<IReducer<TestFeatureState>>();
-        IReducer<TestAction, TestFeatureState>? typedReducer =
-            provider.GetService<IReducer<TestAction, TestFeatureState>>();
+        IActionReducer<TestFeatureState>? reducer = provider.GetService<IActionReducer<TestFeatureState>>();
+        IActionReducer<TestAction, TestFeatureState>? typedReducer =
+            provider.GetService<IActionReducer<TestAction, TestFeatureState>>();
 
         // Assert
         Assert.NotNull(reducer);
@@ -278,7 +278,7 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReducer<TestAction, TestFeatureState, TestReducer>();
+        services.AddReducer<TestAction, TestFeatureState, TestActionReducer>();
 
         // Act
         services.AddRootReducer<TestFeatureState>();

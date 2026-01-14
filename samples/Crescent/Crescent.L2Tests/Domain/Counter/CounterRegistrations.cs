@@ -43,19 +43,19 @@ internal static class CounterRegistrations
         services.AddCommandHandler<ResetCounter, CounterAggregate, ResetCounterHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<CounterInitialized, CounterAggregate, CounterInitializedReducer>();
-        services.AddReducer<CounterIncremented, CounterAggregate, CounterIncrementedReducer>();
-        services.AddReducer<CounterDecremented, CounterAggregate, CounterDecrementedReducer>();
-        services.AddReducer<CounterReset, CounterAggregate, CounterResetReducer>();
+        services.AddReducer<CounterInitialized, CounterAggregate, CounterInitializedEventReducer>();
+        services.AddReducer<CounterIncremented, CounterAggregate, CounterIncrementedEventReducer>();
+        services.AddReducer<CounterDecremented, CounterAggregate, CounterDecrementedEventReducer>();
+        services.AddReducer<CounterReset, CounterAggregate, CounterResetEventReducer>();
 
         // Add snapshot state converter for CounterAggregate (required for aggregate snapshots)
         services.AddSnapshotStateConverter<CounterAggregate>();
 
         // Register reducers for CounterSummaryProjection (UX projection)
-        services.AddReducer<CounterInitialized, CounterSummaryProjection, CounterSummaryInitializedReducer>();
-        services.AddReducer<CounterIncremented, CounterSummaryProjection, CounterSummaryIncrementedReducer>();
-        services.AddReducer<CounterDecremented, CounterSummaryProjection, CounterSummaryDecrementedReducer>();
-        services.AddReducer<CounterReset, CounterSummaryProjection, CounterSummaryResetReducer>();
+        services.AddReducer<CounterInitialized, CounterSummaryProjection, CounterSummaryInitializedEventReducer>();
+        services.AddReducer<CounterIncremented, CounterSummaryProjection, CounterSummaryIncrementedEventReducer>();
+        services.AddReducer<CounterDecremented, CounterSummaryProjection, CounterSummaryDecrementedEventReducer>();
+        services.AddReducer<CounterReset, CounterSummaryProjection, CounterSummaryResetEventReducer>();
 
         // Add snapshot state converter for CounterSummaryProjection (required for projection verification)
         services.AddSnapshotStateConverter<CounterSummaryProjection>();

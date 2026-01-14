@@ -11,7 +11,7 @@ using Cascade.Domain.User.Reducers;
 namespace Cascade.Domain.L0Tests.User.Reducers;
 
 /// <summary>
-///     Tests for <see cref="UserWentOnlineReducer" /> and <see cref="UserWentOfflineReducer" />.
+///     Tests for <see cref="UserWentOnlineEventReducer" /> and <see cref="UserWentOfflineEventReducer" />.
 /// </summary>
 [AllureParentSuite("Cascade")]
 [AllureSuite("User")]
@@ -27,7 +27,7 @@ public sealed class OnlineStatusReducerTests
     public void ReduceUserWentOfflineSetsOffline()
     {
         // Arrange
-        UserWentOfflineReducer reducer = new();
+        UserWentOfflineEventReducer eventReducer = new();
         DateTimeOffset timestamp = DateTimeOffset.UtcNow;
         UserWentOffline evt = new()
         {
@@ -42,7 +42,7 @@ public sealed class OnlineStatusReducerTests
         };
 
         // Act
-        UserAggregate result = reducer.Reduce(state, evt);
+        UserAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.False(result.IsOnline);
@@ -58,7 +58,7 @@ public sealed class OnlineStatusReducerTests
     public void ReduceUserWentOnlineSetsOnline()
     {
         // Arrange
-        UserWentOnlineReducer reducer = new();
+        UserWentOnlineEventReducer eventReducer = new();
         DateTimeOffset timestamp = DateTimeOffset.UtcNow;
         UserWentOnline evt = new()
         {
@@ -73,7 +73,7 @@ public sealed class OnlineStatusReducerTests
         };
 
         // Act
-        UserAggregate result = reducer.Reduce(state, evt);
+        UserAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.True(result.IsOnline);

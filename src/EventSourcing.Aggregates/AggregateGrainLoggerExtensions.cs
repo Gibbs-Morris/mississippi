@@ -93,12 +93,12 @@ internal static partial class AggregateGrainLoggerExtensions
     );
 
     /// <summary>
-    ///     Logs when reducer hash does not match the snapshot, requiring a rebuild.
+    ///     Logs when event reducer hash does not match the snapshot, requiring a rebuild.
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="aggregateKey">The aggregate key.</param>
     /// <param name="snapshotHash">The hash from the snapshot.</param>
-    /// <param name="currentHash">The current reducer hash.</param>
+    /// <param name="currentHash">The current event reducer hash.</param>
     [LoggerMessage(
         6,
         LogLevel.Information,

@@ -1017,6 +1017,7 @@
           "Microsoft.Orleans.Streaming": "[9.2.1, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.Aqueduct.Grains": "[1.0.0, )",
+          "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Cosmos": "[1.0.0, )",
           "Mississippi.EventSourcing.Serialization.Json": "[1.0.0, )",

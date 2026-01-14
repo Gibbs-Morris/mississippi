@@ -11,13 +11,13 @@ using Mississippi.Reservoir.Abstractions.Actions;
 namespace Mississippi.Reservoir;
 
 /// <summary>
-///     Root-level reducer that composes one or more <see cref="IReducer{TState}" /> instances.
+///     Root-level reducer that composes one or more <see cref="IActionReducer{TState}" /> instances.
 /// </summary>
 /// <typeparam name="TState">The feature state type.</typeparam>
 /// <remarks>
 ///     <para>
 ///         Actions are dispatched using a precomputed type index built at construction time.
-///         For each action type, only reducers registered for that exact type are considered.
+///         For each action type, only action reducers registered for that exact type are considered.
 ///     </para>
 /// </remarks>
 public sealed class RootReducer<TState> : IRootReducer<TState>
@@ -25,41 +25,42 @@ public sealed class RootReducer<TState> : IRootReducer<TState>
 {
     private static readonly Type StateType = typeof(TState);
 
-    private readonly ImmutableArray<IReducer<TState>> fallbackReducers;
+    private readonly ImmutableArray<IActionReducer<TState>> fallbackReducers;
 
-    private readonly FrozenDictionary<Type, ImmutableArray<IReducer<TState>>> reducerIndex;
+    private readonly FrozenDictionary<Type, ImmutableArray<IActionReducer<TState>>> reducerIndex;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RootReducer{TState}" /> class.
     /// </summary>
-    /// <param name="reducers">The reducers that can update the feature state.</param>
+    /// <param name="reducers">The action reducers that can update the feature state.</param>
     public RootReducer(
-        IEnumerable<IReducer<TState>> reducers
+        IEnumerable<IActionReducer<TState>> reducers
     )
     {
         ArgumentNullException.ThrowIfNull(reducers);
-        IReducer<TState>[] reducersArray = reducers.ToArray();
+        IActionReducer<TState>[] reducersArray = reducers.ToArray();
         (reducerIndex, fallbackReducers) = BuildReducerIndex(reducersArray);
     }
 
     /// <summary>
-    ///     Builds an index mapping action types to their reducers, preserving registration order.
+    ///     Builds an index mapping action types to their action reducers, preserving registration order.
     /// </summary>
-    private static (FrozenDictionary<Type, ImmutableArray<IReducer<TState>>> Index, ImmutableArray<IReducer<TState>>
-        Fallback) BuildReducerIndex(
-            IReducer<TState>[] reducersArray
+    private static (FrozenDictionary<Type, ImmutableArray<IActionReducer<TState>>> Index,
+        ImmutableArray<IActionReducer<TState>> Fallback) BuildReducerIndex(
+            IActionReducer<TState>[] reducersArray
         )
     {
-        Dictionary<Type, ImmutableArray<IReducer<TState>>.Builder> indexBuilder = new();
-        ImmutableArray<IReducer<TState>>.Builder fallbackBuilder = ImmutableArray.CreateBuilder<IReducer<TState>>();
-        foreach (IReducer<TState> reducer in reducersArray)
+        Dictionary<Type, ImmutableArray<IActionReducer<TState>>.Builder> indexBuilder = new();
+        ImmutableArray<IActionReducer<TState>>.Builder fallbackBuilder =
+            ImmutableArray.CreateBuilder<IActionReducer<TState>>();
+        foreach (IActionReducer<TState> reducer in reducersArray)
         {
             Type? actionType = ExtractActionType(reducer.GetType());
             if (actionType is not null)
             {
-                if (!indexBuilder.TryGetValue(actionType, out ImmutableArray<IReducer<TState>>.Builder? list))
+                if (!indexBuilder.TryGetValue(actionType, out ImmutableArray<IActionReducer<TState>>.Builder? list))
                 {
-                    list = ImmutableArray.CreateBuilder<IReducer<TState>>();
+                    list = ImmutableArray.CreateBuilder<IActionReducer<TState>>();
                     indexBuilder[actionType] = list;
                 }
 
@@ -71,19 +72,19 @@ public sealed class RootReducer<TState> : IRootReducer<TState>
             }
         }
 
-        FrozenDictionary<Type, ImmutableArray<IReducer<TState>>> frozenIndex =
+        FrozenDictionary<Type, ImmutableArray<IActionReducer<TState>>> frozenIndex =
             indexBuilder.ToFrozenDictionary(kvp => kvp.Key, kvp => kvp.Value.ToImmutable());
         return (frozenIndex, fallbackBuilder.ToImmutable());
     }
 
     /// <summary>
-    ///     Extracts the TAction type argument from a reducer implementing IReducer{TAction, TState}.
+    ///     Extracts the TAction type argument from an action reducer implementing IActionReducer{TAction, TState}.
     /// </summary>
     private static Type? ExtractActionType(
         Type reducerType
     )
     {
-        Type genericInterface = typeof(IReducer<,>);
+        Type genericInterface = typeof(IActionReducer<,>);
         foreach (Type iface in reducerType.GetInterfaces())
         {
             if (!iface.IsGenericType)
@@ -119,9 +120,9 @@ public sealed class RootReducer<TState> : IRootReducer<TState>
 
         // First, try indexed reducers for the exact action type
         Type actionType = action.GetType();
-        if (reducerIndex.TryGetValue(actionType, out ImmutableArray<IReducer<TState>> indexedReducers))
+        if (reducerIndex.TryGetValue(actionType, out ImmutableArray<IActionReducer<TState>> indexedReducers))
         {
-            foreach (IReducer<TState> reducer in indexedReducers)
+            foreach (IActionReducer<TState> reducer in indexedReducers)
             {
                 if (reducer.TryReduce(currentState, action, out TState newState))
                 {
@@ -131,7 +132,7 @@ public sealed class RootReducer<TState> : IRootReducer<TState>
         }
 
         // Then, try fallback reducers (those without specific action type)
-        foreach (IReducer<TState> reducer in fallbackReducers)
+        foreach (IActionReducer<TState> reducer in fallbackReducers)
         {
             if (reducer.TryReduce(currentState, action, out TState newState))
             {

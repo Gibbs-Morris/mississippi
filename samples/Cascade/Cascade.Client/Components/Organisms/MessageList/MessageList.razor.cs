@@ -23,7 +23,7 @@ public sealed partial class MessageList : ComponentBase
     ///     Gets or sets the list of messages to display.
     /// </summary>
     [Parameter]
-    public IReadOnlyList<ChannelMessageItem>? Messages { get; set; }
+    public IReadOnlyList<MessageDto>? Messages { get; set; }
 
     private IEnumerable<MessageGroup> GroupedMessages => GroupMessagesBySender();
 
@@ -34,10 +34,10 @@ public sealed partial class MessageList : ComponentBase
             yield break;
         }
 
-        List<ChannelMessageItem> currentGroup = [];
+        List<MessageDto> currentGroup = [];
         string currentSender = string.Empty;
         DateTimeOffset groupStartTime = default;
-        foreach (ChannelMessageItem message in Messages)
+        foreach (MessageDto message in Messages)
         {
             // Start a new group if sender changes or more than 5 minutes have passed
             bool shouldStartNewGroup = (message.SentBy != currentSender) ||

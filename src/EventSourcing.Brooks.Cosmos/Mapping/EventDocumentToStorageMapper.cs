@@ -24,6 +24,7 @@ internal sealed class EventDocumentToStorageMapper : IMapper<EventDocument, Even
             EventType = input.EventType,
             DataContentType = input.DataContentType,
             Data = input.Data,
+            DataSizeBytes = input.DataSizeBytes,
             Time = input.Time,
         };
 }

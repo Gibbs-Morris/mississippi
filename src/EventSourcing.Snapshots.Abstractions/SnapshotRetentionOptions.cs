@@ -68,15 +68,15 @@ public sealed class SnapshotRetentionOptions
     /// <typeparam name="TSnapshot">The state type to calculate the base version for.</typeparam>
     /// <param name="targetVersion">The target version to find the base snapshot for.</param>
     /// <returns>
-    ///     The nearest retained snapshot version that is less than or equal to the target version.
-    ///     Returns 0 if the target version is less than the modulus.
+    ///     The nearest retained snapshot version that is strictly less than the target version.
+    ///     Returns 0 if the target version is less than or equal to the modulus.
     /// </returns>
     /// <remarks>
     ///     For example, with a modulus of 100:
     ///     <list type="bullet">
     ///         <item>Target 364 → base 300</item>
     ///         <item>Target 199 → base 100</item>
-    ///         <item>Target 100 → base 100</item>
+    ///         <item>Target 100 → base 0 (not 100, to prevent self-reference)</item>
     ///         <item>Target 99 → base 0</item>
     ///     </list>
     /// </remarks>
@@ -91,10 +91,15 @@ public sealed class SnapshotRetentionOptions
     /// <param name="stateType">The state type to calculate the base version for.</param>
     /// <param name="targetVersion">The target version to find the base snapshot for.</param>
     /// <returns>
-    ///     The nearest retained snapshot version that is less than or equal to the target version.
-    ///     Returns 0 if the target version is less than the modulus.
+    ///     The nearest retained snapshot version that is strictly less than the target version.
+    ///     Returns 0 if the target version is less than or equal to the modulus.
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="stateType" /> is null.</exception>
+    /// <remarks>
+    ///     The base version must be strictly less than the target to prevent a grain from
+    ///     calling itself when the target version equals a retention boundary.
+    ///     For example, with modulus 5: target 5 → base 0, target 10 → base 5, target 7 → base 5.
+    /// </remarks>
     public long GetBaseSnapshotVersion(
         Type stateType,
         long targetVersion
@@ -107,7 +112,15 @@ public sealed class SnapshotRetentionOptions
         }
 
         int modulus = GetRetainModulus(stateType);
-        return (targetVersion / modulus) * modulus;
+
+        // Use (targetVersion - 1) to ensure the base is strictly less than the target.
+        // This prevents self-referential grain calls when targetVersion % modulus == 0.
+        // Examples with modulus 5:
+        //   target 5: (5-1)/5*5 = 0  (not 5, which would cause self-call)
+        //   target 6: (6-1)/5*5 = 5
+        //   target 10: (10-1)/5*5 = 5  (not 10)
+        //   target 11: (11-1)/5*5 = 10
+        return ((targetVersion - 1) / modulus) * modulus;
     }
 
     /// <summary>

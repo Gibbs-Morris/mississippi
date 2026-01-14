@@ -26,6 +26,7 @@ internal sealed class SnapshotStorageToDocumentMapper : IMapper<SnapshotStorageM
             ReducersHash = input.StreamKey.ReducersHash,
             Version = input.Version,
             Data = input.Data,
+            DataSizeBytes = input.DataSizeBytes,
             DataContentType = input.DataContentType,
         };
 }

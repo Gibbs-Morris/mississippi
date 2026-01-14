@@ -141,6 +141,7 @@ internal sealed class CosmosRepository : ICosmosRepository
                 EventType = eventStorageModel.EventType,
                 DataContentType = eventStorageModel.DataContentType,
                 Data = eventStorageModel.Data,
+                DataSizeBytes = eventStorageModel.DataSizeBytes,
                 Time = eventStorageModel.Time,
             };
             await RetryPolicy.ExecuteAsync(

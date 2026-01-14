@@ -31,6 +31,16 @@ public sealed record BrookEvent
     public string DataContentType { get; init; } = string.Empty;
 
     /// <summary>
+    ///     Gets the size of the <see cref="Data" /> payload in bytes.
+    /// </summary>
+    /// <remarks>
+    ///     This denormalized field enables efficient queries for event size
+    ///     without deserializing the payload.
+    /// </remarks>
+    [Id(6)]
+    public long DataSizeBytes { get; init; }
+
+    /// <summary>
     ///     Gets the semantic event type used to interpret and deserialize the payload downstream.
     /// </summary>
     [Id(0)]

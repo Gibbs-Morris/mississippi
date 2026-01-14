@@ -30,6 +30,12 @@ internal sealed class EventDocument
     public string? DataContentType { get; set; }
 
     /// <summary>
+    ///     Gets or sets the size of the event data in bytes.
+    /// </summary>
+    [JsonProperty("dataSizeBytes")]
+    public long DataSizeBytes { get; set; }
+
+    /// <summary>
     ///     Gets or sets the unique identifier of the event.
     /// </summary>
     [JsonProperty("eventId")]

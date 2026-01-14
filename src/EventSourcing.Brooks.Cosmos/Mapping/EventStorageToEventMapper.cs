@@ -27,6 +27,7 @@ internal sealed class EventStorageToEventMapper : IMapper<EventStorageModel, Bro
             EventType = input.EventType,
             DataContentType = input.DataContentType ?? string.Empty,
             Data = input.Data?.ToImmutableArray() ?? ImmutableArray<byte>.Empty,
+            DataSizeBytes = input.DataSizeBytes,
             Time = input.Time,
         };
 }

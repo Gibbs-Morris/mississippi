@@ -15,6 +15,7 @@ using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
+using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.Inlet.Orleans;
 
@@ -45,6 +46,7 @@ builder.Services.AddOpenTelemetry()
         .AddMeter("Mississippi.Inlet")
         .AddMeter("Mississippi.Storage.Cosmos")
         .AddMeter("Mississippi.Storage.Snapshots")
+        .AddMeter("Mississippi.Storage.Locking")
 
         // Orleans meters
         .AddMeter("Microsoft.Orleans"))
@@ -93,6 +95,10 @@ builder.Services.ScanProjectionAssemblies(typeof(ChannelMessagesProjection).Asse
 builder.Services.AddJsonSerialization();
 builder.Services.AddEventSourcingByService();
 builder.Services.AddSnapshotCaching();
+
+// Configure snapshot retention to persist more frequently (every 25 events)
+// This reduces activation time by limiting the maximum number of events to replay
+builder.Services.Configure<SnapshotRetentionOptions>(options => options.DefaultRetainModulus = 100);
 
 // Configure Cosmos storage for Brooks (event streams)
 builder.Services.AddCosmosBrookStorageProvider(options =>

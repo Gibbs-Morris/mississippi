@@ -16,6 +16,21 @@ internal static class SnapshotMetrics
 
     private static readonly Meter SnapshotMeter = new(MeterName);
 
+    private static readonly Counter<long> ActivationCount = SnapshotMeter.CreateCounter<long>(
+        "snapshot.activation.count",
+        "activations",
+        "Number of snapshot grain activations.");
+
+    private static readonly Histogram<double> ActivationDuration = SnapshotMeter.CreateHistogram<double>(
+        "snapshot.activation.duration",
+        "ms",
+        "Time to activate snapshot grain (including hydration).");
+
+    private static readonly Counter<long> ActivationFailures = SnapshotMeter.CreateCounter<long>(
+        "snapshot.activation.failures",
+        "failures",
+        "Number of snapshot grain activation failures.");
+
     private static readonly Counter<long> BaseUsed = SnapshotMeter.CreateCounter<long>(
         "snapshot.base.used",
         "bases",
@@ -55,9 +70,40 @@ internal static class SnapshotMetrics
         "Number of events replayed during rebuild.");
 
     private static readonly Counter<long> ReducerHashMismatches = SnapshotMeter.CreateCounter<long>(
-        "snapshot.reducer.hash.mismatches",
+        "snapshot.event_reducer.hash.mismatches",
         "mismatches",
-        "Number of reducer hash mismatches requiring rebuild.");
+        "Number of event reducer hash mismatches requiring rebuild.");
+
+    // Activation metrics
+
+    // State size metrics
+    private static readonly Histogram<long> StateSize = SnapshotMeter.CreateHistogram<long>(
+        "snapshot.state.size",
+        "By",
+        "Serialized state size in bytes after activation.");
+
+    /// <summary>
+    ///     Record a snapshot grain activation.
+    /// </summary>
+    /// <param name="snapshotType">The snapshot type name.</param>
+    /// <param name="durationMs">The duration of the activation in milliseconds.</param>
+    /// <param name="success">Whether the activation was successful.</param>
+    internal static void RecordActivation(
+        string snapshotType,
+        double durationMs,
+        bool success
+    )
+    {
+        TagList tags = default;
+        tags.Add("snapshot.type", snapshotType);
+        tags.Add("result", success ? "success" : "failure");
+        ActivationCount.Add(1, tags);
+        ActivationDuration.Record(durationMs, tags);
+        if (!success)
+        {
+            ActivationFailures.Add(1, tags);
+        }
+    }
 
     /// <summary>
     ///     Record use of a base snapshot for delta replay.
@@ -136,7 +182,7 @@ internal static class SnapshotMetrics
     }
 
     /// <summary>
-    ///     Record a reducer hash mismatch.
+    ///     Record an event reducer hash mismatch.
     /// </summary>
     /// <param name="snapshotType">The snapshot type name.</param>
     internal static void RecordReducerHashMismatch(
@@ -146,5 +192,20 @@ internal static class SnapshotMetrics
         TagList tags = default;
         tags.Add("snapshot.type", snapshotType);
         ReducerHashMismatches.Add(1, tags);
+    }
+
+    /// <summary>
+    ///     Record the serialized state size after activation.
+    /// </summary>
+    /// <param name="snapshotType">The snapshot type name.</param>
+    /// <param name="sizeBytes">The serialized state size in bytes.</param>
+    internal static void RecordStateSize(
+        string snapshotType,
+        long sizeBytes
+    )
+    {
+        TagList tags = default;
+        tags.Add("snapshot.type", snapshotType);
+        StateSize.Record(sizeBytes, tags);
     }
 }

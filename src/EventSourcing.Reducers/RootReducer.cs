@@ -15,7 +15,7 @@ using Mississippi.EventSourcing.Reducers.Abstractions;
 namespace Mississippi.EventSourcing.Reducers;
 
 /// <summary>
-///     Root-level reducer that composes one or more <see cref="IReducer{TProjection}" /> instances.
+///     Root-level event reducer that composes one or more <see cref="IEventReducer{TProjection}" /> instances.
 /// </summary>
 /// <typeparam name="TProjection">The projection state type.</typeparam>
 /// <remarks>
@@ -29,24 +29,24 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
 {
     private static readonly Type ProjectionType = typeof(TProjection);
 
-    private readonly ImmutableArray<IReducer<TProjection>> fallbackReducers;
+    private readonly ImmutableArray<IEventReducer<TProjection>> fallbackReducers;
 
     private readonly string reducerHash;
 
-    private readonly FrozenDictionary<Type, ImmutableArray<IReducer<TProjection>>> reducerIndex;
+    private readonly FrozenDictionary<Type, ImmutableArray<IEventReducer<TProjection>>> reducerIndex;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RootReducer{TProjection}" /> class.
     /// </summary>
     /// <param name="reducers">The reducers that can update the projection state.</param>
-    /// <param name="logger">The logger used for reducer diagnostics.</param>
+    /// <param name="logger">The logger used for event reducer diagnostics.</param>
     public RootReducer(
-        IEnumerable<IReducer<TProjection>> reducers,
+        IEnumerable<IEventReducer<TProjection>> reducers,
         ILogger<RootReducer<TProjection>>? logger = null
     )
     {
         ArgumentNullException.ThrowIfNull(reducers);
-        IReducer<TProjection>[] reducersArray = reducers.ToArray();
+        IEventReducer<TProjection>[] reducersArray = reducers.ToArray();
         Logger = logger ?? NullLogger<RootReducer<TProjection>>.Instance;
         reducerHash = ComputeReducerHash(reducersArray);
         (reducerIndex, fallbackReducers) = BuildReducerIndex(reducersArray);
@@ -57,22 +57,22 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
     /// <summary>
     ///     Builds an index mapping event types to their reducers, preserving registration order.
     /// </summary>
-    private static (FrozenDictionary<Type, ImmutableArray<IReducer<TProjection>>> Index,
-        ImmutableArray<IReducer<TProjection>> Fallback) BuildReducerIndex(
-            IReducer<TProjection>[] reducersArray
+    private static (FrozenDictionary<Type, ImmutableArray<IEventReducer<TProjection>>> Index,
+        ImmutableArray<IEventReducer<TProjection>> Fallback) BuildReducerIndex(
+            IEventReducer<TProjection>[] reducersArray
         )
     {
-        Dictionary<Type, ImmutableArray<IReducer<TProjection>>.Builder> indexBuilder = new();
-        ImmutableArray<IReducer<TProjection>>.Builder fallbackBuilder =
-            ImmutableArray.CreateBuilder<IReducer<TProjection>>();
-        foreach (IReducer<TProjection> reducer in reducersArray)
+        Dictionary<Type, ImmutableArray<IEventReducer<TProjection>>.Builder> indexBuilder = new();
+        ImmutableArray<IEventReducer<TProjection>>.Builder fallbackBuilder =
+            ImmutableArray.CreateBuilder<IEventReducer<TProjection>>();
+        foreach (IEventReducer<TProjection> reducer in reducersArray)
         {
             Type? eventType = ExtractEventType(reducer.GetType());
             if (eventType is not null)
             {
-                if (!indexBuilder.TryGetValue(eventType, out ImmutableArray<IReducer<TProjection>>.Builder? list))
+                if (!indexBuilder.TryGetValue(eventType, out ImmutableArray<IEventReducer<TProjection>>.Builder? list))
                 {
-                    list = ImmutableArray.CreateBuilder<IReducer<TProjection>>();
+                    list = ImmutableArray.CreateBuilder<IEventReducer<TProjection>>();
                     indexBuilder[eventType] = list;
                 }
 
@@ -84,13 +84,13 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
             }
         }
 
-        FrozenDictionary<Type, ImmutableArray<IReducer<TProjection>>> frozenIndex =
+        FrozenDictionary<Type, ImmutableArray<IEventReducer<TProjection>>> frozenIndex =
             indexBuilder.ToFrozenDictionary(kvp => kvp.Key, kvp => kvp.Value.ToImmutable());
         return (frozenIndex, fallbackBuilder.ToImmutable());
     }
 
     private static string ComputeReducerHash(
-        IReadOnlyList<IReducer<TProjection>> reducers
+        IReadOnlyList<IEventReducer<TProjection>> reducers
     )
     {
         string[] typeNames = reducers.Select(x => x.GetType().FullName ?? x.GetType().Name)
@@ -102,14 +102,14 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
     }
 
     /// <summary>
-    ///     Extracts the TEvent type argument from a reducer implementing IReducer{TEvent, TProjection}.
+    ///     Extracts the TEvent type argument from an event reducer implementing IEventReducer{TEvent, TProjection}.
     /// </summary>
     private static Type? ExtractEventType(
         Type reducerType
     )
     {
-        // Look for IReducer<TEvent, TProjection> in the interface list.
-        Type genericInterface = typeof(IReducer<,>);
+        // Look for IEventReducer<TEvent, TProjection> in the interface list.
+        Type genericInterface = typeof(IEventReducer<,>);
         foreach (Type iface in reducerType.GetInterfaces())
         {
             if (!iface.IsGenericType)
@@ -150,7 +150,7 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
         Logger.RootReducerReducing(projectionType, eventType);
 
         // Fast path: look up reducers registered for this exact event type.
-        if (reducerIndex.TryGetValue(eventRuntimeType, out ImmutableArray<IReducer<TProjection>> indexed) &&
+        if (reducerIndex.TryGetValue(eventRuntimeType, out ImmutableArray<IEventReducer<TProjection>> indexed) &&
             TryApplyReducers(indexed, state, eventData, projectionType, eventType, out TProjection result))
         {
             return result;
@@ -173,17 +173,17 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
     }
 
     /// <summary>
-    ///     Attempts to apply the first matching reducer from the given collection.
+    ///     Attempts to apply the first matching event reducer from the given collection.
     /// </summary>
     /// <param name="reducers">The collection of reducers to try.</param>
     /// <param name="state">The current projection state.</param>
     /// <param name="eventData">The event data to reduce.</param>
     /// <param name="projectionType">The projection type name for logging.</param>
     /// <param name="eventType">The event type name for logging.</param>
-    /// <param name="result">The resulting projection if a reducer matched.</param>
-    /// <returns>True if a reducer successfully handled the event; otherwise, false.</returns>
+    /// <param name="result">The resulting projection if an event reducer matched.</param>
+    /// <returns>True if an event reducer successfully handled the event; otherwise, false.</returns>
     private bool TryApplyReducers(
-        IReadOnlyList<IReducer<TProjection>> reducers,
+        IReadOnlyList<IEventReducer<TProjection>> reducers,
         TProjection state,
         object eventData,
         string projectionType,
@@ -191,7 +191,7 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
         out TProjection result
     )
     {
-        foreach (IReducer<TProjection> reducer in reducers)
+        foreach (IEventReducer<TProjection> reducer in reducers)
         {
             if (!reducer.TryReduce(state, eventData, out TProjection projection))
             {

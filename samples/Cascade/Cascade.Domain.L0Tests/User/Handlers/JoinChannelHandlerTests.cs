@@ -35,6 +35,7 @@ public sealed class JoinChannelHandlerTests
         JoinChannel command = new()
         {
             ChannelId = "channel-1",
+            ChannelName = "General",
         };
         UserAggregate state = new()
         {
@@ -64,6 +65,7 @@ public sealed class JoinChannelHandlerTests
         JoinChannel command = new()
         {
             ChannelId = string.Empty,
+            ChannelName = "General",
         };
         UserAggregate state = new()
         {
@@ -92,6 +94,7 @@ public sealed class JoinChannelHandlerTests
         JoinChannel command = new()
         {
             ChannelId = "channel-1",
+            ChannelName = "General",
         };
 
         // Act
@@ -114,6 +117,7 @@ public sealed class JoinChannelHandlerTests
         JoinChannel command = new()
         {
             ChannelId = "channel-1",
+            ChannelName = "General",
         };
         UserAggregate state = new()
         {

@@ -42,7 +42,7 @@ internal static partial class SnapshotCacheGrainLoggerExtensions
     [LoggerMessage(
         3,
         LogLevel.Information,
-        "Snapshot reducer hash mismatch for key {SnapshotKey} (stored: {StoredHash}, current: {CurrentHash}), rebuilding from stream")]
+        "Snapshot event reducer hash mismatch for key {SnapshotKey} (stored: {StoredHash}, current: {CurrentHash}), rebuilding from stream")]
     public static partial void ReducerHashMismatch(
         this ILogger logger,
         string snapshotKey,

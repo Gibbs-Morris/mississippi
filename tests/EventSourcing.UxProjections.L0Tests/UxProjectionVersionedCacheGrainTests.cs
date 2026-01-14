@@ -34,7 +34,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     }
 
     private static Mock<IRootReducer<TestProjection>> CreateDefaultRootReducer(
-        string reducersHash = "test-reducer-hash"
+        string reducersHash = "test-event-reducer-hash"
     )
     {
         Mock<IRootReducer<TestProjection>> mock = new();
@@ -48,7 +48,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
         Mock<IRootReducer<TestProjection>>? rootReducerMock = null,
         Mock<ILogger<UxProjectionVersionedCacheGrain<TestProjection>>>? loggerMock = null,
         string primaryKey = ValidPrimaryKey,
-        string reducersHash = "test-reducer-hash"
+        string reducersHash = "test-event-reducer-hash"
     )
     {
         grainContextMock ??= CreateDefaultGrainContext(primaryKey);
@@ -365,7 +365,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
             .Returns(snapshotCacheGrainMock.Object);
         UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(
             snapshotGrainFactoryMock: snapshotGrainFactoryMock,
-            reducersHash: "my-reducer-hash");
+            reducersHash: "my-event-reducer-hash");
 
         // Act
         await grain.OnActivateAsync(CancellationToken.None);
@@ -373,7 +373,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
         // Assert
         Assert.NotNull(capturedKey);
         Assert.Equal("entity-123", capturedKey.Value.Stream.EntityId);
-        Assert.Equal("my-reducer-hash", capturedKey.Value.Stream.ReducersHash);
+        Assert.Equal("my-event-reducer-hash", capturedKey.Value.Stream.ReducersHash);
         Assert.Equal(42, capturedKey.Value.Version);
     }
 }

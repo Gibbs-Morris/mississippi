@@ -19,6 +19,11 @@ internal sealed class EventStorageModel
     public string? DataContentType { get; set; }
 
     /// <summary>
+    ///     Gets or sets the size of the event data in bytes.
+    /// </summary>
+    public long DataSizeBytes { get; set; }
+
+    /// <summary>
     ///     Gets or sets the unique identifier of the event.
     /// </summary>
     public string EventId { get; set; } = string.Empty;

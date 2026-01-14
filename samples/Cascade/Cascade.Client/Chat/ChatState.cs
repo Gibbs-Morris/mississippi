@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-
 using Mississippi.Reservoir.Abstractions.State;
 
 
@@ -8,17 +6,16 @@ namespace Cascade.Client.Chat;
 /// <summary>
 ///     Represents the chat feature state for Redux-style state management.
 /// </summary>
+/// <remarks>
+///     Note: Available channels and messages come from projections subscribed via InletStore,
+///     not from this feature state. This state tracks authentication and UI concerns only.
+/// </remarks>
 internal sealed record ChatState : IFeatureState
 {
     /// <summary>
     ///     Gets the unique key identifying this feature state in the store.
     /// </summary>
     public static string FeatureKey => "chat";
-
-    /// <summary>
-    ///     Gets the list of available channels.
-    /// </summary>
-    public ImmutableList<ChannelInfo> Channels { get; init; } = [];
 
     /// <summary>
     ///     Gets the error message if login failed.

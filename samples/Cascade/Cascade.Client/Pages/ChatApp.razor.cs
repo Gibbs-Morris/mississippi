@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -22,29 +21,70 @@ namespace Cascade.Client.Pages;
 /// <summary>
 ///     Chat application page implementing real-time messaging with Inlet/Reservoir state management.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This component demonstrates the Mississippi collection pattern:
+///     </para>
+///     <list type="bullet">
+///         <item>Subscribe to ID projections (lightweight, always loaded)</item>
+///         <item>Subscribe to individual item projections as they enter the viewport</item>
+///         <item>Unsubscribe from items as they leave the viewport</item>
+///     </list>
+///     <para>
+///         This enables efficient rendering of large lists without loading all data upfront.
+///     </para>
+/// </remarks>
 public sealed partial class ChatApp
     : StoreComponent,
       IAsyncDisposable
 {
+    /// <summary>
+    ///     The singleton projection ID for all channel IDs.
+    /// </summary>
+    private const string AllChannelIdsProjectionId = "all";
+
     private string displayName = string.Empty;
 
     private bool hasRendered;
 
+    private bool isAllChannelIdsSubscribed;
+
     private bool isCreatingChannel;
-
-    private bool isLoggingIn;
-
-    private string? loginError;
 
     private string newChannelName = string.Empty;
 
-    private string? previousChannelSubscription;
+    private string? previousMessageIdsChannelSubscription;
 
     private string? previousUserChannelListSubscription;
 
+    /// <summary>
+    ///     Tracks which channel summaries are currently subscribed.
+    /// </summary>
+    private HashSet<string> subscribedChannelSummaries = [];
+
+    /// <summary>
+    ///     Tracks which individual messages are currently subscribed.
+    /// </summary>
+    private HashSet<string> subscribedMessages = [];
+
+    /// <summary>
+    ///     Gets available channel IDs from the AllChannelIds projection.
+    /// </summary>
+    private IReadOnlySet<string>? AvailableChannelIds
+    {
+        get
+        {
+            AllChannelIdsDto? projection = InletStore.GetProjection<AllChannelIdsDto>(AllChannelIdsProjectionId);
+            return projection?.ChannelIds;
+        }
+    }
+
     private ChatState ChatState => GetState<ChatState>();
 
-    private IReadOnlyList<ChannelMessageItem>? CurrentMessages
+    /// <summary>
+    ///     Gets the current message IDs from the ChannelMessageIds projection.
+    /// </summary>
+    private IReadOnlyList<string>? CurrentMessageIds
     {
         get
         {
@@ -53,8 +93,9 @@ public sealed partial class ChatApp
                 return null;
             }
 
-            ChannelMessagesDto? projection = InletStore.GetProjection<ChannelMessagesDto>(ChatState.SelectedChannelId);
-            return projection?.Messages;
+            ChannelMessageIdsDto? projection = InletStore.GetProjection<ChannelMessageIdsDto>(
+                ChatState.SelectedChannelId);
+            return projection?.MessageIds;
         }
     }
 
@@ -66,36 +107,25 @@ public sealed partial class ChatApp
 
     private bool IsLoadingMessages =>
         !string.IsNullOrEmpty(ChatState.SelectedChannelId) &&
-        InletStore.IsProjectionLoading<ChannelMessagesDto>(ChatState.SelectedChannelId);
+        InletStore.IsProjectionLoading<ChannelMessageIdsDto>(ChatState.SelectedChannelId);
 
-    private string SelectedChannelName =>
-        ChatState.Channels.FirstOrDefault(c => c.ChannelId == ChatState.SelectedChannelId)?.Name ?? "Channel";
-
-    private static bool ChannelsMatch(
-        ImmutableList<ChannelInfo> current,
-        List<ChannelInfo> incoming
-    )
+    private string SelectedChannelName
     {
-        if (current.Count != incoming.Count)
+        get
         {
-            return false;
-        }
-
-        for (int i = 0; i < current.Count; i++)
-        {
-            if (current[i].ChannelId != incoming[i].ChannelId)
+            if (string.IsNullOrEmpty(ChatState.SelectedChannelId))
             {
-                return false;
+                return "Channel";
             }
-        }
 
-        return true;
+            ChannelSummaryDto? summary = GetChannelSummary(ChatState.SelectedChannelId);
+            return summary?.Name ?? "Channel";
+        }
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        // Unsubscribe from all projections when leaving the page
         UnsubscribeFromAllProjections();
         await Task.CompletedTask;
     }
@@ -111,17 +141,62 @@ public sealed partial class ChatApp
             hasRendered = true;
         }
 
-        // Only manage subscriptions after first render
         if (!hasRendered)
         {
             return;
         }
 
-        // Handle user channel list subscription based on authentication
-        await ManageUserChannelListSubscriptionAsync();
+        // Manage projection subscriptions based on current state
+        ManageAllChannelIdsSubscription();
+        ManageChannelSummarySubscriptions();
+        ManageMessageIdsSubscription();
+        ManageMessageSubscriptions();
+        ManageUserChannelListSubscription();
+    }
 
-        // Handle message subscription based on selected channel
-        ManageMessageSubscription();
+    /// <summary>
+    ///     Gets available channels by combining IDs with individual summaries.
+    /// </summary>
+    /// <returns>A list of channel information for display.</returns>
+    private List<ChannelInfo> GetAvailableChannels()
+    {
+        IReadOnlySet<string>? channelIds = AvailableChannelIds;
+        if (channelIds is null || (channelIds.Count == 0))
+        {
+            return [];
+        }
+
+        return channelIds.Select(id => GetChannelSummary(id))
+            .Where(c => c is not null && !c.IsArchived)
+            .OrderBy(c => c!.Name)
+            .Select(c => new ChannelInfo
+            {
+                ChannelId = c!.ChannelId,
+                Name = c.Name,
+            })
+            .ToList();
+    }
+
+    private ChannelSummaryDto? GetChannelSummary(
+        string channelId
+    ) =>
+        InletStore.GetProjection<ChannelSummaryDto>(channelId);
+
+    /// <summary>
+    ///     Gets the current messages by combining IDs with individual message projections.
+    /// </summary>
+    /// <returns>A list of messages for display.</returns>
+    private List<MessageDto>? GetCurrentMessages()
+    {
+        IReadOnlyList<string>? messageIds = CurrentMessageIds;
+        if (messageIds is null)
+        {
+            return null;
+        }
+
+        return messageIds.Select(id => InletStore.GetProjection<MessageDto>(id))
+            .Where(m => m is not null && !m.IsDeleted)
+            .ToList()!;
     }
 
     private void HandleCloseModal() => Dispatch(new HideCreateChannelModalAction());
@@ -136,11 +211,8 @@ public sealed partial class ChatApp
         isCreatingChannel = true;
         try
         {
-            // Generate a unique channel ID
             string channelId = $"channel-{Guid.NewGuid():N}"[..20];
             string trimmedName = newChannelName.Trim();
-
-            // Create the channel via API
             using HttpResponseMessage response = await Http.PostAsync(
                 new Uri(
                     $"/api/channels/{Uri.EscapeDataString(channelId)}/create?name={Uri.EscapeDataString(trimmedName)}&createdBy={Uri.EscapeDataString(ChatState.UserId)}",
@@ -148,23 +220,13 @@ public sealed partial class ChatApp
                 null);
             if (response.IsSuccessStatusCode)
             {
-                // Start a conversation for the channel
                 using HttpResponseMessage conversation = await Http.PostAsync(
                     new Uri($"/api/conversations/{Uri.EscapeDataString(channelId)}/start", UriKind.Relative),
                     null);
                 conversation.EnsureSuccessStatusCode();
-
-                // Join the channel (updates both user and channel aggregates)
                 await JoinChannelAsync(channelId, trimmedName);
-
-                // Add channel locally and select it
-                ChannelInfo newChannel = new()
-                {
-                    ChannelId = channelId,
-                    Name = trimmedName,
-                };
-                Dispatch(new ChannelCreatedAction(newChannel));
                 Dispatch(new HideCreateChannelModalAction());
+                Dispatch(new SelectChannelAction(channelId));
                 newChannelName = string.Empty;
             }
         }
@@ -180,21 +242,16 @@ public sealed partial class ChatApp
 
     private async Task HandleLoginAsync()
     {
-        if (string.IsNullOrWhiteSpace(displayName) || isLoggingIn)
+        if (string.IsNullOrWhiteSpace(displayName) || ChatState.IsLoggingIn)
         {
             return;
         }
 
-        isLoggingIn = true;
-        loginError = null;
         Dispatch(new LoginInProgressAction());
         try
         {
-            // Generate a unique user ID for this session
             string userId = $"user-{Guid.NewGuid():N}"[..16];
             string trimmedName = displayName.Trim();
-
-            // Register the user via API
             using HttpResponseMessage response = await Http.PostAsync(
                 new Uri(
                     $"/api/users/{Uri.EscapeDataString(userId)}/register?displayName={Uri.EscapeDataString(trimmedName)}",
@@ -203,30 +260,21 @@ public sealed partial class ChatApp
             if (response.IsSuccessStatusCode)
             {
                 Dispatch(new LoginSuccessAction(userId, trimmedName));
-
-                // Subscription to user's channel list happens in OnAfterRenderAsync
             }
             else
             {
                 string content = await response.Content.ReadAsStringAsync();
-                loginError = $"Registration failed: {content}";
-                Dispatch(new LoginFailedAction(loginError));
+                Dispatch(new LoginFailedAction($"Registration failed: {content}"));
             }
         }
         catch (HttpRequestException ex)
         {
-            loginError = $"Connection error: {ex.Message}";
-            Dispatch(new LoginFailedAction(loginError));
-        }
-        finally
-        {
-            isLoggingIn = false;
+            Dispatch(new LoginFailedAction($"Connection error: {ex.Message}"));
         }
     }
 
     private void HandleLogout()
     {
-        // Clean up all subscriptions before logout
         UnsubscribeFromAllProjections();
         Dispatch(new LogoutAction());
     }
@@ -235,11 +283,8 @@ public sealed partial class ChatApp
         string channelId
     )
     {
-        // Join the channel if not already joined
         await JoinChannelAsync(channelId);
         Dispatch(new SelectChannelAction(channelId));
-
-        // Subscription happens in OnAfterRenderAsync when state updates
     }
 
     private async Task HandleSendMessageAsync(
@@ -266,7 +311,7 @@ public sealed partial class ChatApp
         }
         catch (HttpRequestException)
         {
-            // Silently fail for demo; production would show error toast
+            // Silently fail for demo
         }
     }
 
@@ -277,6 +322,11 @@ public sealed partial class ChatApp
         string? channelName = null
     )
     {
+        if (string.IsNullOrEmpty(channelName))
+        {
+            channelName = GetChannelSummary(channelId)?.Name ?? channelId;
+        }
+
         try
         {
             string nameParam = string.IsNullOrEmpty(channelName)
@@ -287,96 +337,162 @@ public sealed partial class ChatApp
                     $"/api/users/{Uri.EscapeDataString(ChatState.UserId)}/channels/{Uri.EscapeDataString(channelId)}/join?{nameParam}",
                     UriKind.Relative),
                 null);
-
-            // Ignore errors - join is idempotent
             _ = response;
         }
         catch (HttpRequestException)
         {
-            // Silently fail - join is best-effort
+            // Silently fail
         }
     }
 
-    private void ManageMessageSubscription()
+    /// <summary>
+    ///     Manages subscription to AllChannelIds (singleton "all").
+    /// </summary>
+    private void ManageAllChannelIdsSubscription()
     {
-        if (ChatState.SelectedChannelId != previousChannelSubscription)
+        bool shouldSubscribe = ChatState.IsAuthenticated;
+        if (shouldSubscribe && !isAllChannelIdsSubscribed)
         {
-            // Unsubscribe from previous
-            if (!string.IsNullOrEmpty(previousChannelSubscription))
-            {
-                Dispatch(new UnsubscribeFromProjectionAction<ChannelMessagesDto>(previousChannelSubscription));
-            }
-
-            // Subscribe to new
-            if (!string.IsNullOrEmpty(ChatState.SelectedChannelId))
-            {
-                Dispatch(new SubscribeToProjectionAction<ChannelMessagesDto>(ChatState.SelectedChannelId));
-            }
-
-            previousChannelSubscription = ChatState.SelectedChannelId;
+            Dispatch(new SubscribeToProjectionAction<AllChannelIdsDto>(AllChannelIdsProjectionId));
+            isAllChannelIdsSubscribed = true;
+        }
+        else if (!shouldSubscribe && isAllChannelIdsSubscribed)
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<AllChannelIdsDto>(AllChannelIdsProjectionId));
+            isAllChannelIdsSubscribed = false;
         }
     }
 
-    private async Task ManageUserChannelListSubscriptionAsync()
+    /// <summary>
+    ///     Manages subscriptions to individual ChannelSummary projections.
+    /// </summary>
+    /// <remarks>
+    ///     Subscribes to all channel summaries when IDs are available.
+    ///     In a production app with many channels, you'd only subscribe to visible ones.
+    /// </remarks>
+    private void ManageChannelSummarySubscriptions()
+    {
+        IReadOnlySet<string>? currentIds = AvailableChannelIds;
+        HashSet<string> targetIds = currentIds?.ToHashSet() ?? [];
+
+        // Subscribe to new channels
+        foreach (string id in targetIds.Except(subscribedChannelSummaries))
+        {
+            Dispatch(new SubscribeToProjectionAction<ChannelSummaryDto>(id));
+        }
+
+        // Unsubscribe from removed channels
+        foreach (string id in subscribedChannelSummaries.Except(targetIds))
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<ChannelSummaryDto>(id));
+        }
+
+        subscribedChannelSummaries = targetIds;
+    }
+
+    /// <summary>
+    ///     Manages subscription to ChannelMessageIds for the selected channel.
+    /// </summary>
+    private void ManageMessageIdsSubscription()
+    {
+        string? currentChannel = ChatState.SelectedChannelId;
+        if (currentChannel != previousMessageIdsChannelSubscription)
+        {
+            if (!string.IsNullOrEmpty(previousMessageIdsChannelSubscription))
+            {
+                Dispatch(
+                    new UnsubscribeFromProjectionAction<ChannelMessageIdsDto>(previousMessageIdsChannelSubscription));
+            }
+
+            if (!string.IsNullOrEmpty(currentChannel))
+            {
+                Dispatch(new SubscribeToProjectionAction<ChannelMessageIdsDto>(currentChannel));
+            }
+
+            previousMessageIdsChannelSubscription = currentChannel;
+        }
+    }
+
+    /// <summary>
+    ///     Manages subscriptions to individual Message projections.
+    /// </summary>
+    /// <remarks>
+    ///     Currently subscribes to all messages in the channel.
+    ///     A production implementation would use viewport detection to only
+    ///     subscribe to visible messages and implement virtual scrolling.
+    /// </remarks>
+    private void ManageMessageSubscriptions()
+    {
+        IReadOnlyList<string>? currentIds = CurrentMessageIds;
+        HashSet<string> targetIds = currentIds?.ToHashSet() ?? [];
+
+        // Subscribe to new messages
+        foreach (string id in targetIds.Except(subscribedMessages))
+        {
+            Dispatch(new SubscribeToProjectionAction<MessageDto>(id));
+        }
+
+        // Unsubscribe from removed messages (channel changed)
+        foreach (string id in subscribedMessages.Except(targetIds))
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<MessageDto>(id));
+        }
+
+        subscribedMessages = targetIds;
+    }
+
+    private void ManageUserChannelListSubscription()
     {
         string? expectedSubscription = ChatState.IsAuthenticated ? ChatState.UserId : null;
         if (expectedSubscription != previousUserChannelListSubscription)
         {
-            // Unsubscribe from previous
             if (!string.IsNullOrEmpty(previousUserChannelListSubscription))
             {
                 Dispatch(new UnsubscribeFromProjectionAction<UserChannelListDto>(previousUserChannelListSubscription));
             }
 
-            // Subscribe to new user's channel list
             if (!string.IsNullOrEmpty(expectedSubscription))
             {
                 Dispatch(new SubscribeToProjectionAction<UserChannelListDto>(expectedSubscription));
-
-                // Sync channels from projection when it loads
-                await SyncChannelsFromProjectionAsync();
             }
 
             previousUserChannelListSubscription = expectedSubscription;
         }
-        else if (ChatState.IsAuthenticated && !string.IsNullOrEmpty(ChatState.UserId))
-        {
-            // Check if we have projection data to sync
-            await SyncChannelsFromProjectionAsync();
-        }
-    }
-
-    private async Task SyncChannelsFromProjectionAsync()
-    {
-        UserChannelListDto? userChannels = InletStore.GetProjection<UserChannelListDto>(ChatState.UserId);
-        if (userChannels is not null)
-        {
-            // Convert projection to channel info list
-            List<ChannelInfo> channels = userChannels.Channels.Select(c => new ChannelInfo
-                {
-                    ChannelId = c.ChannelId,
-                    Name = string.IsNullOrEmpty(c.ChannelName) ? c.ChannelId : c.ChannelName,
-                })
-                .ToList();
-
-            // Only dispatch if channels changed
-            if (!ChannelsMatch(ChatState.Channels, channels))
-            {
-                Dispatch(new ChannelsLoadedAction(channels));
-            }
-        }
-
-        await Task.CompletedTask;
     }
 
     private void UnsubscribeFromAllProjections()
     {
-        if (!string.IsNullOrEmpty(previousChannelSubscription))
+        // Unsubscribe from AllChannelIds
+        if (isAllChannelIdsSubscribed)
         {
-            Dispatch(new UnsubscribeFromProjectionAction<ChannelMessagesDto>(previousChannelSubscription));
-            previousChannelSubscription = null;
+            Dispatch(new UnsubscribeFromProjectionAction<AllChannelIdsDto>(AllChannelIdsProjectionId));
+            isAllChannelIdsSubscribed = false;
         }
 
+        // Unsubscribe from all channel summaries
+        foreach (string id in subscribedChannelSummaries)
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<ChannelSummaryDto>(id));
+        }
+
+        subscribedChannelSummaries = [];
+
+        // Unsubscribe from message IDs
+        if (!string.IsNullOrEmpty(previousMessageIdsChannelSubscription))
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<ChannelMessageIdsDto>(previousMessageIdsChannelSubscription));
+            previousMessageIdsChannelSubscription = null;
+        }
+
+        // Unsubscribe from all individual messages
+        foreach (string id in subscribedMessages)
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<MessageDto>(id));
+        }
+
+        subscribedMessages = [];
+
+        // Unsubscribe from user channel list
         if (!string.IsNullOrEmpty(previousUserChannelListSubscription))
         {
             Dispatch(new UnsubscribeFromProjectionAction<UserChannelListDto>(previousUserChannelListSubscription));

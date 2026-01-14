@@ -40,7 +40,6 @@ namespace Mississippi.Inlet.Projection.Abstractions;
 ///             // Server-side projection (in Domain project):
 ///             [ProjectionPath("cascade/channels")]
 ///             public sealed record ChannelMessagesProjection { ... }
-///
 ///             // Client-side DTO (in Contracts project, WASM-safe):
 ///             [ProjectionPath("cascade/channels")]
 ///             public sealed record ChannelMessagesDto { ... }

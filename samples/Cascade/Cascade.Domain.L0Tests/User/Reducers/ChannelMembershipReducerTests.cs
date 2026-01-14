@@ -12,7 +12,7 @@ using Cascade.Domain.User.Reducers;
 namespace Cascade.Domain.L0Tests.User.Reducers;
 
 /// <summary>
-///     Tests for <see cref="UserJoinedChannelReducer" /> and <see cref="UserLeftChannelReducer" />.
+///     Tests for <see cref="UserJoinedChannelEventReducer" /> and <see cref="UserLeftChannelEventReducer" />.
 /// </summary>
 [AllureParentSuite("Cascade")]
 [AllureSuite("User")]
@@ -28,10 +28,11 @@ public sealed class ChannelMembershipReducerTests
     public void ReduceUserJoinedChannelAddsChannel()
     {
         // Arrange
-        UserJoinedChannelReducer reducer = new();
+        UserJoinedChannelEventReducer eventReducer = new();
         UserJoinedChannel evt = new()
         {
             ChannelId = "channel-1",
+            ChannelName = "General",
             JoinedAt = DateTimeOffset.UtcNow,
         };
         UserAggregate state = new()
@@ -43,7 +44,7 @@ public sealed class ChannelMembershipReducerTests
         };
 
         // Act
-        UserAggregate result = reducer.Reduce(state, evt);
+        UserAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.Contains("channel-1", result.ChannelIds);
@@ -58,10 +59,11 @@ public sealed class ChannelMembershipReducerTests
     public void ReduceUserJoinedChannelWithExistingChannels()
     {
         // Arrange
-        UserJoinedChannelReducer reducer = new();
+        UserJoinedChannelEventReducer eventReducer = new();
         UserJoinedChannel evt = new()
         {
             ChannelId = "channel-2",
+            ChannelName = "Random",
             JoinedAt = DateTimeOffset.UtcNow,
         };
         UserAggregate state = new()
@@ -73,7 +75,7 @@ public sealed class ChannelMembershipReducerTests
         };
 
         // Act
-        UserAggregate result = reducer.Reduce(state, evt);
+        UserAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.Contains("channel-1", result.ChannelIds);
@@ -89,7 +91,7 @@ public sealed class ChannelMembershipReducerTests
     public void ReduceUserLeftChannelLastChannel()
     {
         // Arrange
-        UserLeftChannelReducer reducer = new();
+        UserLeftChannelEventReducer eventReducer = new();
         UserLeftChannel evt = new()
         {
             ChannelId = "channel-1",
@@ -104,7 +106,7 @@ public sealed class ChannelMembershipReducerTests
         };
 
         // Act
-        UserAggregate result = reducer.Reduce(state, evt);
+        UserAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.Empty(result.ChannelIds);
@@ -118,7 +120,7 @@ public sealed class ChannelMembershipReducerTests
     public void ReduceUserLeftChannelRemovesChannel()
     {
         // Arrange
-        UserLeftChannelReducer reducer = new();
+        UserLeftChannelEventReducer eventReducer = new();
         UserLeftChannel evt = new()
         {
             ChannelId = "channel-1",
@@ -133,7 +135,7 @@ public sealed class ChannelMembershipReducerTests
         };
 
         // Act
-        UserAggregate result = reducer.Reduce(state, evt);
+        UserAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.DoesNotContain("channel-1", result.ChannelIds);

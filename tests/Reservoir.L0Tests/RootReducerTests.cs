@@ -20,7 +20,7 @@ public sealed class RootReducerTests
     /// <summary>
     ///     A fallback reducer that increments for any action.
     /// </summary>
-    private sealed class FallbackReducer : IReducer<TestState>
+    private sealed class FallbackActionReducer : IActionReducer<TestState>
     {
         /// <inheritdoc />
         public bool TryReduce(
@@ -45,7 +45,7 @@ public sealed class RootReducerTests
     /// <summary>
     ///     Test reducer that increments counter.
     /// </summary>
-    private sealed class IncrementReducer : ReducerBase<IncrementAction, TestState>
+    private sealed class IncrementActionReducer : ActionReducerBase<IncrementAction, TestState>
     {
         /// <inheritdoc />
         public override TestState Reduce(
@@ -96,7 +96,7 @@ public sealed class RootReducerTests
     public void ReduceAppliesBothIndexedAndFallbackReducers()
     {
         // Arrange
-        RootReducer<TestState> sut = new([new IncrementReducer(), new FallbackReducer()]);
+        RootReducer<TestState> sut = new([new IncrementActionReducer(), new FallbackActionReducer()]);
         TestState initialState = new()
         {
             Counter = 0,
@@ -117,7 +117,7 @@ public sealed class RootReducerTests
     public void ReduceAppliesMatchingReducer()
     {
         // Arrange
-        RootReducer<TestState> sut = new([new IncrementReducer()]);
+        RootReducer<TestState> sut = new([new IncrementActionReducer()]);
         TestState initialState = new()
         {
             Counter = 5,
@@ -138,7 +138,7 @@ public sealed class RootReducerTests
     public void ReduceAppliesMultipleReducersInOrder()
     {
         // Arrange
-        RootReducer<TestState> sut = new([new IncrementReducer(), new IncrementReducer()]);
+        RootReducer<TestState> sut = new([new IncrementActionReducer(), new IncrementActionReducer()]);
         TestState initialState = new()
         {
             Counter = 0,
@@ -152,14 +152,14 @@ public sealed class RootReducerTests
     }
 
     /// <summary>
-    ///     RootReducer should handle fallback reducers (IReducer without specific TAction).
+    ///     RootReducer should handle fallback reducers (IActionReducer without specific TAction).
     /// </summary>
     [Fact]
     [AllureFeature("Reduction")]
     public void ReduceHandlesFallbackReducers()
     {
         // Arrange
-        RootReducer<TestState> sut = new([new FallbackReducer()]);
+        RootReducer<TestState> sut = new([new FallbackActionReducer()]);
         TestState initialState = new()
         {
             Counter = 5,

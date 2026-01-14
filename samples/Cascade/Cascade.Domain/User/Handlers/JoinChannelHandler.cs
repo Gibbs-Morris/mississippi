@@ -47,6 +47,7 @@ internal sealed class JoinChannelHandler : CommandHandlerBase<JoinChannel, UserA
                 new UserJoinedChannel
                 {
                     ChannelId = command.ChannelId,
+                    ChannelName = command.ChannelName,
                     JoinedAt = DateTimeOffset.UtcNow,
                 },
             });

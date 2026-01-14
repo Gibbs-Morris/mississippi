@@ -28,7 +28,7 @@ public sealed class ChannelReducerTests
     public void ReduceChannelArchivedSetsArchived()
     {
         // Arrange
-        ChannelArchivedReducer reducer = new();
+        ChannelArchivedEventReducer eventReducer = new();
         ChannelArchived evt = new()
         {
             ArchivedBy = "user-123",
@@ -43,7 +43,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelAggregate result = reducer.Reduce(state, evt);
+        ChannelAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.True(result.IsArchived);
@@ -58,7 +58,7 @@ public sealed class ChannelReducerTests
     public void ReduceChannelCreatedCreatesState()
     {
         // Arrange
-        ChannelCreatedReducer reducer = new();
+        ChannelCreatedEventReducer eventReducer = new();
         DateTimeOffset createdAt = DateTimeOffset.UtcNow;
         ChannelCreated evt = new()
         {
@@ -69,7 +69,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelAggregate result = reducer.Reduce(null!, evt);
+        ChannelAggregate result = eventReducer.Reduce(null!, evt);
 
         // Assert
         Assert.True(result.IsCreated);
@@ -88,7 +88,7 @@ public sealed class ChannelReducerTests
     public void ReduceChannelRenamedUpdatesName()
     {
         // Arrange
-        ChannelRenamedReducer reducer = new();
+        ChannelRenamedEventReducer eventReducer = new();
         ChannelRenamed evt = new()
         {
             OldName = "Old Name",
@@ -102,7 +102,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelAggregate result = reducer.Reduce(state, evt);
+        ChannelAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.Equal("New Name", result.Name);
@@ -117,7 +117,7 @@ public sealed class ChannelReducerTests
     public void ReduceMemberAddedAddsMember()
     {
         // Arrange
-        MemberAddedReducer reducer = new();
+        MemberAddedEventReducer eventReducer = new();
         MemberAdded evt = new()
         {
             UserId = "user-456",
@@ -132,7 +132,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelAggregate result = reducer.Reduce(state, evt);
+        ChannelAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.Contains("user-123", result.MemberIds);
@@ -148,7 +148,7 @@ public sealed class ChannelReducerTests
     public void ReduceMemberRemovedRemovesMember()
     {
         // Arrange
-        MemberRemovedReducer reducer = new();
+        MemberRemovedEventReducer eventReducer = new();
         MemberRemoved evt = new()
         {
             UserId = "user-123",
@@ -163,7 +163,7 @@ public sealed class ChannelReducerTests
         };
 
         // Act
-        ChannelAggregate result = reducer.Reduce(state, evt);
+        ChannelAggregate result = eventReducer.Reduce(state, evt);
 
         // Assert
         Assert.DoesNotContain("user-123", result.MemberIds);

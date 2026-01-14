@@ -7,7 +7,7 @@ using Mississippi.Reservoir.Abstractions.State;
 namespace Mississippi.Reservoir.Abstractions.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="ReducerBase{TAction,TState}" />.
+///     Tests for <see cref="ActionReducerBase{TAction,TState}" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Reservoir.Abstractions")]
 [AllureSuite("Core")]
@@ -22,7 +22,7 @@ public sealed class ReducerTests
     /// <summary>
     ///     Test reducer implementation.
     /// </summary>
-    private sealed class IncrementReducer : ReducerBase<IncrementAction, TestState>
+    private sealed class IncrementActionReducer : ActionReducerBase<IncrementAction, TestState>
     {
         /// <inheritdoc />
         public override TestState Reduce(
@@ -62,7 +62,7 @@ public sealed class ReducerTests
     public void ReduceAppliesTransformation()
     {
         // Arrange
-        IncrementReducer sut = new();
+        IncrementActionReducer sut = new();
         TestState initialState = new()
         {
             Counter = 5,
@@ -83,7 +83,7 @@ public sealed class ReducerTests
     public void TryReduceReturnsFalseForNonMatchingActionType()
     {
         // Arrange
-        IncrementReducer sut = new();
+        IncrementActionReducer sut = new();
         TestState initialState = new()
         {
             Counter = 10,
@@ -105,7 +105,7 @@ public sealed class ReducerTests
     public void TryReduceReturnsTrueForMatchingActionType()
     {
         // Arrange
-        IncrementReducer sut = new();
+        IncrementActionReducer sut = new();
         TestState initialState = new()
         {
             Counter = 10,

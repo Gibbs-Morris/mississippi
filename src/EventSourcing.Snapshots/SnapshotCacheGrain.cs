@@ -73,7 +73,7 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="snapshotStorageReader">Reader for loading snapshots from storage.</param>
     /// <param name="brookGrainFactory">Factory for resolving brook grains.</param>
-    /// <param name="rootReducer">The root reducer for computing state from events.</param>
+    /// <param name="rootReducer">The root event reducer for computing state from events.</param>
     /// <param name="snapshotStateConverter">Converter for serializing/deserializing state to/from envelopes.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="retentionOptions">Options controlling snapshot retention and replay strategy.</param>
@@ -137,42 +137,55 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
         CancellationToken token
     )
     {
+        Stopwatch activationStopwatch = Stopwatch.StartNew();
         string primaryKey = this.GetPrimaryKeyString();
         string snapshotTypeName = typeof(TSnapshot).Name;
         snapshotKey = SnapshotKey.FromString(primaryKey);
         Logger.Activating(primaryKey);
-        string currentReducerHash = RootReducer.GetReducerHash();
-        SnapshotEnvelope? envelope = await SnapshotStorageReader.ReadAsync(snapshotKey, token);
-        if (envelope is not null)
+        bool success = false;
+        try
         {
-            // Check if reducer hash matches
-            if (!string.IsNullOrEmpty(envelope.ReducerHash) &&
-                string.Equals(envelope.ReducerHash, currentReducerHash, StringComparison.Ordinal))
+            string currentReducerHash = RootReducer.GetReducerHash();
+            SnapshotEnvelope? envelope = await SnapshotStorageReader.ReadAsync(snapshotKey, token);
+            if (envelope is not null)
             {
-                // Snapshot is valid, use it directly
-                state = SnapshotStateConverter.FromEnvelope(envelope);
-                SnapshotMetrics.RecordCacheHit(snapshotTypeName);
-                Logger.SnapshotLoadedFromStorage(primaryKey);
-                Logger.Activated(primaryKey);
-                return;
+                // Check if event reducer hash matches
+                if (!string.IsNullOrEmpty(envelope.ReducerHash) &&
+                    string.Equals(envelope.ReducerHash, currentReducerHash, StringComparison.Ordinal))
+                {
+                    // Snapshot is valid, use it directly
+                    state = SnapshotStateConverter.FromEnvelope(envelope);
+                    SnapshotMetrics.RecordCacheHit(snapshotTypeName);
+                    SnapshotMetrics.RecordStateSize(snapshotTypeName, envelope.DataSizeBytes);
+                    Logger.SnapshotLoadedFromStorage(primaryKey);
+                    Logger.Activated(primaryKey);
+                    success = true;
+                    return;
+                }
+
+                // Reducer hash mismatch - need to rebuild
+                SnapshotMetrics.RecordReducerHashMismatch(snapshotTypeName);
+                Logger.ReducerHashMismatch(primaryKey, envelope.ReducerHash, currentReducerHash);
+            }
+            else
+            {
+                SnapshotMetrics.RecordCacheMiss(snapshotTypeName);
+                Logger.NoSnapshotInStorage(primaryKey);
             }
 
-            // Reducer hash mismatch - need to rebuild
-            SnapshotMetrics.RecordReducerHashMismatch(snapshotTypeName);
-            Logger.ReducerHashMismatch(primaryKey, envelope.ReducerHash, currentReducerHash);
+            // Rebuild state from the event stream
+            await RebuildStateFromStreamAsync(token);
+
+            // Request background persistence since we rebuilt
+            RequestBackgroundPersistence(currentReducerHash);
+            Logger.Activated(primaryKey);
+            success = true;
         }
-        else
+        finally
         {
-            SnapshotMetrics.RecordCacheMiss(snapshotTypeName);
-            Logger.NoSnapshotInStorage(primaryKey);
+            activationStopwatch.Stop();
+            SnapshotMetrics.RecordActivation(snapshotTypeName, activationStopwatch.Elapsed.TotalMilliseconds, success);
         }
-
-        // Rebuild state from the event stream
-        await RebuildStateFromStreamAsync(token);
-
-        // Request background persistence since we rebuilt
-        RequestBackgroundPersistence(currentReducerHash);
-        Logger.Activated(primaryKey);
     }
 
     private async Task RebuildStateFromStreamAsync(
@@ -246,8 +259,12 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
         }
 
         string keyString = snapshotKey;
+        string snapshotTypeName = typeof(TSnapshot).Name;
         Logger.RequestingPersistence(keyString);
         SnapshotEnvelope envelope = SnapshotStateConverter.ToEnvelope(state, reducerHash);
+
+        // Record state size after rebuild (envelope contains serialized size)
+        SnapshotMetrics.RecordStateSize(snapshotTypeName, envelope.DataSizeBytes);
         ISnapshotPersisterGrain persisterGrain = SnapshotGrainFactory.GetSnapshotPersisterGrain(snapshotKey);
 
         // Fire-and-forget: method is marked with [OneWay] for background persistence

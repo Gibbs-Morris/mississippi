@@ -9,6 +9,7 @@ using Cascade.Domain.Conversation.Events;
 using Cascade.Domain.Conversation.Handlers;
 using Cascade.Domain.Conversation.Reducers;
 using Cascade.Domain.Projections.ChannelMemberList;
+using Cascade.Domain.Projections.ChannelMessageIds;
 using Cascade.Domain.Projections.ChannelMessages;
 using Cascade.Domain.Projections.OnlineUsers;
 using Cascade.Domain.Projections.UserChannelList;
@@ -28,6 +29,7 @@ using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.UxProjections;
 
 using ChannelMemberListReducers = Cascade.Domain.Projections.ChannelMemberList.Reducers;
+using ChannelMessageIdsReducers = Cascade.Domain.Projections.ChannelMessageIds.Reducers;
 using ChannelMessagesReducers = Cascade.Domain.Projections.ChannelMessages.Reducers;
 using OnlineUsersReducers = Cascade.Domain.Projections.OnlineUsers.Reducers;
 using UserChannelListReducers = Cascade.Domain.Projections.UserChannelList.Reducers;
@@ -65,6 +67,7 @@ public static class CascadeRegistrations
         services.AddUserProfileProjection();
         services.AddUserChannelListProjection();
         services.AddChannelMessagesProjection();
+        services.AddChannelMessageIdsProjection();
         services.AddChannelMemberListProjection();
         services.AddOnlineUsersProjection();
 
@@ -97,11 +100,11 @@ public static class CascadeRegistrations
         services.AddCommandHandler<RemoveMember, ChannelAggregate, RemoveMemberHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<ChannelCreated, ChannelAggregate, ChannelCreatedReducer>();
-        services.AddReducer<ChannelRenamed, ChannelAggregate, ChannelRenamedReducer>();
-        services.AddReducer<ChannelArchived, ChannelAggregate, ChannelArchivedReducer>();
-        services.AddReducer<MemberAdded, ChannelAggregate, MemberAddedReducer>();
-        services.AddReducer<MemberRemoved, ChannelAggregate, MemberRemovedReducer>();
+        services.AddReducer<ChannelCreated, ChannelAggregate, ChannelCreatedEventReducer>();
+        services.AddReducer<ChannelRenamed, ChannelAggregate, ChannelRenamedEventReducer>();
+        services.AddReducer<ChannelArchived, ChannelAggregate, ChannelArchivedEventReducer>();
+        services.AddReducer<MemberAdded, ChannelAggregate, MemberAddedEventReducer>();
+        services.AddReducer<MemberRemoved, ChannelAggregate, MemberRemovedEventReducer>();
 
         // Add snapshot state converter for ChannelAggregate
         services.AddSnapshotStateConverter<ChannelAggregate>();
@@ -120,16 +123,38 @@ public static class CascadeRegistrations
         // Register reducers for ChannelMemberListProjection (UX projection)
         services
             .AddReducer<ChannelCreated, ChannelMemberListProjection,
-                ChannelMemberListReducers.ChannelCreatedProjectionReducer>();
+                ChannelMemberListReducers.ChannelCreatedProjectionEventReducer>();
         services
             .AddReducer<MemberAdded, ChannelMemberListProjection,
-                ChannelMemberListReducers.MemberAddedProjectionReducer>();
+                ChannelMemberListReducers.MemberAddedProjectionEventReducer>();
         services
             .AddReducer<MemberRemoved, ChannelMemberListProjection,
-                ChannelMemberListReducers.MemberRemovedProjectionReducer>();
+                ChannelMemberListReducers.MemberRemovedProjectionEventReducer>();
 
         // Add snapshot state converter for ChannelMemberListProjection
         services.AddSnapshotStateConverter<ChannelMemberListProjection>();
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds the ChannelMessageIdsProjection services to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    private static IServiceCollection AddChannelMessageIdsProjection(
+        this IServiceCollection services
+    )
+    {
+        // Register reducers for ChannelMessageIdsProjection (UX projection)
+        services
+            .AddReducer<ConversationStarted, ChannelMessageIdsProjection,
+                ChannelMessageIdsReducers.ConversationStartedMessageIdsEventReducer>();
+        services
+            .AddReducer<MessageSent, ChannelMessageIdsProjection,
+                ChannelMessageIdsReducers.MessageSentMessageIdsEventReducer>();
+
+        // Add snapshot state converter for ChannelMessageIdsProjection
+        services.AddSnapshotStateConverter<ChannelMessageIdsProjection>();
         return services;
     }
 
@@ -145,15 +170,16 @@ public static class CascadeRegistrations
         // Register reducers for ChannelMessagesProjection (UX projection)
         services
             .AddReducer<ConversationStarted, ChannelMessagesProjection,
-                ChannelMessagesReducers.ConversationStartedProjectionReducer>();
+                ChannelMessagesReducers.ConversationStartedProjectionEventReducer>();
         services
-            .AddReducer<MessageSent, ChannelMessagesProjection, ChannelMessagesReducers.MessageSentProjectionReducer>();
+            .AddReducer<MessageSent, ChannelMessagesProjection,
+                ChannelMessagesReducers.MessageSentProjectionEventReducer>();
         services
             .AddReducer<MessageEdited, ChannelMessagesProjection,
-                ChannelMessagesReducers.MessageEditedProjectionReducer>();
+                ChannelMessagesReducers.MessageEditedProjectionEventReducer>();
         services
             .AddReducer<MessageDeleted, ChannelMessagesProjection,
-                ChannelMessagesReducers.MessageDeletedProjectionReducer>();
+                ChannelMessagesReducers.MessageDeletedProjectionEventReducer>();
 
         // Add snapshot state converter for ChannelMessagesProjection
         services.AddSnapshotStateConverter<ChannelMessagesProjection>();
@@ -182,10 +208,10 @@ public static class CascadeRegistrations
         services.AddCommandHandler<DeleteMessage, ConversationAggregate, DeleteMessageHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<ConversationStarted, ConversationAggregate, ConversationStartedReducer>();
-        services.AddReducer<MessageSent, ConversationAggregate, MessageSentReducer>();
-        services.AddReducer<MessageEdited, ConversationAggregate, MessageEditedReducer>();
-        services.AddReducer<MessageDeleted, ConversationAggregate, MessageDeletedReducer>();
+        services.AddReducer<ConversationStarted, ConversationAggregate, ConversationStartedEventReducer>();
+        services.AddReducer<MessageSent, ConversationAggregate, MessageSentEventReducer>();
+        services.AddReducer<MessageEdited, ConversationAggregate, MessageEditedEventReducer>();
+        services.AddReducer<MessageDeleted, ConversationAggregate, MessageDeletedEventReducer>();
 
         // Add snapshot state converter for ConversationAggregate
         services.AddSnapshotStateConverter<ConversationAggregate>();
@@ -203,14 +229,17 @@ public static class CascadeRegistrations
     {
         // Register reducers for OnlineUsersProjection (UX projection)
         services
-            .AddReducer<UserRegistered, OnlineUsersProjection, OnlineUsersReducers.UserRegisteredProjectionReducer>();
+            .AddReducer<UserRegistered, OnlineUsersProjection,
+                OnlineUsersReducers.UserRegisteredProjectionEventReducer>();
         services
             .AddReducer<DisplayNameUpdated, OnlineUsersProjection,
-                OnlineUsersReducers.DisplayNameUpdatedProjectionReducer>();
+                OnlineUsersReducers.DisplayNameUpdatedProjectionEventReducer>();
         services
-            .AddReducer<UserWentOnline, OnlineUsersProjection, OnlineUsersReducers.UserWentOnlineProjectionReducer>();
+            .AddReducer<UserWentOnline, OnlineUsersProjection,
+                OnlineUsersReducers.UserWentOnlineProjectionEventReducer>();
         services
-            .AddReducer<UserWentOffline, OnlineUsersProjection, OnlineUsersReducers.UserWentOfflineProjectionReducer>();
+            .AddReducer<UserWentOffline, OnlineUsersProjection,
+                OnlineUsersReducers.UserWentOfflineProjectionEventReducer>();
 
         // Add snapshot state converter for OnlineUsersProjection
         services.AddSnapshotStateConverter<OnlineUsersProjection>();
@@ -242,12 +271,12 @@ public static class CascadeRegistrations
         services.AddCommandHandler<LeaveChannel, UserAggregate, LeaveChannelHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<UserRegistered, UserAggregate, UserRegisteredReducer>();
-        services.AddReducer<DisplayNameUpdated, UserAggregate, DisplayNameUpdatedReducer>();
-        services.AddReducer<UserWentOnline, UserAggregate, UserWentOnlineReducer>();
-        services.AddReducer<UserWentOffline, UserAggregate, UserWentOfflineReducer>();
-        services.AddReducer<UserJoinedChannel, UserAggregate, UserJoinedChannelReducer>();
-        services.AddReducer<UserLeftChannel, UserAggregate, UserLeftChannelReducer>();
+        services.AddReducer<UserRegistered, UserAggregate, UserRegisteredEventReducer>();
+        services.AddReducer<DisplayNameUpdated, UserAggregate, DisplayNameUpdatedEventReducer>();
+        services.AddReducer<UserWentOnline, UserAggregate, UserWentOnlineEventReducer>();
+        services.AddReducer<UserWentOffline, UserAggregate, UserWentOfflineEventReducer>();
+        services.AddReducer<UserJoinedChannel, UserAggregate, UserJoinedChannelEventReducer>();
+        services.AddReducer<UserLeftChannel, UserAggregate, UserLeftChannelEventReducer>();
 
         // Add snapshot state converter for UserAggregate
         services.AddSnapshotStateConverter<UserAggregate>();
@@ -266,13 +295,13 @@ public static class CascadeRegistrations
         // Register reducers for UserChannelListProjection (UX projection)
         services
             .AddReducer<UserRegistered, UserChannelListProjection,
-                UserChannelListReducers.UserRegisteredProjectionReducer>();
+                UserChannelListReducers.UserRegisteredProjectionEventReducer>();
         services
             .AddReducer<UserJoinedChannel, UserChannelListProjection,
-                UserChannelListReducers.UserJoinedChannelProjectionReducer>();
+                UserChannelListReducers.UserJoinedChannelProjectionEventReducer>();
         services
             .AddReducer<UserLeftChannel, UserChannelListProjection,
-                UserChannelListReducers.UserLeftChannelProjectionReducer>();
+                UserChannelListReducers.UserLeftChannelProjectionEventReducer>();
 
         // Add snapshot state converter for UserChannelListProjection
         services.AddSnapshotStateConverter<UserChannelListProjection>();
@@ -289,12 +318,12 @@ public static class CascadeRegistrations
     )
     {
         // Register reducers for UserProfileProjection (UX projection)
-        services.AddReducer<UserRegistered, UserProfileProjection, UserRegisteredProjectionReducer>();
-        services.AddReducer<DisplayNameUpdated, UserProfileProjection, DisplayNameUpdatedProjectionReducer>();
-        services.AddReducer<UserWentOnline, UserProfileProjection, UserWentOnlineProjectionReducer>();
-        services.AddReducer<UserWentOffline, UserProfileProjection, UserWentOfflineProjectionReducer>();
-        services.AddReducer<UserJoinedChannel, UserProfileProjection, UserJoinedChannelProjectionReducer>();
-        services.AddReducer<UserLeftChannel, UserProfileProjection, UserLeftChannelProjectionReducer>();
+        services.AddReducer<UserRegistered, UserProfileProjection, UserRegisteredProjectionEventReducer>();
+        services.AddReducer<DisplayNameUpdated, UserProfileProjection, DisplayNameUpdatedProjectionEventReducer>();
+        services.AddReducer<UserWentOnline, UserProfileProjection, UserWentOnlineProjectionEventReducer>();
+        services.AddReducer<UserWentOffline, UserProfileProjection, UserWentOfflineProjectionEventReducer>();
+        services.AddReducer<UserJoinedChannel, UserProfileProjection, UserJoinedChannelProjectionEventReducer>();
+        services.AddReducer<UserLeftChannel, UserProfileProjection, UserLeftChannelProjectionEventReducer>();
 
         // Add snapshot state converter for UserProfileProjection
         services.AddSnapshotStateConverter<UserProfileProjection>();

@@ -12,8 +12,8 @@ namespace Mississippi.Reservoir.Abstractions;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The store follows a Redux-like pattern with actions, reducers, middleware, and effects.
-///         Actions are dispatched to update state synchronously via reducers, and asynchronously
+///         The store follows a Redux-like pattern with actions, action reducers, middleware, and effects.
+///         Actions are dispatched to update state synchronously via action reducers, and asynchronously
 ///         via effects for side-effect operations.
 ///     </para>
 ///     <para>
@@ -25,7 +25,7 @@ public interface IStore : IDisposable
 {
     /// <summary>
     ///     Dispatches an action to the store.
-    ///     Actions are processed by middleware, then reducers, then effects.
+    ///     Actions are processed by middleware, then action reducers, then effects.
     /// </summary>
     /// <param name="action">The action to dispatch.</param>
     void Dispatch(
@@ -38,7 +38,7 @@ public interface IStore : IDisposable
     /// <typeparam name="TState">The feature state type (must implement <see cref="IFeatureState" />).</typeparam>
     /// <returns>The current feature state.</returns>
     /// <exception cref="InvalidOperationException">
-    ///     Thrown when no reducer is registered for the feature state.
+    ///     Thrown when no action reducer is registered for the feature state.
     /// </exception>
     TState GetState<TState>()
         where TState : class, IFeatureState;

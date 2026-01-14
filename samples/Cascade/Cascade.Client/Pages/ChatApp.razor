@@ -6,8 +6,6 @@
 @using Cascade.Client.Components.Organisms.MessageList
 @inherits Mississippi.Reservoir.Blazor.StoreComponent
 
-<link href="css/chat-app.css" rel="stylesheet"/>
-
 @if (!ChatState.IsAuthenticated)
 {
     @* Login Screen *@
@@ -17,10 +15,10 @@
             <h1 class="chat-login__title">Welcome to Cascade Chat</h1>
             <p class="chat-login__subtitle">Enter your name to get started</p>
 
-            @if (!string.IsNullOrEmpty(loginError))
+            @if (!string.IsNullOrEmpty(ChatState.Error))
             {
                 <div class="chat-login__error" role="alert">
-                    @loginError
+                    @ChatState.Error
                 </div>
             }
 
@@ -30,14 +28,14 @@
                        Value="@displayName"
                        ValueChanged="@(value => displayName = value)"
                        OnEnter="HandleLoginAsync"
-                       Disabled="@isLoggingIn"/>
+                       Disabled="@ChatState.IsLoggingIn"/>
 
                 <Button Variant="primary"
                         Size="lg"
                         FullWidth="true"
                         OnClick="HandleLoginAsync"
-                        Disabled="@(isLoggingIn || string.IsNullOrWhiteSpace(displayName))">
-                    @if (isLoggingIn)
+                        Disabled="@(ChatState.IsLoggingIn || string.IsNullOrWhiteSpace(displayName))">
+                    @if (ChatState.IsLoggingIn)
                     {
                         <span>Signing in...</span>
                     }
@@ -55,7 +53,7 @@ else
     @* Main Chat Interface *@
     <div class="chat-app">
         @* Sidebar *@
-        <ChannelSidebar Channels="@ChatState.Channels"
+        <ChannelSidebar Channels="@GetAvailableChannels()"
                         SelectedChannelId="@ChatState.SelectedChannelId"
                         CurrentUserName="@ChatState.UserDisplayName"
                         OnSelectChannel="HandleSelectChannelAsync"
@@ -88,7 +86,7 @@ else
                     <span class="chat-header__topic">Real-time messaging powered by Mississippi + Orleans</span>
                 </header>
                 @* Message List *@
-                <MessageList Messages="@CurrentMessages" IsLoading="@IsLoadingMessages"/>
+                <MessageList Messages="@GetCurrentMessages()" IsLoading="@IsLoadingMessages"/>
                 @* Message Input *@
                 <MessageInput Placeholder="@($"Message #{SelectedChannelName}")"
                               OnSend="HandleSendMessageAsync"

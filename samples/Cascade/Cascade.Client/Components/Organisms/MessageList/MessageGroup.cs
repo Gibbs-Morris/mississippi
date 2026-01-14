@@ -19,7 +19,7 @@ internal sealed record MessageGroup
     /// <summary>
     ///     Gets the messages in this group.
     /// </summary>
-    public required IReadOnlyList<ChannelMessageItem> Messages { get; init; }
+    public required IReadOnlyList<MessageDto> Messages { get; init; }
 
     /// <summary>
     ///     Gets the sender of this message group.

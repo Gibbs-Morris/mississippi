@@ -113,8 +113,8 @@ services.AddReducer<IncrementAction, CounterState>(
 services.AddReducer<DecrementAction, CounterState>(
     (state, action) => state with { Count = state.Count - 1 });
 
-// Or using class-based reducers (more testable)
-public sealed class SetCountReducer : ReducerBase<SetCountAction, CounterState>
+// Or using class-based action reducers (more testable)
+public sealed class SetCountReducer : ActionReducerBase<SetCountAction, CounterState>
 {
     public override CounterState Reduce(CounterState state, SetCountAction action)
         => state with { Count = action.Value };

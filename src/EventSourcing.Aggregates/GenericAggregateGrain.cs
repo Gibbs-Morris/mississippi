@@ -45,6 +45,7 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///         If the attribute is missing, the grain will fail to activate with an exception.
 ///     </para>
 /// </remarks>
+[Alias("Mississippi.EventSourcing.Aggregates.GenericAggregateGrain`1")]
 internal sealed class GenericAggregateGrain<TAggregate>
     : IGenericAggregateGrain<TAggregate>,
       IGrainBase
@@ -68,7 +69,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="brookEventConverter">Converter for domain events to/from brook events.</param>
     /// <param name="rootCommandHandler">The root command handler for processing commands.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
-    /// <param name="rootReducer">The root reducer for obtaining the reducers hash.</param>
+    /// <param name="rootReducer">The root event reducer for obtaining the reducers hash.</param>
     /// <param name="logger">Logger instance.</param>
     public GenericAggregateGrain(
         IGrainContext grainContext,

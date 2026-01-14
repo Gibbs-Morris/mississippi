@@ -51,11 +51,11 @@ public static class ReservoirRegistrations
     }
 
     /// <summary>
-    ///     Adds a reducer expressed as a delegate to the service collection.
+    ///     Adds an action reducer expressed as a delegate to the service collection.
     /// </summary>
-    /// <typeparam name="TAction">The action type consumed by the reducer.</typeparam>
-    /// <typeparam name="TState">The state type produced by the reducer.</typeparam>
-    /// <param name="services">The service collection to add the reducer to.</param>
+    /// <typeparam name="TAction">The action type consumed by the action reducer.</typeparam>
+    /// <typeparam name="TState">The state type produced by the action reducer.</typeparam>
+    /// <param name="services">The service collection to add the action reducer to.</param>
     /// <param name="reduce">The delegate invoked to apply actions to the current state.</param>
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddReducer<TAction, TState>(
@@ -66,37 +66,38 @@ public static class ReservoirRegistrations
         where TState : class, IFeatureState, new()
     {
         ArgumentNullException.ThrowIfNull(reduce);
-        services.AddTransient<DelegateReducer<TAction, TState>>(_ => new(reduce));
-        services.AddTransient<IReducer<TState>>(sp => sp.GetRequiredService<DelegateReducer<TAction, TState>>());
-        services.AddTransient<IReducer<TAction, TState>>(sp =>
-            sp.GetRequiredService<DelegateReducer<TAction, TState>>());
+        services.AddTransient<DelegateActionReducer<TAction, TState>>(_ => new(reduce));
+        services.AddTransient<IActionReducer<TState>>(sp =>
+            sp.GetRequiredService<DelegateActionReducer<TAction, TState>>());
+        services.AddTransient<IActionReducer<TAction, TState>>(sp =>
+            sp.GetRequiredService<DelegateActionReducer<TAction, TState>>());
         services.AddRootReducer<TState>();
         return services;
     }
 
     /// <summary>
-    ///     Adds a reducer implementation to the service collection.
+    ///     Adds an action reducer implementation to the service collection.
     /// </summary>
-    /// <typeparam name="TAction">The action type consumed by the reducer.</typeparam>
-    /// <typeparam name="TState">The state type produced by the reducer.</typeparam>
-    /// <typeparam name="TReducer">The reducer implementation type.</typeparam>
-    /// <param name="services">The service collection to add the reducer to.</param>
+    /// <typeparam name="TAction">The action type consumed by the action reducer.</typeparam>
+    /// <typeparam name="TState">The state type produced by the action reducer.</typeparam>
+    /// <typeparam name="TReducer">The action reducer implementation type.</typeparam>
+    /// <param name="services">The service collection to add the action reducer to.</param>
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddReducer<TAction, TState, TReducer>(
         this IServiceCollection services
     )
         where TAction : IAction
         where TState : class, IFeatureState, new()
-        where TReducer : class, IReducer<TAction, TState>
+        where TReducer : class, IActionReducer<TAction, TState>
     {
-        services.AddTransient<IReducer<TState>, TReducer>();
-        services.AddTransient<IReducer<TAction, TState>, TReducer>();
+        services.AddTransient<IActionReducer<TState>, TReducer>();
+        services.AddTransient<IActionReducer<TAction, TState>, TReducer>();
         services.AddRootReducer<TState>();
         return services;
     }
 
     /// <summary>
-    ///     Adds the Store to the service collection with DI-resolved reducers, effects, and middleware.
+    ///     Adds the Store to the service collection with DI-resolved action reducers, effects, and middleware.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configureStore">Optional action to configure the store with feature states.</param>
@@ -117,10 +118,10 @@ public static class ReservoirRegistrations
     }
 
     /// <summary>
-    ///     Adds a root reducer for the specified state type.
+    ///     Adds a root action reducer for the specified state type.
     /// </summary>
     /// <typeparam name="TState">The feature state type.</typeparam>
-    /// <param name="services">The service collection to add the root reducer to.</param>
+    /// <param name="services">The service collection to add the root action reducer to.</param>
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddRootReducer<TState>(
         this IServiceCollection services

@@ -77,7 +77,7 @@ public sealed class SnapshotStateConverterTests
     }
 
     /// <summary>
-    ///     Verifies that ToEnvelope serializes the state with the provided reducer hash.
+    ///     Verifies that ToEnvelope serializes the state with the provided event reducer hash.
     /// </summary>
     [Fact]
     [AllureFeature("Serialization")]
@@ -106,7 +106,7 @@ public sealed class SnapshotStateConverterTests
     }
 
     /// <summary>
-    ///     Verifies that ToEnvelope throws when the reducer hash is null.
+    ///     Verifies that ToEnvelope throws when the event reducer hash is null.
     /// </summary>
     [Fact]
     [AllureFeature("Validation")]

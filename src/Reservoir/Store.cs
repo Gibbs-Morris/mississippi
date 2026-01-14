@@ -17,7 +17,7 @@ namespace Mississippi.Reservoir;
 
 /// <summary>
 ///     Central state container implementing Redux-like dispatch pattern.
-///     Supports local feature states with actions, reducers, middleware, and effects.
+///     Supports local feature states with actions, action reducers, middleware, and effects.
 /// </summary>
 public class Store : IStore
 {
@@ -48,7 +48,7 @@ public class Store : IStore
     ///     Initializes a new instance of the <see cref="Store" /> class with DI support.
     /// </summary>
     /// <param name="serviceProvider">
-    ///     The service provider for resolving root reducers and effects.
+    ///     The service provider for resolving root action reducers and effects.
     /// </param>
     public Store(
         IServiceProvider serviceProvider
@@ -105,7 +105,7 @@ public class Store : IStore
         }
 
         throw new InvalidOperationException(
-            $"No reducer registered for feature state '{featureKey}'. " +
+            $"No action reducer registered for feature state '{featureKey}'. " +
             $"Call RegisterState<{typeof(TState).Name}>() before selecting.");
     }
 
@@ -139,7 +139,7 @@ public class Store : IStore
     }
 
     /// <summary>
-    ///     Registers a feature state with its root reducer from DI.
+    ///     Registers a feature state with its root action reducer from DI.
     /// </summary>
     /// <typeparam name="TState">The feature state type.</typeparam>
     /// <exception cref="InvalidOperationException">
@@ -218,7 +218,7 @@ public class Store : IStore
     }
 
     /// <summary>
-    ///     Hook for derived classes to process actions after reducers run.
+    ///     Hook for derived classes to process actions after action reducers run.
     ///     Called before effects are triggered.
     /// </summary>
     /// <param name="action">The action being dispatched.</param>

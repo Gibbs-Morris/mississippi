@@ -93,7 +93,7 @@ public class GenericAggregateGrainTests
 
     private const string TestEntityId = "entity-123";
 
-    private const string TestReducerHash = "test-reducer-hash";
+    private const string TestReducerHash = "test-event-reducer-hash";
 
     /// <summary>
     ///     Constructor should throw when brook grain factory is null.

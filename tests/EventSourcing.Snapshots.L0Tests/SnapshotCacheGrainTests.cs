@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
@@ -49,18 +50,34 @@ public sealed class SnapshotCacheGrainTests
         Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null,
         IOptions<SnapshotRetentionOptions>? retentionOptions = null,
         Mock<IBrookEventConverter>? brookEventConverterMock = null,
-        Mock<ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>>? loggerMock = null
+        ILogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>? logger = null
     )
     {
         grainContextMock ??= CreateDefaultGrainContext();
         snapshotStorageReaderMock ??= new();
         brookGrainFactoryMock ??= new();
         rootReducerMock ??= new();
-        snapshotStateConverterMock ??= new();
+        if (snapshotStateConverterMock is null)
+        {
+            snapshotStateConverterMock = new();
+            snapshotStateConverterMock.Setup(c => c.ToEnvelope(
+                    It.IsAny<SnapshotCacheGrainTestState>(),
+                    It.IsAny<string>()))
+                .Returns((
+                    SnapshotCacheGrainTestState _,
+                    string hash
+                ) => new()
+                {
+                    Data = [1, 2, 3, 4],
+                    DataContentType = "application/json",
+                    ReducerHash = hash,
+                });
+        }
+
         snapshotGrainFactoryMock ??= new();
         retentionOptions ??= Options.Create(new SnapshotRetentionOptions());
         brookEventConverterMock ??= new();
-        loggerMock ??= new();
+        logger ??= NullLogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>.Instance;
         return new(
             grainContextMock.Object,
             snapshotStorageReaderMock.Object,
@@ -70,7 +87,7 @@ public sealed class SnapshotCacheGrainTests
             snapshotGrainFactoryMock.Object,
             retentionOptions,
             brookEventConverterMock.Object,
-            loggerMock.Object);
+            logger);
     }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators
@@ -482,7 +499,7 @@ public sealed class SnapshotCacheGrainTests
     }
 
     /// <summary>
-    ///     Verifies that activation rebuilds state when the stored snapshot has an empty reducer hash.
+    ///     Verifies that activation rebuilds state when the stored snapshot has an empty event reducer hash.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
@@ -512,6 +529,16 @@ public sealed class SnapshotCacheGrainTests
         brookGrainFactoryMock.Setup(f => f.GetBrookAsyncReaderGrain(It.IsAny<BrookKey>()))
             .Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        converterMock.Setup(c => c.ToEnvelope(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<string>()))
+            .Returns((
+                SnapshotCacheGrainTestState _,
+                string hash
+            ) => new()
+            {
+                Data = [1, 2, 3, 4],
+                DataContentType = "application/json",
+                ReducerHash = hash,
+            });
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Mock<ISnapshotPersisterGrain> persisterGrainMock = new();
         snapshotGrainFactoryMock.Setup(f => f.GetSnapshotPersisterGrain(It.IsAny<SnapshotKey>()))
@@ -539,7 +566,7 @@ public sealed class SnapshotCacheGrainTests
     }
 
     /// <summary>
-    ///     Verifies that activation rebuilds state when the reducer hash does not match the stored snapshot.
+    ///     Verifies that activation rebuilds state when the event reducer hash does not match the stored snapshot.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
@@ -570,6 +597,16 @@ public sealed class SnapshotCacheGrainTests
         brookGrainFactoryMock.Setup(f => f.GetBrookAsyncReaderGrain(It.IsAny<BrookKey>()))
             .Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        converterMock.Setup(c => c.ToEnvelope(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<string>()))
+            .Returns((
+                SnapshotCacheGrainTestState _,
+                string hash
+            ) => new()
+            {
+                Data = [1, 2, 3, 4],
+                DataContentType = "application/json",
+                ReducerHash = hash,
+            });
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         Mock<ISnapshotPersisterGrain> persisterGrainMock = new();
         snapshotGrainFactoryMock.Setup(f => f.GetSnapshotPersisterGrain(It.IsAny<SnapshotKey>()))

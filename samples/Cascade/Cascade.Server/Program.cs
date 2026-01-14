@@ -218,6 +218,8 @@ app.MapPost(
 // Products endpoint for Reservoir effect demo - returns a static list of products
 app.MapGet("/api/products", () => Cascade.Server.Program.AvailableProducts);
 
+// Note: Channel discovery now uses the AllChannelIds projection via Inlet.
+// Clients subscribe to "cascade/channel-ids" for real-time channel list updates.
 app.MapGet(
     "/api/cosmos",
     async (
@@ -299,6 +301,8 @@ app.MapPost(
     });
 
 // Create a new channel (idempotent)
+// Note: The ChannelCreated event flows through Brooks to update AllChannelIds
+// and ChannelSummary projections automatically.
 app.MapPost(
     "/api/channels/{channelId}/create",
     async (
@@ -424,6 +428,7 @@ app.MapPost(
             new JoinChannel
             {
                 ChannelId = channelId,
+                ChannelName = channelName ?? channelId,
             });
 
         // Both operations should succeed (or be idempotent)
@@ -457,7 +462,7 @@ namespace Cascade.Server
     /// <summary>
     ///     Placeholder class for top-level partial declarations.
     /// </summary>
-    internal static partial class Program
+    internal static class Program
     {
         /// <summary>
         ///     Static list of available products for the Reservoir effect demo.

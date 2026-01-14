@@ -98,8 +98,8 @@ public sealed class StorageOperationsTests : TestBase
                 Timeout = 30000,
             });
 
-        // Assert - Check blob result specifically
-        ILocator result = page.Locator("p:has-text('Blob Result') + p >> text=Written successfully");
+        // Assert - Check blob result shows success (text is in same <p> element)
+        ILocator result = page.Locator("p:has-text('Blob Result: Written successfully')");
         await Assertions.Expect(result)
             .ToBeVisibleAsync(
                 new()

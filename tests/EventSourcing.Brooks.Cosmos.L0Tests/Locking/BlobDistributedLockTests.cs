@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,7 +48,13 @@ public sealed class BlobDistributedLockTests
         // First call throws, subsequent call (if any) would succeed
         leaseClient.Setup(l => l.ReleaseAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new RequestFailedException(404, "not found"));
-        await using BlobDistributedLock sut = new(leaseClient.Object, "lock-id", 1, 2);
+        await using BlobDistributedLock sut = new(
+            leaseClient.Object,
+            "lock-id",
+            1,
+            2,
+            "test-lock-key",
+            Stopwatch.StartNew());
 
         // Act - should not throw
         await sut.DisposeAsync();
@@ -69,7 +76,13 @@ public sealed class BlobDistributedLockTests
         Mock<IBlobLeaseClient> leaseClient = new();
         leaseClient.Setup(l => l.RenewAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<Response<BlobLease>>());
-        await using BlobDistributedLock sut = new(leaseClient.Object, "lock-id", 5, 15);
+        await using BlobDistributedLock sut = new(
+            leaseClient.Object,
+            "lock-id",
+            5,
+            15,
+            "test-lock-key",
+            Stopwatch.StartNew());
 
         // Force lastRenewalTime far in the past to exceed threshold
         SetPrivateField(sut, "lastRenewalTime", DateTimeOffset.UtcNow - TimeSpan.FromHours(1));
@@ -92,7 +105,13 @@ public sealed class BlobDistributedLockTests
         Mock<IBlobLeaseClient> leaseClient = new();
 
         // leaseDurationSeconds=15, thresholdSeconds=5
-        await using BlobDistributedLock sut = new(leaseClient.Object, "lock-id", 5, 15);
+        await using BlobDistributedLock sut = new(
+            leaseClient.Object,
+            "lock-id",
+            5,
+            15,
+            "test-lock-key",
+            Stopwatch.StartNew());
 
         // Act
         await sut.RenewAsync();
@@ -119,7 +138,13 @@ public sealed class BlobDistributedLockTests
         Mock<IBlobLeaseClient> leaseClient = new();
         leaseClient.Setup(l => l.RenewAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new RequestFailedException(status, "conflict"));
-        await using BlobDistributedLock sut = new(leaseClient.Object, "lock-id", 1, 2);
+        await using BlobDistributedLock sut = new(
+            leaseClient.Object,
+            "lock-id",
+            1,
+            2,
+            "test-lock-key",
+            Stopwatch.StartNew());
         SetPrivateField(sut, "lastRenewalTime", DateTimeOffset.UtcNow - TimeSpan.FromMinutes(5));
 
         // Act + Assert

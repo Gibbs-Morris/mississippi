@@ -1,4 +1,3 @@
-@using Cascade.Contracts.Projections
 @* MessageList - Organism component for displaying a scrollable list of chat messages *@
 
 @if (IsLoading)
@@ -31,7 +30,7 @@ else
                         <Timestamp Value="@group.FirstSentAt" ShowRelative="true"/>
                     </div>
                     <div class="message-group__messages">
-                        @foreach (ChannelMessageItem message in group.Messages)
+                        @foreach (MessageDto message in group.Messages)
                         {
                             <MessageBubble Content="@message.Content"
                                            IsDeleted="@message.IsDeleted"

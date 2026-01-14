@@ -60,7 +60,7 @@ internal sealed class UxProjectionVersionedCacheGrain<TProjection>
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
-    /// <param name="rootReducer">The root reducer for computing the reducers hash.</param>
+    /// <param name="rootReducer">The root event reducer for computing the reducers hash.</param>
     /// <param name="logger">Logger instance.</param>
     public UxProjectionVersionedCacheGrain(
         IGrainContext grainContext,

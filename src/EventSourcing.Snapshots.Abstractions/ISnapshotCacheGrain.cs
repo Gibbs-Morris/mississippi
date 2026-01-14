@@ -19,8 +19,8 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 ///     </para>
 ///     <para>
 ///         On activation, the grain first attempts to load the snapshot from storage.
-///         If the snapshot does not exist or has a stale reducer hash, the grain reads events from
-///         the underlying brook and rebuilds the state using the registered reducers.
+///         If the snapshot does not exist or has a stale event reducer hash, the grain reads events from
+///         the underlying brook and rebuilds the state using the registered event reducers.
 ///     </para>
 ///     <para>
 ///         After the state is built, a one-way call is made to an <see cref="ISnapshotPersisterGrain" />

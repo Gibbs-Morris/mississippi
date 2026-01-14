@@ -17,7 +17,7 @@ Reducers must follow these fundamental principles:
 3. **Immutable updates** — Return a new state object; never mutate the existing state
 4. **Synchronous** — Execute instantly without `await` or callbacks
 
-## The IReducer Interface
+## The IActionReducer Interface
 
 Reservoir provides two reducer interfaces:
 
@@ -27,7 +27,7 @@ Reservoir provides two reducer interfaces:
 /// </summary>
 /// <typeparam name="TAction">The action type consumed by the reducer.</typeparam>
 /// <typeparam name="TState">The state type produced by the reducer.</typeparam>
-public interface IReducer<in TAction, TState> : IReducer<TState>
+public interface IActionReducer<in TAction, TState> : IActionReducer<TState>
     where TAction : IAction
     where TState : class
 {
@@ -38,7 +38,7 @@ public interface IReducer<in TAction, TState> : IReducer<TState>
 }
 ```
 
-The strongly-typed `IReducer<TAction, TState>` is the primary interface for implementing reducers. Each reducer handles exactly one action type, making them easy to test and reason about.
+The strongly-typed `IActionReducer<TAction, TState>` is the primary interface for implementing reducers. Each reducer handles exactly one action type, making them easy to test and reason about.
 
 ## Implementing Reducers
 
@@ -59,7 +59,7 @@ public sealed record CounterState : IFeatureState
 
 public sealed record IncrementAction : IAction;
 
-public sealed class IncrementReducer : ReducerBase<IncrementAction, CounterState>
+public sealed class IncrementReducer : ActionReducerBase<IncrementAction, CounterState>
 {
     public override CounterState Reduce(CounterState state, IncrementAction action)
         => state with { Count = state.Count + 1 };

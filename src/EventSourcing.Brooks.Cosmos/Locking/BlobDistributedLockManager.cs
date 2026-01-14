@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -65,6 +66,7 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
         CancellationToken cancellationToken = default
     )
     {
+        Stopwatch stopwatch = Stopwatch.StartNew();
         Logger.AcquiringLock(lockKey, duration.TotalSeconds);
         BlobContainerClient? containerClient = BlobServiceClient.GetBlobContainerClient(Options.LockContainerName);
         await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
@@ -80,8 +82,10 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
         // Bounded retries for lease conflicts
         const int maxAcquireAttempts = 5;
         Response<BlobLease>? lease = null;
+        int attemptsMade = 0;
         for (int attempt = 0; attempt < maxAcquireAttempts; attempt++)
         {
+            attemptsMade = attempt + 1;
             try
             {
                 lease = await leaseClient.AcquireAsync(duration, cancellationToken: cancellationToken);
@@ -90,6 +94,9 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
             }
             catch (RequestFailedException ex) when (ex.Status == 409)
             {
+                // Record contention wait for each 409 conflict
+                LockMetrics.RecordContentionWait(lockKey);
+
                 // Lease is already held; backoff with jitter and retry while attempts remain
                 if (attempt < (maxAcquireAttempts - 1))
                 {
@@ -101,16 +108,21 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
             }
         }
 
+        stopwatch.Stop();
         if (lease is null)
         {
+            LockMetrics.RecordAcquireFailure(lockKey, stopwatch.Elapsed.TotalMilliseconds, attemptsMade);
             Logger.LockAcquisitionFailed(lockKey, maxAcquireAttempts);
             throw new InvalidOperationException("Failed to acquire blob lease for distributed lock after retries.");
         }
 
+        LockMetrics.RecordAcquireSuccess(lockKey, stopwatch.Elapsed.TotalMilliseconds, attemptsMade);
         return new BlobDistributedLock(
             leaseClient,
             lease.Value.LeaseId,
             Options.LeaseRenewalThresholdSeconds,
-            Options.LeaseDurationSeconds);
+            Options.LeaseDurationSeconds,
+            lockKey,
+            stopwatch);
     }
 }

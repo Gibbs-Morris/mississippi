@@ -30,10 +30,12 @@ public sealed class SnapshotMappingTests
         {
             Data = new byte[] { 1, 2 },
             DataContentType = "ct",
+            DataSizeBytes = 2,
         };
         SnapshotEnvelope envelope = new SnapshotDocumentToEnvelopeMapper().Map(document);
         Assert.Equal(new byte[] { 1, 2 }, envelope.Data.ToArray());
         Assert.Equal("ct", envelope.DataContentType);
+        Assert.Equal(2, envelope.DataSizeBytes);
     }
 
     /// <summary>
@@ -46,6 +48,7 @@ public sealed class SnapshotMappingTests
         {
             Data = new byte[] { 3 },
             DataContentType = "json",
+            DataSizeBytes = 1,
             BrookName = StreamKey.BrookName,
             ProjectionType = StreamKey.SnapshotStorageName,
             ProjectionId = StreamKey.EntityId,
@@ -55,6 +58,7 @@ public sealed class SnapshotMappingTests
         SnapshotStorageModel storage = new SnapshotDocumentToStorageMapper().Map(document);
         Assert.Equal(document.Data, storage.Data);
         Assert.Equal(document.DataContentType, storage.DataContentType);
+        Assert.Equal(1, storage.DataSizeBytes);
         Assert.Equal(StreamKey, storage.StreamKey);
         Assert.Equal(5, storage.Version);
     }
@@ -71,6 +75,7 @@ public sealed class SnapshotMappingTests
             Version = 7,
             Data = new byte[] { 9 },
             DataContentType = "xml",
+            DataSizeBytes = 1,
         };
         SnapshotDocument document = new SnapshotStorageToDocumentMapper().Map(storage);
         Assert.Equal("7", document.Id);
@@ -82,6 +87,7 @@ public sealed class SnapshotMappingTests
         Assert.Equal(StreamKey.ReducersHash, document.ReducersHash);
         Assert.Equal(storage.Data, document.Data);
         Assert.Equal(storage.DataContentType, document.DataContentType);
+        Assert.Equal(1, document.DataSizeBytes);
         Assert.Equal(7, document.Version);
     }
 
@@ -95,12 +101,14 @@ public sealed class SnapshotMappingTests
         {
             Data = new byte[] { 4, 5 },
             DataContentType = "bin",
+            DataSizeBytes = 2,
             StreamKey = StreamKey,
             Version = 2,
         };
         SnapshotEnvelope envelope = new SnapshotStorageToEnvelopeMapper().Map(storage);
         Assert.Equal(new byte[] { 4, 5 }, envelope.Data.ToArray());
         Assert.Equal("bin", envelope.DataContentType);
+        Assert.Equal(2, envelope.DataSizeBytes);
     }
 
     /// <summary>
@@ -113,6 +121,7 @@ public sealed class SnapshotMappingTests
         {
             Data = ImmutableArray.Create((byte)7),
             DataContentType = "text",
+            DataSizeBytes = 1,
         };
         SnapshotKey key = new(StreamKey, 11);
         SnapshotWriteModel writeModel = new(key, envelope);
@@ -125,6 +134,7 @@ public sealed class SnapshotMappingTests
         Assert.Equal(11, document.Version);
         Assert.Equal(new byte[] { 7 }, document.Data);
         Assert.Equal("text", document.DataContentType);
+        Assert.Equal(1, document.DataSizeBytes);
     }
 
     /// <summary>
@@ -137,6 +147,7 @@ public sealed class SnapshotMappingTests
         {
             Data = ImmutableArray.Create((byte)8, (byte)9),
             DataContentType = "bytes",
+            DataSizeBytes = 2,
         };
         SnapshotKey key = new(StreamKey, 3);
         SnapshotWriteModel writeModel = new(key, envelope);
@@ -145,5 +156,6 @@ public sealed class SnapshotMappingTests
         Assert.Equal(3, storage.Version);
         Assert.Equal(new byte[] { 8, 9 }, storage.Data);
         Assert.Equal("bytes", storage.DataContentType);
+        Assert.Equal(2, storage.DataSizeBytes);
     }
 }

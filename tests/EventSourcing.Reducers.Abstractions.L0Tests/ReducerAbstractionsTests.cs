@@ -7,7 +7,7 @@ using Allure.Xunit.Attributes;
 namespace Mississippi.EventSourcing.Reducers.Abstractions.L0Tests;
 
 /// <summary>
-///     Tests for reducer abstractions.
+///     Tests for event reducer abstractions.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Reducers Abstractions")]
@@ -21,7 +21,7 @@ public sealed class ReducerAbstractionsTests
         public string Value { get; set; } = string.Empty;
     }
 
-    private sealed class MutatingReducer : ReducerBase<MutableEvent, MutableProjection>
+    private sealed class MutatingEventReducer : EventReducerBase<MutableEvent, MutableProjection>
     {
         protected override MutableProjection ReduceCore(
             MutableProjection state,
@@ -33,7 +33,7 @@ public sealed class ReducerAbstractionsTests
         }
     }
 
-    private sealed class NonMutatingReducer : ReducerBase<MutableEvent, MutableProjection>
+    private sealed class NonMutatingEventReducer : EventReducerBase<MutableEvent, MutableProjection>
     {
         protected override MutableProjection ReduceCore(
             MutableProjection state,
@@ -45,7 +45,7 @@ public sealed class ReducerAbstractionsTests
             };
     }
 
-    private sealed class NullProjectionReducer : ReducerBase<MutableEvent, MutableProjection?>
+    private sealed class NullProjectionEventReducer : EventReducerBase<MutableEvent, MutableProjection?>
     {
         protected override MutableProjection? ReduceCore(
             MutableProjection? state,
@@ -55,12 +55,12 @@ public sealed class ReducerAbstractionsTests
     }
 
     /// <summary>
-    ///     Verifies the projection-scoped reducer contract shape stays stable.
+    ///     Verifies the projection-scoped event reducer contract shape stays stable.
     /// </summary>
     [Fact]
-    public void IReducerShouldExposeTryReduceMethod()
+    public void IEventReducerShouldExposeTryReduceMethod()
     {
-        Type reducerType = typeof(IReducer<>);
+        Type reducerType = typeof(IEventReducer<>);
         Assert.True(reducerType.IsPublic);
         Assert.True(reducerType.IsInterface);
         MethodInfo? reduceMethod = reducerType.GetMethod("TryReduce", BindingFlags.Public | BindingFlags.Instance);
@@ -76,7 +76,7 @@ public sealed class ReducerAbstractionsTests
     }
 
     /// <summary>
-    ///     Verifies the root reducer contract shape stays stable.
+    ///     Verifies the root event reducer contract shape stays stable.
     /// </summary>
     [Fact]
     public void IRootReducerShouldExposeHashAndReduceMethods()
@@ -104,31 +104,31 @@ public sealed class ReducerAbstractionsTests
     [Fact]
     public void ReduceShouldPermitNullStateAndProjection()
     {
-        NullProjectionReducer reducer = new();
-        MutableProjection? projection = reducer.Reduce(null!, new("e2"));
+        NullProjectionEventReducer eventReducer = new();
+        MutableProjection? projection = eventReducer.Reduce(null!, new("e2"));
         Assert.Null(projection);
     }
 
     /// <summary>
-    ///     Verifies the base reducer class is available for inheritance.
+    ///     Verifies the base event reducer class is available for inheritance.
     /// </summary>
     [Fact]
-    public void ReducerBaseClassShouldBeAbstractAndImplementIReducer()
+    public void ReducerBaseClassShouldBeAbstractAndImplementIEventReducer()
     {
-        Type reducerType = typeof(ReducerBase<,>);
+        Type reducerType = typeof(EventReducerBase<,>);
         Assert.True(reducerType.IsPublic);
         Assert.True(reducerType.IsClass);
         Assert.True(reducerType.IsAbstract);
         Assert.Contains(
             reducerType.GetInterfaces(),
-            x => x.IsGenericType && (x.GetGenericTypeDefinition() == typeof(IReducer<>)));
+            x => x.IsGenericType && (x.GetGenericTypeDefinition() == typeof(IEventReducer<>)));
         Assert.Contains(
             reducerType.GetInterfaces(),
-            x => x.IsGenericType && (x.GetGenericTypeDefinition() == typeof(IReducer<,>)));
+            x => x.IsGenericType && (x.GetGenericTypeDefinition() == typeof(IEventReducer<,>)));
     }
 
     /// <summary>
-    ///     Verifies the base reducer guard prevents returning the same reference for reference types.
+    ///     Verifies the base event reducer guard prevents returning the same reference for reference types.
     /// </summary>
     [Fact]
     public void ReducerBaseClassShouldRejectMutatingReducerReturningSameInstance()
@@ -137,8 +137,8 @@ public sealed class ReducerAbstractionsTests
         {
             Value = "s0",
         };
-        MutatingReducer reducer = new();
-        Assert.Throws<InvalidOperationException>(() => reducer.Reduce(state, new("e0")));
+        MutatingEventReducer eventReducer = new();
+        Assert.Throws<InvalidOperationException>(() => eventReducer.Reduce(state, new("e0")));
     }
 
     /// <summary>
@@ -151,8 +151,8 @@ public sealed class ReducerAbstractionsTests
         {
             Value = "s0",
         };
-        MutatingReducer reducer = new();
-        Assert.Throws<InvalidOperationException>(() => reducer.TryReduce(
+        MutatingEventReducer eventReducer = new();
+        Assert.Throws<InvalidOperationException>(() => eventReducer.TryReduce(
             state,
             new MutableEvent("e0"),
             out MutableProjection _));
@@ -168,8 +168,8 @@ public sealed class ReducerAbstractionsTests
         {
             Value = "s0",
         };
-        MutatingReducer reducer = new();
-        bool reduced = reducer.TryReduce(state, new(), out MutableProjection projection);
+        MutatingEventReducer eventReducer = new();
+        bool reduced = eventReducer.TryReduce(state, new(), out MutableProjection projection);
         Assert.False(reduced);
         Assert.Null(projection);
         Assert.Equal("s0", state.Value);
@@ -185,8 +185,8 @@ public sealed class ReducerAbstractionsTests
         {
             Value = "s0",
         };
-        NonMutatingReducer reducer = new();
-        bool reduced = reducer.TryReduce(state, new MutableEvent("e1"), out MutableProjection projection);
+        NonMutatingEventReducer eventReducer = new();
+        bool reduced = eventReducer.TryReduce(state, new MutableEvent("e1"), out MutableProjection projection);
         Assert.True(reduced);
         Assert.NotSame(state, projection);
         Assert.Equal("s0-e1", projection.Value);
@@ -194,16 +194,16 @@ public sealed class ReducerAbstractionsTests
     }
 
     /// <summary>
-    ///     Verifies the typed reducer contract shape stays stable.
+    ///     Verifies the typed event reducer contract shape stays stable.
     /// </summary>
     [Fact]
-    public void TypedIReducerShouldDeriveFromProjectionReducer()
+    public void TypedIEventReducerShouldDeriveFromProjectionReducer()
     {
-        Type reducerType = typeof(IReducer<,>);
+        Type reducerType = typeof(IEventReducer<,>);
         Assert.True(reducerType.IsPublic);
         Assert.True(reducerType.IsInterface);
         Assert.Contains(
             reducerType.GetInterfaces(),
-            x => x.IsGenericType && (x.GetGenericTypeDefinition() == typeof(IReducer<>)));
+            x => x.IsGenericType && (x.GetGenericTypeDefinition() == typeof(IEventReducer<>)));
     }
 }
