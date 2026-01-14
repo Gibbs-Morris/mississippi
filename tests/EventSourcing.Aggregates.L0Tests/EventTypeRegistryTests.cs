@@ -84,6 +84,30 @@ public class EventTypeRegistryTests
     }
 
     /// <summary>
+    ///     RegisteredTypes should contain all registered types.
+    /// </summary>
+    [Fact]
+    public void RegisteredTypesContainsRegisteredTypes()
+    {
+        EventTypeRegistry registry = new();
+        registry.Register("TestEvent", typeof(TestEvent));
+        registry.Register("AnotherEvent", typeof(AnotherEvent));
+        Assert.Equal(2, registry.RegisteredTypes.Count);
+        Assert.True(registry.RegisteredTypes.ContainsKey("TestEvent"));
+        Assert.True(registry.RegisteredTypes.ContainsKey("AnotherEvent"));
+    }
+
+    /// <summary>
+    ///     RegisteredTypes should return empty dictionary initially.
+    /// </summary>
+    [Fact]
+    public void RegisteredTypesReturnsEmptyDictionaryInitially()
+    {
+        EventTypeRegistry registry = new();
+        Assert.Empty(registry.RegisteredTypes);
+    }
+
+    /// <summary>
     ///     Registry should support multiple event types.
     /// </summary>
     [Fact]
@@ -94,6 +118,39 @@ public class EventTypeRegistryTests
         registry.Register("AnotherEvent", typeof(AnotherEvent));
         Assert.Equal(typeof(TestEvent), registry.ResolveType("TestEvent"));
         Assert.Equal(typeof(AnotherEvent), registry.ResolveType("AnotherEvent"));
+    }
+
+    /// <summary>
+    ///     ResolveName should return the registered name for a type.
+    /// </summary>
+    [Fact]
+    public void ResolveNameReturnsNameForRegisteredType()
+    {
+        EventTypeRegistry registry = new();
+        registry.Register("TestEvent", typeof(TestEvent));
+        string? resolved = registry.ResolveName(typeof(TestEvent));
+        Assert.Equal("TestEvent", resolved);
+    }
+
+    /// <summary>
+    ///     ResolveName should return null for unregistered type.
+    /// </summary>
+    [Fact]
+    public void ResolveNameReturnsNullForUnregisteredType()
+    {
+        EventTypeRegistry registry = new();
+        string? resolved = registry.ResolveName(typeof(TestEvent));
+        Assert.Null(resolved);
+    }
+
+    /// <summary>
+    ///     ResolveName should throw when event type is null.
+    /// </summary>
+    [Fact]
+    public void ResolveNameThrowsWhenEventTypeIsNull()
+    {
+        EventTypeRegistry registry = new();
+        Assert.Throws<ArgumentNullException>(() => registry.ResolveName(null!));
     }
 
     /// <summary>
@@ -142,5 +199,28 @@ public class EventTypeRegistryTests
     {
         EventTypeRegistry registry = new();
         Assert.Throws<ArgumentNullException>(() => registry.ResolveType(null!));
+    }
+
+    /// <summary>
+    ///     ScanAssembly should return zero when no attributed types exist.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyReturnsZeroForAssemblyWithNoAttributedTypes()
+    {
+        EventTypeRegistry registry = new();
+
+        // Use mscorlib which has no EventStorageNameAttribute types
+        int count = registry.ScanAssembly(typeof(object).Assembly);
+        Assert.Equal(0, count);
+    }
+
+    /// <summary>
+    ///     ScanAssembly should throw when assembly is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyThrowsWhenAssemblyIsNull()
+    {
+        EventTypeRegistry registry = new();
+        Assert.Throws<ArgumentNullException>(() => registry.ScanAssembly(null!));
     }
 }

@@ -53,6 +53,34 @@ public class BrookNameHelperTests
     }
 
     /// <summary>
+    ///     GetBrookNameFromGrain should return the brook name from the attribute.
+    /// </summary>
+    [Fact]
+    public void GetBrookNameFromGrainReturnsAttributeValue()
+    {
+        string brookName = BrookNameHelper.GetBrookNameFromGrain(DecoratedType.AsType);
+        Assert.Equal("APP.MODULE.STREAM", brookName);
+    }
+
+    /// <summary>
+    ///     GetBrookNameFromGrain should throw when attribute is missing.
+    /// </summary>
+    [Fact]
+    public void GetBrookNameFromGrainThrowsWhenAttributeMissing()
+    {
+        Assert.Throws<InvalidOperationException>(() => BrookNameHelper.GetBrookNameFromGrain(UndecoratedType.AsType));
+    }
+
+    /// <summary>
+    ///     GetBrookNameFromGrain should throw when type is null.
+    /// </summary>
+    [Fact]
+    public void GetBrookNameFromGrainThrowsWhenNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => BrookNameHelper.GetBrookNameFromGrain(null!));
+    }
+
+    /// <summary>
     ///     GetBrookName should return the brook name from the attribute.
     /// </summary>
     [Fact]
@@ -97,6 +125,35 @@ public class BrookNameHelperTests
     public void GetBrookNameWithTypeThrowsWhenNull()
     {
         Assert.Throws<ArgumentNullException>(() => BrookNameHelper.GetBrookName(null!));
+    }
+
+    /// <summary>
+    ///     GetDefinition should return the BrookNameAttribute from the decorated type.
+    /// </summary>
+    [Fact]
+    public void GetDefinitionReturnsAttribute()
+    {
+        BrookNameAttribute attribute = BrookNameHelper.GetDefinition(DecoratedType.AsType);
+        Assert.NotNull(attribute);
+        Assert.Equal("APP.MODULE.STREAM", attribute.BrookName);
+    }
+
+    /// <summary>
+    ///     GetDefinition should throw when attribute is missing.
+    /// </summary>
+    [Fact]
+    public void GetDefinitionThrowsWhenAttributeMissing()
+    {
+        Assert.Throws<InvalidOperationException>(() => BrookNameHelper.GetDefinition(UndecoratedType.AsType));
+    }
+
+    /// <summary>
+    ///     GetDefinition should throw when type is null.
+    /// </summary>
+    [Fact]
+    public void GetDefinitionThrowsWhenNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => BrookNameHelper.GetDefinition(null!));
     }
 
     /// <summary>
