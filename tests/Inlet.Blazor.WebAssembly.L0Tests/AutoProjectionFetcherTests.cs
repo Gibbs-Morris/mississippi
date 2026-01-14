@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -67,6 +68,10 @@ public sealed class AutoProjectionFetcherTests : IDisposable
     /// <summary>
     ///     Mock HTTP message handler for testing.
     /// </summary>
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP001:Dispose created",
+        Justification = "HttpResponseMessage lifetime is managed by HttpClient - responses are returned to caller for disposal")]
     private sealed class MockHttpHandler : HttpMessageHandler
     {
         private readonly Dictionary<string, (HttpStatusCode StatusCode, string? Content, string? ETag)> responses =
