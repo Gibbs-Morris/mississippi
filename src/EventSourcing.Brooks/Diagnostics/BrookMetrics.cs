@@ -16,6 +16,8 @@ internal static class BrookMetrics
     /// </summary>
     internal const string MeterName = "Mississippi.EventSourcing.Brooks";
 
+    private const string BrookNameTag = "brook.name";
+
     private static readonly Meter BrookMeter = new(MeterName);
 
     // Cursor metrics
@@ -72,7 +74,7 @@ internal static class BrookMetrics
     )
     {
         TagList tags = default;
-        tags.Add("brook.name", brookKey.BrookName);
+        tags.Add(BrookNameTag, brookKey.BrookName);
         tags.Add("read.type", readType);
         CursorReads.Add(1, tags);
     }
@@ -97,7 +99,7 @@ internal static class BrookMetrics
         }
 
         TagList tags = default;
-        tags.Add("brook.name", brookKey.BrookName);
+        tags.Add(BrookNameTag, brookKey.BrookName);
         tags.Add("read.mode", readMode);
         ReaderEvents.Add(eventCount, tags);
         ReaderDuration.Record(durationMs, tags);
@@ -119,7 +121,7 @@ internal static class BrookMetrics
         }
 
         TagList tags = default;
-        tags.Add("brook.name", brookKey.BrookName);
+        tags.Add(BrookNameTag, brookKey.BrookName);
         ReaderSlices.Add(sliceCount, tags);
     }
 
@@ -141,7 +143,7 @@ internal static class BrookMetrics
         }
 
         TagList tags = default;
-        tags.Add("brook.name", brookKey.BrookName);
+        tags.Add(BrookNameTag, brookKey.BrookName);
         WriterEvents.Add(eventCount, tags);
         WriterDuration.Record(durationMs, tags);
         WriterBatchSize.Record(eventCount, tags);
@@ -158,7 +160,7 @@ internal static class BrookMetrics
     )
     {
         TagList tags = default;
-        tags.Add("brook.name", brookKey.BrookName);
+        tags.Add(BrookNameTag, brookKey.BrookName);
         tags.Add("error.type", errorType);
         WriterErrors.Add(1, tags);
     }

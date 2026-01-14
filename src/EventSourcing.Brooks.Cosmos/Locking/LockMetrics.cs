@@ -14,6 +14,8 @@ internal static class LockMetrics
     /// </summary>
     internal const string MeterName = "Mississippi.Storage.Locking";
 
+    private const string LockKeyTag = "lock.key";
+
     private static readonly Meter LockMeter = new(MeterName);
 
     private static readonly Counter<long> AcquireCount = LockMeter.CreateCounter<long>(
@@ -59,7 +61,7 @@ internal static class LockMetrics
     )
     {
         TagList tags = default;
-        tags.Add("lock.key", SanitizeLockKey(lockKey));
+        tags.Add(LockKeyTag, SanitizeLockKey(lockKey));
         tags.Add("result", "failure");
         AcquireCount.Add(1, tags);
         AcquireDuration.Record(durationMs, tags);
@@ -80,7 +82,7 @@ internal static class LockMetrics
     )
     {
         TagList tags = default;
-        tags.Add("lock.key", SanitizeLockKey(lockKey));
+        tags.Add(LockKeyTag, SanitizeLockKey(lockKey));
         tags.Add("result", "success");
         AcquireCount.Add(1, tags);
         AcquireDuration.Record(durationMs, tags);
@@ -96,7 +98,7 @@ internal static class LockMetrics
     )
     {
         TagList tags = default;
-        tags.Add("lock.key", SanitizeLockKey(lockKey));
+        tags.Add(LockKeyTag, SanitizeLockKey(lockKey));
         ContentionWaits.Add(1, tags);
     }
 
@@ -111,7 +113,7 @@ internal static class LockMetrics
     )
     {
         TagList tags = default;
-        tags.Add("lock.key", SanitizeLockKey(lockKey));
+        tags.Add(LockKeyTag, SanitizeLockKey(lockKey));
         HeldDuration.Record(durationMs, tags);
     }
 

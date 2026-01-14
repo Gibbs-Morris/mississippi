@@ -14,6 +14,8 @@ internal static class UxProjectionMetrics
     /// </summary>
     internal const string MeterName = "Mississippi.EventSourcing.UxProjections";
 
+    private const string ProjectionTypeTag = "projection.type";
+
     private static readonly Meter ProjectionMeter = new(MeterName);
 
     private static readonly Counter<long> CursorReads = ProjectionMeter.CreateCounter<long>(
@@ -65,7 +67,7 @@ internal static class UxProjectionMetrics
     )
     {
         TagList tags = default;
-        tags.Add("projection.type", projectionType);
+        tags.Add(ProjectionTypeTag, projectionType);
         CursorReads.Add(1, tags);
     }
 
@@ -78,7 +80,7 @@ internal static class UxProjectionMetrics
     )
     {
         TagList tags = default;
-        tags.Add("projection.type", projectionType);
+        tags.Add(ProjectionTypeTag, projectionType);
         NotificationSent.Add(1, tags);
     }
 
@@ -97,14 +99,14 @@ internal static class UxProjectionMetrics
     )
     {
         TagList tags = default;
-        tags.Add("projection.type", projectionType);
+        tags.Add(ProjectionTypeTag, projectionType);
         tags.Add("query.type", queryType);
         QueryCount.Add(1, tags);
         QueryDuration.Record(durationMs, tags);
         if (!hasResult)
         {
             TagList emptyTags = default;
-            emptyTags.Add("projection.type", projectionType);
+            emptyTags.Add(ProjectionTypeTag, projectionType);
             QueryEmpty.Add(1, emptyTags);
         }
     }
@@ -131,7 +133,7 @@ internal static class UxProjectionMetrics
     )
     {
         TagList tags = default;
-        tags.Add("projection.type", projectionType);
+        tags.Add(ProjectionTypeTag, projectionType);
         VersionCacheHits.Add(1, tags);
     }
 }

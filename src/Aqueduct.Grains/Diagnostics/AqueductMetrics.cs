@@ -14,17 +14,21 @@ internal static class AqueductMetrics
     /// </summary>
     internal const string MeterName = "Mississippi.Aqueduct";
 
+    private const string EventsUnit = "events";
+
+    private const string HubNameTag = "hub.name";
+
     private static readonly Meter AqueductMeter = new(MeterName);
 
     // Client metrics
     private static readonly Counter<long> ClientConnect = AqueductMeter.CreateCounter<long>(
         "signalr.client.connect",
-        "events",
+        EventsUnit,
         "Number of client connection events.");
 
     private static readonly Counter<long> ClientDisconnect = AqueductMeter.CreateCounter<long>(
         "signalr.client.disconnect",
-        "events",
+        EventsUnit,
         "Number of client disconnection events.");
 
     private static readonly Histogram<double> ClientMessageDuration = AqueductMeter.CreateHistogram<double>(
@@ -45,12 +49,12 @@ internal static class AqueductMetrics
     // Group metrics
     private static readonly Counter<long> GroupJoin = AqueductMeter.CreateCounter<long>(
         "signalr.group.join",
-        "events",
+        EventsUnit,
         "Number of group join events.");
 
     private static readonly Counter<long> GroupLeave = AqueductMeter.CreateCounter<long>(
         "signalr.group.leave",
-        "events",
+        EventsUnit,
         "Number of group leave events.");
 
     private static readonly Counter<long> GroupMessageSent = AqueductMeter.CreateCounter<long>(
@@ -71,7 +75,7 @@ internal static class AqueductMetrics
     // Server metrics
     private static readonly Counter<long> ServerRegister = AqueductMeter.CreateCounter<long>(
         "signalr.server.register",
-        "events",
+        EventsUnit,
         "Number of server registration events.");
 
     /// <summary>
@@ -83,7 +87,7 @@ internal static class AqueductMetrics
     )
     {
         TagList tags = default;
-        tags.Add("hub.name", hubName);
+        tags.Add(HubNameTag, hubName);
         ClientConnect.Add(1, tags);
     }
 
@@ -96,7 +100,7 @@ internal static class AqueductMetrics
     )
     {
         TagList tags = default;
-        tags.Add("hub.name", hubName);
+        tags.Add(HubNameTag, hubName);
         ClientDisconnect.Add(1, tags);
     }
 
@@ -113,7 +117,7 @@ internal static class AqueductMetrics
     )
     {
         TagList tags = default;
-        tags.Add("hub.name", hubName);
+        tags.Add(HubNameTag, hubName);
         tags.Add("method", method);
         ClientMessageSent.Add(1, tags);
         ClientMessageDuration.Record(durationMs, tags);
@@ -142,7 +146,7 @@ internal static class AqueductMetrics
     )
     {
         TagList tags = default;
-        tags.Add("hub.name", hubName);
+        tags.Add(HubNameTag, hubName);
         GroupJoin.Add(1, tags);
     }
 
@@ -155,7 +159,7 @@ internal static class AqueductMetrics
     )
     {
         TagList tags = default;
-        tags.Add("hub.name", hubName);
+        tags.Add(HubNameTag, hubName);
         GroupLeave.Add(1, tags);
     }
 
@@ -172,7 +176,7 @@ internal static class AqueductMetrics
     )
     {
         TagList tags = default;
-        tags.Add("hub.name", hubName);
+        tags.Add(HubNameTag, hubName);
         tags.Add("method", method);
         GroupMessageSent.Add(1, tags);
         GroupFanoutSize.Record(connectionCount, tags);

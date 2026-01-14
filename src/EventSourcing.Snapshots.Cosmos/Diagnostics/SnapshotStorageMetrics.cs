@@ -14,6 +14,8 @@ internal static class SnapshotStorageMetrics
     /// </summary>
     internal const string MeterName = "Mississippi.Storage.Snapshots";
 
+    private const string SnapshotTypeTag = "snapshot.type";
+
     private static readonly Meter SnapshotStorageMeter = new(MeterName);
 
     private static readonly Counter<long> DeleteCount = SnapshotStorageMeter.CreateCounter<long>(
@@ -65,7 +67,7 @@ internal static class SnapshotStorageMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         DeleteCount.Add(1, tags);
     }
 
@@ -85,7 +87,7 @@ internal static class SnapshotStorageMetrics
         }
 
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         PruneCount.Add(prunedCount, tags);
     }
 
@@ -102,7 +104,7 @@ internal static class SnapshotStorageMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         tags.Add("result", found ? "found" : "not_found");
         ReadCount.Add(1, tags);
         ReadDuration.Record(durationMs, tags);
@@ -123,14 +125,14 @@ internal static class SnapshotStorageMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         tags.Add("result", success ? "success" : "failure");
         WriteCount.Add(1, tags);
         WriteDuration.Record(durationMs, tags);
         if (sizeBytes > 0)
         {
             TagList sizeTags = default;
-            sizeTags.Add("snapshot.type", snapshotType);
+            sizeTags.Add(SnapshotTypeTag, snapshotType);
             SnapshotSize.Record(sizeBytes, sizeTags);
         }
     }

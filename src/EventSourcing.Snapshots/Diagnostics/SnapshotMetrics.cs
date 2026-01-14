@@ -14,6 +14,8 @@ internal static class SnapshotMetrics
     /// </summary>
     internal const string MeterName = "Mississippi.EventSourcing.Snapshots";
 
+    private const string SnapshotTypeTag = "snapshot.type";
+
     private static readonly Meter SnapshotMeter = new(MeterName);
 
     private static readonly Counter<long> ActivationCount = SnapshotMeter.CreateCounter<long>(
@@ -95,7 +97,7 @@ internal static class SnapshotMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         tags.Add("result", success ? "success" : "failure");
         ActivationCount.Add(1, tags);
         ActivationDuration.Record(durationMs, tags);
@@ -114,7 +116,7 @@ internal static class SnapshotMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         BaseUsed.Add(1, tags);
     }
 
@@ -127,7 +129,7 @@ internal static class SnapshotMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         CacheHits.Add(1, tags);
     }
 
@@ -140,7 +142,7 @@ internal static class SnapshotMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         CacheMisses.Add(1, tags);
     }
 
@@ -157,7 +159,7 @@ internal static class SnapshotMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         tags.Add("result", success ? "success" : "failure");
         PersistCount.Add(1, tags);
         PersistDuration.Record(durationMs, tags);
@@ -176,7 +178,7 @@ internal static class SnapshotMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         RebuildDuration.Record(durationMs, tags);
         RebuildEvents.Record(eventCount, tags);
     }
@@ -190,7 +192,7 @@ internal static class SnapshotMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         ReducerHashMismatches.Add(1, tags);
     }
 
@@ -205,7 +207,7 @@ internal static class SnapshotMetrics
     )
     {
         TagList tags = default;
-        tags.Add("snapshot.type", snapshotType);
+        tags.Add(SnapshotTypeTag, snapshotType);
         StateSize.Record(sizeBytes, tags);
     }
 }

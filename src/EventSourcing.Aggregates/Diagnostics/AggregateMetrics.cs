@@ -14,6 +14,10 @@ internal static class AggregateMetrics
     /// </summary>
     internal const string MeterName = "Mississippi.EventSourcing.Aggregates";
 
+    private const string AggregateTypeTag = "aggregate.type";
+
+    private const string CommandTypeTag = "command.type";
+
     private static readonly Meter AggregateMeter = new(MeterName);
 
     // Command metrics
@@ -63,14 +67,14 @@ internal static class AggregateMetrics
     )
     {
         TagList tags = default;
-        tags.Add("aggregate.type", aggregateType);
-        tags.Add("command.type", commandType);
+        tags.Add(AggregateTypeTag, aggregateType);
+        tags.Add(CommandTypeTag, commandType);
         tags.Add("result", "failure");
         CommandCount.Add(1, tags);
         CommandDuration.Record(durationMs, tags);
         TagList errorTags = default;
-        errorTags.Add("aggregate.type", aggregateType);
-        errorTags.Add("command.type", commandType);
+        errorTags.Add(AggregateTypeTag, aggregateType);
+        errorTags.Add(CommandTypeTag, commandType);
         errorTags.Add("error.code", errorCode);
         CommandErrors.Add(1, errorTags);
     }
@@ -90,16 +94,16 @@ internal static class AggregateMetrics
     )
     {
         TagList tags = default;
-        tags.Add("aggregate.type", aggregateType);
-        tags.Add("command.type", commandType);
+        tags.Add(AggregateTypeTag, aggregateType);
+        tags.Add(CommandTypeTag, commandType);
         tags.Add("result", "success");
         CommandCount.Add(1, tags);
         CommandDuration.Record(durationMs, tags);
         if (eventCount > 0)
         {
             TagList eventTags = default;
-            eventTags.Add("aggregate.type", aggregateType);
-            eventTags.Add("command.type", commandType);
+            eventTags.Add(AggregateTypeTag, aggregateType);
+            eventTags.Add(CommandTypeTag, commandType);
             EventsProduced.Add(eventCount, eventTags);
         }
     }
@@ -113,7 +117,7 @@ internal static class AggregateMetrics
     )
     {
         TagList tags = default;
-        tags.Add("aggregate.type", aggregateType);
+        tags.Add(AggregateTypeTag, aggregateType);
         ConcurrencyConflicts.Add(1, tags);
     }
 
@@ -128,7 +132,7 @@ internal static class AggregateMetrics
     )
     {
         TagList tags = default;
-        tags.Add("aggregate.type", aggregateType);
+        tags.Add(AggregateTypeTag, aggregateType);
         StateFetchDuration.Record(durationMs, tags);
     }
 }
