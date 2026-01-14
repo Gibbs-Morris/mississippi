@@ -48,6 +48,7 @@ For domain models using Mississippi event sourcing:
 | `Add{Projection}Projection()` | Private per-projection | `AddUserProfileProjection()` |
 
 Registration order within aggregates/projections:
+
 1. `AddEventType<TEvent>()` - Register event types
 2. `AddCommandHandler<TCommand, TAggregate, THandler>()` - Register handlers
 3. `AddReducer<TEvent, TState, TReducer>()` - Register reducers

@@ -25,23 +25,23 @@ You MUST follow this sequence and keep the headings exactly as listed.
 - List assumptions and unknowns.
 - Produce a "Claim list": atomic, testable statements (e.g., API compatibility, migration safety, idempotency).
 
-2) Verification questions (5-10)
+1) Verification questions (5-10)
 
 - Generate questions that would expose errors in the plan/claims.
 - Questions must be answerable via repository evidence (code/config/docs/tests) and/or by running commands/tests.
 
-3) Independent answers (evidence-based)
+1) Independent answers (evidence-based)
 
 - Answer each verification question WITHOUT using the initial draft as authority.
 - Re-derive facts from repository evidence; cite file paths/symbols/config keys and include what tests/commands were run.
 - If something cannot be verified, mark it clearly as "UNVERIFIED" and state what evidence is missing.
 
-4) Final revised plan
+1) Final revised plan
 
 - Revise the plan based on the verified answers.
 - Highlight any changes from the initial draft.
 
-5) Implementation (only after revised plan)
+1) Implementation (only after revised plan)
 
 - Implement the revised plan with minimal cohesive changes.
 - Add/adjust tests that would fail pre-change and pass post-change where practical.

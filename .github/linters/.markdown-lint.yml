@@ -8,3 +8,12 @@ default: true
 # MD013: Line length - disabled as technical documentation often requires longer lines
 # for code examples, URLs, command lines, and tables
 MD013: false
+
+# MD024: Duplicate headings - allowed for documentation with repeated section patterns
+MD024: false
+
+# MD025: Single H1 - disabled for Docusaurus (uses frontmatter title + markdown H1)
+MD025: false
+
+# MD060: Table column style - disabled due to inconsistent compact/aligned requirements
+MD060: false

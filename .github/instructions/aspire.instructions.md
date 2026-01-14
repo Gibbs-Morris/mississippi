@@ -23,6 +23,7 @@ Developers building Aspire-based integration tests with Azure emulators.
 ## At-a-Glance Quick-Start
 
 AppHost configuration:
+
 ```csharp
 builder.AddAzureCosmosDB("cosmos")
     .RunAsPreviewEmulator(emulator =>
@@ -33,6 +34,7 @@ builder.AddAzureCosmosDB("cosmos")
 ```
 
 SDK client configuration:
+
 ```csharp
 CosmosClientOptions options = new()
 {
@@ -42,6 +44,7 @@ CosmosClientOptions options = new()
 ```
 
 Document model:
+
 ```csharp
 public class MyDocument
 {
@@ -69,4 +72,3 @@ public class MyDocument
 - Sample implementation: `samples/Crescent/Aspire.L2Tests/`
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - Testing guidance: `.github/instructions/testing.instructions.md`
-

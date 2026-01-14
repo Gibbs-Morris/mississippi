@@ -333,6 +333,7 @@ builder.Services.AddReservoir(store => store.RegisterState<AppState>());
 ```
 
 Effects are registered with **scoped lifetime**:
+
 - In Blazor WebAssembly, scoped behaves as singleton
 - In Blazor Server, each circuit gets its own effect instances
 

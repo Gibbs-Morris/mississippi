@@ -68,7 +68,8 @@ Developers implementing domain models using Mississippi event sourcing in sample
 ## At-a-Glance Quick-Start
 
 ### Folder Structure
-```
+
+```text
 {Domain}/
 ├── {Aggregate}/
 │   ├── {Aggregate}Aggregate.cs

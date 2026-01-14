@@ -81,6 +81,7 @@ sequenceDiagram
 ### 1. Command Path: Sending a Message
 
 #### Step 1: Client HTTP Request
+
 **File**: [EventSourcing.razor](../Cascade.Web.Client/Pages/EventSourcing.razor#L118-L140)
 
 ```csharp
@@ -90,6 +91,7 @@ HttpResponseMessage response = await Http.PostAsJsonAsync(
 ```
 
 #### Step 2: BFF API Endpoint
+
 **File**: [Program.cs](../Cascade.Web.Server/Program.cs#L230-L264)
 
 ```csharp
@@ -103,11 +105,13 @@ app.MapPost("/api/conversations/{conversationId}/messages", async (...) =>
 ```
 
 Key points:
+
 - `IAggregateGrainFactory` is injected via DI (registered by `AddAggregateSupport()`)
 - `GetGenericAggregate<TAggregate>(entityId)` returns a grain reference keyed by entity ID
 - The brook name comes from `[BrookName("CASCADE", "CHAT", "CONVERSATION")]` on `ConversationAggregate`
 
 #### Step 3: GenericAggregateGrain.ExecuteAsync
+
 **File**: [GenericAggregateGrain.cs](../../../src/EventSourcing.Aggregates/GenericAggregateGrain.cs#L118-L165)
 
 1. Gets current brook position (from local cache or `BrookCursorGrain`)
@@ -117,6 +121,7 @@ Key points:
 5. Updates local position cache to avoid race conditions
 
 #### Step 4: Command Handler Execution
+
 **File**: [SendMessageHandler.cs](../Cascade.Domain/Conversation/Handlers/SendMessageHandler.cs)
 
 The handler validates the command and produces a `MessageSent` event:
@@ -133,6 +138,7 @@ internal sealed class SendMessageHandler : CommandHandlerBase<ConversationAggreg
 ```
 
 #### Step 5: BrookWriterGrain.AppendEventsAsync
+
 **File**: [BrookWriterGrain.cs](../../../src/EventSourcing.Brooks/Writer/BrookWriterGrain.cs#L68-L94)
 
 1. Calls `IBrookStorageWriter.AppendEventsAsync(brookKey, events, expectedVersion)`
@@ -146,6 +152,7 @@ await stream.OnNextAsync(new BrookCursorMovedEvent(brookKey, newPosition));
 ```
 
 #### Step 6: EventBrookWriter → Cosmos DB
+
 **File**: [EventBrookWriter.cs](../../../src/EventSourcing.Brooks.Cosmos/Brooks/EventBrookWriter.cs#L131-L160)
 
 1. Acquires distributed lock via Azure Blob lease
@@ -156,12 +163,14 @@ await stream.OnNextAsync(new BrookCursorMovedEvent(brookKey, newPosition));
 4. Returns new position
 
 **Cosmos Document Structure**:
+
 - **Events Container**: `{ id, pk, position, eventType, payload, timestamp }`
 - **Cursor**: Part of the transactional batch, tracks latest position
 
 ### 2. Query Path: Reading Messages
 
 #### Step 1: Client HTTP Request
+
 **File**: [EventSourcing.razor](../Cascade.Web.Client/Pages/EventSourcing.razor#L150-L171)
 
 ```csharp
@@ -171,6 +180,7 @@ messages = await response.Content.ReadFromJsonAsync<ConversationMessagesResponse
 ```
 
 #### Step 2: BFF API Endpoint
+
 **File**: [Program.cs](../Cascade.Web.Server/Program.cs#L266-L298)
 
 ```csharp
@@ -184,12 +194,14 @@ app.MapGet("/api/conversations/{conversationId}/messages", async (...) =>
 ```
 
 Key points:
+
 - `IUxProjectionGrainFactory` is injected via DI (registered by `AddUxProjections()`)
 - `GetUxProjectionGrain<TProjection>(entityId)` returns a grain reference
 - The brook name comes from `[BrookName("CASCADE", "CHAT", "CONVERSATION")]` on `ChannelMessagesProjection`
 - **Both aggregate and projection share the same brook** → same event stream!
 
 #### Step 3: UxProjectionGrain.GetAsync
+
 **File**: [UxProjectionGrain.cs](../../../src/EventSourcing.UxProjections/UxProjectionGrain.cs#L98-L116)
 
 1. Gets latest brook position from `UxProjectionCursorGrain`
@@ -205,6 +217,7 @@ public async ValueTask<TProjection?> GetAsync(CancellationToken cancellationToke
 ```
 
 #### Step 4: UxProjectionCursorGrain
+
 **File**: [UxProjectionCursorGrain.cs](../../../src/EventSourcing.UxProjections/UxProjectionCursorGrain.cs#L88-L115)
 
 - Subscribes to `BrookCursorMovedEvent` stream on activation
@@ -221,6 +234,7 @@ public Task OnNextAsync(BrookCursorMovedEvent item, StreamSequenceToken? token =
 ```
 
 #### Step 5: UxProjectionVersionedCacheGrain → SnapshotCacheGrain
+
 **File**: [UxProjectionVersionedCacheGrain.cs](../../../src/EventSourcing.UxProjections/UxProjectionVersionedCacheGrain.cs#L95-L127)
 
 On activation, loads projection from `SnapshotCacheGrain`:
@@ -233,9 +247,11 @@ cachedProjection = await snapshotCacheGrain.GetStateAsync(token);
 ```
 
 #### Step 6: SnapshotCacheGrain State Hydration
+
 **File**: [SnapshotCacheGrain.cs](../../../src/EventSourcing.Snapshots/SnapshotCacheGrain.cs#L126-L168)
 
 On activation:
+
 1. Attempts to load snapshot from Cosmos
 2. If found and reducer hash matches → use directly
 3. If missing or hash mismatch → rebuild from events
@@ -252,6 +268,7 @@ RequestBackgroundPersistence(currentReducerHash);
 ```
 
 #### Step 7: Event Replay (if needed)
+
 **File**: [SnapshotCacheGrain.cs](../../../src/EventSourcing.Snapshots/SnapshotCacheGrain.cs#L175-L227)
 
 Uses retention-based strategy for efficient replay:
@@ -289,11 +306,13 @@ This is defined via `[BrookName("CASCADE", "CHAT", "CONVERSATION")]` attribute o
 Events are applied to state via the reducer chain:
 
 **Aggregate Reducers** (apply to `ConversationAggregate`):
+
 - `MessageSentReducer` → adds message to `Messages` list
 - `MessageDeletedReducer` → marks message as deleted
 - etc.
 
 **Projection Reducers** (apply to `ChannelMessagesProjection`):
+
 - `MessageSentProjectionReducer` → adds to projection's `Messages` list
 - Same events, different state shape optimized for reading
 
