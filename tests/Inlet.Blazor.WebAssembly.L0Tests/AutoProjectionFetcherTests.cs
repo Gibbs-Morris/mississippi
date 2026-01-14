@@ -71,8 +71,7 @@ public sealed class AutoProjectionFetcherTests : IDisposable
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
-        Justification =
-            "HttpResponseMessage lifetime is managed by HttpClient - responses are returned to caller for disposal")]
+        Justification = "HttpResponseMessage lifetime is managed by HttpClient - responses are returned to caller for disposal")]
     private sealed class MockHttpHandler : HttpMessageHandler
     {
         private readonly Dictionary<string, (HttpStatusCode StatusCode, string? Content, string? ETag)> responses =

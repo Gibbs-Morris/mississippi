@@ -62,6 +62,12 @@ public class AggregateRegistrationsTests
     private sealed class TestEvent;
 
     /// <summary>
+    ///     Test snapshot class.
+    /// </summary>
+    [SnapshotStorageName("TEST", "APP", "TESTSNAPSHOT")]
+    private sealed class TestSnapshot;
+
+    /// <summary>
     ///     Test state record.
     /// </summary>
     /// <param name="Count">The state count.</param>
@@ -221,5 +227,182 @@ public class AggregateRegistrationsTests
     {
         IServiceCollection? services = null;
         Assert.Throws<ArgumentNullException>(() => services!.AddEventType<TestEvent>());
+    }
+
+    /// <summary>
+    ///     AddRootCommandHandler should register the handler.
+    /// </summary>
+    [Fact]
+    public void AddRootCommandHandlerRegistersHandler()
+    {
+        ServiceCollection services = new();
+        services.AddAggregateSupport();
+        services.AddRootCommandHandler<TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IRootCommandHandler<TestState>? handler = provider.GetService<IRootCommandHandler<TestState>>();
+        Assert.NotNull(handler);
+    }
+
+    /// <summary>
+    ///     AddSnapshotType should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void AddSnapshotTypeRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.AddSnapshotType<TestSnapshot>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISnapshotTypeRegistry? registry = provider.GetService<ISnapshotTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     AddSnapshotType should register the snapshot with the registry.
+    /// </summary>
+    [Fact]
+    public void AddSnapshotTypeRegistersSnapshotWithRegistry()
+    {
+        ServiceCollection services = new();
+        services.AddSnapshotType<TestSnapshot>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISnapshotTypeRegistry registry = provider.GetRequiredService<ISnapshotTypeRegistry>();
+        string snapshotName = SnapshotStorageNameHelper.GetStorageName<TestSnapshot>();
+        Assert.Equal(typeof(TestSnapshot), registry.ResolveType(snapshotName));
+    }
+
+    /// <summary>
+    ///     AddSnapshotType should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void AddSnapshotTypeReturnsServiceCollection()
+    {
+        ServiceCollection services = new();
+        IServiceCollection result = services.AddSnapshotType<TestSnapshot>();
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     AddSnapshotType should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddSnapshotTypeThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() => services!.AddSnapshotType<TestSnapshot>());
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesReturnsServiceCollection()
+    {
+        ServiceCollection services = new();
+        IServiceCollection result = services.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly);
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes should throw when assembly is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesThrowsWhenAssemblyIsNull()
+    {
+        ServiceCollection services = new();
+        Assert.Throws<ArgumentNullException>(() => services.ScanAssemblyForEventTypes(null!));
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() => services!.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly));
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes with marker type should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesWithMarkerRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.ScanAssemblyForEventTypes<TestEvent>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISnapshotTypeRegistry? registry = provider.GetService<ISnapshotTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesReturnsServiceCollection()
+    {
+        ServiceCollection services = new();
+        IServiceCollection result = services.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly);
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes should throw when assembly is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesThrowsWhenAssemblyIsNull()
+    {
+        ServiceCollection services = new();
+        Assert.Throws<ArgumentNullException>(() => services.ScanAssemblyForSnapshotTypes(null!));
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() =>
+            services!.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly));
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes with marker type should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesWithMarkerRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.ScanAssemblyForSnapshotTypes<TestSnapshot>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISnapshotTypeRegistry? registry = provider.GetService<ISnapshotTypeRegistry>();
+        Assert.NotNull(registry);
     }
 }
