@@ -216,6 +216,140 @@ public static class UxProjectionEndpointExtensions
         return endpoints;
     }
 
+    private static async Task<object?> ExtractResultFromValueTaskAsync(
+        object valueTaskResult
+    )
+    {
+        // ValueTask doesn't have Result property directly accessible, convert to Task first
+        Task projectionTask = (Task)valueTaskResult.GetType().GetMethod("AsTask")!.Invoke(valueTaskResult, null)!;
+        await projectionTask;
+        return projectionTask.GetType().GetProperty("Result")?.GetValue(projectionTask);
+    }
+
+    private static async Task<object?> InvokeProjectionAtVersionAsync(
+        MethodInfo method,
+        object grainObj,
+        BrookPosition position,
+        CancellationToken cancellationToken
+    )
+    {
+        object projectionResult = method.Invoke(grainObj, [position, cancellationToken])!;
+        return await ExtractResultFromValueTaskAsync(projectionResult);
+    }
+
+    private static async Task<object?> InvokeProjectionMethodAsync(
+        MethodInfo method,
+        object grainObj,
+        CancellationToken cancellationToken
+    )
+    {
+        object projectionResult = method.Invoke(grainObj, [cancellationToken])!;
+        return await ExtractResultFromValueTaskAsync(projectionResult);
+    }
+
+    private static async Task<BrookPosition> InvokeVersionMethodAsync(
+        MethodInfo method,
+        object grainObj,
+        CancellationToken cancellationToken
+    )
+    {
+        object versionResult = method.Invoke(grainObj, [cancellationToken])!;
+        return await (ValueTask<BrookPosition>)versionResult;
+    }
+
+    private static bool IsNotModified(
+        HttpContext httpContext,
+        string currentETag
+    )
+    {
+        string? ifNoneMatch = httpContext.Request.Headers.IfNoneMatch.ToString();
+        return !string.IsNullOrEmpty(ifNoneMatch) && (ifNoneMatch == currentETag);
+    }
+
+    private static void MapAtVersionEndpoint(
+        RouteGroupBuilder group,
+        Type projectionType,
+        MethodInfo getGrainMethod,
+        MethodInfo getAtVersionMethod
+    )
+    {
+        group.MapGet(
+                "{entityId}/at/{version:long}",
+                async (
+                    string entityId,
+                    long version,
+                    IUxProjectionGrainFactory factory,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    object? grainObj = getGrainMethod.Invoke(factory, [entityId]);
+                    if (grainObj is null)
+                    {
+                        return Results.Problem("Failed to get grain");
+                    }
+
+                    BrookPosition brookPosition = new(version);
+                    object? projection = await InvokeProjectionAtVersionAsync(
+                        getAtVersionMethod,
+                        grainObj,
+                        brookPosition,
+                        cancellationToken);
+                    return projection is null ? Results.NotFound() : Results.Ok(projection);
+                })
+            .WithName($"Get{projectionType.Name}AtVersion");
+    }
+
+    private static void MapLatestProjectionEndpoint(
+        RouteGroupBuilder group,
+        Type projectionType,
+        MethodInfo getGrainMethod,
+        MethodInfo getLatestVersionMethod,
+        MethodInfo getAsyncMethod
+    )
+    {
+        group.MapGet(
+                "{entityId}",
+                async (
+                    string entityId,
+                    IUxProjectionGrainFactory factory,
+                    HttpContext httpContext,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    object? grainObj = getGrainMethod.Invoke(factory, [entityId]);
+                    if (grainObj is null)
+                    {
+                        return Results.Problem("Failed to get grain");
+                    }
+
+                    BrookPosition position = await InvokeVersionMethodAsync(
+                        getLatestVersionMethod,
+                        grainObj,
+                        cancellationToken);
+                    if (position.NotSet)
+                    {
+                        return Results.NotFound();
+                    }
+
+                    string currentETag = $"\"{position.Value}\"";
+                    if (IsNotModified(httpContext, currentETag))
+                    {
+                        return Results.StatusCode(304);
+                    }
+
+                    object? projection = await InvokeProjectionMethodAsync(getAsyncMethod, grainObj, cancellationToken);
+                    if (projection is null)
+                    {
+                        return Results.NotFound();
+                    }
+
+                    httpContext.Response.Headers.ETag = currentETag;
+                    httpContext.Response.Headers.CacheControl = "private, must-revalidate";
+                    return Results.Ok(projection);
+                })
+            .WithName($"Get{projectionType.Name}");
+    }
+
     private static void MapProjectionEndpoints(
         IEndpointRouteBuilder endpoints,
         string routePrefix,
@@ -240,60 +374,18 @@ public static class UxProjectionEndpointExtensions
         MethodInfo getLatestVersionMethod = grainInterfaceType.GetMethod("GetLatestVersionAsync")!;
         MethodInfo getAsyncMethod = grainInterfaceType.GetMethod("GetAsync")!;
         MethodInfo getAtVersionMethod = grainInterfaceType.GetMethod("GetAtVersionAsync")!;
+        MapLatestProjectionEndpoint(group, projectionType, getGrainMethod, getLatestVersionMethod, getAsyncMethod);
+        MapVersionEndpoint(group, projectionType, getGrainMethod, getLatestVersionMethod);
+        MapAtVersionEndpoint(group, projectionType, getGrainMethod, getAtVersionMethod);
+    }
 
-        // GET {entityId} - Latest projection
-        group.MapGet(
-                "{entityId}",
-                async (
-                    string entityId,
-                    IUxProjectionGrainFactory factory,
-                    HttpContext httpContext,
-                    CancellationToken cancellationToken
-                ) =>
-                {
-                    object? grainObj = getGrainMethod.Invoke(factory, [entityId]);
-                    if (grainObj is null)
-                    {
-                        return Results.Problem("Failed to get grain");
-                    }
-
-                    // Get version for ETag - interface returns ValueTask<T>
-                    object versionResult = getLatestVersionMethod.Invoke(grainObj, [cancellationToken])!;
-                    BrookPosition position = await (ValueTask<BrookPosition>)versionResult;
-                    if (position.NotSet)
-                    {
-                        return Results.NotFound();
-                    }
-
-                    string currentETag = $"\"{position.Value}\"";
-
-                    // Conditional GET
-                    string? ifNoneMatch = httpContext.Request.Headers.IfNoneMatch.ToString();
-                    if (!string.IsNullOrEmpty(ifNoneMatch) && (ifNoneMatch == currentETag))
-                    {
-                        return Results.StatusCode(304);
-                    }
-
-                    // Get projection - interface returns ValueTask<T?>
-                    object projectionResult = getAsyncMethod.Invoke(grainObj, [cancellationToken])!;
-
-                    // ValueTask doesn't have Result property directly accessible, await it first
-                    Task projectionTask =
-                        (Task)projectionResult.GetType().GetMethod("AsTask")!.Invoke(projectionResult, null)!;
-                    await projectionTask;
-                    object? projection = projectionTask.GetType().GetProperty("Result")?.GetValue(projectionTask);
-                    if (projection is null)
-                    {
-                        return Results.NotFound();
-                    }
-
-                    httpContext.Response.Headers.ETag = currentETag;
-                    httpContext.Response.Headers.CacheControl = "private, must-revalidate";
-                    return Results.Ok(projection);
-                })
-            .WithName($"Get{projectionType.Name}");
-
-        // GET {entityId}/version
+    private static void MapVersionEndpoint(
+        RouteGroupBuilder group,
+        Type projectionType,
+        MethodInfo getGrainMethod,
+        MethodInfo getLatestVersionMethod
+    )
+    {
         group.MapGet(
                 "{entityId}/version",
                 async (
@@ -308,38 +400,12 @@ public static class UxProjectionEndpointExtensions
                         return Results.Problem("Failed to get grain");
                     }
 
-                    object versionResult = getLatestVersionMethod.Invoke(grainObj, [cancellationToken])!;
-                    BrookPosition position = await (ValueTask<BrookPosition>)versionResult;
+                    BrookPosition position = await InvokeVersionMethodAsync(
+                        getLatestVersionMethod,
+                        grainObj,
+                        cancellationToken);
                     return position.NotSet ? Results.NotFound() : Results.Ok(position.Value);
                 })
             .WithName($"Get{projectionType.Name}Version");
-
-        // GET {entityId}/at/{version}
-        group.MapGet(
-                "{entityId}/at/{version:long}",
-                async (
-                    string entityId,
-                    long version,
-                    IUxProjectionGrainFactory factory,
-                    CancellationToken cancellationToken
-                ) =>
-                {
-                    object? grainObj = getGrainMethod.Invoke(factory, [entityId]);
-                    if (grainObj is null)
-                    {
-                        return Results.Problem("Failed to get grain");
-                    }
-
-                    BrookPosition brookPosition = new(version);
-                    object projectionResult = getAtVersionMethod.Invoke(grainObj, [brookPosition, cancellationToken])!;
-
-                    // ValueTask doesn't have Result property directly accessible, convert to Task first
-                    Task projectionTask =
-                        (Task)projectionResult.GetType().GetMethod("AsTask")!.Invoke(projectionResult, null)!;
-                    await projectionTask;
-                    object? projection = projectionTask.GetType().GetProperty("Result")?.GetValue(projectionTask);
-                    return projection is null ? Results.NotFound() : Results.Ok(projection);
-                })
-            .WithName($"Get{projectionType.Name}AtVersion");
     }
 }

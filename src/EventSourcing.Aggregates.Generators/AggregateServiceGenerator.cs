@@ -30,6 +30,27 @@ public sealed class AggregateServiceGenerator : IIncrementalGenerator
     private const string CommandHandlerBaseFullName =
         "Mississippi.EventSourcing.Aggregates.Abstractions.CommandHandler";
 
+    private static void EmitGeneratedSources(
+        SourceProductionContext spc,
+        AggregateServiceInfo aggregate
+    )
+    {
+        // Generate interface
+        string interfaceSource = GenerateServiceInterface(aggregate);
+        spc.AddSource($"I{aggregate.ServiceName}Service.g.cs", interfaceSource);
+
+        // Generate implementation
+        string implementationSource = GenerateServiceImplementation(aggregate);
+        spc.AddSource($"{aggregate.ServiceName}Service.g.cs", implementationSource);
+
+        // Generate API controller if requested
+        if (aggregate.GenerateApi && !string.IsNullOrEmpty(aggregate.Route))
+        {
+            string controllerSource = GenerateApiController(aggregate);
+            spc.AddSource($"{aggregate.ServiceName}Controller.g.cs", controllerSource);
+        }
+    }
+
     private static AggregateServiceInfo? ExtractAggregateInfo(
         GeneratorAttributeSyntaxContext context,
         CancellationToken ct
@@ -138,6 +159,26 @@ public sealed class AggregateServiceGenerator : IIncrementalGenerator
         }
 
         return null;
+    }
+
+    private static void GenerateAggregateServiceOutput(
+        SourceProductionContext spc,
+        (AggregateServiceInfo? Aggregate, ImmutableArray<CommandHandlerInfo?> Handlers) tuple
+    )
+    {
+        AggregateServiceInfo? aggregate = tuple.Aggregate;
+        if (aggregate is null)
+        {
+            return;
+        }
+
+        PopulateAggregateCommands(aggregate, tuple.Handlers);
+        if (aggregate.Commands.Count == 0)
+        {
+            return;
+        }
+
+        EmitGeneratedSources(spc, aggregate);
     }
 
     private static string GenerateApiController(
@@ -355,6 +396,29 @@ namespace {aggregate.Namespace};
     ) =>
         commandTypeName;
 
+    private static void PopulateAggregateCommands(
+        AggregateServiceInfo aggregate,
+        ImmutableArray<CommandHandlerInfo?> handlers
+    )
+    {
+        foreach (CommandHandlerInfo? handler in handlers)
+        {
+            if (handler is null || (handler.AggregateFullTypeName != aggregate.FullTypeName))
+            {
+                continue;
+            }
+
+            aggregate.Commands.Add(
+                new()
+                {
+                    FullTypeName = handler.CommandFullTypeName,
+                    TypeName = handler.CommandTypeName,
+                    Namespace = handler.CommandNamespace,
+                    MethodName = GetMethodName(handler.CommandTypeName),
+                });
+        }
+    }
+
     /// <inheritdoc />
     public void Initialize(
         IncrementalGeneratorInitializationContext context
@@ -394,61 +458,6 @@ namespace {aggregate.Namespace};
             combined = aggregates.Combine(allHandlers);
 
         // Generate service interface and implementation
-        context.RegisterSourceOutput(
-            combined,
-            static (
-                spc,
-                tuple
-            ) =>
-            {
-                AggregateServiceInfo? aggregate = tuple.Aggregate;
-                if (aggregate is null)
-                {
-                    return;
-                }
-
-                ImmutableArray<CommandHandlerInfo?> handlers = tuple.Handlers;
-
-                // Find commands for this aggregate
-                foreach (CommandHandlerInfo? handler in handlers)
-                {
-                    if (handler is null)
-                    {
-                        continue;
-                    }
-
-                    if (handler.AggregateFullTypeName == aggregate.FullTypeName)
-                    {
-                        aggregate.Commands.Add(
-                            new()
-                            {
-                                FullTypeName = handler.CommandFullTypeName,
-                                TypeName = handler.CommandTypeName,
-                                Namespace = handler.CommandNamespace,
-                                MethodName = GetMethodName(handler.CommandTypeName),
-                            });
-                    }
-                }
-
-                if (aggregate.Commands.Count == 0)
-                {
-                    return;
-                }
-
-                // Generate interface
-                string interfaceSource = GenerateServiceInterface(aggregate);
-                spc.AddSource($"I{aggregate.ServiceName}Service.g.cs", interfaceSource);
-
-                // Generate implementation
-                string implementationSource = GenerateServiceImplementation(aggregate);
-                spc.AddSource($"{aggregate.ServiceName}Service.g.cs", implementationSource);
-
-                // Generate API controller if requested
-                if (aggregate.GenerateApi && !string.IsNullOrEmpty(aggregate.Route))
-                {
-                    string controllerSource = GenerateApiController(aggregate);
-                    spc.AddSource($"{aggregate.ServiceName}Controller.g.cs", controllerSource);
-                }
-            });
+        context.RegisterSourceOutput(combined, GenerateAggregateServiceOutput);
     }
 }

@@ -109,23 +109,30 @@ public sealed class AutoProjectionFetcherTests : IDisposable
         {
             LastRequestedUrl = request.RequestUri?.PathAndQuery;
             string path = LastRequestedUrl ?? string.Empty;
+
+            // Create response with appropriate status code - default to NotFound if not configured
+            HttpStatusCode statusCode = HttpStatusCode.NotFound;
+            string? content = null;
+            string? etag = null;
             if (responses.TryGetValue(path, out (HttpStatusCode StatusCode, string? Content, string? ETag) response))
             {
-                HttpResponseMessage httpResponse = new(response.StatusCode);
-                if (response.Content is not null)
-                {
-                    httpResponse.Content = new StringContent(response.Content, Encoding.UTF8, "application/json");
-                }
-
-                if (response.ETag is not null)
-                {
-                    httpResponse.Headers.ETag = new(response.ETag);
-                }
-
-                return Task.FromResult(httpResponse);
+                statusCode = response.StatusCode;
+                content = response.Content;
+                etag = response.ETag;
             }
 
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+            HttpResponseMessage httpResponse = new(statusCode);
+            if (content is not null)
+            {
+                httpResponse.Content = new StringContent(content, Encoding.UTF8, "application/json");
+            }
+
+            if (etag is not null)
+            {
+                httpResponse.Headers.ETag = new(etag);
+            }
+
+            return Task.FromResult(httpResponse);
         }
     }
 

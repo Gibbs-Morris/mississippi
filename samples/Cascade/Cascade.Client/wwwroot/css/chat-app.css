@@ -194,7 +194,7 @@ html, body {
     width: 88px;
     height: 88px;
     margin: 0 auto var(--chat-space-6);
-    background: linear-gradient(135deg, var(--chat-accent-primary) 0%, #7289da 100%);
+    background: linear-gradient(135deg, var(--chat-accent-primary) 0%, var(--chat-accent-hover) 100%);
     border-radius: var(--chat-radius-xl);
     display: flex;
     align-items: center;
@@ -708,7 +708,7 @@ html, body {
     width: 40px;
     height: 40px;
     border-radius: var(--chat-radius-full);
-    background: linear-gradient(135deg, var(--chat-accent-primary) 0%, #7289da 100%);
+    background: linear-gradient(135deg, var(--chat-accent-primary) 0%, var(--chat-accent-hover) 100%);
     display: flex;
     align-items: center;
     justify-content: center;

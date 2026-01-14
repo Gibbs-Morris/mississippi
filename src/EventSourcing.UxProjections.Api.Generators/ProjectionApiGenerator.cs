@@ -75,6 +75,101 @@ public sealed class BatchProjectionRequest
         "System.Uri",
     ];
 
+    private static string BuildDtoTypeName(
+        bool isCollection,
+        bool needsDto,
+        string? elementType,
+        ITypeSymbol typeToCheck,
+        bool isNullable,
+        string typeName
+    )
+    {
+        if (isCollection)
+        {
+            string dtoElementType = needsDto ? elementType + "Dto" : elementType!;
+            return $"IReadOnlyList<{dtoElementType}>";
+        }
+
+        if (needsDto)
+        {
+            string baseTypeName = typeToCheck.Name + "Dto";
+            return isNullable ? baseTypeName + "?" : baseTypeName;
+        }
+
+        return typeName;
+    }
+
+    private static List<NestedTypeMetadata> BuildNestedTypeMetadata(
+        GeneratorAttributeSyntaxContext context,
+        HashSet<string> nestedTypesToGenerate
+    )
+    {
+        List<NestedTypeMetadata> nestedTypes = [];
+        foreach (string nestedTypeName in nestedTypesToGenerate)
+        {
+            INamedTypeSymbol? nestedSymbol = context.SemanticModel.Compilation.GetTypeByMetadataName(nestedTypeName);
+            if (nestedSymbol is null)
+            {
+                continue;
+            }
+
+            HashSet<string> deeperNested = [];
+            List<PropertyMetadata> nestedProperties = ExtractPublicProperties(nestedSymbol, deeperNested);
+            nestedTypes.Add(
+                new()
+                {
+                    TypeName = nestedSymbol.Name,
+                    FullTypeName = nestedTypeName,
+                    Namespace = nestedSymbol.ContainingNamespace.ToDisplayString(),
+                    Properties = nestedProperties,
+                });
+        }
+
+        return nestedTypes;
+    }
+
+    private static (bool IsCollection, string? ElementType, ITypeSymbol? ElementTypeSymbol) DetectCollectionType(
+        ITypeSymbol propertyType
+    )
+    {
+        if (propertyType is not INamedTypeSymbol { IsGenericType: true } namedType)
+        {
+            return (false, null, null);
+        }
+
+        string genericTypeName = namedType.ConstructedFrom.ToDisplayString();
+        if (IsCollectionTypeName(genericTypeName))
+        {
+            ITypeSymbol elementTypeSymbol = namedType.TypeArguments[0];
+            return (true, elementTypeSymbol.Name, elementTypeSymbol);
+        }
+
+        return (false, null, null);
+    }
+
+    private static (ITypeSymbol TypeToCheck, bool NeedsDto) DetermineIfNeedsDto(
+        ITypeSymbol propertyType,
+        ITypeSymbol? elementTypeSymbol,
+        HashSet<string> nestedTypesToGenerate
+    )
+    {
+        ITypeSymbol typeToCheck = elementTypeSymbol ?? propertyType;
+        if ((typeToCheck.NullableAnnotation == NullableAnnotation.Annotated) &&
+            typeToCheck is INamedTypeSymbol { TypeArguments.Length: > 0 } nullableNamed)
+        {
+            typeToCheck = nullableNamed.TypeArguments[0];
+        }
+
+        string typeToCheckName = typeToCheck.ToDisplayString();
+        bool needsDto = !IsPrimitiveOrBuiltIn(typeToCheckName) && !typeToCheck.TypeKind.HasFlag(TypeKind.Enum);
+        if (needsDto && typeToCheck is INamedTypeSymbol)
+        {
+            nestedTypesToGenerate.Add(typeToCheckName);
+        }
+
+        return (typeToCheck, needsDto);
+    }
+
     private static ProjectionApiInfo? ExtractProjectionInfo(
         GeneratorAttributeSyntaxContext context,
         CancellationToken ct
@@ -86,85 +181,20 @@ public sealed class BatchProjectionRequest
             return null;
         }
 
-        AttributeData? attribute = null;
-        foreach (AttributeData attr in typeSymbol.GetAttributes())
-        {
-            if (attr.AttributeClass?.ToDisplayString() == UxProjectionAttributeFullName)
-            {
-                attribute = attr;
-                break;
-            }
-        }
-
+        AttributeData? attribute = FindProjectionAttribute(typeSymbol);
         if (attribute is null)
         {
             return null;
         }
 
-        // Extract route from constructor argument
-        string route = attribute.ConstructorArguments.Length > 0
-            ? attribute.ConstructorArguments[0].Value?.ToString() ?? string.Empty
-            : string.Empty;
-
-        // Extract optional properties
-        bool isBatchEnabled = true;
-        string? authorize = null;
-        foreach (KeyValuePair<string, TypedConstant> arg in attribute.NamedArguments)
-        {
-            switch (arg.Key)
-            {
-                case "IsBatchEnabled":
-                    isBatchEnabled = (bool)(arg.Value.Value ?? true);
-                    break;
-                case "Authorize":
-                    authorize = arg.Value.Value?.ToString();
-                    break;
-            }
-        }
+        (string route, bool isBatchEnabled, string? authorize) = ParseAttributeArguments(attribute);
 
         // Extract properties
         HashSet<string> nestedTypesToGenerate = [];
-        List<PropertyMetadata> properties = [];
-        foreach (ISymbol member in typeSymbol.GetMembers())
-        {
-            if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public, IsStatic: false } prop &&
-                prop.GetMethod is not null)
-            {
-                properties.Add(ExtractPropertyMetadata(prop, nestedTypesToGenerate));
-            }
-        }
+        List<PropertyMetadata> properties = ExtractPublicProperties(typeSymbol, nestedTypesToGenerate);
 
         // Extract nested type metadata
-        List<NestedTypeMetadata> nestedTypes = [];
-        foreach (string nestedTypeName in nestedTypesToGenerate)
-        {
-            INamedTypeSymbol? nestedSymbol = context.SemanticModel.Compilation.GetTypeByMetadataName(nestedTypeName);
-            if (nestedSymbol is null)
-            {
-                continue;
-            }
-
-            HashSet<string> deeperNested = [];
-            List<PropertyMetadata> nestedProperties = [];
-            foreach (ISymbol member in nestedSymbol.GetMembers())
-            {
-                if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public, IsStatic: false } prop &&
-                    prop.GetMethod is not null)
-                {
-                    nestedProperties.Add(ExtractPropertyMetadata(prop, deeperNested));
-                }
-            }
-
-            nestedTypes.Add(
-                new()
-                {
-                    TypeName = nestedSymbol.Name,
-                    FullTypeName = nestedTypeName,
-                    Namespace = nestedSymbol.ContainingNamespace.ToDisplayString(),
-                    Properties = nestedProperties,
-                });
-        }
-
+        List<NestedTypeMetadata> nestedTypes = BuildNestedTypeMetadata(context, nestedTypesToGenerate);
         return new()
         {
             FullTypeName = typeSymbol.ToDisplayString(),
@@ -187,61 +217,12 @@ public sealed class BatchProjectionRequest
         string typeName = propertyType.ToDisplayString();
         bool isNullable = propertyType.NullableAnnotation == NullableAnnotation.Annotated;
         bool isRequired = property.IsRequired;
-
-        // Check if it's a collection (ImmutableList, ImmutableArray, List, IReadOnlyList, etc.)
-        bool isCollection = false;
-        string? elementType = null;
-        ITypeSymbol? elementTypeSymbol = null;
-        if (propertyType is INamedTypeSymbol namedType && namedType.IsGenericType)
-        {
-            string genericTypeName = namedType.ConstructedFrom.ToDisplayString();
-            if (genericTypeName.Contains("ImmutableList") ||
-                genericTypeName.Contains("ImmutableArray") ||
-                genericTypeName.Contains("List<") ||
-                genericTypeName.Contains("IList<") ||
-                genericTypeName.Contains("IReadOnlyList<") ||
-                genericTypeName.Contains("IEnumerable<") ||
-                genericTypeName.Contains("ICollection<"))
-            {
-                isCollection = true;
-                elementTypeSymbol = namedType.TypeArguments[0];
-                elementType = elementTypeSymbol.Name;
-            }
-        }
-
-        // Determine if the type (or element type for collections) needs a DTO
-        ITypeSymbol typeToCheck = elementTypeSymbol ?? propertyType;
-        if ((typeToCheck.NullableAnnotation == NullableAnnotation.Annotated) &&
-            typeToCheck is INamedTypeSymbol nullableNamed &&
-            (nullableNamed.TypeArguments.Length > 0))
-        {
-            typeToCheck = nullableNamed.TypeArguments[0];
-        }
-
-        string typeToCheckName = typeToCheck.ToDisplayString();
-        bool needsDto = !IsPrimitiveOrBuiltIn(typeToCheckName) && !typeToCheck.TypeKind.HasFlag(TypeKind.Enum);
-        if (needsDto && typeToCheck is INamedTypeSymbol)
-        {
-            nestedTypesToGenerate.Add(typeToCheckName);
-        }
-
-        // Build DTO type name
-        string dtoTypeName;
-        if (isCollection)
-        {
-            string dtoElementType = needsDto ? elementType + "Dto" : elementType!;
-            dtoTypeName = $"IReadOnlyList<{dtoElementType}>";
-        }
-        else if (needsDto)
-        {
-            string baseTypeName = typeToCheck.Name + "Dto";
-            dtoTypeName = isNullable ? baseTypeName + "?" : baseTypeName;
-        }
-        else
-        {
-            dtoTypeName = typeName;
-        }
-
+        (bool isCollection, string? elementType, ITypeSymbol? elementTypeSymbol) = DetectCollectionType(propertyType);
+        (ITypeSymbol typeToCheck, bool needsDto) = DetermineIfNeedsDto(
+            propertyType,
+            elementTypeSymbol,
+            nestedTypesToGenerate);
+        string dtoTypeName = BuildDtoTypeName(isCollection, needsDto, elementType, typeToCheck, isNullable, typeName);
         return new()
         {
             PropertyName = property.Name,
@@ -253,6 +234,39 @@ public sealed class BatchProjectionRequest
             Nullable = isNullable,
             Required = isRequired,
         };
+    }
+
+    private static List<PropertyMetadata> ExtractPublicProperties(
+        INamedTypeSymbol typeSymbol,
+        HashSet<string> nestedTypesToGenerate
+    )
+    {
+        List<PropertyMetadata> properties = [];
+        foreach (ISymbol member in typeSymbol.GetMembers())
+        {
+            if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public, IsStatic: false } prop &&
+                prop.GetMethod is not null)
+            {
+                properties.Add(ExtractPropertyMetadata(prop, nestedTypesToGenerate));
+            }
+        }
+
+        return properties;
+    }
+
+    private static AttributeData? FindProjectionAttribute(
+        INamedTypeSymbol typeSymbol
+    )
+    {
+        foreach (AttributeData attr in typeSymbol.GetAttributes())
+        {
+            if (attr.AttributeClass?.ToDisplayString() == UxProjectionAttributeFullName)
+            {
+                return attr;
+            }
+        }
+
+        return null;
     }
 
     private static string GenerateDtoAndMapper(
@@ -558,6 +572,17 @@ public sealed partial class {projection.TypeName}Controller : ControllerBase
         sb.AppendLine($"{indent}}}");
     }
 
+    private static bool IsCollectionTypeName(
+        string genericTypeName
+    ) =>
+        genericTypeName.Contains("ImmutableList") ||
+        genericTypeName.Contains("ImmutableArray") ||
+        genericTypeName.Contains("List<") ||
+        genericTypeName.Contains("IList<") ||
+        genericTypeName.Contains("IReadOnlyList<") ||
+        genericTypeName.Contains("IEnumerable<") ||
+        genericTypeName.Contains("ICollection<");
+
     private static bool IsPrimitiveOrBuiltIn(
         string typeName
     )
@@ -576,6 +601,31 @@ public sealed partial class {projection.TypeName}Controller : ControllerBase
         }
 
         return false;
+    }
+
+    private static (string Route, bool IsBatchEnabled, string? Authorize) ParseAttributeArguments(
+        AttributeData attribute
+    )
+    {
+        string route = attribute.ConstructorArguments.Length > 0
+            ? attribute.ConstructorArguments[0].Value?.ToString() ?? string.Empty
+            : string.Empty;
+        bool isBatchEnabled = true;
+        string? authorize = null;
+        foreach (KeyValuePair<string, TypedConstant> arg in attribute.NamedArguments)
+        {
+            switch (arg.Key)
+            {
+                case "IsBatchEnabled":
+                    isBatchEnabled = (bool)(arg.Value.Value ?? true);
+                    break;
+                case "Authorize":
+                    authorize = arg.Value.Value?.ToString();
+                    break;
+            }
+        }
+
+        return (route, isBatchEnabled, authorize);
     }
 
     /// <inheritdoc />
