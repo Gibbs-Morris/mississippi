@@ -1,4 +1,4 @@
-name: "Tests"
+name: "L1 Tests"
 on:
   push:
     branches:
@@ -18,8 +18,8 @@ env:
   CONFIGURATION: Release
 
 jobs:
-  Build:
-    name: "Unit Tests"
+  l1-tests:
+    name: "L1 Light Infrastructure Tests"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -67,13 +67,17 @@ jobs:
         run: |
           dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
 
-      - name: Build and test dotnet projects
+      - name: Build dotnet projects
+        run: |
+          dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+
+      - name: Run L1 Tests
         run: |
           mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
-          dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results -- RunConfiguration.ReporterSwitch=allure
+          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L1Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results -- RunConfiguration.ReporterSwitch=allure
 
       - name: Install Allure
+        if: always()
         run: |
           wget https://github.com/allure-framework/allure2/releases/download/2.30.0/allure-2.30.0.tgz
           tar -zxvf allure-2.30.0.tgz
@@ -81,11 +85,13 @@ jobs:
           sudo ln -s /opt/allure/bin/allure /usr/bin/allure
 
       - name: Generate Allure Report
+        if: always()
         run: |
           allure generate ${{ github.workspace }}/.scratchpad/coverage-test-results -o ${{ github.workspace }}/allure-report
 
       - name: Upload Allure Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-test-results-${{ matrix.solution }}-${{ matrix.os }}-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
+          name: allure-l1-test-results-${{ matrix.solution }}-${{ matrix.os }}-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
           path: ${{ github.workspace }}/allure-report

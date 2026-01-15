@@ -1,0 +1,103 @@
+name: "L2 Tests"
+on:
+  push:
+    branches:
+      - main
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+      - topic/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CONFIGURATION: Release
+
+jobs:
+  l2-tests:
+    name: "L2 Integration Tests (Aspire)"
+    runs-on: ${{ matrix.os }}
+    # L2 tests use containers and Aspire - failures are informational, not blocking
+    continue-on-error: true
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        solution: [ mississippi.slnx, samples.slnx ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache GitVersion tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.gitversion
+          key: ${{ runner.os }}-gitversion
+          restore-keys: ${{ runner.os }}-gitversion
+
+      - name: Cache nugets
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: Install Aspire workload
+        run: |
+          dotnet workload install aspire
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3.2.1
+        with:
+          versionSpec: "6.0.5"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v3.2.1
+        with:
+          useConfigFile: true
+
+      - name: Restore dotnet packages
+        run: |
+          dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
+
+      - name: Build dotnet projects
+        run: |
+          dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+
+      - name: Run L2 Tests
+        run: |
+          mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
+          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L2Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results -- RunConfiguration.ReporterSwitch=allure
+
+      - name: Install Allure
+        if: always()
+        run: |
+          wget https://github.com/allure-framework/allure2/releases/download/2.30.0/allure-2.30.0.tgz
+          tar -zxvf allure-2.30.0.tgz
+          sudo mv allure-2.30.0 /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+
+      - name: Generate Allure Report
+        if: always()
+        run: |
+          allure generate ${{ github.workspace }}/.scratchpad/coverage-test-results -o ${{ github.workspace }}/allure-report
+
+      - name: Upload Allure Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-l2-test-results-${{ matrix.solution }}-${{ matrix.os }}-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
+          path: ${{ github.workspace }}/allure-report
