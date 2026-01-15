@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
+using System.Reflection;
 
 using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Orleans.L0Tests.Infrastructure;
 
 
 namespace Mississippi.Inlet.Orleans.L0Tests;
@@ -109,6 +112,49 @@ public sealed class InletOrleansRegistrationsTests
     }
 
     /// <summary>
+    ///     ScanProjectionAssemblies discovers types with ProjectionPathAttribute.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Assembly Scanning")]
+    public void ScanProjectionAssembliesDiscoversProjectionPathAttribute()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
+
+        // Act
+        services.ScanProjectionAssemblies(testAssembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
+
+        // Assert
+        string[] paths = registry.GetAllPaths().ToArray();
+        Assert.Contains("/api/path-only-projection", paths);
+    }
+
+    /// <summary>
+    ///     ScanProjectionAssemblies replaces existing registry.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Assembly Scanning")]
+    public void ScanProjectionAssembliesReplacesExistingRegistry()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        services.AddInletOrleans();
+        Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
+
+        // Act
+        services.ScanProjectionAssemblies(testAssembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
+
+        // Assert - Should have the scanned projections, not the empty default
+        string[] paths = registry.GetAllPaths().ToArray();
+        Assert.Contains("/api/path-only-projection", paths);
+    }
+
+    /// <summary>
     ///     ScanProjectionAssemblies should return the same services collection for chaining.
     /// </summary>
     [Fact]
@@ -155,6 +201,48 @@ public sealed class InletOrleansRegistrationsTests
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(() => services.ScanProjectionAssemblies());
         Assert.Equal("services", exception.ParamName);
+    }
+
+    /// <summary>
+    ///     ScanProjectionAssemblies uses BrookNameAttribute value when present.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Assembly Scanning")]
+    public void ScanProjectionAssembliesUsesBrookNameAttributeWhenPresent()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        Assembly testAssembly = typeof(BrookNamedProjection).Assembly;
+
+        // Act
+        services.ScanProjectionAssemblies(testAssembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
+
+        // Assert
+        string? brookName = registry.GetBrookName("/api/brook-named-projection");
+        Assert.Equal("TEST.MODULE.BROOKNAME", brookName);
+    }
+
+    /// <summary>
+    ///     ScanProjectionAssemblies uses path as brook name when BrookNameAttribute is absent.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Assembly Scanning")]
+    public void ScanProjectionAssembliesUsesPathAsBrookNameByDefault()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
+
+        // Act
+        services.ScanProjectionAssemblies(testAssembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
+
+        // Assert
+        string? brookName = registry.GetBrookName("/api/path-only-projection");
+        Assert.Equal("/api/path-only-projection", brookName);
     }
 
     /// <summary>
