@@ -26,6 +26,10 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 [AllureSubSuite("UxProjectionCursorGrain Unit")]
 public sealed class UxProjectionCursorGrainUnitTests
 {
+    private const string InvalidPrimaryKey = "invalid-key-without-pipe";
+
+    private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123";
+
     private static UxProjectionCursorGrain CreateGrain(
         string primaryKey
     )
@@ -59,10 +63,6 @@ public sealed class UxProjectionCursorGrainUnitTests
             logger.Object);
         return (sut, context, logger, options, streamIdFactory, brookStorageReader);
     }
-
-    private const string InvalidPrimaryKey = "invalid-key-without-pipe";
-
-    private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123";
 
     /// <summary>
     ///     Ensures the constructor throws ArgumentNullException when grainContext is null.

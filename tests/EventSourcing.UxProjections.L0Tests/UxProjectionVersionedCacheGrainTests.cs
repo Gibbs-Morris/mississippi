@@ -24,6 +24,8 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 [AllureSubSuite("UxProjectionVersionedCacheGrain")]
 public sealed class UxProjectionVersionedCacheGrainTests
 {
+    private const string ValidPrimaryKey = "TEST.MODULE.STREAM|entity-123|42";
+
     private static Mock<IGrainContext> CreateDefaultGrainContext(
         string primaryKey = ValidPrimaryKey
     )
@@ -57,8 +59,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
         loggerMock ??= new();
         return new(grainContextMock.Object, snapshotGrainFactoryMock.Object, rootReducerMock.Object, loggerMock.Object);
     }
-
-    private const string ValidPrimaryKey = "TEST.MODULE.STREAM|entity-123|42";
 
     /// <summary>
     ///     Constructor should initialize properties correctly.

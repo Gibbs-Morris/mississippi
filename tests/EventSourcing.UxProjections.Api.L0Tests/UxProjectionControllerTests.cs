@@ -27,6 +27,8 @@ namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
 #pragma warning disable CS0618 // Type or member is obsolete - testing legacy IBrookDefinition-based methods
 public sealed class UxProjectionControllerTests
 {
+    private const string TestEntityId = "entity-123";
+
     private static TestableController CreateController(
         Mock<IUxProjectionGrainFactory>? factoryMock = null,
         string? ifNoneMatchHeader = null
@@ -50,8 +52,6 @@ public sealed class UxProjectionControllerTests
         };
         return controller;
     }
-
-    private const string TestEntityId = "entity-123";
 
     /// <summary>
     ///     A testable implementation of <see cref="UxProjectionControllerBase{TProjection}" />.

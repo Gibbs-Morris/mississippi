@@ -24,6 +24,8 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 [AllureSubSuite("UxProjectionGrain")]
 public sealed class UxProjectionGrainTests
 {
+    private const string ValidPrimaryKey = "entity-123";
+
     private static Mock<IGrainContext> CreateDefaultGrainContext(
         string primaryKey = ValidPrimaryKey
     )
@@ -45,8 +47,6 @@ public sealed class UxProjectionGrainTests
         loggerMock ??= new();
         return new(grainContextMock.Object, uxProjectionGrainFactoryMock.Object, loggerMock.Object);
     }
-
-    private const string ValidPrimaryKey = "entity-123";
 
     /// <summary>
     ///     Verifies that constructor throws when grainContext is null.

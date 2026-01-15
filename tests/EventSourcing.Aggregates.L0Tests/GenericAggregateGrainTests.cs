@@ -31,6 +31,10 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 [AllureSubSuite("Generic Aggregate Grain")]
 public class GenericAggregateGrainTests
 {
+    private const string TestEntityId = "entity-123";
+
+    private const string TestReducerHash = "test-event-reducer-hash";
+
     private static async Task<GenericAggregateGrain<AggregateGrainTestAggregate>> CreateActivatedGrainAsync(
         Mock<IRootCommandHandler<AggregateGrainTestAggregate>>? rootCommandHandlerMock = null,
         Mock<IBrookGrainFactory>? brookGrainFactoryMock = null,
@@ -90,10 +94,6 @@ public class GenericAggregateGrainTests
             rootReducerMock.Object,
             loggerMock.Object);
     }
-
-    private const string TestEntityId = "entity-123";
-
-    private const string TestReducerHash = "test-event-reducer-hash";
 
     /// <summary>
     ///     Constructor should throw when brook grain factory is null.
