@@ -93,47 +93,6 @@ internal sealed class InletSignalREffect
     /// </summary>
     private IInletStore Store => store ??= serviceProvider.GetRequiredService<IInletStore>();
 
-    private static IAction CreateErrorAction(
-        Type projectionType,
-        string entityId,
-        Exception error
-    )
-    {
-        Type actionType = typeof(ProjectionErrorAction<>).MakeGenericType(projectionType);
-        return (IAction)Activator.CreateInstance(actionType, entityId, error)!;
-    }
-
-    private static IAction CreateLoadedAction(
-        Type projectionType,
-        string entityId,
-        object? data,
-        long version
-    )
-    {
-        Type actionType = typeof(ProjectionLoadedAction<>).MakeGenericType(projectionType);
-        return (IAction)Activator.CreateInstance(actionType, entityId, data, version)!;
-    }
-
-    private static IAction CreateLoadingAction(
-        Type projectionType,
-        string entityId
-    )
-    {
-        Type actionType = typeof(ProjectionLoadingAction<>).MakeGenericType(projectionType);
-        return (IAction)Activator.CreateInstance(actionType, entityId)!;
-    }
-
-    private static IAction CreateUpdatedAction(
-        Type projectionType,
-        string entityId,
-        object? data,
-        long version
-    )
-    {
-        Type actionType = typeof(ProjectionUpdatedAction<>).MakeGenericType(projectionType);
-        return (IAction)Activator.CreateInstance(actionType, entityId, data, version)!;
-    }
-
     /// <inheritdoc />
     public bool CanHandle(
         IAction action
@@ -213,7 +172,7 @@ internal sealed class InletSignalREffect
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
-        yield return CreateLoadingAction(projectionType, entityId);
+        yield return ProjectionActionFactory.CreateLoading(projectionType, entityId);
         ProjectionFetchResult? result = null;
         Exception? fetchError = null;
         bool cancelled = false;
@@ -237,20 +196,20 @@ internal sealed class InletSignalREffect
 
         if (fetchError is not null)
         {
-            yield return CreateErrorAction(projectionType, entityId, fetchError);
+            yield return ProjectionActionFactory.CreateError(projectionType, entityId, fetchError);
             yield break;
         }
 
         if (result is null)
         {
-            yield return CreateErrorAction(
+            yield return ProjectionActionFactory.CreateError(
                 projectionType,
                 entityId,
                 new InvalidOperationException($"No fetcher registered for projection type {projectionType.Name}"));
             yield break;
         }
 
-        yield return CreateUpdatedAction(projectionType, entityId, result.Data, result.Version);
+        yield return ProjectionActionFactory.CreateUpdated(projectionType, entityId, result.Data, result.Version);
     }
 
     private async IAsyncEnumerable<IAction> HandleSubscribeAsync(
@@ -271,7 +230,7 @@ internal sealed class InletSignalREffect
         string? path = ProjectionDtoRegistry.GetPath(projectionType);
         if (path is null)
         {
-            yield return CreateErrorAction(
+            yield return ProjectionActionFactory.CreateError(
                 projectionType,
                 entityId,
                 new InvalidOperationException($"No projection path registered for DTO type {projectionType.Name}"));
@@ -279,7 +238,7 @@ internal sealed class InletSignalREffect
         }
 
         // Yield loading action
-        yield return CreateLoadingAction(projectionType, entityId);
+        yield return ProjectionActionFactory.CreateLoading(projectionType, entityId);
 
         // Subscribe via SignalR hub
         string? subscriptionId = null;
@@ -309,7 +268,7 @@ internal sealed class InletSignalREffect
 
         if (subscribeError is not null)
         {
-            yield return CreateErrorAction(projectionType, entityId, subscribeError);
+            yield return ProjectionActionFactory.CreateError(projectionType, entityId, subscribeError);
             yield break;
         }
 
@@ -339,20 +298,20 @@ internal sealed class InletSignalREffect
 
         if (fetchError is not null)
         {
-            yield return CreateErrorAction(projectionType, entityId, fetchError);
+            yield return ProjectionActionFactory.CreateError(projectionType, entityId, fetchError);
             yield break;
         }
 
         if (result is null)
         {
-            yield return CreateErrorAction(
+            yield return ProjectionActionFactory.CreateError(
                 projectionType,
                 entityId,
                 new InvalidOperationException($"No fetcher registered for projection type {projectionType.Name}"));
             yield break;
         }
 
-        yield return CreateLoadedAction(projectionType, entityId, result.Data, result.Version);
+        yield return ProjectionActionFactory.CreateLoaded(projectionType, entityId, result.Data, result.Version);
     }
 
     private async Task HandleUnsubscribeAsync(
@@ -427,13 +386,13 @@ internal sealed class InletSignalREffect
                 CancellationToken.None);
             if (result is not null)
             {
-                IAction action = CreateUpdatedAction(dtoType, entityId, result.Data, newVersion);
+                IAction action = ProjectionActionFactory.CreateUpdated(dtoType, entityId, result.Data, newVersion);
                 Store.Dispatch(action);
             }
         }
         catch (Exception ex)
         {
-            IAction action = CreateErrorAction(dtoType, entityId, ex);
+            IAction action = ProjectionActionFactory.CreateError(dtoType, entityId, ex);
             Store.Dispatch(action);
         }
     }
@@ -471,13 +430,13 @@ internal sealed class InletSignalREffect
                     CancellationToken.None);
                 if (result is not null)
                 {
-                    IAction action = CreateUpdatedAction(key.ProjectionType, key.EntityId, result.Data, result.Version);
+                    IAction action = ProjectionActionFactory.CreateUpdated(key.ProjectionType, key.EntityId, result.Data, result.Version);
                     Store.Dispatch(action);
                 }
             }
             catch (Exception ex)
             {
-                IAction action = CreateErrorAction(key.ProjectionType, key.EntityId, ex);
+                IAction action = ProjectionActionFactory.CreateError(key.ProjectionType, key.EntityId, ex);
                 Store.Dispatch(action);
             }
         }
