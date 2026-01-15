@@ -61,7 +61,6 @@
   <Folder Name="/Tests/Core/">
     <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />
     <Project Path="tests\Common.Abstractions.L0Tests\Common.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Common.Cosmos.Abstractions.L0Tests\Common.Cosmos.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Common.Cosmos.L0Tests\Common.Cosmos.L0Tests.csproj" />
     <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
   </Folder>
@@ -89,7 +88,6 @@
     <Project Path="tests\EventSourcing.Reducers.L0Tests\EventSourcing.Reducers.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Serialization/">
-    <Project Path="tests\EventSourcing.Serialization.Abstractions.L0Tests\EventSourcing.Serialization.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Serialization.L0Tests\EventSourcing.Serialization.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Serialization.Json.L0Tests\EventSourcing.Serialization.Json.L0Tests.csproj" />
   </Folder>
