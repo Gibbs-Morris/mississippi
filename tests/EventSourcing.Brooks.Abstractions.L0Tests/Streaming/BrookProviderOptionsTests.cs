@@ -15,20 +15,6 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests.Streaming;
 public sealed class BrookProviderOptionsTests
 {
     /// <summary>
-    ///     OrleansStreamProviderName should default to MississippiDefaults.StreamProviderName.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Default Values")]
-    public void OrleansStreamProviderNameDefaultsToMississippiDefaultsStreamProviderName()
-    {
-        // Arrange & Act
-        BrookProviderOptions sut = new();
-
-        // Assert
-        Assert.Equal(MississippiDefaults.StreamProviderName, sut.OrleansStreamProviderName);
-    }
-
-    /// <summary>
     ///     OrleansStreamProviderName should be settable.
     /// </summary>
     [Fact]
@@ -44,5 +30,19 @@ public sealed class BrookProviderOptionsTests
 
         // Assert
         Assert.Equal(customName, sut.OrleansStreamProviderName);
+    }
+
+    /// <summary>
+    ///     OrleansStreamProviderName should default to MississippiDefaults.StreamProviderName.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Default Values")]
+    public void OrleansStreamProviderNameDefaultsToMississippiDefaultsStreamProviderName()
+    {
+        // Arrange & Act
+        BrookProviderOptions sut = new();
+
+        // Assert
+        Assert.Equal(MississippiDefaults.StreamProviderName, sut.OrleansStreamProviderName);
     }
 }

@@ -38,6 +38,14 @@ public interface IHubConnectionProvider : IAsyncDisposable
     );
 
     /// <summary>
+    ///     Registers a handler for reconnection events.
+    /// </summary>
+    /// <param name="handler">The handler to invoke when reconnected.</param>
+    void OnReconnected(
+        Func<string?, Task> handler
+    );
+
+    /// <summary>
     ///     Registers a handler for hub method invocations.
     /// </summary>
     /// <typeparam name="T1">The type of the first argument.</typeparam>
@@ -49,13 +57,5 @@ public interface IHubConnectionProvider : IAsyncDisposable
     IDisposable RegisterHandler<T1, T2, T3>(
         string methodName,
         Func<T1, T2, T3, Task> handler
-    );
-
-    /// <summary>
-    ///     Registers a handler for reconnection events.
-    /// </summary>
-    /// <param name="handler">The handler to invoke when reconnected.</param>
-    void OnReconnected(
-        Func<string?, Task> handler
     );
 }

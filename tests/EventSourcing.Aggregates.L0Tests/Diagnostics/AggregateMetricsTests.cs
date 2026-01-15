@@ -79,60 +79,13 @@ public sealed class AggregateMetricsTests
 
         // Assert
         MetricMeasurement? commandMeasurement = measurements.Find(m =>
-            m.InstrumentName == "aggregate.command.count" &&
+            (m.InstrumentName == "aggregate.command.count") &&
             m.Tags.TryGetValue("result", out object? result) &&
-            (string?)result == "failure");
+            ((string?)result == "failure"));
         Assert.NotNull(commandMeasurement);
         Assert.Equal(1, commandMeasurement.LongValue);
         Assert.Equal("TestAggregate", commandMeasurement.Tags["aggregate.type"]);
         Assert.Equal("CreateCommand", commandMeasurement.Tags["command.type"]);
-    }
-
-    /// <summary>
-    ///     RecordCommandFailure should emit command error count.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Command Failure Metrics")]
-    public void RecordCommandFailureEmitsErrorCount()
-    {
-        using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
-        {
-            if (instrument.Meter.Name == AggregateMetrics.MeterName)
-            {
-                listener.EnableMeasurementEvents(instrument);
-            }
-        };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
-        {
-            Dictionary<string, object?> tagDict = [];
-            foreach (KeyValuePair<string, object?> tag in tags)
-            {
-                tagDict[tag.Key] = tag.Value;
-            }
-
-            measurements.Add(new(instrument.Name, measurement, 0, tagDict));
-        });
-        listener.Start();
-
-        // Act
-        AggregateMetrics.RecordCommandFailure("TestAggregate", "CreateCommand", 100.5, "VALIDATION_ERROR");
-
-        // Assert
-        MetricMeasurement? errorMeasurement = measurements.Find(m =>
-            m.InstrumentName == "aggregate.command.errors");
-        Assert.NotNull(errorMeasurement);
-        Assert.Equal(1, errorMeasurement.LongValue);
-        Assert.Equal("VALIDATION_ERROR", errorMeasurement.Tags["error.code"]);
     }
 
     /// <summary>
@@ -175,10 +128,56 @@ public sealed class AggregateMetricsTests
         AggregateMetrics.RecordCommandFailure("TestAggregate", "CreateCommand", 100.5, "VALIDATION_ERROR");
 
         // Assert
-        MetricMeasurement? durationMeasurement = measurements.Find(m =>
-            m.InstrumentName == "aggregate.command.duration");
+        MetricMeasurement? durationMeasurement =
+            measurements.Find(m => m.InstrumentName == "aggregate.command.duration");
         Assert.NotNull(durationMeasurement);
         Assert.Equal(100.5, durationMeasurement.DoubleValue);
+    }
+
+    /// <summary>
+    ///     RecordCommandFailure should emit command error count.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Command Failure Metrics")]
+    public void RecordCommandFailureEmitsErrorCount()
+    {
+        using MeterListener listener = new();
+        List<MetricMeasurement> measurements = [];
+        listener.InstrumentPublished = (
+            instrument,
+            listener
+        ) =>
+        {
+            if (instrument.Meter.Name == AggregateMetrics.MeterName)
+            {
+                listener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((
+            instrument,
+            measurement,
+            tags,
+            _
+        ) =>
+        {
+            Dictionary<string, object?> tagDict = [];
+            foreach (KeyValuePair<string, object?> tag in tags)
+            {
+                tagDict[tag.Key] = tag.Value;
+            }
+
+            measurements.Add(new(instrument.Name, measurement, 0, tagDict));
+        });
+        listener.Start();
+
+        // Act
+        AggregateMetrics.RecordCommandFailure("TestAggregate", "CreateCommand", 100.5, "VALIDATION_ERROR");
+
+        // Assert
+        MetricMeasurement? errorMeasurement = measurements.Find(m => m.InstrumentName == "aggregate.command.errors");
+        Assert.NotNull(errorMeasurement);
+        Assert.Equal(1, errorMeasurement.LongValue);
+        Assert.Equal("VALIDATION_ERROR", errorMeasurement.Tags["error.code"]);
     }
 
     /// <summary>
@@ -237,9 +236,9 @@ public sealed class AggregateMetricsTests
 
         // Assert
         MetricMeasurement? commandMeasurement = measurements.Find(m =>
-            m.InstrumentName == "aggregate.command.count" &&
+            (m.InstrumentName == "aggregate.command.count") &&
             m.Tags.TryGetValue("result", out object? result) &&
-            (string?)result == "success");
+            ((string?)result == "success"));
         Assert.NotNull(commandMeasurement);
         Assert.Equal(1, commandMeasurement.LongValue);
         Assert.Equal("OrderAggregate", commandMeasurement.Tags["aggregate.type"]);
@@ -286,8 +285,7 @@ public sealed class AggregateMetricsTests
         AggregateMetrics.RecordCommandSuccess("OrderAggregate", "PlaceOrder", 50.0, 3);
 
         // Assert
-        MetricMeasurement? eventMeasurement = measurements.Find(m =>
-            m.InstrumentName == "aggregate.events.produced");
+        MetricMeasurement? eventMeasurement = measurements.Find(m => m.InstrumentName == "aggregate.events.produced");
         Assert.NotNull(eventMeasurement);
         Assert.Equal(3, eventMeasurement.LongValue);
     }
@@ -332,8 +330,7 @@ public sealed class AggregateMetricsTests
         AggregateMetrics.RecordCommandSuccess("OrderAggregate", "PlaceOrder", 50.0, 0);
 
         // Assert
-        MetricMeasurement? eventMeasurement = measurements.Find(m =>
-            m.InstrumentName == "aggregate.events.produced");
+        MetricMeasurement? eventMeasurement = measurements.Find(m => m.InstrumentName == "aggregate.events.produced");
         Assert.Null(eventMeasurement);
     }
 

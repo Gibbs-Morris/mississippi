@@ -14,17 +14,20 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.Effects;
 public sealed class InletSignalREffectOptionsTests
 {
     /// <summary>
-    ///     HubPath should default to "/hubs/inlet".
+    ///     HubPath should be initializable with custom value.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
-    public void HubPathDefaultsToHubsInlet()
+    [AllureFeature("Configuration")]
+    public void HubPathCanBeInitialized()
     {
         // Arrange & Act
-        InletSignalREffectOptions sut = new();
+        InletSignalREffectOptions sut = new()
+        {
+            HubPath = "/api/signalr",
+        };
 
         // Assert
-        Assert.Equal("/hubs/inlet", sut.HubPath);
+        Assert.Equal("/api/signalr", sut.HubPath);
     }
 
     /// <summary>
@@ -46,19 +49,16 @@ public sealed class InletSignalREffectOptionsTests
     }
 
     /// <summary>
-    ///     HubPath should be initializable with custom value.
+    ///     HubPath should default to "/hubs/inlet".
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
-    public void HubPathCanBeInitialized()
+    [AllureFeature("Default Values")]
+    public void HubPathDefaultsToHubsInlet()
     {
         // Arrange & Act
-        InletSignalREffectOptions sut = new()
-        {
-            HubPath = "/api/signalr",
-        };
+        InletSignalREffectOptions sut = new();
 
         // Assert
-        Assert.Equal("/api/signalr", sut.HubPath);
+        Assert.Equal("/hubs/inlet", sut.HubPath);
     }
 }

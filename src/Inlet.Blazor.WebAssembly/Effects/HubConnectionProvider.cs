@@ -26,8 +26,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     {
         ArgumentNullException.ThrowIfNull(navigationManager);
         InletSignalREffectOptions effectOptions = options ?? new InletSignalREffectOptions();
-        Connection = new HubConnectionBuilder()
-            .WithUrl(navigationManager.ToAbsoluteUri(effectOptions.HubPath))
+        Connection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri(effectOptions.HubPath))
             .WithAutomaticReconnect()
             .Build();
     }
@@ -56,19 +55,17 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     }
 
     /// <inheritdoc />
-    public IDisposable RegisterHandler<T1, T2, T3>(
-        string methodName,
-        Func<T1, T2, T3, Task> handler
-    )
-    {
-        return Connection.On(methodName, handler);
-    }
-
-    /// <inheritdoc />
     public void OnReconnected(
         Func<string?, Task> handler
     )
     {
         Connection.Reconnected += handler;
     }
+
+    /// <inheritdoc />
+    public IDisposable RegisterHandler<T1, T2, T3>(
+        string methodName,
+        Func<T1, T2, T3, Task> handler
+    ) =>
+        Connection.On(methodName, handler);
 }

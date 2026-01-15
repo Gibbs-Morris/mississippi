@@ -211,16 +211,13 @@ public sealed class AqueductMetricsTests
 
         // Zero count should not emit
         AqueductMetrics.RecordDeadServers(0);
-        Assert.DoesNotContain(
-            measurements,
-            measurement => measurement.InstrumentName == "signalr.server.dead");
+        Assert.DoesNotContain(measurements, measurement => measurement.InstrumentName == "signalr.server.dead");
 
         // Positive count should emit
         AqueductMetrics.RecordDeadServers(3);
         Assert.Contains(
             measurements,
-            measurement => (measurement.InstrumentName == "signalr.server.dead") &&
-                           (measurement.LongValue == 3));
+            measurement => (measurement.InstrumentName == "signalr.server.dead") && (measurement.LongValue == 3));
     }
 
     /// <summary>
@@ -373,8 +370,7 @@ public sealed class AqueductMetricsTests
                            (method as string == "BroadcastMessage"));
         Assert.Contains(
             intMeasurements,
-            measurement => (measurement.InstrumentName == "signalr.group.fanout.size") &&
-                           (measurement.IntValue == 15));
+            measurement => (measurement.InstrumentName == "signalr.group.fanout.size") && (measurement.IntValue == 15));
     }
 
     /// <summary>
@@ -409,8 +405,7 @@ public sealed class AqueductMetricsTests
         AqueductMetrics.RecordServerHeartbeat();
         Assert.Contains(
             measurements,
-            measurement => (measurement.InstrumentName == "signalr.server.heartbeat") &&
-                           (measurement.LongValue == 1));
+            measurement => (measurement.InstrumentName == "signalr.server.heartbeat") && (measurement.LongValue == 1));
     }
 
     /// <summary>
@@ -445,7 +440,6 @@ public sealed class AqueductMetricsTests
         AqueductMetrics.RecordServerRegister();
         Assert.Contains(
             measurements,
-            measurement => (measurement.InstrumentName == "signalr.server.register") &&
-                           (measurement.LongValue == 1));
+            measurement => (measurement.InstrumentName == "signalr.server.register") && (measurement.LongValue == 1));
     }
 }

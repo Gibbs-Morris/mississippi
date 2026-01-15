@@ -1,7 +1,5 @@
 using Allure.Xunit.Attributes;
 
-using Mississippi.Common.Abstractions;
-
 
 namespace Mississippi.Common.Abstractions.L0Tests;
 

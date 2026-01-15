@@ -26,6 +26,59 @@ public sealed class SnapshotMetricsTests
     );
 
     /// <summary>
+    ///     RecordActivation should emit failure metric on failure.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Activation Metrics")]
+    public void RecordActivationFailureEmitsFailureMetric()
+    {
+        using MeterListener listener = new();
+        List<MetricMeasurement> measurements = [];
+        listener.InstrumentPublished = (
+            instrument,
+            listener
+        ) =>
+        {
+            if (instrument.Meter.Name == SnapshotMetrics.MeterName)
+            {
+                listener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((
+            instrument,
+            measurement,
+            tags,
+            _
+        ) =>
+        {
+            Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, object?> tag in tags)
+            {
+                tagMap[tag.Key] = tag.Value;
+            }
+
+            measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+        });
+        listener.SetMeasurementEventCallback<double>((
+            _,
+            _,
+            _,
+            _
+        ) =>
+        {
+            // Ignore histogram
+        });
+        listener.Start();
+        SnapshotMetrics.RecordActivation("TestSnapshot", 25.0, false);
+        Assert.Contains(
+            measurements,
+            measurement => (measurement.InstrumentName == "snapshot.activation.failures") &&
+                           (measurement.LongValue == 1) &&
+                           measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
+                           (snapType as string == "TestSnapshot"));
+    }
+
+    /// <summary>
     ///     RecordActivation should emit count and duration metrics for success.
     /// </summary>
     [Fact]
@@ -92,59 +145,6 @@ public sealed class SnapshotMetricsTests
         Assert.DoesNotContain(
             longMeasurements,
             measurement => measurement.InstrumentName == "snapshot.activation.failures");
-    }
-
-    /// <summary>
-    ///     RecordActivation should emit failure metric on failure.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Activation Metrics")]
-    public void RecordActivationFailureEmitsFailureMetric()
-    {
-        using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
-        {
-            if (instrument.Meter.Name == SnapshotMetrics.MeterName)
-            {
-                listener.EnableMeasurementEvents(instrument);
-            }
-        };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
-        {
-            Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
-            foreach (KeyValuePair<string, object?> tag in tags)
-            {
-                tagMap[tag.Key] = tag.Value;
-            }
-
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
-        });
-        listener.SetMeasurementEventCallback<double>((
-            _,
-            _,
-            _,
-            _
-        ) =>
-        {
-            // Ignore histogram
-        });
-        listener.Start();
-        SnapshotMetrics.RecordActivation("TestSnapshot", 25.0, false);
-        Assert.Contains(
-            measurements,
-            measurement => (measurement.InstrumentName == "snapshot.activation.failures") &&
-                           (measurement.LongValue == 1) &&
-                           measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
-                           (snapType as string == "TestSnapshot"));
     }
 
     /// <summary>
@@ -403,8 +403,7 @@ public sealed class SnapshotMetricsTests
                            (Math.Abs(measurement.DoubleValue - 100.0) < 0.01));
         Assert.Contains(
             intMeasurements,
-            measurement => (measurement.InstrumentName == "snapshot.rebuild.events") &&
-                           (measurement.IntValue == 25));
+            measurement => (measurement.InstrumentName == "snapshot.rebuild.events") && (measurement.IntValue == 25));
     }
 
     /// <summary>

@@ -130,7 +130,6 @@ internal sealed class InletSignalREffect
     {
         // Ensure connection is started
         await hubConnectionProvider.EnsureConnectedAsync(cancellationToken);
-
         Type actionType = action.GetType();
         Type genericDef = actionType.GetGenericTypeDefinition();
         Type projectionType = actionType.GetGenericArguments()[0];
@@ -421,7 +420,11 @@ internal sealed class InletSignalREffect
                     CancellationToken.None);
                 if (result is not null)
                 {
-                    IAction action = ProjectionActionFactory.CreateUpdated(key.ProjectionType, key.EntityId, result.Data, result.Version);
+                    IAction action = ProjectionActionFactory.CreateUpdated(
+                        key.ProjectionType,
+                        key.EntityId,
+                        result.Data,
+                        result.Version);
                     Store.Dispatch(action);
                 }
             }

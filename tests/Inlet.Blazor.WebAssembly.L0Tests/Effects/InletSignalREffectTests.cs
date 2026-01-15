@@ -89,6 +89,40 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     private sealed record NonProjectionAction : IAction;
 
     /// <summary>
+    ///     Verifies that CanHandle returns false for ProjectionErrorAction (output only).
+    /// </summary>
+    [Fact]
+    [AllureFeature("CanHandle")]
+    public void CanHandleReturnsFalseForErrorAction()
+    {
+        // Arrange - Error action is an output action, not input
+        ProjectionErrorAction<TestProjection> action = new(TestEntityId, new InvalidOperationException("test"));
+
+        // Act
+        bool result = effect!.CanHandle(action);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    ///     Verifies that CanHandle returns false for ProjectionLoadingAction (output only).
+    /// </summary>
+    [Fact]
+    [AllureFeature("CanHandle")]
+    public void CanHandleReturnsFalseForLoadingAction()
+    {
+        // Arrange - Loading action is an output action, not input
+        ProjectionLoadingAction<TestProjection> action = new(TestEntityId);
+
+        // Act
+        bool result = effect!.CanHandle(action);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
     ///     Verifies that CanHandle returns false for non-projection actions.
     /// </summary>
     [Fact]
@@ -97,6 +131,40 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     {
         // Arrange
         IAction action = new NonProjectionAction();
+
+        // Act
+        bool result = effect!.CanHandle(action);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    ///     Verifies that CanHandle returns false for generic action that is not a projection action.
+    /// </summary>
+    [Fact]
+    [AllureFeature("CanHandle")]
+    public void CanHandleReturnsFalseForNonProjectionGenericAction()
+    {
+        // Arrange - ProjectionLoadedAction is a result action, not handled by effect
+        ProjectionLoadedAction<TestProjection> action = new(TestEntityId, new("test", 1), 1L);
+
+        // Act
+        bool result = effect!.CanHandle(action);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    ///     Verifies that CanHandle returns false for ProjectionUpdatedAction (output only).
+    /// </summary>
+    [Fact]
+    [AllureFeature("CanHandle")]
+    public void CanHandleReturnsFalseForUpdatedAction()
+    {
+        // Arrange - Updated action is an output action, not input
+        ProjectionUpdatedAction<TestProjection> action = new(TestEntityId, new("test", 1), 1L);
 
         // Act
         bool result = effect!.CanHandle(action);
@@ -165,6 +233,61 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => effect!.CanHandle(null!));
+    }
+
+    /// <summary>
+    ///     Verifies that constructor registers handler for projection updates.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public async Task ConstructorRegistersProjectionUpdateHandler()
+    {
+        // Arrange
+        Mock<IHubConnectionProvider> localHubProviderMock = new();
+        localHubProviderMock.Setup(h => h.RegisterHandler<string, string, long>(
+                InletHubConstants.ProjectionUpdatedMethod,
+                It.IsAny<Func<string, string, long, Task>>()))
+            .Returns(Mock.Of<IDisposable>());
+        InletSignalREffect localEffect = new(
+            serviceProvider,
+            localHubProviderMock.Object,
+            fetcherMock.Object,
+            registry);
+
+        // Act & Assert
+        localHubProviderMock.Verify(
+            h => h.RegisterHandler<string, string, long>(
+                InletHubConstants.ProjectionUpdatedMethod,
+                It.IsAny<Func<string, string, long, Task>>()),
+            Times.Once);
+        await localEffect.DisposeAsync();
+    }
+
+    /// <summary>
+    ///     Verifies that constructor registers reconnection handler.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    [AllureFeature("Constructor")]
+    public async Task ConstructorRegistersReconnectionHandler()
+    {
+        // Arrange
+        Mock<IHubConnectionProvider> localHubProviderMock = new();
+        localHubProviderMock
+            .Setup(h => h.RegisterHandler<string, string, long>(
+                It.IsAny<string>(),
+                It.IsAny<Func<string, string, long, Task>>()))
+            .Returns(Mock.Of<IDisposable>());
+        InletSignalREffect localEffect = new(
+            serviceProvider,
+            localHubProviderMock.Object,
+            fetcherMock.Object,
+            registry);
+
+        // Act & Assert
+        localHubProviderMock.Verify(h => h.OnReconnected(It.IsAny<Func<string?, Task>>()), Times.Once);
+        await localEffect.DisposeAsync();
     }
 
     /// <summary>
@@ -239,92 +362,6 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     }
 
     /// <summary>
-    ///     Verifies that HandleAsync throws when action is null.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    [AllureFeature("HandleAsync")]
-    public async Task HandleAsyncThrowsWhenActionIsNull()
-    {
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-        {
-            await foreach (IAction action in effect!.HandleAsync(null!, CancellationToken.None))
-            {
-                // Should not execute
-            }
-        });
-    }
-
-    /// <summary>
-    ///     Verifies that CanHandle returns false for generic action that is not a projection action.
-    /// </summary>
-    [Fact]
-    [AllureFeature("CanHandle")]
-    public void CanHandleReturnsFalseForNonProjectionGenericAction()
-    {
-        // Arrange - ProjectionLoadedAction is a result action, not handled by effect
-        ProjectionLoadedAction<TestProjection> action = new(TestEntityId, new("test", 1), 1L);
-
-        // Act
-        bool result = effect!.CanHandle(action);
-
-        // Assert
-        Assert.False(result);
-    }
-
-    /// <summary>
-    ///     Verifies that CanHandle returns false for ProjectionLoadingAction (output only).
-    /// </summary>
-    [Fact]
-    [AllureFeature("CanHandle")]
-    public void CanHandleReturnsFalseForLoadingAction()
-    {
-        // Arrange - Loading action is an output action, not input
-        ProjectionLoadingAction<TestProjection> action = new(TestEntityId);
-
-        // Act
-        bool result = effect!.CanHandle(action);
-
-        // Assert
-        Assert.False(result);
-    }
-
-    /// <summary>
-    ///     Verifies that CanHandle returns false for ProjectionUpdatedAction (output only).
-    /// </summary>
-    [Fact]
-    [AllureFeature("CanHandle")]
-    public void CanHandleReturnsFalseForUpdatedAction()
-    {
-        // Arrange - Updated action is an output action, not input
-        ProjectionUpdatedAction<TestProjection> action = new(TestEntityId, new("test", 1), 1L);
-
-        // Act
-        bool result = effect!.CanHandle(action);
-
-        // Assert
-        Assert.False(result);
-    }
-
-    /// <summary>
-    ///     Verifies that CanHandle returns false for ProjectionErrorAction (output only).
-    /// </summary>
-    [Fact]
-    [AllureFeature("CanHandle")]
-    public void CanHandleReturnsFalseForErrorAction()
-    {
-        // Arrange - Error action is an output action, not input
-        ProjectionErrorAction<TestProjection> action = new(TestEntityId, new InvalidOperationException("test"));
-
-        // Act
-        bool result = effect!.CanHandle(action);
-
-        // Assert
-        Assert.False(result);
-    }
-
-    /// <summary>
     ///     Verifies that DisposeAsync can be called safely.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -340,7 +377,6 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
                 It.IsAny<string>(),
                 It.IsAny<Func<string, string, long, Task>>()))
             .Returns(callbackDisposableMock.Object);
-
         InletSignalREffect localEffect = new(
             serviceProvider,
             localHubProviderMock.Object,
@@ -355,62 +391,20 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     }
 
     /// <summary>
-    ///     Verifies that constructor registers handler for projection updates.
+    ///     Verifies that HandleAsync throws when action is null.
     /// </summary>
-    /// <returns>A task representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Constructor")]
-    public async Task ConstructorRegistersProjectionUpdateHandler()
+    [AllureFeature("HandleAsync")]
+    public async Task HandleAsyncThrowsWhenActionIsNull()
     {
-        // Arrange
-        Mock<IHubConnectionProvider> localHubProviderMock = new();
-        localHubProviderMock
-            .Setup(h => h.RegisterHandler<string, string, long>(
-                InletHubConstants.ProjectionUpdatedMethod,
-                It.IsAny<Func<string, string, long, Task>>()))
-            .Returns(Mock.Of<IDisposable>());
-
-        InletSignalREffect localEffect = new(
-            serviceProvider,
-            localHubProviderMock.Object,
-            fetcherMock.Object,
-            registry);
-
         // Act & Assert
-        localHubProviderMock.Verify(
-            h => h.RegisterHandler<string, string, long>(
-                InletHubConstants.ProjectionUpdatedMethod,
-                It.IsAny<Func<string, string, long, Task>>()),
-            Times.Once);
-
-        await localEffect.DisposeAsync();
-    }
-
-    /// <summary>
-    ///     Verifies that constructor registers reconnection handler.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test operation.</returns>
-    [Fact]
-    [AllureFeature("Constructor")]
-    public async Task ConstructorRegistersReconnectionHandler()
-    {
-        // Arrange
-        Mock<IHubConnectionProvider> localHubProviderMock = new();
-        localHubProviderMock
-            .Setup(h => h.RegisterHandler<string, string, long>(
-                It.IsAny<string>(),
-                It.IsAny<Func<string, string, long, Task>>()))
-            .Returns(Mock.Of<IDisposable>());
-
-        InletSignalREffect localEffect = new(
-            serviceProvider,
-            localHubProviderMock.Object,
-            fetcherMock.Object,
-            registry);
-
-        // Act & Assert
-        localHubProviderMock.Verify(h => h.OnReconnected(It.IsAny<Func<string?, Task>>()), Times.Once);
-
-        await localEffect.DisposeAsync();
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        {
+            await foreach (IAction action in effect!.HandleAsync(null!, CancellationToken.None))
+            {
+                // Should not execute
+            }
+        });
     }
 }

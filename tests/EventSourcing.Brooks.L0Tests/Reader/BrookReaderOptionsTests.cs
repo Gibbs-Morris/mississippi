@@ -14,20 +14,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
 public sealed class BrookReaderOptionsTests
 {
     /// <summary>
-    ///     BrookSliceSize should default to 100.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Default Values")]
-    public void BrookSliceSizeDefaultsTo100()
-    {
-        // Arrange & Act
-        BrookReaderOptions sut = new();
-
-        // Assert
-        Assert.Equal(100, sut.BrookSliceSize);
-    }
-
-    /// <summary>
     ///     BrookSliceSize should be initializable to a custom value.
     /// </summary>
     [Fact]
@@ -42,6 +28,20 @@ public sealed class BrookReaderOptionsTests
 
         // Assert
         Assert.Equal(500, sut.BrookSliceSize);
+    }
+
+    /// <summary>
+    ///     BrookSliceSize should default to 100.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Default Values")]
+    public void BrookSliceSizeDefaultsTo100()
+    {
+        // Arrange & Act
+        BrookReaderOptions sut = new();
+
+        // Assert
+        Assert.Equal(100, sut.BrookSliceSize);
     }
 
     /// <summary>
