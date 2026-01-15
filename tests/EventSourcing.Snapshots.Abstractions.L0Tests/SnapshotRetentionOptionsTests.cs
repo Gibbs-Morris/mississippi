@@ -1,4 +1,8 @@
+using System;
+
 using Allure.Xunit.Attributes;
+
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
 namespace Mississippi.EventSourcing.Snapshots.Abstractions.L0Tests;
@@ -11,6 +15,12 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions.L0Tests;
 [AllureSubSuite("Snapshot Retention Options")]
 public sealed class SnapshotRetentionOptionsTests
 {
+    /// <summary>
+    ///     Test snapshot type with a storage name attribute.
+    /// </summary>
+    [SnapshotStorageName("TESTAPP", "TESTMODULE", "TESTSNAP")]
+    private sealed record AttributedSnapshot;
+
     /// <summary>
     ///     Test snapshot type used for retention options testing.
     /// </summary>
@@ -138,5 +148,64 @@ public sealed class SnapshotRetentionOptionsTests
             long result = options.GetBaseSnapshotVersion<TestSnapshot>(target);
             Assert.True(result < target, $"Base {result} should be strictly less than target {target}");
         }
+    }
+
+    /// <summary>
+    ///     Verifies that the generic GetRetainModulus delegates to the non-generic overload.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusGenericReturnsDefaultWhenNoOverride()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 42,
+        };
+        int result = options.GetRetainModulus<TestSnapshot>();
+        Assert.Equal(42, result);
+    }
+
+    /// <summary>
+    ///     Verifies that GetRetainModulus prefers snapshot storage name over CLR type name.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusPrefersSnapshotStorageNameOverClrTypeName()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 100,
+        };
+
+        // Set override using storage name (format: AppName.ModuleName.Name.V{Version})
+        options.StateTypeOverrides["TESTAPP.TESTMODULE.TESTSNAP.V1"] = 50;
+
+        // Set override using CLR name (should be ignored when storage name matches)
+        options.StateTypeOverrides[typeof(AttributedSnapshot).FullName!] = 75;
+        int result = options.GetRetainModulus<AttributedSnapshot>();
+        Assert.Equal(50, result);
+    }
+
+    /// <summary>
+    ///     Verifies that GetRetainModulus respects type override using CLR type name.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusRespectsClrTypeNameOverride()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 100,
+        };
+        options.StateTypeOverrides[typeof(TestSnapshot).FullName!] = 25;
+        int result = options.GetRetainModulus<TestSnapshot>();
+        Assert.Equal(25, result);
+    }
+
+    /// <summary>
+    ///     Verifies that GetRetainModulus throws for null type.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusThrowsForNullType()
+    {
+        SnapshotRetentionOptions options = new();
+        Assert.Throws<ArgumentNullException>(() => options.GetRetainModulus(null!));
     }
 }

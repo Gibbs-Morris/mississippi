@@ -59,6 +59,24 @@ public sealed class CosmosRetryPolicyTests
     }
 
     /// <summary>
+    ///     Verifies that TaskCanceledException with active cancellation token is distinguished.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncDistinguishesCancellationReasonAsync()
+    {
+        CosmosRetryPolicy policy = new(NullLogger<CosmosRetryPolicy>.Instance);
+        using CancellationTokenSource cts = new();
+
+        // Simulate a timeout (TaskCanceledException) without the token being canceled
+        OperationCanceledException ex = await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            policy.ExecuteAsync<int>(() => throw new TaskCanceledException("HTTP timeout"), cts.Token));
+
+        // Message should indicate it was canceled before completion (not user cancellation)
+        Assert.Contains("before completion", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     ///     Verifies cancellation tokens propagate as <see cref="OperationCanceledException" />.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
@@ -131,5 +149,18 @@ public sealed class CosmosRetryPolicyTests
             policy.ExecuteAsync(() =>
                 Task.FromException<int>(CreateCosmosException(HttpStatusCode.RequestEntityTooLarge))));
         Assert.Contains("Request size exceeds", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     Verifies that TaskCanceledException from the operation is wrapped as OperationCanceledException.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExecuteAsyncWrapsTaskCanceledExceptionFromOperationAsync()
+    {
+        CosmosRetryPolicy policy = new(NullLogger<CosmosRetryPolicy>.Instance);
+        OperationCanceledException ex = await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            policy.ExecuteAsync<int>(() => throw new TaskCanceledException("Simulated timeout")));
+        Assert.Contains("canceled", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
