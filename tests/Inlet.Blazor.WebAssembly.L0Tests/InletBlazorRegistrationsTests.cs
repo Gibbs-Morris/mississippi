@@ -52,6 +52,73 @@ public sealed class InletBlazorRegistrationsTests
     }
 
     /// <summary>
+    ///     AddInletBlazorSignalR can be called without configure action.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Service Registration")]
+    public void AddInletBlazorSignalRCanBeCalledWithoutConfigureAction()
+    {
+        // Arrange
+        ServiceCollection services = [];
+
+        // Act
+        IServiceCollection result = services.AddInletBlazorSignalR();
+
+        // Assert
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     AddInletBlazorSignalR should invoke the configure action when provided.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Service Registration")]
+    public void AddInletBlazorSignalRInvokesConfigureAction()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        bool configureInvoked = false;
+
+        // Act
+        services.AddInletBlazorSignalR(builder => { configureInvoked = true; });
+
+        // Assert
+        Assert.True(configureInvoked);
+    }
+
+    /// <summary>
+    ///     AddInletBlazorSignalR should return the same services collection for chaining.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Service Registration")]
+    public void AddInletBlazorSignalRReturnsSameCollection()
+    {
+        // Arrange
+        ServiceCollection services = [];
+
+        // Act
+        IServiceCollection result = services.AddInletBlazorSignalR();
+
+        // Assert
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     AddInletBlazorSignalR should throw when services is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Argument Validation")]
+    public void AddInletBlazorSignalRThrowsWhenServicesNull()
+    {
+        // Arrange
+        IServiceCollection services = null!;
+
+        // Act & Assert
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => services.AddInletBlazorSignalR());
+        Assert.Equal("services", exception.ParamName);
+    }
+
+    /// <summary>
     ///     AddInletBlazor should throw when services is null.
     /// </summary>
     [Fact]
