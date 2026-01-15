@@ -152,8 +152,14 @@ public sealed class CrescentFixture
                 LimitToEndpoint = true,
             }));
 
-        // Pre-register BlobServiceClient for distributed locking
-        builder.Services.AddSingleton<BlobServiceClient>(_ => new(blobConnectionString));
+        // Pre-register BlobServiceClient as keyed service for distributed locking
+        // BlobDistributedLockManager uses [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)]
+        builder.Services.AddKeyedSingleton(
+            MississippiDefaults.ServiceKeys.BlobLocking,
+            (
+                _,
+                _
+            ) => new BlobServiceClient(blobConnectionString));
 
         // Configure Cosmos DB storage for brooks (event streams)
         // Use the overload without connection strings since we pre-registered the clients
