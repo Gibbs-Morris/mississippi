@@ -26,12 +26,6 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.Effects;
 [AllureSubSuite("InletSignalREffect")]
 public sealed class InletSignalREffectTests : IAsyncDisposable
 {
-    private const string TestEntityId = "test-entity-123";
-
-    private const string TestHubPath = "/hubs/test-inlet";
-
-    private const string TestProjectionPath = "test-projections";
-
     private readonly InletSignalREffect? effect;
 
     private readonly Mock<IProjectionFetcher> fetcherMock = new();
@@ -76,6 +70,12 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
 
         await serviceProvider.DisposeAsync();
     }
+
+    private const string TestEntityId = "test-entity-123";
+
+    private const string TestHubPath = "/hubs/test-inlet";
+
+    private const string TestProjectionPath = "test-projections";
 
     /// <summary>
     ///     Test projection DTO for testing.

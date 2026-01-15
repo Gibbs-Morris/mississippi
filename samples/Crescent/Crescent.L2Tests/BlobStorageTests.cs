@@ -12,8 +12,6 @@ namespace Crescent.Crescent.L2Tests;
 public sealed class BlobStorageTests
 #pragma warning restore CA1515
 {
-    private const string TestContainerName = "test-container";
-
     private readonly CrescentFixture fixture;
 
     /// <summary>
@@ -24,6 +22,8 @@ public sealed class BlobStorageTests
         CrescentFixture fixture
     ) =>
         this.fixture = fixture;
+
+    private const string TestContainerName = "test-container";
 
     /// <summary>
     ///     Verifies that a blob can be deleted.
