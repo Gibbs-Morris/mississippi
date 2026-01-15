@@ -1,0 +1,5 @@
+# Ignore scratch/working files
+.scratchpad/**
+
+# Ignore agent definition files (special format with code fence wrappers)
+.github/agents/**
