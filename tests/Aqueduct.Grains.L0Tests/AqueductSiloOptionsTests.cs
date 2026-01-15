@@ -79,4 +79,44 @@ public sealed class AqueductSiloOptionsTests
         Assert.Equal(5, options.HeartbeatIntervalMinutes);
         Assert.Equal(10, options.DeadServerTimeoutMultiplier);
     }
+
+    /// <summary>
+    ///     UseMemoryStreams with custom names should throw when pubSubStoreName is null or empty.
+    /// </summary>
+    /// <param name="invalidStoreName">The invalid store name to test.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [AllureFeature("Argument Validation")]
+    public void UseMemoryStreamsWithCustomNamesThrowsWhenPubSubStoreNameInvalid(
+        string? invalidStoreName
+    )
+    {
+        // Arrange
+        ISiloBuilder siloBuilder = Substitute.For<ISiloBuilder>();
+        AqueductSiloOptions options = new(siloBuilder);
+
+        // Act & Assert
+        Assert.ThrowsAny<ArgumentException>(() => options.UseMemoryStreams("StreamProvider", invalidStoreName!));
+    }
+
+    /// <summary>
+    ///     UseMemoryStreams with custom names should throw when streamProviderName is null or empty.
+    /// </summary>
+    /// <param name="invalidProviderName">The invalid provider name to test.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [AllureFeature("Argument Validation")]
+    public void UseMemoryStreamsWithCustomNamesThrowsWhenStreamProviderNameInvalid(
+        string? invalidProviderName
+    )
+    {
+        // Arrange
+        ISiloBuilder siloBuilder = Substitute.For<ISiloBuilder>();
+        AqueductSiloOptions options = new(siloBuilder);
+
+        // Act & Assert
+        Assert.ThrowsAny<ArgumentException>(() => options.UseMemoryStreams(invalidProviderName!, "PubSubStore"));
+    }
 }

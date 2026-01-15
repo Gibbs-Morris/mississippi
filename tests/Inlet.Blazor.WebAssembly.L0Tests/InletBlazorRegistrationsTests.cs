@@ -52,7 +52,7 @@ public sealed class InletBlazorRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletBlazorSignalR can be called without configure action.
+    ///     AddInletBlazorSignalR can be called without configure action and registers services.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
@@ -62,10 +62,10 @@ public sealed class InletBlazorRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        IServiceCollection result = services.AddInletBlazorSignalR();
+        services.AddInletBlazorSignalR();
 
-        // Assert
-        Assert.Same(services, result);
+        // Assert - verify services were registered (not an empty collection)
+        Assert.NotEmpty(services);
     }
 
     /// <summary>
