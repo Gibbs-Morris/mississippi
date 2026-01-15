@@ -125,6 +125,26 @@ public sealed class AqueductNotifierTests
     }
 
     /// <summary>
+    ///     Tests that SendToAllAsync throws when method is empty.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "SendToAllAsync Throws When Method Is Empty")]
+    public async Task SendToAllAsyncShouldThrowWhenMethodIsEmpty()
+    {
+        // Arrange
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToAllAsync(
+            "TestHub",
+            string.Empty,
+            ImmutableArray<object?>.Empty));
+    }
+
+    /// <summary>
     ///     Tests that SendToAllAsync throws when method is null.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -167,6 +187,24 @@ public sealed class AqueductNotifierTests
     }
 
     /// <summary>
+    ///     Tests that SendToConnectionAsync throws when connection ID is empty.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "SendToConnectionAsync Throws When ConnectionId Is Empty")]
+    public async Task SendToConnectionAsyncShouldThrowWhenConnectionIdIsEmpty()
+    {
+        // Arrange
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            notifier.SendToConnectionAsync("TestHub", string.Empty, "method", ImmutableArray<object?>.Empty));
+    }
+
+    /// <summary>
     ///     Tests that SendToConnectionAsync throws when connection ID is null.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -185,6 +223,24 @@ public sealed class AqueductNotifierTests
     }
 
     /// <summary>
+    ///     Tests that SendToConnectionAsync throws when hub name is empty.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "SendToConnectionAsync Throws When HubName Is Empty")]
+    public async Task SendToConnectionAsyncShouldThrowWhenHubNameIsEmpty()
+    {
+        // Arrange
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            notifier.SendToConnectionAsync(string.Empty, "conn1", "method", ImmutableArray<object?>.Empty));
+    }
+
+    /// <summary>
     ///     Tests that SendToConnectionAsync throws when hub name is null.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -200,6 +256,24 @@ public sealed class AqueductNotifierTests
         // Act & Assert
         await Assert.ThrowsAnyAsync<ArgumentException>(() =>
             notifier.SendToConnectionAsync(null!, "conn1", "method", ImmutableArray<object?>.Empty));
+    }
+
+    /// <summary>
+    ///     Tests that SendToConnectionAsync throws when method is empty.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "SendToConnectionAsync Throws When Method Is Empty")]
+    public async Task SendToConnectionAsyncShouldThrowWhenMethodIsEmpty()
+    {
+        // Arrange
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            notifier.SendToConnectionAsync("TestHub", "conn1", string.Empty, ImmutableArray<object?>.Empty));
     }
 
     /// <summary>
@@ -243,6 +317,27 @@ public sealed class AqueductNotifierTests
     }
 
     /// <summary>
+    ///     Tests that SendToGroupAsync throws when group name is empty.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "SendToGroupAsync Throws When GroupName Is Empty")]
+    public async Task SendToGroupAsyncShouldThrowWhenGroupNameIsEmpty()
+    {
+        // Arrange
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToGroupAsync(
+            "TestHub",
+            string.Empty,
+            "method",
+            ImmutableArray<object?>.Empty));
+    }
+
+    /// <summary>
     ///     Tests that SendToGroupAsync throws when group name is null.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -259,6 +354,27 @@ public sealed class AqueductNotifierTests
         await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToGroupAsync(
             "TestHub",
             null!,
+            "method",
+            ImmutableArray<object?>.Empty));
+    }
+
+    /// <summary>
+    ///     Tests that SendToGroupAsync throws when hub name is empty.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "SendToGroupAsync Throws When HubName Is Empty")]
+    public async Task SendToGroupAsyncShouldThrowWhenHubNameIsEmpty()
+    {
+        // Arrange
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToGroupAsync(
+            string.Empty,
+            "group1",
             "method",
             ImmutableArray<object?>.Empty));
     }
@@ -281,6 +397,27 @@ public sealed class AqueductNotifierTests
             null!,
             "group1",
             "method",
+            ImmutableArray<object?>.Empty));
+    }
+
+    /// <summary>
+    ///     Tests that SendToGroupAsync throws when method is empty.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact(DisplayName = "SendToGroupAsync Throws When Method Is Empty")]
+    public async Task SendToGroupAsyncShouldThrowWhenMethodIsEmpty()
+    {
+        // Arrange
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, options, logger);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToGroupAsync(
+            "TestHub",
+            "group1",
+            string.Empty,
             ImmutableArray<object?>.Empty));
     }
 
