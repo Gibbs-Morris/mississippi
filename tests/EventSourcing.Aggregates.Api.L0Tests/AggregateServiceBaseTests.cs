@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -285,7 +286,8 @@ public sealed class AggregateServiceBaseTests
         Assert.True(service.OnAfterExecuteCalled);
         Assert.Equal("entity-1", service.AfterEntityId);
         Assert.NotNull(service.AfterResult);
-        Assert.True(service.AfterResult.Value.Success);
+        ActionResult<OperationResult> afterResult = service.AfterResult!;
+        Assert.True(afterResult.Value.Success);
     }
 
     /// <summary>

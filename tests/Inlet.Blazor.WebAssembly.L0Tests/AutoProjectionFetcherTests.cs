@@ -34,10 +34,12 @@ public sealed class AutoProjectionFetcherTests : IDisposable
     public AutoProjectionFetcherTests()
     {
 #pragma warning disable IDISP014 // Test fixture manages HttpClient with mock handler - not using IHttpClientFactory
+#pragma warning disable CA2000 // HttpClient is stored and disposed in Dispose method
         httpClient = new(handler, false)
         {
             BaseAddress = new("http://localhost"),
         };
+#pragma warning restore CA2000
 #pragma warning restore IDISP014
     }
 

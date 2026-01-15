@@ -384,10 +384,19 @@ public sealed class AqueductHubLifetimeManager<THub>
                 null,
                 TimeSpan.Zero,
                 TimeSpan.FromMinutes(Options.Value.HeartbeatIntervalMinutes));
-            Timer? existingTimer = Interlocked.Exchange(ref heartbeatTimer, newTimer);
-            if (existingTimer != null)
+            try
             {
-                await existingTimer.DisposeAsync().ConfigureAwait(false);
+                Timer? existingTimer = Interlocked.Exchange(ref heartbeatTimer, newTimer);
+                if (existingTimer != null)
+                {
+                    await existingTimer.DisposeAsync().ConfigureAwait(false);
+                }
+            }
+            catch
+            {
+                // If exchange or disposal fails, clean up the new timer
+                await newTimer.DisposeAsync().ConfigureAwait(false);
+                throw;
             }
 
             streamsInitialized = true;

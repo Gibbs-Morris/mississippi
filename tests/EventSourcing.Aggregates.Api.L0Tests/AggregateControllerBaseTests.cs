@@ -346,7 +346,8 @@ public sealed class AggregateControllerBaseTests
         Assert.True(controller.OnAfterExecuteCalled);
         Assert.Equal("entity-1", controller.AfterEntityId);
         Assert.NotNull(controller.AfterResult);
-        Assert.True(controller.AfterResult.Value.Success);
+        ActionResult<OperationResult> afterResult = controller.AfterResult!;
+        Assert.True(afterResult.Value.Success);
     }
 
     /// <summary>
