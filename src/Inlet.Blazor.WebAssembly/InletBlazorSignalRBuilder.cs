@@ -147,6 +147,9 @@ public sealed class InletBlazorSignalRBuilder
             Services.TryAddScoped(typeof(IProjectionFetcher), projectionFetcherType);
         }
 
+        // Register the hub connection provider
+        Services.TryAddScoped<IHubConnectionProvider, HubConnectionProvider>();
+
         // Register the SignalR effect
         Services.AddEffect<InletSignalREffect>();
     }

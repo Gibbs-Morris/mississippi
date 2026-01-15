@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,6 +36,8 @@ internal sealed class InletSignalREffect
 
     private readonly IDisposable hubCallbackRegistration;
 
+    private readonly IHubConnectionProvider hubConnectionProvider;
+
     private readonly IServiceProvider serviceProvider;
 
     private IInletStore? store;
@@ -45,42 +46,35 @@ internal sealed class InletSignalREffect
     ///     Initializes a new instance of the <see cref="InletSignalREffect" /> class.
     /// </summary>
     /// <param name="serviceProvider">The service provider for lazy store resolution (avoids circular dependency).</param>
-    /// <param name="navigationManager">The navigation manager for resolving hub URL.</param>
+    /// <param name="hubConnectionProvider">The hub connection provider.</param>
     /// <param name="projectionFetcher">The projection fetcher for retrieving projection data.</param>
     /// <param name="projectionDtoRegistry">The registry mapping DTO types to projection paths.</param>
-    /// <param name="options">Options for configuring the effect.</param>
     public InletSignalREffect(
         IServiceProvider serviceProvider,
-        NavigationManager navigationManager,
+        IHubConnectionProvider hubConnectionProvider,
         IProjectionFetcher projectionFetcher,
-        IProjectionDtoRegistry projectionDtoRegistry,
-        InletSignalREffectOptions? options = null
+        IProjectionDtoRegistry projectionDtoRegistry
     )
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
-        ArgumentNullException.ThrowIfNull(navigationManager);
+        ArgumentNullException.ThrowIfNull(hubConnectionProvider);
         ArgumentNullException.ThrowIfNull(projectionFetcher);
         ArgumentNullException.ThrowIfNull(projectionDtoRegistry);
         this.serviceProvider = serviceProvider;
+        this.hubConnectionProvider = hubConnectionProvider;
         ProjectionFetcher = projectionFetcher;
         ProjectionDtoRegistry = projectionDtoRegistry;
-        Options = options ?? new InletSignalREffectOptions();
-        HubConnection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri(Options.HubPath))
-            .WithAutomaticReconnect()
-            .Build();
 
         // Subscribe to projection update notifications from the server
-        hubCallbackRegistration = HubConnection.On<string, string, long>(
+        hubCallbackRegistration = hubConnectionProvider.RegisterHandler<string, string, long>(
             InletHubConstants.ProjectionUpdatedMethod,
             OnProjectionUpdatedAsync);
 
         // Handle reconnection - re-subscribe to all active subscriptions
-        HubConnection.Reconnected += OnReconnectedAsync;
+        hubConnectionProvider.OnReconnected(OnReconnectedAsync);
     }
 
-    private HubConnection HubConnection { get; }
-
-    private InletSignalREffectOptions Options { get; }
+    private HubConnection HubConnection => hubConnectionProvider.Connection;
 
     private IProjectionDtoRegistry ProjectionDtoRegistry { get; }
 
@@ -112,11 +106,11 @@ internal sealed class InletSignalREffect
     }
 
     /// <inheritdoc />
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         activeSubscriptions.Clear();
         hubCallbackRegistration.Dispose();
-        await HubConnection.DisposeAsync();
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
@@ -135,10 +129,7 @@ internal sealed class InletSignalREffect
     )
     {
         // Ensure connection is started
-        if (HubConnection.State == HubConnectionState.Disconnected)
-        {
-            await HubConnection.StartAsync(cancellationToken);
-        }
+        await hubConnectionProvider.EnsureConnectedAsync(cancellationToken);
 
         Type actionType = action.GetType();
         Type genericDef = actionType.GetGenericTypeDefinition();
