@@ -11,17 +11,16 @@ alwaysApply: false
 
 Governing thought: Use keyed DI services for storage clients so multiple instances (Cosmos, Blob, Redis, etc.) can coexist in a single host for different purposes.
 
-> Drift check: Review existing `*Keys` classes (e.g., `CosmosContainerKeys`, `BlobServiceClientKeys`) and Aspire registration patterns before adding new keyed services.
+> Drift check: Review `MississippiDefaults` in `Common.Abstractions` and Aspire registration patterns before adding new keyed services.
 
 ## Rules (RFC 2119)
 
-- Library code that consumes cloud clients (BlobServiceClient, CosmosClient, etc.) **MUST** use `[FromKeyedServices(KeyClass.KeyName)]` on constructor parameters rather than expecting an unkeyed registration. Why: Enterprise apps require multiple storage accounts for different purposes (locking, state, uploads, archival).
-- Each library feature **MUST** define its own key constant in a `{ClientType}Keys` class (e.g., `BlobServiceClientKeys.Brooks`, `CosmosContainerKeys.Events`). Why: Prevents key collisions across features.
-- Key constants **MUST** be `public const string` and **MUST** follow the pattern `"{client-type}-{feature}"` (e.g., `"blob-service-client-brooks"`). Why: Provides unique, discoverable identifiers.
+- Library code that consumes cloud clients (BlobServiceClient, CosmosClient, Container, etc.) **MUST** use `[FromKeyedServices(MississippiDefaults.ServiceKeys.XxxYyy)]` on constructor parameters rather than expecting an unkeyed registration. Why: Enterprise apps require multiple storage accounts for different purposes (locking, state, uploads, archival).
+- All Mississippi service keys **MUST** be defined in `MississippiDefaults.ServiceKeys` in `Common.Abstractions`. Why: Single source of truth prevents key collisions and drift.
+- Key constants **MUST** follow the pattern `"mississippi-{client-type}-{feature}"` (e.g., `"mississippi-cosmos-brooks"`, `"mississippi-blob-locking"`). Why: Provides unique, discoverable identifiers.
 - Registration documentation **MUST** comment which keyed services the library expects callers to provide. Why: Clarifies the DI contract.
-- Host applications **MUST** forward from their registration key (e.g., Aspire's `"blobs"`) to the library's expected key using `AddKeyedSingleton`. Why: Decouples host naming from library requirements.
+- Host applications **MUST** forward from their registration key (e.g., Aspire's `"cosmos"`, `"blobs"`) to the library's expected key using `AddKeyedSingleton`. Why: Decouples host naming from library requirements.
 - When a host needs both keyed (for library) and unkeyed (for its own services), it **MUST** explicitly forward using `AddSingleton(sp => sp.GetRequiredKeyedService<T>("key"))`. Why: Makes DI resolution explicit.
-- Keys **SHOULD** be placed in the library's main namespace alongside registration code. Why: Keeps discovery simple.
 
 ## Scope and Audience
 
@@ -32,19 +31,14 @@ Library authors and host developers integrating Mississippi with cloud storage o
 ### Library Side
 
 ```csharp
-// Define keys
-public static class BlobServiceClientKeys
-{
-    public const string Brooks = "blob-service-client-brooks";
-}
-
-// Use in constructor
+// Use centralized keys from MississippiDefaults
 public BlobDistributedLockManager(
-    [FromKeyedServices(BlobServiceClientKeys.Brooks)] BlobServiceClient blobServiceClient,
+    [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)]
+    BlobServiceClient blobServiceClient,
     ILogger<BlobDistributedLockManager> logger) { }
 
-// Document in registration
-// Caller must register a keyed BlobServiceClient with BlobServiceClientKeys.Brooks
+// Document in registration comments
+// Caller must register a keyed BlobServiceClient with MississippiDefaults.ServiceKeys.BlobLocking
 services.AddSingleton<IDistributedLockManager, BlobDistributedLockManager>();
 ```
 
@@ -56,7 +50,7 @@ builder.AddKeyedAzureBlobServiceClient("blobs");
 
 // Forward to library key
 builder.Services.AddKeyedSingleton(
-    BlobServiceClientKeys.Brooks,
+    MississippiDefaults.ServiceKeys.BlobLocking,
     (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
 
 // If host also needs unkeyed for its own services
@@ -66,15 +60,19 @@ builder.Services.AddSingleton(sp => sp.GetRequiredKeyedService<BlobServiceClient
 ## Core Principles
 
 - One client type, many instances: keyed services enable coexistence.
+- All Mississippi keys centralized in `MississippiDefaults.ServiceKeys`.
 - Library keys are stable contracts; host keys are deployment-specific.
 - Explicit forwarding makes the DI graph auditable.
 
-## Existing Key Classes
+## MississippiDefaults Reference
 
-| Class | Purpose |
-|-------|---------|
-| `CosmosContainerKeys` | Cosmos container registrations for events, snapshots |
-| `BlobServiceClientKeys` | Blob storage for distributed locking, file uploads |
+| Key | Value | Purpose |
+|-----|-------|---------|
+| `ServiceKeys.CosmosBrooks` | `"mississippi-cosmos-brooks"` | Cosmos container for event streams |
+| `ServiceKeys.CosmosSnapshots` | `"mississippi-cosmos-snapshots"` | Cosmos container for snapshots |
+| `ServiceKeys.BlobLocking` | `"mississippi-blob-locking"` | Blob storage for distributed locking |
+
+See also: `MississippiDefaults.ContainerIds`, `MississippiDefaults.StreamNamespaces` for other unified defaults.
 
 ## References
 

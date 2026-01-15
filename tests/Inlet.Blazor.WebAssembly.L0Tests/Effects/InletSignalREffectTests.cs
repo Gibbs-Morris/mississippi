@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,7 +30,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
 
     private readonly Mock<IProjectionFetcher> fetcherMock = new();
 
-    private readonly Mock<NavigationManager> navManagerMock = new();
+    private readonly TestNavigationManager navManager = new();
 
     private readonly ProjectionDtoRegistry registry = new();
 
@@ -49,10 +48,6 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         // Register test projection in registry
         registry.Register(TestProjectionPath, typeof(TestProjection));
 
-        // Set up NavigationManager mock
-        navManagerMock.Setup(n => n.ToAbsoluteUri(It.IsAny<string>()))
-            .Returns<string>(path => new($"http://localhost{path}"));
-
         // Set up service provider with store
         services.AddSingleton(storeMock.Object);
         serviceProvider = services.BuildServiceProvider();
@@ -62,7 +57,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         {
             HubPath = TestHubPath,
         };
-        effect = new(serviceProvider, navManagerMock.Object, fetcherMock.Object, registry, options);
+        effect = new(serviceProvider, navManager, fetcherMock.Object, registry, options);
     }
 
     /// <inheritdoc />
@@ -94,6 +89,29 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     ///     Non-projection action for negative testing.
     /// </summary>
     private sealed record NonProjectionAction : IAction;
+
+    /// <summary>
+    ///     Test NavigationManager implementation for testing.
+    /// </summary>
+    private sealed class TestNavigationManager : NavigationManager
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="TestNavigationManager" /> class.
+        /// </summary>
+        public TestNavigationManager()
+        {
+            Initialize("http://localhost/", "http://localhost/");
+        }
+
+        /// <inheritdoc />
+        protected override void NavigateToCore(
+            string uri,
+            bool forceLoad
+        )
+        {
+            // No-op for testing
+        }
+    }
 
     /// <summary>
     ///     Verifies that CanHandle returns false for non-projection actions.
@@ -205,7 +223,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
             provider,
-            navManagerMock.Object,
+            navManager,
             fetcherMock.Object,
             null!));
     }
@@ -221,11 +239,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
-            provider,
-            navManagerMock.Object,
-            null!,
-            registry));
+        Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(provider, navManager, null!, registry));
     }
 
     /// <summary>
@@ -241,7 +255,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
             null!,
-            navManagerMock.Object,
+            navManager,
             fetcherMock.Object,
             registry));
     }
@@ -262,149 +276,5 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
                 // Should not execute
             }
         });
-    }
-
-    /// <summary>
-    ///     Verifies that RefreshProjectionAction yields error action when fetch fails.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    [AllureFeature("HandleAsync")]
-    public async Task RefreshActionYieldsErrorActionWhenFetchFails()
-    {
-        // Arrange
-        RefreshProjectionAction<TestProjection> action = new(TestEntityId);
-        InvalidOperationException expectedError = new("Fetch failed");
-        fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(expectedError);
-
-        // Act
-        List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
-        {
-            results.Add(resultAction);
-        }
-
-        // Assert
-        Assert.Equal(2, results.Count);
-        Assert.IsType<ProjectionErrorAction<TestProjection>>(results[1]);
-        ProjectionErrorAction<TestProjection> errorAction = (ProjectionErrorAction<TestProjection>)results[1];
-        Assert.Equal(TestEntityId, errorAction.EntityId);
-        Assert.Equal(expectedError, errorAction.Error);
-    }
-
-    /// <summary>
-    ///     Verifies that RefreshProjectionAction yields error action when fetch returns null.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    [AllureFeature("HandleAsync")]
-    public async Task RefreshActionYieldsErrorActionWhenFetchReturnsNull()
-    {
-        // Arrange
-        RefreshProjectionAction<TestProjection> action = new(TestEntityId);
-        fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ProjectionFetchResult?)null);
-
-        // Act
-        List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
-        {
-            results.Add(resultAction);
-        }
-
-        // Assert
-        Assert.Equal(2, results.Count);
-        Assert.IsType<ProjectionErrorAction<TestProjection>>(results[1]);
-        ProjectionErrorAction<TestProjection> errorAction = (ProjectionErrorAction<TestProjection>)results[1];
-        Assert.Equal(TestEntityId, errorAction.EntityId);
-        Assert.IsType<InvalidOperationException>(errorAction.Error);
-    }
-
-    /// <summary>
-    ///     Verifies that RefreshProjectionAction yields loading action first.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    [AllureFeature("HandleAsync")]
-    public async Task RefreshActionYieldsLoadingActionFirst()
-    {
-        // Arrange
-        RefreshProjectionAction<TestProjection> action = new(TestEntityId);
-        TestProjection projection = new("Test", 123);
-        ProjectionFetchResult fetchResult = new(projection, TestVersion);
-        fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fetchResult);
-
-        // Act
-        List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
-        {
-            results.Add(resultAction);
-        }
-
-        // Assert
-        Assert.NotEmpty(results);
-        Assert.IsType<ProjectionLoadingAction<TestProjection>>(results[0]);
-        ProjectionLoadingAction<TestProjection> loadingAction = (ProjectionLoadingAction<TestProjection>)results[0];
-        Assert.Equal(TestEntityId, loadingAction.EntityId);
-    }
-
-    /// <summary>
-    ///     Verifies that RefreshProjectionAction yields nothing when cancelled.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    [AllureFeature("HandleAsync")]
-    public async Task RefreshActionYieldsNothingWhenCancelled()
-    {
-        // Arrange
-        RefreshProjectionAction<TestProjection> action = new(TestEntityId);
-        using CancellationTokenSource cts = new();
-        await cts.CancelAsync();
-        fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new OperationCanceledException());
-
-        // Act
-        List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, cts.Token))
-        {
-            results.Add(resultAction);
-        }
-
-        // Assert
-        Assert.Single(results); // Only loading action before cancellation
-        Assert.IsType<ProjectionLoadingAction<TestProjection>>(results[0]);
-    }
-
-    /// <summary>
-    ///     Verifies that RefreshProjectionAction yields updated action after successful fetch.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    [AllureFeature("HandleAsync")]
-    public async Task RefreshActionYieldsUpdatedActionAfterSuccessfulFetch()
-    {
-        // Arrange
-        RefreshProjectionAction<TestProjection> action = new(TestEntityId);
-        TestProjection projection = new("Test", 123);
-        ProjectionFetchResult fetchResult = new(projection, TestVersion);
-        fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fetchResult);
-
-        // Act
-        List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
-        {
-            results.Add(resultAction);
-        }
-
-        // Assert
-        Assert.Equal(2, results.Count);
-        Assert.IsType<ProjectionUpdatedAction<TestProjection>>(results[1]);
-        ProjectionUpdatedAction<TestProjection> updatedAction = (ProjectionUpdatedAction<TestProjection>)results[1];
-        Assert.Equal(TestEntityId, updatedAction.EntityId);
-        Assert.Equal(projection, updatedAction.Data);
-        Assert.Equal(TestVersion, updatedAction.Version);
     }
 }

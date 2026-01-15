@@ -28,6 +28,7 @@ Developers building Aspire-based integration tests with Azure emulators.
 ## At-a-Glance Quick-Start
 
 AppHost configuration:
+
 ```csharp
 builder.AddAzureCosmosDB("cosmos")
     .RunAsPreviewEmulator(emulator =>
@@ -38,6 +39,7 @@ builder.AddAzureCosmosDB("cosmos")
 ```
 
 SDK client configuration:
+
 ```csharp
 CosmosClientOptions options = new()
 {
@@ -47,6 +49,7 @@ CosmosClientOptions options = new()
 ```
 
 Document model:
+
 ```csharp
 public class MyDocument
 {
