@@ -93,7 +93,7 @@ public sealed class ComprehensiveE2ETests
         for (int attempt = 1; attempt <= MaxAttempts; attempt++)
         {
             afterZero = await projGrain.GetAsync(CancellationToken.None);
-            if ((afterZero is not null) && (afterZero.CurrentCount == 0))
+            if (afterZero is not null && (afterZero.CurrentCount == 0))
             {
                 break;
             }

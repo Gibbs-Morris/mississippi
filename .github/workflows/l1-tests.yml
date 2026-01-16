@@ -37,6 +37,11 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Cache GitVersion tools
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -79,10 +84,7 @@ jobs:
       - name: Install Allure
         if: always()
         run: |
-          wget https://github.com/allure-framework/allure2/releases/download/2.30.0/allure-2.30.0.tgz
-          tar -zxvf allure-2.30.0.tgz
-          sudo mv allure-2.30.0 /opt/allure
-          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+          npm install -g allure-commandline@2.30.0
 
       - name: Generate Allure Report
         if: always()
