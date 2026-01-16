@@ -6,6 +6,7 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Abstractions;
+using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 
 
@@ -26,11 +27,11 @@ public sealed class InletRegistrationsTests
     private sealed record TestProjection(string Name);
 
     /// <summary>
-    ///     AddInlet should register IInletStore pointing to InletStore.
+    ///     AddInlet should register IInletStore as CompositeInletStore.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddInletRegistersIInletStoreAsInletStore()
+    public void AddInletRegistersIInletStoreAsCompositeInletStore()
     {
         // Arrange
         ServiceCollection services = [];
@@ -39,18 +40,38 @@ public sealed class InletRegistrationsTests
         services.AddInlet();
         using ServiceProvider provider = services.BuildServiceProvider();
         IInletStore store = provider.GetRequiredService<IInletStore>();
-        InletStore inletStore = provider.GetRequiredService<InletStore>();
 
         // Assert
-        Assert.Same(inletStore, store);
+        Assert.IsType<CompositeInletStore>(store);
     }
 
     /// <summary>
-    ///     AddInlet should register IProjectionUpdateNotifier pointing to InletStore.
+    ///     AddInlet should register IProjectionCache as ProjectionCache singleton.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddInletRegistersIProjectionUpdateNotifierAsInletStore()
+    public void AddInletRegistersIProjectionCacheAsSingleton()
+    {
+        // Arrange
+        ServiceCollection services = [];
+
+        // Act
+        services.AddInlet();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IProjectionCache cache1 = provider.GetRequiredService<IProjectionCache>();
+        IProjectionCache cache2 = provider.GetRequiredService<IProjectionCache>();
+
+        // Assert
+        Assert.IsType<ProjectionCache>(cache1);
+        Assert.Same(cache1, cache2);
+    }
+
+    /// <summary>
+    ///     AddInlet should register IProjectionUpdateNotifier as ProjectionNotifier.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Service Registration")]
+    public void AddInletRegistersIProjectionUpdateNotifierAsProjectionNotifier()
     {
         // Arrange
         ServiceCollection services = [];
@@ -59,18 +80,37 @@ public sealed class InletRegistrationsTests
         services.AddInlet();
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionUpdateNotifier notifier = provider.GetRequiredService<IProjectionUpdateNotifier>();
-        InletStore inletStore = provider.GetRequiredService<InletStore>();
 
         // Assert
-        Assert.Same(inletStore, notifier);
+        Assert.IsType<ProjectionNotifier>(notifier);
     }
 
     /// <summary>
-    ///     AddInlet should register IStore pointing to InletStore.
+    ///     AddInlet should register IStore as singleton.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddInletRegistersIStoreAsInletStore()
+    public void AddInletRegistersIStoreAsSingleton()
+    {
+        // Arrange
+        ServiceCollection services = [];
+
+        // Act
+        services.AddInlet();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IStore store1 = provider.GetRequiredService<IStore>();
+        IStore store2 = provider.GetRequiredService<IStore>();
+
+        // Assert
+        Assert.Same(store1, store2);
+    }
+
+    /// <summary>
+    ///     AddInlet should register IStore as Store.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Service Registration")]
+    public void AddInletRegistersIStoreAsStore()
     {
         // Arrange
         ServiceCollection services = [];
@@ -79,30 +119,9 @@ public sealed class InletRegistrationsTests
         services.AddInlet();
         using ServiceProvider provider = services.BuildServiceProvider();
         IStore store = provider.GetRequiredService<IStore>();
-        InletStore inletStore = provider.GetRequiredService<InletStore>();
 
         // Assert
-        Assert.Same(inletStore, store);
-    }
-
-    /// <summary>
-    ///     AddInlet should register InletStore as singleton.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletRegistersInletStoreAsSingleton()
-    {
-        // Arrange
-        ServiceCollection services = [];
-
-        // Act
-        services.AddInlet();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        InletStore store1 = provider.GetRequiredService<InletStore>();
-        InletStore store2 = provider.GetRequiredService<InletStore>();
-
-        // Assert
-        Assert.Same(store1, store2);
+        Assert.IsType<Store>(store);
     }
 
     /// <summary>

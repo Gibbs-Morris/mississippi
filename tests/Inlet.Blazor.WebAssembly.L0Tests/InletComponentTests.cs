@@ -6,6 +6,7 @@ using Allure.Xunit.Attributes;
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Abstractions.Actions;
 using Mississippi.Inlet.Abstractions.State;
+using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
@@ -20,17 +21,26 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests;
 [AllureSubSuite("InletComponent")]
 public sealed class InletComponentTests : IDisposable
 {
-    private readonly InletStore store;
+    private readonly ProjectionCache projectionCache = new();
+
+    private readonly CompositeInletStore store;
+
+    private readonly Store underlyingStore;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletComponentTests" /> class.
     /// </summary>
-    public InletComponentTests() => store = new();
+    public InletComponentTests()
+    {
+        underlyingStore = new();
+        store = new(underlyingStore, projectionCache);
+    }
 
     /// <inheritdoc />
     public void Dispose()
     {
         store.Dispose();
+        underlyingStore.Dispose();
     }
 
     /// <summary>
@@ -344,7 +354,7 @@ public sealed class InletComponentTests : IDisposable
         sut.SetStore(store);
         sut.SetInletStore(store);
         IAction? dispatchedAction = null;
-        store.RegisterMiddleware(new CaptureActionMiddleware(a => dispatchedAction = a));
+        underlyingStore.RegisterMiddleware(new CaptureActionMiddleware(a => dispatchedAction = a));
 
         // Act
         sut.TestRefreshProjection<TestProjection>("entity-1");
@@ -368,7 +378,7 @@ public sealed class InletComponentTests : IDisposable
         sut.SetStore(store);
         sut.SetInletStore(store);
         IAction? dispatchedAction = null;
-        store.RegisterMiddleware(new CaptureActionMiddleware(a => dispatchedAction = a));
+        underlyingStore.RegisterMiddleware(new CaptureActionMiddleware(a => dispatchedAction = a));
 
         // Act
         sut.TestSubscribeToProjection<TestProjection>("entity-1");
@@ -393,7 +403,7 @@ public sealed class InletComponentTests : IDisposable
         sut.SetStore(store);
         sut.SetInletStore(store);
         IAction? dispatchedAction = null;
-        store.RegisterMiddleware(new CaptureActionMiddleware(a => dispatchedAction = a));
+        underlyingStore.RegisterMiddleware(new CaptureActionMiddleware(a => dispatchedAction = a));
 
         // Act
         sut.TestUnsubscribeFromProjection<TestProjection>("entity-1");
