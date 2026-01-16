@@ -3,7 +3,16 @@
     <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Exclude Allure reporting for this integration test project.
+         Allure.Xunit crashes when tests fail during IAsyncLifetime.InitializeAsync
+         (before the test context is established). -->
+    <ExcludeAllure>true</ExcludeAllure>
   </PropertyGroup>
+
+  <!-- Remove Allure.Xunit that was added by Directory.Build.props -->
+  <ItemGroup>
+    <PackageReference Remove="Allure.Xunit" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Aspire Testing Infrastructure -->
