@@ -86,9 +86,22 @@ public sealed class ComprehensiveE2ETests
             await counter.ExecuteAsync(new IncrementCounter());
         }
 
-        // Small delay for projection to catch up
-        await Task.Delay(50);
-        CounterSummaryProjection? afterZero = await projGrain.GetAsync(CancellationToken.None);
+        // Wait for projection to catch up
+        CounterSummaryProjection? afterZero = null;
+        const int MaxAttempts = 20;
+        const int RetryDelayMs = 100;
+        for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            afterZero = await projGrain.GetAsync(CancellationToken.None);
+            if ((afterZero is not null) && (afterZero.CurrentCount == 0))
+            {
+                break;
+            }
+
+            output.WriteLine(
+                $"[Test] Waiting for projection to return to zero (attempt {attempt}/{MaxAttempts}). CurrentCount={afterZero?.CurrentCount}");
+            await Task.Delay(RetryDelayMs);
+        }
         afterZero.Should().NotBeNull();
         afterZero!.CurrentCount.Should().Be(0, "Count should be 0 after incrementing back");
         output.WriteLine("[Test] PASSED: Boundary conditions handled correctly!");
