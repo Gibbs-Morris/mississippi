@@ -83,7 +83,7 @@ jobs:
 
       - name: Install Allure
         run: |
-          npm install -g allure-commandline@2.30.0
+          npm install -g allure-commandline@2.30.0 --ignore-scripts
 
       - name: Generate Allure Report
         run: |
