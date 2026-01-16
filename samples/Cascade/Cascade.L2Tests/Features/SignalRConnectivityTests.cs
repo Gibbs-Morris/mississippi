@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Microsoft.Playwright;
 
 
@@ -8,9 +6,6 @@ namespace Cascade.L2Tests.Features;
 /// <summary>
 ///     Tests for SignalR messaging from the Blazor WASM client.
 /// </summary>
-[AllureParentSuite("Cascade")]
-[AllureSuite("Connectivity")]
-[AllureSubSuite("SignalR")]
 #pragma warning disable CA1515 // Types can be made internal - xUnit test class must be public
 public sealed class SignalRConnectivityTests : TestBase
 #pragma warning restore CA1515
@@ -31,7 +26,6 @@ public sealed class SignalRConnectivityTests : TestBase
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    [AllureId("web-signalr-001")]
     public async Task SignalRConnectionIsEstablished()
     {
         // Arrange
@@ -64,7 +58,6 @@ public sealed class SignalRConnectivityTests : TestBase
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    [AllureId("web-signalr-002")]
     public async Task SignalRSendMessageAppearsInList()
     {
         // Arrange

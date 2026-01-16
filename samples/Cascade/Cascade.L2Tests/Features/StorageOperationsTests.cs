@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Microsoft.Playwright;
 
 
@@ -8,9 +6,6 @@ namespace Cascade.L2Tests.Features;
 /// <summary>
 ///     Tests for storage operations (Cosmos DB and Blob Storage).
 /// </summary>
-[AllureParentSuite("Cascade")]
-[AllureSuite("Storage")]
-[AllureSubSuite("Operations")]
 #pragma warning disable CA1515 // Types can be made internal - xUnit test class must be public
 public sealed class StorageOperationsTests : TestBase
 #pragma warning restore CA1515
@@ -31,7 +26,6 @@ public sealed class StorageOperationsTests : TestBase
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    [AllureId("web-storage-004")]
     public async Task BlobStorageReadAfterWriteReturnsContent()
     {
         // Arrange
@@ -74,7 +68,6 @@ public sealed class StorageOperationsTests : TestBase
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    [AllureId("web-storage-003")]
     public async Task BlobStorageWriteSucceeds()
     {
         // Arrange
@@ -113,7 +106,6 @@ public sealed class StorageOperationsTests : TestBase
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    [AllureId("web-storage-002")]
     public async Task CosmosDbReadAfterWriteReturnsData()
     {
         // Arrange
@@ -156,7 +148,6 @@ public sealed class StorageOperationsTests : TestBase
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    [AllureId("web-storage-001")]
     public async Task CosmosDbWriteSucceeds()
     {
         // Arrange
