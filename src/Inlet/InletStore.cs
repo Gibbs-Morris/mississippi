@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Reflection;
 
 using Mississippi.Inlet.Abstractions;
@@ -9,6 +10,7 @@ using Mississippi.Inlet.State;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Reservoir.Abstractions.State;
 
 
 namespace Mississippi.Inlet;
@@ -29,13 +31,17 @@ public class InletStore
     }
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="InletStore" /> class.
+    ///     Initializes a new instance of the <see cref="InletStore" /> class with DI-resolved components.
     /// </summary>
-    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="featureRegistrations">The feature state registrations to initialize.</param>
+    /// <param name="effects">The effects to register for handling async operations.</param>
+    /// <param name="middlewares">The middlewares to register in the dispatch pipeline.</param>
     public InletStore(
-        IServiceProvider serviceProvider
+        IEnumerable<IFeatureStateRegistration> featureRegistrations,
+        IEnumerable<IEffect> effects,
+        IEnumerable<IMiddleware> middlewares
     )
-        : base(serviceProvider)
+        : base(featureRegistrations, effects, middlewares)
     {
     }
 

@@ -228,7 +228,7 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Store constructor with null service provider should throw ArgumentNullException.
+    ///     Store constructor with null feature registrations should throw ArgumentNullException.
     /// </summary>
     [Fact]
     [AllureFeature("Validation")]
@@ -240,28 +240,64 @@ public sealed class StoreTests : IDisposable
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    public void ConstructorWithNullServiceProviderThrowsArgumentNullException()
+    public void ConstructorWithNullFeatureRegistrationsThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store(null!));
+        Assert.Throws<ArgumentNullException>(() => new Store(null!, [], []));
     }
 
     /// <summary>
-    ///     Store constructor with service provider should resolve effects from DI.
+    ///     Store constructor with null effects should throw ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP001:Dispose created",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    public void ConstructorWithNullEffectsThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new Store([], null!, []));
+    }
+
+    /// <summary>
+    ///     Store constructor with null middleware should throw ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP001:Dispose created",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    public void ConstructorWithNullMiddlewareThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new Store([], [], null!));
+    }
+
+    /// <summary>
+    ///     Store constructor with effects collection should register effects.
     /// </summary>
     /// <returns>A task representing the async test operation.</returns>
     [Fact]
     [AllureFeature("DI Integration")]
-    public async Task ConstructorWithServiceProviderResolvesEffects()
+    public async Task ConstructorWithEffectsCollectionRegistersEffects()
     {
         // Arrange
         bool effectHandled = false;
-        ServiceCollection services = [];
-        services.AddTransient<IEffect>(_ => new TestEffect(() => effectHandled = true));
-        using ServiceProvider provider = services.BuildServiceProvider();
+        TestEffect effect = new(() => effectHandled = true);
 
         // Act
-        using Store diStore = new(provider);
+        using Store diStore = new([], [effect], []);
         diStore.Dispatch(new IncrementAction());
 
         // Assert
@@ -270,20 +306,18 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Store constructor with service provider should resolve middleware from DI.
+    ///     Store constructor with middleware collection should register middleware.
     /// </summary>
     [Fact]
     [AllureFeature("DI Integration")]
-    public void ConstructorWithServiceProviderResolvesMiddleware()
+    public void ConstructorWithMiddlewareCollectionRegistersMiddleware()
     {
         // Arrange
         bool middlewareInvoked = false;
-        ServiceCollection services = [];
-        services.AddTransient<IMiddleware>(_ => new TestMiddleware(() => middlewareInvoked = true));
-        using ServiceProvider provider = services.BuildServiceProvider();
+        TestMiddleware middleware = new(() => middlewareInvoked = true);
 
         // Act
-        using Store diStore = new(provider);
+        using Store diStore = new([], [], [middleware]);
         diStore.Dispatch(new IncrementAction());
 
         // Assert
@@ -488,11 +522,11 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddTransient<IActionReducer<TestFeatureState>, TestFeatureActionReducer>();
-        services.AddTransient<IRootReducer<TestFeatureState>, RootReducer<TestFeatureState>>();
+        services.AddReducer<IncrementAction, TestFeatureState, TestFeatureActionReducer>();
+        services.AddReservoir();
         using ServiceProvider provider = services.BuildServiceProvider();
-        using Store diStore = new(provider);
-        diStore.RegisterState<TestFeatureState>();
+        using IServiceScope scope = provider.CreateScope();
+        IStore diStore = scope.ServiceProvider.GetRequiredService<IStore>();
 
         // Act
         diStore.Dispatch(new IncrementAction());
@@ -618,36 +652,25 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     RegisterState should register feature state from DI.
+    ///     Feature state registration should register state via constructor.
     /// </summary>
     [Fact]
     [AllureFeature("State Registration")]
-    public void RegisterStateRegistersFeatureStateFromDI()
+    public void FeatureStateRegistrationRegistersStateViaConstructor()
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddTransient<IActionReducer<TestFeatureState>, TestFeatureActionReducer>();
-        services.AddTransient<IRootReducer<TestFeatureState>, RootReducer<TestFeatureState>>();
+        services.AddFeatureState<TestFeatureState>();
+        services.AddReservoir();
         using ServiceProvider provider = services.BuildServiceProvider();
-        using Store diStore = new(provider);
+        using IServiceScope scope = provider.CreateScope();
 
         // Act
-        diStore.RegisterState<TestFeatureState>();
-        TestFeatureState state = diStore.GetState<TestFeatureState>();
+        IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
+        TestFeatureState state = store.GetState<TestFeatureState>();
 
         // Assert
         Assert.NotNull(state);
-    }
-
-    /// <summary>
-    ///     RegisterState without service provider should throw InvalidOperationException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    public void RegisterStateWithoutServiceProviderThrowsInvalidOperationException()
-    {
-        // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => sut.RegisterState<TestFeatureState>());
     }
 
     /// <summary>

@@ -4,8 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Abstractions.State;
 
 
 namespace Mississippi.Inlet;
@@ -26,38 +26,15 @@ public static class InletRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        return services.AddInlet(null);
-    }
-
-    /// <summary>
-    ///     Adds Inlet services to the service collection with store configuration.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configureStore">
-    ///     Action to configure the store with feature states.
-    ///     This is called each time a new store instance is created.
-    /// </param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="services" /> is null.
-    /// </exception>
-    public static IServiceCollection AddInlet(
-        this IServiceCollection services,
-        Action<Store>? configureStore
-    )
-    {
-        ArgumentNullException.ThrowIfNull(services);
         services.TryAddSingleton<IProjectionRegistry, ProjectionRegistry>();
 
         // Use scoped lifetime to match Fluxor pattern:
         // - Blazor WASM: scoped = singleton (no difference)
         // - Blazor Server: scoped = per-circuit (each user gets own store)
-        services.TryAddScoped(sp =>
-        {
-            InletStore store = new(sp);
-            configureStore?.Invoke(store);
-            return store;
-        });
+        services.TryAddScoped(sp => new InletStore(
+            sp.GetServices<IFeatureStateRegistration>(),
+            sp.GetServices<IEffect>(),
+            sp.GetServices<IMiddleware>()));
         services.TryAddScoped<IStore>(sp => sp.GetRequiredService<InletStore>());
         services.TryAddScoped<IInletStore>(sp => sp.GetRequiredService<InletStore>());
         services.TryAddScoped<IProjectionUpdateNotifier>(sp => sp.GetRequiredService<InletStore>());

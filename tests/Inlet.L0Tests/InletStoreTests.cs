@@ -24,26 +24,15 @@ namespace Mississippi.Inlet.L0Tests;
 [AllureSubSuite("InletStore")]
 public sealed class InletStoreTests : IDisposable
 {
-    private readonly ServiceProvider serviceProvider;
-
     private readonly InletStore sut;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletStoreTests" /> class.
     /// </summary>
-    public InletStoreTests()
-    {
-        ServiceCollection services = [];
-        serviceProvider = services.BuildServiceProvider();
-        sut = new(serviceProvider);
-    }
+    public InletStoreTests() => sut = new([], [], []);
 
     /// <inheritdoc />
-    public void Dispose()
-    {
-        sut.Dispose();
-        serviceProvider.Dispose();
-    }
+    public void Dispose() => sut.Dispose();
 
     /// <summary>
     ///     Test effect for CreateWithEffect tests.
@@ -189,9 +178,7 @@ public sealed class InletStoreTests : IDisposable
     public void DispatchAfterDisposeThrowsObjectDisposedException()
     {
         // Arrange
-        ServiceCollection services = [];
-        using ServiceProvider testProvider = services.BuildServiceProvider();
-        InletStore disposedStore = new(testProvider);
+        InletStore disposedStore = new([], [], []);
         disposedStore.Dispose();
         ProjectionLoadingAction<TestProjection> action = new("entity-1");
 

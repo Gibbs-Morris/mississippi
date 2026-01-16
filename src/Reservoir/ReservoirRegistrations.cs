@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
+using Mississippi.Reservoir.State;
 
 
 namespace Mississippi.Reservoir;
@@ -72,6 +73,7 @@ public static class ReservoirRegistrations
         services.AddTransient<IActionReducer<TAction, TState>>(sp =>
             sp.GetRequiredService<DelegateActionReducer<TAction, TState>>());
         services.AddRootReducer<TState>();
+        services.AddFeatureState<TState>();
         return services;
     }
 
@@ -93,27 +95,46 @@ public static class ReservoirRegistrations
         services.AddTransient<IActionReducer<TState>, TReducer>();
         services.AddTransient<IActionReducer<TAction, TState>, TReducer>();
         services.AddRootReducer<TState>();
+        services.AddFeatureState<TState>();
         return services;
     }
 
     /// <summary>
-    ///     Adds the Store to the service collection with DI-resolved action reducers, effects, and middleware.
+    ///     Adds a feature state registration to the service collection.
+    /// </summary>
+    /// <typeparam name="TState">The feature state type.</typeparam>
+    /// <param name="services">The service collection to add the feature state to.</param>
+    /// <returns>The updated service collection.</returns>
+    /// <remarks>
+    ///     This method is called automatically by <see cref="AddReducer{TAction,TState}(IServiceCollection, Func{TState, TAction, TState})" />.
+    ///     Call it directly only for feature states without reducers.
+    /// </remarks>
+    public static IServiceCollection AddFeatureState<TState>(
+        this IServiceCollection services
+    )
+        where TState : class, IFeatureState, new()
+    {
+        // Use TryAddEnumerable with concrete implementation type to prevent duplicate registrations
+        // The implementation type (FeatureStateRegistration<TState>) is used for deduplication
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(
+            sp => new FeatureStateRegistration<TState>(sp.GetService<IRootReducer<TState>>())));
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds the Store to the service collection with DI-resolved feature states, effects, and middleware.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="configureStore">Optional action to configure the store with feature states.</param>
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddReservoir(
-        this IServiceCollection services,
-        Action<Store>? configureStore = null
+        this IServiceCollection services
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        services.TryAddScoped<IStore>(sp =>
-        {
-            Store store = new(sp);
-            configureStore?.Invoke(store);
-            return store;
-        });
+        services.TryAddScoped<IStore>(sp => new Store(
+            sp.GetServices<IFeatureStateRegistration>(),
+            sp.GetServices<IEffect>(),
+            sp.GetServices<IMiddleware>()));
         return services;
     }
 

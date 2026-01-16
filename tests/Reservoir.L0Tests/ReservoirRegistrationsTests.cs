@@ -235,27 +235,6 @@ public sealed class ReservoirRegistrationsTests
     }
 
     /// <summary>
-    ///     AddReservoir with configureStore should invoke configuration callback.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Configuration")]
-    public void AddReservoirWithConfigureStoreInvokesCallback()
-    {
-        // Arrange
-        ServiceCollection services = [];
-        bool configured = false;
-
-        // Act
-        services.AddReservoir(_ => configured = true);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        using IServiceScope scope = provider.CreateScope();
-        _ = scope.ServiceProvider.GetRequiredService<IStore>();
-
-        // Assert
-        Assert.True(configured);
-    }
-
-    /// <summary>
     ///     AddReservoir should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]

@@ -6,8 +6,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.DependencyInjection;
-
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -33,8 +31,6 @@ public class Store : IStore
 
     private readonly ConcurrentDictionary<string, object> rootReducers = new();
 
-    private readonly IServiceProvider? serviceProvider;
-
     private bool disposed;
 
     /// <summary>
@@ -45,26 +41,39 @@ public class Store : IStore
     }
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="Store" /> class with DI support.
+    ///     Initializes a new instance of the <see cref="Store" /> class with DI-resolved components.
     /// </summary>
-    /// <param name="serviceProvider">
-    ///     The service provider for resolving root action reducers and effects.
-    /// </param>
+    /// <param name="featureRegistrations">The feature state registrations to initialize.</param>
+    /// <param name="effectsCollection">The effects to register for handling async operations.</param>
+    /// <param name="middlewaresCollection">The middlewares to register in the dispatch pipeline.</param>
     public Store(
-        IServiceProvider serviceProvider
+        IEnumerable<IFeatureStateRegistration> featureRegistrations,
+        IEnumerable<IEffect> effectsCollection,
+        IEnumerable<IMiddleware> middlewaresCollection
     )
     {
-        ArgumentNullException.ThrowIfNull(serviceProvider);
-        this.serviceProvider = serviceProvider;
+        ArgumentNullException.ThrowIfNull(featureRegistrations);
+        ArgumentNullException.ThrowIfNull(effectsCollection);
+        ArgumentNullException.ThrowIfNull(middlewaresCollection);
 
-        // Resolve effects registered in DI
-        foreach (IEffect effect in serviceProvider.GetServices<IEffect>())
+        // Initialize feature states from registrations
+        foreach (IFeatureStateRegistration registration in featureRegistrations)
+        {
+            featureStates[registration.FeatureKey] = registration.InitialState;
+            if (registration.RootReducer is not null)
+            {
+                rootReducers[registration.FeatureKey] = registration.RootReducer;
+            }
+        }
+
+        // Register effects
+        foreach (IEffect effect in effectsCollection)
         {
             RegisterEffect(effect);
         }
 
-        // Resolve middleware registered in DI
-        foreach (IMiddleware middleware in serviceProvider.GetServices<IMiddleware>())
+        // Register middleware
+        foreach (IMiddleware middleware in middlewaresCollection)
         {
             RegisterMiddleware(middleware);
         }
@@ -105,8 +114,8 @@ public class Store : IStore
         }
 
         throw new InvalidOperationException(
-            $"No action reducer registered for feature state '{featureKey}'. " +
-            $"Call RegisterState<{typeof(TState).Name}>() before selecting.");
+            $"No feature state registered for '{featureKey}'. " +
+            $"Call AddFeatureState<{typeof(TState).Name}>() during service registration.");
     }
 
     /// <summary>
@@ -136,33 +145,6 @@ public class Store : IStore
         ArgumentNullException.ThrowIfNull(middleware);
         ObjectDisposedException.ThrowIf(disposed, this);
         middlewares.Add(middleware);
-    }
-
-    /// <summary>
-    ///     Registers a feature state with its root action reducer from DI.
-    /// </summary>
-    /// <typeparam name="TState">The feature state type.</typeparam>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when the store was not created with a service provider.
-    /// </exception>
-    public void RegisterState<TState>()
-        where TState : class, IFeatureState, new()
-    {
-        ObjectDisposedException.ThrowIf(disposed, this);
-        if (serviceProvider is null)
-        {
-            throw new InvalidOperationException(
-                "Cannot register feature state without a service provider. " +
-                "Use the constructor that accepts IServiceProvider.");
-        }
-
-        string featureKey = TState.FeatureKey;
-        featureStates[featureKey] = new TState();
-        IRootReducer<TState>? rootReducer = serviceProvider.GetService<IRootReducer<TState>>();
-        if (rootReducer is not null)
-        {
-            rootReducers[featureKey] = rootReducer;
-        }
     }
 
     /// <inheritdoc />
