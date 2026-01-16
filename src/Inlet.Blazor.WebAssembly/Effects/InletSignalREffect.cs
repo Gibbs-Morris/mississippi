@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Abstractions.Actions;
@@ -38,29 +37,27 @@ internal sealed class InletSignalREffect
 
     private readonly IHubConnectionProvider hubConnectionProvider;
 
-    private readonly IServiceProvider serviceProvider;
-
-    private IInletStore? store;
+    private readonly Lazy<IInletStore> lazyStore;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalREffect" /> class.
     /// </summary>
-    /// <param name="serviceProvider">The service provider for lazy store resolution (avoids circular dependency).</param>
+    /// <param name="lazyStore">Lazy reference to the store (avoids circular dependency).</param>
     /// <param name="hubConnectionProvider">The hub connection provider.</param>
     /// <param name="projectionFetcher">The projection fetcher for retrieving projection data.</param>
     /// <param name="projectionDtoRegistry">The registry mapping DTO types to projection paths.</param>
     public InletSignalREffect(
-        IServiceProvider serviceProvider,
+        Lazy<IInletStore> lazyStore,
         IHubConnectionProvider hubConnectionProvider,
         IProjectionFetcher projectionFetcher,
         IProjectionDtoRegistry projectionDtoRegistry
     )
     {
-        ArgumentNullException.ThrowIfNull(serviceProvider);
+        ArgumentNullException.ThrowIfNull(lazyStore);
         ArgumentNullException.ThrowIfNull(hubConnectionProvider);
         ArgumentNullException.ThrowIfNull(projectionFetcher);
         ArgumentNullException.ThrowIfNull(projectionDtoRegistry);
-        this.serviceProvider = serviceProvider;
+        this.lazyStore = lazyStore;
         this.hubConnectionProvider = hubConnectionProvider;
         ProjectionFetcher = projectionFetcher;
         ProjectionDtoRegistry = projectionDtoRegistry;
@@ -85,7 +82,7 @@ internal sealed class InletSignalREffect
     ///     The store resolves effects during construction, so effects cannot depend
     ///     on the store directly in their constructor.
     /// </summary>
-    private IInletStore Store => store ??= serviceProvider.GetRequiredService<IInletStore>();
+    private IInletStore Store => lazyStore.Value;
 
     /// <inheritdoc />
     public bool CanHandle(

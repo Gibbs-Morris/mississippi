@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Abstractions.Actions;
@@ -37,11 +36,9 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
 
     private readonly Mock<IHubConnectionProvider> hubProviderMock = new();
 
+    private readonly Lazy<IInletStore> lazyStore;
+
     private readonly ProjectionDtoRegistry registry = new();
-
-    private readonly ServiceProvider serviceProvider;
-
-    private readonly ServiceCollection services = new();
 
     private readonly Mock<IInletStore> storeMock = new();
 
@@ -53,9 +50,8 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         // Register test projection in registry
         registry.Register(TestProjectionPath, typeof(TestProjection));
 
-        // Set up service provider with store
-        services.AddSingleton(storeMock.Object);
-        serviceProvider = services.BuildServiceProvider();
+        // Set up lazy store
+        lazyStore = new Lazy<IInletStore>(() => storeMock.Object);
 
         // Set up hub provider mock
         hubProviderMock
@@ -65,7 +61,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
             .Returns(Mock.Of<IDisposable>());
 
         // Create effect
-        effect = new(serviceProvider, hubProviderMock.Object, fetcherMock.Object, registry);
+        effect = new(lazyStore, hubProviderMock.Object, fetcherMock.Object, registry);
     }
 
     /// <inheritdoc />
@@ -75,8 +71,6 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         {
             await effect.DisposeAsync();
         }
-
-        await serviceProvider.DisposeAsync();
     }
 
     /// <summary>
@@ -252,7 +246,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
                 It.IsAny<Func<string, string, long, Task>>()))
             .Returns(Mock.Of<IDisposable>());
         InletSignalREffect localEffect = new(
-            serviceProvider,
+            lazyStore,
             localHubProviderMock.Object,
             fetcherMock.Object,
             registry);
@@ -282,7 +276,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
                 It.IsAny<Func<string, string, long, Task>>()))
             .Returns(Mock.Of<IDisposable>());
         InletSignalREffect localEffect = new(
-            serviceProvider,
+            lazyStore,
             localHubProviderMock.Object,
             fetcherMock.Object,
             registry);
@@ -299,12 +293,9 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenHubConnectionProviderIsNull()
     {
-        // Arrange
-        using ServiceProvider provider = services.BuildServiceProvider();
-
-        // Act & Assert
+        // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
-            provider,
+            lazyStore,
             null!,
             fetcherMock.Object,
             registry));
@@ -317,12 +308,9 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenProjectionDtoRegistryIsNull()
     {
-        // Arrange
-        using ServiceProvider provider = services.BuildServiceProvider();
-
-        // Act & Assert
+        // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
-            provider,
+            lazyStore,
             hubProviderMock.Object,
             fetcherMock.Object,
             null!));
@@ -335,27 +323,22 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenProjectionFetcherIsNull()
     {
-        // Arrange
-        using ServiceProvider provider = services.BuildServiceProvider();
-
-        // Act & Assert
+        // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
-            provider,
+            lazyStore,
             hubProviderMock.Object,
             null!,
             registry));
     }
 
     /// <summary>
-    ///     Verifies that constructor throws when service provider is null.
+    ///     Verifies that constructor throws when lazy store is null.
     /// </summary>
     [Fact]
     [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenServiceProviderIsNull()
+    public void ConstructorThrowsWhenLazyStoreIsNull()
     {
-        // Arrange
-
-        // Act & Assert
+        // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
             null!,
             hubProviderMock.Object,
@@ -380,7 +363,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
                 It.IsAny<Func<string, string, long, Task>>()))
             .Returns(callbackDisposableMock.Object);
         InletSignalREffect localEffect = new(
-            serviceProvider,
+            lazyStore,
             localHubProviderMock.Object,
             fetcherMock.Object,
             registry);
@@ -460,7 +443,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
             .Returns(Mock.Of<IDisposable>());
 
         InletSignalREffect localEffect = new(
-            serviceProvider,
+            lazyStore,
             localHubProviderMock.Object,
             fetcherMock.Object,
             registry);
@@ -494,7 +477,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
             .Returns(Mock.Of<IDisposable>());
 
         InletSignalREffect localEffect = new(
-            serviceProvider,
+            lazyStore,
             localHubProviderMock.Object,
             fetcherMock.Object,
             registry);
@@ -530,7 +513,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
             .Callback<Func<string?, Task>>(cb => capturedCallback = cb);
 
         InletSignalREffect localEffect = new(
-            serviceProvider,
+            lazyStore,
             localHubProviderMock.Object,
             fetcherMock.Object,
             registry);
