@@ -59,8 +59,6 @@ public sealed class AqueductHubLifetimeManager<THub>
       IDisposable
     where THub : Hub
 {
-    private readonly ConcurrentDictionary<string, HubConnectionContext> connections = new();
-
     private readonly string hubName;
 
     private readonly SemaphoreSlim streamSetupLock = new(1);
@@ -78,16 +76,25 @@ public sealed class AqueductHubLifetimeManager<THub>
     /// <summary>
     ///     Initializes a new instance of the <see cref="AqueductHubLifetimeManager{THub}" /> class.
     /// </summary>
-    /// <param name="clusterClient">The Orleans cluster client for grain operations.</param>
+    /// <param name="clusterClient">The Orleans cluster client for stream operations.</param>
+    /// <param name="grainFactory">The grain factory for resolving SignalR grains.</param>
+    /// <param name="connectionRegistry">The registry for tracking local connections.</param>
+    /// <param name="messageSender">The service for sending messages to local connections.</param>
     /// <param name="options">Configuration options for the backplane.</param>
     /// <param name="logger">Logger instance for backplane operations.</param>
     public AqueductHubLifetimeManager(
         IClusterClient clusterClient,
+        IAqueductGrainFactory grainFactory,
+        IConnectionRegistry connectionRegistry,
+        ILocalMessageSender messageSender,
         IOptions<AqueductOptions> options,
         ILogger<AqueductHubLifetimeManager<THub>> logger
     )
     {
         ClusterClient = clusterClient ?? throw new ArgumentNullException(nameof(clusterClient));
+        GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
+        ConnectionRegistry = connectionRegistry ?? throw new ArgumentNullException(nameof(connectionRegistry));
+        MessageSender = messageSender ?? throw new ArgumentNullException(nameof(messageSender));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         ServerId = Guid.NewGuid().ToString("N");
@@ -96,7 +103,13 @@ public sealed class AqueductHubLifetimeManager<THub>
 
     private IClusterClient ClusterClient { get; }
 
+    private IConnectionRegistry ConnectionRegistry { get; }
+
+    private IAqueductGrainFactory GrainFactory { get; }
+
     private ILogger<AqueductHubLifetimeManager<THub>> Logger { get; }
+
+    private ILocalMessageSender MessageSender { get; }
 
     private IOptions<AqueductOptions> Options { get; }
 
@@ -144,7 +157,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentNullException.ThrowIfNull(connection);
         await EnsureStreamSetupAsync().ConfigureAwait(false);
-        connections[connection.ConnectionId] = connection;
+        ConnectionRegistry.TryAdd(connection.ConnectionId, connection);
         ISignalRClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.ConnectAsync(hubName, ServerId).ConfigureAwait(false);
         Logger.ConnectionRegistered(connection.ConnectionId, hubName, ServerId);
@@ -157,7 +170,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentNullException.ThrowIfNull(connection);
         Logger.ConnectionDisconnecting(connection.ConnectionId, hubName);
-        _ = connections.TryRemove(connection.ConnectionId, out HubConnectionContext? _);
+        _ = ConnectionRegistry.TryRemove(connection.ConnectionId);
         ISignalRClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.DisconnectAsync().ConfigureAwait(false);
         Logger.ConnectionUnregistered(connection.ConnectionId, hubName);
@@ -240,9 +253,10 @@ public sealed class AqueductHubLifetimeManager<THub>
         ArgumentException.ThrowIfNullOrEmpty(methodName);
 
         // Try local connection first
-        if (connections.TryGetValue(connectionId, out HubConnectionContext? connection))
+        HubConnectionContext? connection = ConnectionRegistry.GetConnection(connectionId);
+        if (connection != null)
         {
-            await SendLocalAsync(connection, methodName, args ?? []).ConfigureAwait(false);
+            await MessageSender.SendAsync(connection, methodName, args ?? []).ConfigureAwait(false);
             return;
         }
 
@@ -411,22 +425,22 @@ public sealed class AqueductHubLifetimeManager<THub>
     private ISignalRClientGrain GetClientGrain(
         string connectionId
     ) =>
-        ClusterClient.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
+        GrainFactory.GetClientGrain(hubName, connectionId);
 
     private ISignalRGroupGrain GetGroupGrain(
         string groupName
     ) =>
-        ClusterClient.GetGrain<ISignalRGroupGrain>($"{hubName}:{groupName}");
+        GrainFactory.GetGroupGrain(hubName, groupName);
 
     private ISignalRServerDirectoryGrain GetServerDirectoryGrain() =>
-        ClusterClient.GetGrain<ISignalRServerDirectoryGrain>("default");
+        GrainFactory.GetServerDirectoryGrain();
 
     private async Task HeartbeatAsync()
     {
         try
         {
             ISignalRServerDirectoryGrain directoryGrain = GetServerDirectoryGrain();
-            await directoryGrain.HeartbeatAsync(ServerId, connections.Count).ConfigureAwait(false);
+            await directoryGrain.HeartbeatAsync(ServerId, ConnectionRegistry.Count).ConfigureAwait(false);
         }
         catch (OrleansException ex)
         {
@@ -447,7 +461,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         StreamSequenceToken? token
     )
     {
-        foreach (HubConnectionContext connection in connections.Values)
+        foreach (HubConnectionContext connection in ConnectionRegistry.GetAll())
         {
             if (connection.ConnectionAborted.IsCancellationRequested)
             {
@@ -457,7 +471,7 @@ public sealed class AqueductHubLifetimeManager<THub>
             bool isExcluded = message.ExcludedConnectionIds?.Contains(connection.ConnectionId) ?? false;
             if (!isExcluded)
             {
-                await SendLocalAsync(connection, message.MethodName, message.Args).ConfigureAwait(false);
+                await MessageSender.SendAsync(connection, message.MethodName, message.Args).ConfigureAwait(false);
             }
         }
     }
@@ -467,21 +481,10 @@ public sealed class AqueductHubLifetimeManager<THub>
         StreamSequenceToken? token
     )
     {
-        if (connections.TryGetValue(message.ConnectionId, out HubConnectionContext? connection))
+        HubConnectionContext? connection = ConnectionRegistry.GetConnection(message.ConnectionId);
+        if (connection != null)
         {
-            await SendLocalAsync(connection, message.MethodName, message.Args).ConfigureAwait(false);
+            await MessageSender.SendAsync(connection, message.MethodName, message.Args).ConfigureAwait(false);
         }
-    }
-
-    private async Task SendLocalAsync(
-        HubConnectionContext connection,
-        string methodName,
-        IReadOnlyList<object?> args
-    )
-    {
-        Logger.SendingLocalMessage(connection.ConnectionId, methodName, hubName);
-        object?[] argsArray = args as object?[] ?? args.ToArray();
-        InvocationMessage invocation = new(methodName, argsArray);
-        await connection.WriteAsync(invocation).ConfigureAwait(false);
     }
 }

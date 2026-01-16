@@ -41,6 +41,8 @@ public static class AqueductRegistrations
     {
         ArgumentNullException.ThrowIfNull(services);
         services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
+        services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
+        services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
         services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
         return services;
     }
@@ -69,6 +71,8 @@ public static class AqueductRegistrations
         ArgumentNullException.ThrowIfNull(configureOptions);
         services.Configure(configureOptions);
         services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
+        services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
+        services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
         services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
         return services;
     }

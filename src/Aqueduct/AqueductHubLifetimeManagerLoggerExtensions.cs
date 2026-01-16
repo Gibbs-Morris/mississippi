@@ -62,13 +62,6 @@ internal static partial class AqueductHubLifetimeManagerLoggerExtensions
         string hubName
     );
 
-    [LoggerMessage(EventId = 9, Level = LogLevel.Warning, Message = "Heartbeat failed for server '{ServerId}'")]
-    public static partial void HeartbeatFailed(
-        this ILogger logger,
-        string serverId,
-        Exception exception
-    );
-
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Information,
