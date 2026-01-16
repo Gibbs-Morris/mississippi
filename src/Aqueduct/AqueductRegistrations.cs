@@ -40,9 +40,12 @@ public static class AqueductRegistrations
         where THub : Hub
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
         services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
         services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
         services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
+        services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
+        services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
         services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
         return services;
     }
@@ -70,9 +73,12 @@ public static class AqueductRegistrations
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configureOptions);
         services.Configure(configureOptions);
+        services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
         services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
         services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
         services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
+        services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
+        services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
         services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
         return services;
     }

@@ -25,6 +25,15 @@ namespace Mississippi.Aqueduct.L0Tests;
 [AllureSubSuite("StreamSubscriptionManager")]
 public sealed class StreamSubscriptionManagerTests
 {
+    private static IServerIdProvider CreateServerIdProvider(
+        string? serverId = null
+    )
+    {
+        IServerIdProvider provider = Substitute.For<IServerIdProvider>();
+        provider.ServerId.Returns(serverId ?? Guid.NewGuid().ToString("N"));
+        return provider;
+    }
+
     /// <summary>
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
@@ -38,7 +47,7 @@ public sealed class StreamSubscriptionManagerTests
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
 
         // Act
-        using StreamSubscriptionManager manager = new(clusterClient, options, logger);
+        using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Assert
         Assert.NotNull(manager);
@@ -63,7 +72,11 @@ public sealed class StreamSubscriptionManagerTests
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new StreamSubscriptionManager(null!, options, logger));
+        Assert.Throws<ArgumentNullException>(() => new StreamSubscriptionManager(
+            CreateServerIdProvider(),
+            null!,
+            options,
+            logger));
     }
 
     /// <summary>
@@ -82,7 +95,11 @@ public sealed class StreamSubscriptionManagerTests
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new StreamSubscriptionManager(clusterClient, options, null!));
+        Assert.Throws<ArgumentNullException>(() => new StreamSubscriptionManager(
+            CreateServerIdProvider(),
+            clusterClient,
+            options,
+            null!));
     }
 
     /// <summary>
@@ -101,7 +118,35 @@ public sealed class StreamSubscriptionManagerTests
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new StreamSubscriptionManager(clusterClient, null!, logger));
+        Assert.Throws<ArgumentNullException>(() => new StreamSubscriptionManager(
+            CreateServerIdProvider(),
+            clusterClient,
+            null!,
+            logger));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when serverIdProvider is null.
+    /// </summary>
+    [Fact(DisplayName = "Constructor Throws When ServerIdProvider Is Null")]
+    [AllureFeature("Argument Validation")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Test expects exception before object is created")]
+    public void ConstructorShouldThrowWhenServerIdProviderIsNull()
+    {
+        // Arrange
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new StreamSubscriptionManager(
+            null!,
+            clusterClient,
+            options,
+            logger));
     }
 
     /// <summary>
@@ -120,10 +165,11 @@ public sealed class StreamSubscriptionManagerTests
     public void DisposeShouldBeIdempotent()
     {
         // Arrange
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
-        StreamSubscriptionManager manager = new(clusterClient, options, logger);
+        StreamSubscriptionManager manager = new(serverIdProvider, clusterClient, options, logger);
 
         // Act - Dispose multiple times
         manager.Dispose();
@@ -146,7 +192,7 @@ public sealed class StreamSubscriptionManagerTests
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
-        using StreamSubscriptionManager manager = new(clusterClient, options, logger);
+        using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -165,7 +211,7 @@ public sealed class StreamSubscriptionManagerTests
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
-        using StreamSubscriptionManager manager = new(clusterClient, options, logger);
+        using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -184,7 +230,7 @@ public sealed class StreamSubscriptionManagerTests
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
-        using StreamSubscriptionManager manager = new(clusterClient, options, logger);
+        using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -203,7 +249,7 @@ public sealed class StreamSubscriptionManagerTests
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
-        using StreamSubscriptionManager manager = new(clusterClient, options, logger);
+        using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -223,7 +269,7 @@ public sealed class StreamSubscriptionManagerTests
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
 
         // Act
-        using StreamSubscriptionManager manager = new(clusterClient, options, logger);
+        using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Assert
         Assert.False(manager.IsInitialized);
@@ -241,7 +287,7 @@ public sealed class StreamSubscriptionManagerTests
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
-        using StreamSubscriptionManager manager = new(clusterClient, options, logger);
+        using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => manager.PublishToAllAsync(null!));
@@ -259,7 +305,7 @@ public sealed class StreamSubscriptionManagerTests
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
-        using StreamSubscriptionManager manager = new(clusterClient, options, logger);
+        using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
         AllMessage message = new()
         {
             MethodName = "Test",
@@ -285,8 +331,8 @@ public sealed class StreamSubscriptionManagerTests
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
 
         // Act
-        using StreamSubscriptionManager manager1 = new(clusterClient, options, logger);
-        using StreamSubscriptionManager manager2 = new(clusterClient, options, logger);
+        using StreamSubscriptionManager manager1 = new(CreateServerIdProvider(), clusterClient, options, logger);
+        using StreamSubscriptionManager manager2 = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Assert
         Assert.NotEqual(manager1.ServerId, manager2.ServerId);

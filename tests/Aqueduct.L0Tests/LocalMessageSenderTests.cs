@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO.Pipelines;
 using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
-using Microsoft.AspNetCore.Connections;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+
+using Mississippi.Testing.Utilities.SignalR;
 
 using NSubstitute;
 
@@ -25,90 +22,6 @@ namespace Mississippi.Aqueduct.L0Tests;
 [AllureSubSuite("LocalMessageSender")]
 public sealed class LocalMessageSenderTests
 {
-    [SuppressMessage(
-        "Reliability",
-        "CA2000:Dispose objects before losing scope",
-        Justification = "HubConnectionContext manages its own lifetime; caller disposes via using")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Test helper creates context that is disposed by caller via using statement")]
-    private static HubConnectionContext CreateTestConnection(
-        string connectionId
-    )
-    {
-        TestConnectionContext connectionContext = new(connectionId);
-        return new(
-            connectionContext,
-            new()
-            {
-                KeepAliveInterval = TimeSpan.FromSeconds(30),
-                ClientTimeoutInterval = TimeSpan.FromMinutes(1),
-            },
-            NullLoggerFactory.Instance);
-    }
-
-    /// <summary>
-    ///     Minimal ConnectionContext implementation for testing.
-    /// </summary>
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Test helper pipes are short-lived and do not need disposal in tests")]
-    private sealed class TestConnectionContext
-        : ConnectionContext,
-          IDisposable
-    {
-        private readonly IDuplexPipe transport;
-
-        public TestConnectionContext(
-            string connectionId
-        )
-        {
-            ConnectionId = connectionId;
-            Pipe applicationPipe = new();
-            Pipe transportPipe = new();
-            transport = new TestDuplexPipe(transportPipe.Reader, applicationPipe.Writer);
-            Items = new Dictionary<object, object?>();
-        }
-
-        public override string ConnectionId { get; set; }
-
-        public override IFeatureCollection Features { get; } = new FeatureCollection();
-
-        public override IDictionary<object, object?> Items { get; set; }
-
-        public override IDuplexPipe Transport
-        {
-            get => transport;
-            set => throw new NotSupportedException();
-        }
-
-        public void Dispose()
-        {
-            // Clean up pipes if needed
-        }
-    }
-
-    /// <summary>
-    ///     Simple duplex pipe implementation for testing.
-    /// </summary>
-    private sealed class TestDuplexPipe : IDuplexPipe
-    {
-        public TestDuplexPipe(
-            PipeReader input,
-            PipeWriter output
-        )
-        {
-            Input = input;
-            Output = output;
-        }
-
-        public PipeReader Input { get; }
-
-        public PipeWriter Output { get; }
-    }
-
     /// <summary>
     ///     Constructor should succeed with valid logger.
     /// </summary>
@@ -148,7 +61,7 @@ public sealed class LocalMessageSenderTests
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
         LocalMessageSender sender = new(logger);
-        HubConnectionContext connection = CreateTestConnection("conn-1");
+        HubConnectionContext connection = HubConnectionContextFactory.Create("conn-1");
         List<object?> args = [];
 
         // Act
@@ -169,7 +82,7 @@ public sealed class LocalMessageSenderTests
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
         LocalMessageSender sender = new(logger);
-        HubConnectionContext connection = CreateTestConnection("conn-1");
+        HubConnectionContext connection = HubConnectionContextFactory.Create("conn-1");
         List<object?> args = ["arg1", 42];
 
         // Act
@@ -208,7 +121,7 @@ public sealed class LocalMessageSenderTests
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
         LocalMessageSender sender = new(logger);
-        HubConnectionContext connection = CreateTestConnection("conn-1");
+        HubConnectionContext connection = HubConnectionContextFactory.Create("conn-1");
         List<object?> args = ["arg1", 42];
 
         // Act & Assert
@@ -226,7 +139,7 @@ public sealed class LocalMessageSenderTests
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
         LocalMessageSender sender = new(logger);
-        HubConnectionContext connection = CreateTestConnection("conn-1");
+        HubConnectionContext connection = HubConnectionContextFactory.Create("conn-1");
         List<object?> args = ["arg1", 42];
 
         // Act & Assert
@@ -244,7 +157,7 @@ public sealed class LocalMessageSenderTests
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
         LocalMessageSender sender = new(logger);
-        HubConnectionContext connection = CreateTestConnection("conn-1");
+        HubConnectionContext connection = HubConnectionContextFactory.Create("conn-1");
         object?[] args = ["arg1", 42, null];
 
         // Act

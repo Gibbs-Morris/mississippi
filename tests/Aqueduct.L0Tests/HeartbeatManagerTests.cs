@@ -23,6 +23,15 @@ namespace Mississippi.Aqueduct.L0Tests;
 [AllureSubSuite("HeartbeatManager")]
 public sealed class HeartbeatManagerTests
 {
+    private static IServerIdProvider CreateServerIdProvider(
+        string? serverId = null
+    )
+    {
+        IServerIdProvider provider = Substitute.For<IServerIdProvider>();
+        provider.ServerId.Returns(serverId ?? Guid.NewGuid().ToString("N"));
+        return provider;
+    }
+
     /// <summary>
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
@@ -36,7 +45,7 @@ public sealed class HeartbeatManagerTests
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
 
         // Act
-        using HeartbeatManager manager = new(grainFactory, options, logger);
+        using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
 
         // Assert
         Assert.NotNull(manager);
@@ -60,7 +69,11 @@ public sealed class HeartbeatManagerTests
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new HeartbeatManager(null!, options, logger));
+        Assert.Throws<ArgumentNullException>(() => new HeartbeatManager(
+            CreateServerIdProvider(),
+            null!,
+            options,
+            logger));
     }
 
     /// <summary>
@@ -79,7 +92,11 @@ public sealed class HeartbeatManagerTests
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new HeartbeatManager(grainFactory, options, null!));
+        Assert.Throws<ArgumentNullException>(() => new HeartbeatManager(
+            CreateServerIdProvider(),
+            grainFactory,
+            options,
+            null!));
     }
 
     /// <summary>
@@ -98,7 +115,31 @@ public sealed class HeartbeatManagerTests
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new HeartbeatManager(grainFactory, null!, logger));
+        Assert.Throws<ArgumentNullException>(() => new HeartbeatManager(
+            CreateServerIdProvider(),
+            grainFactory,
+            null!,
+            logger));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when serverIdProvider is null.
+    /// </summary>
+    [Fact(DisplayName = "Constructor Throws When ServerIdProvider Is Null")]
+    [AllureFeature("Argument Validation")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Test expects exception before object is created")]
+    public void ConstructorShouldThrowWhenServerIdProviderIsNull()
+    {
+        // Arrange
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new HeartbeatManager(null!, grainFactory, options, logger));
     }
 
     /// <summary>
@@ -117,12 +158,13 @@ public sealed class HeartbeatManagerTests
     public void DisposeShouldBeIdempotent()
     {
         // Arrange
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
         ISignalRServerDirectoryGrain directoryGrain = Substitute.For<ISignalRServerDirectoryGrain>();
         grainFactory.GetServerDirectoryGrain().Returns(directoryGrain);
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
-        HeartbeatManager manager = new(grainFactory, options, logger);
+        HeartbeatManager manager = new(serverIdProvider, grainFactory, options, logger);
 
         // Act - Dispose multiple times
         manager.Dispose();
@@ -150,7 +192,7 @@ public sealed class HeartbeatManagerTests
         grainFactory.GetServerDirectoryGrain().Returns(directoryGrain);
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
-        HeartbeatManager manager = new(grainFactory, options, logger);
+        HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
         string serverId = manager.ServerId;
 
         // Act
@@ -175,8 +217,8 @@ public sealed class HeartbeatManagerTests
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
 
         // Act
-        using HeartbeatManager manager1 = new(grainFactory, options, logger);
-        using HeartbeatManager manager2 = new(grainFactory, options, logger);
+        using HeartbeatManager manager1 = new(CreateServerIdProvider(), grainFactory, options, logger);
+        using HeartbeatManager manager2 = new(CreateServerIdProvider(), grainFactory, options, logger);
 
         // Assert
         Assert.NotEqual(manager1.ServerId, manager2.ServerId);
@@ -196,7 +238,7 @@ public sealed class HeartbeatManagerTests
         grainFactory.GetServerDirectoryGrain().Returns(directoryGrain);
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
-        using HeartbeatManager manager = new(grainFactory, options, logger);
+        using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
         Func<int> connectionCountProvider = () => 5;
 
         // Act - Start multiple times
@@ -221,7 +263,7 @@ public sealed class HeartbeatManagerTests
         grainFactory.GetServerDirectoryGrain().Returns(directoryGrain);
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
-        using HeartbeatManager manager = new(grainFactory, options, logger);
+        using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
         string serverId = manager.ServerId;
         Func<int> connectionCountProvider = () => 5;
 
@@ -244,7 +286,7 @@ public sealed class HeartbeatManagerTests
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
-        using HeartbeatManager manager = new(grainFactory, options, logger);
+        using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => manager.StartAsync(null!));
@@ -264,7 +306,7 @@ public sealed class HeartbeatManagerTests
         grainFactory.GetServerDirectoryGrain().Returns(directoryGrain);
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
-        using HeartbeatManager manager = new(grainFactory, options, logger);
+        using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
         string serverId = manager.ServerId;
         await manager.StartAsync(() => 5);
 

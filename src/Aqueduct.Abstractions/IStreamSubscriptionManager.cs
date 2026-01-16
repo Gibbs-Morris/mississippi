@@ -29,11 +29,6 @@ public interface IStreamSubscriptionManager
     bool IsInitialized { get; }
 
     /// <summary>
-    ///     Gets the unique identifier for this server instance.
-    /// </summary>
-    string ServerId { get; }
-
-    /// <summary>
     ///     Ensures that stream subscriptions are set up for the hub.
     /// </summary>
     /// <param name="hubName">The name of the SignalR hub.</param>

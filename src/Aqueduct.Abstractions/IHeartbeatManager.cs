@@ -22,11 +22,6 @@ namespace Mississippi.Aqueduct.Abstractions;
 public interface IHeartbeatManager : IDisposable
 {
     /// <summary>
-    ///     Gets the unique identifier for this server instance.
-    /// </summary>
-    string ServerId { get; }
-
-    /// <summary>
     ///     Starts the heartbeat timer, periodically sending heartbeats with the current connection count.
     /// </summary>
     /// <param name="connectionCountProvider">A function that returns the current connection count.</param>

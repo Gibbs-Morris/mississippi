@@ -40,25 +40,30 @@ internal sealed class StreamSubscriptionManager
     /// <summary>
     ///     Initializes a new instance of the <see cref="StreamSubscriptionManager" /> class.
     /// </summary>
+    /// <param name="serverIdProvider">The provider for the server's unique identifier.</param>
     /// <param name="clusterClient">The Orleans cluster client for stream operations.</param>
     /// <param name="options">Configuration options for stream namespaces.</param>
     /// <param name="logger">Logger instance for stream operations.</param>
     public StreamSubscriptionManager(
+        IServerIdProvider serverIdProvider,
         IClusterClient clusterClient,
         IOptions<AqueductOptions> options,
         ILogger<StreamSubscriptionManager> logger
     )
     {
+        ArgumentNullException.ThrowIfNull(serverIdProvider);
         ClusterClient = clusterClient ?? throw new ArgumentNullException(nameof(clusterClient));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        ServerId = Guid.NewGuid().ToString("N");
+        ServerId = serverIdProvider.ServerId;
     }
 
     /// <inheritdoc />
     public bool IsInitialized => initialized;
 
-    /// <inheritdoc />
+    /// <summary>
+    ///     Gets the unique identifier for this server instance.
+    /// </summary>
     public string ServerId { get; }
 
     private IClusterClient ClusterClient { get; }

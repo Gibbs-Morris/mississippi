@@ -1,25 +1,19 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.IO.Pipelines;
 using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
-using Microsoft.AspNetCore.Connections;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
+using Mississippi.Testing.Utilities.SignalR;
 
 using NSubstitute;
-
-using Orleans;
 
 
 namespace Mississippi.Aqueduct.L0Tests;
@@ -33,103 +27,30 @@ namespace Mississippi.Aqueduct.L0Tests;
 public sealed class AqueductHubLifetimeManagerTests
 {
     private static AqueductHubLifetimeManager<TestAqueductHub> CreateManager(
-        IClusterClient? clusterClient = null,
+        IServerIdProvider? serverIdProvider = null,
         IAqueductGrainFactory? grainFactory = null,
         IConnectionRegistry? connectionRegistry = null,
         ILocalMessageSender? messageSender = null,
-        IOptions<AqueductOptions>? options = null,
+        IHeartbeatManager? heartbeatManager = null,
+        IStreamSubscriptionManager? streamSubscriptionManager = null,
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>>? logger = null
     ) =>
         new(
-            clusterClient ?? Substitute.For<IClusterClient>(),
+            serverIdProvider ?? CreateServerIdProvider(),
             grainFactory ?? Substitute.For<IAqueductGrainFactory>(),
             connectionRegistry ?? Substitute.For<IConnectionRegistry>(),
             messageSender ?? Substitute.For<ILocalMessageSender>(),
-            options ?? Options.Create(new AqueductOptions()),
+            heartbeatManager ?? Substitute.For<IHeartbeatManager>(),
+            streamSubscriptionManager ?? Substitute.For<IStreamSubscriptionManager>(),
             logger ?? NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
 
-    [SuppressMessage(
-        "Microsoft.Reliability",
-        "CA2000:Dispose objects before losing scope",
-        Justification = "HubConnectionContext manages its own lifetime; caller disposes via using")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Test helper creates context that is disposed by caller via using statement")]
-    private static HubConnectionContext CreateTestConnection(
-        string connectionId
+    private static IServerIdProvider CreateServerIdProvider(
+        string? serverId = null
     )
     {
-        TestConnectionContext connectionContext = new(connectionId);
-        return new(
-            connectionContext,
-            new()
-            {
-                KeepAliveInterval = TimeSpan.FromSeconds(30),
-                ClientTimeoutInterval = TimeSpan.FromMinutes(1),
-            },
-            NullLoggerFactory.Instance);
-    }
-
-    /// <summary>
-    ///     Minimal ConnectionContext implementation for testing.
-    /// </summary>
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Test helper pipes are short-lived and do not need disposal in tests")]
-    private sealed class TestConnectionContext
-        : ConnectionContext,
-          IDisposable
-    {
-        private readonly IDuplexPipe transport;
-
-        public TestConnectionContext(
-            string connectionId
-        )
-        {
-            ConnectionId = connectionId;
-            Pipe applicationPipe = new();
-            Pipe transportPipe = new();
-            transport = new TestDuplexPipe(transportPipe.Reader, applicationPipe.Writer);
-            Items = new Dictionary<object, object?>();
-        }
-
-        public override string ConnectionId { get; set; }
-
-        public override IFeatureCollection Features { get; } = new FeatureCollection();
-
-        public override IDictionary<object, object?> Items { get; set; }
-
-        public override IDuplexPipe Transport
-        {
-            get => transport;
-            set => throw new NotSupportedException();
-        }
-
-        public void Dispose()
-        {
-            // Clean up pipes if needed
-        }
-    }
-
-    /// <summary>
-    ///     Simple duplex pipe implementation for testing.
-    /// </summary>
-    private sealed class TestDuplexPipe : IDuplexPipe
-    {
-        public TestDuplexPipe(
-            PipeReader input,
-            PipeWriter output
-        )
-        {
-            Input = input;
-            Output = output;
-        }
-
-        public PipeReader Input { get; }
-
-        public PipeWriter Output { get; }
+        IServerIdProvider provider = Substitute.For<IServerIdProvider>();
+        provider.ServerId.Returns(serverId ?? Guid.NewGuid().ToString("N"));
+        return provider;
     }
 
     /// <summary>
@@ -191,54 +112,27 @@ public sealed class AqueductHubLifetimeManagerTests
     public void ConstructorShouldSucceedWithValidDependencies()
     {
         // Arrange
-        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
-        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
         // Act
         using AqueductHubLifetimeManager<TestAqueductHub> manager = new(
-            clusterClient,
+            serverIdProvider,
             grainFactory,
             connectionRegistry,
             messageSender,
-            options,
+            heartbeatManager,
+            streamSubscriptionManager,
             logger);
 
         // Assert
         Assert.NotNull(manager);
-    }
-
-    /// <summary>
-    ///     Constructor should throw when clusterClient is null.
-    /// </summary>
-    [Fact(DisplayName = "Constructor Throws When ClusterClient Is Null")]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP005:Return type should indicate that the value should be disposed",
-        Justification = "Test expects exception before object is created")]
-    public void ConstructorShouldThrowWhenClusterClientIsNull()
-    {
-        // Arrange
-        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
-        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
-        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
-        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
-        ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
-            NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
-            null!,
-            grainFactory,
-            connectionRegistry,
-            messageSender,
-            options,
-            logger));
     }
 
     /// <summary>
@@ -253,20 +147,22 @@ public sealed class AqueductHubLifetimeManagerTests
     public void ConstructorShouldThrowWhenConnectionRegistryIsNull()
     {
         // Arrange
-        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
-        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
-            clusterClient,
+            serverIdProvider,
             grainFactory,
             null!,
             messageSender,
-            options,
+            heartbeatManager,
+            streamSubscriptionManager,
             logger));
     }
 
@@ -282,20 +178,53 @@ public sealed class AqueductHubLifetimeManagerTests
     public void ConstructorShouldThrowWhenGrainFactoryIsNull()
     {
         // Arrange
-        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
-        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
-            clusterClient,
+            serverIdProvider,
             null!,
             connectionRegistry,
             messageSender,
-            options,
+            heartbeatManager,
+            streamSubscriptionManager,
+            logger));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when heartbeatManager is null.
+    /// </summary>
+    [Fact(DisplayName = "Constructor Throws When HeartbeatManager Is Null")]
+    [AllureFeature("Argument Validation")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Test expects exception before object is created")]
+    public void ConstructorShouldThrowWhenHeartbeatManagerIsNull()
+    {
+        // Arrange
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
+            NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
+            serverIdProvider,
+            grainFactory,
+            connectionRegistry,
+            messageSender,
+            null!,
+            streamSubscriptionManager,
             logger));
     }
 
@@ -311,19 +240,21 @@ public sealed class AqueductHubLifetimeManagerTests
     public void ConstructorShouldThrowWhenLoggerIsNull()
     {
         // Arrange
-        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
-        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
-            clusterClient,
+            serverIdProvider,
             grainFactory,
             connectionRegistry,
             messageSender,
-            options,
+            heartbeatManager,
+            streamSubscriptionManager,
             null!));
     }
 
@@ -339,48 +270,83 @@ public sealed class AqueductHubLifetimeManagerTests
     public void ConstructorShouldThrowWhenMessageSenderIsNull()
     {
         // Arrange
-        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
-        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
-            clusterClient,
+            serverIdProvider,
             grainFactory,
             connectionRegistry,
             null!,
-            options,
+            heartbeatManager,
+            streamSubscriptionManager,
             logger));
     }
 
     /// <summary>
-    ///     Constructor should throw when options is null.
+    ///     Constructor should throw when serverIdProvider is null.
     /// </summary>
-    [Fact(DisplayName = "Constructor Throws When Options Is Null")]
+    [Fact(DisplayName = "Constructor Throws When ServerIdProvider Is Null")]
     [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
-    public void ConstructorShouldThrowWhenOptionsIsNull()
+    public void ConstructorShouldThrowWhenServerIdProviderIsNull()
     {
         // Arrange
-        IClusterClient clusterClient = Substitute.For<IClusterClient>();
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
-            clusterClient,
+            null!,
             grainFactory,
             connectionRegistry,
             messageSender,
+            heartbeatManager,
+            streamSubscriptionManager,
+            logger));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when streamSubscriptionManager is null.
+    /// </summary>
+    [Fact(DisplayName = "Constructor Throws When StreamSubscriptionManager Is Null")]
+    [AllureFeature("Argument Validation")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Test expects exception before object is created")]
+    public void ConstructorShouldThrowWhenStreamSubscriptionManagerIsNull()
+    {
+        // Arrange
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
+            NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
+            serverIdProvider,
+            grainFactory,
+            connectionRegistry,
+            messageSender,
+            heartbeatManager,
             null!,
             logger));
     }
@@ -503,7 +469,7 @@ public sealed class AqueductHubLifetimeManagerTests
         // Arrange
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
-        HubConnectionContext connection = CreateTestConnection("conn1");
+        HubConnectionContext connection = HubConnectionContextFactory.Create("conn1");
         connectionRegistry.GetConnection("conn1").Returns(connection);
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
             connectionRegistry: connectionRegistry,

@@ -42,22 +42,27 @@ internal sealed class HeartbeatManager : IHeartbeatManager
     /// <summary>
     ///     Initializes a new instance of the <see cref="HeartbeatManager" /> class.
     /// </summary>
+    /// <param name="serverIdProvider">The provider for the server's unique identifier.</param>
     /// <param name="grainFactory">The grain factory for resolving the server directory grain.</param>
     /// <param name="options">Configuration options for heartbeat intervals.</param>
     /// <param name="logger">Logger instance for heartbeat operations.</param>
     public HeartbeatManager(
+        IServerIdProvider serverIdProvider,
         IAqueductGrainFactory grainFactory,
         IOptions<AqueductOptions> options,
         ILogger<HeartbeatManager> logger
     )
     {
+        ArgumentNullException.ThrowIfNull(serverIdProvider);
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        ServerId = Guid.NewGuid().ToString("N");
+        ServerId = serverIdProvider.ServerId;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    ///     Gets the unique identifier for this server instance.
+    /// </summary>
     public string ServerId { get; }
 
     private IAqueductGrainFactory GrainFactory { get; }

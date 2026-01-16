@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
@@ -15,7 +14,6 @@ using Mississippi.Aqueduct.Abstractions.Messages;
 
 using Orleans;
 using Orleans.Runtime;
-using Orleans.Streams;
 
 
 namespace Mississippi.Aqueduct;
@@ -59,59 +57,55 @@ public sealed class AqueductHubLifetimeManager<THub>
 {
     private readonly string hubName;
 
-    private readonly SemaphoreSlim streamSetupLock = new(1);
-
-    private IAsyncStream<AllMessage>? allStream;
-
     private bool disposed;
 
-    private Timer? heartbeatTimer;
-
     private IDisposable? lifecycleSubscription;
-
-    private volatile bool streamsInitialized;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="AqueductHubLifetimeManager{THub}" /> class.
     /// </summary>
-    /// <param name="clusterClient">The Orleans cluster client for stream operations.</param>
+    /// <param name="serverIdProvider">The provider for the server's unique identifier.</param>
     /// <param name="grainFactory">The grain factory for resolving SignalR grains.</param>
     /// <param name="connectionRegistry">The registry for tracking local connections.</param>
     /// <param name="messageSender">The service for sending messages to local connections.</param>
-    /// <param name="options">Configuration options for the backplane.</param>
+    /// <param name="heartbeatManager">The manager for server heartbeat operations.</param>
+    /// <param name="streamSubscriptionManager">The manager for Orleans stream subscriptions.</param>
     /// <param name="logger">Logger instance for backplane operations.</param>
     public AqueductHubLifetimeManager(
-        IClusterClient clusterClient,
+        IServerIdProvider serverIdProvider,
         IAqueductGrainFactory grainFactory,
         IConnectionRegistry connectionRegistry,
         ILocalMessageSender messageSender,
-        IOptions<AqueductOptions> options,
+        IHeartbeatManager heartbeatManager,
+        IStreamSubscriptionManager streamSubscriptionManager,
         ILogger<AqueductHubLifetimeManager<THub>> logger
     )
     {
-        ClusterClient = clusterClient ?? throw new ArgumentNullException(nameof(clusterClient));
+        ArgumentNullException.ThrowIfNull(serverIdProvider);
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
         ConnectionRegistry = connectionRegistry ?? throw new ArgumentNullException(nameof(connectionRegistry));
         MessageSender = messageSender ?? throw new ArgumentNullException(nameof(messageSender));
-        Options = options ?? throw new ArgumentNullException(nameof(options));
+        HeartbeatManager = heartbeatManager ?? throw new ArgumentNullException(nameof(heartbeatManager));
+        StreamSubscriptionManager = streamSubscriptionManager ??
+                                    throw new ArgumentNullException(nameof(streamSubscriptionManager));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        ServerId = Guid.NewGuid().ToString("N");
+        ServerId = serverIdProvider.ServerId;
         hubName = DeriveHubName();
     }
-
-    private IClusterClient ClusterClient { get; }
 
     private IConnectionRegistry ConnectionRegistry { get; }
 
     private IAqueductGrainFactory GrainFactory { get; }
 
+    private IHeartbeatManager HeartbeatManager { get; }
+
     private ILogger<AqueductHubLifetimeManager<THub>> Logger { get; }
 
     private ILocalMessageSender MessageSender { get; }
 
-    private IOptions<AqueductOptions> Options { get; }
-
     private string ServerId { get; }
+
+    private IStreamSubscriptionManager StreamSubscriptionManager { get; }
 
     private static string DeriveHubName() => typeof(THub).Name;
 
@@ -138,14 +132,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         }
 
         disposed = true;
-        heartbeatTimer?.Dispose();
         lifecycleSubscription?.Dispose();
-        streamSetupLock.Dispose();
-
-        // Fire-and-forget unregistration - we can't await in Dispose
-        // The server directory grain will clean up stale servers via heartbeat timeout
-        ISignalRServerDirectoryGrain directoryGrain = GetServerDirectoryGrain();
-        _ = directoryGrain.UnregisterServerAsync(ServerId);
     }
 
     /// <inheritdoc />
@@ -217,7 +204,7 @@ public sealed class AqueductHubLifetimeManager<THub>
             MethodName = methodName,
             Args = args ?? [],
         };
-        await allStream!.OnNextAsync(message).ConfigureAwait(false);
+        await StreamSubscriptionManager.PublishToAllAsync(message).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -236,7 +223,7 @@ public sealed class AqueductHubLifetimeManager<THub>
             Args = args ?? [],
             ExcludedConnectionIds = excludedConnectionIds,
         };
-        await allStream!.OnNextAsync(message).ConfigureAwait(false);
+        await StreamSubscriptionManager.PublishToAllAsync(message).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -359,65 +346,24 @@ public sealed class AqueductHubLifetimeManager<THub>
         CancellationToken cancellationToken = default
     )
     {
-        if (streamsInitialized)
+        if (StreamSubscriptionManager.IsInitialized)
         {
             return;
         }
 
-        await streamSetupLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            if (streamsInitialized)
-            {
-                return;
-            }
+        Logger.InitializingBackplane(hubName, ServerId);
 
-            Logger.InitializingBackplane(hubName, ServerId);
-            string streamProviderName = Options.Value.StreamProviderName;
-            IStreamProvider streamProvider = ClusterClient.GetStreamProvider(streamProviderName);
+        // Initialize stream subscriptions via the manager
+        await StreamSubscriptionManager.EnsureInitializedAsync(
+                hubName,
+                OnServerMessageAsync,
+                OnAllMessageAsync,
+                cancellationToken)
+            .ConfigureAwait(false);
 
-            // Subscribe to server-specific stream
-            StreamId serverStreamId = StreamId.Create(Options.Value.ServerStreamNamespace, ServerId);
-            IAsyncStream<ServerMessage> serverStream = streamProvider.GetStream<ServerMessage>(serverStreamId);
-            await serverStream.SubscribeAsync(OnServerMessageAsync).ConfigureAwait(false);
-
-            // Subscribe to hub broadcast stream
-            StreamId allStreamId = StreamId.Create(Options.Value.AllClientsStreamNamespace, hubName);
-            allStream = streamProvider.GetStream<AllMessage>(allStreamId);
-            await allStream.SubscribeAsync(OnAllMessageAsync).ConfigureAwait(false);
-
-            // Register with server directory
-            ISignalRServerDirectoryGrain directoryGrain = GetServerDirectoryGrain();
-            await directoryGrain.RegisterServerAsync(ServerId).ConfigureAwait(false);
-
-            // Start heartbeat timer - created once within the lock, no race possible
-            Timer newTimer = new(
-                HeartbeatCallback,
-                null,
-                TimeSpan.Zero,
-                TimeSpan.FromMinutes(Options.Value.HeartbeatIntervalMinutes));
-            try
-            {
-                Timer? existingTimer = Interlocked.Exchange(ref heartbeatTimer, newTimer);
-                if (existingTimer != null)
-                {
-                    await existingTimer.DisposeAsync().ConfigureAwait(false);
-                }
-            }
-            catch
-            {
-                // If exchange or disposal fails, clean up the new timer
-                await newTimer.DisposeAsync().ConfigureAwait(false);
-                throw;
-            }
-
-            streamsInitialized = true;
-            Logger.BackplaneInitialized(hubName, ServerId);
-        }
-        finally
-        {
-            streamSetupLock.Release();
-        }
+        // Start heartbeat manager
+        await HeartbeatManager.StartAsync(() => ConnectionRegistry.Count, cancellationToken).ConfigureAwait(false);
+        Logger.BackplaneInitialized(hubName, ServerId);
     }
 
     private ISignalRClientGrain GetClientGrain(
@@ -430,32 +376,8 @@ public sealed class AqueductHubLifetimeManager<THub>
     ) =>
         GrainFactory.GetGroupGrain(hubName, groupName);
 
-    private ISignalRServerDirectoryGrain GetServerDirectoryGrain() => GrainFactory.GetServerDirectoryGrain();
-
-    private async Task HeartbeatAsync()
-    {
-        try
-        {
-            ISignalRServerDirectoryGrain directoryGrain = GetServerDirectoryGrain();
-            await directoryGrain.HeartbeatAsync(ServerId, ConnectionRegistry.Count).ConfigureAwait(false);
-        }
-        catch (OrleansException ex)
-        {
-            Logger.HeartbeatFailed(ServerId, ex);
-        }
-    }
-
-    private void HeartbeatCallback(
-        object? state
-    )
-    {
-        // Fire-and-forget: explicitly discard to satisfy VSTHRD110
-        _ = Task.Run(HeartbeatAsync);
-    }
-
     private async Task OnAllMessageAsync(
-        AllMessage message,
-        StreamSequenceToken? token
+        AllMessage message
     )
     {
         foreach (HubConnectionContext connection in ConnectionRegistry.GetAll())
@@ -474,8 +396,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     }
 
     private async Task OnServerMessageAsync(
-        ServerMessage message,
-        StreamSequenceToken? token
+        ServerMessage message
     )
     {
         HubConnectionContext? connection = ConnectionRegistry.GetConnection(message.ConnectionId);
