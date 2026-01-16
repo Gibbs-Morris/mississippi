@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,6 +14,7 @@ using Mississippi.Aqueduct.Abstractions.Messages;
 using NSubstitute;
 
 using Orleans;
+using Orleans.Runtime;
 using Orleans.Streams;
 
 
@@ -84,12 +86,15 @@ public sealed class StreamSubscriptionManagerTests
         StreamSubscriptionHandle<AllMessage> allSubscription =
             Substitute.For<StreamSubscriptionHandle<AllMessage>>();
 
-        clusterClient.GetStreamProvider(options.Value.StreamProviderName).Returns(streamProvider);
+        ServiceCollection services = new();
+        services.AddKeyedSingleton<IStreamProvider>(options.Value.StreamProviderName, streamProvider);
+        using ServiceProvider serviceProvider = services.BuildServiceProvider();
+        clusterClient.ServiceProvider.Returns(serviceProvider);
         streamProvider.GetStream<ServerMessage>(Arg.Any<StreamId>()).Returns(serverStream);
         streamProvider.GetStream<AllMessage>(Arg.Any<StreamId>()).Returns(allStream);
-        serverStream.SubscribeAsync(Arg.Any<Func<ServerMessage, StreamSequenceToken, Task>>())
+        serverStream.SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>())
             .Returns(Task.FromResult(serverSubscription));
-        allStream.SubscribeAsync(Arg.Any<Func<AllMessage, StreamSequenceToken, Task>>())
+        allStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>())
             .Returns(Task.FromResult(allSubscription));
 
         using StreamSubscriptionManager manager = new(serverIdProvider, clusterClient, options, logger);

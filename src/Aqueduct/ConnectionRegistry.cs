@@ -54,6 +54,6 @@ internal sealed class ConnectionRegistry : IConnectionRegistry
     )
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
-        return connections.TryRemove(connectionId, out HubConnectionContext _);
+        return connections.TryRemove(connectionId, out HubConnectionContext? _);
     }
 }
