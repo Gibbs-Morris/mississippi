@@ -10,10 +10,7 @@ namespace Mississippi.Aqueduct;
 /// </summary>
 internal static partial class HeartbeatManagerLoggerExtensions
 {
-    [LoggerMessage(
-        EventId = 3,
-        Level = LogLevel.Warning,
-        Message = "Heartbeat failed for server '{ServerId}'")]
+    [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Heartbeat failed for server '{ServerId}'")]
     public static partial void HeartbeatFailed(
         this ILogger logger,
         string serverId,

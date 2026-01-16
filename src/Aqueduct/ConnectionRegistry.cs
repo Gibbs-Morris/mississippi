@@ -12,7 +12,7 @@ namespace Mississippi.Aqueduct;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This implementation uses a <see cref="ConcurrentDictionary{TKey, TValue}" />
+///         This implementation uses a <see cref="ConcurrentDictionary{TKey,TValue}" />
 ///         to provide thread-safe access to hub connection contexts. It is intended
 ///         for use within a single server instance to track connections that are
 ///         hosted locally.
@@ -54,6 +54,6 @@ internal sealed class ConnectionRegistry : IConnectionRegistry
     )
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
-        return connections.TryRemove(connectionId, out _);
+        return connections.TryRemove(connectionId, out var _);
     }
 }

@@ -27,10 +27,8 @@ internal sealed class LocalMessageSender : ILocalMessageSender
     /// <param name="logger">Logger instance for message-sending operations.</param>
     public LocalMessageSender(
         ILogger<LocalMessageSender> logger
-    )
-    {
+    ) =>
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     private ILogger<LocalMessageSender> Logger { get; }
 
