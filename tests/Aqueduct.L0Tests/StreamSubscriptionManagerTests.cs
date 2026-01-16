@@ -271,20 +271,20 @@ public sealed class StreamSubscriptionManagerTests
         string serverId = "server-123";
         IServerIdProvider serverIdProvider = CreateServerIdProvider(serverId);
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
-        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions
-        {
-            StreamProviderName = "Provider",
-            ServerStreamNamespace = "servers",
-            AllClientsStreamNamespace = "all",
-        });
+        IOptions<AqueductOptions> options = Options.Create(
+            new AqueductOptions
+            {
+                StreamProviderName = "Provider",
+                ServerStreamNamespace = "servers",
+                AllClientsStreamNamespace = "all",
+            });
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
         IStreamProvider streamProvider = Substitute.For<IStreamProvider>();
         IAsyncStream<ServerMessage> serverStream = Substitute.For<IAsyncStream<ServerMessage>>();
         IAsyncStream<AllMessage> allStream = Substitute.For<IAsyncStream<AllMessage>>();
         StreamSubscriptionHandle<ServerMessage> serverSubscription =
             Substitute.For<StreamSubscriptionHandle<ServerMessage>>();
-        StreamSubscriptionHandle<AllMessage> allSubscription =
-            Substitute.For<StreamSubscriptionHandle<AllMessage>>();
+        StreamSubscriptionHandle<AllMessage> allSubscription = Substitute.For<StreamSubscriptionHandle<AllMessage>>();
 
         ServiceCollection services = new();
         services.AddKeyedSingleton<IStreamProvider>(options.Value.StreamProviderName, streamProvider);
@@ -294,8 +294,7 @@ public sealed class StreamSubscriptionManagerTests
         streamProvider.GetStream<AllMessage>(Arg.Any<StreamId>()).Returns(allStream);
         serverStream.SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>())
             .Returns(Task.FromResult(serverSubscription));
-        allStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>())
-            .Returns(Task.FromResult(allSubscription));
+        allStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>()).Returns(Task.FromResult(allSubscription));
 
         using StreamSubscriptionManager manager = new(serverIdProvider, clusterClient, options, logger);
 
