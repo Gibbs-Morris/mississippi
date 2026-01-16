@@ -34,6 +34,7 @@ public sealed class SnapshotMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -57,7 +58,10 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            lock (syncLock)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            }
         });
         listener.SetMeasurementEventCallback<double>((
             _,
@@ -70,8 +74,15 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordActivation("TestSnapshot", 25.0, false);
+
+        List<MetricMeasurement> snapshot;
+        lock (syncLock)
+        {
+            snapshot = [.. measurements];
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "snapshot.activation.failures") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
@@ -88,6 +99,7 @@ public sealed class SnapshotMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
         List<MetricMeasurement> doubleMeasurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -111,7 +123,10 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            longMeasurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            lock (syncLock)
+            {
+                longMeasurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            }
         });
         listener.SetMeasurementEventCallback<double>((
             instrument,
@@ -126,12 +141,24 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            doubleMeasurements.Add(new(instrument.Name, 0, measurement, 0, tagMap));
+            lock (syncLock)
+            {
+                doubleMeasurements.Add(new(instrument.Name, 0, measurement, 0, tagMap));
+            }
         });
         listener.Start();
         SnapshotMetrics.RecordActivation("TestSnapshot", 50.0, true);
+
+        List<MetricMeasurement> longSnapshot;
+        List<MetricMeasurement> doubleSnapshot;
+        lock (syncLock)
+        {
+            longSnapshot = [.. longMeasurements];
+            doubleSnapshot = [.. doubleMeasurements];
+        }
+
         Assert.Contains(
-            longMeasurements,
+            longSnapshot,
             measurement => (measurement.InstrumentName == "snapshot.activation.count") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
@@ -139,11 +166,11 @@ public sealed class SnapshotMetricsTests
                            measurement.Tags.TryGetValue("result", out object? result) &&
                            (result as string == "success"));
         Assert.Contains(
-            doubleMeasurements,
+            doubleSnapshot,
             measurement => (measurement.InstrumentName == "snapshot.activation.duration") &&
                            (Math.Abs(measurement.DoubleValue - 50.0) < 0.01));
         Assert.DoesNotContain(
-            longMeasurements,
+            longSnapshot,
             measurement => measurement.InstrumentName == "snapshot.activation.failures");
     }
 
@@ -156,6 +183,7 @@ public sealed class SnapshotMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -179,12 +207,22 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            lock (syncLock)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            }
         });
         listener.Start();
         SnapshotMetrics.RecordBaseUsed("TestSnapshot");
+
+        List<MetricMeasurement> snapshot;
+        lock (syncLock)
+        {
+            snapshot = [.. measurements];
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "snapshot.base.used") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
@@ -200,6 +238,7 @@ public sealed class SnapshotMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -223,12 +262,22 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            lock (syncLock)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            }
         });
         listener.Start();
         SnapshotMetrics.RecordCacheHit("TestSnapshot");
+
+        List<MetricMeasurement> snapshot;
+        lock (syncLock)
+        {
+            snapshot = [.. measurements];
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "snapshot.cache.hits") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
@@ -244,6 +293,7 @@ public sealed class SnapshotMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -267,12 +317,22 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            lock (syncLock)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            }
         });
         listener.Start();
         SnapshotMetrics.RecordCacheMiss("TestSnapshot");
+
+        List<MetricMeasurement> snapshot;
+        lock (syncLock)
+        {
+            snapshot = [.. measurements];
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "snapshot.cache.misses") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
@@ -289,6 +349,7 @@ public sealed class SnapshotMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
         List<MetricMeasurement> doubleMeasurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -312,7 +373,10 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            longMeasurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            lock (syncLock)
+            {
+                longMeasurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            }
         });
         listener.SetMeasurementEventCallback<double>((
             instrument,
@@ -327,12 +391,24 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            doubleMeasurements.Add(new(instrument.Name, 0, measurement, 0, tagMap));
+            lock (syncLock)
+            {
+                doubleMeasurements.Add(new(instrument.Name, 0, measurement, 0, tagMap));
+            }
         });
         listener.Start();
         SnapshotMetrics.RecordPersist("TestSnapshot", 75.0, true);
+
+        List<MetricMeasurement> longSnapshot;
+        List<MetricMeasurement> doubleSnapshot;
+        lock (syncLock)
+        {
+            longSnapshot = [.. longMeasurements];
+            doubleSnapshot = [.. doubleMeasurements];
+        }
+
         Assert.Contains(
-            longMeasurements,
+            longSnapshot,
             measurement => (measurement.InstrumentName == "snapshot.persist.count") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
@@ -340,7 +416,7 @@ public sealed class SnapshotMetricsTests
                            measurement.Tags.TryGetValue("result", out object? result) &&
                            (result as string == "success"));
         Assert.Contains(
-            doubleMeasurements,
+            doubleSnapshot,
             measurement => (measurement.InstrumentName == "snapshot.persist.duration") &&
                            (Math.Abs(measurement.DoubleValue - 75.0) < 0.01));
     }
@@ -355,6 +431,7 @@ public sealed class SnapshotMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> doubleMeasurements = [];
         List<MetricMeasurement> intMeasurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -378,7 +455,10 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            doubleMeasurements.Add(new(instrument.Name, 0, measurement, 0, tagMap));
+            lock (syncLock)
+            {
+                doubleMeasurements.Add(new(instrument.Name, 0, measurement, 0, tagMap));
+            }
         });
         listener.SetMeasurementEventCallback<int>((
             instrument,
@@ -393,16 +473,28 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            intMeasurements.Add(new(instrument.Name, 0, 0, measurement, tagMap));
+            lock (syncLock)
+            {
+                intMeasurements.Add(new(instrument.Name, 0, 0, measurement, tagMap));
+            }
         });
         listener.Start();
         SnapshotMetrics.RecordRebuild("TestSnapshot", 100.0, 25);
+
+        List<MetricMeasurement> doubleSnapshot;
+        List<MetricMeasurement> intSnapshot;
+        lock (syncLock)
+        {
+            doubleSnapshot = [.. doubleMeasurements];
+            intSnapshot = [.. intMeasurements];
+        }
+
         Assert.Contains(
-            doubleMeasurements,
+            doubleSnapshot,
             measurement => (measurement.InstrumentName == "snapshot.rebuild.duration") &&
                            (Math.Abs(measurement.DoubleValue - 100.0) < 0.01));
         Assert.Contains(
-            intMeasurements,
+            intSnapshot,
             measurement => (measurement.InstrumentName == "snapshot.rebuild.events") && (measurement.IntValue == 25));
     }
 
@@ -415,6 +507,7 @@ public sealed class SnapshotMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -438,12 +531,22 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            lock (syncLock)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            }
         });
         listener.Start();
         SnapshotMetrics.RecordReducerHashMismatch("TestSnapshot");
+
+        List<MetricMeasurement> snapshot;
+        lock (syncLock)
+        {
+            snapshot = [.. measurements];
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "snapshot.event_reducer.hash.mismatches") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
@@ -459,6 +562,7 @@ public sealed class SnapshotMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -482,12 +586,22 @@ public sealed class SnapshotMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            lock (syncLock)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
+            }
         });
         listener.Start();
         SnapshotMetrics.RecordStateSize("TestSnapshot", 4096L);
+
+        List<MetricMeasurement> snapshot;
+        lock (syncLock)
+        {
+            snapshot = [.. measurements];
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "snapshot.state.size") &&
                            (measurement.LongValue == 4096L) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
