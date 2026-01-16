@@ -13,6 +13,7 @@ using Mississippi.Aqueduct.Abstractions.Messages;
 using NSubstitute;
 
 using Orleans;
+using Orleans.Streams;
 
 
 namespace Mississippi.Aqueduct.L0Tests;
@@ -54,6 +55,53 @@ public sealed class StreamSubscriptionManagerTests
         Assert.NotNull(manager.ServerId);
         Assert.Equal(32, manager.ServerId.Length); // GUID without hyphens
         Assert.False(manager.IsInitialized);
+    }
+
+    /// <summary>
+    ///     EnsureInitializedAsync should use the server ID from the provider when creating streams.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "EnsureInitializedAsync Uses Provider ServerId")]
+    [AllureFeature("Initialization")]
+    public async Task EnsureInitializedAsyncShouldUseProviderServerId()
+    {
+        // Arrange
+        string serverId = "server-123";
+        IServerIdProvider serverIdProvider = CreateServerIdProvider(serverId);
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions
+        {
+            StreamProviderName = "Provider",
+            ServerStreamNamespace = "servers",
+            AllClientsStreamNamespace = "all",
+        });
+        ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
+        IStreamProvider streamProvider = Substitute.For<IStreamProvider>();
+        IAsyncStream<ServerMessage> serverStream = Substitute.For<IAsyncStream<ServerMessage>>();
+        IAsyncStream<AllMessage> allStream = Substitute.For<IAsyncStream<AllMessage>>();
+        StreamSubscriptionHandle<ServerMessage> serverSubscription =
+            Substitute.For<StreamSubscriptionHandle<ServerMessage>>();
+        StreamSubscriptionHandle<AllMessage> allSubscription =
+            Substitute.For<StreamSubscriptionHandle<AllMessage>>();
+
+        clusterClient.GetStreamProvider(options.Value.StreamProviderName).Returns(streamProvider);
+        streamProvider.GetStream<ServerMessage>(Arg.Any<StreamId>()).Returns(serverStream);
+        streamProvider.GetStream<AllMessage>(Arg.Any<StreamId>()).Returns(allStream);
+        serverStream.SubscribeAsync(Arg.Any<Func<ServerMessage, StreamSequenceToken, Task>>())
+            .Returns(Task.FromResult(serverSubscription));
+        allStream.SubscribeAsync(Arg.Any<Func<AllMessage, StreamSequenceToken, Task>>())
+            .Returns(Task.FromResult(allSubscription));
+
+        using StreamSubscriptionManager manager = new(serverIdProvider, clusterClient, options, logger);
+
+        // Act
+        await manager.EnsureInitializedAsync("TestHub", _ => Task.CompletedTask, _ => Task.CompletedTask);
+
+        // Assert
+        StreamId expectedServerStreamId = StreamId.Create(options.Value.ServerStreamNamespace, serverId);
+        StreamId expectedAllStreamId = StreamId.Create(options.Value.AllClientsStreamNamespace, "TestHub");
+        _ = streamProvider.Received(1).GetStream<ServerMessage>(expectedServerStreamId);
+        _ = streamProvider.Received(1).GetStream<AllMessage>(expectedAllStreamId);
     }
 
     /// <summary>
