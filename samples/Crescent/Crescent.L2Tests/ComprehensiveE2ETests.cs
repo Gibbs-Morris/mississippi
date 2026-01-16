@@ -102,6 +102,7 @@ public sealed class ComprehensiveE2ETests
                 $"[Test] Waiting for projection to return to zero (attempt {attempt}/{MaxAttempts}). CurrentCount={afterZero?.CurrentCount}");
             await Task.Delay(RetryDelayMs);
         }
+
         afterZero.Should().NotBeNull();
         afterZero!.CurrentCount.Should().Be(0, "Count should be 0 after incrementing back");
         output.WriteLine("[Test] PASSED: Boundary conditions handled correctly!");

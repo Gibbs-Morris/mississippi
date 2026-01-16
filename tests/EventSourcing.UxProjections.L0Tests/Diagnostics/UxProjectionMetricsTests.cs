@@ -232,6 +232,7 @@ public sealed class UxProjectionMetricsTests
         {
             snapshot = new(measurements);
         }
+
         Assert.Contains(
             snapshot,
             measurement => (measurement.InstrumentName == "projection.query.empty") &&
