@@ -58,6 +58,11 @@ jobs:
         run: |
           dotnet workload install aspire
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
         with:
@@ -76,6 +81,10 @@ jobs:
       - name: Build dotnet projects
         run: |
           dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+
+      - name: Install Playwright Browsers
+        run: |
+          npx playwright install --with-deps
 
       - name: Run L2 Tests
         run: |
