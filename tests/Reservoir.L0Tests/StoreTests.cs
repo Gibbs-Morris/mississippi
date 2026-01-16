@@ -228,63 +228,6 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Store constructor with null feature registrations should throw ArgumentNullException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP005:Return type should indicate that the value should be disposed",
-        Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    public void ConstructorWithNullFeatureRegistrationsThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store(null!, [], []));
-    }
-
-    /// <summary>
-    ///     Store constructor with null effects should throw ArgumentNullException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP005:Return type should indicate that the value should be disposed",
-        Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    public void ConstructorWithNullEffectsThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store([], null!, []));
-    }
-
-    /// <summary>
-    ///     Store constructor with null middleware should throw ArgumentNullException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP005:Return type should indicate that the value should be disposed",
-        Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    public void ConstructorWithNullMiddlewareThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store([], [], null!));
-    }
-
-    /// <summary>
     ///     Store constructor with effects collection should register effects.
     /// </summary>
     /// <returns>A task representing the async test operation.</returns>
@@ -322,6 +265,63 @@ public sealed class StoreTests : IDisposable
 
         // Assert
         Assert.True(middlewareInvoked);
+    }
+
+    /// <summary>
+    ///     Store constructor with null effects should throw ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP001:Dispose created",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    public void ConstructorWithNullEffectsThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new Store([], null!, []));
+    }
+
+    /// <summary>
+    ///     Store constructor with null feature registrations should throw ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP001:Dispose created",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    public void ConstructorWithNullFeatureRegistrationsThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new Store(null!, [], []));
+    }
+
+    /// <summary>
+    ///     Store constructor with null middleware should throw ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP001:Dispose created",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Testing ArgumentNullException - constructor throws before returning")]
+    public void ConstructorWithNullMiddlewareThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new Store([], [], null!));
     }
 
     /// <summary>
@@ -453,6 +453,28 @@ public sealed class StoreTests : IDisposable
         // Assert
         await Task.Delay(100);
         Assert.True(secondEffectRan);
+    }
+
+    /// <summary>
+    ///     Feature state registration should register state via constructor.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State Registration")]
+    public void FeatureStateRegistrationRegistersStateViaConstructor()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        services.AddFeatureState<TestFeatureState>();
+        services.AddReservoir();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+
+        // Act
+        IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
+        TestFeatureState state = store.GetState<TestFeatureState>();
+
+        // Assert
+        Assert.NotNull(state);
     }
 
     /// <summary>
@@ -649,28 +671,6 @@ public sealed class StoreTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.RegisterMiddleware(null!));
-    }
-
-    /// <summary>
-    ///     Feature state registration should register state via constructor.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State Registration")]
-    public void FeatureStateRegistrationRegistersStateViaConstructor()
-    {
-        // Arrange
-        ServiceCollection services = [];
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        using IServiceScope scope = provider.CreateScope();
-
-        // Act
-        IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
-        TestFeatureState state = store.GetState<TestFeatureState>();
-
-        // Assert
-        Assert.NotNull(state);
     }
 
     /// <summary>

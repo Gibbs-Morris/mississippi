@@ -18,10 +18,8 @@ public sealed class FeatureStateRegistration<TState> : IFeatureStateRegistration
     /// <param name="rootReducer">The optional root reducer for processing actions.</param>
     public FeatureStateRegistration(
         IRootReducer<TState>? rootReducer = null
-    )
-    {
+    ) =>
         RootReducer = rootReducer;
-    }
 
     /// <inheritdoc />
     public string FeatureKey => TState.FeatureKey;

@@ -37,6 +37,30 @@ public static class ReservoirRegistrations
     }
 
     /// <summary>
+    ///     Adds a feature state registration to the service collection.
+    /// </summary>
+    /// <typeparam name="TState">The feature state type.</typeparam>
+    /// <param name="services">The service collection to add the feature state to.</param>
+    /// <returns>The updated service collection.</returns>
+    /// <remarks>
+    ///     This method is called automatically by
+    ///     <see cref="AddReducer{TAction,TState}(IServiceCollection, Func{TState,TAction,TState})" />.
+    ///     Call it directly only for feature states without reducers.
+    /// </remarks>
+    public static IServiceCollection AddFeatureState<TState>(
+        this IServiceCollection services
+    )
+        where TState : class, IFeatureState, new()
+    {
+        // Use TryAddEnumerable with concrete implementation type to prevent duplicate registrations
+        // The implementation type (FeatureStateRegistration<TState>) is used for deduplication
+        services.TryAddEnumerable(
+            ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp =>
+                new(sp.GetService<IRootReducer<TState>>())));
+        return services;
+    }
+
+    /// <summary>
     ///     Adds a middleware implementation to the service collection.
     /// </summary>
     /// <typeparam name="TMiddleware">The middleware implementation type.</typeparam>
@@ -96,28 +120,6 @@ public static class ReservoirRegistrations
         services.AddTransient<IActionReducer<TAction, TState>, TReducer>();
         services.AddRootReducer<TState>();
         services.AddFeatureState<TState>();
-        return services;
-    }
-
-    /// <summary>
-    ///     Adds a feature state registration to the service collection.
-    /// </summary>
-    /// <typeparam name="TState">The feature state type.</typeparam>
-    /// <param name="services">The service collection to add the feature state to.</param>
-    /// <returns>The updated service collection.</returns>
-    /// <remarks>
-    ///     This method is called automatically by <see cref="AddReducer{TAction,TState}(IServiceCollection, Func{TState, TAction, TState})" />.
-    ///     Call it directly only for feature states without reducers.
-    /// </remarks>
-    public static IServiceCollection AddFeatureState<TState>(
-        this IServiceCollection services
-    )
-        where TState : class, IFeatureState, new()
-    {
-        // Use TryAddEnumerable with concrete implementation type to prevent duplicate registrations
-        // The implementation type (FeatureStateRegistration<TState>) is used for deduplication
-        services.TryAddEnumerable(ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(
-            sp => new FeatureStateRegistration<TState>(sp.GetService<IRootReducer<TState>>())));
         return services;
     }
 

@@ -6,8 +6,6 @@ using System.Threading;
 
 using Allure.Xunit.Attributes;
 
-using Microsoft.Extensions.DependencyInjection;
-
 using Mississippi.Inlet.Abstractions.Actions;
 using Mississippi.Inlet.Abstractions.State;
 using Mississippi.Reservoir.Abstractions;

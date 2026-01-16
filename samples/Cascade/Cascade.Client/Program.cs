@@ -35,25 +35,20 @@ builder.Services.AddScoped<IMessageService, SignalRMessageService>();
 
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [UxProjectionDto] types and wires up fetching
-// Configure store with feature states via the configureStore callback
-builder.Services.AddInlet(store =>
-{
-    store.RegisterState<CartState>();
-    store.RegisterState<ChatState>();
-});
+builder.Services.AddInlet();
 builder.Services.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(ChannelMessagesDto).Assembly));
 
 // Configure Reservoir (Redux-style state management)
-// Register reducers for cart actions
+// Register reducers for cart actions (AddReducer auto-registers CartState)
 builder.Services.AddReducer<AddItemAction, CartState>(CartReducers.AddItem);
 builder.Services.AddReducer<RemoveItemAction, CartState>(CartReducers.RemoveItem);
 builder.Services.AddReducer<ProductsLoadingAction, CartState>(CartReducers.ProductsLoading);
 builder.Services.AddReducer<ProductsLoadedAction, CartState>(CartReducers.ProductsLoaded);
 builder.Services.AddReducer<ProductsLoadFailedAction, CartState>(CartReducers.ProductsLoadFailed);
 
-// Register reducers for chat actions
+// Register reducers for chat actions (AddReducer auto-registers ChatState)
 // Note: Channel data now comes from InletStore projections, not reducers.
 builder.Services.AddReducer<LoginInProgressAction, ChatState>(ChatReducers.LoginInProgress);
 builder.Services.AddReducer<LoginSuccessAction, ChatState>(ChatReducers.LoginSuccess);
@@ -66,6 +61,5 @@ builder.Services.AddReducer<HideCreateChannelModalAction, ChatState>(ChatReducer
 // Register effects for async operations
 builder.Services.AddEffect<LoadProductsEffect>();
 
-// AddReservoir registers remaining Reservoir services (reducers are already registered above)
-builder.Services.AddReservoir();
+// AddInlet registers Inlet services using feature states and reducers registered above
 await builder.Build().RunAsync();
