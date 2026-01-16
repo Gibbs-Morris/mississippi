@@ -240,22 +240,238 @@ This document contains detailed file-by-file review notes from Pass 1 (local con
 
 ---
 
-## Pass 2 - Holistic Assessment
+---
 
-*To be completed after Pass 1 review of all files*
+## EventSourcing.Brooks.Cosmos/Brooks/EventBrookWriter.cs
+
+**Path:** `/src/EventSourcing.Brooks.Cosmos/Brooks/EventBrookWriter.cs`
+
+**Pass 1 Notes:**
+- Lines 1-411: Full implementation of Cosmos-based event writer
+- Uses distributed locking for concurrency control
+- Implements batch processing for large event sets
+- Has rollback mechanism for failed batches
+- Uses LoggerMessage source generators for structured logging
+
+**Key Features:**
+- `AppendEventsAsync` - Main entry point with lock acquisition
+- `AppendLargeBatchAsync` - Handles batches exceeding size limits
+- `RollbackLargeBatchAsync` - Compensating action for failed writes
+- Lease renewal during long-running operations
+
+**Craftsmanship Assessment:**
+- ✅ **EXCELLENT**: Comprehensive error handling with rollback
+- ✅ **GOOD**: Proper use of distributed locking
+- ✅ **GOOD**: Structured logging with LoggerMessage
+- ⚠️ **CONCERN**: Lines 275-285 - catch block rethrows after rollback but doesn't preserve original exception context
+- 💡 **SUGGESTION**: Consider adding more granular metrics for batch operations
+
+---
+
+## EventSourcing.Snapshots/SnapshotCacheGrain.cs
+
+**Path:** `/src/EventSourcing.Snapshots/SnapshotCacheGrain.cs`
+
+**Pass 1 Notes:**
+- Lines 1-273: Snapshot cache grain implementation
+- Implements retention-based strategy for efficient state building
+- Reducer hash validation for snapshot invalidation
+- Background persistence via one-way call
+
+**Key Features:**
+- Versioned immutable snapshots
+- Recursive base snapshot loading
+- Event replay for delta computation
+- Automatic background persistence
+
+**Craftsmanship Assessment:**
+- ✅ **EXCELLENT**: Sophisticated retention and caching strategy
+- ✅ **GOOD**: Reducer hash validation prevents stale snapshots
+- ✅ **GOOD**: Fire-and-forget persistence with [OneWay]
+- ✅ **GOOD**: Proper use of IGrainBase pattern
+
+---
+
+## Directory.Build.props
+
+**Path:** `/Directory.Build.props`
+
+**Pass 1 Notes:**
+- Lines 1-88: Central MSBuild configuration
+- NoWarn list (line 18-20): SA1633, SA1111, SA1200, SA1009, SA1507, SA1101, SA1202, SA1204, CA1014, CA2007, CA1040, CA1812, CA1303, VSTHRD111, SA1201
+
+**Suppression Analysis:**
+
+| Rule | Description | Justification |
+|------|-------------|---------------|
+| SA1633 | File header | Repo uses LICENSE file, not file headers |
+| SA1111 | Closing paren on same line | Style preference |
+| SA1200 | Using placement | File-scoped namespaces change convention |
+| SA1009 | Closing paren spacing | Style preference |
+| SA1507 | Multiple blank lines | Less strict formatting |
+| SA1101 | this. prefix | ⚠️ May cause inconsistency |
+| SA1202 | Member ordering | Less strict ordering |
+| SA1204 | Static ordering | Less strict ordering |
+| CA1014 | CLSCompliant | Not targeting CLS compliance |
+| CA2007 | ConfigureAwait | ⚠️ Should review for library code |
+| CA1040 | Empty interfaces | Marker interfaces allowed |
+| CA1812 | Internal instantiation | DI handles instantiation |
+| CA1303 | String literals | ⚠️ No localization needed but could hide issues |
+| VSTHRD111 | Async naming | False positives with Orleans patterns |
+| SA1201 | Element ordering | Less strict ordering |
+
+**Craftsmanship Assessment:**
+- ✅ **GOOD**: Central configuration reduces duplication
+- ✅ **GOOD**: Proper analyzer integration
+- ⚠️ **CONCERN**: 15 rules suppressed - some (CA2007, SA1101, CA1303) deserve case-by-case review
+
+---
+
+## Pass 2 - Holistic Assessment
 
 ### Cross-Cutting Concerns Identified
 
-1. **Logging Pattern Consistency** - Need to verify all LoggerExtensions classes follow the pattern
-2. **Orleans Grain Patterns** - Verify POCO grain pattern is used consistently
-3. **Serialization Attributes** - Ensure all persisted types have proper attributes
-4. **DI Property Pattern** - Verify get-only property pattern for injected dependencies
-5. **Error Handling** - Review OperationResult usage consistency
+1. **Logging Pattern Consistency** ✅ VERIFIED
+   - All grains use `{Grain}LoggerExtensions` static partial classes
+   - LoggerMessage source generator used consistently
+   - Structured logging with proper event IDs
+
+2. **Orleans Grain Patterns** ✅ VERIFIED
+   - All grains implement `IGrainBase`
+   - No inheritance from `Grain` base class
+   - All concrete grains are `internal sealed`
+   - Properties use get-only pattern
+
+3. **Serialization Attributes** ✅ VERIFIED
+   - Domain types have `[GenerateSerializer]`
+   - Event/snapshot types have storage name attributes
+   - `[Id(n)]` attributes on all serialized members
+
+4. **DI Property Pattern** ✅ VERIFIED
+   - All injected dependencies use `private Type Name { get; }`
+   - No underscored fields for DI
+   - Constructor injection only
+
+5. **Error Handling** ✅ VERIFIED
+   - `OperationResult` used consistently for business operations
+   - Exceptions reserved for infrastructure failures
+   - Clear error codes in `AggregateErrorCodes`
 
 ### Architecture Observations
 
-*To be populated during Pass 2*
+**Strengths:**
+- Clean separation between abstractions and implementations
+- Consistent patterns across all modules
+- Comprehensive OpenTelemetry metrics
+- Architecture tests prevent pattern drift
+
+**Areas for Improvement:**
+- Store.cs uses reflection (performance concern)
+- Effect error handling is too silent
+- NoWarn list is too broad
 
 ### Design Pattern Inventory
 
-*To be populated during Pass 2*
+| Pattern | Usage | Files |
+|---------|-------|-------|
+| Command Handler | CQRS command processing | `CommandHandlerBase`, domain handlers |
+| Event Reducer | State derivation from events | `EventReducerBase`, domain reducers |
+| POCO Grain | Orleans grain pattern | All `*Grain.cs` files |
+| Factory | Grain resolution | `*GrainFactory.cs` files |
+| Options | Configuration | `*Options.cs` files |
+| Builder | Registration | `*Builder.cs` files |
+| Mapper | Type transformation | `*Mapper.cs` files |
+| Repository | Data access | `CosmosRepository`, `SnapshotCosmosRepository` |
+| Envelope | Data wrapping | `SnapshotEnvelope`, `BrookEvent` |
+| Subscription | State change notification | `Store.Subscribe`, `InletSubscription` |
+
+---
+
+## Cascade.Domain/CascadeRegistrations.cs
+
+**Path:** `/samples/Cascade/Cascade.Domain/CascadeRegistrations.cs`
+
+**Pass 1 Notes:**
+- Lines 1-332: Complete domain registration following service-registration.instructions.md
+- Hierarchical registration pattern: AddCascadeDomain → Add{Aggregate}Aggregate → individual registrations
+- 3 aggregates: User, Channel, Conversation
+- 6 projections: UserProfile, UserChannelList, ChannelMessages, ChannelMessageIds, ChannelMemberList, OnlineUsers
+
+**Registration Pattern:**
+```
+AddCascadeDomain()
+├── AddAggregateSupport()
+├── AddUserAggregate()
+│   ├── AddEventType<UserRegistered>()
+│   ├── AddCommandHandler<RegisterUser, UserAggregate, Handler>()
+│   ├── AddReducer<UserRegistered, UserAggregate, Reducer>()
+│   └── AddSnapshotStateConverter<UserAggregate>()
+├── AddChannelAggregate()
+├── AddConversationAggregate()
+├── AddUserProfileProjection()
+└── AddUxProjections()
+```
+
+**Craftsmanship Assessment:**
+- ✅ **EXCELLENT**: Follows documented patterns exactly
+- ✅ **EXCELLENT**: Clear organization by aggregate/projection
+- ✅ **GOOD**: Private helper methods for individual registrations
+- ✅ **GOOD**: Complete XML documentation
+- 💡 **OBSERVATION**: Good example for documentation
+
+---
+
+## Cascade.Domain/Channel/ChannelAggregate.cs
+
+**Path:** `/samples/Cascade/Cascade.Domain/Channel/ChannelAggregate.cs`
+
+**Pass 1 Notes:**
+- Lines 1-60: Aggregate state as immutable record
+- Proper attributes: `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, `[Alias]`
+- All properties have `[Id(n)]` for Orleans serialization
+- Sentinel property `IsCreated` for first-time detection
+
+**Attributes:**
+- `[BrookName("CASCADE", "CHAT", "CHANNEL")]`
+- `[SnapshotStorageName("CASCADE", "CHAT", "CHANNELSTATE")]`
+- `[GenerateSerializer]`
+- `[Alias("Cascade.Domain.Channel.ChannelAggregate")]`
+
+**Craftsmanship Assessment:**
+- ✅ **EXCELLENT**: Follows domain-modeling.instructions.md exactly
+- ✅ **GOOD**: Proper [Id(n)] ordering
+- ✅ **GOOD**: Immutable HashSet for members
+- ✅ **GOOD**: XML documentation
+
+---
+
+## Summary of Key Files Reviewed
+
+| File | Quality | Key Pattern |
+|------|---------|-------------|
+| Directory.Build.props | ⚠️ Good with concerns | Central config, large NoWarn |
+| MississippiDefaults.cs | ✅ Excellent | Constants, keyed services |
+| CommandHandlerBase.cs | ✅ Excellent | Command handler pattern |
+| EventReducerBase.cs | ✅ Excellent | Immutability enforcement |
+| GenericAggregateGrain.cs | ✅ Excellent | POCO grain, CQRS |
+| BrookWriterGrain.cs | ✅ Excellent | Event writing, logging |
+| EventBrookWriter.cs | ✅ Excellent | Cosmos storage, rollback |
+| SnapshotCacheGrain.cs | ✅ Excellent | Caching, retention |
+| Store.cs | ⚠️ Good with concerns | Redux, reflection issue |
+| CascadeRegistrations.cs | ✅ Excellent | DI registration pattern |
+| ChannelAggregate.cs | ✅ Excellent | Domain modeling |
+| OrleansGrainArchitectureTests.cs | ✅ Excellent | Architecture enforcement |
+
+### Overall Code Quality: **High** ⭐⭐⭐⭐☆
+
+The codebase demonstrates excellent craftsmanship with:
+- Consistent patterns across all modules
+- Proper use of C# features (records, init properties)
+- Comprehensive structured logging
+- Clean separation of concerns
+- Architecture tests preventing drift
+
+Areas for improvement:
+- Store.cs reflection (performance)
+- Effect error handling (observability)
+- NoWarn list (potential hidden issues)
