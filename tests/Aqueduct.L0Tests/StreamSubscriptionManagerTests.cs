@@ -285,7 +285,6 @@ public sealed class StreamSubscriptionManagerTests
         StreamSubscriptionHandle<ServerMessage> serverSubscription =
             Substitute.For<StreamSubscriptionHandle<ServerMessage>>();
         StreamSubscriptionHandle<AllMessage> allSubscription = Substitute.For<StreamSubscriptionHandle<AllMessage>>();
-
         ServiceCollection services = new();
         services.AddKeyedSingleton<IStreamProvider>(options.Value.StreamProviderName, streamProvider);
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
@@ -295,7 +294,6 @@ public sealed class StreamSubscriptionManagerTests
         serverStream.SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>())
             .Returns(Task.FromResult(serverSubscription));
         allStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>()).Returns(Task.FromResult(allSubscription));
-
         using StreamSubscriptionManager manager = new(serverIdProvider, clusterClient, options, logger);
 
         // Act
