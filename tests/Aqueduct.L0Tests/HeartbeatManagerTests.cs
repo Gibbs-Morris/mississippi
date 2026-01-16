@@ -54,27 +54,6 @@ public sealed class HeartbeatManagerTests
     }
 
     /// <summary>
-    ///     Constructor should use the server ID provided by the provider.
-    /// </summary>
-    [Fact(DisplayName = "Constructor Uses ServerId Provider Value")]
-    [AllureFeature("Construction")]
-    public void ConstructorShouldUseServerIdProviderValue()
-    {
-        // Arrange
-        string serverId = "server-123";
-        IServerIdProvider serverIdProvider = CreateServerIdProvider(serverId);
-        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
-        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
-        ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
-
-        // Act
-        using HeartbeatManager manager = new(serverIdProvider, grainFactory, options, logger);
-
-        // Assert
-        Assert.Equal(serverId, manager.ServerId);
-    }
-
-    /// <summary>
     ///     Constructor should throw when grainFactory is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When GrainFactory Is Null")]
@@ -161,6 +140,27 @@ public sealed class HeartbeatManagerTests
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new HeartbeatManager(null!, grainFactory, options, logger));
+    }
+
+    /// <summary>
+    ///     Constructor should use the server ID provided by the provider.
+    /// </summary>
+    [Fact(DisplayName = "Constructor Uses ServerId Provider Value")]
+    [AllureFeature("Construction")]
+    public void ConstructorShouldUseServerIdProviderValue()
+    {
+        // Arrange
+        string serverId = "server-123";
+        IServerIdProvider serverIdProvider = CreateServerIdProvider(serverId);
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
+
+        // Act
+        using HeartbeatManager manager = new(serverIdProvider, grainFactory, options, logger);
+
+        // Assert
+        Assert.Equal(serverId, manager.ServerId);
     }
 
     /// <summary>
