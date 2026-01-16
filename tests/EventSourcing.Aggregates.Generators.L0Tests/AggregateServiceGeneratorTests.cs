@@ -19,6 +19,47 @@ namespace Mississippi.EventSourcing.Aggregates.Generators.L0Tests;
 [AllureSubSuite("AggregateServiceGenerator")]
 public sealed class AggregateServiceGeneratorTests
 {
+    private static CSharpCompilation CreateCompilation(
+        string source
+    )
+    {
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, new(LanguageVersion.CSharp12));
+        List<MetadataReference> references = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
+            .Select(assembly => (MetadataReference)MetadataReference.CreateFromFile(assembly.Location))
+            .ToList();
+        return CSharpCompilation.Create(
+            "AggregateServiceGeneratorTests",
+            [syntaxTree],
+            references,
+            new(OutputKind.DynamicallyLinkedLibrary));
+    }
+
+    private static GeneratorDriverRunResult RunGenerator(
+        string source,
+        IIncrementalGenerator generator
+    )
+    {
+        CSharpCompilation compilation = CreateCompilation(source);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+        driver = driver.RunGenerators(compilation);
+        return driver.GetRunResult();
+    }
+
+    /// <summary>
+    ///     Verifies that the generator can be instantiated.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Generator Instantiation")]
+    public void CanInstantiateGenerator()
+    {
+        // Act
+        AggregateServiceGenerator sut = new();
+
+        // Assert
+        Assert.NotNull(sut);
+    }
+
     /// <summary>
     ///     Verifies that the generator emits service and controller sources for aggregates with handlers.
     /// </summary>
@@ -80,7 +121,6 @@ namespace Sample.Aggregates
         Assert.Contains(sources, generated => generated.HintName == "IOrderService.g.cs");
         Assert.Contains(sources, generated => generated.HintName == "OrderService.g.cs");
         Assert.Contains(sources, generated => generated.HintName == "OrderController.g.cs");
-
         string interfaceSource = sources.First(generated => generated.HintName == "IOrderService.g.cs")
             .SourceText.ToString();
         Assert.Contains("Task<OperationResult> CreateOrderAsync", interfaceSource, StringComparison.Ordinal);
@@ -132,20 +172,6 @@ namespace Sample.Aggregates
     }
 
     /// <summary>
-    ///     Verifies that the generator can be instantiated.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Generator Instantiation")]
-    public void CanInstantiateGenerator()
-    {
-        // Act
-        AggregateServiceGenerator sut = new();
-
-        // Assert
-        Assert.NotNull(sut);
-    }
-
-    /// <summary>
     ///     Verifies that the generator implements IIncrementalGenerator.
     /// </summary>
     [Fact]
@@ -157,34 +183,5 @@ namespace Sample.Aggregates
 
         // Assert
         Assert.True(sut is IIncrementalGenerator);
-    }
-
-    private static GeneratorDriverRunResult RunGenerator(
-        string source,
-        IIncrementalGenerator generator
-    )
-    {
-        CSharpCompilation compilation = CreateCompilation(source);
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-        driver = driver.RunGenerators(compilation);
-        return driver.GetRunResult();
-    }
-
-    private static CSharpCompilation CreateCompilation(
-        string source
-    )
-    {
-        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(
-            source,
-            new CSharpParseOptions(LanguageVersion.CSharp12));
-        List<MetadataReference> references = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
-            .Select(assembly => (MetadataReference)MetadataReference.CreateFromFile(assembly.Location))
-            .ToList();
-        return CSharpCompilation.Create(
-            "AggregateServiceGeneratorTests",
-            [syntaxTree],
-            references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
 }

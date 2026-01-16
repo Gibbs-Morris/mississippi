@@ -19,6 +19,47 @@ namespace Mississippi.EventSourcing.UxProjections.Api.Generators.L0Tests;
 [AllureSubSuite("ProjectionApiGenerator")]
 public sealed class ProjectionApiGeneratorTests
 {
+    private static CSharpCompilation CreateCompilation(
+        string source
+    )
+    {
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, new(LanguageVersion.CSharp12));
+        List<MetadataReference> references = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
+            .Select(assembly => (MetadataReference)MetadataReference.CreateFromFile(assembly.Location))
+            .ToList();
+        return CSharpCompilation.Create(
+            "ProjectionApiGeneratorTests",
+            [syntaxTree],
+            references,
+            new(OutputKind.DynamicallyLinkedLibrary));
+    }
+
+    private static GeneratorDriverRunResult RunGenerator(
+        string source,
+        IIncrementalGenerator generator
+    )
+    {
+        CSharpCompilation compilation = CreateCompilation(source);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+        driver = driver.RunGenerators(compilation);
+        return driver.GetRunResult();
+    }
+
+    /// <summary>
+    ///     Verifies that the generator can be instantiated.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Generator Instantiation")]
+    public void CanInstantiateGenerator()
+    {
+        // Act
+        ProjectionApiGenerator sut = new();
+
+        // Assert
+        Assert.NotNull(sut);
+    }
+
     /// <summary>
     ///     Verifies that the generator emits controller, DTO, and batch request sources.
     /// </summary>
@@ -65,25 +106,10 @@ namespace Sample.Projections
         Assert.Contains(sources, generated => generated.HintName == "WidgetProjectionController.g.cs");
         Assert.Contains(sources, generated => generated.HintName == "WidgetProjectionDto.g.cs");
         Assert.Contains(sources, generated => generated.HintName == "BatchProjectionRequest.g.cs");
-
         string controllerSource = sources.First(generated => generated.HintName == "WidgetProjectionController.g.cs")
             .SourceText.ToString();
         Assert.Contains("WidgetProjectionController", controllerSource, StringComparison.Ordinal);
         Assert.Contains("api/projections/widgets", controllerSource, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Verifies that the generator can be instantiated.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Generator Instantiation")]
-    public void CanInstantiateGenerator()
-    {
-        // Act
-        ProjectionApiGenerator sut = new();
-
-        // Assert
-        Assert.NotNull(sut);
     }
 
     /// <summary>
@@ -98,34 +124,5 @@ namespace Sample.Projections
 
         // Assert
         Assert.True(sut is IIncrementalGenerator);
-    }
-
-    private static GeneratorDriverRunResult RunGenerator(
-        string source,
-        IIncrementalGenerator generator
-    )
-    {
-        CSharpCompilation compilation = CreateCompilation(source);
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-        driver = driver.RunGenerators(compilation);
-        return driver.GetRunResult();
-    }
-
-    private static CSharpCompilation CreateCompilation(
-        string source
-    )
-    {
-        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(
-            source,
-            new CSharpParseOptions(LanguageVersion.CSharp12));
-        List<MetadataReference> references = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
-            .Select(assembly => (MetadataReference)MetadataReference.CreateFromFile(assembly.Location))
-            .ToList();
-        return CSharpCompilation.Create(
-            "ProjectionApiGeneratorTests",
-            [syntaxTree],
-            references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
 }
