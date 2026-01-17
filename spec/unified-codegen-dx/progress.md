@@ -285,12 +285,18 @@ Get-ChildItem Target.Client\bin\Release\net9.0\*.dll | Select-Object Name
 - ✅ Generator found types in referenced assembly
 - ✅ Generated DTO has Orleans attributes stripped
 - ✅ Client output contains **zero Orleans DLLs**
+- ✅ Orleans generator still produces `Codec_ChannelProjection` in Domain
+
+**Dual Generator Output:**
+
+- `Source.Domain/obj/.../Source.Domain.orleans.g.cs` — Orleans serialization
+- `Target.Contracts/obj/.../ChannelProjectionDto.g.cs` — Mississippi DTO
 
 **Client Output DLLs:**
 
 ```text
-Mississippi.Target.Client.dll
-Mississippi.Target.Contracts.dll
+Target.Client.dll
+Target.Contracts.dll
 (NO Orleans DLLs)
 ```
 

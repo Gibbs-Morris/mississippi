@@ -14,11 +14,12 @@ validated the `PrivateAssets="all"` pattern.
 
 ### POC Validation (2025-01-17)
 
-A throwaway proof-of-concept in `.scratchpad/poc-cross-project-gen/` proved:
+A throwaway proof-of-concept in `.scratchpad/poc-orleans-coexist/` proved:
 
 1. ✅ **Generators CAN read types from referenced assemblies** (not just source)
 2. ✅ **`PrivateAssets="all"` prevents Orleans from flowing transitively**
 3. ✅ **Client project has ZERO Orleans DLLs in output**
+4. ✅ **Orleans generator still produces serialization code** (both coexist)
 
 **POC Structure:**
 
@@ -28,6 +29,11 @@ Source.Generator/       (Scans referenced assemblies for [GenerateClientDto])
 Target.Contracts/       (PrivateAssets="all" ref to Domain, uses generator)
 Target.Client/          (References only Contracts — NO Orleans)
 ```
+
+**Dual Generator Output:**
+
+- `Source.Domain/obj/.../Source.Domain.orleans.g.cs` — Orleans `Codec_ChannelProjection`
+- `Target.Contracts/obj/.../ChannelProjectionDto.g.cs` — Mississippi DTO (Orleans-free)
 
 **Generated DTO (Orleans-free):**
 

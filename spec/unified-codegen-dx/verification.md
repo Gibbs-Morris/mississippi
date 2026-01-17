@@ -165,13 +165,14 @@ Orleans-free DTOs into a separate project using `PrivateAssets="all"`.
 
 **Evidence:**
 
-A proof-of-concept in `.scratchpad/poc-cross-project-gen/` demonstrated:
+A proof-of-concept in `.scratchpad/poc-orleans-coexist/` demonstrated:
 
 1. Generator scans `compilation.References` to find Domain assembly
 2. Generator finds types with `[GenerateClientDto]` marker attribute
 3. Generator emits Orleans-free DTOs into `Target.Contracts` project
 4. `PrivateAssets="all"` prevents Orleans from flowing transitively
 5. Client output contains **zero Orleans DLLs**
+6. **Orleans generator still produces serialization code** in Domain project
 
 **Generated DTO (Orleans attributes stripped):**
 
