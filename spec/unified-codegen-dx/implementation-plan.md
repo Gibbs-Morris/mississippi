@@ -7,13 +7,13 @@ the Cascade sample, eliminating manual DTO duplication and DI boilerplate.
 
 ## Size Classification
 
-**Medium** — Four phases touching generators, sample code, and build
+**Large** — Five phases touching generators, sample code, and build
 configuration. No public API changes.
 
 ## Decision Checkpoint
 
 **Yes** — Multiple viable designs exist (Options A, B, C in RFC). Recommend
-Option C. User approval required before Phase 3-4 (new generators).
+Option C. User approval required before Phase 3-5 (new generators).
 
 ## Phases
 
@@ -177,6 +177,8 @@ Expect: Clean build and passing tests.
 | 5 | Phase 3: Migrate DI | Delete CascadeRegistrations |
 | 6 | Phase 4: Client DTOs | Build Cascade.Client |
 | 7 | Phase 4: Delete manual | Full test suite |
+| 8 | Phase 5: Client actions | Build Cascade.Client |
+| 9 | Phase 5: Migrate commands | Full test suite |
 
 ## Backout Plan
 
@@ -186,6 +188,7 @@ Each phase is independently revertible:
 - **Phase 2**: No changes to commit; investigation only
 - **Phase 3**: Delete generator; restore `CascadeRegistrations.cs`
 - **Phase 4**: Delete `Cascade.Contracts.Generated`; restore Contracts DTOs
+- **Phase 5**: Delete `[GenerateClientAction]` attributes; restore manual HTTP calls
 
 ## Test Plan
 
@@ -213,6 +216,7 @@ Each phase is independently revertible:
 | 2 | 0 | 0 | 0 |
 | 3 | 1 | 2-3 | 1 |
 | 4 | 2 | 1 project | 9 DTOs |
+| 5 | 5-10 commands | 3-4 generator files | Manual HTTP code |
 
 ## Risks and Mitigations
 
@@ -222,6 +226,79 @@ Each phase is independently revertible:
 | Build ordering with analyzer refs | Use `OutputItemType="Analyzer"` pattern |
 | Generator perf regression | Incremental generators already in use |
 | Breaking client serialization | Verify JSON round-trip in Phase 2 |
+| Client action naming conflicts | Use namespace scoping and prefix options |
+
+## Phase 5: Create ClientActionGenerator (New)
+
+**Goal:** Generate Fluxor actions and effects for client-side command dispatch.
+
+### New Attribute
+
+Create `[GenerateClientAction]` in `EventSourcing.Aggregates.Abstractions`:
+
+```csharp
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+public sealed class GenerateClientActionAttribute : Attribute
+{
+    public string? ActionName { get; set; }
+}
+```
+
+### New Generator
+
+Create `src/EventSourcing.Generators/ClientActionGenerator.cs`:
+
+**Triggers on:** Commands with `[GenerateClientAction]` attribute
+
+**Scans:**
+
+1. Command type name and properties
+2. Parent aggregate's `[AggregateService]` route for URL construction
+
+**Generates:**
+
+1. `{CommandName}Action.g.cs` — action record with command properties
+2. `{CommandName}SuccessAction.g.cs` — success result action
+3. `{CommandName}FailureAction.g.cs` — failure result action
+4. `{CommandName}Effect.g.cs` — effect handling HTTP dispatch
+
+### Migration Steps
+
+1. Add `[GenerateClientAction]` to selected commands in `Cascade.Domain`:
+
+   ```csharp
+   [GenerateClientAction]
+   [GenerateSerializer]
+   public sealed record CreateChannel
+   {
+       [Id(0)] public required string ChannelId { get; init; }
+       [Id(1)] public required string Name { get; init; }
+       [Id(2)] public required string CreatedBy { get; init; }
+   }
+   ```
+
+2. Update `Cascade.Client` to reference generated actions.
+
+3. Replace manual HTTP calls in `ChatApp.razor.cs` with action dispatches:
+
+   ```csharp
+   // Before
+   await Http.PostAsJsonAsync($"/api/channels/{channelId}/create?...", null);
+
+   // After
+   Dispatch(new CreateChannelAction { EntityId = channelId, Name = name, CreatedBy = user });
+   ```
+
+4. Delete manual command dispatch code.
+
+### Validation
+
+```powershell
+dotnet build samples/Cascade/Cascade.Client/Cascade.Client.csproj -warnaserror
+dotnet run --project samples/Cascade/Cascade.AppHost/Cascade.AppHost.csproj
+```
+
+Manual test: Create channel via UI, verify command executes successfully.
 
 ## Sequence Diagram: API Request with Generated Service
 

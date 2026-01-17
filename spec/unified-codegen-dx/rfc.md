@@ -187,6 +187,69 @@ flowchart TD
 **Option C** balances incremental delivery with full automation. Phase 1
 enables existing generators; subsequent phases add new generators.
 
+## Client-Side Command Actions (New)
+
+### Problem
+
+Current client command dispatch is manual HTTP calls with no type safety:
+
+```csharp
+// Manual pattern in ChatApp.razor.cs
+await Http.PostAsJsonAsync(
+    $"/api/channels/{Uri.EscapeDataString(channelId)}/create?name=...",
+    null);
+```
+
+Issues: no loading states, no typed errors, no retry, repeated boilerplate.
+
+### Proposed Solution: `[GenerateClientAction]`
+
+Add opt-in attribute on commands to generate Fluxor actions and effects:
+
+```csharp
+[GenerateClientAction]
+public sealed record CreateChannel
+{
+    public required string ChannelId { get; init; }
+    public required string Name { get; init; }
+    public required string CreatedBy { get; init; }
+}
+```
+
+**Generated Output:**
+
+1. `CreateChannelAction` — dispatched by UI
+2. `CreateChannelSuccessAction` — dispatched on success
+3. `CreateChannelFailureAction` — dispatched on failure
+4. `CreateChannelEffect` — handles HTTP call, error handling
+
+**Client Usage:**
+
+```csharp
+// Simplified: just dispatch the action
+Dispatch(new CreateChannelAction
+{
+    EntityId = newChannelId,
+    Name = name,
+    CreatedBy = ChatState.UserDisplayName
+});
+```
+
+### Generator: `ClientActionGenerator`
+
+**Triggers on:** Commands with `[GenerateClientAction]` attribute
+
+**Scans:** `[AggregateService]` to determine route prefix
+
+**Outputs:**
+
+- `{CommandName}Action.g.cs`
+- `{CommandName}SuccessAction.g.cs`
+- `{CommandName}FailureAction.g.cs`
+- `{CommandName}Effect.g.cs`
+
+**Target Project:** `Cascade.Client` (or `*.Client.Generated`)
+
 ## Alternatives Considered
 
 | Alternative | Why Rejected |
@@ -194,18 +257,21 @@ enables existing generators; subsequent phases add new generators.
 | T4 Templates | Not incremental; poor IDE integration |
 | Reflection-based DI | Runtime cost; no compile-time verification |
 | Manual DTO maintenance | Status quo; high duplication risk |
+| Full RPC framework | Over-engineering; HTTP is sufficient |
 
 ## Security Considerations
 
 - Generated controllers inherit ASP.NET authorization attributes from parent
   types. No new auth surface.
 - No secrets or credentials flow through generators.
+- Client actions use same HTTP endpoints; no new attack surface.
 
 ## Observability
 
 - Generators emit `#nullable enable` and XML doc comments for IntelliSense.
 - Build diagnostics (`MSGGEN0001`, etc.) report missing attributes or
   conflicting configurations.
+- Generated effects include structured logging for command dispatch.
 
 ## Compatibility and Migration
 
@@ -222,3 +288,4 @@ enables existing generators; subsequent phases add new generators.
 | Cross-project emit complexity | Medium | Medium | Start with same-project emit; extract later |
 | Build ordering issues | Low | High | Use `InternalsVisibleTo` and analyzer references |
 | Generator performance | Low | Low | Incremental generators already in use |
+| Client action naming conflicts | Low | Low | Use namespace scoping |

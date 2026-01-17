@@ -51,22 +51,38 @@ Created RFC with three options:
 - Option B: Shared abstractions with type derivation
 - **Option C (Recommended)**: Unified attribute + analyzer-linked generation
 
-### Implementation Plan Created
+### Expanded Scope
 
-Four-phase approach:
+Added new requirements from user:
+
+- Complete attribute inventory with SRP analysis
+- Full call-chain mapping (UX → Cosmos → Client state)
+- Client-side action generation with `[GenerateClientAction]`
+
+### New Documents Created
+
+- `attribute-catalog.md` — complete inventory of all 6 Mississippi attributes
+- `call-chain-mapping.md` — write path, read path, update path with code traces
+
+### Implementation Plan Updated
+
+Five-phase approach:
 
 1. Enable existing generators in Cascade
 2. Verify projection DTO generation
 3. Create DI registration generator
 4. Create client DTO generator
+5. Create client action generator (NEW)
 
 ### Spec Files Complete
 
 - README.md ✓
 - learned.md ✓
-- rfc.md ✓
+- rfc.md ✓ (updated with client actions)
+- attribute-catalog.md ✓ (NEW)
+- call-chain-mapping.md ✓ (NEW)
 - verification.md ✓
-- implementation-plan.md ✓
+- implementation-plan.md ✓ (updated with Phase 5)
 - progress.md ✓
 - handoff.md ✓
 
