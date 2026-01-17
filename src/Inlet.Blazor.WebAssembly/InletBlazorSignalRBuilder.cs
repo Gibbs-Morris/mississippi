@@ -6,6 +6,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Blazor.WebAssembly.Effects;
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Reservoir;
@@ -149,6 +150,12 @@ public sealed class InletBlazorSignalRBuilder
 
         // Register the hub connection provider
         Services.TryAddScoped<IHubConnectionProvider, HubConnectionProvider>();
+
+        // Register Lazy<IInletStore> to break the circular dependency:
+        // Store resolves IEffect[] → InletSignalREffect needs Store.
+        // By using Lazy<IInletStore>, the effect defers resolution until first use.
+        Services.TryAddScoped<Lazy<IInletStore>>(sp =>
+            new Lazy<IInletStore>(() => sp.GetRequiredService<IInletStore>()));
 
         // Register the SignalR effect
         Services.AddEffect<InletSignalREffect>();
