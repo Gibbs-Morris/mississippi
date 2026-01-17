@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 title: Reducers
 description: Transform state in response to actions with pure, predictable functions
 ---

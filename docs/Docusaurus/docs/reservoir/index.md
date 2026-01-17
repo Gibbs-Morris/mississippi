@@ -23,45 +23,49 @@ Reservoir follows the Redux pattern with four core concepts:
 
 The following diagram illustrates how data flows through a Reservoir application:
 
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                           Component                                  │
-│  ┌──────────────┐                           ┌──────────────────┐    │
-│  │ Dispatch()   │                           │ GetState<T>()    │    │
-│  └──────┬───────┘                           └────────▲─────────┘    │
-└─────────┼────────────────────────────────────────────┼──────────────┘
-          │                                            │
-          ▼                                            │
-┌─────────────────────────────────────────────────────────────────────┐
-│                            Store                                     │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │                     Middleware Pipeline                         │ │
-│  │  ┌──────────┐   ┌──────────┐   ┌──────────┐                    │ │
-│  │  │Middleware│──▶│Middleware│──▶│Middleware│──┐                 │ │
-│  │  └──────────┘   └──────────┘   └──────────┘  │                 │ │
-│  └──────────────────────────────────────────────┼─────────────────┘ │
-│                                                 ▼                   │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │                      Root Reducer                               │ │
-│  │  ┌──────────┐   ┌──────────┐   ┌──────────┐                    │ │
-│  │  │ Reducer  │   │ Reducer  │   │ Reducer  │  ─────────────┐    │ │
-│  │  └──────────┘   └──────────┘   └──────────┘               │    │ │
-│  └───────────────────────────────────────────────────────────┼────┘ │
-│                                                              ▼      │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │                     Feature States                              │ │
-│  │  ┌──────────┐   ┌──────────┐   ┌──────────┐                    │ │
-│  │  │  State   │   │  State   │   │  State   │                    │ │
-│  │  └──────────┘   └──────────┘   └──────────┘                    │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │                        Effects                                  │ │
-│  │  ┌──────────┐   ┌──────────┐                                   │ │
-│  │  │  Effect  │   │  Effect  │  ─────────▶ Dispatch new actions  │ │
-│  │  └──────────┘   └──────────┘                                   │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Component["🖥️ Component"]
+        Dispatch["Dispatch()"]
+        GetState["GetState&lt;T&gt;()"]
+    end
+
+    subgraph Store["📦 Store"]
+        subgraph Middleware["Middleware Pipeline"]
+            M1["Middleware"] --> M2["Middleware"] --> M3["Middleware"]
+        end
+        
+        subgraph RootReducer["Root Reducer"]
+            R1["Reducer"]
+            R2["Reducer"]
+            R3["Reducer"]
+        end
+        
+        subgraph FeatureStates["Feature States"]
+            S1["State"]
+            S2["State"]
+            S3["State"]
+        end
+        
+        subgraph Effects["Effects"]
+            E1["Effect"]
+            E2["Effect"]
+        end
+    end
+
+    Dispatch --> M1
+    M3 --> RootReducer
+    RootReducer --> FeatureStates
+    FeatureStates --> GetState
+    RootReducer --> Effects
+    Effects -->|"Dispatch new actions"| Dispatch
+
+    style Component fill:#e1f5fe
+    style Store fill:#f3e5f5
+    style Middleware fill:#fff3e0
+    style RootReducer fill:#e8f5e9
+    style FeatureStates fill:#fce4ec
+    style Effects fill:#fff8e1
 ```
 
 1. **Components dispatch actions** to signal user intent or events.
@@ -103,31 +107,44 @@ public sealed record DecrementAction : IAction;
 public sealed record SetCountAction(int Value) : IAction;
 ```
 
-### 4. Implement reducers
+### 4. Implement reducers and register them
+
+Reducers are registered with the DI container. When you register a reducer, the feature state is automatically registered too:
 
 ```csharp
+// Program.cs
+using Mississippi.Reservoir;
+
 // Using delegate reducers (concise)
-services.AddReducer<IncrementAction, CounterState>(
+builder.Services.AddReducer<IncrementAction, CounterState>(
     (state, action) => state with { Count = state.Count + 1 });
 
-services.AddReducer<DecrementAction, CounterState>(
+builder.Services.AddReducer<DecrementAction, CounterState>(
     (state, action) => state with { Count = state.Count - 1 });
 
-// Or using class-based action reducers (more testable)
+// Or using class-based reducers (more testable)
+builder.Services.AddReducer<SetCountAction, CounterState, SetCountReducer>();
+```
+
+For class-based reducers, inherit from `ActionReducerBase`:
+
+```csharp
+using Mississippi.Reservoir.Abstractions;
+
 public sealed class SetCountReducer : ActionReducerBase<SetCountAction, CounterState>
 {
     public override CounterState Reduce(CounterState state, SetCountAction action)
         => state with { Count = action.Value };
 }
-
-services.AddReducer<SetCountAction, CounterState, SetCountReducer>();
 ```
 
 ### 5. Register Reservoir
 
+After registering all your reducers and effects, add the store:
+
 ```csharp
 // Program.cs
-builder.Services.AddReservoir(store => store.RegisterState<CounterState>());
+builder.Services.AddReservoir();
 ```
 
 ### 6. Use in Blazor components
@@ -162,6 +179,7 @@ For simpler applications with minimal shared state, standard Blazor component st
 
 Explore each concept in depth:
 
+- [Getting Started](./getting-started.md) - Complete walkthrough with a working example
 - [Actions](./actions.md) - Define what happens in your application
 - [Reducers](./reducers.md) - Specify how state changes in response to actions
 - [Effects](./effects.md) - Handle asynchronous operations
