@@ -5,17 +5,18 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
 using Mississippi.EventSourcing.Brooks.Factory;
 using Mississippi.EventSourcing.Brooks.Reader;
-using Mississippi.EventSourcing.Brooks.Writer;
 
 using Moq;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Tests.Factory;
+namespace Mississippi.EventSourcing.Brooks.L0Tests.Factory;
 
 /// <summary>
 ///     Tests for <see cref="BrookGrainFactory" />.

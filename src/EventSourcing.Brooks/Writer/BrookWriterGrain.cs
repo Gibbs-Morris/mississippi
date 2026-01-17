@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,8 +8,9 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
+using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
+using Mississippi.EventSourcing.Brooks.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -74,7 +75,7 @@ internal sealed class BrookWriterGrain
         CancellationToken cancellationToken = default
     )
     {
-        BrookKey key = this.GetPrimaryKeyString();
+        BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.AppendingEvents(key, events.Length, expectedCursorPosition?.Value);
         Stopwatch sw = Stopwatch.StartNew();
         BrookPosition newPosition = await BrookWriterService.AppendEventsAsync(
@@ -83,13 +84,15 @@ internal sealed class BrookWriterGrain
             expectedCursorPosition,
             cancellationToken);
         sw.Stop();
+        BrookMetrics.RecordWrite(key, events.Length, sw.Elapsed.TotalMilliseconds);
         Logger.EventsAppended(key, events.Length, newPosition.Value, sw.ElapsedMilliseconds);
         Logger.PublishingCursorMoved(key, newPosition.Value);
         IAsyncStream<BrookCursorMovedEvent> stream = this
             .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookCursorMovedEvent>(
                 StreamId.Create(EventSourcingOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
-        await stream.OnNextAsync(new(newPosition));
+        await stream.OnNextAsync(new(this.GetPrimaryKeyString(), newPosition));
+        Logger.CursorMovedEventPublished(key, newPosition.Value);
         return newPosition;
     }
 
@@ -102,7 +105,7 @@ internal sealed class BrookWriterGrain
         CancellationToken token
     )
     {
-        BrookKey key = this.GetPrimaryKeyString();
+        BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.Activated(key);
         return Task.CompletedTask;
     }

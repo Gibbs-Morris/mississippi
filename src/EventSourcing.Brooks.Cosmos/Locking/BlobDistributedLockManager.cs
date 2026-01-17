@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,8 +8,11 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using Mississippi.Common.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
@@ -16,7 +20,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 /// <summary>
 ///     Distributed lock manager implementation using Azure Blob Storage.
 /// </summary>
-internal class BlobDistributedLockManager : IDistributedLockManager
+internal sealed class BlobDistributedLockManager : IDistributedLockManager
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="BlobDistributedLockManager" /> class.
@@ -27,6 +31,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
     /// <param name="logger">The logger for diagnostic output.</param>
     /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
     public BlobDistributedLockManager(
+        [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)]
         BlobServiceClient blobServiceClient,
         IOptions<BrookStorageOptions> options,
         IBlobLeaseClientFactory leaseClientFactory,
@@ -61,6 +66,7 @@ internal class BlobDistributedLockManager : IDistributedLockManager
         CancellationToken cancellationToken = default
     )
     {
+        Stopwatch stopwatch = Stopwatch.StartNew();
         Logger.AcquiringLock(lockKey, duration.TotalSeconds);
         BlobContainerClient? containerClient = BlobServiceClient.GetBlobContainerClient(Options.LockContainerName);
         await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
@@ -76,8 +82,10 @@ internal class BlobDistributedLockManager : IDistributedLockManager
         // Bounded retries for lease conflicts
         const int maxAcquireAttempts = 5;
         Response<BlobLease>? lease = null;
+        int attemptsMade = 0;
         for (int attempt = 0; attempt < maxAcquireAttempts; attempt++)
         {
+            attemptsMade = attempt + 1;
             try
             {
                 lease = await leaseClient.AcquireAsync(duration, cancellationToken: cancellationToken);
@@ -86,6 +94,9 @@ internal class BlobDistributedLockManager : IDistributedLockManager
             }
             catch (RequestFailedException ex) when (ex.Status == 409)
             {
+                // Record contention wait for each 409 conflict
+                LockMetrics.RecordContentionWait(lockKey);
+
                 // Lease is already held; backoff with jitter and retry while attempts remain
                 if (attempt < (maxAcquireAttempts - 1))
                 {
@@ -97,16 +108,21 @@ internal class BlobDistributedLockManager : IDistributedLockManager
             }
         }
 
+        stopwatch.Stop();
         if (lease is null)
         {
+            LockMetrics.RecordAcquireFailure(lockKey, stopwatch.Elapsed.TotalMilliseconds, attemptsMade);
             Logger.LockAcquisitionFailed(lockKey, maxAcquireAttempts);
             throw new InvalidOperationException("Failed to acquire blob lease for distributed lock after retries.");
         }
 
+        LockMetrics.RecordAcquireSuccess(lockKey, stopwatch.Elapsed.TotalMilliseconds, attemptsMade);
         return new BlobDistributedLock(
             leaseClient,
             lease.Value.LeaseId,
             Options.LeaseRenewalThresholdSeconds,
-            Options.LeaseDurationSeconds);
+            Options.LeaseDurationSeconds,
+            lockKey,
+            stopwatch);
     }
 }

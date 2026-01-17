@@ -33,9 +33,9 @@ Purpose: <concise behavior description>
 Invariants:
 - <bullet list of conditions that must always hold>
 Test Cases:
-| ID | Scenario | Given / When / Then | Edge Focus | Priority | Type |
-|----|----------|---------------------|------------|----------|------|
-| T1 | ... | G: ... W: ... T: ... | e.g. Null / Bounds / Concurrency | H | Unit |
+| ID | Scenario | Given / When / Then | Edge Focus | Priority | Type  |
+| ---- | ---------- | --------------------- | ------------ | ---------- | ------ |
+| T1 | ... | G: ... W: ... T: ... | e.g. Null / Bounds / Concurrency | H | Unit  |
 
 Notes:
 - <optional clarifications>

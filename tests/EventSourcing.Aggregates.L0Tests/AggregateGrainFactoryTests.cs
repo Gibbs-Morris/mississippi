@@ -5,15 +5,13 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Moq;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Tests;
+namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateGrainFactory" />.
@@ -23,18 +21,6 @@ namespace Mississippi.EventSourcing.Aggregates.Tests;
 [AllureSubSuite("Grain Factory")]
 public class AggregateGrainFactoryTests
 {
-    /// <summary>
-    ///     Test brook definition.
-    /// </summary>
-    [BrookName("TEST", "APP", "BROOK")]
-    private sealed class TestBrook : IBrookDefinition
-    {
-        /// <summary>
-        ///     Gets the brook name.
-        /// </summary>
-        public static string BrookName => "TEST.APP.BROOK";
-    }
-
     /// <summary>
     ///     Constructor should throw when grain factory is null.
     /// </summary>
@@ -56,55 +42,81 @@ public class AggregateGrainFactoryTests
     }
 
     /// <summary>
-    ///     GetAggregate with brook key should resolve grain with the key.
+    ///     GetGenericAggregate should resolve grain with entity ID only.
     /// </summary>
     [Fact]
-    public void GetAggregateWithBrookKeyResolvesGrain()
+    public void GetGenericAggregateResolvesGrainWithEntityId()
     {
         Mock<IGrainFactory> grainFactoryMock = new();
         Mock<ILogger<AggregateGrainFactory>> loggerMock = new();
-        Mock<ITestAggregateGrain> grainMock = new();
-        BrookKey expectedKey = BrookKey.For<TestBrook>("entity-456");
+        Mock<IGenericAggregateGrain<AggregateGrainTestAggregate>> grainMock = new();
+        string entityId = "entity-789";
         string? capturedKey = null;
-        grainFactoryMock.Setup(f => f.GetGrain<ITestAggregateGrain>(It.IsAny<string>(), It.IsAny<string?>()))
+        grainFactoryMock
+            .Setup(f => f.GetGrain<IGenericAggregateGrain<AggregateGrainTestAggregate>>(
+                It.IsAny<string>(),
+                It.IsAny<string?>()))
             .Callback<string, string?>((
                 key,
                 _
             ) => capturedKey = key)
             .Returns(grainMock.Object);
         AggregateGrainFactory factory = new(grainFactoryMock.Object, loggerMock.Object);
-        ITestAggregateGrain result = factory.GetAggregate<ITestAggregateGrain>(expectedKey);
+        IGenericAggregateGrain<AggregateGrainTestAggregate> result =
+            factory.GetGenericAggregate<AggregateGrainTestAggregate>(entityId);
         Assert.Same(grainMock.Object, result);
-        Assert.Equal((string)expectedKey, capturedKey);
+        Assert.Equal(entityId, capturedKey);
     }
 
     /// <summary>
-    ///     GetAggregate with brook type should resolve grain with correct key.
+    ///     GetGenericAggregate should throw when entity ID is null.
     /// </summary>
     [Fact]
-    public void GetAggregateWithBrookTypeResolvesGrainWithCorrectKey()
+    public void GetGenericAggregateThrowsWhenEntityIdIsNull()
     {
         Mock<IGrainFactory> grainFactoryMock = new();
         Mock<ILogger<AggregateGrainFactory>> loggerMock = new();
-        Mock<ITestAggregateGrain> grainMock = new();
+        AggregateGrainFactory factory = new(grainFactoryMock.Object, loggerMock.Object);
+        Assert.Throws<ArgumentNullException>(() =>
+            factory.GetGenericAggregate<AggregateGrainTestAggregate>((string)null!));
+    }
+
+    /// <summary>
+    ///     GetGenericAggregate should throw when entity ID is whitespace.
+    /// </summary>
+    [Fact]
+    public void GetGenericAggregateThrowsWhenEntityIdIsWhitespace()
+    {
+        Mock<IGrainFactory> grainFactoryMock = new();
+        Mock<ILogger<AggregateGrainFactory>> loggerMock = new();
+        AggregateGrainFactory factory = new(grainFactoryMock.Object, loggerMock.Object);
+        Assert.Throws<ArgumentException>(() => factory.GetGenericAggregate<AggregateGrainTestAggregate>("   "));
+    }
+
+    /// <summary>
+    ///     GetGenericAggregate with AggregateKey should resolve grain correctly.
+    /// </summary>
+    [Fact]
+    public void GetGenericAggregateWithAggregateKeyResolvesGrain()
+    {
+        Mock<IGrainFactory> grainFactoryMock = new();
+        Mock<ILogger<AggregateGrainFactory>> loggerMock = new();
+        Mock<IGenericAggregateGrain<AggregateGrainTestAggregate>> grainMock = new();
+        AggregateKey aggregateKey = new("entity-789");
         string? capturedKey = null;
-        grainFactoryMock.Setup(f => f.GetGrain<ITestAggregateGrain>(It.IsAny<string>(), It.IsAny<string?>()))
+        grainFactoryMock
+            .Setup(f => f.GetGrain<IGenericAggregateGrain<AggregateGrainTestAggregate>>(
+                It.IsAny<string>(),
+                It.IsAny<string?>()))
             .Callback<string, string?>((
                 key,
                 _
             ) => capturedKey = key)
             .Returns(grainMock.Object);
         AggregateGrainFactory factory = new(grainFactoryMock.Object, loggerMock.Object);
-        ITestAggregateGrain result = factory.GetAggregate<ITestAggregateGrain, TestBrook>("entity-123");
+        IGenericAggregateGrain<AggregateGrainTestAggregate> result =
+            factory.GetGenericAggregate<AggregateGrainTestAggregate>(aggregateKey);
         Assert.Same(grainMock.Object, result);
-        Assert.NotNull(capturedKey);
-        BrookKey expectedKey = BrookKey.For<TestBrook>("entity-123");
-        Assert.Equal((string)expectedKey, capturedKey);
+        Assert.Equal("entity-789", capturedKey);
     }
 }
-
-/// <summary>
-///     Test aggregate grain interface for testing.
-/// </summary>
-[Alias("Mississippi.EventSourcing.Aggregates.Tests.ITestAggregateGrain")]
-internal interface ITestAggregateGrain : IAggregateGrain;

@@ -8,7 +8,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Mapping;
 
 /// <summary>
 ///     Test class for EventStorageToEventMapper functionality.
@@ -33,6 +33,7 @@ public sealed class EventStorageToEventMapperTests
             EventType = "etype",
             DataContentType = "application/octet-stream",
             Data = new byte[] { 9, 8, 7 },
+            DataSizeBytes = 3,
             Time = DateTimeOffset.UtcNow,
         };
         EventStorageToEventMapper mapper = new();
@@ -46,6 +47,7 @@ public sealed class EventStorageToEventMapperTests
         Assert.Equal(input.EventType, result.EventType);
         Assert.Equal(input.DataContentType, result.DataContentType);
         Assert.Equal(input.Data, result.Data.ToArray());
+        Assert.Equal(3, result.DataSizeBytes);
         Assert.Equal(input.Time, result.Time);
     }
 }

@@ -14,13 +14,13 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions;
 /// <remarks>
 ///     <para>
 ///         This grain is keyed by <see cref="SnapshotKey" /> in the format
-///         "projectionType|projectionId|reducersHash|version".
+///         "brookName|entityId|version|snapshotStorageName|reducersHash".
 ///         Once activated and hydrated, the state is immutable and cached in memory for fast read access.
 ///     </para>
 ///     <para>
 ///         On activation, the grain first attempts to load the snapshot from storage.
-///         If the snapshot does not exist or has a stale reducer hash, the grain reads events from
-///         the underlying brook and rebuilds the state using the registered reducers.
+///         If the snapshot does not exist or has a stale event reducer hash, the grain reads events from
+///         the underlying brook and rebuilds the state using the registered event reducers.
 ///     </para>
 ///     <para>
 ///         After the state is built, a one-way call is made to an <see cref="ISnapshotPersisterGrain" />

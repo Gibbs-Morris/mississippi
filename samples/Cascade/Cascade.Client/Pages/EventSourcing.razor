@@ -1,0 +1,384 @@
+@page "/event-sourcing"
+@using Cascade.Contracts.Api
+@using Cascade.Contracts.Projections
+@using Mississippi.Inlet.Abstractions
+@using Mississippi.Inlet.Abstractions.Actions
+@inherits Mississippi.Reservoir.Blazor.StoreComponent
+@inject IInletStore InletStore
+@inject HttpClient Http
+
+<h1>Event Sourcing Demo</h1>
+<p>Demonstrates: Blazor Client → SignalR → Orleans Aggregate/Projection Grains → Cosmos DB</p>
+<p><strong>Real-time updates via Inlet:</strong> Open this page in multiple browser tabs and watch messages appear in real-time!</p>
+
+<section>
+    <h2>Conversation</h2>
+    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+        <label>Conversation ID:</label>
+        <input @bind="conversationId" placeholder="Enter conversation ID" style="width: 250px;"/>
+    </div>
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <button @onclick="JoinConversationAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId) || isJoined)">
+            📡 Join Conversation
+        </button>
+        <button @onclick="StartConversationAsync" disabled="@(string.IsNullOrWhiteSpace(conversationId))">
+            ➕ Start New Conversation
+        </button>
+        @if (isJoined)
+        {
+            <button @onclick="LeaveConversation" style="background-color: #dc3545; color: white;">
+                🚪 Leave
+            </button>
+        }
+    </div>
+    <p>
+        <strong>Status:</strong>
+        @if (isJoined)
+        {
+            <span style="color: green;">✅ Subscribed to "@currentSubscription"</span>
+        }
+        else
+        {
+            <span style="color: gray;">⚪ Not subscribed</span>
+        }
+    </p>
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <p>@statusMessage</p>
+    }
+</section>
+
+<section>
+    <h2>Send Message</h2>
+    @if (!isJoined)
+    {
+        <p style="color: gray;">
+            <em>Join a conversation first to send messages.</em>
+        </p>
+    }
+    else
+    {
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+            <label>Your Name:</label>
+            <input @bind="senderName" placeholder="Enter your name" style="width: 150px;"/>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+            <label style="width: 85px;">Message:</label>
+            <input @bind="messageContent" placeholder="Enter message" @onkeypress="OnMessageKeyPress" style="flex: 1; max-width: 400px;"/>
+            <button @onclick="SendMessageAsync"
+                    disabled="@(isSendingBatch || string.IsNullOrWhiteSpace(messageContent) || string.IsNullOrWhiteSpace(senderName))">
+                Send
+            </button>
+            <button @onclick="SendRandomBatchAsync"
+                    disabled="@(isSendingBatch || string.IsNullOrWhiteSpace(senderName))">
+                Send Random Batch
+            </button>
+        </div>
+        @if (!string.IsNullOrEmpty(sendResult))
+        {
+            <p>@sendResult</p>
+        }
+    }
+</section>
+
+<section>
+    <h2>Messages (Real-time Projection)</h2>
+    @if (!isJoined)
+    {
+        <p style="color: gray;">
+            <em>Join a conversation to see messages.</em>
+        </p>
+    }
+    else if (InletStore.IsProjectionLoading<ChannelMessagesDto>(currentSubscription!))
+    {
+        <p>⏳ Loading projection...</p>
+    }
+    else if (InletStore.GetProjectionError<ChannelMessagesDto>(currentSubscription!) is { } error)
+    {
+        <p>❌ Error: @error.Message</p>
+        <button @onclick="RefreshProjection">Retry</button>
+    }
+    else if (projection is { Messages.Count: > 0 })
+    {
+        <p>✅ Receiving updates - Total Messages: @projection.MessageCount</p>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Sender</th>
+                <th>Content</th>
+                <th>Sent At</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (ChannelMessageItem message in projection.Messages)
+            {
+                <tr style="@(message.IsDeleted ? "text-decoration: line-through; color: gray;" : "")">
+                    <td>@message.MessageId[..12]...</td>
+                    <td>@message.SentBy</td>
+                    <td>@message.Content</td>
+                    <td>@message.SentAt.ToString("HH:mm:ss")</td>
+                    <td>
+                        @if (message.IsDeleted)
+                        {
+                            <span>Deleted</span>
+                        }
+                        else if (message.EditedAt.HasValue)
+                        {
+                            <span>Edited @message.EditedAt.Value.ToString("HH:mm:ss")</span>
+                        }
+                        else
+                        {
+                            <span>✓</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else if (projection is not null)
+    {
+        <p>✅ Subscribed - <em>No messages yet. Send one above!</em></p>
+    }
+    else
+    {
+        <p>📡 Waiting for projection data...</p>
+    }
+</section>
+
+@code {
+
+    private string conversationId = "demo-conversation";
+
+    private string senderName = "Demo User";
+
+    private string messageContent = string.Empty;
+
+    private string statusMessage = string.Empty;
+
+    private string sendResult = string.Empty;
+
+#pragma warning disable CA5394 // Random is acceptable for demo UI purposes - not security sensitive
+    private readonly Random random = new();
+#pragma warning restore CA5394
+
+    private bool isSendingBatch;
+
+    private string? currentSubscription;
+
+    private bool isJoined => !string.IsNullOrWhiteSpace(currentSubscription);
+
+    private ChannelMessagesDto? projection => isJoined ? InletStore.GetProjection<ChannelMessagesDto>(currentSubscription!) : null;
+
+    private static readonly string[] RandomPhrases = new[] { "quick update from the field", "shipping now, watching metrics", "status green across the board", "rolling out another change", "latency looks calm today", "cache warmed, results stable", "signal is strong in the channel", "deploy complete, monitoring", "sync finished without issues", "handoff done, next up testing" };
+
+    private static readonly string[] RandomAdjectives = new[] { "quiet", "bright", "steady", "curious", "bold", "swift", "gentle", "lively", "calm", "sharp" };
+
+    private static readonly string[] RandomNouns = new[] { "river", "signal", "delta", "thread", "message", "stream", "pulse", "window", "channel", "bridge" };
+
+    private static readonly string[] RandomVerbs = new[] { "drifts", "sparks", "flows", "hums", "glides", "turns", "shifts", "loops", "echoes", "lands" };
+
+    private static readonly string[] RandomEnds = new[] { "at sunrise", "over the delta", "in the stream", "through the wire", "with a soft echo", "under the lights", "across the board", "past the checkpoint", "after the commit", "inside the channel" };
+
+    private Task JoinConversationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(conversationId))
+        {
+            return Task.CompletedTask;
+        }
+
+        // Unsubscribe from previous if different
+        if (!string.IsNullOrWhiteSpace(currentSubscription) && (currentSubscription != conversationId))
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<ChannelMessagesDto>(currentSubscription));
+        }
+
+        // Subscribe to the new conversation's projection
+        currentSubscription = conversationId;
+        Dispatch(new SubscribeToProjectionAction<ChannelMessagesDto>(currentSubscription));
+        statusMessage = $"📡 Joined conversation '{conversationId}' - listening for real-time updates...";
+        return Task.CompletedTask;
+    }
+
+    private void LeaveConversation()
+    {
+        if (!string.IsNullOrWhiteSpace(currentSubscription))
+        {
+            Dispatch(new UnsubscribeFromProjectionAction<ChannelMessagesDto>(currentSubscription));
+            statusMessage = $"Left conversation '{currentSubscription}'";
+            currentSubscription = null;
+        }
+    }
+
+    private void RefreshProjection()
+    {
+        if (isJoined)
+        {
+            Dispatch(new RefreshProjectionAction<ChannelMessagesDto>(currentSubscription!));
+        }
+    }
+
+    private async Task StartConversationAsync()
+    {
+        statusMessage = "Starting conversation...";
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsync($"/api/conversations/{Uri.EscapeDataString(conversationId)}/start", null);
+            string content = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                statusMessage = $"✓ Conversation '{conversationId}' started successfully!";
+
+                // Auto-join after starting
+                await JoinConversationAsync();
+            }
+            else
+            {
+                statusMessage = $"✗ Failed to start: {content}";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"✗ Exception: {ex.Message}";
+        }
+    }
+
+    private async Task OnMessageKeyPress(
+        KeyboardEventArgs e
+    )
+    {
+        if (e.Key == "Enter")
+        {
+            await SendMessageAsync();
+        }
+    }
+
+    private async Task SendMessageAsync()
+    {
+        if (!isJoined || isSendingBatch)
+        {
+            return;
+        }
+
+        sendResult = "Sending...";
+        try
+        {
+            SendMessageRequest request = new()
+            {
+                Content = messageContent,
+                SentBy = senderName,
+            };
+            HttpResponseMessage response = await Http.PostAsJsonAsync($"/api/conversations/{Uri.EscapeDataString(currentSubscription!)}/messages", request);
+            string content = await response.Content.ReadAsStringAsync();
+            sendResult = response.IsSuccessStatusCode ? "✓ Sent!" : $"✗ Error: {content}";
+
+            // Clear message input - projection will auto-update via SignalR
+            if (response.IsSuccessStatusCode)
+            {
+                messageContent = string.Empty;
+                // Clear the send result after a moment
+                ClearSendResultAfterDelay();
+            }
+        }
+        catch (Exception ex)
+        {
+            sendResult = $"✗ Exception: {ex.Message}";
+        }
+    }
+
+#pragma warning disable CA5394 // Random is acceptable for demo UI - not security sensitive
+    private async Task SendRandomBatchAsync()
+    {
+        if (!isJoined || isSendingBatch || string.IsNullOrWhiteSpace(senderName))
+        {
+            return;
+        }
+
+        int messageCount = random.Next(1, 251);
+        int sentCount = 0;
+        isSendingBatch = true;
+        sendResult = $"Sending random batch ({messageCount} messages)...";
+        try
+        {
+            for (int i = 0; i < messageCount; i++)
+            {
+                string content = GenerateRandomMessage();
+                if (await TrySendMessageAsync(content))
+                {
+                    sentCount++;
+                }
+
+                sendResult = $"Batch progress: {i + 1}/{messageCount} (sent {sentCount})";
+                await InvokeAsync(StateHasChanged);
+            }
+
+            sendResult = $"Batch complete: sent {sentCount}/{messageCount}.";
+            ClearSendResultAfterDelay();
+        }
+        finally
+        {
+            isSendingBatch = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task<bool> TrySendMessageAsync(
+        string content
+    )
+    {
+        if (!isJoined || string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(senderName))
+        {
+            return false;
+        }
+
+        try
+        {
+            SendMessageRequest request = new()
+            {
+                Content = content,
+                SentBy = senderName,
+            };
+            HttpResponseMessage response = await Http.PostAsJsonAsync($"/api/conversations/{Uri.EscapeDataString(currentSubscription!)}/messages", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private string GenerateRandomMessage()
+    {
+        if (random.Next(0, 3) == 0)
+        {
+            return RandomPhrases[random.Next(RandomPhrases.Length)];
+        }
+
+        string adjective = RandomAdjectives[random.Next(RandomAdjectives.Length)];
+        string noun = RandomNouns[random.Next(RandomNouns.Length)];
+        string verb = RandomVerbs[random.Next(RandomVerbs.Length)];
+        string tail = RandomEnds[random.Next(RandomEnds.Length)];
+        return $"{adjective} {noun} {verb} {tail}";
+    }
+#pragma warning restore CA5394
+
+    private void ClearSendResultAfterDelay()
+    {
+        _ = Task.Delay(2000)
+            .ContinueWith(
+                _ =>
+                {
+                    if (isSendingBatch)
+                    {
+                        return;
+                    }
+
+                    sendResult = string.Empty;
+                    InvokeAsync(StateHasChanged);
+                },
+                TaskScheduler.Default);
+    }
+
+}

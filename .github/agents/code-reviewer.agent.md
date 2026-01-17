@@ -145,7 +145,7 @@ Apply these checks to files that implement grain interfaces (types implementing 
 
 ## Summary
 | Metric | Value |
-|--------|-------|
+| -------- | ------- |
 | Files Reviewed | 5 |
 | Critical | 0 |
 | Major | 2 |

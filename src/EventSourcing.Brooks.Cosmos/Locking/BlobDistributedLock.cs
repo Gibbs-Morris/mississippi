@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,6 +13,10 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 /// </summary>
 internal sealed class BlobDistributedLock : IDistributedLock
 {
+    private readonly Stopwatch heldDurationStopwatch;
+
+    private readonly string lockKey;
+
     private readonly TimeSpan renewalThreshold;
 
     private bool disposed;
@@ -25,17 +30,23 @@ internal sealed class BlobDistributedLock : IDistributedLock
     /// <param name="lockId">The unique identifier for the lock.</param>
     /// <param name="leaseRenewalThresholdSeconds">The threshold in seconds for lease renewal.</param>
     /// <param name="leaseDurationSeconds">The duration in seconds for the lease.</param>
+    /// <param name="lockKey">The lock key for metrics reporting.</param>
+    /// <param name="heldDurationStopwatch">Stopwatch started when lock was acquired, for measuring held duration.</param>
     public BlobDistributedLock(
         IBlobLeaseClient leaseClient,
         string lockId,
         int leaseRenewalThresholdSeconds,
-        int leaseDurationSeconds
+        int leaseDurationSeconds,
+        string lockKey,
+        Stopwatch heldDurationStopwatch
     )
     {
         LeaseClient = leaseClient;
         LockId = lockId;
         LeaseRenewalThresholdSeconds = leaseRenewalThresholdSeconds;
         LeaseDurationSeconds = leaseDurationSeconds;
+        this.lockKey = lockKey;
+        this.heldDurationStopwatch = heldDurationStopwatch;
         lastRenewalTime = DateTimeOffset.UtcNow;
 
         // Calculate renewal threshold with a safety buffer to account for network latency
@@ -72,6 +83,12 @@ internal sealed class BlobDistributedLock : IDistributedLock
             catch (InvalidOperationException)
             {
                 // Ignore invalid operation exceptions during disposal (e.g., lease already released)
+            }
+            finally
+            {
+                // Record how long the lock was held
+                heldDurationStopwatch.Stop();
+                LockMetrics.RecordHeldDuration(lockKey, heldDurationStopwatch.Elapsed.TotalMilliseconds);
             }
 
             disposed = true;

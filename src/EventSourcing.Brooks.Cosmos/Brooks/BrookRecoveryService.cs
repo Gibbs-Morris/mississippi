@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,10 +8,9 @@ using Azure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
-using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
@@ -20,7 +19,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
 /// <summary>
 ///     Service for recovering and managing brook cursor positions in Cosmos DB.
 /// </summary>
-internal class BrookRecoveryService : IBrookRecoveryService
+internal sealed class BrookRecoveryService : IBrookRecoveryService
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookRecoveryService" /> class.

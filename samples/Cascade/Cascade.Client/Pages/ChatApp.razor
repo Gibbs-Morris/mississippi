@@ -1,0 +1,131 @@
+@page "/chat-app"
+@using Cascade.Client.Components.Atoms.Button
+@using Cascade.Client.Components.Atoms.Input
+@using Cascade.Client.Components.Molecules.MessageInput
+@using Cascade.Client.Components.Organisms.ChannelSidebar
+@using Cascade.Client.Components.Organisms.MessageList
+@inherits Mississippi.Reservoir.Blazor.StoreComponent
+
+@if (!ChatState.IsAuthenticated)
+{
+    @* Login Screen *@
+    <div class="chat-login">
+        <div class="chat-login__card">
+            <div class="chat-login__logo" aria-hidden="true">💬</div>
+            <h1 class="chat-login__title">Welcome to Cascade Chat</h1>
+            <p class="chat-login__subtitle">Enter your name to get started</p>
+
+            @if (!string.IsNullOrEmpty(ChatState.Error))
+            {
+                <div class="chat-login__error" role="alert">
+                    @ChatState.Error
+                </div>
+            }
+
+            <div class="chat-login__form">
+                <Input Label="Display Name"
+                       Placeholder="Enter your name"
+                       Value="@displayName"
+                       ValueChanged="@(value => displayName = value)"
+                       OnEnter="HandleLoginAsync"
+                       Disabled="@ChatState.IsLoggingIn"/>
+
+                <Button Variant="primary"
+                        Size="lg"
+                        FullWidth="true"
+                        OnClick="HandleLoginAsync"
+                        Disabled="@(ChatState.IsLoggingIn || string.IsNullOrWhiteSpace(displayName))">
+                    @if (ChatState.IsLoggingIn)
+                    {
+                        <span>Signing in...</span>
+                    }
+                    else
+                    {
+                        <span>Continue</span>
+                    }
+                </Button>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    @* Main Chat Interface *@
+    <div class="chat-app">
+        @* Sidebar *@
+        <ChannelSidebar Channels="@GetAvailableChannels()"
+                        SelectedChannelId="@ChatState.SelectedChannelId"
+                        CurrentUserName="@ChatState.UserDisplayName"
+                        OnSelectChannel="HandleSelectChannelAsync"
+                        OnCreateChannel="HandleShowCreateChannel"
+                        OnLogout="HandleLogout"/>
+
+        @* Main Content Area *@
+        <main class="chat-main">
+            @if (string.IsNullOrEmpty(ChatState.SelectedChannelId))
+            {
+                @* No Channel Selected *@
+                <div class="chat-messages__empty">
+                    <span class="chat-messages__empty-icon" aria-hidden="true">👋</span>
+                    <h3 class="chat-messages__empty-title">Welcome, @ChatState.UserDisplayName!</h3>
+                    <p class="chat-messages__empty-text">Select a channel from the sidebar or create a new one to start chatting.</p>
+                    <div style="margin-top: var(--chat-space-4);">
+                        <Button Variant="primary" OnClick="HandleShowCreateChannel">
+                            ✚ Create Channel
+                        </Button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @* Channel Header *@
+                <header class="chat-header">
+                    <span class="chat-header__channel-icon" aria-hidden="true">#</span>
+                    <h1 class="chat-header__channel-name">@SelectedChannelName</h1>
+                    <span class="chat-header__divider"></span>
+                    <span class="chat-header__topic">Real-time messaging powered by Mississippi + Orleans</span>
+                </header>
+                @* Message List *@
+                <MessageList Messages="@GetCurrentMessages()" IsLoading="@IsLoadingMessages"/>
+                @* Message Input *@
+                <MessageInput Placeholder="@($"Message #{SelectedChannelName}")"
+                              OnSend="HandleSendMessageAsync"
+                              Disabled="@IsLoadingMessages"/>
+            }
+        </main>
+    </div>
+    @* Create Channel Modal *@
+    @if (ChatState.ShowCreateChannelModal)
+    {
+        <div class="modal-overlay" @onclick="HandleCloseModal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal" @onclick:stopPropagation="true">
+                <header class="modal__header">
+                    <h2 id="modal-title" class="modal__title">Create a Channel</h2>
+                    <p class="modal__subtitle">Channels are where conversations happen. Give your channel a name.</p>
+                </header>
+                <div class="modal__body">
+                    <Input Label="Channel Name"
+                           Placeholder="e.g., general, random, project-x"
+                           Value="@newChannelName"
+                           ValueChanged="@(value => newChannelName = value)"
+                           OnEnter="HandleCreateChannelAsync"/>
+                </div>
+                <footer class="modal__footer">
+                    <Button Variant="secondary" OnClick="HandleCloseModal">Cancel</Button>
+                    <Button Variant="primary"
+                            OnClick="HandleCreateChannelAsync"
+                            Disabled="@(isCreatingChannel || string.IsNullOrWhiteSpace(newChannelName))">
+                        @if (isCreatingChannel)
+                        {
+                            <span>Creating...</span>
+                        }
+                        else
+                        {
+                            <span>Create Channel</span>
+                        }
+                    </Button>
+                </footer>
+            </div>
+        </div>
+    }
+}

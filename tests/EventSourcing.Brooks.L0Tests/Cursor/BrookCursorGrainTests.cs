@@ -3,15 +3,15 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Brooks.Writer;
-using Mississippi.EventSourcing.Tests.Infrastructure;
+using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
+using Mississippi.EventSourcing.Brooks.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
 
 using Orleans.TestingHost;
 
 
-namespace Mississippi.EventSourcing.Tests.Cursor;
+namespace Mississippi.EventSourcing.Brooks.L0Tests.Cursor;
 
 /// <summary>
 ///     Integration tests for <see cref="IBrookCursorGrain" /> behavior.

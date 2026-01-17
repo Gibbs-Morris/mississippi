@@ -79,6 +79,7 @@ internal sealed class BrookEventConverter : IBrookEventConverter
                     Source = source,
                     Data = data.ToArray().ToImmutableArray(),
                     DataContentType = SerializationProvider.Format,
+                    DataSizeBytes = data.Length,
                 });
         }
 

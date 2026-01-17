@@ -1,10 +1,12 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.EventSourcing.Snapshots.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -18,17 +20,17 @@ namespace Mississippi.EventSourcing.Snapshots;
 /// <remarks>
 ///     <para>
 ///         This grain is designed to receive fire-and-forget calls from
-///         <see cref="SnapshotCacheGrainBase{TSnapshot, TBrook}" />,
+///         <see cref="SnapshotCacheGrain{TSnapshot}" />,
 ///         allowing the cache grain to return immediately after building state
 ///         while persistence happens asynchronously.
 ///     </para>
 ///     <para>
 ///         The grain is keyed by <see cref="SnapshotKey" /> in the format
-///         "projectionType|projectionId|reducersHash|version",
+///         "brookName|entityId|version|snapshotStorageName|reducersHash",
 ///         matching the cache grain's key for one-to-one correspondence.
 ///     </para>
 /// </remarks>
-internal class SnapshotPersisterGrain
+internal sealed class SnapshotPersisterGrain
     : ISnapshotPersisterGrain,
       IGrainBase
 {
@@ -65,7 +67,7 @@ internal class SnapshotPersisterGrain
     private ISnapshotStorageWriter SnapshotStorageWriter { get; }
 
     /// <inheritdoc />
-    public virtual Task OnActivateAsync(
+    public Task OnActivateAsync(
         CancellationToken token
     )
     {
@@ -82,14 +84,20 @@ internal class SnapshotPersisterGrain
     {
         ArgumentNullException.ThrowIfNull(envelope);
         string keyString = snapshotKey;
+        string snapshotTypeName = snapshotKey.Stream.SnapshotStorageName;
         Logger.PersistingSnapshot(keyString);
+        Stopwatch sw = Stopwatch.StartNew();
         try
         {
             await SnapshotStorageWriter.WriteAsync(snapshotKey, envelope, cancellationToken);
+            sw.Stop();
+            SnapshotMetrics.RecordPersist(snapshotTypeName, sw.Elapsed.TotalMilliseconds, true);
             Logger.SnapshotPersisted(keyString);
         }
         catch (Exception ex)
         {
+            sw.Stop();
+            SnapshotMetrics.RecordPersist(snapshotTypeName, sw.Elapsed.TotalMilliseconds, false);
             Logger.PersistenceFailed(ex, keyString, ex.Message);
             throw;
         }

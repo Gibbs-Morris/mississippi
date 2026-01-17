@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Linq;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
 
@@ -21,11 +21,12 @@ internal sealed class SnapshotWriteModelToDocumentMapper : IMapper<SnapshotWrite
             Id = input.Key.Version.ToString(CultureInfo.InvariantCulture),
             Type = "snapshot",
             SnapshotPartitionKey = input.Key.Stream.ToString(),
-            ProjectionType = input.Key.Stream.ProjectionType,
-            ProjectionId = input.Key.Stream.ProjectionId,
+            ProjectionType = input.Key.Stream.SnapshotStorageName,
+            ProjectionId = input.Key.Stream.EntityId,
             ReducersHash = input.Key.Stream.ReducersHash,
             Version = input.Key.Version,
             Data = input.Snapshot.Data.ToArray(),
+            DataSizeBytes = input.Snapshot.DataSizeBytes,
             DataContentType = input.Snapshot.DataContentType,
         };
 }

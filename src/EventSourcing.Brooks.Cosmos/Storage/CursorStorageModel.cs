@@ -6,7 +6,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 /// <summary>
 ///     Storage model for brook cursor position information.
 /// </summary>
-internal class CursorStorageModel
+internal sealed class CursorStorageModel
 {
     /// <summary>
     ///     Gets or sets the original position of the brook cursor before any updates.

@@ -23,12 +23,12 @@ public sealed class SnapshotStorageModelTests
         {
             Data = new byte[] { 1, 2 },
             DataContentType = "ct",
-            StreamKey = new("t", "i", "h"),
+            StreamKey = new("brook", "t", "i", "h"),
             Version = 5,
         };
         Assert.Equal(new byte[] { 1, 2 }, model.Data);
         Assert.Equal("ct", model.DataContentType);
-        Assert.Equal(new("t", "i", "h"), model.StreamKey);
+        Assert.Equal(new("brook", "t", "i", "h"), model.StreamKey);
         Assert.Equal(5, model.Version);
     }
 

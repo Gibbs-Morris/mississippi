@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,8 +6,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
+using Mississippi.EventSourcing.Brooks.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -20,7 +22,7 @@ namespace Mississippi.EventSourcing.Brooks.Cursor;
 ///     Orleans grain implementation that observes and maintains the cursor position of a Mississippi brook.
 /// </summary>
 [ImplicitStreamSubscription(EventSourcingOrleansStreamNames.CursorUpdateStreamName)]
-internal class BrookCursorGrain
+internal sealed class BrookCursorGrain
     : IBrookCursorGrain,
       IAsyncObserver<BrookCursorMovedEvent>,
       IGrainBase
@@ -86,10 +88,12 @@ internal class BrookCursorGrain
     ///     Gets the latest position of the brook cursor, loading from storage if not initialized.
     /// </summary>
     /// <returns>The most recent persisted cursor position.</returns>
-    public Task<BrookPosition> GetLatestPositionAsync() =>
-
+    public Task<BrookPosition> GetLatestPositionAsync()
+    {
         // Fast path: return cached cursor. Writers publish updates on success.
-        Task.FromResult(TrackedCursorPosition);
+        BrookMetrics.RecordCursorRead(BrookId, "cached");
+        return Task.FromResult(TrackedCursorPosition);
+    }
 
     /// <summary>
     ///     Gets the latest position by issuing a strongly consistent storage read and updating the cache if newer.
@@ -104,6 +108,7 @@ internal class BrookCursorGrain
             TrackedCursorPosition = storagePosition;
         }
 
+        BrookMetrics.RecordCursorRead(BrookId, "confirmed");
         return TrackedCursorPosition;
     }
 

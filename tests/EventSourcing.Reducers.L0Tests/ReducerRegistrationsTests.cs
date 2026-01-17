@@ -11,7 +11,7 @@ using Mississippi.EventSourcing.Reducers.Abstractions;
 namespace Mississippi.EventSourcing.Reducers.L0Tests;
 
 /// <summary>
-///     Tests for reducer registrations.
+///     Tests for event reducer registrations.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("Reducers")]
@@ -20,9 +20,7 @@ public sealed class ReducerRegistrationsTests
 {
     private sealed record TestEvent(string Value);
 
-    private sealed record TestProjection(string Value);
-
-    private sealed class TestReducer : IReducer<TestEvent, TestProjection>
+    private sealed class TestEventReducer : IEventReducer<TestEvent, TestProjection>
     {
         public TestProjection Reduce(
             TestProjection state,
@@ -51,8 +49,10 @@ public sealed class ReducerRegistrationsTests
         }
     }
 
+    private sealed record TestProjection(string Value);
+
     /// <summary>
-    ///     Verifies the delegate-based AddReducer overload registers the reducer and root reducer.
+    ///     Verifies the delegate-based AddReducer overload registers the event reducer and root event reducer.
     /// </summary>
     [Fact]
     public void AddReducerDelegateOverloadShouldRegisterReducerAndRootReducer()
@@ -63,9 +63,9 @@ public sealed class ReducerRegistrationsTests
             e
         ) => new($"{state.Value}-{e.Value}"));
         using ServiceProvider provider = services.BuildServiceProvider();
-        IReducer<TestEvent, TestProjection>
-            reducer = provider.GetRequiredService<IReducer<TestEvent, TestProjection>>();
-        TestProjection projection = reducer.Reduce(new("s0"), new("v1"));
+        IEventReducer<TestEvent, TestProjection> eventReducer =
+            provider.GetRequiredService<IEventReducer<TestEvent, TestProjection>>();
+        TestProjection projection = eventReducer.Reduce(new("s0"), new("v1"));
         Assert.Equal("s0-v1", projection.Value);
         IRootReducer<TestProjection> root = provider.GetRequiredService<IRootReducer<TestProjection>>();
         TestProjection state = new("s0");
@@ -74,35 +74,35 @@ public sealed class ReducerRegistrationsTests
     }
 
     /// <summary>
-    ///     Verifies AddReducer registers the reducer implementation as a transient service.
+    ///     Verifies AddReducer registers the event reducer implementation as a transient service.
     /// </summary>
     [Fact]
     public void AddReducerShouldRegisterReducerAsTransient()
     {
         ServiceCollection services = new();
-        services.AddReducer<TestEvent, TestProjection, TestReducer>();
+        services.AddReducer<TestEvent, TestProjection, TestEventReducer>();
         ServiceDescriptor projectionDescriptor = services.Single(x =>
-            x.ServiceType == typeof(IReducer<TestProjection>));
+            x.ServiceType == typeof(IEventReducer<TestProjection>));
         Assert.Equal(ServiceLifetime.Transient, projectionDescriptor.Lifetime);
-        Assert.Equal(typeof(TestReducer), projectionDescriptor.ImplementationType);
+        Assert.Equal(typeof(TestEventReducer), projectionDescriptor.ImplementationType);
         Assert.Null(projectionDescriptor.ImplementationFactory);
         Assert.Null(projectionDescriptor.ImplementationInstance);
         ServiceDescriptor typedDescriptor = services.Single(x =>
-            x.ServiceType == typeof(IReducer<TestEvent, TestProjection>));
+            x.ServiceType == typeof(IEventReducer<TestEvent, TestProjection>));
         Assert.Equal(ServiceLifetime.Transient, typedDescriptor.Lifetime);
-        Assert.Equal(typeof(TestReducer), typedDescriptor.ImplementationType);
+        Assert.Equal(typeof(TestEventReducer), typedDescriptor.ImplementationType);
         Assert.Null(typedDescriptor.ImplementationFactory);
         Assert.Null(typedDescriptor.ImplementationInstance);
     }
 
     /// <summary>
-    ///     Verifies AddReducer also registers a root reducer for the projection type when missing.
+    ///     Verifies AddReducer also registers a root event reducer for the projection type when missing.
     /// </summary>
     [Fact]
     public void AddReducerShouldRegisterRootReducerWhenMissing()
     {
         ServiceCollection services = new();
-        services.AddReducer<TestEvent, TestProjection, TestReducer>();
+        services.AddReducer<TestEvent, TestProjection, TestEventReducer>();
         ServiceDescriptor rootDescriptor = services.Single(x => x.ServiceType == typeof(IRootReducer<TestProjection>));
         Assert.Equal(ServiceLifetime.Transient, rootDescriptor.Lifetime);
         Assert.Equal(typeof(RootReducer<TestProjection>), rootDescriptor.ImplementationType);
@@ -111,7 +111,7 @@ public sealed class ReducerRegistrationsTests
     }
 
     /// <summary>
-    ///     Verifies AddRootReducer registers the root reducer implementation as a transient service.
+    ///     Verifies AddRootReducer registers the root event reducer implementation as a transient service.
     /// </summary>
     [Fact]
     public void AddRootReducerShouldRegisterRootReducerAsTransient()

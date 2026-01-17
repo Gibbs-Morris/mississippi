@@ -222,6 +222,7 @@ function Invoke-SolutionTests {
         [string]$ResultsRoot,
         [string]$Logger = 'trx;LogFileName=test_results.trx',
         [switch]$CollectCoverage,
+        [string[]]$TestLevels,
         [string[]]$AdditionalArguments,
         [switch]$Quiet
     )
@@ -243,6 +244,15 @@ function Invoke-SolutionTests {
     if ($CollectCoverage) {
         $args += '--collect'
         $args += 'XPlat Code Coverage'
+    }
+
+    # Build filter expression for test levels (e.g., L0Tests, L1Tests)
+    # Filters by FullyQualifiedName containing the level pattern
+    if ($TestLevels -and $TestLevels.Count -gt 0) {
+        $filterParts = $TestLevels | ForEach-Object { "FullyQualifiedName~.$($_)." }
+        $filterExpression = $filterParts -join '|'
+        $args += '--filter'
+        $args += $filterExpression
     }
 
     if ($AdditionalArguments) {
@@ -483,7 +493,8 @@ function Invoke-MississippiSolutionUnitTests {
     [CmdletBinding()]
     param(
         [string]$Configuration = 'Release',
-        [string]$RepoRoot = (Get-RepositoryRoot)
+        [string]$RepoRoot = (Get-RepositoryRoot),
+        [string[]]$TestLevels = @('L0Tests', 'L1Tests')
     )
 
     $solutionPath = Join-Path $RepoRoot 'mississippi.slnx'
@@ -503,8 +514,9 @@ function Invoke-MississippiSolutionUnitTests {
 
     Write-Host "[3/3] Executing unit tests for mississippi.slnx..." -ForegroundColor ([ConsoleColor]::Cyan)
     Write-Host "Configuration: $Configuration"
+    Write-Host "Test levels: $($TestLevels -join ', ')"
     Write-Host 'Test flags: --no-restore --collect:XPlat Code Coverage'
-    $testResult = (Invoke-SolutionTests -SolutionPath $solutionPath -Configuration $Configuration -ResultsRoot $resultsRoot -CollectCoverage -Quiet | Select-Object -Last 1)
+    $testResult = (Invoke-SolutionTests -SolutionPath $solutionPath -Configuration $Configuration -ResultsRoot $resultsRoot -CollectCoverage -TestLevels $TestLevels -Quiet | Select-Object -Last 1)
     $runDirectory = $testResult.ResultsDirectory
     Write-Host "Results directory: $runDirectory"
     Write-Host 'Logger: TRX format (test_results.trx)'
@@ -543,7 +555,8 @@ function Invoke-SampleSolutionUnitTests {
     [CmdletBinding()]
     param(
         [string]$Configuration = 'Release',
-        [string]$RepoRoot = (Get-RepositoryRoot)
+        [string]$RepoRoot = (Get-RepositoryRoot),
+        [string[]]$TestLevels = @('L0Tests', 'L1Tests')
     )
 
     $solutionPath = Join-Path $RepoRoot 'samples.slnx'
@@ -563,8 +576,9 @@ function Invoke-SampleSolutionUnitTests {
 
     Write-Host "[3/3] Executing unit tests for samples.slnx..." -ForegroundColor ([ConsoleColor]::Cyan)
     Write-Host "Configuration: $Configuration"
+    Write-Host "Test levels: $($TestLevels -join ', ')"
     Write-Host 'Test flags: --no-restore'
-    $testResult = (Invoke-SolutionTests -SolutionPath $solutionPath -Configuration $Configuration -ResultsRoot $resultsRoot -Quiet | Select-Object -Last 1)
+    $testResult = (Invoke-SolutionTests -SolutionPath $solutionPath -Configuration $Configuration -ResultsRoot $resultsRoot -TestLevels $TestLevels -Quiet | Select-Object -Last 1)
     Write-Host "Results directory: $($testResult.ResultsDirectory)"
     Write-Host 'Logger: TRX format (test_results.trx)'
     Write-Host 'NOTE: Sample tests are for demonstration purposes only'

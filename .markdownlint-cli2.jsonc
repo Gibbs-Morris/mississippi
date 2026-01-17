@@ -4,10 +4,18 @@
 
 {
   "globsIgnore": [
-    ".scratchpad/**"
+    ".scratchpad/**",
+    ".github/agents/**"
   ],
   "config": {
     "default": true,
-    "MD013": false
+    // MD013: Line length - disabled for technical docs with code/URLs/tables
+    "MD013": false,
+    // MD024: Duplicate headings - allowed for docs with repeated section patterns
+    "MD024": false,
+    // MD025: Single H1 - disabled for Docusaurus (frontmatter title + markdown H1)
+    "MD025": false,
+    // MD060: Table column style - disabled due to inconsistent compact/aligned requirements
+    "MD060": false
   }
 }

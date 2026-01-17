@@ -18,8 +18,8 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 ///         the latest position in memory for fast reads.
 ///     </para>
 ///     <para>
-///         The grain is keyed by <see cref="UxProjectionKey" /> in the format
-///         "projectionTypeName|brookType|brookId".
+///         The grain is keyed by <see cref="UxProjectionCursorKey" /> in the format
+///         "brookName|entityId".
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.EventSourcing.UxProjections.Abstractions.IUxProjectionCursorGrain")]

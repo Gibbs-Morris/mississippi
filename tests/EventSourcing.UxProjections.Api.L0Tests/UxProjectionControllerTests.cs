@@ -4,9 +4,11 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Primitives;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -17,29 +19,44 @@ using Moq;
 namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="UxProjectionControllerBase{TProjection, TBrook}" />.
+///     Tests for <see cref="UxProjectionControllerBase{TProjection}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections API")]
 [AllureSubSuite("UxProjectionControllerBase")]
+#pragma warning disable CS0618 // Type or member is obsolete - testing legacy IBrookDefinition-based methods
 public sealed class UxProjectionControllerTests
 {
+    private const string TestEntityId = "entity-123";
+
     private static TestableController CreateController(
-        Mock<IUxProjectionGrainFactory>? factoryMock = null
+        Mock<IUxProjectionGrainFactory>? factoryMock = null,
+        string? ifNoneMatchHeader = null
     )
     {
         factoryMock ??= new();
-        return new(
+        TestableController controller = new(
             factoryMock.Object,
-            NullLogger<UxProjectionControllerBase<TestProjection, TestBrookDefinition>>.Instance);
+            NullLogger<UxProjectionControllerBase<TestProjection>>.Instance);
+
+        // Set up HttpContext for header access
+        DefaultHttpContext httpContext = new();
+        if (ifNoneMatchHeader is not null)
+        {
+            httpContext.Request.Headers.IfNoneMatch = ifNoneMatchHeader;
+        }
+
+        controller.ControllerContext = new()
+        {
+            HttpContext = httpContext,
+        };
+        return controller;
     }
 
-    private const string TestEntityId = "entity-123";
-
     /// <summary>
-    ///     A testable implementation of <see cref="UxProjectionControllerBase{TProjection, TBrook}" />.
+    ///     A testable implementation of <see cref="UxProjectionControllerBase{TProjection}" />.
     /// </summary>
-    private sealed class TestableController : UxProjectionControllerBase<TestProjection, TestBrookDefinition>
+    private sealed class TestableController : UxProjectionControllerBase<TestProjection>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TestableController" /> class.
@@ -48,7 +65,7 @@ public sealed class UxProjectionControllerTests
         /// <param name="logger">The logger for diagnostic output.</param>
         public TestableController(
             IUxProjectionGrainFactory uxProjectionGrainFactory,
-            ILogger<UxProjectionControllerBase<TestProjection, TestBrookDefinition>> logger
+            ILogger<UxProjectionControllerBase<TestProjection>> logger
         )
             : base(uxProjectionGrainFactory, logger)
         {
@@ -69,9 +86,7 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Assert - Controller was created successfully, verify no grain calls yet
-        factoryMock.Verify(
-            f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(It.IsAny<string>()),
-            Times.Never);
+        factoryMock.Verify(f => f.GetUxProjectionGrain<TestProjection>(It.IsAny<string>()), Times.Never);
         Assert.NotNull(controller);
     }
 
@@ -85,7 +100,117 @@ public sealed class UxProjectionControllerTests
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new TestableController(
             null!,
-            NullLogger<UxProjectionControllerBase<TestProjection, TestBrookDefinition>>.Instance));
+            NullLogger<UxProjectionControllerBase<TestProjection>>.Instance));
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync returns 304 Not Modified when If-None-Match matches.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("ETag")]
+    public async Task GetAsyncReturns304WhenIfNoneMatchMatches()
+    {
+        // Arrange
+        const long version = 42;
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(version));
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
+        TestableController controller = CreateController(factoryMock, "\"42\"");
+
+        // Act
+        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+
+        // Assert
+        StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
+        Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
+        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync returns Cache-Control header.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("ETag")]
+    public async Task GetAsyncReturnsCacheControlHeader()
+    {
+        // Arrange
+        TestProjection expectedProjection = new(100);
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(42));
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
+        TestableController controller = CreateController(factoryMock);
+
+        // Act
+        await controller.GetAsync(TestEntityId);
+
+        // Assert
+        Assert.True(controller.Response.Headers.TryGetValue("Cache-Control", out StringValues cacheControl));
+        Assert.Equal("private, must-revalidate", cacheControl.ToString());
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync returns data when If-None-Match does not match.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("ETag")]
+    public async Task GetAsyncReturnsDataWhenIfNoneMatchDoesNotMatch()
+    {
+        // Arrange
+        const long currentVersion = 42;
+        TestProjection expectedProjection = new(100);
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(currentVersion));
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
+        TestableController controller = CreateController(factoryMock, "\"41\"");
+
+        // Act
+        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+
+        // Assert
+        OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+        TestProjection projection = Assert.IsType<TestProjection>(okResult.Value);
+        Assert.Equal(100, projection.Value);
+        Assert.True(controller.Response.Headers.TryGetValue("ETag", out StringValues etag));
+        Assert.Equal("\"42\"", etag.ToString());
+    }
+
+    /// <summary>
+    ///     Verifies that GetAsync returns ETag header with projection version.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("ETag")]
+    public async Task GetAsyncReturnsETagHeader()
+    {
+        // Arrange
+        const long version = 42;
+        TestProjection expectedProjection = new(100);
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(version));
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
+        TestableController controller = CreateController(factoryMock);
+
+        // Act
+        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result.Result);
+        Assert.True(controller.Response.Headers.TryGetValue("ETag", out StringValues etag));
+        Assert.Equal("\"42\"", etag.ToString());
     }
 
     /// <summary>
@@ -100,8 +225,7 @@ public sealed class UxProjectionControllerTests
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync((TestProjection?)null);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
         // Act
@@ -123,9 +247,9 @@ public sealed class UxProjectionControllerTests
         TestProjection expectedProjection = new(42);
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new BrookPosition(1));
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
         // Act
@@ -150,8 +274,7 @@ public sealed class UxProjectionControllerTests
         grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestProjection?)null);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
         // Act
@@ -181,8 +304,7 @@ public sealed class UxProjectionControllerTests
             ) => capturedVersion = v)
             .ReturnsAsync(expectedProjection);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
         // Act
@@ -209,12 +331,11 @@ public sealed class UxProjectionControllerTests
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(notSetPosition);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<BrookPosition> result = await controller.GetLatestVersionAsync(TestEntityId);
+        ActionResult<long> result = await controller.GetLatestVersionAsync(TestEntityId);
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
@@ -233,16 +354,15 @@ public sealed class UxProjectionControllerTests
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedPosition);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection, TestBrookDefinition>(TestEntityId))
-            .Returns(grainMock.Object);
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<BrookPosition> result = await controller.GetLatestVersionAsync(TestEntityId);
+        ActionResult<long> result = await controller.GetLatestVersionAsync(TestEntityId);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-        BrookPosition position = Assert.IsType<BrookPosition>(okResult.Value);
-        Assert.Equal(42, position.Value);
+        long version = Assert.IsType<long>(okResult.Value);
+        Assert.Equal(42L, version);
     }
 }

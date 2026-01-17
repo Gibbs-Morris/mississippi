@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
@@ -19,6 +19,7 @@ internal sealed class SnapshotDocumentToEnvelopeMapper : IMapper<SnapshotDocumen
         new()
         {
             Data = input.Data.ToImmutableArray(),
+            DataSizeBytes = input.DataSizeBytes,
             DataContentType = input.DataContentType,
         };
 }

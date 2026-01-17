@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Linq;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
@@ -11,7 +11,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 /// <summary>
 ///     Maps brook events to event storage models.
 /// </summary>
-internal class EventToStorageMapper : IMapper<BrookEvent, EventStorageModel>
+internal sealed class EventToStorageMapper : IMapper<BrookEvent, EventStorageModel>
 {
     /// <summary>
     ///     Maps a brook event to an event storage model.
@@ -28,6 +28,7 @@ internal class EventToStorageMapper : IMapper<BrookEvent, EventStorageModel>
             EventType = input.EventType ?? string.Empty,
             DataContentType = input.DataContentType,
             Data = input.Data.ToArray(),
+            DataSizeBytes = input.DataSizeBytes,
             Time = input.Time ?? DateTimeOffset.UtcNow,
         };
 }

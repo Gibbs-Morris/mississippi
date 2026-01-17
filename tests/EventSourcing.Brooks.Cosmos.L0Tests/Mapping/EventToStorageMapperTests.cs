@@ -9,7 +9,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests.Mapping;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Mapping;
 
 /// <summary>
 ///     Test class for EventToStorageMapper functionality.
@@ -34,6 +34,7 @@ public sealed class EventToStorageMapperTests
             EventType = "my-type",
             DataContentType = "application/json",
             Data = ImmutableArray.Create<byte>(1, 2, 3),
+            DataSizeBytes = 3,
             Time = DateTimeOffset.UtcNow,
         };
         EventToStorageMapper mapper = new();
@@ -47,6 +48,7 @@ public sealed class EventToStorageMapperTests
         Assert.Equal(input.EventType, result.EventType);
         Assert.Equal(input.DataContentType, result.DataContentType);
         Assert.Equal(input.Data.ToArray(), result.Data);
+        Assert.Equal(3, result.DataSizeBytes);
         Assert.Equal(input.Time, result.Time);
     }
 }

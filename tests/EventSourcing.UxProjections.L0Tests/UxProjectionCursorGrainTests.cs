@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 using Moq;
@@ -20,8 +20,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 [AllureSubSuite("UxProjectionCursorGrain")]
 public sealed class UxProjectionCursorGrainTests
 {
-    private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123";
-
     /// <summary>
     ///     Verifies that BrookCursorMovedEvent can be created with a position.
     /// </summary>
@@ -30,10 +28,11 @@ public sealed class UxProjectionCursorGrainTests
     public void BrookCursorMovedEventCanBeCreatedWithPosition()
     {
         // Arrange & Act
-        BrookCursorMovedEvent cursorEvent = new(new(10));
+        BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", new(10));
 
         // Assert
         Assert.Equal(10, cursorEvent.NewPosition.Value);
+        Assert.Equal("TEST.BROOK:entity-1", cursorEvent.BrookKey);
     }
 
     /// <summary>
@@ -47,7 +46,7 @@ public sealed class UxProjectionCursorGrainTests
         BrookPosition position = new(100);
 
         // Act
-        BrookCursorMovedEvent cursorEvent = new(position);
+        BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", position);
 
         // Assert
         Assert.Equal(100, cursorEvent.NewPosition.Value);
@@ -62,7 +61,7 @@ public sealed class UxProjectionCursorGrainTests
     public void BrookCursorMovedEventWithNegativePositionRepresentsNotSet()
     {
         // Arrange & Act
-        BrookCursorMovedEvent cursorEvent = new(new(-1));
+        BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", new(-1));
 
         // Assert
         Assert.True(cursorEvent.NewPosition.NotSet);
@@ -302,7 +301,7 @@ public sealed class UxProjectionCursorGrainTests
         // Arrange
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
         Mock<IUxProjectionGrainFactory> factoryMock = new();
-        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity-123");
+        UxProjectionCursorKey key = new("TEST.MODULE.STREAM", "entity-123");
         factoryMock.Setup(f => f.GetUxProjectionCursorGrain(key)).Returns(cursorGrainMock.Object);
 
         // Act
@@ -313,19 +312,20 @@ public sealed class UxProjectionCursorGrainTests
     }
 
     /// <summary>
-    ///     Verifies that UxProjectionKey For method creates correct key.
+    ///     Verifies that UxProjectionKey at max length is accepted.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Creation")]
-    public void UxProjectionKeyForMethodCreatesCorrectKey()
+    [AllureFeature("Key Validation")]
+    public void UxProjectionKeyAcceptsMaxLengthEntityId()
     {
+        // Arrange
+        string maxLengthEntityId = new('x', 4192);
+
         // Act
-        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("my-entity");
+        UxProjectionKey key = new(maxLengthEntityId);
 
         // Assert
-        Assert.Equal("TestProjection", key.ProjectionTypeName);
-        Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.Type);
-        Assert.Equal("my-entity", key.BrookKey.Id);
+        Assert.Equal(4192, key.EntityId.Length);
     }
 
     /// <summary>
@@ -336,54 +336,38 @@ public sealed class UxProjectionCursorGrainTests
     public void UxProjectionKeyFromStringParsesValidKey()
     {
         // Act
-        UxProjectionKey key = UxProjectionKey.FromString(ValidPrimaryKey);
+        UxProjectionKey key = UxProjectionKey.FromString("entity-123");
 
         // Assert
-        Assert.Equal("TestProjection", key.ProjectionTypeName);
-        Assert.Equal("TEST.MODULE.STREAM", key.BrookKey.Type);
-        Assert.Equal("entity-123", key.BrookKey.Id);
+        Assert.Equal("entity-123", key.EntityId);
     }
 
     /// <summary>
-    ///     Verifies that UxProjectionKey FromString throws for empty string.
+    ///     Verifies that UxProjectionKey FromString throws for null string.
     /// </summary>
     [Fact]
     [AllureFeature("Key Parsing")]
-    public void UxProjectionKeyFromStringThrowsForEmptyString()
+    public void UxProjectionKeyFromStringThrowsForNullString()
     {
-        // Arrange
-        const string emptyKey = "";
-
         // Act & Assert
-        Assert.Throws<FormatException>(() => UxProjectionKey.FromString(emptyKey));
+        Assert.Throws<ArgumentNullException>(() => UxProjectionKey.FromString(null!));
     }
 
     /// <summary>
-    ///     Verifies that UxProjectionKey throws when given an invalid key format.
+    ///     Verifies that UxProjectionKey implicit conversion to string works.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Parsing")]
-    public void UxProjectionKeyFromStringThrowsForInvalidFormat()
+    [AllureFeature("Key Conversion")]
+    public void UxProjectionKeyImplicitConversionToStringWorks()
     {
         // Arrange
-        const string invalidKey = "invalid-key-without-pipe";
+        UxProjectionKey key = new("entity-123");
 
-        // Act & Assert
-        Assert.Throws<FormatException>(() => UxProjectionKey.FromString(invalidKey));
-    }
+        // Act
+        string result = key;
 
-    /// <summary>
-    ///     Verifies that UxProjectionKey FromString throws for key with only one segment.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Key Parsing")]
-    public void UxProjectionKeyFromStringThrowsForSingleSegment()
-    {
-        // Arrange
-        const string singleSegmentKey = "OnlyOneSegment";
-
-        // Act & Assert
-        Assert.Throws<FormatException>(() => UxProjectionKey.FromString(singleSegmentKey));
+        // Assert
+        Assert.Equal("entity-123", result);
     }
 
     /// <summary>
@@ -394,32 +378,69 @@ public sealed class UxProjectionCursorGrainTests
     public void UxProjectionKeyRoundtripsThroughSerialization()
     {
         // Arrange
-        UxProjectionKey original = UxProjectionKey.For<TestProjection, TestBrookDefinition>("test-id");
+        UxProjectionKey original = new("test-id");
 
         // Act
         string serialized = original.ToString();
         UxProjectionKey deserialized = UxProjectionKey.FromString(serialized);
 
         // Assert
-        Assert.Equal(original.ProjectionTypeName, deserialized.ProjectionTypeName);
-        Assert.Equal(original.BrookKey.Type, deserialized.BrookKey.Type);
-        Assert.Equal(original.BrookKey.Id, deserialized.BrookKey.Id);
+        Assert.Equal(original.EntityId, deserialized.EntityId);
     }
 
     /// <summary>
-    ///     Verifies that UxProjectionKey ToString returns the expected format.
+    ///     Verifies that UxProjectionKey stores entity ID correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Key Creation")]
+    public void UxProjectionKeyStoresEntityIdCorrectly()
+    {
+        // Act
+        UxProjectionKey key = new("my-entity");
+
+        // Assert
+        Assert.Equal("my-entity", key.EntityId);
+    }
+
+    /// <summary>
+    ///     Verifies that UxProjectionKey throws when entity ID exceeds max length.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Key Validation")]
+    public void UxProjectionKeyThrowsWhenEntityIdExceedsMaxLength()
+    {
+        // Arrange
+        string tooLongEntityId = new('x', 4193);
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => new UxProjectionKey(tooLongEntityId));
+    }
+
+    /// <summary>
+    ///     Verifies that UxProjectionKey throws when entity ID is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Key Validation")]
+    public void UxProjectionKeyThrowsWhenEntityIdIsNull()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionKey(null!));
+    }
+
+    /// <summary>
+    ///     Verifies that UxProjectionKey ToString returns the entity ID.
     /// </summary>
     [Fact]
     [AllureFeature("Key Serialization")]
-    public void UxProjectionKeyToStringReturnsCorrectFormat()
+    public void UxProjectionKeyToStringReturnsEntityId()
     {
         // Arrange
-        UxProjectionKey key = UxProjectionKey.For<TestProjection, TestBrookDefinition>("entity-123");
+        UxProjectionKey key = new("entity-123");
 
         // Act
         string result = key.ToString();
 
         // Assert
-        Assert.Equal("TestProjection|TEST.MODULE.STREAM|entity-123", result);
+        Assert.Equal("entity-123", result);
     }
 }

@@ -7,11 +7,9 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 
 using Moq;
 
@@ -28,6 +26,10 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 [AllureSubSuite("UxProjectionCursorGrain Unit")]
 public sealed class UxProjectionCursorGrainUnitTests
 {
+    private const string InvalidPrimaryKey = "invalid-key-without-pipe";
+
+    private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123";
+
     private static UxProjectionCursorGrain CreateGrain(
         string primaryKey
     )
@@ -61,10 +63,6 @@ public sealed class UxProjectionCursorGrainUnitTests
             logger.Object);
         return (sut, context, logger, options, streamIdFactory, brookStorageReader);
     }
-
-    private const string InvalidPrimaryKey = "invalid-key-without-pipe";
-
-    private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123";
 
     /// <summary>
     ///     Ensures the constructor throws ArgumentNullException when grainContext is null.
@@ -377,7 +375,7 @@ public sealed class UxProjectionCursorGrainUnitTests
         const long largePosition = 1_000_000_000L;
 
         // Act
-        await sut.OnNextAsync(new(new(largePosition)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(largePosition)));
         BrookPosition position = await sut.GetPositionAsync();
 
         // Assert
@@ -396,8 +394,8 @@ public sealed class UxProjectionCursorGrainUnitTests
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
 
         // Act
-        await sut.OnNextAsync(new(new(10)));
-        await sut.OnNextAsync(new(new(10)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)));
         BrookPosition position = await sut.GetPositionAsync();
 
         // Assert
@@ -416,8 +414,8 @@ public sealed class UxProjectionCursorGrainUnitTests
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
 
         // Act - set position to 10, then try to go backwards to 5
-        await sut.OnNextAsync(new(new(10)));
-        await sut.OnNextAsync(new(new(5)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(5)));
         BrookPosition position = await sut.GetPositionAsync();
 
         // Assert - should still be 10
@@ -451,7 +449,7 @@ public sealed class UxProjectionCursorGrainUnitTests
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
 
         // Act
-        await sut.OnNextAsync(new(new(0)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(0)));
         BrookPosition position = await sut.GetPositionAsync();
 
         // Assert
@@ -471,11 +469,11 @@ public sealed class UxProjectionCursorGrainUnitTests
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
 
         // Act
-        await sut.OnNextAsync(new(new(5)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(5)));
         BrookPosition position1 = await sut.GetPositionAsync();
-        await sut.OnNextAsync(new(new(10)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)));
         BrookPosition position2 = await sut.GetPositionAsync();
-        await sut.OnNextAsync(new(new(15)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(15)));
         BrookPosition position3 = await sut.GetPositionAsync();
 
         // Assert
@@ -494,7 +492,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
-        BrookCursorMovedEvent cursorEvent = new(new(10));
+        BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", new(10));
 
         // Act
         await sut.OnNextAsync(cursorEvent);
@@ -518,7 +516,7 @@ public sealed class UxProjectionCursorGrainUnitTests
         // Act - simulate a sequence of cursor updates
         for (int i = 0; i < 100; i++)
         {
-            await sut.OnNextAsync(new(new(i)));
+            await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(i)));
         }
 
         BrookPosition finalPosition = await sut.GetPositionAsync();

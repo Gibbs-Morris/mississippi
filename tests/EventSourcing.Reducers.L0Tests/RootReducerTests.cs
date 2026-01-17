@@ -16,9 +16,9 @@ namespace Mississippi.EventSourcing.Reducers.L0Tests;
 public sealed class RootReducerTests
 {
     /// <summary>
-    ///     A second typed reducer for TestEvent to test first-match-wins with duplicates.
+    ///     A second typed event reducer for TestEvent to test first-match-wins with duplicates.
     /// </summary>
-    private sealed class AlternateTestEventReducer : IReducer<TestEvent, TestProjection>
+    private sealed class AlternateTestEventEventReducer : IEventReducer<TestEvent, TestProjection>
     {
         public int InvocationCount { get; private set; }
 
@@ -48,7 +48,7 @@ public sealed class RootReducerTests
         }
     }
 
-    private sealed class CountingReducer : IReducer<TestProjection>
+    private sealed class CountingEventReducer : IEventReducer<TestProjection>
     {
         public int InvocationCount { get; private set; }
 
@@ -70,7 +70,7 @@ public sealed class RootReducerTests
         }
     }
 
-    private sealed class MatchingReducer : IReducer<TestProjection>
+    private sealed class MatchingEventReducer : IEventReducer<TestProjection>
     {
         public bool TryReduce(
             TestProjection state,
@@ -97,7 +97,7 @@ public sealed class RootReducerTests
         public string Value { get; set; } = string.Empty;
     }
 
-    private sealed class MutatingReducer : IReducer<MutableEvent, MutableProjection>
+    private sealed class MutatingEventReducer : IEventReducer<MutableEvent, MutableProjection>
     {
         public MutableProjection Reduce(
             MutableProjection state,
@@ -128,7 +128,7 @@ public sealed class RootReducerTests
         }
     }
 
-    private sealed class NonMatchingReducer : IReducer<TestProjection>
+    private sealed class NonMatchingEventReducer : IEventReducer<TestProjection>
     {
         public bool TryReduce(
             TestProjection state,
@@ -142,7 +142,7 @@ public sealed class RootReducerTests
         }
     }
 
-    private sealed class NullReturningReducer : IReducer<string?>
+    private sealed class NullReturningEventReducer : IEventReducer<string?>
     {
         public bool TryReduce(
             string? state,
@@ -162,9 +162,9 @@ public sealed class RootReducerTests
     private sealed record SecondEvent(string Value);
 
     /// <summary>
-    ///     A typed reducer for SecondEvent to test type indexing.
+    ///     A typed event reducer for SecondEvent to test type indexing.
     /// </summary>
-    private sealed class SecondEventReducer : IReducer<SecondEvent, TestProjection>
+    private sealed class SecondEventEventReducer : IEventReducer<SecondEvent, TestProjection>
     {
         public int InvocationCount { get; private set; }
 
@@ -203,7 +203,7 @@ public sealed class RootReducerTests
     /// </summary>
     private sealed record ThirdEvent(string Value);
 
-    private sealed class ThrowingReducer : IReducer<TestProjection>
+    private sealed class ThrowingEventReducer : IEventReducer<TestProjection>
     {
         public bool Invoked { get; private set; }
 
@@ -214,14 +214,15 @@ public sealed class RootReducerTests
         )
         {
             Invoked = true;
-            throw new InvalidOperationException("This reducer should not be invoked when a prior reducer matches.");
+            throw new InvalidOperationException(
+                "This event reducer should not be invoked when a prior event reducer matches.");
         }
     }
 
     /// <summary>
-    ///     A typed reducer for TestEvent to test type indexing.
+    ///     A typed event reducer for TestEvent to test type indexing.
     /// </summary>
-    private sealed class TypedTestEventReducer : IReducer<TestEvent, TestProjection>
+    private sealed class TypedTestEventEventReducer : IEventReducer<TestEvent, TestProjection>
     {
         public int InvocationCount { get; private set; }
 
@@ -252,13 +253,13 @@ public sealed class RootReducerTests
     }
 
     /// <summary>
-    ///     Ensures reducer hash generation is stable and insensitive to reducer order.
+    ///     Ensures event reducer hash generation is stable and insensitive to event reducer order.
     /// </summary>
     [Fact]
     public void GetReducerHashShouldBeStableAndOrderIndependent()
     {
-        IReducer<TestProjection>[] reducersA = { new MatchingReducer(), new NonMatchingReducer() };
-        IReducer<TestProjection>[] reducersB = { new NonMatchingReducer(), new MatchingReducer() };
+        IEventReducer<TestProjection>[] reducersA = { new MatchingEventReducer(), new NonMatchingEventReducer() };
+        IEventReducer<TestProjection>[] reducersB = { new NonMatchingEventReducer(), new MatchingEventReducer() };
         RootReducer<TestProjection> rootA = new(reducersA);
         RootReducer<TestProjection> rootB = new(reducersB);
         string hashA = rootA.GetReducerHash();
@@ -273,7 +274,7 @@ public sealed class RootReducerTests
     [Fact]
     public void ReduceShouldAllowNullStateAndProjection()
     {
-        IReducer<string?>[] reducers = new IReducer<string?>[] { new NullReturningReducer() };
+        IEventReducer<string?>[] reducers = new IEventReducer<string?>[] { new NullReturningEventReducer() };
         RootReducer<string?> root = new(reducers);
         string? projection = root.Reduce(null!, "e0");
         Assert.Null(projection);
@@ -285,51 +286,54 @@ public sealed class RootReducerTests
     [Fact]
     public void ReduceShouldCheckIndexedReducersBeforeFallback()
     {
-        TypedTestEventReducer typedReducer = new();
-        CountingReducer fallbackReducer = new();
-        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { typedReducer, fallbackReducer };
+        TypedTestEventEventReducer typedEventReducer = new();
+        CountingEventReducer fallbackEventReducer = new();
+        IEventReducer<TestProjection>[] reducers =
+            new IEventReducer<TestProjection>[] { typedEventReducer, fallbackEventReducer };
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new TestEvent("v1"));
         Assert.Equal("s0-typed-v1", result.Value);
-        Assert.Equal(1, typedReducer.InvocationCount);
+        Assert.Equal(1, typedEventReducer.InvocationCount);
 
-        // Fallback should not be invoked when indexed reducer matches
-        Assert.Equal(0, fallbackReducer.InvocationCount);
+        // Fallback should not be invoked when indexed event reducer matches
+        Assert.Equal(0, fallbackEventReducer.InvocationCount);
     }
 
     /// <summary>
-    ///     Ensures Reduce dispatches to the correct reducer via type index.
+    ///     Ensures Reduce dispatches to the correct event reducer via type index.
     /// </summary>
     [Fact]
     public void ReduceShouldDispatchToCorrectReducerViaTypeIndex()
     {
-        TypedTestEventReducer testEventReducer = new();
-        SecondEventReducer secondEventReducer = new();
-        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { testEventReducer, secondEventReducer };
+        TypedTestEventEventReducer testEventEventReducer = new();
+        SecondEventEventReducer secondEventEventReducer = new();
+        IEventReducer<TestProjection>[] reducers =
+            new IEventReducer<TestProjection>[] { testEventEventReducer, secondEventEventReducer };
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new SecondEvent("v1"));
         Assert.Equal("s0-second-v1", result.Value);
-        Assert.Equal(0, testEventReducer.InvocationCount);
-        Assert.Equal(1, secondEventReducer.InvocationCount);
+        Assert.Equal(0, testEventEventReducer.InvocationCount);
+        Assert.Equal(1, secondEventEventReducer.InvocationCount);
     }
 
     /// <summary>
-    ///     Ensures Reduce falls through to fallback when indexed reducer does not match.
+    ///     Ensures Reduce falls through to fallback when indexed event reducer does not match.
     /// </summary>
     [Fact]
     public void ReduceShouldFallToFallbackWhenIndexedReducerDoesNotMatch()
     {
-        SecondEventReducer secondEventReducer = new();
-        CountingReducer fallbackReducer = new();
-        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { secondEventReducer, fallbackReducer };
+        SecondEventEventReducer secondEventEventReducer = new();
+        CountingEventReducer fallbackEventReducer = new();
+        IEventReducer<TestProjection>[] reducers =
+            new IEventReducer<TestProjection>[] { secondEventEventReducer, fallbackEventReducer };
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new TestEvent("v1"));
         Assert.Equal("s0-v1-c1", result.Value);
-        Assert.Equal(0, secondEventReducer.InvocationCount);
-        Assert.Equal(1, fallbackReducer.InvocationCount);
+        Assert.Equal(0, secondEventEventReducer.InvocationCount);
+        Assert.Equal(1, fallbackEventReducer.InvocationCount);
     }
 
     /// <summary>
@@ -338,14 +342,15 @@ public sealed class RootReducerTests
     [Fact]
     public void ReduceShouldNotInvokeReducersForOtherEventTypes()
     {
-        TypedTestEventReducer testEventReducer = new();
-        SecondEventReducer secondEventReducer = new();
-        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { testEventReducer, secondEventReducer };
+        TypedTestEventEventReducer testEventEventReducer = new();
+        SecondEventEventReducer secondEventEventReducer = new();
+        IEventReducer<TestProjection>[] reducers =
+            new IEventReducer<TestProjection>[] { testEventEventReducer, secondEventEventReducer };
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
         root.Reduce(state, new TestEvent("v1"));
-        Assert.Equal(1, testEventReducer.InvocationCount);
-        Assert.Equal(0, secondEventReducer.InvocationCount);
+        Assert.Equal(1, testEventEventReducer.InvocationCount);
+        Assert.Equal(0, secondEventEventReducer.InvocationCount);
     }
 
     /// <summary>
@@ -354,15 +359,16 @@ public sealed class RootReducerTests
     [Fact]
     public void ReduceShouldPreserveFirstMatchWinsOrderingWithDuplicates()
     {
-        TypedTestEventReducer firstReducer = new();
-        AlternateTestEventReducer secondReducer = new();
-        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { firstReducer, secondReducer };
+        TypedTestEventEventReducer firstEventReducer = new();
+        AlternateTestEventEventReducer secondEventReducer = new();
+        IEventReducer<TestProjection>[] reducers =
+            new IEventReducer<TestProjection>[] { firstEventReducer, secondEventReducer };
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new TestEvent("v1"));
         Assert.Equal("s0-typed-v1", result.Value);
-        Assert.Equal(1, firstReducer.InvocationCount);
-        Assert.Equal(0, secondReducer.InvocationCount);
+        Assert.Equal(1, firstEventReducer.InvocationCount);
+        Assert.Equal(0, secondEventReducer.InvocationCount);
     }
 
     /// <summary>
@@ -371,7 +377,8 @@ public sealed class RootReducerTests
     [Fact]
     public void ReduceShouldRejectMutatingReducersReturningSameInstance()
     {
-        IReducer<MutableProjection>[] reducers = new IReducer<MutableProjection>[] { new MutatingReducer() };
+        IEventReducer<MutableProjection>[] reducers =
+            new IEventReducer<MutableProjection>[] { new MutatingEventReducer() };
         RootReducer<MutableProjection> root = new(reducers);
         MutableProjection state = new()
         {
@@ -381,14 +388,14 @@ public sealed class RootReducerTests
     }
 
     /// <summary>
-    ///     Ensures the first matching reducer determines the resulting projection.
+    ///     Ensures the first matching event reducer determines the resulting projection.
     /// </summary>
     [Fact]
     public void ReduceShouldReturnProjectionFromFirstMatchingReducer()
     {
-        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[]
+        IEventReducer<TestProjection>[] reducers = new IEventReducer<TestProjection>[]
         {
-            new NonMatchingReducer(), new MatchingReducer(),
+            new NonMatchingEventReducer(), new MatchingEventReducer(),
         };
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
@@ -402,24 +409,25 @@ public sealed class RootReducerTests
     [Fact]
     public void ReduceShouldReturnStateWhenNoIndexedReducerMatchesAndNoFallback()
     {
-        TypedTestEventReducer testEventReducer = new();
-        SecondEventReducer secondEventReducer = new();
-        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { testEventReducer, secondEventReducer };
+        TypedTestEventEventReducer testEventEventReducer = new();
+        SecondEventEventReducer secondEventEventReducer = new();
+        IEventReducer<TestProjection>[] reducers =
+            new IEventReducer<TestProjection>[] { testEventEventReducer, secondEventEventReducer };
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new ThirdEvent("v1"));
         Assert.Same(state, result);
-        Assert.Equal(0, testEventReducer.InvocationCount);
-        Assert.Equal(0, secondEventReducer.InvocationCount);
+        Assert.Equal(0, testEventEventReducer.InvocationCount);
+        Assert.Equal(0, secondEventEventReducer.InvocationCount);
     }
 
     /// <summary>
-    ///     Ensures Reduce returns the existing state when no reducer matches the event.
+    ///     Ensures Reduce returns the existing state when no event reducer matches the event.
     /// </summary>
     [Fact]
     public void ReduceShouldReturnStateWhenNoReducerMatchesEvent()
     {
-        IReducer<TestProjection>[] reducers = Array.Empty<IReducer<TestProjection>>();
+        IEventReducer<TestProjection>[] reducers = Array.Empty<IEventReducer<TestProjection>>();
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new TestEvent("e0"));
@@ -427,14 +435,14 @@ public sealed class RootReducerTests
     }
 
     /// <summary>
-    ///     Ensures Reduce stops iterating after the first matching reducer.
+    ///     Ensures Reduce stops iterating after the first matching event reducer.
     /// </summary>
     [Fact]
     public void ReduceShouldStopAfterFirstMatchingReducer()
     {
-        CountingReducer first = new();
-        ThrowingReducer second = new();
-        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { first, second };
+        CountingEventReducer first = new();
+        ThrowingEventReducer second = new();
+        IEventReducer<TestProjection>[] reducers = new IEventReducer<TestProjection>[] { first, second };
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new TestEvent("e1"));
@@ -449,7 +457,7 @@ public sealed class RootReducerTests
     [Fact]
     public void ReduceShouldThrowWhenEventIsNull()
     {
-        RootReducer<TestProjection> root = new(Array.Empty<IReducer<TestProjection>>());
+        RootReducer<TestProjection> root = new(Array.Empty<IEventReducer<TestProjection>>());
         Assert.Throws<ArgumentNullException>(() => root.Reduce(new("s0"), null!));
     }
 
@@ -459,12 +467,12 @@ public sealed class RootReducerTests
     [Fact]
     public void ReduceShouldUseFallbackPathForNonGenericReducers()
     {
-        CountingReducer fallbackReducer = new();
-        IReducer<TestProjection>[] reducers = new IReducer<TestProjection>[] { fallbackReducer };
+        CountingEventReducer fallbackEventReducer = new();
+        IEventReducer<TestProjection>[] reducers = new IEventReducer<TestProjection>[] { fallbackEventReducer };
         RootReducer<TestProjection> root = new(reducers);
         TestProjection state = new("s0");
         TestProjection result = root.Reduce(state, new TestEvent("v1"));
         Assert.Equal("s0-v1-c1", result.Value);
-        Assert.Equal(1, fallbackReducer.InvocationCount);
+        Assert.Equal(1, fallbackEventReducer.InvocationCount);
     }
 }

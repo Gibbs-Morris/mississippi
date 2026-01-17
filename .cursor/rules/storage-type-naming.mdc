@@ -15,7 +15,7 @@ Governing thought: Persisted types carry stable, versioned attribute names (`APP
 
 ## Rules (RFC 2119)
 
-- Persisted types (events/snapshots/commands, etc.) **MUST** have a naming attribute (e.g., `[EventName]`, `[SnapshotName]`) with an explicit `version` parameter. Why: Provides stable, versioned identities.
+- Persisted types (events/snapshots/commands, etc.) **MUST** have a naming attribute (e.g., `[EventStorageName]`, `[SnapshotStorageName]`) with an explicit `version` parameter. Why: Provides stable, versioned identities.
 - The computed name **MUST** follow `APPNAME.MODULENAME.NAME.Vn`; app/module/name **MUST NOT** change once persisted; schema evolution **MUST** increment `version` instead. Why: Maintains compatibility.
 - Each attribute value **MUST** be globally unique; registries (e.g., `IEventTypeRegistry`) **MUST** resolve names↔types; all persisted types **SHOULD** be registered at startup via scanning. Why: Enables deterministic resolution.
 - Class/record names **MAY** be refactored freely when the attribute stays the same. Why: Decouples code identity from storage identity.
@@ -27,7 +27,7 @@ Developers creating or consuming persisted types in event-sourced/storage compon
 
 ## At-a-Glance Quick-Start
 
-- Decorate types with `[EventName("ORDER","FULFILLMENT","SHIPPED", version: 1)]` (or appropriate attribute).
+- Decorate types with `[EventStorageName("ORDER","FULFILLMENT","SHIPPED", version: 1)]` (or appropriate attribute).
 - Keep app/module/name stable; bump `version` for breaking changes.
 - Use registries for name↔type resolution; scan assemblies at startup.
 

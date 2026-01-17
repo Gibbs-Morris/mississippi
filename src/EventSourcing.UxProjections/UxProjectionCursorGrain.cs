@@ -5,12 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Cursor;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.EventSourcing.UxProjections.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
@@ -39,9 +38,9 @@ internal sealed class UxProjectionCursorGrain
       IAsyncObserver<BrookCursorMovedEvent>,
       IGrainBase
 {
-    private StreamSequenceToken? lastToken;
+    private UxProjectionCursorKey cursorKey;
 
-    private UxProjectionKey projectionKey;
+    private StreamSequenceToken? lastToken;
 
     private BrookPosition trackedCursorPosition = -1;
 
@@ -87,7 +86,11 @@ internal sealed class UxProjectionCursorGrain
     }
 
     /// <inheritdoc />
-    public Task<BrookPosition> GetPositionAsync() => Task.FromResult(trackedCursorPosition);
+    public Task<BrookPosition> GetPositionAsync()
+    {
+        UxProjectionMetrics.RecordCursorRead(cursorKey.BrookName);
+        return Task.FromResult(trackedCursorPosition);
+    }
 
     /// <summary>
     ///     Subscribes the grain as an observer to the cursor update stream on activation.
@@ -101,7 +104,7 @@ internal sealed class UxProjectionCursorGrain
         string primaryKey = this.GetPrimaryKeyString();
         try
         {
-            projectionKey = UxProjectionKey.FromString(primaryKey);
+            cursorKey = UxProjectionCursorKey.Parse(primaryKey);
         }
         catch (Exception ex) when (ex is ArgumentException or FormatException)
         {
@@ -110,15 +113,16 @@ internal sealed class UxProjectionCursorGrain
         }
 
         // Read initial cursor position from storage before subscribing to the stream
-        trackedCursorPosition = await BrookStorageReader.ReadCursorPositionAsync(projectionKey.BrookKey, token);
+        BrookKey brookKey = new(cursorKey.BrookName, cursorKey.EntityId);
+        trackedCursorPosition = await BrookStorageReader.ReadCursorPositionAsync(brookKey, token);
 
-        // Subscribe to brook cursor updates using the brook key extracted from the projection key
-        StreamId streamId = StreamIdFactory.Create(projectionKey.BrookKey);
+        // Subscribe to brook cursor updates using the brook key extracted from the cursor key
+        StreamId streamId = StreamIdFactory.Create(brookKey);
         IAsyncStream<BrookCursorMovedEvent> stream = this
             .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookCursorMovedEvent>(streamId);
         await stream.SubscribeAsync(this);
-        Logger.CursorGrainActivated(primaryKey, projectionKey.ProjectionTypeName, projectionKey.BrookKey);
+        Logger.CursorGrainActivated(primaryKey, cursorKey.BrookName, cursorKey.EntityId);
     }
 
     /// <summary>
@@ -127,7 +131,7 @@ internal sealed class UxProjectionCursorGrain
     /// <returns>A completed task.</returns>
     public Task OnCompletedAsync()
     {
-        Logger.StreamCompleted(projectionKey);
+        Logger.StreamCompleted(cursorKey);
         return Task.CompletedTask;
     }
 
@@ -140,7 +144,7 @@ internal sealed class UxProjectionCursorGrain
         Exception ex
     )
     {
-        Logger.StreamError(projectionKey, ex);
+        Logger.StreamError(cursorKey, ex);
         this.DeactivateOnIdle();
         return Task.CompletedTask;
     }
@@ -166,7 +170,7 @@ internal sealed class UxProjectionCursorGrain
         if (item.NewPosition.IsNewerThan(trackedCursorPosition))
         {
             trackedCursorPosition = item.NewPosition;
-            Logger.PositionUpdated(projectionKey, trackedCursorPosition);
+            Logger.PositionUpdated(cursorKey, trackedCursorPosition);
         }
 
         return Task.CompletedTask;

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Orleans grain implementations for SignalR backplane. Deploy this package to Orleans silo hosts to enable distributed SignalR messaging.</Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Orleans.Sdk"/>
+        <PackageReference Include="Microsoft.Orleans.Server"/>
+        <PackageReference Include="Microsoft.Orleans.Streaming"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj"/>
+    </ItemGroup>
+</Project>

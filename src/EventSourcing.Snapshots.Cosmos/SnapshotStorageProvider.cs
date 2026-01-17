@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
+using Mississippi.EventSourcing.Snapshots.Cosmos.Diagnostics;
 
 
 namespace Mississippi.EventSourcing.Snapshots.Cosmos;
@@ -48,13 +49,14 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
     }
 
     /// <inheritdoc />
-    public Task DeleteAsync(
+    public async Task DeleteAsync(
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
     )
     {
         Logger.DeletingSnapshot(snapshotKey);
-        return Repository.DeleteAsync(snapshotKey, cancellationToken);
+        await Repository.DeleteAsync(snapshotKey, cancellationToken);
+        SnapshotStorageMetrics.RecordDelete(snapshotKey.Stream.SnapshotStorageName);
     }
 
     /// <inheritdoc />
@@ -67,6 +69,7 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
         ArgumentNullException.ThrowIfNull(retainModuli);
         Logger.PruningSnapshots(streamKey, retainModuli.Count);
         await Repository.PruneAsync(streamKey, retainModuli, cancellationToken).ConfigureAwait(false);
+        SnapshotStorageMetrics.RecordPrune(streamKey.SnapshotStorageName, retainModuli.Count);
     }
 
     /// <inheritdoc />
@@ -76,8 +79,12 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
     )
     {
         Logger.ReadingSnapshot(snapshotKey);
+        Stopwatch sw = Stopwatch.StartNew();
         SnapshotEnvelope? result = await Repository.ReadAsync(snapshotKey, cancellationToken);
-        if (result is not null)
+        sw.Stop();
+        bool found = result is not null;
+        SnapshotStorageMetrics.RecordRead(snapshotKey.Stream.SnapshotStorageName, sw.Elapsed.TotalMilliseconds, found);
+        if (found)
         {
             Logger.SnapshotFound(snapshotKey);
         }
@@ -97,7 +104,25 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
     )
     {
         Logger.WritingSnapshot(snapshotKey);
-        await Repository.WriteAsync(snapshotKey, snapshot, cancellationToken);
-        Logger.SnapshotWritten(snapshotKey);
+        Stopwatch sw = Stopwatch.StartNew();
+        try
+        {
+            await Repository.WriteAsync(snapshotKey, snapshot, cancellationToken);
+            sw.Stop();
+            SnapshotStorageMetrics.RecordWrite(
+                snapshotKey.Stream.SnapshotStorageName,
+                sw.Elapsed.TotalMilliseconds,
+                true);
+            Logger.SnapshotWritten(snapshotKey);
+        }
+        catch
+        {
+            sw.Stop();
+            SnapshotStorageMetrics.RecordWrite(
+                snapshotKey.Stream.SnapshotStorageName,
+                sw.Elapsed.TotalMilliseconds,
+                false);
+            throw;
+        }
     }
 }

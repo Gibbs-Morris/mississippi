@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 
 namespace Mississippi.EventSourcing.Brooks.Cosmos;

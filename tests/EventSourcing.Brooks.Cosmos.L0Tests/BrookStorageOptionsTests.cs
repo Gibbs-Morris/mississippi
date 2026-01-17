@@ -1,9 +1,9 @@
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Brooks.Cosmos;
+using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Cosmos.Tests;
+namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookStorageOptions" /> defaults and mutability.
@@ -20,9 +20,9 @@ public sealed class BrookStorageOptionsTests
     public void DefaultsShouldBeSensible()
     {
         BrookStorageOptions options = new();
-        Assert.Equal("mississippi", options.DatabaseId);
-        Assert.Equal("brooks", options.ContainerId);
-        Assert.Equal("brook-locks", options.LockContainerName);
+        Assert.Equal(MississippiDefaults.DatabaseId, options.DatabaseId);
+        Assert.Equal(MississippiDefaults.ContainerIds.Brooks, options.ContainerId);
+        Assert.Equal(MississippiDefaults.ContainerIds.Locks, options.LockContainerName);
         Assert.Equal(100, options.QueryBatchSize);
         Assert.Equal(90, options.MaxEventsPerBatch);
         Assert.Equal(60, options.LeaseDurationSeconds);
@@ -53,6 +53,6 @@ public sealed class BrookStorageOptionsTests
         Assert.Equal(120, options.LeaseDurationSeconds);
         Assert.Equal(1_000_000, options.MaxRequestSizeBytes);
         Assert.Equal(15, options.LeaseRenewalThresholdSeconds);
-        Assert.Equal("brooks", options.ContainerId); // get-only default
+        Assert.Equal(MississippiDefaults.ContainerIds.Brooks, options.ContainerId); // get-only default
     }
 }

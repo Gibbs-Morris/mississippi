@@ -25,11 +25,21 @@ public sealed record SnapshotEnvelope
     public string DataContentType { get; init; } = string.Empty;
 
     /// <summary>
-    ///     Gets the hash of the reducers used to create this snapshot.
-    ///     Used for invalidation when reducer logic changes.
+    ///     Gets the size of the <see cref="Data" /> payload in bytes.
     /// </summary>
     /// <remarks>
-    ///     When this value is empty or does not match the current reducer hash,
+    ///     This denormalized field enables efficient Cosmos DB queries for large snapshots
+    ///     without deserializing the payload.
+    /// </remarks>
+    [Id(3)]
+    public long DataSizeBytes { get; init; }
+
+    /// <summary>
+    ///     Gets the hash of the event reducers used to create this snapshot.
+    ///     Used for invalidation when event reducer logic changes.
+    /// </summary>
+    /// <remarks>
+    ///     When this value is empty or does not match the current event reducer hash,
     ///     the snapshot is considered stale and must be rebuilt from the event stream.
     /// </remarks>
     [Id(2)]

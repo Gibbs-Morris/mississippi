@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <InternalsVisibleTo Include="Cascade.Server" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Generator (analyzer reference) -->
+        <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates.Generators\EventSourcing.Aggregates.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <!-- Directly used Mississippi packages -->
+        <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+        <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+        <ProjectReference Include="..\..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+        <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
+        <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
+        <ProjectReference Include="..\..\..\src\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
+    </ItemGroup>
+</Project>

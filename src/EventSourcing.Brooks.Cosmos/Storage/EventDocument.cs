@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using Newtonsoft.Json;
 
@@ -8,7 +8,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 /// <summary>
 ///     Document model for storing events in Cosmos DB.
 /// </summary>
-internal class EventDocument
+internal sealed class EventDocument
 {
     /// <summary>
     ///     Gets or sets the partition key value for the document. Must match container partition key path
@@ -28,6 +28,12 @@ internal class EventDocument
     /// </summary>
     [JsonProperty("dataContentType")]
     public string? DataContentType { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the size of the event data in bytes.
+    /// </summary>
+    [JsonProperty("dataSizeBytes")]
+    public long DataSizeBytes { get; set; }
 
     /// <summary>
     ///     Gets or sets the unique identifier of the event.

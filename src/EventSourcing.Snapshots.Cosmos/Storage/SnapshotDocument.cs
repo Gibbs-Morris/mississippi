@@ -11,6 +11,12 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 internal sealed class SnapshotDocument
 {
     /// <summary>
+    ///     Gets or sets the brook name identifying the event stream.
+    /// </summary>
+    [JsonProperty("brookName")]
+    public string BrookName { get; set; } = string.Empty;
+
+    /// <summary>
     ///     Gets or sets the snapshot payload bytes.
     /// </summary>
     [JsonProperty("data")]
@@ -21,6 +27,15 @@ internal sealed class SnapshotDocument
     /// </summary>
     [JsonProperty("dataContentType")]
     public string DataContentType { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets the size of the snapshot payload in bytes.
+    /// </summary>
+    /// <remarks>
+    ///     This denormalized field enables efficient Cosmos DB queries for large snapshots.
+    /// </remarks>
+    [JsonProperty("dataSizeBytes")]
+    public long DataSizeBytes { get; set; }
 
     /// <summary>
     ///     Gets or sets the document identifier (snapshot version).

@@ -15,7 +15,6 @@ namespace Mississippi.EventSourcing.UxProjections.Api;
 ///     Abstract base controller for exposing UX projections via HTTP endpoints.
 /// </summary>
 /// <typeparam name="TProjection">The projection state type.</typeparam>
-/// <typeparam name="TBrook">The brook definition type that identifies the event stream.</typeparam>
 /// <remarks>
 ///     <para>
 ///         Inherit from this controller to expose a UX projection as a RESTful API.
@@ -26,11 +25,11 @@ namespace Mississippi.EventSourcing.UxProjections.Api;
 ///         Example usage:
 ///         <code>
 ///             [Route("api/users/{entityId}")]
-///             public class UserProjectionController : UxProjectionControllerBase&lt;UserProjection, UserBrook&gt;
+///             public class UserProjectionController : UxProjectionControllerBase&lt;UserProjection&gt;
 ///             {
 ///                 public UserProjectionController(
 ///                     IUxProjectionGrainFactory factory,
-///                     ILogger&lt;UxProjectionControllerBase&lt;UserProjection, UserBrook&gt;&gt; logger) : base(factory, logger) { }
+///                     ILogger&lt;UxProjectionControllerBase&lt;UserProjection&gt;&gt; logger) : base(factory, logger) { }
 ///             }
 ///         </code>
 ///     </para>
@@ -44,21 +43,20 @@ namespace Mississippi.EventSourcing.UxProjections.Api;
 ///     </para>
 /// </remarks>
 [ApiController]
-public abstract class UxProjectionControllerBase<TProjection, TBrook> : ControllerBase
+public abstract class UxProjectionControllerBase<TProjection> : ControllerBase
     where TProjection : class
-    where TBrook : IBrookDefinition
 {
     private static readonly string ProjectionTypeName = typeof(TProjection).Name;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="UxProjectionControllerBase{TProjection, TBrook}" />
+    ///     Initializes a new instance of the <see cref="UxProjectionControllerBase{TProjection}" />
     ///     class.
     /// </summary>
     /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains.</param>
     /// <param name="logger">The logger for diagnostic output.</param>
     protected UxProjectionControllerBase(
         IUxProjectionGrainFactory uxProjectionGrainFactory,
-        ILogger<UxProjectionControllerBase<TProjection, TBrook>> logger
+        ILogger<UxProjectionControllerBase<TProjection>> logger
     )
     {
         UxProjectionGrainFactory = uxProjectionGrainFactory ??
@@ -69,7 +67,7 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
     /// <summary>
     ///     Gets the logger for diagnostic output.
     /// </summary>
-    protected ILogger<UxProjectionControllerBase<TProjection, TBrook>> Logger { get; }
+    protected ILogger<UxProjectionControllerBase<TProjection>> Logger { get; }
 
     /// <summary>
     ///     Gets the factory for resolving UX projection grains.
@@ -83,8 +81,27 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>
     ///     An <see cref="ActionResult{TProjection}" /> containing the projection state,
-    ///     or <see cref="NotFoundResult" /> if no events exist for the entity.
+    ///     or <see cref="NotFoundResult" /> if no events exist for the entity,
+    ///     or <see cref="StatusCodeResult" /> with status 304 if the ETag matches.
     /// </returns>
+    /// <remarks>
+    ///     <para>
+    ///         This endpoint supports HTTP caching via ETag headers:
+    ///     </para>
+    ///     <list type="bullet">
+    ///         <item>
+    ///             The response includes an <c>ETag</c> header containing the projection version.
+    ///         </item>
+    ///         <item>
+    ///             Clients can send an <c>If-None-Match</c> header to receive a 304 Not Modified
+    ///             response if the projection has not changed.
+    ///         </item>
+    ///         <item>
+    ///             The <c>Cache-Control</c> header is set to <c>private, must-revalidate</c>
+    ///             to ensure clients always validate with the server.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
     [HttpGet]
     public virtual async Task<ActionResult<TProjection>> GetAsync(
         [FromRoute] string entityId,
@@ -92,8 +109,27 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
     )
     {
         Logger.GettingLatestProjection(entityId, ProjectionTypeName);
-        IUxProjectionGrain<TProjection> grain =
-            UxProjectionGrainFactory.GetUxProjectionGrain<TProjection, TBrook>(entityId);
+        IUxProjectionGrain<TProjection> grain = UxProjectionGrainFactory.GetUxProjectionGrain<TProjection>(entityId);
+
+        // Get the latest version first for ETag support
+        BrookPosition position = await grain.GetLatestVersionAsync(cancellationToken);
+        if (position.NotSet)
+        {
+            Logger.ProjectionNotFound(entityId, ProjectionTypeName);
+            return NotFound();
+        }
+
+        string currentETag = $"\"{position.Value}\"";
+
+        // Check If-None-Match header for conditional GET
+        string? ifNoneMatch = Request.Headers.IfNoneMatch.ToString();
+        if (!string.IsNullOrEmpty(ifNoneMatch) && (ifNoneMatch == currentETag))
+        {
+            Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
+            return StatusCode(304);
+        }
+
+        // Fetch the projection data
         TProjection? projection = await grain.GetAsync(cancellationToken);
         if (projection is null)
         {
@@ -101,6 +137,9 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
             return NotFound();
         }
 
+        // Set caching headers
+        Response.Headers.ETag = currentETag;
+        Response.Headers.CacheControl = "private, must-revalidate";
         Logger.ProjectionRetrieved(entityId, ProjectionTypeName);
         return Ok(projection);
     }
@@ -123,8 +162,7 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
     )
     {
         Logger.GettingProjectionAtVersion(entityId, version, ProjectionTypeName);
-        IUxProjectionGrain<TProjection> grain =
-            UxProjectionGrainFactory.GetUxProjectionGrain<TProjection, TBrook>(entityId);
+        IUxProjectionGrain<TProjection> grain = UxProjectionGrainFactory.GetUxProjectionGrain<TProjection>(entityId);
         BrookPosition brookPosition = new(version);
         TProjection? projection = await grain.GetAtVersionAsync(brookPosition, cancellationToken);
         if (projection is null)
@@ -143,18 +181,17 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
     /// <param name="entityId">The entity identifier within the brook.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>
-    ///     An <see cref="ActionResult{BrookPosition}" /> containing the latest version position,
+    ///     An <see cref="ActionResult{T}" /> containing the latest version number,
     ///     or <see cref="NotFoundResult" /> if no events exist for the entity.
     /// </returns>
     [HttpGet("version")]
-    public virtual async Task<ActionResult<BrookPosition>> GetLatestVersionAsync(
+    public virtual async Task<ActionResult<long>> GetLatestVersionAsync(
         [FromRoute] string entityId,
         CancellationToken cancellationToken = default
     )
     {
         Logger.GettingLatestVersion(entityId, ProjectionTypeName);
-        IUxProjectionGrain<TProjection> grain =
-            UxProjectionGrainFactory.GetUxProjectionGrain<TProjection, TBrook>(entityId);
+        IUxProjectionGrain<TProjection> grain = UxProjectionGrainFactory.GetUxProjectionGrain<TProjection>(entityId);
         BrookPosition position = await grain.GetLatestVersionAsync(cancellationToken);
         if (position.NotSet)
         {
@@ -163,6 +200,6 @@ public abstract class UxProjectionControllerBase<TProjection, TBrook> : Controll
         }
 
         Logger.LatestVersionRetrieved(entityId, position.Value, ProjectionTypeName);
-        return Ok(position);
+        return Ok(position.Value);
     }
 }

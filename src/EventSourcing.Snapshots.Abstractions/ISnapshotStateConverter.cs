@@ -16,10 +16,10 @@ public interface ISnapshotStateConverter<TSnapshot>
     );
 
     /// <summary>
-    ///     Serializes state to a <see cref="SnapshotEnvelope" /> with the specified reducer hash.
+    ///     Serializes state to a <see cref="SnapshotEnvelope" /> with the specified event reducer hash.
     /// </summary>
     /// <param name="state">The state to serialize.</param>
-    /// <param name="reducerHash">The hash of the reducers used to build this state.</param>
+    /// <param name="reducerHash">The hash of the event reducers used to build this state.</param>
     /// <returns>A <see cref="SnapshotEnvelope" /> containing the serialized state.</returns>
     SnapshotEnvelope ToEnvelope(
         TSnapshot state,

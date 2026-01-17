@@ -1,0 +1,24 @@
+@* MessageInput - Molecule component combining input field with send button *@
+
+<div class="chat-input">
+    <div class="chat-input__wrapper">
+        <textarea class="chat-input__field"
+                  placeholder="@Placeholder"
+                  @bind="CurrentMessage"
+                  @bind:event="oninput"
+                  @onkeydown="HandleKeyDownAsync"
+                  @onkeydown:preventDefault="ShouldPreventDefault"
+                  rows="1"
+                  aria-label="Message input"
+                  disabled="@Disabled">
+        </textarea>
+        <div class="chat-input__actions">
+            <Button Variant="primary"
+                    Size="icon"
+                    OnClick="HandleSendAsync"
+                    Disabled="@(Disabled || string.IsNullOrWhiteSpace(CurrentMessage))">
+                ➤
+            </Button>
+        </div>
+    </div>
+</div>

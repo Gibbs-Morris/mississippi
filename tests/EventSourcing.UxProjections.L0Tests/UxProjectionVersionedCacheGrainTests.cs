@@ -6,6 +6,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
+using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 
 using Moq;
@@ -16,13 +17,15 @@ using Orleans.Runtime;
 namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="UxProjectionVersionedCacheGrainBase{TProjection, TBrook}" />.
+///     Tests for <see cref="UxProjectionVersionedCacheGrain{TProjection}" />.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionVersionedCacheGrainBase")]
+[AllureSubSuite("UxProjectionVersionedCacheGrain")]
 public sealed class UxProjectionVersionedCacheGrainTests
 {
+    private const string ValidPrimaryKey = "TEST.MODULE.STREAM|entity-123|42";
+
     private static Mock<IGrainContext> CreateDefaultGrainContext(
         string primaryKey = ValidPrimaryKey
     )
@@ -32,61 +35,29 @@ public sealed class UxProjectionVersionedCacheGrainTests
         return mock;
     }
 
-    private static TestableUxProjectionVersionedCacheGrain CreateGrain(
+    private static Mock<IRootReducer<TestProjection>> CreateDefaultRootReducer(
+        string reducersHash = "test-event-reducer-hash"
+    )
+    {
+        Mock<IRootReducer<TestProjection>> mock = new();
+        mock.Setup(r => r.GetReducerHash()).Returns(reducersHash);
+        return mock;
+    }
+
+    private static UxProjectionVersionedCacheGrain<TestProjection> CreateGrain(
         Mock<IGrainContext>? grainContextMock = null,
         Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null,
-        string? reducersHash = null,
-        Mock<ILogger>? loggerMock = null,
-        string primaryKey = ValidPrimaryKey
+        Mock<IRootReducer<TestProjection>>? rootReducerMock = null,
+        Mock<ILogger<UxProjectionVersionedCacheGrain<TestProjection>>>? loggerMock = null,
+        string primaryKey = ValidPrimaryKey,
+        string reducersHash = "test-event-reducer-hash"
     )
     {
         grainContextMock ??= CreateDefaultGrainContext(primaryKey);
         snapshotGrainFactoryMock ??= new();
-        reducersHash ??= "test-reducer-hash";
+        rootReducerMock ??= CreateDefaultRootReducer(reducersHash);
         loggerMock ??= new();
-        return new(grainContextMock.Object, snapshotGrainFactoryMock.Object, reducersHash, loggerMock.Object);
-    }
-
-    private const string ValidPrimaryKey = "TestProjection|TEST.MODULE.STREAM|entity-123|42";
-
-    /// <summary>
-    ///     A testable implementation of <see cref="UxProjectionVersionedCacheGrainBase{TProjection, TBrook}" />.
-    /// </summary>
-    private sealed class TestableUxProjectionVersionedCacheGrain
-        : UxProjectionVersionedCacheGrainBase<TestProjection, TestBrookDefinition>
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="TestableUxProjectionVersionedCacheGrain" /> class.
-        /// </summary>
-        /// <param name="grainContext">The Orleans grain context.</param>
-        /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
-        /// <param name="reducersHash">The hash of the reducers for snapshot key construction.</param>
-        /// <param name="logger">Logger instance.</param>
-        public TestableUxProjectionVersionedCacheGrain(
-            IGrainContext grainContext,
-            ISnapshotGrainFactory snapshotGrainFactory,
-            string reducersHash,
-            ILogger logger
-        )
-            : base(grainContext, snapshotGrainFactory, reducersHash, logger)
-        {
-        }
-
-        /// <summary>
-        ///     Gets the brook name from the brook definition for testing.
-        /// </summary>
-        /// <returns>The brook name.</returns>
-        public static string GetBrookName() => BrookName;
-    }
-
-    /// <summary>
-    ///     BrookName property should return the brook name from the brook definition.
-    /// </summary>
-    [Fact]
-    public void BrookNameReturnsValueFromBrookDefinition()
-    {
-        string brookName = TestableUxProjectionVersionedCacheGrain.GetBrookName();
-        Assert.Equal("TEST.MODULE.STREAM", brookName);
+        return new(grainContextMock.Object, snapshotGrainFactoryMock.Object, rootReducerMock.Object, loggerMock.Object);
     }
 
     /// <summary>
@@ -100,7 +71,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
 
         // Act
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(grainContextMock);
+        UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(grainContextMock);
 
         // Assert
         Assert.Same(grainContextMock.Object, grain.GrainContext);
@@ -115,13 +86,14 @@ public sealed class UxProjectionVersionedCacheGrainTests
     {
         // Arrange
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        Mock<ILogger> loggerMock = new();
+        Mock<IRootReducer<TestProjection>> rootReducerMock = CreateDefaultRootReducer();
+        Mock<ILogger<UxProjectionVersionedCacheGrain<TestProjection>>> loggerMock = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionVersionedCacheGrain(
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionVersionedCacheGrain<TestProjection>(
             null!,
             snapshotGrainFactoryMock.Object,
-            "test-hash",
+            rootReducerMock.Object,
             loggerMock.Object));
     }
 
@@ -135,29 +107,30 @@ public sealed class UxProjectionVersionedCacheGrainTests
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        Mock<IRootReducer<TestProjection>> rootReducerMock = CreateDefaultRootReducer();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionVersionedCacheGrain(
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionVersionedCacheGrain<TestProjection>(
             grainContextMock.Object,
             snapshotGrainFactoryMock.Object,
-            "test-hash",
+            rootReducerMock.Object,
             null!));
     }
 
     /// <summary>
-    ///     Constructor should throw when reducersHash is null.
+    ///     Constructor should throw when rootReducer is null.
     /// </summary>
     [Fact]
     [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenReducersHashIsNull()
+    public void ConstructorThrowsWhenRootReducerIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        Mock<ILogger> loggerMock = new();
+        Mock<ILogger<UxProjectionVersionedCacheGrain<TestProjection>>> loggerMock = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionVersionedCacheGrain(
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionVersionedCacheGrain<TestProjection>(
             grainContextMock.Object,
             snapshotGrainFactoryMock.Object,
             null!,
@@ -173,13 +146,14 @@ public sealed class UxProjectionVersionedCacheGrainTests
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<ILogger> loggerMock = new();
+        Mock<IRootReducer<TestProjection>> rootReducerMock = CreateDefaultRootReducer();
+        Mock<ILogger<UxProjectionVersionedCacheGrain<TestProjection>>> loggerMock = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TestableUxProjectionVersionedCacheGrain(
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionVersionedCacheGrain<TestProjection>(
             grainContextMock.Object,
             null!,
-            "test-hash",
+            rootReducerMock.Object,
             loggerMock.Object));
     }
 
@@ -199,7 +173,8 @@ public sealed class UxProjectionVersionedCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
             .Returns(snapshotCacheGrainMock.Object);
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -227,7 +202,8 @@ public sealed class UxProjectionVersionedCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
             .Returns(snapshotCacheGrainMock.Object);
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
@@ -254,7 +230,8 @@ public sealed class UxProjectionVersionedCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
             .Returns(snapshotCacheGrainMock.Object);
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act - call GetAsync twice
@@ -264,6 +241,34 @@ public sealed class UxProjectionVersionedCacheGrainTests
         // Assert - should return same cached result, only loaded once during activation
         Assert.Same(result1, result2);
         snapshotCacheGrainMock.Verify(g => g.GetStateAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    ///     OnActivateAsync should extract brook name from key.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    [AllureFeature("Key Construction")]
+    public async Task OnActivateAsyncExtractsBrookNameFromKey()
+    {
+        // Arrange
+        SnapshotKey? capturedKey = null;
+        Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TestProjection(1));
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
+            .Callback<SnapshotKey>(key => capturedKey = key)
+            .Returns(snapshotCacheGrainMock.Object);
+        UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+
+        // Act
+        await grain.OnActivateAsync(CancellationToken.None);
+
+        // Assert - brook name should be extracted from the key (TEST.MODULE.STREAM from brookKey.Type)
+        Assert.NotNull(capturedKey);
+        Assert.Equal("TEST.MODULE.STREAM", capturedKey.Value.Stream.BrookName);
     }
 
     /// <summary>
@@ -281,7 +286,8 @@ public sealed class UxProjectionVersionedCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
             .Returns(snapshotCacheGrainMock.Object);
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
 
         // Act
         Exception? exception = await Record.ExceptionAsync(() => grain.OnActivateAsync(CancellationToken.None));
@@ -315,7 +321,8 @@ public sealed class UxProjectionVersionedCacheGrainTests
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
             .Returns(snapshotCacheGrainMock.Object);
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
 
         // Act
         await grain.OnActivateAsync(expectedToken);
@@ -333,7 +340,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     public async Task OnActivateAsyncThrowsWhenPrimaryKeyIsInvalid()
     {
         // Arrange
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(primaryKey: "invalid-key-format");
+        UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(primaryKey: "invalid-key-format");
 
         // Act & Assert
         await Assert.ThrowsAsync<FormatException>(() => grain.OnActivateAsync(CancellationToken.None));
@@ -356,17 +363,17 @@ public sealed class UxProjectionVersionedCacheGrainTests
         snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestProjection>(It.IsAny<SnapshotKey>()))
             .Callback<SnapshotKey>(key => capturedKey = key)
             .Returns(snapshotCacheGrainMock.Object);
-        TestableUxProjectionVersionedCacheGrain grain = CreateGrain(
+        UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(
             snapshotGrainFactoryMock: snapshotGrainFactoryMock,
-            reducersHash: "my-reducer-hash");
+            reducersHash: "my-event-reducer-hash");
 
         // Act
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Assert
         Assert.NotNull(capturedKey);
-        Assert.Equal("entity-123", capturedKey.Value.Stream.ProjectionId);
-        Assert.Equal("my-reducer-hash", capturedKey.Value.Stream.ReducersHash);
+        Assert.Equal("entity-123", capturedKey.Value.Stream.EntityId);
+        Assert.Equal("my-event-reducer-hash", capturedKey.Value.Stream.ReducersHash);
         Assert.Equal(42, capturedKey.Value.Version);
     }
 }

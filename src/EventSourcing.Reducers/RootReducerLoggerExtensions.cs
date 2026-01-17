@@ -9,7 +9,7 @@ namespace Mississippi.EventSourcing.Reducers;
 internal static partial class RootReducerLoggerExtensions
 {
     /// <summary>
-    ///     Logs when no reducer matches an incoming event for a projection.
+    ///     Logs when no event reducer matches an incoming event for a projection.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="projectionType">The projection type name.</param>
@@ -17,7 +17,7 @@ internal static partial class RootReducerLoggerExtensions
     [LoggerMessage(
         3,
         LogLevel.Debug,
-        "No reducer matched for projection {ProjectionType} and event {EventType}; returning unchanged state")]
+        "No event reducer matched for projection {ProjectionType} and event {EventType}; returning unchanged state")]
     public static partial void RootReducerNoReducerMatched(
         this ILogger logger,
         string projectionType,
@@ -25,10 +25,10 @@ internal static partial class RootReducerLoggerExtensions
     );
 
     /// <summary>
-    ///     Logs an immutability violation when a reducer returns the incoming projection instance.
+    ///     Logs an immutability violation when an event reducer returns the incoming projection instance.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    /// <param name="reducerType">The reducer type name.</param>
+    /// <param name="reducerType">The event reducer type name.</param>
     /// <param name="projectionType">The projection type name.</param>
     /// <param name="eventType">The event type name.</param>
     [LoggerMessage(
@@ -43,10 +43,10 @@ internal static partial class RootReducerLoggerExtensions
     );
 
     /// <summary>
-    ///     Logs that a reducer matched and is being applied.
+    ///     Logs that an event reducer matched and is being applied.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    /// <param name="reducerType">The reducer type name.</param>
+    /// <param name="reducerType">The event reducer type name.</param>
     /// <param name="eventType">The event type name.</param>
     [LoggerMessage(2, LogLevel.Debug, "Reducer {ReducerType} applied event {EventType}")]
     public static partial void RootReducerReducerMatched(

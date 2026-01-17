@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 
 namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
@@ -6,7 +6,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 /// <summary>
 ///     Storage model for event data.
 /// </summary>
-internal class EventStorageModel
+internal sealed class EventStorageModel
 {
     /// <summary>
     ///     Gets or sets the event data as a byte array.
@@ -17,6 +17,11 @@ internal class EventStorageModel
     ///     Gets or sets the content type of the event data.
     /// </summary>
     public string? DataContentType { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the size of the event data in bytes.
+    /// </summary>
+    public long DataSizeBytes { get; set; }
 
     /// <summary>
     ///     Gets or sets the unique identifier of the event.

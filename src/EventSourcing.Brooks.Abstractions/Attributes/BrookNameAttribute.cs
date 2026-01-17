@@ -8,7 +8,7 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 ///     Attribute that specifies the hierarchical naming convention for a brook (event stream).
 ///     Ensures consistent naming across the application with validation for proper format.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, Inherited = false)]
 public sealed partial class BrookNameAttribute : Attribute
 {
     /// <summary>

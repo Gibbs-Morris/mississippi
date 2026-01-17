@@ -60,6 +60,22 @@ internal static partial class BrookWriterGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when cursor moved event has been published to the stream.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="brookKey">The brook key.</param>
+    /// <param name="newPosition">The new cursor position.</param>
+    [LoggerMessage(
+        EventId = 6,
+        Level = LogLevel.Information,
+        Message = "Cursor moved event published for brook '{BrookKey}' to position {NewPosition}")]
+    public static partial void CursorMovedEventPublished(
+        this ILogger logger,
+        BrookKey brookKey,
+        long newPosition
+    );
+
+    /// <summary>
     ///     Logs when events have been successfully appended to the brook.
     /// </summary>
     /// <param name="logger">The logger instance.</param>

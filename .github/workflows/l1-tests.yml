@@ -1,0 +1,99 @@
+name: "L1 Tests"
+on:
+  push:
+    branches:
+      - main
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+      - topic/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CONFIGURATION: Release
+
+jobs:
+  l1-tests:
+    name: "L1 Light Infrastructure Tests"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        solution: [ mississippi.slnx, samples.slnx ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache GitVersion tools
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.gitversion
+          key: ${{ runner.os }}-gitversion
+          restore-keys: ${{ runner.os }}-gitversion
+
+      - name: Cache nugets
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
+        with:
+          versionSpec: "6.0.5"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
+        with:
+          useConfigFile: true
+
+      - name: Restore dotnet packages
+        run: |
+          dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
+
+      - name: Build dotnet projects
+        run: |
+          dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+
+      - name: Run L1 Tests
+        run: |
+          mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
+          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L1Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results -- RunConfiguration.ReporterSwitch=allure
+
+      - name: Install Allure
+        if: always()
+        run: |
+          npm install -g allure-commandline@2.30.0 --ignore-scripts
+
+      - name: Generate Allure Report
+        if: always()
+        run: |
+          allure generate ${{ github.workspace }}/.scratchpad/coverage-test-results -o ${{ github.workspace }}/allure-report
+
+      - name: Upload Allure Report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: allure-l1-test-results-${{ matrix.solution }}-${{ matrix.os }}-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
+          path: ${{ github.workspace }}/allure-report

@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 
 
 namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;

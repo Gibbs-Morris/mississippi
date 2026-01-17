@@ -35,7 +35,20 @@ All C# contributors.
 - Consistent naming reduces StyleCop churn and reviewer overhead.
 - Documentation should explain intent and usage without speculation.
 
+## Domain Type Suffixes (Event Sourcing)
+
+| Type | Suffix | Example |
+|------|--------|---------|
+| Aggregate state | `Aggregate` | `ChannelAggregate` |
+| Command handler | `Handler` | `CreateChannelHandler` |
+| Aggregate reducer | `Reducer` | `ChannelCreatedReducer` |
+| Projection state | `Projection` | `UserProfileProjection` |
+| Projection reducer | `ProjectionReducer` | `UserRegisteredProjectionReducer` |
+| Registration class | `Registrations` | `CascadeRegistrations` |
+| LoggerExtensions | `LoggerExtensions` | `BrookWriterGrainLoggerExtensions` |
+
 ## References
 
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - C# standards: `.github/instructions/csharp.instructions.md`
+- Domain modeling: `.github/instructions/domain-modeling.instructions.md`

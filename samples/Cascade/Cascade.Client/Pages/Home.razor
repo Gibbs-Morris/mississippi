@@ -1,0 +1,494 @@
+@page "/"
+@using Cascade.Client.Cart
+@using Cascade.Contracts.Api
+@using Cascade.Contracts.Storage
+@inherits Mississippi.Reservoir.Blazor.StoreComponent
+@inject HttpClient Http
+@inject IMessageService MessageService
+
+<h1>Cascade Web</h1>
+
+<nav>
+    <a href="/chat-app">Chat App Demo</a> |
+    <a href="/event-sourcing">Event Sourcing Demo</a>
+</nav>
+
+<section>
+    <h2>API Connectivity</h2>
+    <p>Status: @apiStatus</p>
+    <button @onclick="CallApiAsync">Call API</button>
+    @if (!string.IsNullOrEmpty(echoResponse))
+    {
+        <p>Echo Response: @echoResponse</p>
+    }
+</section>
+
+<section>
+    <h2>SignalR Messaging</h2>
+    <p>Connection: @connectionStatus</p>
+    <div>
+        <input @bind="messageInput" placeholder="Enter message"/>
+        <button @onclick="SendMessageAsync" disabled="@(!isConnected)">Send</button>
+    </div>
+    <h3>Messages</h3>
+    <ul>
+        @foreach (string message in signalRMessages)
+        {
+            <li>@message</li>
+        }
+    </ul>
+</section>
+
+<section>
+    <h2>Orleans Grain Operations</h2>
+    <h3>API → Grain</h3>
+    <div>
+        <input @bind="greetNameInput" placeholder="Enter name to greet"/>
+        <button @onclick="CallGreetApiAsync">Greet via API</button>
+    </div>
+    <p>API Greet Result: @greetApiResult</p>
+    <div>
+        <input @bind="toUpperApiInput" placeholder="Enter text to uppercase"/>
+        <button @onclick="CallToUpperApiAsync">ToUpper via API</button>
+    </div>
+    <p>API ToUpper Result: @toUpperApiResult</p>
+
+    <h3>SignalR → Grain</h3>
+    <div>
+        <input @bind="greetSignalRInput" placeholder="Enter name to greet"/>
+        <button @onclick="CallGreetSignalRAsync" disabled="@(!isConnected)">Greet via SignalR</button>
+    </div>
+    <h4>Greeting Results</h4>
+    <ul>
+        @foreach (string greeting in greetingMessages)
+        {
+            <li>@greeting</li>
+        }
+    </ul>
+    <div>
+        <input @bind="toUpperSignalRInput" placeholder="Enter text to uppercase"/>
+        <button @onclick="CallToUpperSignalRAsync" disabled="@(!isConnected)">ToUpper via SignalR</button>
+    </div>
+    <p>SignalR ToUpper Result: @toUpperSignalRResult</p>
+</section>
+
+<section>
+    <h2>Orleans Streaming</h2>
+    <p>Demonstrates: API → BroadcasterGrain → Orleans Stream → StreamBridgeService → SignalR → Client</p>
+    <div>
+        <input @bind="broadcastMessageInput" placeholder="Enter message to broadcast"/>
+        <button @onclick="BroadcastMessageAsync">Broadcast via Stream</button>
+    </div>
+    <p>Broadcast Result: @broadcastResult</p>
+    <h3>Stream Messages</h3>
+    <ul>
+        @foreach (string message in streamMessages)
+        {
+            <li>@message</li>
+        }
+    </ul>
+</section>
+
+<section>
+    <h2>Storage Operations</h2>
+    <h3>Cosmos DB</h3>
+    <button @onclick="WriteToCosmosAsync">Write to Cosmos</button>
+    <button @onclick="ReadFromCosmosAsync">Read from Cosmos</button>
+    <p>Cosmos Result: @cosmosResult</p>
+
+    <h3>Blob Storage</h3>
+    <button @onclick="WriteToBlobAsync">Write to Blob</button>
+    <button @onclick="ReadFromBlobAsync">Read from Blob</button>
+    <p>Blob Result: @blobResult</p>
+</section>
+
+<section>
+    <h2>Reservoir (Redux-style State)</h2>
+    <p>Demonstrates: Client-side state management with actions, reducers, effects, and immutable state</p>
+
+    <h3>Available Products (Effect Demo)</h3>
+    <button @onclick="LoadProducts" disabled="@Cart.IsLoadingProducts">
+        @(Cart.IsLoadingProducts ? "Loading..." : "Load Products from API")
+    </button>
+    @if (!string.IsNullOrEmpty(Cart.ProductsError))
+    {
+        <p style="color: red;">Error: @Cart.ProductsError</p>
+    }
+    @if (Cart.AvailableProducts.Count > 0)
+    {
+        <ul>
+            @foreach (string product in Cart.AvailableProducts)
+            {
+                <li>
+                    @product
+                    <button @onclick="() => AddProductToCart(product)">Add to Cart</button>
+                </li>
+            }
+        </ul>
+    }
+
+    <h3>Manual Add</h3>
+    <div>
+        <input @bind="newItemName" placeholder="Enter item name"/>
+        <button @onclick="AddItemToCart">Add to Cart</button>
+    </div>
+
+    <h3>Cart Items (@Cart.Items.Count)</h3>
+    @if (Cart.Items.Count == 0)
+    {
+        <p>
+            <em>Cart is empty</em>
+        </p>
+    }
+    else
+    {
+        <ul>
+            @foreach (CartItem item in Cart.Items)
+            {
+                <li>
+                    @item.Name
+                    <button @onclick="() => RemoveItemFromCart(item.Id)">Remove</button>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+
+    private string apiStatus = "Not checked";
+
+    private string echoResponse = string.Empty;
+
+    private string connectionStatus = "Disconnected";
+
+    private string messageInput = string.Empty;
+
+    private string cosmosResult = string.Empty;
+
+    private string blobResult = string.Empty;
+
+    private bool isConnected;
+
+    // SignalR Messaging section - self-contained
+    private readonly List<string> signalRMessages = [];
+
+    // Orleans Grain Operations section - self-contained
+    private string greetNameInput = string.Empty;
+
+    private string greetApiResult = string.Empty;
+
+    private string toUpperApiInput = string.Empty;
+
+    private string toUpperApiResult = string.Empty;
+
+    private string greetSignalRInput = string.Empty;
+
+    private string toUpperSignalRInput = string.Empty;
+
+    private string toUpperSignalRResult = string.Empty;
+
+    private readonly List<string> greetingMessages = [];
+
+    // Orleans Streaming section - self-contained
+    private string broadcastMessageInput = string.Empty;
+
+    private string broadcastResult = string.Empty;
+
+    private readonly List<string> streamMessages = [];
+
+    // Reservoir Cart section - self-contained
+    private string newItemName = string.Empty;
+
+    private CartState Cart => GetState<CartState>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        MessageService.MessageReceived += HandleMessageReceived;
+        MessageService.GreetingReceived += HandleGreetingReceived;
+        MessageService.StreamMessageReceived += HandleStreamMessageReceived;
+        await ConnectToSignalRAsync();
+    }
+
+    private async Task CallApiAsync()
+    {
+        try
+        {
+            HealthResponse? health = await Http.GetFromJsonAsync<HealthResponse>("api/health");
+            apiStatus = health?.Status ?? "Unknown";
+            EchoResponse? echo = await Http.GetFromJsonAsync<EchoResponse>("api/echo?message=Hello");
+            echoResponse = echo?.Message ?? "No response";
+        }
+        catch (Exception ex)
+        {
+            apiStatus = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task ConnectToSignalRAsync()
+    {
+        try
+        {
+            await MessageService.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected";
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            connectionStatus = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task SendMessageAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(messageInput))
+        {
+            await MessageService.SendMessageAsync(messageInput);
+            messageInput = string.Empty;
+        }
+    }
+
+    private async Task CallGreetApiAsync()
+    {
+        if (string.IsNullOrWhiteSpace(greetNameInput))
+        {
+            greetApiResult = "Please enter a name";
+            return;
+        }
+
+        try
+        {
+            GreetingResponse? response = await Http.GetFromJsonAsync<GreetingResponse>($"api/greet/{Uri.EscapeDataString(greetNameInput)}");
+            greetApiResult = response is not null ? $"{response.Greeting} (Uppercase: {response.UppercaseName}, Time: {response.Timestamp:HH:mm:ss})" : "No response";
+        }
+        catch (Exception ex)
+        {
+            greetApiResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task CallToUpperApiAsync()
+    {
+        if (string.IsNullOrWhiteSpace(toUpperApiInput))
+        {
+            toUpperApiResult = "Please enter text";
+            return;
+        }
+
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync(
+                "api/toupper",
+                new ToUpperRequest
+                {
+                    Input = toUpperApiInput,
+                });
+            if (response.IsSuccessStatusCode)
+            {
+                toUpperApiResult = await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                toUpperApiResult = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            toUpperApiResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task CallGreetSignalRAsync()
+    {
+        if (string.IsNullOrWhiteSpace(greetSignalRInput))
+        {
+            return;
+        }
+
+        try
+        {
+            await MessageService.GreetAsync(greetSignalRInput);
+            greetSignalRInput = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            greetingMessages.Add($"Greet Error: {ex.Message}");
+            StateHasChanged();
+        }
+    }
+
+    private async Task CallToUpperSignalRAsync()
+    {
+        if (string.IsNullOrWhiteSpace(toUpperSignalRInput))
+        {
+            toUpperSignalRResult = "Please enter text";
+            return;
+        }
+
+        try
+        {
+            toUpperSignalRResult = await MessageService.ToUpperAsync(toUpperSignalRInput);
+        }
+        catch (Exception ex)
+        {
+            toUpperSignalRResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task BroadcastMessageAsync()
+    {
+        if (string.IsNullOrWhiteSpace(broadcastMessageInput))
+        {
+            broadcastResult = "Please enter a message";
+            return;
+        }
+
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync(
+                "api/broadcast",
+                new BroadcastRequest
+                {
+                    Message = broadcastMessageInput,
+                });
+            if (response.IsSuccessStatusCode)
+            {
+                broadcastResult = "Broadcast sent successfully";
+                broadcastMessageInput = string.Empty;
+            }
+            else
+            {
+                broadcastResult = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            broadcastResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private void HandleMessageReceived(
+        object? sender,
+        MessageReceivedEventArgs e
+    )
+    {
+        signalRMessages.Add(e.Message);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleGreetingReceived(
+        object? sender,
+        GreetingReceivedEventArgs e
+    )
+    {
+        string formattedMessage = $"[{e.GeneratedAt:HH:mm:ss}] {e.Greeting} (Uppercase: {e.UppercaseName})";
+        greetingMessages.Add(formattedMessage);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleStreamMessageReceived(
+        object? sender,
+        StreamMessageReceivedEventArgs e
+    )
+    {
+        string formattedMessage = $"[{e.Timestamp:HH:mm:ss}] From {e.Sender}: {e.Content}";
+        streamMessages.Add(formattedMessage);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task WriteToCosmosAsync()
+    {
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync(
+                "api/cosmos",
+                new CosmosItem
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Data = $"Test data at {DateTime.UtcNow:O}",
+                });
+            cosmosResult = response.IsSuccessStatusCode ? "Written successfully" : $"Error: {response.StatusCode}";
+        }
+        catch (Exception ex)
+        {
+            cosmosResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task ReadFromCosmosAsync()
+    {
+        try
+        {
+            CosmosItem[]? items = await Http.GetFromJsonAsync<CosmosItem[]>("api/cosmos");
+            cosmosResult = items is { Length: > 0 } ? $"Found {items.Length} item(s): {items[0].Data}" : "No items found";
+        }
+        catch (Exception ex)
+        {
+            cosmosResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task WriteToBlobAsync()
+    {
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync(
+                "api/blob",
+                new BlobItem
+                {
+                    Name = "test-blob",
+                    Content = $"Blob content at {DateTime.UtcNow:O}",
+                });
+            blobResult = response.IsSuccessStatusCode ? "Written successfully" : $"Error: {response.StatusCode}";
+        }
+        catch (Exception ex)
+        {
+            blobResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task ReadFromBlobAsync()
+    {
+        try
+        {
+            BlobItem? item = await Http.GetFromJsonAsync<BlobItem>("api/blob/test-blob");
+            blobResult = item is not null ? $"Content: {item.Content}" : "Blob not found";
+        }
+        catch (Exception ex)
+        {
+            blobResult = $"Error: {ex.Message}";
+        }
+    }
+
+    private void AddItemToCart()
+    {
+        if (string.IsNullOrWhiteSpace(newItemName))
+        {
+            return;
+        }
+
+        Dispatch(new AddItemAction(newItemName));
+        newItemName = string.Empty;
+    }
+
+    private void AddProductToCart(
+        string productName
+    )
+    {
+        Dispatch(new AddItemAction(productName));
+    }
+
+    private void RemoveItemFromCart(
+        string itemId
+    )
+    {
+        Dispatch(new RemoveItemAction(itemId));
+    }
+
+    private void LoadProducts()
+    {
+        Dispatch(new LoadProductsAction());
+    }
+
+}

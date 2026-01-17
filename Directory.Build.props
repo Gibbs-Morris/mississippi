@@ -63,8 +63,8 @@
         </PackageReference>
     </ItemGroup>
     <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
-        <PackageReference Include="Moq" />
         <PackageReference Include="Allure.Xunit" />
+        <PackageReference Include="Moq" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="xunit" />
         <PackageReference Include="xunit.runner.visualstudio">

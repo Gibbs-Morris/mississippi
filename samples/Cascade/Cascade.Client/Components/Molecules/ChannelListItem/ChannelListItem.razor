@@ -1,0 +1,17 @@
+@* ChannelListItem - Molecule component for displaying a channel in the sidebar *@
+
+<div class="channel-item @(IsActive ? "channel-item--active" : "")"
+     tabindex="0"
+     role="button"
+     aria-pressed="@IsActive"
+     @onclick="HandleClickAsync"
+     @onkeypress="HandleKeyPressAsync">
+    <span class="channel-item__icon" aria-hidden="true">#</span>
+    <span class="channel-item__name">@Name</span>
+    @if (UnreadCount > 0)
+    {
+        <span class="channel-item__badge" aria-label="@UnreadCount unread messages">
+            @(UnreadCount > 99 ? "99+" : UnreadCount.ToString())
+        </span>
+    }
+</div>

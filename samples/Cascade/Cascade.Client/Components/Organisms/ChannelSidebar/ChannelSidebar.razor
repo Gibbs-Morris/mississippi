@@ -1,0 +1,54 @@
+@* ChannelSidebar - Organism component for the channel navigation sidebar *@
+
+<aside class="chat-sidebar" role="navigation" aria-label="Channels">
+    <header class="chat-sidebar__header">
+        <h2 class="chat-sidebar__title">Cascade Chat</h2>
+        <Button Variant="ghost"
+                Size="icon"
+                OnClick="HandleCreateChannelAsync"
+                aria-label="Create channel">
+            ✚
+        </Button>
+    </header>
+
+    <nav class="chat-sidebar__channels">
+        <section class="chat-sidebar__section">
+            <div class="chat-sidebar__section-header">
+                <span>Channels</span>
+            </div>
+            <div class="channel-list" role="listbox" aria-label="Available channels">
+                @if (Channels is { Count: > 0 })
+                {
+                    @foreach (ChannelInfo channel in Channels)
+                    {
+                        <ChannelListItem ChannelId="@channel.ChannelId"
+                                         Name="@channel.Name"
+                                         IsActive="@(channel.ChannelId == SelectedChannelId)"
+                                         UnreadCount="@channel.UnreadCount"
+                                         OnSelect="HandleChannelSelectAsync"/>
+                    }
+                }
+                else
+                {
+                    <p style="color: var(--chat-text-muted); padding: var(--chat-space-2); font-size: var(--chat-font-size-sm);">
+                        No channels yet. Create one!
+                    </p>
+                }
+            </div>
+        </section>
+    </nav>
+
+    <footer class="chat-sidebar__user">
+        <Avatar Name="@CurrentUserName" Size="sm" ShowStatus="true" IsOnline="true"/>
+        <div class="user-info__details">
+            <span class="user-info__name">@CurrentUserName</span>
+            <span class="user-info__status">Online</span>
+        </div>
+        <Button Variant="ghost"
+                Size="icon"
+                OnClick="HandleLogoutAsync"
+                aria-label="Sign out">
+            ⏻
+        </Button>
+    </footer>
+</aside>

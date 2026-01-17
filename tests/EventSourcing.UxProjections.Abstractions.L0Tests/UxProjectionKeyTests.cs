@@ -2,8 +2,6 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-
 
 namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
 
@@ -16,50 +14,32 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
 public sealed class UxProjectionKeyTests
 {
     /// <summary>
-    ///     Constructor should create key with valid components.
+    ///     Constructor should create key with valid entity ID.
     /// </summary>
     [Fact]
     public void ConstructorCreatesValidKey()
     {
-        BrookKey brookKey = new("brookType", "entityId");
-        UxProjectionKey key = new("ProjectionName", brookKey);
-        Assert.Equal("ProjectionName", key.ProjectionTypeName);
-        Assert.Equal(brookKey, key.BrookKey);
+        UxProjectionKey key = new("entity-1");
+        Assert.Equal("entity-1", key.EntityId);
     }
 
     /// <summary>
-    ///     Constructor should throw when composite key exceeds maximum length.
+    ///     Constructor should throw when entity ID exceeds maximum length.
     /// </summary>
     [Fact]
-    public void ConstructorThrowsWhenKeyExceedsMaxLength()
+    public void ConstructorThrowsWhenEntityIdExceedsMaxLength()
     {
-        // UxProjectionKey limit is 2048, BrookKey limit is 1024
-        // Create a valid BrookKey that's under 1024 chars, but projection type name + brook key exceeds 2048
-        string longTypeName = new('x', 1500);
-        string brookType = new('y', 300);
-        string entityId = new('z', 300);
-        BrookKey brookKey = new(brookType, entityId);
-        Assert.Throws<ArgumentException>(() => new UxProjectionKey(longTypeName, brookKey));
+        string longEntityId = new('x', 4193);
+        Assert.Throws<ArgumentException>(() => new UxProjectionKey(longEntityId));
     }
 
     /// <summary>
-    ///     Constructor should throw when projection type name contains separator.
+    ///     Constructor should throw when entity ID is null.
     /// </summary>
     [Fact]
-    public void ConstructorThrowsWhenProjectionTypeNameContainsSeparator()
+    public void ConstructorThrowsWhenEntityIdIsNull()
     {
-        BrookKey brookKey = new("brookType", "entityId");
-        Assert.Throws<ArgumentException>(() => new UxProjectionKey("Projection|Name", brookKey));
-    }
-
-    /// <summary>
-    ///     Constructor should throw when projection type name is null.
-    /// </summary>
-    [Fact]
-    public void ConstructorThrowsWhenProjectionTypeNameIsNull()
-    {
-        BrookKey brookKey = new("brookType", "entityId");
-        Assert.Throws<ArgumentNullException>(() => new UxProjectionKey(null!, brookKey));
+        Assert.Throws<ArgumentNullException>(() => new UxProjectionKey(null!));
     }
 
     /// <summary>
@@ -68,42 +48,21 @@ public sealed class UxProjectionKeyTests
     [Fact]
     public void EqualityWorksForIdenticalKeys()
     {
-        BrookKey brookKey = new("brookType", "entityId");
-        UxProjectionKey key1 = new("ProjectionName", brookKey);
-        UxProjectionKey key2 = new("ProjectionName", brookKey);
+        UxProjectionKey key1 = new("entity-1");
+        UxProjectionKey key2 = new("entity-1");
         Assert.Equal(key1, key2);
         Assert.True(key1 == key2);
         Assert.False(key1 != key2);
     }
 
     /// <summary>
-    ///     FromString should parse valid key string.
+    ///     FromString should parse valid entity ID string.
     /// </summary>
     [Fact]
-    public void FromStringParsesValidKey()
+    public void FromStringParsesValidEntityId()
     {
-        UxProjectionKey key = UxProjectionKey.FromString("ProjectionName|brookType|entityId");
-        Assert.Equal("ProjectionName", key.ProjectionTypeName);
-        Assert.Equal("brookType", key.BrookKey.Type);
-        Assert.Equal("entityId", key.BrookKey.Id);
-    }
-
-    /// <summary>
-    ///     FromString should throw when brook key part is invalid.
-    /// </summary>
-    [Fact]
-    public void FromStringThrowsWhenBrookKeyPartInvalid()
-    {
-        Assert.Throws<FormatException>(() => UxProjectionKey.FromString("ProjectionName|invalidBrookKey"));
-    }
-
-    /// <summary>
-    ///     FromString should throw when format is invalid.
-    /// </summary>
-    [Fact]
-    public void FromStringThrowsWhenFormatInvalid()
-    {
-        Assert.Throws<FormatException>(() => UxProjectionKey.FromString("invalid-no-separator"));
+        UxProjectionKey key = UxProjectionKey.FromString("entity-1");
+        Assert.Equal("entity-1", key.EntityId);
     }
 
     /// <summary>
@@ -116,76 +75,58 @@ public sealed class UxProjectionKeyTests
     }
 
     /// <summary>
-    ///     FromUxProjectionKey returns string representation.
-    /// </summary>
-    [Fact]
-    public void FromUxProjectionKeyReturnsString()
-    {
-        BrookKey brookKey = new("brookType", "entityId");
-        UxProjectionKey key = new("ProjectionName", brookKey);
-        string result = UxProjectionKey.FromUxProjectionKey(key);
-        Assert.Equal("ProjectionName|brookType|entityId", result);
-    }
-
-    /// <summary>
     ///     GetHashCode should be consistent for equal keys.
     /// </summary>
     [Fact]
     public void GetHashCodeIsConsistentForEqualKeys()
     {
-        BrookKey brookKey = new("brookType", "entityId");
-        UxProjectionKey key1 = new("ProjectionName", brookKey);
-        UxProjectionKey key2 = new("ProjectionName", brookKey);
+        UxProjectionKey key1 = new("entity-1");
+        UxProjectionKey key2 = new("entity-1");
         Assert.Equal(key1.GetHashCode(), key2.GetHashCode());
     }
 
     /// <summary>
-    ///     Implicit string conversion should work correctly.
+    ///     Implicit conversion from string should work correctly.
     /// </summary>
     [Fact]
-    public void ImplicitStringConversionWorks()
+    public void ImplicitConversionFromStringWorks()
     {
-        BrookKey brookKey = new("brookType", "entityId");
-        UxProjectionKey key = new("ProjectionName", brookKey);
+        UxProjectionKey key = "entity-1";
+        Assert.Equal("entity-1", key.EntityId);
+    }
+
+    /// <summary>
+    ///     Implicit conversion to string should return entity ID.
+    /// </summary>
+    [Fact]
+    public void ImplicitConversionToStringWorks()
+    {
+        UxProjectionKey key = new("entity-1");
         string result = key;
-        Assert.Equal("ProjectionName|brookType|entityId", result);
+        Assert.Equal("entity-1", result);
     }
 
     /// <summary>
-    ///     Implicit string to UxProjectionKey conversion should work.
+    ///     Inequality comparison should work for different keys.
     /// </summary>
     [Fact]
-    public void ImplicitStringToKeyConversionWorks()
+    public void InequalityWorksForDifferentKeys()
     {
-        UxProjectionKey key = "ProjectionName|brookType|entityId";
-        Assert.Equal("ProjectionName", key.ProjectionTypeName);
-        Assert.Equal("brookType", key.BrookKey.Type);
-        Assert.Equal("entityId", key.BrookKey.Id);
-    }
-
-    /// <summary>
-    ///     Inequality comparison should work for different brook keys.
-    /// </summary>
-    [Fact]
-    public void InequalityWorksForDifferentBrookKeys()
-    {
-        UxProjectionKey key1 = new("ProjectionName", new("brookType", "entity1"));
-        UxProjectionKey key2 = new("ProjectionName", new("brookType", "entity2"));
-        Assert.NotEqual(key1, key2);
-    }
-
-    /// <summary>
-    ///     Inequality comparison should work for different projection type names.
-    /// </summary>
-    [Fact]
-    public void InequalityWorksForDifferentProjectionTypes()
-    {
-        BrookKey brookKey = new("brookType", "entityId");
-        UxProjectionKey key1 = new("ProjectionA", brookKey);
-        UxProjectionKey key2 = new("ProjectionB", brookKey);
+        UxProjectionKey key1 = new("entity-1");
+        UxProjectionKey key2 = new("entity-2");
         Assert.NotEqual(key1, key2);
         Assert.False(key1 == key2);
         Assert.True(key1 != key2);
+    }
+
+    /// <summary>
+    ///     Parse should create key from string.
+    /// </summary>
+    [Fact]
+    public void ParseCreatesKeyFromString()
+    {
+        UxProjectionKey key = UxProjectionKey.Parse("entity-1");
+        Assert.Equal("entity-1", key.EntityId);
     }
 
     /// <summary>
@@ -194,21 +135,19 @@ public sealed class UxProjectionKeyTests
     [Fact]
     public void RoundtripThroughStringPreservesKey()
     {
-        BrookKey brookKey = new("brookType", "entityId");
-        UxProjectionKey original = new("ProjectionName", brookKey);
+        UxProjectionKey original = new("entity-1");
         string stringForm = original;
         UxProjectionKey parsed = stringForm;
         Assert.Equal(original, parsed);
     }
 
     /// <summary>
-    ///     ToString should return correct format.
+    ///     ToString should return entity ID.
     /// </summary>
     [Fact]
-    public void ToStringReturnsCorrectFormat()
+    public void ToStringReturnsEntityId()
     {
-        BrookKey brookKey = new("brookType", "entityId");
-        UxProjectionKey key = new("ProjectionName", brookKey);
-        Assert.Equal("ProjectionName|brookType|entityId", key.ToString());
+        UxProjectionKey key = new("entity-1");
+        Assert.Equal("entity-1", key.ToString());
     }
 }

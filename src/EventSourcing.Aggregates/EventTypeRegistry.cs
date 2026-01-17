@@ -76,13 +76,13 @@ internal sealed class EventTypeRegistry : IEventTypeRegistry
         int registeredCount = 0;
         foreach (Type type in assembly.GetTypes())
         {
-            EventNameAttribute? attribute = type.GetCustomAttribute<EventNameAttribute>(false);
+            EventStorageNameAttribute? attribute = type.GetCustomAttribute<EventStorageNameAttribute>(false);
             if (attribute is null)
             {
                 continue;
             }
 
-            Register(attribute.EventName, type);
+            Register(attribute.StorageName, type);
             registeredCount++;
         }
 

@@ -3,7 +3,7 @@ using System;
 using Allure.Xunit.Attributes;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Tests;
+namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotTypeRegistry" />.
@@ -100,6 +100,16 @@ public class SnapshotTypeRegistryTests
     }
 
     /// <summary>
+    ///     RegisteredTypes should return empty dictionary initially.
+    /// </summary>
+    [Fact]
+    public void RegisteredTypesReturnsEmptyDictionaryInitially()
+    {
+        SnapshotTypeRegistry registry = new();
+        Assert.Empty(registry.RegisteredTypes);
+    }
+
+    /// <summary>
     ///     Registry should support multiple snapshot types.
     /// </summary>
     [Fact]
@@ -191,5 +201,28 @@ public class SnapshotTypeRegistryTests
     {
         SnapshotTypeRegistry registry = new();
         Assert.Throws<ArgumentNullException>(() => registry.ResolveType(null!));
+    }
+
+    /// <summary>
+    ///     ScanAssembly should return zero when no attributed types exist.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyReturnsZeroForAssemblyWithNoAttributedTypes()
+    {
+        SnapshotTypeRegistry registry = new();
+
+        // Use mscorlib which has no SnapshotStorageNameAttribute types
+        int count = registry.ScanAssembly(typeof(object).Assembly);
+        Assert.Equal(0, count);
+    }
+
+    /// <summary>
+    ///     ScanAssembly should throw when assembly is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyThrowsWhenAssemblyIsNull()
+    {
+        SnapshotTypeRegistry registry = new();
+        Assert.Throws<ArgumentNullException>(() => registry.ScanAssembly(null!));
     }
 }

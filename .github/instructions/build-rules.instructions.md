@@ -14,6 +14,7 @@ Governing thought: Every change ships only after a clean build, cleanup, tests, 
 - Agents **MUST** run and pass build, cleanup, unit tests, and mutation tests (for Mississippi projects) before calling work complete. Why: Full quality pipeline prevents regressions.
 - Agents **MUST NOT** add `[SuppressMessage]` or `#pragma warning disable` except for explicitly approved, minimal scopes. Why: Suppressions hide defects.
 - Agents **MUST** keep StyleCop/ReSharper cleanup clean. Why: Consistent formatting enables readable diffs.
+- Solution files **MUST** be edited in `.slnx` form only; `.sln` files **MUST NOT** be hand-edited because automation regenerates them with SlnGen during builds/cleanup for legacy tooling compatibility. Why: Prevents drift between canonical and generated solutions.
 - Mississippi code changes **MUST** add comprehensive tests; Samples changes **SHOULD** add minimal illustrative tests. Why: Maintains coverage expectations per solution type.
 - Mississippi mutation tests **MUST** be allowed to run to completion (plan for ~30 minutes) and **MUST** not be cancelled early. Why: Mutation score enforces assertion quality.
 - Package versions **MUST** remain in `Directory.Packages.props`; project files **MUST NOT** add `Version` attributes. Why: Central Package Management avoids drift.

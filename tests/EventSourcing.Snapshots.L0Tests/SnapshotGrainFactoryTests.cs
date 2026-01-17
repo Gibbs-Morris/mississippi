@@ -1,3 +1,5 @@
+using System;
+
 using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
@@ -9,7 +11,7 @@ using Moq;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Tests;
+namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotGrainFactory" />.
@@ -30,6 +32,56 @@ public sealed class SnapshotGrainFactoryTests
     }
 
     /// <summary>
+    ///     Constructor should succeed with valid dependencies.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Construction")]
+    public void ConstructorSucceedsWithValidDependencies()
+    {
+        // Arrange
+        Mock<IGrainFactory> grainFactoryMock = new();
+        Mock<ILogger<SnapshotGrainFactory>> loggerMock = new();
+
+        // Act
+        SnapshotGrainFactory factory = new(grainFactoryMock.Object, loggerMock.Object);
+
+        // Assert
+        Assert.NotNull(factory);
+    }
+
+    /// <summary>
+    ///     Constructor should throw ArgumentNullException when grainFactory is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    public void ConstructorThrowsArgumentNullExceptionWhenGrainFactoryIsNull()
+    {
+        // Arrange
+        Mock<ILogger<SnapshotGrainFactory>> loggerMock = new();
+
+        // Act & Assert
+        ArgumentNullException exception =
+            Assert.Throws<ArgumentNullException>(() => new SnapshotGrainFactory(null!, loggerMock.Object));
+        Assert.Equal("grainFactory", exception.ParamName);
+    }
+
+    /// <summary>
+    ///     Constructor should throw ArgumentNullException when logger is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    public void ConstructorThrowsArgumentNullExceptionWhenLoggerIsNull()
+    {
+        // Arrange
+        Mock<IGrainFactory> grainFactoryMock = new();
+
+        // Act & Assert
+        ArgumentNullException exception =
+            Assert.Throws<ArgumentNullException>(() => new SnapshotGrainFactory(grainFactoryMock.Object, null!));
+        Assert.Equal("logger", exception.ParamName);
+    }
+
+    /// <summary>
     ///     Verifies that GetSnapshotCacheGrain returns a grain from the underlying factory.
     /// </summary>
     [Fact]
@@ -37,7 +89,7 @@ public sealed class SnapshotGrainFactoryTests
     public void GetSnapshotCacheGrainReturnsGrainFromFactory()
     {
         // Arrange
-        SnapshotKey key = new(new("TestProjection", "entity-1", "hash123"), 5);
+        SnapshotKey key = new(new("TEST.BROOK", "TestProjection", "entity-1", "hash123"), 5);
         Mock<ISnapshotCacheGrain<SnapshotGrainFactoryTestState>> expectedGrainMock = new();
         Mock<IGrainFactory> grainFactoryMock = new();
         grainFactoryMock
@@ -64,7 +116,7 @@ public sealed class SnapshotGrainFactoryTests
     public void GetSnapshotPersisterGrainReturnsGrainFromFactory()
     {
         // Arrange
-        SnapshotKey key = new(new("TestProjection", "entity-1", "hash123"), 5);
+        SnapshotKey key = new(new("TEST.BROOK", "TestProjection", "entity-1", "hash123"), 5);
         Mock<ISnapshotPersisterGrain> expectedGrainMock = new();
         Mock<IGrainFactory> grainFactoryMock = new();
         grainFactoryMock.Setup(f => f.GetGrain<ISnapshotPersisterGrain>(key.ToString(), null))

@@ -17,7 +17,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         deserialization during aggregate hydration and serialization when persisting events.
 ///     </para>
 ///     <para>
-///         Event types are identified by their <see cref="EventNameAttribute" />, which provides
+///         Event types are identified by their <see cref="EventStorageNameAttribute" />, which provides
 ///         a stable string identity that survives type renames and namespace changes.
 ///     </para>
 /// </remarks>
@@ -31,7 +31,7 @@ public interface IEventTypeRegistry
     /// <summary>
     ///     Registers an event type with its corresponding event name.
     /// </summary>
-    /// <param name="eventName">The event name as defined by <see cref="EventNameAttribute" />.</param>
+    /// <param name="eventName">The event name as defined by <see cref="EventStorageNameAttribute" />.</param>
     /// <param name="eventType">The CLR type of the event.</param>
     void Register(
         string eventName,
@@ -57,7 +57,7 @@ public interface IEventTypeRegistry
     );
 
     /// <summary>
-    ///     Scans an assembly for types decorated with <see cref="EventNameAttribute" /> and registers them.
+    ///     Scans an assembly for types decorated with <see cref="EventStorageNameAttribute" /> and registers them.
     /// </summary>
     /// <param name="assembly">The assembly to scan.</param>
     /// <returns>The number of event types registered from the assembly.</returns>

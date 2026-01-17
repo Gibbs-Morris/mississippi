@@ -1,0 +1,44 @@
+@* MessageList - Organism component for displaying a scrollable list of chat messages *@
+
+@if (IsLoading)
+{
+    <div class="chat-messages__loading" role="status" aria-label="Loading messages">
+        <div class="chat-messages__loading-spinner"></div>
+        <span class="visually-hidden">Loading messages...</span>
+    </div>
+}
+else if (Messages is null || (Messages.Count == 0))
+{
+    <div class="chat-messages__empty">
+        <span class="chat-messages__empty-icon" aria-hidden="true">💬</span>
+        <h3 class="chat-messages__empty-title">No messages yet</h3>
+        <p class="chat-messages__empty-text">Be the first to send a message in this channel!</p>
+    </div>
+}
+else
+{
+    <div class="chat-messages" role="log" aria-live="polite" aria-label="Message history">
+        @foreach (MessageGroup group in GroupedMessages)
+        {
+            <div class="message-group">
+                <div class="message-group__avatar">
+                    <Avatar Name="@group.SentBy" Size="md"/>
+                </div>
+                <div class="message-group__content">
+                    <div class="message-group__header">
+                        <span class="message-group__author">@group.SentBy</span>
+                        <Timestamp Value="@group.FirstSentAt" ShowRelative="true"/>
+                    </div>
+                    <div class="message-group__messages">
+                        @foreach (MessageDto message in group.Messages)
+                        {
+                            <MessageBubble Content="@message.Content"
+                                           IsDeleted="@message.IsDeleted"
+                                           IsEdited="@(message.EditedAt.HasValue)"/>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

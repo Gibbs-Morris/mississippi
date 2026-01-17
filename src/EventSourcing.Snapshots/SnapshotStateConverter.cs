@@ -51,6 +51,7 @@ internal sealed class SnapshotStateConverter<TSnapshot> : ISnapshotStateConverte
             Data = [.. data.Span],
             DataContentType = SerializationProvider.Format,
             ReducerHash = reducerHash,
+            DataSizeBytes = data.Length,
         };
     }
 }

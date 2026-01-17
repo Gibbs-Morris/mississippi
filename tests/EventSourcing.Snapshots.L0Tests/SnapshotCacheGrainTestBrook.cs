@@ -1,13 +1,12 @@
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Tests;
+namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 
 /// <summary>
-///     Test brook definition for snapshot cache grain tests.
+///     Test grain type for snapshot cache grain tests.
 /// </summary>
-internal sealed class SnapshotCacheGrainTestBrook : IBrookDefinition
+[BrookName("TEST", "SNAPSHOTS", "TESTBROOK")]
+internal sealed class SnapshotCacheGrainTestBrook
 {
-    /// <inheritdoc />
-    public static string BrookName => "TEST.SNAPSHOTS.TestBrook";
 }

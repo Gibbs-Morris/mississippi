@@ -1,4 +1,4 @@
-﻿using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
@@ -7,7 +7,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 /// <summary>
 ///     Maps event documents to event storage models.
 /// </summary>
-internal class EventDocumentToStorageMapper : IMapper<EventDocument, EventStorageModel>
+internal sealed class EventDocumentToStorageMapper : IMapper<EventDocument, EventStorageModel>
 {
     /// <summary>
     ///     Maps an event document to an event storage model.
@@ -24,6 +24,7 @@ internal class EventDocumentToStorageMapper : IMapper<EventDocument, EventStorag
             EventType = input.EventType,
             DataContentType = input.DataContentType,
             Data = input.Data,
+            DataSizeBytes = input.DataSizeBytes,
             Time = input.Time,
         };
 }

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Abstractions for Orleans-SignalR bridge infrastructure. Provides grain interfaces and contracts for distributed SignalR backplane functionality.</Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Orleans.Sdk"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
+    </ItemGroup>
+</Project>

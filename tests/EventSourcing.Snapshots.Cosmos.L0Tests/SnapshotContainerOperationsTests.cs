@@ -9,7 +9,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Cosmos.Retry;
+using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
 using Moq;
@@ -30,6 +30,10 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 [AllureSubSuite("Container Operations")]
 public sealed class SnapshotContainerOperationsTests
 {
+    private const string TestDocumentId = "test-doc-id";
+
+    private const string TestPartitionKey = "test-partition";
+
     private static CosmosException CreateCosmosNotFound() =>
         new("not-found", HttpStatusCode.NotFound, 0, string.Empty, 0);
 
@@ -47,10 +51,6 @@ public sealed class SnapshotContainerOperationsTests
             retryPolicy,
             NullLogger<SnapshotContainerOperations>.Instance);
     }
-
-    private const string TestDocumentId = "test-doc-id";
-
-    private const string TestPartitionKey = "test-partition";
 
     private sealed class PassThroughRetryPolicy : IRetryPolicy
     {

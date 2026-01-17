@@ -702,11 +702,6 @@
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         }
       },
-      "System.Text.Json": {
-        "type": "Transitive",
-        "resolved": "9.0.1",
-        "contentHash": "eqWHDZqYPv1PvuvoIIx5pF74plL3iEOZOl/0kQP+Y0TEbtgNnM2W6k8h8EPYs+LTJZsXuWa92n5W5sHTWvE3VA=="
-      },
       "System.Threading.Channels": {
         "type": "Transitive",
         "resolved": "6.0.0",
@@ -760,6 +755,13 @@
           "xunit.abstractions": "2.0.3"
         }
       },
+      "Mississippi.Common.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+        }
+      },
       "Mississippi.EventSourcing.Brooks": {
         "type": "Project",
         "dependencies": {
@@ -776,8 +778,13 @@
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.11, )",
-          "Microsoft.Orleans.Sdk": "[9.2.1, )"
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
+      },
+      "Mississippi.EventSourcing.Reducers.Abstractions": {
+        "type": "Project"
       },
       "Mississippi.EventSourcing.Snapshots.Abstractions": {
         "type": "Project",
@@ -791,6 +798,7 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
         }
@@ -799,8 +807,12 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
         }
+      },
+      "Mississippi.Inlet.Projection.Abstractions": {
+        "type": "Project"
       },
       "Mississippi.Testing.Utilities": {
         "type": "Project",
@@ -1057,6 +1069,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Text.Json": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.5, )",
+        "resolved": "9.0.1",
+        "contentHash": "eqWHDZqYPv1PvuvoIIx5pF74plL3iEOZOl/0kQP+Y0TEbtgNnM2W6k8h8EPYs+LTJZsXuWa92n5W5sHTWvE3VA=="
       }
     }
   }

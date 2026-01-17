@@ -1,14 +1,31 @@
+---
+applyTo: '**'
+---
+
 # Agents
 
-Agents MUST read every GitHub instruction document before making changes in this repository.  
-Why: Ensures all work follows the repository’s authoritative policies and conventions.
+Governing thought: Agents follow repository instructions and iterate from correctness to quality to performance.
 
-Required reading order:
+> Drift check: Review `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` before relying on this summary.
 
-1. .github/copilot-instructions.md
-2. All instruction files under .github/instructions
+## Rules (RFC 2119)
 
-You can review the instruction files with PowerShell:
+- Agents MUST read `.github/copilot-instructions.md` first, then all instruction files under `.github/instructions/`, before making changes. Why: Ensures all work follows the repository's authoritative policies and conventions.
+- Agents MUST follow every rule and guideline in those documents when planning or writing code. Why: Keeps contributions consistent, reviewable, and compliant with quality gates.
+- Agents MUST follow the "make it work, make it right, make it fast" loop: get tests passing first, then refactor for clarity and correctness, then optimize only where needed. Why: Surfaces issues early and avoids premature optimization.
+
+## Scope and Audience
+
+All agents working in this repository.
+
+## At-a-Glance Quick-Start
+
+- Read `.github/copilot-instructions.md`, then all `.github/instructions/*.instructions.md`.
+- Prioritize correctness first, cleanup next, and performance improvements last.
+
+## Procedures
+
+Use PowerShell to review instruction files:
 
 ```powershell
 Get-ChildItem -Path .github -Recurse -Filter "*.instructions.md" |
@@ -16,5 +33,7 @@ Get-ChildItem -Path .github -Recurse -Filter "*.instructions.md" |
     ForEach-Object { Get-Content -Path $_.FullName -Raw }
 ```
 
-Agents MUST follow every rule and guideline in those documents when planning or writing code.  
-Why: Keeps contributions consistent, reviewable, and compliant with quality gates.
+## Core Principles
+
+- Authoritative instructions come first.
+- Iterative delivery reduces risk.

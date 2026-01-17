@@ -10,10 +10,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Core.Abstractions.Mapping;
-using Mississippi.Core.Cosmos.Retry;
+using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Common.Cosmos.Abstractions.Retry;
+using Mississippi.Common.Cosmos.Retry;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Mapping;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
@@ -51,7 +52,7 @@ public static class SnapshotStorageProviderRegistrations
 
         // Provide container handle using keyed service to avoid conflicts with other Cosmos providers
         services.AddKeyedSingleton<Container>(
-            CosmosContainerKeys.Snapshots,
+            MississippiDefaults.ServiceKeys.CosmosSnapshots,
             (
                 provider,
                 _

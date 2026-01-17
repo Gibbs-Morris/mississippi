@@ -22,7 +22,7 @@
 Test Cases:
 
 | ID | Scenario | G/W/T | Edge | Pri | Type |
-|----|----------|-------|------|-----|------|
+| ---- | ---------- | ------- | ------ | ----- | ------ |
 | BSP1 | ReadCursorPosition delegates | call -> recoveryService invoked | Delegation | M | Unit |
 | BSP2 | ReadEventsAsync forwards enumeration | yield all from reader | Delegation | M | Unit |
 | BSP3 | AppendEvents validates non-empty | empty list -> ArgException | Validation | H | Unit |
@@ -37,7 +37,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
-|----|----------|-------------|------|-----|------|
+| ---- | ---------- | ------------- | ------ | ----- | ------ |
 | BSE1 | EstimateEventSize small | simple event -> positive size > data length | Basic | M | Unit |
 | BSE2 | Large data path | >10MB triggers estimation branch | Size | M | Unit |
 | BSE3 | Serialization failure fallback | invalid data causing JsonException -> fallback path | Error | L | Unit |
@@ -55,7 +55,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
-|----|----------|-------------|------|-----|------|
+| ---- | ---------- | ------------- | ------ | ----- | ------ |
 | BDL1 | Renew under threshold no-op | timeSinceLastRenewal < threshold -> no call to lease.RenewAsync | Threshold | M | Unit |
 | BDL2 | Renew above threshold calls lease | advance time -> renew called updates timestamp | Renewal | H | Unit |
 | BDL3 | Lost lease maps to InvalidOperationException | leaseClient throws 409 | Conflict | H | Unit |
@@ -71,7 +71,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
-|----|----------|-------------|------|-----|------|
+| ---- | ---------- | ------------- | ------ | ----- | ------ |
 | DLM1 | Acquire creates container if missing | first call -> CreateIfNotExists | Init | M | Unit |
 | DLM2 | Acquire uploads placeholder if missing | missing blob -> UploadAsync called | Init | M | Unit |
 | DLM3 | Conflict retries with backoff | 409 on first attempts -> eventually succeed | Retry | H | Unit |
@@ -86,7 +86,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
-|----|----------|-------------|------|-----|------|
+| ---- | ---------- | ------------- | ------ | ----- | ------ |
 | RP1 | Succeeds first attempt | operation returns value | Basic | H | Unit |
 | RP2 | Retries 429 then success | first TooManyRequests then success | Backoff | H | Unit |
 | RP3 | Retries transient 503 sequence | 503 then success | Transient | M | Unit |
@@ -104,7 +104,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
-|----|----------|-------------|------|-----|------|
+| ---- | ---------- | ------------- | ------ | ----- | ------ |
 | CR1 | GetHeadDocumentAsync hit | container returns doc -> mapped | Basic | H | Unit |
 | CR2 | GetHeadDocumentAsync miss | 404 -> null | NotFound | H | Unit |
 | CR3 | CreatePendingHeadAsync uses retry | inject failing first attempt -> retried | Retry | M | Unit |
@@ -127,7 +127,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
-|----|----------|-------------|------|-----|------|
+| ---- | ---------- | ------------- | ------ | ----- | ------ |
 | RCV1 | Head exists returns directly | head present -> no recovery | Fast path | H | Unit |
 | RCV2 | Pending head commit path | head null + pending + all events exist -> commit -> new head position | Commit | H | Unit |
 | RCV3 | Pending head rollback path | missing events -> rollback deletes and clears pending | Rollback | H | Unit |
@@ -144,7 +144,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
-|----|----------|-------------|------|-----|------|
+| ---- | ---------- | ------------- | ------ | ----- | ------ |
 | EBA1 | AppendEventsAsync empty list | throws ArgException | Validation | H | Unit |
 | EBA2 | Too many events overflow guard | Count > int.MaxValue/2 -> ArgException | Overflow | H | Unit |
 | EBA3 | Expected version mismatch | currentHead != expected -> OptimisticConcurrencyException | Concurrency | H | Unit |
@@ -164,7 +164,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Edge | Pri | Type |
-|----|----------|-------------|------|-----|------|
+| ---- | ---------- | ------------- | ------ | ----- | ------ |
 | EBR1 | Enumerates events | repository returns two storage models -> mapped events sequence | Mapping | H | Unit |
 | EBR2 | Cancellation honored | cancel during enumeration -> TaskCanceled | Cancellation | M | Unit |
 
@@ -175,7 +175,7 @@ Test Cases:
 Test Cases (apply to each mapper):
 
 | ID | Scenario | Description | Pri | Type |
-|----|----------|-------------|-----|------|
+| ---- | ---------- | ------------- | ----- | ------ |
 | MAP1 | Map copies expected fields | sample input -> output matches | H | Unit |
 | MAP2 | Nullables default fallback | null optional fields -> expected defaults (empty, etc.) | M | Unit |
 | MAP3 | EventDocument -> Storage -> Domain round-trip | document -> storage -> domain (compare key fields) | M | Unit |
@@ -190,7 +190,7 @@ Test Cases (apply to each mapper):
 Test Cases:
 
 | ID | Scenario | Description | Pri | Type |
-|----|----------|-------------|-----|------|
+| ---- | ---------- | ------------- | ----- | ------ |
 | REGC1 | Registers required singletons | call AddCosmosBrookStorageProvider -> resolve writer/reader/recovery/appender/repos | H | Unit |
 | REGC2 | Overload with options delegate | use Action\<BrookStorageOptions\> -> value applied | M | Unit |
 | REGC3 | Overload with connection strings | supply strings -> CosmosClient & BlobServiceClient registered | M | Unit |
@@ -205,7 +205,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Pri | Type |
-|----|----------|-------------|-----|------|
+| ---- | ---------- | ------------- | ----- | ------ |
 | OPTC1 | Defaults populated | new options -> defaults match documented constants | M | Unit |
 | OPTC2 | MaxEventsPerBatch < 100 safeguard | ensure default 90 < 100 (mutation guard) | H | Unit |
 | OPTC3 | LeaseRenewalThresholdSeconds < LeaseDurationSeconds | default 20 < 60 (guard) | H | Unit |
@@ -219,7 +219,7 @@ Test Cases:
 Test Cases:
 
 | ID | Scenario | Description | Pri | Type |
-|----|----------|-------------|-----|------|
+| ---- | ---------- | ------------- | ----- | ------ |
 | OCE1 | Ctor message preserved | new(msg).Message == msg | M | Unit |
 | OCE2 | Ctor inner preserved | new(msg, inner).InnerException==inner | M | Unit |
 | OCE3 | Default ctor has generic message | new().Message not empty | L | Unit |

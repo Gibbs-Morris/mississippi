@@ -1,7 +1,7 @@
 using Allure.Xunit.Attributes;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions.Tests;
+namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateErrorCodes" /> constants.

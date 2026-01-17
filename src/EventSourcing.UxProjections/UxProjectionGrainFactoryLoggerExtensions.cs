@@ -13,30 +13,30 @@ internal static partial class UxProjectionGrainFactoryLoggerExtensions
     [LoggerMessage(
         EventId = 2,
         Level = LogLevel.Debug,
-        Message = "Resolving {GrainType} for UX projection cursor '{ProjectionKey}'")]
+        Message = "Resolving {GrainType} for UX projection cursor '{CursorKey}'")]
     public static partial void ResolvingCursorGrain(
         this ILogger logger,
         string grainType,
-        UxProjectionKey projectionKey
+        UxProjectionCursorKey cursorKey
     );
 
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Debug,
-        Message = "Resolving {GrainType} for UX projection '{ProjectionKey}'")]
+        Message = "Resolving {GrainType} for UX projection entity '{EntityId}'")]
     public static partial void ResolvingProjectionGrain(
         this ILogger logger,
         string grainType,
-        UxProjectionKey projectionKey
+        string entityId
     );
 
     [LoggerMessage(
         EventId = 3,
         Level = LogLevel.Debug,
-        Message = "Resolving {GrainType} for versioned UX projection '{VersionedKey}'")]
+        Message = "Resolving {GrainType} for versioned UX projection cache '{CacheKey}'")]
     public static partial void ResolvingVersionedCacheGrain(
         this ILogger logger,
         string grainType,
-        UxProjectionVersionedKey versionedKey
+        UxProjectionVersionedCacheKey cacheKey
     );
 }

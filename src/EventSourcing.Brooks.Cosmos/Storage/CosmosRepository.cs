@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Core.Abstractions.Mapping;
+using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Retry;
 
 
 namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
@@ -20,7 +20,7 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 /// <summary>
 ///     Repository implementation for Cosmos DB operations on brooks and events.
 /// </summary>
-internal class CosmosRepository : ICosmosRepository
+internal sealed class CosmosRepository : ICosmosRepository
 {
     private const string CursorDocumentId = "cursor";
 
@@ -34,7 +34,7 @@ internal class CosmosRepository : ICosmosRepository
     /// <param name="cursorDocumentMapper">The mapper for cursor documents.</param>
     /// <param name="eventDocumentMapper">The mapper for event documents.</param>
     public CosmosRepository(
-        [FromKeyedServices(CosmosContainerKeys.Brooks)]
+        [FromKeyedServices(MississippiDefaults.ServiceKeys.CosmosBrooks)]
         Container container,
         IRetryPolicy retryPolicy,
         IMapper<CursorDocument, CursorStorageModel> cursorDocumentMapper,
@@ -141,6 +141,7 @@ internal class CosmosRepository : ICosmosRepository
                 EventType = eventStorageModel.EventType,
                 DataContentType = eventStorageModel.DataContentType,
                 Data = eventStorageModel.Data,
+                DataSizeBytes = eventStorageModel.DataSizeBytes,
                 Time = eventStorageModel.Time,
             };
             await RetryPolicy.ExecuteAsync(

@@ -101,6 +101,6 @@ jobs:
           dotnet restore ${{ env.SOLUTION_PATH }}
           dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
-          dotnet dotnet-coverage collect "dotnet test ${{ env.SOLUTION_PATH }} -p:Version=${{ steps.gitversion.outputs.SemVer }} --no-restore --verbosity normal"  -f xml -o "coverage.xml"
+          dotnet dotnet-coverage collect "dotnet test ${{ env.SOLUTION_PATH }} -p:Version=${{ steps.gitversion.outputs.SemVer }} --no-restore --no-build --verbosity normal --filter \"FullyQualifiedName~.L0Tests.|FullyQualifiedName~.L1Tests.\""  -f xml -o "coverage.xml"
 
           dotnet dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
