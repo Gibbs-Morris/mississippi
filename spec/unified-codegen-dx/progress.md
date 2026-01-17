@@ -78,13 +78,80 @@ Five-phase approach:
 
 - README.md ✓
 - learned.md ✓
-- rfc.md ✓ (updated with client actions)
-- attribute-catalog.md ✓ (NEW)
-- call-chain-mapping.md ✓ (NEW)
+- rfc.md ✓
 - verification.md ✓
-- implementation-plan.md ✓ (updated with Phase 5)
+- implementation-plan.md ✓
+- attribute-catalog.md ✓
+- call-chain-mapping.md ✓
 - progress.md ✓
 - handoff.md ✓
+
+### Commit
+
+```text
+spec(unified-codegen-dx): initial spec package
+
+- RFC with three options (recommend Option C)
+- Implementation plan with 5 phases
+- Attribute catalog (6 attributes)
+- Call-chain mapping (write/read/update paths)
+- Client action generation design
+
+Commit: 65ad767
+```
+
+## 2026-01-17 (continued)
+
+### User Feedback
+
+User clarified key architectural points:
+
+1. **SignalR vs HTTP**: "Projection read is done via HTTP not SignalR, but we
+   get a notification on SignalR the version has updated - this is key."
+
+2. **Inlet Pattern**: "Inlet has a bunch of effects/actions/store to manage
+   server side state."
+
+3. **Generated Project Preference**: "I think I like the generated project
+   approach."
+
+4. **Critical Concern**: "Biggest concern is the Orleans attributes leaking
+   into client code and HTTP code, as WASM/ASP.NET/Orleans are 3 different
+   things running in different pods/envs."
+
+### Verification of User Feedback
+
+Traced code to verify SignalR/HTTP pattern:
+
+- `InletSignalREffect.cs:357-381` — `OnProjectionUpdatedAsync(path, entityId, newVersion)` receives SignalR notification, then calls `FetchAtVersionAsync()` via HTTP
+- `AutoProjectionFetcher.cs:76-101` — Uses `HttpClient` to GET `/api/projections/{path}/{entityId}/at/{version}`
+
+**CONFIRMED**: SignalR is notification-only (lightweight); HTTP fetches actual data.
+
+### Documents Updated
+
+1. **call-chain-mapping.md**:
+   - Added "Three-Layer Architecture" diagram
+   - Added "Key Insight: SignalR vs HTTP" section
+   - Corrected Read Path and Update Path diagrams to show HTTP for data fetch
+   - Added "Notification vs Data Separation" explanation
+
+2. **rfc.md**:
+   - Expanded Goals to emphasize Orleans isolation across three deployment targets
+   - Added "Critical Constraint: Three-Layer Isolation" section
+   - Added "Deployment Boundary Model" diagram
+   - Added "How Generators Enforce Isolation" with concrete rules
+   - Added "Build-Time Validation" diagnostics
+
+3. **implementation-plan.md**:
+   - Added user preference note for generated project approach
+   - Added "Generated Project Architecture" section with file layout
+   - Added project reference diagram showing Orleans-free zone
+   - Added "Key Isolation Mechanisms" (AnalyzerReference, attribute stripping)
+
+4. **learned.md**:
+   - Added "SignalR vs HTTP Pattern" verified section with code evidence
+   - Added "Three-Layer Deployment Model" verified section
 
 ### Next Steps
 

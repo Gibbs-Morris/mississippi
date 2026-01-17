@@ -14,6 +14,22 @@ projection state with attributes automatically generates:
 3. Client DTOs (without Orleans dependencies)
 4. Client-side Fluxor actions/effects for command dispatch
 
+## Critical Constraint: Orleans Isolation
+
+**User's Key Concern:** "The biggest concern is the Orleans attributes leaking
+into client code and HTTP code, as WASM/ASP.NET/Orleans are 3 different things
+running in different pods/envs."
+
+**Solution:** Generated project approach:
+
+- `Cascade.Contracts.Generated` — DTOs without `[Id]`, `[GenerateSerializer]`
+- `Cascade.Client.Generated` — Actions/effects without Orleans dependencies
+- Build fails if any `.Generated` project references Orleans packages
+
+**Key Architectural Insight:** SignalR sends notifications only (path, entityId,
+version). HTTP fetches actual projection data. This separation means client DTOs
+only need JSON serialization—no Orleans.
+
 ## Current State
 
 The repository has two separate generators:
@@ -40,20 +56,25 @@ for server and client layers without dependency leakage.
 
 ## Spec Files
 
-| File                                                  | Purpose                              |
-| ----------------------------------------------------- | ------------------------------------ |
-| [learned.md](learned.md)                              | Verified repository facts            |
-| [rfc.md](rfc.md)                                      | RFC-style design document            |
-| [attribute-catalog.md](attribute-catalog.md)          | Complete attribute inventory         |
-| [call-chain-mapping.md](call-chain-mapping.md)        | Full request-response flow           |
-| [verification.md](verification.md)                    | Claims and verification questions    |
-| [implementation-plan.md](implementation-plan.md)      | Step-by-step plan                    |
-| [progress.md](progress.md)                            | Work log                             |
-| [handoff.md](handoff.md)                              | Implementation handoff brief         |
+| File | Purpose |
+| ---- | ------- |
+| [learned.md](learned.md) | Verified repository facts |
+| [rfc.md](rfc.md) | RFC-style design document |
+| [attribute-catalog.md](attribute-catalog.md) | Complete attribute inventory |
+| [call-chain-mapping.md](call-chain-mapping.md) | Full request-response flow |
+| [verification.md](verification.md) | Claims and verification questions |
+| [implementation-plan.md](implementation-plan.md) | Step-by-step plan |
+| [progress.md](progress.md) | Work log |
+| [handoff.md](handoff.md) | Implementation handoff brief |
 
-## Key Decisions Required
+## User Preferences (Confirmed)
 
-1. Where should generated client DTOs live (Contracts project vs generated assembly)?
-2. Should `[AggregateService]` and `[UxProjection]` share a unified attribute model?
-3. How should DI registrations be generated (source gen vs runtime reflection)?
-4. Should client-side command actions be generated via opt-in attribute on commands?
+1. **Generated project approach** — DTOs and actions go into separate `.Generated` projects
+2. **Strict Orleans isolation** — No Orleans packages in WASM/client projects
+3. **SignalR for notifications, HTTP for data** — Keep this separation
+
+## Remaining Decisions
+
+1. Should `[AggregateService]` and `[UxProjection]` share a unified attribute model?
+2. How should DI registrations be generated (source gen vs runtime reflection)?
+3. Should client-side command actions be generated via opt-in `[GenerateClientAction]` attribute?

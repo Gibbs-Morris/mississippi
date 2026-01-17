@@ -5,6 +5,8 @@
 This plan enables unified source generation for aggregates and projections in
 the Cascade sample, eliminating manual DTO duplication and DI boilerplate.
 
+**User Preference:** Generated project approach (separate output projects).
+
 ## Size Classification
 
 **Large** — Five phases touching generators, sample code, and build
@@ -14,6 +16,73 @@ configuration. No public API changes.
 
 **Yes** — Multiple viable designs exist (Options A, B, C in RFC). Recommend
 Option C. User approval required before Phase 3-5 (new generators).
+
+## Generated Project Architecture
+
+To maintain strict Orleans isolation, generated code goes into dedicated
+projects that have **no Orleans dependencies**:
+
+```text
+samples/Cascade/
+├── Cascade.Domain/              # Source definitions (has Orleans)
+│   ├── Channel/
+│   │   ├── ChannelAggregate.cs     [AggregateService]
+│   │   └── ChannelSummary.cs       [UxProjection][GenerateClientDto]
+│   └── Commands/
+│       └── CreateChannel.cs        [GenerateClientAction]
+│
+├── Cascade.Contracts.Generated/  # Generated DTOs (NO Orleans)
+│   ├── ChannelSummaryDto.g.cs      # Orleans attributes stripped
+│   └── UserSummaryDto.g.cs
+│
+├── Cascade.Client.Generated/     # Generated actions/effects (NO Orleans)
+│   ├── CreateChannelAction.g.cs
+│   ├── CreateChannelEffect.g.cs
+│   └── ...
+│
+├── Cascade.Contracts/            # Keep: API DTOs, storage types
+├── Cascade.Client/               # References .Generated projects
+├── Cascade.Server/               # Generated controllers + DI
+└── Cascade.Silo/                 # Full Orleans
+```
+
+### Project Reference Structure
+
+```mermaid
+flowchart TB
+    subgraph "Orleans Zone (Silo)"
+        Domain["Cascade.Domain<br/>Orleans.Serialization"]
+        Silo["Cascade.Silo<br/>Orleans.Server"]
+    end
+
+    subgraph "ASP.NET Zone (Server)"
+        Server["Cascade.Server<br/>Orleans.Client"]
+    end
+
+    subgraph "Orleans-Free Zone (WASM)"
+        ContractsGen["Cascade.Contracts.Generated<br/>⚠️ NO ORLEANS"]
+        ClientGen["Cascade.Client.Generated<br/>⚠️ NO ORLEANS"]
+        Client["Cascade.Client<br/>Blazor WASM"]
+    end
+
+    Domain --> Server
+    Domain -.->|"AnalyzerReference<br/>(compile only)"| ContractsGen
+    ContractsGen --> Client
+    ClientGen --> Client
+    Silo --> Domain
+```
+
+### Key Isolation Mechanisms
+
+1. **AnalyzerReference** — Contracts.Generated references Domain with
+   `ReferenceOutputAssembly="false"`, so Orleans types are visible to
+   the generator but NOT linked at runtime.
+
+2. **Attribute Stripping** — Generator removes `[Id(n)]`, `[GenerateSerializer]`,
+   `[Immutable]`, `[Alias]` when emitting DTOs.
+
+3. **No Transitive Orleans** — .Generated projects have no Orleans package
+   references; build will fail if accidentally introduced.
 
 ## Phases
 

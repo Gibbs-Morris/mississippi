@@ -34,7 +34,8 @@ boilerplate:
    one place; generated code handles services, APIs, and client DTOs.
 
 2. **Orleans Isolation** — Generated client DTOs never reference Orleans
-   packages.
+   packages. WASM, ASP.NET, and Orleans Silo are three separate deployment
+   targets with strict dependency boundaries.
 
 3. **Minimal Boilerplate** — Reduce or eliminate manual DTO mirroring and
    80+ line DI registrations.
@@ -46,6 +47,120 @@ boilerplate:
 - Change Orleans grain activation or persistence patterns.
 - Modify existing public API contracts in Mississippi libraries.
 - Support non-HTTP transports (gRPC, GraphQL) in this phase.
+
+## Critical Constraint: Three-Layer Isolation
+
+**User's Stated Concern:** "The biggest concern is the Orleans attributes leaking
+into client code and HTTP code, as WASM/ASP.NET/Orleans are 3 different things
+running in different pods/envs."
+
+### Deployment Boundary Model
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Layer 1: WASM Client (Blazor WebAssembly)                                   │
+│                                                                             │
+│  Allowed Dependencies:                                                      │
+│    ✅ System.Text.Json                                                      │
+│    ✅ Microsoft.AspNetCore.SignalR.Client                                   │
+│    ✅ Fluxor                                                                │
+│    ✅ Cascade.Contracts (or .Contracts.Generated)                           │
+│                                                                             │
+│  Forbidden:                                                                 │
+│    ❌ Orleans.Core                                                          │
+│    ❌ Orleans.Serialization                                                 │
+│    ❌ Any grain interfaces                                                  │
+│    ❌ [Id(n)], [GenerateSerializer] attributes                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                              HTTP / SignalR
+                                    │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Layer 2: ASP.NET Host (Cascade.Server)                                      │
+│                                                                             │
+│  Allowed Dependencies:                                                      │
+│    ✅ Microsoft.AspNetCore.*                                                │
+│    ✅ Orleans.Client (for grain factory)                                    │
+│    ✅ Cascade.Domain (references grain interfaces)                          │
+│    ✅ Cascade.Contracts (shared DTOs)                                       │
+│                                                                             │
+│  Responsibility:                                                            │
+│    - HTTP endpoints (Minimal API or Controllers)                            │
+│    - SignalR hub (InletHub)                                                 │
+│    - Call grain factory to dispatch commands/queries                        │
+│                                                                             │
+│  Note: Does NOT activate grains; just calls them via Orleans client         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                              Orleans RPC
+                                    │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Layer 3: Orleans Silo (Cascade.Silo)                                        │
+│                                                                             │
+│  Allowed Dependencies:                                                      │
+│    ✅ Orleans.Server                                                        │
+│    ✅ Orleans.Serialization.* (full serializer stack)                       │
+│    ✅ Cascade.Domain (full grain implementations)                           │
+│    ✅ Mississippi.* (event sourcing, brooks, projections)                   │
+│                                                                             │
+│  Responsibility:                                                            │
+│    - Grain activation and state management                                  │
+│    - Event persistence to Cosmos                                            │
+│    - Snapshot management                                                    │
+│    - Stream processing                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### How Generators Enforce Isolation
+
+**Problem:** Domain types like `ChannelSummary` carry Orleans attributes:
+
+```csharp
+// Cascade.Domain - has Orleans dependencies
+[GenerateSerializer]
+public sealed record ChannelSummary
+{
+    [Id(0)] public required string ChannelId { get; init; }
+    [Id(1)] public required string Name { get; init; }
+    // ...
+}
+```
+
+**Solution:** `ClientDtoGenerator` produces Orleans-free copies:
+
+```csharp
+// Cascade.Contracts.Generated - NO Orleans dependencies
+public sealed record ChannelSummaryDto
+{
+    public required string ChannelId { get; init; }
+    public required string Name { get; init; }
+    // [Id] attributes stripped
+    // [GenerateSerializer] stripped
+}
+```
+
+**Key Rules for Generation:**
+
+1. **Strip Orleans Attributes** — `[Id(n)]`, `[GenerateSerializer]`,
+   `[Immutable]`, `[Alias]` are omitted from client DTOs.
+
+2. **No Grain Interface References** — Generated actions/effects reference
+   HTTP endpoints, not `IGrain` interfaces.
+
+3. **JSON-Only Serialization** — Client DTOs use `System.Text.Json` attributes
+   only (`[JsonPropertyName]` if needed).
+
+4. **Separate Output Projects** — Generated client code goes to
+   `*.Contracts.Generated` or `*.Client.Generated`, which have no Orleans
+   package references.
+
+### Build-Time Validation
+
+The `ClientDtoGenerator` will emit a diagnostic if:
+
+- Output project references any Orleans package
+- Generated type would reference an Orleans-attributed type
+- A type marked `[GenerateClientDto]` contains non-serializable members
 
 ## Current State
 

@@ -133,6 +133,47 @@ This scans for `[UxProjection]` + `[ProjectionPath]` and creates minimal API end
 
 ## Verified Status
 
+### SignalR vs HTTP Pattern
+
+**VERIFIED**: SignalR is used for **notifications only**, not data fetching.
+
+Evidence from `InletSignalREffect.cs` lines 357-381:
+
+```csharp
+private async IAsyncEnumerable<object> OnProjectionUpdatedAsync(
+    string path, string entityId, long newVersion)
+{
+    // SignalR sends: (path, entityId, newVersion) - notification only
+    // Then HTTP fetches actual data:
+    result = await ProjectionFetcher.FetchAtVersionAsync(
+        dtoType, entityId, newVersion, CancellationToken.None);
+    // ...
+}
+```
+
+Evidence from `AutoProjectionFetcher.cs` lines 76-101:
+
+```csharp
+// HTTP-based fetch using HttpClient
+string url = $"{RoutePrefix}/{path}/{Uri.EscapeDataString(entityId)}";
+// or with version:
+string url = $"{RoutePrefix}/{path}/{entityId}/at/{version}";
+using var request = new HttpRequestMessage(HttpMethod.Get, url);
+using var response = await Http.SendAsync(request, cancellationToken);
+```
+
+### Three-Layer Deployment Model
+
+**VERIFIED**: Three separate deployment targets with strict boundaries:
+
+1. **WASM Client** — `Cascade.Client` references `Cascade.Contracts`, NOT
+   `Cascade.Domain`. No Orleans packages.
+
+2. **ASP.NET Host** — `Cascade.Server` references both Domain and Contracts.
+   Uses Orleans.Client to call grains.
+
+3. **Orleans Silo** — `Cascade.Silo` references Domain. Full Orleans.Server.
+
 ### AggregateServiceGenerator Usage in Cascade
 
 **VERIFIED**: Only `UserAggregate` has `[AggregateService("users")]` attribute

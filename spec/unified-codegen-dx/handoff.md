@@ -5,6 +5,39 @@
 Improve Mississippi's developer experience by enabling existing source generators
 and extending them to eliminate manual DTO duplication and DI boilerplate.
 
+## Critical Constraint: Orleans Isolation
+
+**User's Stated Concern:** "The biggest concern is the Orleans attributes leaking
+into client code and HTTP code, as WASM/ASP.NET/Orleans are 3 different things
+running in different pods/envs."
+
+**Solution:** Generated project approach with strict boundaries:
+
+```text
+┌─ Orleans Zone ─────────────────────────────────────────────────────────┐
+│  Cascade.Domain          (Orleans.Serialization, [Id], [GenerateSerializer])
+│  Cascade.Silo            (Orleans.Server, grain implementations)
+└────────────────────────────────────────────────────────────────────────┘
+                                    │
+                              Orleans RPC
+                                    │
+┌─ ASP.NET Zone ─────────────────────────────────────────────────────────┐
+│  Cascade.Server          (Orleans.Client only, no grain activation)
+└────────────────────────────────────────────────────────────────────────┘
+                                    │
+                              HTTP / SignalR
+                                    │
+┌─ Orleans-Free Zone ────────────────────────────────────────────────────┐
+│  Cascade.Contracts.Generated     (⚠️ NO Orleans packages)
+│  Cascade.Client.Generated        (⚠️ NO Orleans packages)
+│  Cascade.Client                  (Blazor WASM)
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Pattern:** SignalR sends notifications (path, entityId, version) only.
+HTTP fetches actual projection data. This separation means client DTOs only
+need JSON serialization—no Orleans.
+
 ## Current State
 
 - **Two generators exist:** `AggregateServiceGenerator`, `ProjectionApiGenerator`
@@ -15,7 +48,8 @@ and extending them to eliminate manual DTO duplication and DI boilerplate.
 ## Target State
 
 - Aggregates with `[AggregateService]` → Generated services used in endpoints
-- Projections with `[UxProjection]` → Generated DTOs used by client
+- Projections with `[UxProjection]` → Generated DTOs in `Cascade.Contracts.Generated`
+- Commands with `[GenerateClientAction]` → Generated actions in `Cascade.Client.Generated`
 - DI registrations → Generated from discovered types
 - Manual Contracts DTOs → Deleted (replaced by generated)
 
@@ -49,21 +83,48 @@ and extending them to eliminate manual DTO duplication and DI boilerplate.
 - [ ] **3.5** Replace `CascadeRegistrations.cs` with generated call
 - [ ] **3.6** Verify build and runtime
 
-### Phase 4: Client DTO Generator (If Phase 3 complete)
+### Phase 4: Client DTO Generator + Contracts.Generated
 
-- [ ] **4.1** Create `ClientDtoGenerator` project
-- [ ] **4.2** Implement WASM-safe DTO generation
-- [ ] **4.3** Create `Cascade.Contracts.Generated` project
-- [ ] **4.4** Update Client to reference generated project
-- [ ] **4.5** Delete manual Contracts DTOs
-- [ ] **4.6** Verify client builds and runs
+- [ ] **4.1** Create `Cascade.Contracts.Generated.csproj`:
 
-### Phase 5: Cleanup
+    ```xml
+    <Project Sdk="Microsoft.NET.Sdk">
+      <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+      </PropertyGroup>
+      <ItemGroup>
+        <!-- Analyzer-only reference: no runtime Orleans dependency -->
+        <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+      </ItemGroup>
+      <!-- ⚠️ NO Orleans packages allowed -->
+    </Project>
+    ```
 
-- [ ] **5.1** Remove unused manual endpoints
-- [ ] **5.2** Simplify `CascadeRegistrations.cs`
-- [ ] **5.3** Update documentation
-- [ ] **5.4** Run full test suite (`pwsh ./go.ps1`)
+- [ ] **4.2** Create `ClientDtoGenerator` in `EventSourcing.Generators`:
+  - Strip `[Id]`, `[GenerateSerializer]`, `[Immutable]`, `[Alias]`
+  - Emit to `*.Contracts.Generated` namespace
+- [ ] **4.3** Update `Cascade.Client.csproj` to reference `Contracts.Generated`
+- [ ] **4.4** Delete manual DTOs in `Cascade.Contracts/Projections/`
+- [ ] **4.5** Verify client builds without Orleans package errors
+- [ ] **4.6** Run full integration test
+
+### Phase 5: Client Action Generator
+
+- [ ] **5.1** Create `[GenerateClientAction]` attribute in Abstractions
+- [ ] **5.2** Create `ClientActionGenerator` in `EventSourcing.Generators`
+- [ ] **5.3** Create `Cascade.Client.Generated` project (no Orleans)
+- [ ] **5.4** Add `[GenerateClientAction]` to select commands
+- [ ] **5.5** Replace manual HTTP calls in `ChatApp.razor.cs` with dispatches
+- [ ] **5.6** Verify actions dispatch correctly
+
+### Phase 6: Cleanup
+
+- [ ] **6.1** Remove unused manual endpoints
+- [ ] **6.2** Simplify `CascadeRegistrations.cs`
+- [ ] **6.3** Update documentation
+- [ ] **6.4** Run full test suite (`pwsh ./go.ps1`)
 
 ---
 

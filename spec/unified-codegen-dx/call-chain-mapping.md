@@ -5,6 +5,67 @@
 This document maps the complete request-response flow from client UX action
 through to Cosmos storage and back to client-side state updates.
 
+## Three-Layer Architecture
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ WASM Client (Blazor WebAssembly)                                            │
+│ ├── Reservoir (Fluxor-style state management)                               │
+│ ├── Inlet.Blazor.WebAssembly (projection subscriptions, SignalR effects)    │
+│ ├── IInletStore (projection cache + action dispatch)                        │
+│ └── HttpClient (REST calls for commands and projection data)                │
+│                                                                             │
+│ ⚠️  NO ORLEANS DEPENDENCIES - runs in browser sandbox                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                      HTTP (commands) │ SignalR (notifications)
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ASP.NET Core Host (Cascade.Server)                                          │
+│ ├── Minimal API endpoints (command dispatch)                                │
+│ ├── Projection API endpoints (GET /api/projections/{path}/{entityId})       │
+│ ├── InletHub (SignalR hub for subscription notifications)                   │
+│ └── Orleans Client (calls into silo)                                        │
+│                                                                             │
+│ ⚠️  ORLEANS CLIENT ONLY - no grain implementations                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                          Orleans RPC │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Orleans Silo (Cascade.Silo)                                                 │
+│ ├── GenericAggregateGrain<T> (command processing)                           │
+│ ├── UxProjectionGrain<T> (projection state)                                 │
+│ ├── BrookWriterGrain / BrookCursorGrain (event persistence)                 │
+│ ├── SnapshotCacheGrain (snapshot storage)                                   │
+│ └── InletSubscriptionGrain (SignalR bridge)                                 │
+│                                                                             │
+│ ✅ ORLEANS GRAINS - [GenerateSerializer], [Id(n)] attributes here           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                           Cosmos SDK │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Cosmos DB                                                                   │
+│ ├── Events container (partitioned by brookId)                               │
+│ ├── Snapshots container (partitioned by streamKey)                          │
+│ └── Cursors container (brook positions)                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Key Insight: SignalR vs HTTP
+
+**Critical distinction:**
+
+- **SignalR** is used for **notifications only** (lightweight: path, entityId, newVersion)
+- **HTTP** is used for **data fetching** (full projection payload via REST API)
+
+This separation means:
+
+1. SignalR stays lightweight (no large payloads)
+2. HTTP responses can be cached (ETag/version-based)
+3. Client controls when to fetch (can skip if already current)
+
 ## Write Path: Command Execution
 
 ### Sequence Diagram
@@ -77,18 +138,20 @@ sequenceDiagram
 
 ### Sequence Diagram
 
+**Key Pattern:** SignalR establishes subscription; HTTP fetches actual data.
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant UI as Blazor Component
     participant Store as IInletStore
     participant Effect as InletSignalREffect
+    participant Http as HttpClient
     participant Hub as InletHub (SignalR)
+    participant API as Projection API
     participant SubGrain as InletSubscriptionGrain
     participant Stream as Orleans Stream
     participant ProjGrain as UxProjectionGrain<T>
-    participant Snapshot as SnapshotCacheGrain
-    participant Fetcher as IProjectionFetcher
 
     UI->>Store: Dispatch(SubscribeToProjectionAction<ChannelSummaryDto>)
     Store->>Effect: HandleAsync(action)
@@ -101,12 +164,14 @@ sequenceDiagram
     SubGrain-->>Hub: subscriptionId
 
     Hub-->>Effect: subscriptionId
-    Effect->>Fetcher: FetchAsync(projectionType, entityId)
-    Fetcher->>ProjGrain: GetStateAsync()
-    ProjGrain->>Snapshot: GetStateAsync()
-    Snapshot-->>ProjGrain: ChannelSummary projection
-    ProjGrain-->>Fetcher: projection + version
-    Fetcher-->>Effect: ProjectionFetchResult
+
+    Note over Effect,API: HTTP fetches projection data (not SignalR)
+    Effect->>Http: GetAsync("/api/projections/{path}/{entityId}")
+    Http->>API: HTTP GET
+    API->>ProjGrain: GetStateAsync()
+    ProjGrain-->>API: projection + version
+    API-->>Http: 200 OK { projection, version }
+    Http-->>Effect: ProjectionFetchResult
 
     Effect-->>Store: yield ProjectionUpdatedAction<ChannelSummaryDto>
     Store->>UI: StateHasChanged()
@@ -116,15 +181,15 @@ sequenceDiagram
 
 | Step | Component | File | Key Method |
 | ---- | --------- | ---- | ---------- |
-| 1 | Subscribe Action | `ChatApp.razor.cs:382` | `Dispatch(new SubscribeToProjectionAction<T>())` |
+| 1 | Subscribe Action | `ChatApp.razor.cs` | `Dispatch(new SubscribeToProjectionAction<T>())` |
 | 2 | Effect Handler | `InletSignalREffect.cs:119` | `HandleAsync(action)` |
 | 3 | SignalR Connect | `InletSignalREffect.cs:129` | `EnsureConnectedAsync()` |
 | 4 | Hub Subscribe | `InletHub.cs:84` | `SubscribeAsync(path, entityId)` |
 | 5 | Grain Subscribe | `InletSubscriptionGrain.cs:233` | `SubscribeAsync()` |
 | 6 | Stream Subscribe | `InletSubscriptionGrain.cs:319` | `stream.SubscribeAsync(this)` |
-| 7 | Fetch Projection | `InletSignalREffect.cs:241` | `ProjectionFetcher.FetchAsync()` |
-| 8 | Grain GetState | `UxProjectionGrain.cs` | `GetStateAsync()` |
-| 9 | Snapshot Load | `SnapshotCacheGrain.cs` | `GetStateAsync()` |
+| 7 | HTTP Fetch | `AutoProjectionFetcher.cs:76` | `HttpClient.SendAsync()` |
+| 8 | API Endpoint | Projection API | `GET /api/projections/{path}/{entityId}` |
+| 9 | Grain GetState | `UxProjectionGrain.cs` | `GetStateAsync()` |
 | 10 | Update Store | `InletSignalREffect.cs:252` | `yield ProjectionUpdatedAction` |
 
 ## Update Path: Real-Time Projection Updates
@@ -138,9 +203,10 @@ sequenceDiagram
     participant Stream as Orleans Stream
     participant SubGrain as InletSubscriptionGrain
     participant ClientGrain as SignalRClientGrain
-    participant Hub as SignalR Connection
+    participant SignalR as SignalR Connection
     participant Effect as InletSignalREffect
-    participant Fetcher as IProjectionFetcher
+    participant Http as HttpClient
+    participant API as Projection API
     participant Store as IInletStore
     participant UI as Blazor Component
 
@@ -150,11 +216,17 @@ sequenceDiagram
     Stream->>SubGrain: OnNextAsync(cursorMovedEvent)
     SubGrain->>SubGrain: Find affected projections by path
     SubGrain->>ClientGrain: NotifyProjectionUpdatedAsync(path, entityId, version)
-    ClientGrain->>Hub: SendAsync("ProjectionUpdated", path, entityId, version)
+    ClientGrain->>SignalR: SendAsync("ProjectionUpdated", path, entityId, version)
 
-    Hub->>Effect: OnProjectionUpdatedAsync(path, entityId, version)
-    Effect->>Fetcher: FetchAsync(projectionType, entityId)
-    Fetcher-->>Effect: ProjectionFetchResult
+    Note over SignalR,Effect: SignalR sends NOTIFICATION ONLY (path, entityId, version)
+    SignalR->>Effect: OnProjectionUpdatedAsync(path, entityId, version)
+
+    Note over Effect,API: HTTP fetches actual projection data
+    Effect->>Http: GetAsync("/api/projections/{path}/{entityId}/at/{version}")
+    Http->>API: HTTP GET
+    API-->>Http: 200 OK { projection, version }
+    Http-->>Effect: ProjectionFetchResult
+
     Effect->>Store: Dispatch(ProjectionUpdatedAction<T>)
     Store->>UI: StateHasChanged()
 ```
@@ -166,10 +238,42 @@ sequenceDiagram
 | 1 | Cursor Moved | `BrookCursorGrain.cs` | Orleans stream publish |
 | 2 | Subscription Notified | `InletSubscriptionGrain.cs` | `OnNextAsync()` |
 | 3 | Client Notified | `SignalRClientGrain.cs` | `NotifyProjectionUpdatedAsync()` |
-| 4 | SignalR Push | SignalR | `ProjectionUpdated` event |
-| 5 | Effect Callback | `InletSignalREffect.cs:69` | `OnProjectionUpdatedAsync()` |
-| 6 | Fetch Updated Data | `InletSignalREffect.cs` | `ProjectionFetcher.FetchAsync()` |
-| 7 | Update Store | `InletSignalREffect.cs` | `Dispatch(ProjectionUpdatedAction)` |
+| 4 | SignalR Push | SignalR | `ProjectionUpdated(path, entityId, version)` |
+| 5 | Effect Callback | `InletSignalREffect.cs:357` | `OnProjectionUpdatedAsync()` |
+| 6 | HTTP Fetch | `AutoProjectionFetcher.cs:94` | `FetchAtVersionAsync()` |
+| 7 | HTTP Call | `AutoProjectionFetcher.cs:101` | `HttpClient.SendAsync()` |
+| 8 | Update Store | `InletSignalREffect.cs:381` | `Dispatch(ProjectionUpdatedAction)` |
+
+## Key Design Insight: Notification vs Data Separation
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│                        SignalR (Lightweight)                           │
+│                                                                        │
+│   • Payload: { path: "channel-summary", entityId: "abc", version: 42 } │
+│   • Purpose: "Hey, projection X has a new version Y"                   │
+│   • Size: ~100 bytes                                                   │
+│   • No projection data in payload                                      │
+└────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                        HTTP (Cacheable)                                │
+│                                                                        │
+│   • URL: GET /api/projections/channel-summary/abc/at/42                │
+│   • Purpose: "Give me the actual projection data at version Y"         │
+│   • Size: Variable (full projection payload)                           │
+│   • Cacheable (ETag, version-based)                                    │
+│   • Client controls fetch timing                                       │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+**Why this matters for code generation:**
+
+1. **Client DTOs** only need JSON serialization (no Orleans)
+2. **HTTP endpoints** only need ASP.NET (no grain activation)
+3. **Orleans grains** stay isolated in the silo
+4. Generated code naturally falls into the right layer
 
 ## Current Client Command Pattern (Manual)
 
