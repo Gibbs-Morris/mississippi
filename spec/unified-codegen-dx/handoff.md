@@ -1,0 +1,246 @@
+# Implementation Handoff Brief
+
+## Summary
+
+Improve Mississippi's developer experience by enabling existing source generators
+and extending them to eliminate manual DTO duplication and DI boilerplate.
+
+## Current State
+
+- **Two generators exist:** `AggregateServiceGenerator`, `ProjectionApiGenerator`
+- **Generators are underutilized:** Cascade uses manual endpoints and manual DTOs
+- **Duplication:** 9 DTOs in `Cascade.Contracts` manually mirror Domain projections
+- **Boilerplate:** 332 lines of manual DI registrations in `CascadeRegistrations.cs`
+
+## Target State
+
+- Aggregates with `[AggregateService]` → Generated services used in endpoints
+- Projections with `[UxProjection]` → Generated DTOs used by client
+- DI registrations → Generated from discovered types
+- Manual Contracts DTOs → Deleted (replaced by generated)
+
+---
+
+## Execution Checklist
+
+### Phase 1: Enable Existing Generators (Start Here)
+
+- [ ] **1.1** Add `[AggregateService("channels")]` to `ChannelAggregate.cs`
+- [ ] **1.2** Add `[AggregateService("conversations")]` to `ConversationAggregate.cs`
+- [ ] **1.3** Build and verify generated files exist in `obj/`
+- [ ] **1.4** Register generated services in Silo DI
+- [ ] **1.5** Replace one manual endpoint to use generated service (UserAggregate)
+- [ ] **1.6** Run integration test to verify functionality
+- [ ] **1.7** Repeat 1.5-1.6 for remaining aggregates
+
+### Phase 2: Projection DTOs (Verification)
+
+- [ ] **2.1** List generated projection DTOs from Domain build
+- [ ] **2.2** Compare generated DTOs with manual Contracts DTOs
+- [ ] **2.3** Document differences (naming, property handling)
+- [ ] **2.4** Make go/no-go decision on unified approach
+
+### Phase 3: DI Generator (If Phase 2 approved)
+
+- [ ] **3.1** Create `DomainRegistrationsGenerator` project
+- [ ] **3.2** Implement discovery of handlers, reducers, event types
+- [ ] **3.3** Generate `AddGenerated{Namespace}Domain()` method
+- [ ] **3.4** Add tests for generator
+- [ ] **3.5** Replace `CascadeRegistrations.cs` with generated call
+- [ ] **3.6** Verify build and runtime
+
+### Phase 4: Client DTO Generator (If Phase 3 complete)
+
+- [ ] **4.1** Create `ClientDtoGenerator` project
+- [ ] **4.2** Implement WASM-safe DTO generation
+- [ ] **4.3** Create `Cascade.Contracts.Generated` project
+- [ ] **4.4** Update Client to reference generated project
+- [ ] **4.5** Delete manual Contracts DTOs
+- [ ] **4.6** Verify client builds and runs
+
+### Phase 5: Cleanup
+
+- [ ] **5.1** Remove unused manual endpoints
+- [ ] **5.2** Simplify `CascadeRegistrations.cs`
+- [ ] **5.3** Update documentation
+- [ ] **5.4** Run full test suite (`pwsh ./go.ps1`)
+
+---
+
+## Commands to Run
+
+### Build and Verify Generators
+
+```powershell
+# Build Domain to trigger generators
+dotnet build samples/Cascade/Cascade.Domain/Cascade.Domain.csproj -c Release
+
+# Check generated files
+Get-ChildItem -Path samples/Cascade/Cascade.Domain/obj -Recurse -Filter "*.g.cs" |
+    Select-Object FullName, Length
+
+# Build full solution
+dotnet build samples.slnx -c Release -warnaserror
+```
+
+### Run Sample
+
+```powershell
+# Start Aspire host
+dotnet run --project samples/Cascade/Cascade.AppHost/Cascade.AppHost.csproj
+
+# In another terminal, test endpoints
+Invoke-WebRequest -Uri "https://localhost:7001/api/health" -SkipCertificateCheck
+```
+
+### Run Tests
+
+```powershell
+# Generator tests
+pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
+
+# Full gate
+pwsh ./go.ps1
+```
+
+---
+
+## Expected Outputs
+
+### After Phase 1.2 (Add AggregateService attributes)
+
+Generated files in `samples/Cascade/Cascade.Domain/obj/.../generated/`:
+
+- `IChannelService.g.cs`
+- `ChannelService.g.cs`
+- `ChannelController.g.cs`
+- `IConversationService.g.cs`
+- `ConversationService.g.cs`
+- `ConversationController.g.cs`
+
+### After Phase 3 (DI Generator)
+
+Generated file:
+
+- `CascadeDomainRegistrations.g.cs`
+
+Contains:
+
+```csharp
+public static IServiceCollection AddGeneratedCascadeDomain(this IServiceCollection services)
+{
+    services.AddAggregateSupport();
+    services.AddEventType<UserRegistered>();
+    // ... all event types
+    services.AddCommandHandler<RegisterUser, UserAggregate, RegisterUserHandler>();
+    // ... all command handlers
+    services.AddReducer<UserRegistered, UserProfileProjection, UserRegisteredReducer>();
+    // ... all reducers
+    return services;
+}
+```
+
+### After Phase 4 (Client DTO Generator)
+
+New project `Cascade.Contracts.Generated` with:
+
+- `ChannelMessagesDto.g.cs`
+- `ChannelSummaryDto.g.cs`
+- `AllChannelsDto.g.cs`
+- etc.
+
+Client references this project instead of manual `Cascade.Contracts`.
+
+---
+
+## Rollback Plan
+
+### Phase 1 Rollback
+
+```powershell
+# Remove attributes from ChannelAggregate.cs and ConversationAggregate.cs
+git checkout -- samples/Cascade/Cascade.Domain/Channel/ChannelAggregate.cs
+git checkout -- samples/Cascade/Cascade.Domain/Conversation/ConversationAggregate.cs
+
+# Restore manual endpoints if changed
+git checkout -- samples/Cascade/Cascade.Server/Program.cs
+```
+
+### Phase 3 Rollback
+
+```powershell
+# Restore manual registrations
+git checkout -- samples/Cascade/Cascade.Domain/CascadeRegistrations.cs
+```
+
+### Phase 4 Rollback
+
+```powershell
+# Restore Contracts reference in Client
+git checkout -- samples/Cascade/Cascade.Client/Cascade.Client.csproj
+
+# Delete generated project
+Remove-Item -Recurse samples/Cascade/Cascade.Contracts.Generated
+```
+
+---
+
+## Open Questions (Decision Required)
+
+### 1. Generated Controllers vs Minimal APIs
+
+**Question:** Should Cascade use the generated `{Name}Controller` classes or
+keep minimal APIs?
+
+**Options:**
+
+- **A) Use generated controllers** - Standard MVC pattern, OpenAPI annotations
+- **B) Keep minimal APIs** - Current pattern, more flexible
+
+**Recommendation:** Option B for now. Minimal APIs are more common in modern
+.NET and offer flexibility.
+
+### 2. Client DTO Project Location
+
+**Question:** Where should generated client DTOs live?
+
+**Options:**
+
+- **A) In Contracts project** - Keep existing project, add generated files
+- **B) New Contracts.Generated project** - Clean separation
+- **C) Shared source links** - Complex MSBuild, harder to understand
+
+**Recommendation:** Option B for clean separation and explicit dependencies.
+
+### 3. Naming Convention
+
+**Question:** Generated DTOs are named `{Type}Dto` (e.g.,
+`ChannelMessagesProjectionDto`). Manual DTOs drop "Projection"
+(e.g., `ChannelMessagesDto`).
+
+**Options:**
+
+- **A) Keep generator naming** - `ChannelMessagesProjectionDto`
+- **B) Update generator** - Strip "Projection" suffix → `ChannelMessagesDto`
+
+**Recommendation:** Option B for cleaner client API.
+
+---
+
+## Risks
+
+| Risk | Likelihood | Impact | Mitigation |
+| ---- | ---------- | ------ | ---------- |
+| Generated services break internal visibility | Medium | Medium | Test first |
+| DI generator misses types | Low | High | Test coverage |
+| Client DTO generator has Orleans deps | Low | High | Verify output |
+| Breaking changes in Cascade | Medium | Low | Staged rollout |
+
+---
+
+## Success Criteria
+
+1. **Phase 1 Complete:** All three aggregates use generated services
+2. **Phase 3 Complete:** `CascadeRegistrations.cs` reduced to single call
+3. **Phase 4 Complete:** `Cascade.Contracts/Projections/` deleted
+4. **Final:** All tests pass, Cascade sample runs end-to-end
