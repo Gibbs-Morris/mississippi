@@ -15,7 +15,6 @@
         <Project Path="samples\Cascade\Cascade.Server\Cascade.Server.csproj" />
         <Project Path="samples\Cascade\Cascade.Silo\Cascade.Silo.csproj" />
         <Project Path="samples\Cascade\Cascade.AppHost\Cascade.AppHost.csproj" />
-        <Project Path="samples\Cascade\Cascade.L0Tests\Cascade.L0Tests.csproj" />
     </Folder>
     <Folder Name="/Samples/Crescent/">
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
