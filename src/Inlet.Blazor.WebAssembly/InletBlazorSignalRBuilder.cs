@@ -154,8 +154,7 @@ public sealed class InletBlazorSignalRBuilder
         // Register Lazy<IInletStore> to break the circular dependency:
         // Store resolves IEffect[] → InletSignalREffect needs Store.
         // By using Lazy<IInletStore>, the effect defers resolution until first use.
-        Services.TryAddScoped<Lazy<IInletStore>>(sp =>
-            new Lazy<IInletStore>(() => sp.GetRequiredService<IInletStore>()));
+        Services.TryAddScoped<Lazy<IInletStore>>(sp => new(() => sp.GetRequiredService<IInletStore>()));
 
         // Register the SignalR effect
         Services.AddEffect<InletSignalREffect>();
