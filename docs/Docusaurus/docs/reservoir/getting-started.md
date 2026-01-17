@@ -198,7 +198,7 @@ internal static class CartReducers
     public static CartState AddItem(CartState state, AddItemAction action)
     {
         var newItem = new CartItem(
-            Id: Guid.NewGuid().ToString("N"),
+            Id: Guid.NewGuid().ToString("N")[..8],
             Name: action.Name,
             Price: action.Price,
             Quantity: 1);
@@ -282,6 +282,11 @@ namespace ReservoirDemo.Features.Cart;
 /// </summary>
 public sealed class CheckoutEffect : IEffect
 {
+    /// <summary>
+    /// Probability of simulated checkout failure (for demo purposes).
+    /// </summary>
+    private const double FailureProbability = 0.2;
+
     /// <inheritdoc />
     public bool CanHandle(IAction action) => action is CheckoutAction;
 
@@ -298,8 +303,8 @@ public sealed class CheckoutEffect : IEffect
             // Simulate API call
             await Task.Delay(1500, cancellationToken);
 
-            // Simulate occasional failures
-            if (Random.Shared.NextDouble() < 0.2)
+            // Simulate occasional failures (for demo purposes)
+            if (Random.Shared.NextDouble() < FailureProbability)
             {
                 yield return new CheckoutFailedAction("Payment processing failed. Please try again.");
                 yield break;
