@@ -48,6 +48,39 @@ running in different pods/envs."
 HTTP fetches actual projection data. This separation means client DTOs only
 need JSON serialization—no Orleans.
 
+## POC Validation: Dual Generator Coexistence
+
+**Concern:** Will Orleans generator conflict with Mississippi generator?
+
+**Answer:** ✅ **No.** POC in `.scratchpad/poc-orleans-coexist/` proves both work:
+
+| Generator | Project | Output |
+|-----------|---------|--------|
+| Orleans `OrleansCodeGen` | `Source.Domain` | `Codec_ChannelProjection` |
+| Mississippi `ClientDtoGenerator` | `Target.Contracts` | `ChannelProjectionDto` |
+
+**How it works:**
+
+1. Domain project has `[GenerateSerializer]` + `[GenerateClientDto]` on types
+2. Orleans generator runs in Domain → produces serialization code
+3. Contracts project references Domain with `PrivateAssets="all"`
+4. Mississippi generator runs in Contracts → scans `compilation.References`
+5. Mississippi generator finds `[GenerateClientDto]` types → emits Orleans-free DTOs
+6. Client references Contracts → gets DTOs without Orleans packages
+
+**Project reference pattern (validated):**
+
+```xml
+<ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj"
+                  PrivateAssets="all" />
+<ProjectReference Include="...\EventSourcing.Generators.csproj"
+                  OutputItemType="Analyzer"
+                  ReferenceOutputAssembly="false" />
+```
+
+**Client output (verified):** Only `Target.Client.dll` + `Target.Contracts.dll`
+— **zero Orleans DLLs**.
+
 ## Current State
 
 - **Two generators exist:** `AggregateServiceGenerator`, `ProjectionApiGenerator`

@@ -198,3 +198,64 @@ do NOT have this attribute.
 **VERIFIED**: Generator respects `internal` accessibility. Generated services
 inherit the same visibility as the aggregate (see `AggregateServiceGenerator.cs`
 lines 98-105, 347).
+
+## POC: Cross-Project Generator Coexistence
+
+**VERIFIED** via `.scratchpad/poc-orleans-coexist/`
+
+### Key Finding: Generators CAN Read Referenced Assemblies
+
+Roslyn generators are not limited to source files. They can scan
+`compilation.References` to find types in compiled assemblies:
+
+```csharp
+foreach (var reference in compilation.References)
+{
+    if (compilation.GetAssemblyOrModuleSymbol(reference) is not IAssemblySymbol assembly)
+        continue;
+
+    // Find types with [GenerateClientDto] in referenced assembly
+    var typesWithMarker = GetTypesWithMarkerAttribute(assembly);
+    // ...
+}
+```
+
+### Key Finding: PrivateAssets="all" Prevents Transitive Orleans
+
+When `Contracts.Generated` references Domain with `PrivateAssets="all"`:
+
+- Domain types are visible at compile time (generator can read them)
+- Orleans packages do NOT flow transitively to downstream consumers
+- Client gets zero Orleans DLLs in output
+
+### Key Finding: Orleans and Mississippi Generators Coexist
+
+Both generators run without conflict:
+
+| Generator | Context | Input | Output |
+|-----------|---------|-------|--------|
+| Orleans `OrleansCodeGen` | `Source.Domain` | Source files | `Codec_*` serialization |
+| Mississippi `ClientDtoGenerator` | `Target.Contracts` | Referenced assemblies | `*Dto` records |
+
+### POC Output Verification
+
+```powershell
+# Client output DLLs
+Get-ChildItem Target.Client/bin/Release/net9.0/*.dll | Select Name
+# Target.Client.dll
+# Target.Contracts.dll
+# (NO Orleans DLLs)
+```
+
+### Correct Project Reference Pattern
+
+```xml
+<!-- Cascade.Contracts.Generated.csproj -->
+<ItemGroup>
+  <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj"
+                    PrivateAssets="all" />
+  <ProjectReference Include="...\EventSourcing.Generators.csproj"
+                    OutputItemType="Analyzer"
+                    ReferenceOutputAssembly="false" />
+</ItemGroup>
+```

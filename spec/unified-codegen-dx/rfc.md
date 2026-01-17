@@ -179,6 +179,51 @@ The `ClientDtoGenerator` will emit a diagnostic if:
 - Generated type would reference an Orleans-attributed type
 - A type marked `[GenerateClientDto]` contains non-serializable members
 
+## POC Validation: Dual Generator Coexistence
+
+**Concern:** Will Orleans source generator conflict with Mississippi generator?
+Both run on types with `[GenerateSerializer]` and `[GenerateClientDto]`.
+
+**Answer:** ✅ **No conflict.** POC in `.scratchpad/poc-orleans-coexist/` proves
+both generators run independently:
+
+| Generator | Runs In | Produces | Conflict? |
+|-----------|---------|----------|-----------|
+| Orleans `OrleansCodeGen` | `Source.Domain` | `Codec_ChannelProjection` serialization | No |
+| Mississippi `ClientDtoGenerator` | `Target.Contracts` | `ChannelProjectionDto` (Orleans-free) | No |
+
+**Why no conflict:**
+
+1. Orleans generator runs in Domain project context (sees source files)
+2. Mississippi generator runs in Contracts project context (sees referenced assemblies)
+3. Each generator emits to its own project — no file collisions
+4. `PrivateAssets="all"` ensures Orleans packages don't flow to client
+
+**Project reference pattern:**
+
+```xml
+<!-- Cascade.Contracts.Generated.csproj -->
+<ItemGroup>
+  <!-- Domain for type metadata; PrivateAssets stops Orleans transitivity -->
+  <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj"
+                    PrivateAssets="all" />
+
+  <!-- Generator as analyzer -->
+  <ProjectReference Include="...\EventSourcing.Generators.csproj"
+                    OutputItemType="Analyzer"
+                    ReferenceOutputAssembly="false" />
+</ItemGroup>
+```
+
+**POC output verification:**
+
+```powershell
+# Client output DLLs (NO Orleans!)
+Get-ChildItem Target.Client/bin/Release/net9.0/*.dll | Select Name
+# Target.Client.dll
+# Target.Contracts.dll
+```
+
 ## Current State
 
 ### Existing Generators
