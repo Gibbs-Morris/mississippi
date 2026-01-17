@@ -1,5 +1,5 @@
 ---
-name: CoV-enterprise-solo
+name: CoV-enterprise-solo-spec
 description: End-to-end enterprise coding agent that performs Chain-of-Verification before editing, then implements and validates (spec-first; cloud-host friendly).
 model: Claude Opus 4.5
 metadata:
