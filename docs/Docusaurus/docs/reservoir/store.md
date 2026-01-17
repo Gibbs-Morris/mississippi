@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 6
 title: Store
 description: The central state container that coordinates actions, reducers, and effects
 ---
@@ -50,25 +50,23 @@ public interface IStore : IDisposable
 
 ### Basic Registration
 
+Reservoir uses a convention where registering reducers automatically registers the associated feature state. This means you don't need to explicitly register feature states in most cases.
+
 ```csharp
 // Program.cs
 using Mississippi.Reservoir;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-// Register reducers
+// Register reducers (each AddReducer also registers the feature state)
 builder.Services.AddReducer<IncrementAction, CounterState>(
     (state, action) => state with { Count = state.Count + 1 });
 
 // Register effects
 builder.Services.AddEffect<LoadDataEffect>();
 
-// Register the store with feature states
-builder.Services.AddReservoir(store => 
-{
-    store.RegisterState<CounterState>();
-    store.RegisterState<CartState>();
-});
+// Register the store (after all reducers and effects)
+builder.Services.AddReservoir();
 
 await builder.Build().RunAsync();
 ```
@@ -88,49 +86,54 @@ builder.Services.AddReducer<ProductsLoadFailedAction, CartState>(CartReducers.Pr
 // 2. Register effects
 builder.Services.AddEffect<LoadProductsEffect>();
 
-// 3. Register middleware (optional)
+// 3. Register optional middleware
 builder.Services.AddMiddleware<LoggingMiddleware>();
 
-// 4. Register the store
-builder.Services.AddReservoir(store => store.RegisterState<CartState>());
+// 4. Register the store (must be last)
+builder.Services.AddReservoir();
 ```
 
-### AddReservoir Options
+### What AddReservoir Does
 
-The `AddReservoir` method accepts an optional configuration callback:
+The `AddReservoir()` method:
+
+1. Collects all registered `IFeatureStateRegistration` instances
+2. Collects all registered `IEffect` instances  
+3. Collects all registered `IMiddleware` instances
+4. Creates a scoped `IStore` with these dependencies
 
 ```csharp
-builder.Services.AddReservoir(store =>
-{
-    // Register each feature state the store should manage
-    store.RegisterState<CounterState>();
-    store.RegisterState<CartState>();
-    store.RegisterState<UserState>();
-});
+// The store is registered with scoped lifetime
+services.TryAddScoped<IStore>(sp => new Store(
+    sp.GetServices<IFeatureStateRegistration>(),
+    sp.GetServices<IEffect>(),
+    sp.GetServices<IMiddleware>()));
 ```
 
 ## Dispatch Pipeline
 
-When you call `Store.Dispatch(action)`, the action flows through:
+When you call `Store.Dispatch(action)`, the action flows through a pipeline:
 
-```text
-Dispatch(action)
-      │
-      ▼
-┌──────────────────────────────────┐
-│     Middleware Pipeline          │
-│  ┌──────────┐   ┌──────────┐    │
-│  │Middleware│──▶│Middleware│──┐ │
-│  └──────────┘   └──────────┘  │ │
-└───────────────────────────────┼─┘
-                                │
-                                ▼
-┌──────────────────────────────────┐
-│     Core Dispatch                │
-│  1. Reducers update state        │
-│  2. Listeners notified           │
-│  3. Effects triggered (async)    │
-└──────────────────────────────────┘
+```mermaid
+flowchart TD
+    Dispatch["Store.Dispatch(action)"]
+    
+    subgraph Middleware["Middleware Pipeline"]
+        M1["Middleware 1"] --> M2["Middleware 2"] --> M3["Middleware N"]
+    end
+    
+    subgraph Core["Core Dispatch"]
+        Reducers["1. Reducers update state"]
+        Listeners["2. Listeners notified"]
+        Effects["3. Effects triggered (async)"]
+        Reducers --> Listeners --> Effects
+    end
+    
+    Dispatch --> M1
+    M3 --> Reducers
+    
+    style Middleware fill:#fff3e0
+    style Core fill:#e8f5e9
 ```
 
 ### Synchronous vs Asynchronous
@@ -432,7 +435,7 @@ However, individual state objects are immutable, ensuring safe reads.
 
 ### Rules
 
-1. **Register states before accessing them.** Call `RegisterState<T>()` in `AddReservoir`.
+1. **Register reducers before calling AddReservoir.** Each `AddReducer` call auto-registers the feature state.
 
 2. **Dispatch from any thread.** The store is thread-safe for dispatch operations.
 
@@ -453,7 +456,7 @@ However, individual state objects are immutable, ensuring safe reads.
 ### Do
 
 - ✅ Use `StoreComponent` for Blazor components that need store access
-- ✅ Register all feature states in `AddReservoir`
+- ✅ Register all reducers before calling `AddReservoir()`
 - ✅ Keep feature states small and focused
 - ✅ Dispose subscriptions when no longer needed
 - ✅ Access state through `GetState<T>()` for current values
@@ -483,7 +486,7 @@ builder.Services.AddScoped(_ => new HttpClient
     BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) 
 });
 
-// Register reducers
+// Register reducers (auto-registers CartState feature)
 builder.Services.AddReducer<AddItemAction, CartState>(CartReducers.AddItem);
 builder.Services.AddReducer<RemoveItemAction, CartState>(CartReducers.RemoveItem);
 builder.Services.AddReducer<ProductsLoadingAction, CartState>(CartReducers.ProductsLoading);
@@ -496,8 +499,8 @@ builder.Services.AddEffect<LoadProductsEffect>();
 // Register optional middleware
 builder.Services.AddMiddleware<LoggingMiddleware>();
 
-// Register the store with feature states
-builder.Services.AddReservoir(store => store.RegisterState<CartState>());
+// Register the store (after all reducers and effects)
+builder.Services.AddReservoir();
 
 await builder.Build().RunAsync();
 ```

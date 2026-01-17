@@ -14,6 +14,12 @@ const config: Config = {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
+  // Enable Mermaid diagram support
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
+
   // Set the production url of your site here
   // NOSONAR: hardcoded URL is intentional for GitHub Pages deployment configuration
   url: 'https://gibbs-morris.github.io',
@@ -115,6 +121,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ['csharp', 'bash', 'json'],
     },
   } satisfies Preset.ThemeConfig,
 };

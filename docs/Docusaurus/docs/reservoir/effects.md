@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 title: Effects
 description: Handle asynchronous operations like API calls, timers, and navigation
 ---
@@ -116,27 +116,24 @@ public sealed class LoadProductsEffect : IEffect
 4. **Actions yielded** — Each yielded action is dispatched back to the store
 5. **Concurrent execution** — Effects run concurrently; they don't block the UI
 
-```text
-Dispatch(LoadProductsAction)
-         │
-         ▼
-    ┌────────────┐
-    │  Reducers  │ ──▶ State updated (if any reducer handles it)
-    └────────────┘
-         │
-         ▼
-    ┌────────────┐
-    │  Effects   │ ──▶ LoadProductsEffect.CanHandle() returns true
-    └────────────┘
-         │
-         ▼
-    HandleAsync() starts
-         │
-         ├──▶ yield ProductsLoadingAction ──▶ Dispatch ──▶ Reducers
-         │
-         ├──▶ await HTTP call
-         │
-         └──▶ yield ProductsLoadedAction ──▶ Dispatch ──▶ Reducers
+```mermaid
+sequenceDiagram
+    participant UI as Component
+    participant Store as Store
+    participant Reducers as Reducers
+    participant Effect as LoadProductsEffect
+    participant API as HTTP API
+
+    UI->>Store: Dispatch(LoadProductsAction)
+    Store->>Reducers: Apply reducers (if any)
+    Store->>Effect: CanHandle() → true
+    Store->>Effect: HandleAsync() starts
+    Effect-->>Store: yield ProductsLoadingAction
+    Store-->>UI: Re-render (loading state)
+    Effect->>API: GET /api/products
+    API-->>Effect: Response
+    Effect-->>Store: yield ProductsLoadedAction
+    Store-->>UI: Re-render (products shown)
 ```
 
 ## Dependency Injection
