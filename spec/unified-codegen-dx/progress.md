@@ -155,6 +155,21 @@ Traced code to verify SignalR/HTTP pattern:
 
 ### Next Steps
 
-1. Run markdownlint on spec files
-2. Commit spec folder
+1. ~~Run markdownlint on spec files~~ ✓
+2. ~~Commit spec folder~~ ✓ (commit c91cbca)
 3. Present decisions to user for approval before implementation
+
+### Commit
+
+```text
+spec(unified-codegen-dx): address user feedback on Orleans isolation
+
+- Corrected call-chain diagrams: SignalR is notification-only, HTTP fetches data
+- Added Three-Layer Architecture section showing WASM/ASP.NET/Orleans boundaries
+- Expanded RFC with Critical Constraint: Orleans Isolation section
+- Added generated project approach to implementation plan
+- Updated handoff with isolation diagrams and checklist
+- All markdownlint checks pass
+
+Commit: c91cbca
+```
