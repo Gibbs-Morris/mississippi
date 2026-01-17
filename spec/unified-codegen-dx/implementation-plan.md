@@ -341,6 +341,37 @@ Expect: Clean build with generated `IChannelService`, `IConversationService`.
 
 **Goal:** Eliminate 80+ manual `Add*` calls in `CascadeRegistrations.cs`.
 
+**Prerequisites — Scaffold Generator Project:**
+
+The `src/EventSourcing.Generators/` directory exists but is empty (only `bin/`
+and `obj/` folders). Before creating generators, scaffold the project:
+
+```powershell
+# Create generator project (netstandard2.0 for Roslyn compatibility)
+dotnet new classlib -n EventSourcing.Generators -o src/EventSourcing.Generators
+
+# Add required analyzer packages
+cd src/EventSourcing.Generators
+dotnet add package Microsoft.CodeAnalysis.CSharp -v 4.12.0
+dotnet add package Microsoft.CodeAnalysis.Analyzers -v 3.3.4
+```
+
+Update `EventSourcing.Generators.csproj`:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsRoslynComponent>true</IsRoslynComponent>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
+```
+
 **New Files:**
 
 1. `src/EventSourcing.Generators/DomainRegistrationsGenerator.cs`
@@ -418,6 +449,52 @@ public sealed class GenerateClientDtoAttribute : Attribute
    - Scan `[UxProjection]` types that ALSO have `[GenerateClientDto]`
    - Emit `{Name}Dto` records without Orleans attributes
    - Target output: `Cascade.Contracts.Generated` project
+
+**Orleans Attribute Block-List (Explicit Stripping):**
+
+The generator MUST explicitly filter Orleans attributes rather than relying on
+implicit omission. Add a block-list to ensure Orleans attributes are never
+accidentally copied (e.g., when adding `[JsonPropertyName]` support later):
+
+```csharp
+private static readonly HashSet<string> ForbiddenAttributes = new()
+{
+    "Orleans.IdAttribute",
+    "Orleans.GenerateSerializerAttribute",
+    "Orleans.ImmutableAttribute",
+    "Orleans.AliasAttribute",
+};
+
+private static bool IsForbiddenAttribute(AttributeData attr)
+    => ForbiddenAttributes.Contains(attr.AttributeClass?.ToDisplayString() ?? "");
+```
+
+Emit a build diagnostic (`MSGGEN0010`) if a forbidden attribute is encountered
+rather than silently ignoring it.
+
+**JSON Serialization Compatibility:**
+
+Generated DTOs MUST include `[JsonPropertyName]` attributes matching the source
+property names to ensure round-trip compatibility with Orleans JSON
+serialization defaults (camelCase):
+
+```csharp
+// Generated DTO example
+public sealed record ChannelMessagesDto
+{
+    [JsonPropertyName("channelId")]
+    public required string ChannelId { get; init; }
+
+    [JsonPropertyName("messageCount")]
+    public required int MessageCount { get; init; }
+
+    [JsonPropertyName("messages")]
+    public required IReadOnlyList<MessageItemDto> Messages { get; init; }
+}
+```
+
+This matches the existing manual DTO pattern in `Cascade.Contracts/Projections/`
+and ensures the client can deserialize server responses without casing issues.
 
 **New Projects:**
 

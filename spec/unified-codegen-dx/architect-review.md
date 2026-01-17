@@ -225,11 +225,24 @@ Update all usages in one pass; delete old attribute names.
 
 ---
 
+## Follow-Up Items Addressed (2026-01-17)
+
+| Item | Resolution |
+| ---- | ---------- |
+| **Generator project scaffolding** | Phase 3 now includes prerequisite steps to scaffold `EventSourcing.Generators` project |
+| **Orleans attribute block-list** | Phase 4 now requires explicit `ForbiddenAttributes` block-list rather than implicit omission |
+| **JSON serialization compatibility** | Phase 4 now requires `[JsonPropertyName]` on generated DTOs for camelCase round-trip |
+
+---
+
 ## Approval
 
 | Condition | Status |
 | --------- | ------ |
 | All Phases (0-5) | ✅ APPROVED — Proceed with implementation |
 | Attribute naming | ✅ RESOLVED — `Generate*`/`Define*` convention adopted |
+| Generator scaffolding | ✅ RESOLVED — Phase 3 includes prerequisites |
+| Orleans stripping | ✅ RESOLVED — Explicit block-list required |
+| JSON compatibility | ✅ RESOLVED — JsonPropertyName required |
 
 **Next Action:** Proceed with Phase 0 (attribute naming alignment), then Phase 1.
