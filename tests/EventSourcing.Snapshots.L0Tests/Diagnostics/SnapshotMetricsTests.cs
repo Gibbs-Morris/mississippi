@@ -74,7 +74,6 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordActivation("TestSnapshot", 25.0, false);
-
         List<MetricMeasurement> snapshot;
         lock (syncLock)
         {
@@ -148,7 +147,6 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordActivation("TestSnapshot", 50.0, true);
-
         List<MetricMeasurement> longSnapshot;
         List<MetricMeasurement> doubleSnapshot;
         lock (syncLock)
@@ -214,7 +212,6 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordBaseUsed("TestSnapshot");
-
         List<MetricMeasurement> snapshot;
         lock (syncLock)
         {
@@ -269,7 +266,6 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordCacheHit("TestSnapshot");
-
         List<MetricMeasurement> snapshot;
         lock (syncLock)
         {
@@ -324,7 +320,6 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordCacheMiss("TestSnapshot");
-
         List<MetricMeasurement> snapshot;
         lock (syncLock)
         {
@@ -398,7 +393,6 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordPersist("TestSnapshot", 75.0, true);
-
         List<MetricMeasurement> longSnapshot;
         List<MetricMeasurement> doubleSnapshot;
         lock (syncLock)
@@ -480,7 +474,6 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordRebuild("TestSnapshot", 100.0, 25);
-
         List<MetricMeasurement> doubleSnapshot;
         List<MetricMeasurement> intSnapshot;
         lock (syncLock)
@@ -538,7 +531,6 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordReducerHashMismatch("TestSnapshot");
-
         List<MetricMeasurement> snapshot;
         lock (syncLock)
         {
@@ -593,7 +585,6 @@ public sealed class SnapshotMetricsTests
         });
         listener.Start();
         SnapshotMetrics.RecordStateSize("TestSnapshot", 4096L);
-
         List<MetricMeasurement> snapshot;
         lock (syncLock)
         {
