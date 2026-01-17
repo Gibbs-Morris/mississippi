@@ -17,7 +17,7 @@ The theme features:
 
 | File | Changes |
 |------|---------|
-| `docusaurus.config.ts` | Added Google Fonts (headTags, stylesheets), set dark mode as default |
+| `docusaurus.config.ts` | Added Google Fonts (headTags, stylesheets), set dark mode as default with `respectPrefersColorScheme: false` |
 | `src/css/custom.css` | Complete theme with Infima variable overrides and visual effects |
 | `THEME_NOTES.md` | This documentation file |
 
@@ -65,14 +65,18 @@ html[data-theme='dark'] body::before {
 
 ### Shimmer Overlay Opacity & Speed
 
-The shimmer effect is controlled by `html[data-theme='dark'] body::after`:
+The shimmer effect is controlled by a media query (only enabled on viewports >= 768px for performance):
 
 ```css
-html[data-theme='dark'] body::after {
-  opacity: 0.02; /* Increase for more visible shimmer */
-  animation: shimmerDrift 30s ease-in-out infinite; /* Change 30s for faster/slower drift */
+@media (min-width: 768px) {
+  html[data-theme='dark'] body::after {
+    opacity: 0.02; /* Increase for more visible shimmer */
+    animation: shimmerDrift 30s ease-in-out infinite; /* Change 30s for faster/slower drift */
+  }
 }
 ```
+
+Note: The shimmer is disabled on mobile devices to improve rendering performance.
 
 ### Glow Intensity
 
