@@ -426,3 +426,6 @@ __azurite_db_blob_extent__.json
 __azurite_db_queue__.json
 __azurite_db_queue_extent__.json
 __azurite_db_table__.json
+
+# JetBrains ReSharper cache directory (used by CI for cleanup caching)
+.jb-caches/
