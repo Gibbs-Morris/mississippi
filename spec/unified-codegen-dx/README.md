@@ -2,7 +2,12 @@
 
 ## Status
 
-**Decisions Made** → Ready for Implementation | Size: **Large**
+**Decisions Made** → Architect Review Complete | Size: **Large**
+
+**Architect Review:** ⚠️ CONDITIONAL APPROVAL — See [architect-review.md](architect-review.md)
+
+- **Phases 1-3:** ✅ Approved — proceed immediately
+- **Phases 4-5:** 🟡 Blocked — resolve cross-project architecture first
 
 ## Decisions (Confirmed)
 

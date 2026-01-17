@@ -154,4 +154,26 @@ ls samples/Cascade/Cascade.Contracts/Projections/
 
 ## Summary
 
-All 10 claims verified with repository evidence. No claims marked UNVERIFIED.
+9 of 10 original claims verified with repository evidence. 1 new claim identified
+and invalidated during architect review.
+
+### Critical Finding: Cross-Project Generation (C11)
+
+**Claim (implicit in implementation-plan.md):** AnalyzerReference pattern enables
+generating DTOs into a separate `Cascade.Contracts.Generated` project.
+
+**Verification:** ❌ **INVALID**
+
+**Evidence:**
+
+- Roslyn `SourceProductionContext.AddSource()` adds files to the **current
+  compilation only**
+- When Project B references Project A's generator via `OutputItemType="Analyzer"`,
+  the generator runs in Project B's context and sees Project B's source code
+- There is no API to emit files into a different project's compilation
+- The proposed `Contracts.Generated` project would see **empty source** (no
+  `[UxProjection]` types) and generate nothing
+
+**Impact:** Phases 4-5 (Client DTO/Action generators) are blocked until
+architecture is revised. See [architect-review.md](architect-review.md) for
+resolution options.
