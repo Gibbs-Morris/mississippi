@@ -103,10 +103,12 @@ public sealed class AutoProjectionFetcherTests : IDisposable
         }
 
         /// <inheritdoc />
-        protected override Task<HttpResponseMessage> SendAsync(
+#pragma warning disable CS1998 // Async method lacks 'await' operators - intentional for ownership transfer pattern
+        protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken
         )
+#pragma warning restore CS1998
         {
             LastRequestedUrl = request.RequestUri?.PathAndQuery;
             string path = LastRequestedUrl ?? string.Empty;
@@ -133,7 +135,7 @@ public sealed class AutoProjectionFetcherTests : IDisposable
                 httpResponse.Headers.ETag = new(etag);
             }
 
-            return Task.FromResult(httpResponse);
+            return httpResponse;
         }
     }
 

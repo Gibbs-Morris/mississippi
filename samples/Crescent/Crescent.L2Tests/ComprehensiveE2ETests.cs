@@ -103,8 +103,9 @@ public sealed class ComprehensiveE2ETests
             await Task.Delay(RetryDelayMs);
         }
 
-        afterZero.Should().NotBeNull();
-        afterZero!.CurrentCount.Should().Be(0, "Count should be 0 after incrementing back");
+        afterZero.Should().NotBeNull("Projection should exist after incrementing back");
+        CounterSummaryProjection finalProjection = afterZero!;
+        finalProjection.CurrentCount.Should().Be(0, "Count should be 0 after incrementing back");
         output.WriteLine("[Test] PASSED: Boundary conditions handled correctly!");
     }
 
