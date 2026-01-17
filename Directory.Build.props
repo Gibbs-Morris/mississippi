@@ -39,7 +39,7 @@
         <NuGetLockFilePath Condition="'$(_OsxArch)'=='Arm64'">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-arm64.lock.json'))</NuGetLockFilePath>
         <NuGetLockFilePath Condition="'$(_OsxArch)'=='X64'">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-x64.lock.json'))</NuGetLockFilePath>
         <!-- Fallback for unexpected macOS architectures -->
-        <NuGetLockFilePath Condition="'$(NuGetLockFilePath)'==''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-$(_OsxArch.ToLower()).lock.json'))</NuGetLockFilePath>
+        <NuGetLockFilePath Condition="'$(NuGetLockFilePath)'==''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-$([System.String]::new($(_OsxArch)).ToLower()).lock.json'))</NuGetLockFilePath>
     </PropertyGroup>
 
     <ItemGroup>
