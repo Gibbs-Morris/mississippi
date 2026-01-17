@@ -227,3 +227,81 @@ User confirmed all remaining decisions:
 
 **Ready for Implementation** — All major decisions confirmed. Spec package
 complete. Next action: Begin Phase 1 (enable existing generators in Cascade).
+
+## 2026-01-17 (Architect Review & POC Validation)
+
+### Skeptical Architect Review
+
+Performed principal architect review of all claims. Identified potential concern
+with cross-project generation pattern (generators emit to current compilation only).
+
+### User Challenge
+
+User correctly challenged: "But how does the dual approach work when for the
+server side we need the Orleans SDK to generate the serialization bit via
+source gen, which means we can't source gen the server side or am I wrong?"
+
+### Key Insight
+
+Both generators run independently:
+
+- **Orleans generator**: Produces serialization code for original type (stays in Domain)
+- **Mississippi generator**: Creates SEPARATE DTO type (Orleans-free)
+
+The concern was not that generators can't coexist, but whether the generator
+could read types from a **referenced assembly** (not just source files).
+
+### Proposed Solution
+
+Use `PrivateAssets="all"` pattern:
+
+- `Contracts.Generated` references `Domain` with `PrivateAssets="all"`
+- Generator runs in `Contracts.Generated` context
+- Generator reads Domain types via `compilation.References`
+- `PrivateAssets` prevents Orleans from flowing transitively to downstream projects
+
+### POC Validation
+
+Built proof-of-concept in `.scratchpad/poc-cross-project-gen/`:
+
+**Structure:**
+
+- `Source.Domain/` — Orleans SDK, `[GenerateSerializer]`, `[GenerateClientDto]` marker
+- `Source.Generator/` — IIncrementalGenerator scanning referenced assemblies
+- `Target.Contracts/` — `PrivateAssets="all"` reference to Domain
+- `Target.Client/` — References only Contracts
+
+**Commands:**
+
+```powershell
+dotnet build poc.sln -c Release
+dotnet run --project Target.Client -c Release
+Get-ChildItem Target.Client\bin\Release\net9.0\*.dll | Select-Object Name
+```
+
+**Results:**
+
+- ✅ Build succeeded
+- ✅ Generator found types in referenced assembly
+- ✅ Generated DTO has Orleans attributes stripped
+- ✅ Client output contains **zero Orleans DLLs**
+
+**Client Output DLLs:**
+
+```text
+Mississippi.Target.Client.dll
+Mississippi.Target.Contracts.dll
+(NO Orleans DLLs)
+```
+
+### Documents Updated
+
+1. **architect-review.md** — Changed from CONDITIONAL to ✅ APPROVED
+2. **verification.md** — Updated C11 claim to VALIDATED with POC evidence
+3. **implementation-plan.md** — Updated Phase 4 with validated pattern
+4. **README.md** — Updated status to APPROVED
+
+### Status
+
+**✅ Fully Approved for Implementation** — All phases (1-5) validated. Cross-
+project generation pattern proven via POC. Next action: Begin Phase 1.

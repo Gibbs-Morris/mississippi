@@ -2,12 +2,13 @@
 
 ## Status
 
-**Decisions Made** → Architect Review Complete | Size: **Large**
+**Decisions Made** → ✅ Architect Review APPROVED | Size: **Large**
 
-**Architect Review:** ⚠️ CONDITIONAL APPROVAL — See [architect-review.md](architect-review.md)
+**Architect Review:** ✅ APPROVED — See [architect-review.md](architect-review.md)
 
-- **Phases 1-3:** ✅ Approved — proceed immediately
-- **Phases 4-5:** 🟡 Blocked — resolve cross-project architecture first
+- **All Phases (1-5):** ✅ Approved — proceed with implementation
+- **Cross-project generation:** ✅ Validated via POC using `PrivateAssets="all"`
+- **Attribute naming:** 🟡 Advisory — consider `[ClientVisible]`/`[ClientDispatchable]`
 
 ## Decisions (Confirmed)
 

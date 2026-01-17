@@ -112,14 +112,21 @@ need JSON serialization—no Orleans.
         <TargetFramework>net9.0</TargetFramework>
       </PropertyGroup>
       <ItemGroup>
-        <!-- Analyzer-only reference: no runtime Orleans dependency -->
+        <!-- Domain reference with PrivateAssets prevents Orleans from
+             flowing transitively; generator reads types via compilation.References -->
         <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj"
+                          PrivateAssets="all" />
+
+        <!-- Generator as analyzer -->
+        <ProjectReference Include="..\..\..\..\src\EventSourcing.Generators\EventSourcing.Generators.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false" />
       </ItemGroup>
-      <!-- ⚠️ NO Orleans packages allowed -->
+      <!-- ⚠️ NO Orleans packages allowed - validated via POC -->
     </Project>
     ```
+
+    **Pattern validated via POC** (`.scratchpad/poc-cross-project-gen/`).
 
 - [ ] **4.2** Create `ClientDtoGenerator` in `EventSourcing.Generators`:
   - Strip `[Id]`, `[GenerateSerializer]`, `[Immutable]`, `[Alias]`

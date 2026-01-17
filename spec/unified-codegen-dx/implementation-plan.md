@@ -240,16 +240,26 @@ public sealed class GenerateClientDtoAttribute : Attribute
        <Nullable>enable</Nullable>
      </PropertyGroup>
      <ItemGroup>
+       <!-- Domain reference for type metadata; PrivateAssets prevents
+            Orleans from flowing transitively to downstream projects -->
        <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj"
+                         PrivateAssets="all" />
+
+       <!-- Generator runs in this project's context, reads Domain types -->
+       <ProjectReference Include="..\..\..\..\src\EventSourcing.Generators\EventSourcing.Generators.csproj"
                          OutputItemType="Analyzer"
                          ReferenceOutputAssembly="false" />
      </ItemGroup>
-     <ItemGroup>
-       <PackageReference Include="Inlet.Projection.Abstractions" />
-     </ItemGroup>
-     <!-- ⚠️ NO Orleans packages allowed -->
+     <!-- ⚠️ NO Orleans packages allowed; validated via POC -->
    </Project>
    ```
+
+   **Pattern validated via POC** (`.scratchpad/poc-cross-project-gen/`):
+
+   - Generator scans `compilation.References` for Domain assembly
+   - Generator finds types with `[GenerateClientDto]` marker
+   - Generator emits Orleans-free DTOs into this project
+   - Client projects referencing this get **zero Orleans DLLs**
 
 3. Update `Cascade.Client.csproj`:
    - Replace `Cascade.Contracts` reference with `Cascade.Contracts.Generated`
