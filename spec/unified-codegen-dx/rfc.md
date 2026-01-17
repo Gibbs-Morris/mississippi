@@ -6,11 +6,13 @@
 - **Created**: 2026-01-17
 - **Status**: Draft → **Decisions Made** → Ready for Implementation
 - **Tracking**: `spec/unified-codegen-dx/`
+- **Naming**: See [naming-taxonomy.md](naming-taxonomy.md) for attribute and project naming conventions
 
 ## Decisions (Confirmed)
 
 | Question | Decision | Rationale |
 | -------- | -------- | --------- |
+| Attribute naming convention? | **`Generate*` / `Define*`** | `Generate*` for source gen triggers (Orleans-aligned); `Define*` for identity/metadata markers. Legacy attributes shimmed with `[Obsolete]`. |
 | Unified vs separate attributes? | **Separate** | SRP; aggregates and projections are different concerns. Framework should be pluggable—users may want different projection backends. |
 | DI registration approach? | **Compile-time** (source generators) | No runtime reflection cost; compile-time verification; better AOT support. |
 | Client action generation? | **Opt-in** via `[GenerateClientAction]` | Explicit control; future RBAC properties will be added to these attributes. |

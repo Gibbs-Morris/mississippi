@@ -64,7 +64,7 @@ public sealed record MarkedProjectionDto
 | Goals | ✅ **VALID** | Orleans isolation is critical and well-articulated |
 | Existing Generator Claims | ✅ **VERIFIED** | All 10 claims in verification.md confirmed |
 | Cross-Project Generation | ✅ **VALIDATED** | POC proved `PrivateAssets="all"` pattern works |
-| Attribute Naming | ⚠️ **REVISE** | Does not follow Orleans explicit-verb style |
+| Attribute Naming | ✅ **RESOLVED** | `Generate*`/`Define*` convention adopted per naming-taxonomy.md |
 | DI Generator Approach | ✅ **VALID** | Standard same-project generation; no issues |
 | Phase 1 (Enable Existing) | ✅ **SAFE** | Low risk; incremental improvement |
 | Phases 4-5 (Client DTOs/Actions) | ✅ **APPROVED** | Pattern validated; proceed with implementation |
@@ -149,52 +149,37 @@ Not:
 
 ---
 
-## Attribute Naming Review
+## Attribute Naming Review — RESOLVED
 
-### Current Proposal
+The naming convention has been resolved via integration with the project-naming
+work. See [naming-taxonomy.md](naming-taxonomy.md) for complete details.
 
-| Proposed Attribute | Style |
-| ------------------ | ----- |
-| `[GenerateClientDto]` | `Generate` + noun |
-| `[GenerateClientAction]` | `Generate` + noun |
+### Adopted Convention
 
-### Orleans Style Reference
+| Pattern | Examples | Purpose |
+|---------|----------|---------|
+| `Generate*` | `[GenerateAggregateService]`, `[GenerateClientDto]`, `[GenerateClientAction]` | Triggers source generation |
+| `Define*` | `[DefineProjectionPath]`, `[DefineBrookName]` | Assigns identity/metadata |
 
-Orleans uses explicit verb prefixes indicating **what happens**:
+### Rationale
 
-| Orleans Attribute | Pattern |
-| ----------------- | ------- |
-| `[GenerateSerializer]` | Generate + capability |
-| `[Immutable]` | Adjective (describes type) |
-| `[Alias("...")]` | Noun (provides identity) |
-| `[Id(n)]` | Noun (provides identity) |
+- **`Generate*`** aligns with Orleans `[GenerateSerializer]` style
+- **`Define*`** follows Orleans identity marker style (`[Alias]`, `[Id]`)
+- Legacy attributes (`[AggregateService]`, `[UxProjection]`) shimmed with `[Obsolete]`
 
-### Recommended Changes
+### Migration Path
 
-For **opt-in generation markers**, use explicit action verbs:
+```csharp
+// New canonical attribute
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class GenerateAggregateServiceAttribute : Attribute { ... }
 
-| Current Name | Revised Name | Rationale |
-| ------------ | ------------ | --------- |
-| `[GenerateClientDto]` | `[ExposeToClient]` | States intent (visibility), not mechanism |
-| `[GenerateClientAction]` | `[GenerateClientDispatcher]` | Matches Orleans `[GenerateSerializer]` style |
+// Legacy shim for backward compatibility
+[Obsolete("Use GenerateAggregateServiceAttribute instead.")]
+public sealed class AggregateServiceAttribute : GenerateAggregateServiceAttribute { ... }
+```
 
-Alternative:
-
-| Current Name | Revised Name | Rationale |
-| ------------ | ------------ | --------- |
-| `[GenerateClientDto]` | `[ClientVisible]` | Declarative; indicates exposure |
-| `[GenerateClientAction]` | `[ClientDispatchable]` | Declarative; indicates dispatch capability |
-
-### My Preference
-
-Use **declarative adjectives** that describe the capability rather than the
-implementation:
-
-- `[ClientVisible]` — this projection is visible to clients
-- `[ClientDispatchable]` — this command is dispatchable from clients
-
-This follows the `[Immutable]` pattern where the attribute describes the
-**property** of the type, not the **mechanism**.
+Generators recognize both old and new names during transition.
 
 ---
 
@@ -230,24 +215,11 @@ This follows the `[Immutable]` pattern where the attribute describes the
 
 ---
 
-## Remaining Advisory: Attribute Naming Convention
-
-| Style | Example | Pro | Con |
-| ----- | ------- | --- | --- |
-| Action verb | `[GenerateClientDto]` | Clear mechanism | Implementation-focused |
-| Declarative | `[ClientVisible]` | Intent-focused | Indirect mechanism |
-| Hybrid | `[ExposeToClient]` | Explicit action | Slightly verbose |
-
-**Recommended:** `[ClientVisible]` and `[ClientDispatchable]` for Orleans-style
-declarative approach. This is advisory, not blocking.
-
----
-
 ## Summary
 
 1. ✅ **Cross-project pattern VALIDATED** via POC using `PrivateAssets="all"`
-2. ⚠️ **ADVISORY:** Consider renaming attributes to `[ClientVisible]` / `[ClientDispatchable]`
-3. ✅ **All phases APPROVED** — proceed with implementation
+2. ✅ **Attribute naming RESOLVED** — `Generate*`/`Define*` convention adopted
+3. ✅ **All phases APPROVED** — proceed with implementation (Phase 0 first)
 
 ---
 
@@ -255,7 +227,7 @@ declarative approach. This is advisory, not blocking.
 
 | Condition | Status |
 | --------- | ------ |
-| All Phases (1-5) | ✅ APPROVED — Proceed with implementation |
-| Attribute naming | 🟡 ADVISORY — Recommend revision but not blocking |
+| All Phases (0-5) | ✅ APPROVED — Proceed with implementation |
+| Attribute naming | ✅ RESOLVED — `Generate*`/`Define*` convention adopted |
 
-**Next Action:** Proceed with Phase 1 implementation.
+**Next Action:** Proceed with Phase 0 (attribute naming alignment), then Phase 1.

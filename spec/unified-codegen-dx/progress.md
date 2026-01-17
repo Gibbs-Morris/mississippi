@@ -311,3 +311,69 @@ Target.Contracts.dll
 
 **✅ Fully Approved for Implementation** — All phases (1-5) validated. Cross-
 project generation pattern proven via POC. Next action: Begin Phase 1.
+
+## 2026-01-18 (Naming Integration)
+
+### Project Naming Integration
+
+Integrated `.scratchpad/project-naming/` work into unified codegen spec.
+
+**Files reviewed:**
+
+- `00-boundary-rules.md` — Strict WASM/ASP.NET/Orleans separation rules
+- `03-boundary-violations.md` — 7 current violations in codebase
+- `04-target-architecture.md` — Project taxonomy with runtime suffixes
+- `05-migration-plan.md` — Phase 0-3 migration strategy
+- `06-project-names.md` — Complete project/attribute name mappings
+
+### Attribute Naming Convention Adopted
+
+Resolved the architect review's advisory on attribute naming:
+
+| Pattern | Examples | Purpose |
+|---------|----------|---------|
+| `Generate*` | `[GenerateAggregateService]`, `[GenerateClientDto]` | Triggers source generation |
+| `Define*` | `[DefineProjectionPath]`, `[DefineBrookName]` | Assigns identity/metadata |
+
+**Rationale:**
+
+- `Generate*` aligns with Orleans `[GenerateSerializer]` style
+- `Define*` follows Orleans identity marker style (`[Alias]`, `[Id]`)
+- Legacy shims with `[Obsolete]` for backward compatibility
+
+### Migration Strategy
+
+```csharp
+// New canonical attribute
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class GenerateAggregateServiceAttribute : Attribute { ... }
+
+// Legacy shim
+[Obsolete("Use GenerateAggregateServiceAttribute instead.")]
+public sealed class AggregateServiceAttribute : GenerateAggregateServiceAttribute { ... }
+```
+
+### Phase 0 Added
+
+New Phase 0 (attribute naming alignment) added before Phase 1:
+
+1. Create `GenerateAggregateServiceAttribute` with `AggregateServiceAttribute` shim
+2. Create `GenerateProjectionApiAttribute` with `UxProjectionAttribute` shim
+3. Create `DefineProjectionPathAttribute` with `ProjectionPathAttribute` shim
+4. Update generators to recognize both old and new attribute names
+5. Verify backward compatibility with existing tests
+6. Update Cascade sample to use new names
+
+### Documents Created/Updated
+
+1. **naming-taxonomy.md** (NEW) — Complete naming conventions document
+2. **README.md** — Added Phase 0, updated decisions, added naming-taxonomy.md
+3. **implementation-plan.md** — Added Phase 0 and naming summary sections
+4. **handoff.md** — Added Phase 0 checklist, updated attribute names
+5. **rfc.md** — Added naming convention decision
+6. **architect-review.md** — Changed attribute naming from ADVISORY to RESOLVED
+
+### Status
+
+**Ready for Implementation** — Phase 0 (attribute naming) should be done first,
+then Phases 1-5 as previously planned.

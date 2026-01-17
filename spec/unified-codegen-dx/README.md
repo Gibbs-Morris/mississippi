@@ -6,19 +6,21 @@
 
 **Architect Review:** ✅ APPROVED — See [architect-review.md](architect-review.md)
 
-- **All Phases (1-5):** ✅ Approved — proceed with implementation
+- **All Phases (0-5):** ✅ Approved — proceed with implementation
 - **Cross-project generation:** ✅ Validated via POC using `PrivateAssets="all"`
-- **Attribute naming:** 🟡 Advisory — consider `[ClientVisible]`/`[ClientDispatchable]`
+- **Attribute naming:** ✅ Aligned — `Generate*` / `Define*` convention adopted
 
 ## Decisions (Confirmed)
 
 | Decision | Choice | Rationale |
 | -------- | ------ | --------- |
 | Attribute model | **Separate** (agg vs proj) | SRP; framework should be pluggable |
+| Attribute naming | **Generate*/Define*** | Explicit intent; Orleans-aligned |
 | DI registration | **Compile-time** (source gen) | No runtime reflection; AOT support |
 | Client action generation | **Opt-in** `[GenerateClientAction]` | Explicit control; future RBAC support |
 | Client DTO generation | **Opt-in** `[GenerateClientDto]` | Same reasoning; RBAC extensibility |
 | Future extensibility | **RBAC properties reserved** | Attributes will carry auth metadata |
+| Project naming | **Mississippi.\<Area\>.\<Runtime\>** | Enforces boundary separation |
 
 ## Overview
 
@@ -61,17 +63,20 @@ only need JSON serialization—no Orleans.
 | ---- | ------- |
 | [learned.md](learned.md) | Verified repository facts |
 | [rfc.md](rfc.md) | RFC-style design document |
+| [naming-taxonomy.md](naming-taxonomy.md) | Attribute and project naming conventions |
 | [attribute-catalog.md](attribute-catalog.md) | Complete attribute inventory |
 | [call-chain-mapping.md](call-chain-mapping.md) | Full request-response flow |
 | [verification.md](verification.md) | Claims and verification questions |
 | [implementation-plan.md](implementation-plan.md) | Step-by-step plan |
 | [progress.md](progress.md) | Work log |
 | [handoff.md](handoff.md) | Implementation handoff brief |
+| [architect-review.md](architect-review.md) | Principal architect review |
 
 ## Next Steps
 
-All major decisions confirmed. Ready for Phase 1 implementation:
+All major decisions confirmed. Ready for Phase 0 implementation:
 
-1. Add `[AggregateService]` to `ChannelAggregate` and `ConversationAggregate`
-2. Wire generated services in `Cascade.Server`
-3. Run validation builds
+1. **Phase 0:** Add `Generate*`/`Define*` attributes with legacy shims
+2. **Phase 1:** Add `[GenerateAggregateService]` to Cascade aggregates
+3. **Phase 2:** Verify `[GenerateProjectionApi]` produces correct DTOs
+4. Continue through Phases 3-5 per [implementation-plan.md](implementation-plan.md)

@@ -205,19 +205,119 @@ This proves:
 - `PrivateAssets="all"` allows compile-time access without runtime dependency
 - Orleans and Mississippi generators run independently with no conflicts
 
+## Naming and Taxonomy
+
+See [naming-taxonomy.md](naming-taxonomy.md) for the complete attribute and project
+naming conventions integrated from `.scratchpad/project-naming/`.
+
+### Attribute Naming Summary
+
+| Category | Pattern | Examples |
+|----------|---------|----------|
+| Generator triggers | `Generate*` | `[GenerateAggregateService]`, `[GenerateClientDto]` |
+| Identity markers | `Define*` | `[DefineProjectionPath]`, `[DefineBrookName]` |
+
+### Project Naming Summary
+
+| Suffix | Purpose | Orleans? |
+|--------|---------|----------|
+| `.Contracts` | Boundary-safe DTOs | ❌ No |
+| `.Orleans.Contracts` | Grain interfaces | ✅ Yes |
+| `.Orleans` | Grain implementations | ✅ Yes |
+| `.AspNet` | HTTP endpoints/hubs | ❌ No |
+| `.Blazor.Wasm` | WASM client | ❌ No |
+| `.Generated` | Source-generated output | ❌ No |
+
 ## Phases
+
+### Phase 0: Attribute Naming Alignment
+
+**Goal:** Introduce `Generate*`/`Define*` attribute naming with legacy shims.
+
+**Files to Create:**
+
+1. `src/EventSourcing.Aggregates.Abstractions/GenerateAggregateServiceAttribute.cs`
+
+   ```csharp
+   /// <summary>
+   /// Triggers source generation of aggregate service, interface, and controller.
+   /// </summary>
+   [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+   public sealed class GenerateAggregateServiceAttribute : Attribute
+   {
+       public GenerateAggregateServiceAttribute(string route) => Route = route;
+       public string Route { get; }
+   }
+
+   // Legacy shim
+   [Obsolete("Use GenerateAggregateServiceAttribute instead.")]
+   public sealed class AggregateServiceAttribute : GenerateAggregateServiceAttribute
+   {
+       public AggregateServiceAttribute(string route) : base(route) { }
+   }
+   ```
+
+2. `src/EventSourcing.UxProjections.Abstractions/Attributes/GenerateProjectionApiAttribute.cs`
+
+   ```csharp
+   /// <summary>
+   /// Triggers source generation of projection DTO, mapper, and controller.
+   /// </summary>
+   [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+   public sealed class GenerateProjectionApiAttribute : Attribute { }
+
+   // Legacy shim
+   [Obsolete("Use GenerateProjectionApiAttribute instead.")]
+   public sealed class UxProjectionAttribute : GenerateProjectionApiAttribute { }
+   ```
+
+3. `src/Inlet.Projection.Abstractions/DefineProjectionPathAttribute.cs`
+
+   ```csharp
+   /// <summary>
+   /// Assigns the HTTP/SignalR path for a projection.
+   /// </summary>
+   [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+   public sealed class DefineProjectionPathAttribute : Attribute
+   {
+       public DefineProjectionPathAttribute(string path) => Path = path;
+       public string Path { get; }
+   }
+
+   // Legacy shim
+   [Obsolete("Use DefineProjectionPathAttribute instead.")]
+   public sealed class ProjectionPathAttribute : DefineProjectionPathAttribute
+   {
+       public ProjectionPathAttribute(string path) : base(path) { }
+   }
+   ```
+
+**Generator Updates:**
+
+- Update `AggregateServiceGenerator` to recognize both attribute names
+- Update `ProjectionApiGenerator` to recognize both attribute names
+- Emit identical code for both during transition
+
+**Validation:**
+
+```powershell
+dotnet build mississippi.slnx -c Release -warnaserror
+dotnet test tests/EventSourcing.Aggregates.Generators.L0Tests/
+```
+
+Expect: All tests pass; generators work with both old and new attribute names.
 
 ### Phase 1: Enable Existing Generators in Cascade
 
-**Goal:** Add `[AggregateService]` to all aggregates; wire generated services.
+**Goal:** Add `[GenerateAggregateService]` to all aggregates; wire generated services.
 
 **Files to Modify:**
 
 1. `samples/Cascade/Cascade.Domain/Channel/ChannelAggregate.cs`
-   - Add `[AggregateService("channels")]` attribute
+   - Add `[GenerateAggregateService("channels")]` attribute
 
 2. `samples/Cascade/Cascade.Domain/Conversation/ConversationAggregate.cs`
-   - Add `[AggregateService("conversations")]` attribute
+   - Add `[GenerateAggregateService("conversations")]` attribute
 
 3. `samples/Cascade/Cascade.Server/Program.cs`
    - Replace manual `IAggregateGrainFactory.GetGenericAggregate<T>()` calls

@@ -98,12 +98,34 @@ need JSON serialization—no Orleans.
 
 ---
 
+## Naming and Taxonomy
+
+See [naming-taxonomy.md](naming-taxonomy.md) for full details. Key decisions:
+
+| Pattern | Examples | Purpose |
+|---------|----------|---------|
+| `Generate*` | `[GenerateAggregateService]`, `[GenerateClientDto]` | Triggers source generation |
+| `Define*` | `[DefineProjectionPath]`, `[DefineBrookName]` | Assigns identity/metadata |
+
+Legacy attribute names remain as `[Obsolete]` shims during transition.
+
+---
+
 ## Execution Checklist
 
-### Phase 1: Enable Existing Generators (Start Here)
+### Phase 0: Attribute Naming Alignment (Start Here)
 
-- [ ] **1.1** Add `[AggregateService("channels")]` to `ChannelAggregate.cs`
-- [ ] **1.2** Add `[AggregateService("conversations")]` to `ConversationAggregate.cs`
+- [ ] **0.1** Create `GenerateAggregateServiceAttribute` with `AggregateServiceAttribute` shim
+- [ ] **0.2** Create `GenerateProjectionApiAttribute` with `UxProjectionAttribute` shim
+- [ ] **0.3** Create `DefineProjectionPathAttribute` with `ProjectionPathAttribute` shim
+- [ ] **0.4** Update generators to recognize both old and new attribute names
+- [ ] **0.5** Build and run existing tests to verify backward compatibility
+- [ ] **0.6** Update Cascade sample to use new attribute names
+
+### Phase 1: Enable Existing Generators
+
+- [ ] **1.1** Add `[GenerateAggregateService("channels")]` to `ChannelAggregate.cs`
+- [ ] **1.2** Add `[GenerateAggregateService("conversations")]` to `ConversationAggregate.cs`
 - [ ] **1.3** Build and verify generated files exist in `obj/`
 - [ ] **1.4** Register generated services in Silo DI
 - [ ] **1.5** Replace one manual endpoint to use generated service (UserAggregate)
@@ -132,7 +154,7 @@ need JSON serialization—no Orleans.
 - [ ] **4.2** Add `[GenerateClientDto]` to client-visible projections:
 
     ```csharp
-    [UxProjection]
+    [GenerateProjectionApi]
     [GenerateClientDto]  // Opt-in for client generation
     public sealed record ChannelMessagesProjection { ... }
     ```
