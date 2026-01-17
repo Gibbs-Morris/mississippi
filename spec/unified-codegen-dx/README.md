@@ -30,7 +30,7 @@ projection state with attributes automatically generates:
 1. Strongly typed services
 2. HTTP APIs
 3. Client DTOs (without Orleans dependencies)
-4. Client-side Fluxor actions/effects for command dispatch
+4. Client-side Reservoir actions/effects for command dispatch
 
 ## Pluggable Architecture
 

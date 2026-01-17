@@ -10,7 +10,7 @@ through to Cosmos storage and back to client-side state updates.
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ WASM Client (Blazor WebAssembly)                                            │
-│ ├── Reservoir (Fluxor-style state management)                               │
+│ ├── Reservoir (client-side state management)                               │
 │ ├── Inlet.Blazor.WebAssembly (projection subscriptions, SignalR effects)    │
 │ ├── IInletStore (projection cache + action dispatch)                        │
 │ └── HttpClient (REST calls for commands and projection data)                │

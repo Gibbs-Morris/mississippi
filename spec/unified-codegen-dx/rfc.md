@@ -82,7 +82,7 @@ running in different pods/envs."
 │  Allowed Dependencies:                                                      │
 │    ✅ System.Text.Json                                                      │
 │    ✅ Microsoft.AspNetCore.SignalR.Client                                   │
-│    ✅ Fluxor                                                                │
+│    ✅ Reservoir                                                             │
 │    ✅ Cascade.Contracts (or .Contracts.Generated)                           │
 │                                                                             │
 │  Forbidden:                                                                 │
@@ -383,7 +383,7 @@ Issues: no loading states, no typed errors, no retry, repeated boilerplate.
 
 ### Proposed Solution: `[GenerateClientAction]`
 
-Add opt-in attribute on commands to generate Fluxor actions and effects:
+Add opt-in attribute on commands to generate Reservoir actions and effects:
 
 ```csharp
 [GenerateClientAction]
@@ -474,7 +474,7 @@ Both client-side generation attributes are **opt-in**:
 | Attribute | Purpose | When to Use |
 | --------- | ------- | ----------- |
 | `[GenerateClientDto]` | Generates WASM-safe DTO | When projection should be exposed to client |
-| `[GenerateClientAction]` | Generates Fluxor action/effect | When command should be dispatchable from client |
+| `[GenerateClientAction]` | Generates Reservoir action/effect | When command should be dispatchable from client |
 
 **Why opt-in?**
 

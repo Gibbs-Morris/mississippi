@@ -229,7 +229,7 @@ and client layers.
 
 ### GenerateClientActionAttribute (Proposed)
 
-**Purpose:** Opt-in marker on commands to generate client-side Fluxor actions.
+**Purpose:** Opt-in marker on commands to generate client-side Reservoir actions.
 
 **Namespace:** `Mississippi.EventSourcing.Aggregates.Abstractions` (proposed)
 
@@ -241,7 +241,7 @@ and client layers.
 
 **Generator Output:**
 
-- `{CommandName}Action` — Fluxor action record
+- `{CommandName}Action` — Reservoir action record
 - `{CommandName}Effect` — effect that dispatches HTTP call
 - `{CommandName}SuccessAction` / `{CommandName}FailureAction` — result actions
 

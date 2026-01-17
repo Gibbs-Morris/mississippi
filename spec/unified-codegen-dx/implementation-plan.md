@@ -551,7 +551,7 @@ Each phase is independently revertible:
 
 ## Phase 5: Create ClientActionGenerator (New)
 
-**Goal:** Generate Fluxor actions and effects for client-side command dispatch.
+**Goal:** Generate Reservoir actions and effects for client-side command dispatch.
 
 ### New Attribute
 

@@ -92,7 +92,7 @@ need JSON serialization—no Orleans.
 
 - Aggregates with `[AggregateService]` → Generated services used in endpoints
 - Projections with `[UxProjection]` + `[GenerateClientDto]` → Generated DTOs
-- Commands with `[GenerateClientAction]` → Generated Fluxor actions/effects
+- Commands with `[GenerateClientAction]` → Generated Reservoir actions/effects
 - DI registrations → Generated via compile-time source generator
 - Manual Contracts DTOs → Deleted (replaced by generated)
 

@@ -14,7 +14,7 @@ This document consolidates the project and attribute naming conventions from
 | `[AggregateService]` | `[GenerateAggregateService]` | Generates service + optional API |
 | `[UxProjection]` | `[GenerateProjectionApi]` | Generates projection API endpoints |
 | — (new) | `[GenerateClientDto]` | Generates Orleans-free client DTO |
-| — (new) | `[GenerateClientAction]` | Generates Fluxor action/effect |
+| — (new) | `[GenerateClientAction]` | Generates Reservoir action/effect |
 
 ### Identity/Metadata Markers (explicit assignment intent)
 
@@ -65,7 +65,7 @@ compatibility shims:
 | Project | Purpose | Orleans-Free? |
 |---------|---------|---------------|
 | `Cascade.Contracts.Generated` | Client-visible DTOs | ✅ Yes |
-| `Cascade.Client.Generated` | Fluxor actions/effects | ✅ Yes |
+| `Cascade.Client.Generated` | Reservoir actions/effects | ✅ Yes |
 | `Cascade.Domain` | Orleans projections + aggregates | ❌ No (Orleans) |
 
 ### Composition Roots (Defaults Packages)
@@ -89,7 +89,7 @@ Strict separation between runtimes prevents dependency leakage.
 
 - `System.Text.Json`
 - `Microsoft.AspNetCore.SignalR.Client`
-- `Fluxor`
+- `Reservoir`
 - `*.Contracts` projects
 
 **Forbidden:**
