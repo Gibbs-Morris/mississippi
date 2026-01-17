@@ -1,0 +1,30 @@
+---
+sidebar_position: 2
+---
+
+# Grain Call Graph
+
+This diagram shows the call relationships between Orleans grains in the Mississippi framework.
+
+**Grains:** 3 | **Interfaces:** 3 | **Call Edges:** 1
+
+## Legend
+
+- **[STATELESS]**: StatelessWorker grain (scales out automatically)
+- **[REENTRANT]**: Reentrant grain (allows concurrent calls)
+- **[SINGLE]**: Single-activation grain (default)
+- **[RO]**: Read-only method call
+- **[AWAIT]**: Awaited call
+- **[NOAWAIT]**: Non-awaited (fire-and-forget) call
+
+```mermaid
+graph LR
+    SignalRClientGrain["SignalRClientGrain<br/>[SINGLE]"]
+    SignalRGroupGrain["SignalRGroupGrain<br/>[SINGLE]"]
+    SignalRServerDirectoryGrain["SignalRServerDirectoryGrain<br/>[SINGLE]"]
+
+    SignalRGroupGrain -->|"SendMessageAsync [NOAWAIT]"| SignalRClientGrain
+
+    classDef stateless fill:#9f9,stroke:#090
+    classDef reentrant fill:#9cf,stroke:#09c
+```

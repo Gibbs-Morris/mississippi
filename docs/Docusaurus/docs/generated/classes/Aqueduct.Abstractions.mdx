@@ -1,0 +1,73 @@
+---
+sidebar_position: 2
+---
+
+# Aqueduct.Abstractions Classes
+
+Class diagram for the Aqueduct.Abstractions project.
+
+**Types:** 14 | **Relationships:** 0
+
+```mermaid
+classDiagram
+    class AllMessage {
+        <<record>>
+    }
+    class AqueductOptions
+    class IAqueductGrainFactory {
+        <<interface>>
+    }
+    class IAqueductNotifier {
+        <<interface>>
+    }
+    class IHeartbeatManager {
+        <<interface>>
+    }
+    class IServerIdProvider {
+        <<interface>>
+    }
+    class ISignalRClientGrain {
+        <<interface>>
+    }
+    class ISignalRGroupGrain {
+        <<interface>>
+    }
+    class ISignalRServerDirectoryGrain {
+        <<interface>>
+    }
+    class IStreamSubscriptionManager {
+        <<interface>>
+    }
+    class ServerMessage {
+        <<record>>
+    }
+    class SignalRClientKey {
+        <<record>>
+    }
+    class SignalRGroupKey {
+        <<record>>
+    }
+    class SignalRServerDirectoryKey {
+        <<record>>
+    }
+
+```
+
+## Type List
+
+| Type | Kind | Namespace |
+|------|------|-----------|
+| AllMessage | record | Mississippi.Aqueduct.Abstractions.Messages |
+| AqueductOptions | class | Mississippi.Aqueduct.Abstractions |
+| IAqueductGrainFactory | interface | Mississippi.Aqueduct.Abstractions |
+| IAqueductNotifier | interface | Mississippi.Aqueduct.Abstractions |
+| IHeartbeatManager | interface | Mississippi.Aqueduct.Abstractions |
+| IServerIdProvider | interface | Mississippi.Aqueduct.Abstractions |
+| ISignalRClientGrain | interface | Mississippi.Aqueduct.Abstractions.Grains |
+| ISignalRGroupGrain | interface | Mississippi.Aqueduct.Abstractions.Grains |
+| ISignalRServerDirectoryGrain | interface | Mississippi.Aqueduct.Abstractions.Grains |
+| IStreamSubscriptionManager | interface | Mississippi.Aqueduct.Abstractions |
+| ServerMessage | record | Mississippi.Aqueduct.Abstractions.Messages |
+| SignalRClientKey | record struct | Mississippi.Aqueduct.Abstractions.Keys |
+| SignalRGroupKey | record struct | Mississippi.Aqueduct.Abstractions.Keys |
+| SignalRServerDirectoryKey | record struct | Mississippi.Aqueduct.Abstractions.Keys |

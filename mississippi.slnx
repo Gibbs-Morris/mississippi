@@ -6,6 +6,9 @@
     <Project Path="src\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
     <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
   </Folder>
+  <Folder Name="/Framework/Tools/">
+    <Project Path="src\DocumentationGenerator\DocumentationGenerator.csproj" />
+  </Folder>
   <Folder Name="/Framework/Aqueduct/">
     <Project Path="src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
     <Project Path="src\Aqueduct\Aqueduct.csproj" />
@@ -63,6 +66,9 @@
     <Project Path="tests\Common.Abstractions.L0Tests\Common.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Common.Cosmos.L0Tests\Common.Cosmos.L0Tests.csproj" />
     <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
+  </Folder>
+  <Folder Name="/Tests/Tools/">
+    <Project Path="tests\DocumentationGenerator.L0Tests\DocumentationGenerator.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Aqueduct/">
     <Project Path="tests\Aqueduct.Abstractions.L0Tests\Aqueduct.Abstractions.L0Tests.csproj" />

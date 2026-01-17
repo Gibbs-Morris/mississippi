@@ -1,0 +1,28 @@
+{
+  "enabledReports": [
+    "ProjectDependencies",
+    "ClassDiagrams",
+    "OrleansGrains"
+  ],
+  "classDiagrams": {
+    "includeProjects": [],
+    "excludeProjects": ["Tests", "Benchmarks", "AppHost"],
+    "includeNamespaces": [],
+    "excludeNamespaces": [],
+    "maxTypesPerDiagram": 30,
+    "publicOnly": false
+  },
+  "projectDependencies": {
+    "includeSolutions": ["mississippi.slnx", "samples.slnx"],
+    "includeProjects": [],
+    "excludeProjects": []
+  },
+  "orleans": {
+    "includeProjects": [],
+    "excludeProjects": ["Tests", "Benchmarks"],
+    "includeNamespaces": [],
+    "excludeNamespaces": [],
+    "maxEdges": 100,
+    "publicOnly": false
+  }
+}

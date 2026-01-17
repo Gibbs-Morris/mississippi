@@ -25,6 +25,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache nugets
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: Restore DocumentationGenerator
+        run: dotnet restore src/DocumentationGenerator/DocumentationGenerator.csproj
+
+      - name: Build DocumentationGenerator
+        run: dotnet build src/DocumentationGenerator/DocumentationGenerator.csproj --configuration Release --no-restore
+
+      - name: Run DocumentationGenerator
+        run: dotnet run --project src/DocumentationGenerator/DocumentationGenerator.csproj --configuration Release --no-build -- --repoRoot ${{ github.workspace }} --config ${{ github.workspace }}/docsgen.json
+
+      - name: Run DocumentationGenerator Tests
+        run: dotnet test tests/DocumentationGenerator.L0Tests/DocumentationGenerator.L0Tests.csproj --configuration Release --no-restore
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

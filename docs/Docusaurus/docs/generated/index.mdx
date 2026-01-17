@@ -1,0 +1,43 @@
+---
+sidebar_position: 1
+---
+
+# Generated Documentation
+
+This documentation is automatically generated from the Mississippi repository source code.
+
+## Available Reports
+
+- **ClassDiagrams**: Generates class diagrams from source code via Roslyn analysis
+- **OrleansGrains**: Generates Orleans grain call mapping with read-only/stateless classifications
+- **ProjectDependencies**: Generates project dependency diagrams from solution files
+
+## How This Works
+
+The documentation generator analyzes the repository's .NET code and produces:
+
+- **Project dependency diagrams** showing relationships between projects
+- **Class diagrams** derived from source code via Roslyn analysis
+- **Orleans grain call mappings** showing data flow between grains
+
+All diagrams are generated as Mermaid blocks embedded in MDX files.
+
+## Regenerating
+
+To regenerate this documentation locally:
+
+```bash
+pwsh ./eng/src/agent-scripts/generate-docs.ps1
+```
+
+Or run the generator directly:
+
+```bash
+dotnet run --project src/DocumentationGenerator -- --repoRoot .
+```
+
+## Important Notes
+
+- This folder (`generated/`) is completely overwritten on each generation
+- Do not manually edit files in this directory
+- Changes to source code will be reflected after regeneration

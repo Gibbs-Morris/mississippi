@@ -1,0 +1,37 @@
+---
+sidebar_position: 3
+---
+
+# Grain Call Matrix
+
+Detailed view of grain-to-grain method calls.
+
+## All Calls
+
+| Source Grain | Target Interface | Method | Read-Only | Awaited |
+|--------------|------------------|--------|-----------|---------|
+| SignalRGroupGrain | ISignalRClientGrain | SendMessageAsync | ❌ | ⚠️ NOAWAIT |
+
+## Top Callers
+
+Grains that make the most outgoing calls:
+
+| Grain | Outgoing Calls |
+|-------|----------------|
+| SignalRGroupGrain | 1 |
+
+## Top Callees
+
+Interfaces that receive the most calls:
+
+| Interface | Incoming Calls |
+|-----------|----------------|
+| ISignalRClientGrain | 1 |
+
+## Grain Classifications
+
+| Grain | Classification | Namespace |
+|-------|----------------|-----------|
+| SignalRClientGrain | SINGLE | Mississippi.Aqueduct.Grains.Grains |
+| SignalRGroupGrain | SINGLE | Mississippi.Aqueduct.Grains.Grains |
+| SignalRServerDirectoryGrain | SINGLE | Mississippi.Aqueduct.Grains.Grains |
