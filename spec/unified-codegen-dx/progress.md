@@ -157,7 +157,7 @@ Traced code to verify SignalR/HTTP pattern:
 
 1. ~~Run markdownlint on spec files~~ ✓
 2. ~~Commit spec folder~~ ✓ (commit c91cbca)
-3. Present decisions to user for approval before implementation
+3. ~~Present decisions to user for approval~~ ✓
 
 ### Commit
 
@@ -173,3 +173,57 @@ spec(unified-codegen-dx): address user feedback on Orleans isolation
 
 Commit: c91cbca
 ```
+
+## 2026-01-17 (continued - decisions confirmed)
+
+### User Decisions
+
+User confirmed all remaining decisions:
+
+1. **Attribute model**: Keep **separate** for aggregates and projections
+   - Rationale: SRP; framework should be pluggable (different projection backends)
+
+2. **DI registration**: Use **compile-time** source generators
+   - Rationale: No runtime reflection cost; better AOT support
+
+3. **Client action generation**: **Opt-in** via `[GenerateClientAction]`
+   - Rationale: Explicit control; future RBAC properties
+
+4. **Client DTO generation**: **Opt-in** via `[GenerateClientDto]`
+   - Same rationale as client actions
+
+5. **Future extensibility**: Reserve **RBAC properties** on attributes
+   - Rationale: Attributes will carry authorization metadata (roles, permissions,
+     policies) for generated endpoints and actions in future versions
+
+### Documents Updated
+
+1. **rfc.md**:
+   - Added "Decisions (Confirmed)" table at top
+   - Added "Attribute Design: SRP and RBAC Extensibility" section
+   - Added attribute hierarchy diagram (current vs future RBAC)
+   - Added opt-in model explanation
+   - Reserved RBAC properties in attribute schema
+   - Updated Goals to include pluggable architecture and RBAC extensibility
+
+2. **implementation-plan.md**:
+   - Updated Phase 4 to use opt-in `[GenerateClientDto]` attribute
+   - Added attribute definition with reserved RBAC properties
+   - Added migration step to add `[GenerateClientDto]` to projections
+
+3. **handoff.md**:
+   - Added "Decisions (Confirmed)" table at top
+   - Updated target state to reflect opt-in model
+   - Updated Phase 3 to note compile-time approach
+   - Updated Phase 4 checklist for opt-in attribute workflow
+
+4. **README.md**:
+   - Changed status to "Decisions Made → Ready for Implementation"
+   - Added "Decisions (Confirmed)" table
+   - Added "Pluggable Architecture" section
+   - Updated next steps for Phase 1
+
+### Status
+
+**Ready for Implementation** — All major decisions confirmed. Spec package
+complete. Next action: Begin Phase 1 (enable existing generators in Cascade).

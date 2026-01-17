@@ -4,8 +4,18 @@
 
 - **Author**: Planning Agent
 - **Created**: 2026-01-17
-- **Status**: Draft → Decision Required
+- **Status**: Draft → **Decisions Made** → Ready for Implementation
 - **Tracking**: `spec/unified-codegen-dx/`
+
+## Decisions (Confirmed)
+
+| Question | Decision | Rationale |
+| -------- | -------- | --------- |
+| Unified vs separate attributes? | **Separate** | SRP; aggregates and projections are different concerns. Framework should be pluggable—users may want different projection backends. |
+| DI registration approach? | **Compile-time** (source generators) | No runtime reflection cost; compile-time verification; better AOT support. |
+| Client action generation? | **Opt-in** via `[GenerateClientAction]` | Explicit control; future RBAC properties will be added to these attributes. |
+| Client DTO generation? | **Opt-in** via `[GenerateClientDto]` | Same reasoning; explicit control for what gets exposed to client; RBAC extensibility. |
+| Future extensibility? | **RBAC properties** on attributes | Attributes will carry authorization metadata (roles, permissions, policies) for generated endpoints and actions. |
 
 ## Problem Statement
 
@@ -40,13 +50,20 @@ boilerplate:
 3. **Minimal Boilerplate** — Reduce or eliminate manual DTO mirroring and
    80+ line DI registrations.
 
-4. **Cascade Adoption** — Migrate sample to use generators end-to-end.
+4. **Pluggable Architecture** — Keep aggregates and projections as separate
+   concerns so users can swap projection backends without affecting aggregates.
+
+5. **RBAC Extensibility** — Design attributes to support future authorization
+   properties (roles, permissions, policies).
+
+6. **Cascade Adoption** — Migrate sample to use generators end-to-end.
 
 ## Non-Goals
 
 - Change Orleans grain activation or persistence patterns.
 - Modify existing public API contracts in Mississippi libraries.
 - Support non-HTTP transports (gRPC, GraphQL) in this phase.
+- Implement RBAC in this phase (design for it, don't build it).
 
 ## Critical Constraint: Three-Layer Isolation
 
@@ -365,6 +382,92 @@ Dispatch(new CreateChannelAction
 
 **Target Project:** `Cascade.Client` (or `*.Client.Generated`)
 
+## Attribute Design: SRP and RBAC Extensibility
+
+### Principle: Separate Concerns
+
+Aggregates and projections are different architectural concerns:
+
+- **Aggregates** — Command handling, state transitions, event emission
+- **Projections** — Query optimization, read models, client consumption
+
+Users may want different projection backends (Cosmos, SQL, Redis) without
+affecting aggregate infrastructure. Keeping attributes separate enables:
+
+1. **Independent versioning** — Projection attributes can evolve without
+   touching aggregate attributes.
+2. **Backend swapping** — Switch projection storage without changing aggregates.
+3. **Opt-in generation** — Each concern opts into generation independently.
+
+### Attribute Hierarchy (Current → Future)
+
+```text
+Current Phase (v1):
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ [AggregateService(route)]           │ [UxProjection]                        │
+│ [GenerateClientAction]              │ [GenerateClientDto]                   │
+│                                     │ [ProjectionPath(path)]                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Future Phase (v2 - RBAC):
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ [AggregateService(route,            │ [UxProjection]                        │
+│   RequiredRoles = ["Admin"],        │ [GenerateClientDto(                   │
+│   RequiredPermissions = ["write"])] │   RequiredRoles = ["Reader"],         │
+│                                     │   RequiredPermissions = ["read"])]    │
+│ [GenerateClientAction(              │ [ProjectionPath(path,                 │
+│   RequiredPolicy = "CanCreate")]    │   RequiredPolicy = "CanView")]        │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Opt-In Model
+
+Both client-side generation attributes are **opt-in**:
+
+| Attribute | Purpose | When to Use |
+| --------- | ------- | ----------- |
+| `[GenerateClientDto]` | Generates WASM-safe DTO | When projection should be exposed to client |
+| `[GenerateClientAction]` | Generates Fluxor action/effect | When command should be dispatchable from client |
+
+**Why opt-in?**
+
+1. Not all projections are client-visible (some are internal).
+2. Not all commands are client-dispatchable (some are system-only).
+3. RBAC metadata will control who can call what—opt-in makes this explicit.
+4. Generated code size stays minimal.
+
+### Future RBAC Properties (Design Now, Implement Later)
+
+Reserve these properties for future RBAC implementation:
+
+```csharp
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class GenerateClientDtoAttribute : Attribute
+{
+    // Current
+    public string? DtoName { get; set; }
+
+    // Future RBAC (reserved, not yet implemented)
+    public string[]? RequiredRoles { get; set; }
+    public string[]? RequiredPermissions { get; set; }
+    public string? RequiredPolicy { get; set; }
+}
+
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class GenerateClientActionAttribute : Attribute
+{
+    // Current
+    public string? ActionName { get; set; }
+
+    // Future RBAC (reserved, not yet implemented)
+    public string[]? RequiredRoles { get; set; }
+    public string[]? RequiredPermissions { get; set; }
+    public string? RequiredPolicy { get; set; }
+}
+```
+
+Generators will ignore RBAC properties in v1 but the schema is ready for v2.
+
 ## Alternatives Considered
 
 | Alternative | Why Rejected |
@@ -373,6 +476,7 @@ Dispatch(new CreateChannelAction
 | Reflection-based DI | Runtime cost; no compile-time verification |
 | Manual DTO maintenance | Status quo; high duplication risk |
 | Full RPC framework | Over-engineering; HTTP is sufficient |
+| Unified attribute for agg+proj | Violates SRP; limits pluggability |
 
 ## Security Considerations
 
@@ -380,6 +484,7 @@ Dispatch(new CreateChannelAction
   types. No new auth surface.
 - No secrets or credentials flow through generators.
 - Client actions use same HTTP endpoints; no new attack surface.
+- Future RBAC properties will generate `[Authorize]` attributes on endpoints.
 
 ## Observability
 
@@ -395,6 +500,8 @@ Dispatch(new CreateChannelAction
 - **Migration Path** — Add attributes incrementally; delete manual code once
   generated equivalents are verified.
 - **Breaking Changes** — None to public Mississippi APIs.
+- **RBAC Forward Compat** — Attributes reserve properties for RBAC; adding
+  them later won't break existing code.
 
 ## Risks
 
@@ -404,3 +511,4 @@ Dispatch(new CreateChannelAction
 | Build ordering issues | Low | High | Use `InternalsVisibleTo` and analyzer references |
 | Generator performance | Low | Low | Incremental generators already in use |
 | Client action naming conflicts | Low | Low | Use namespace scoping |
+| RBAC property breaking changes | Low | Medium | Reserve properties now with nullable types |

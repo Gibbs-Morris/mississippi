@@ -179,12 +179,36 @@ Expect: Generated `DomainRegistrations.AddDomain()` method.
 
 ### Phase 4: Create ClientDtoGenerator and Migrate Client
 
-**Goal:** Generate WASM-safe DTOs; delete manual Contracts.
+**Goal:** Generate WASM-safe DTOs via opt-in `[GenerateClientDto]` attribute.
 
-**New Files:**
+**New Attribute:**
+
+Create `[GenerateClientDto]` in `EventSourcing.UxProjections.Abstractions`:
+
+```csharp
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+public sealed class GenerateClientDtoAttribute : Attribute
+{
+    /// <summary>Optional custom DTO name (default: {ProjectionName}Dto).</summary>
+    public string? DtoName { get; set; }
+
+    // Reserved for future RBAC (v2)
+    // public string[]? RequiredRoles { get; set; }
+    // public string[]? RequiredPermissions { get; set; }
+    // public string? RequiredPolicy { get; set; }
+}
+```
+
+**Why opt-in?**
+
+- Not all projections are client-visible (some are internal).
+- Future RBAC properties will control who can access which DTOs.
+- Keeps generated output minimal and intentional.
+
+**New Generator:**
 
 1. `src/EventSourcing.Generators/ClientDtoGenerator.cs`
-   - Scan `[UxProjection]` types
+   - Scan `[UxProjection]` types that ALSO have `[GenerateClientDto]`
    - Emit `{Name}Dto` records without Orleans attributes
    - Target output: `Cascade.Contracts.Generated` project
 
@@ -196,7 +220,17 @@ Expect: Generated `DomainRegistrations.AddDomain()` method.
 
 **Migration Steps:**
 
-1. Create `Cascade.Contracts.Generated.csproj`:
+1. Add `[GenerateClientDto]` to client-visible projections in Domain:
+
+   ```csharp
+   [ProjectionPath("cascade/channels")]
+   [UxProjection]
+   [GenerateClientDto]  // <-- opt-in for client generation
+   [GenerateSerializer]
+   public sealed record ChannelMessagesProjection { ... }
+   ```
+
+2. Create `Cascade.Contracts.Generated.csproj`:
 
    ```xml
    <Project Sdk="Microsoft.NET.Sdk">
@@ -213,16 +247,17 @@ Expect: Generated `DomainRegistrations.AddDomain()` method.
      <ItemGroup>
        <PackageReference Include="Inlet.Projection.Abstractions" />
      </ItemGroup>
+     <!-- ⚠️ NO Orleans packages allowed -->
    </Project>
    ```
 
-2. Update `Cascade.Client.csproj`:
+3. Update `Cascade.Client.csproj`:
    - Replace `Cascade.Contracts` reference with `Cascade.Contracts.Generated`
 
-3. Delete manual DTOs:
+4. Delete manual DTOs:
    - `samples/Cascade/Cascade.Contracts/Projections/*.cs` (9 files)
 
-4. Update `Cascade.Contracts` to contain only:
+5. Update `Cascade.Contracts` to contain only:
    - `Api/` request/response DTOs (not projection DTOs)
    - `Storage/` types if needed
 

@@ -5,6 +5,16 @@
 Improve Mississippi's developer experience by enabling existing source generators
 and extending them to eliminate manual DTO duplication and DI boilerplate.
 
+## Decisions (Confirmed)
+
+| Decision | Choice | Rationale |
+| -------- | ------ | --------- |
+| Attribute model | **Separate** (agg vs proj) | SRP; framework should be pluggable |
+| DI registration | **Compile-time** (source gen) | No runtime reflection; AOT support |
+| Client action generation | **Opt-in** `[GenerateClientAction]` | Explicit control; future RBAC support |
+| Client DTO generation | **Opt-in** `[GenerateClientDto]` | Same reasoning; RBAC extensibility |
+| Future extensibility | **RBAC properties reserved** | Attributes will carry auth metadata |
+
 ## Critical Constraint: Orleans Isolation
 
 **User's Stated Concern:** "The biggest concern is the Orleans attributes leaking
@@ -48,9 +58,9 @@ need JSON serialization—no Orleans.
 ## Target State
 
 - Aggregates with `[AggregateService]` → Generated services used in endpoints
-- Projections with `[UxProjection]` → Generated DTOs in `Cascade.Contracts.Generated`
-- Commands with `[GenerateClientAction]` → Generated actions in `Cascade.Client.Generated`
-- DI registrations → Generated from discovered types
+- Projections with `[UxProjection]` + `[GenerateClientDto]` → Generated DTOs
+- Commands with `[GenerateClientAction]` → Generated Fluxor actions/effects
+- DI registrations → Generated via compile-time source generator
 - Manual Contracts DTOs → Deleted (replaced by generated)
 
 ---
@@ -74,18 +84,27 @@ need JSON serialization—no Orleans.
 - [ ] **2.3** Document differences (naming, property handling)
 - [ ] **2.4** Make go/no-go decision on unified approach
 
-### Phase 3: DI Generator (If Phase 2 approved)
+### Phase 3: DI Generator (Compile-Time)
 
-- [ ] **3.1** Create `DomainRegistrationsGenerator` project
+- [ ] **3.1** Create `DomainRegistrationsGenerator` in `EventSourcing.Generators`
 - [ ] **3.2** Implement discovery of handlers, reducers, event types
 - [ ] **3.3** Generate `AddGenerated{Namespace}Domain()` method
 - [ ] **3.4** Add tests for generator
 - [ ] **3.5** Replace `CascadeRegistrations.cs` with generated call
 - [ ] **3.6** Verify build and runtime
 
-### Phase 4: Client DTO Generator + Contracts.Generated
+### Phase 4: Client DTO Generator (Opt-In)
 
-- [ ] **4.1** Create `Cascade.Contracts.Generated.csproj`:
+- [ ] **4.1** Create `[GenerateClientDto]` attribute in abstractions
+- [ ] **4.2** Add `[GenerateClientDto]` to client-visible projections:
+
+    ```csharp
+    [UxProjection]
+    [GenerateClientDto]  // Opt-in for client generation
+    public sealed record ChannelMessagesProjection { ... }
+    ```
+
+- [ ] **4.3** Create `Cascade.Contracts.Generated.csproj`:
 
     ```xml
     <Project Sdk="Microsoft.NET.Sdk">
