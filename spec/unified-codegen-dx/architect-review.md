@@ -165,21 +165,23 @@ work. See [naming-taxonomy.md](naming-taxonomy.md) for complete details.
 
 - **`Generate*`** aligns with Orleans `[GenerateSerializer]` style
 - **`Define*`** follows Orleans identity marker style (`[Alias]`, `[Id]`)
-- Legacy attributes (`[AggregateService]`, `[UxProjection]`) shimmed with `[Obsolete]`
 
-### Migration Path
+### Migration Approach
+
+Since this is **pre-production**, we do a **clean rename** without backward
+compatibility shims:
 
 ```csharp
-// New canonical attribute
+// Rename attribute directly (no shims needed)
 [AttributeUsage(AttributeTargets.Class)]
-public sealed class GenerateAggregateServiceAttribute : Attribute { ... }
-
-// Legacy shim for backward compatibility
-[Obsolete("Use GenerateAggregateServiceAttribute instead.")]
-public sealed class AggregateServiceAttribute : GenerateAggregateServiceAttribute { ... }
+public sealed class GenerateAggregateServiceAttribute : Attribute
+{
+    public GenerateAggregateServiceAttribute(string route) => Route = route;
+    public string Route { get; }
+}
 ```
 
-Generators recognize both old and new names during transition.
+Update all usages in one pass; delete old attribute names.
 
 ---
 

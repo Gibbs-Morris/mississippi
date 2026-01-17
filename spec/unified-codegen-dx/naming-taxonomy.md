@@ -32,12 +32,15 @@ This document consolidates the project and attribute naming conventions from
 3. **Discoverability** — IntelliSense groups related attributes together
 4. **Separation of concerns** — generation vs metadata are distinct categories
 
-### Migration Strategy
+### Migration Approach
 
-- Add new attribute types with `Generate*`/`Define*` names
-- Keep legacy names as `[Obsolete]` shims with type-forwarders
-- Update generators to recognize both during transition
-- Update samples and documentation to use new names
+Since this is **pre-production**, we do a **clean rename** without backward
+compatibility shims:
+
+1. Rename attribute types in-place to `Generate*`/`Define*` names
+2. Update generators to use new attribute names
+3. Update all usages in samples and Mississippi source
+4. Delete old attribute names (no `[Obsolete]` shims needed)
 
 ## Project Naming Taxonomy
 

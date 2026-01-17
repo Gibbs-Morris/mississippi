@@ -115,12 +115,12 @@ Legacy attribute names remain as `[Obsolete]` shims during transition.
 
 ### Phase 0: Attribute Naming Alignment (Start Here)
 
-- [ ] **0.1** Create `GenerateAggregateServiceAttribute` with `AggregateServiceAttribute` shim
-- [ ] **0.2** Create `GenerateProjectionApiAttribute` with `UxProjectionAttribute` shim
-- [ ] **0.3** Create `DefineProjectionPathAttribute` with `ProjectionPathAttribute` shim
-- [ ] **0.4** Update generators to recognize both old and new attribute names
-- [ ] **0.5** Build and run existing tests to verify backward compatibility
-- [ ] **0.6** Update Cascade sample to use new attribute names
+- [ ] **0.1** Rename `AggregateServiceAttribute` → `GenerateAggregateServiceAttribute`
+- [ ] **0.2** Rename `UxProjectionAttribute` → `GenerateProjectionApiAttribute`
+- [ ] **0.3** Rename `ProjectionPathAttribute` → `DefineProjectionPathAttribute`
+- [ ] **0.4** Update generators to use new attribute names
+- [ ] **0.5** Update all usages in Mississippi source and samples
+- [ ] **0.6** Build and run tests to verify rename is complete
 
 ### Phase 1: Enable Existing Generators
 

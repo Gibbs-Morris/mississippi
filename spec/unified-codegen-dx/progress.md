@@ -339,41 +339,20 @@ Resolved the architect review's advisory on attribute naming:
 
 - `Generate*` aligns with Orleans `[GenerateSerializer]` style
 - `Define*` follows Orleans identity marker style (`[Alias]`, `[Id]`)
-- Legacy shims with `[Obsolete]` for backward compatibility
-
-### Migration Strategy
-
-```csharp
-// New canonical attribute
-[AttributeUsage(AttributeTargets.Class)]
-public sealed class GenerateAggregateServiceAttribute : Attribute { ... }
-
-// Legacy shim
-[Obsolete("Use GenerateAggregateServiceAttribute instead.")]
-public sealed class AggregateServiceAttribute : GenerateAggregateServiceAttribute { ... }
-```
 
 ### Phase 0 Added
 
 New Phase 0 (attribute naming alignment) added before Phase 1:
 
-1. Create `GenerateAggregateServiceAttribute` with `AggregateServiceAttribute` shim
-2. Create `GenerateProjectionApiAttribute` with `UxProjectionAttribute` shim
-3. Create `DefineProjectionPathAttribute` with `ProjectionPathAttribute` shim
-4. Update generators to recognize both old and new attribute names
-5. Verify backward compatibility with existing tests
-6. Update Cascade sample to use new names
+1. Rename `AggregateServiceAttribute` → `GenerateAggregateServiceAttribute`
+2. Rename `UxProjectionAttribute` → `GenerateProjectionApiAttribute`
+3. Rename `ProjectionPathAttribute` → `DefineProjectionPathAttribute`
+4. Update generators to use new attribute names
+5. Update all usages in Mississippi source and samples
+6. Build and run tests to verify rename is complete
 
-### Documents Created/Updated
-
-1. **naming-taxonomy.md** (NEW) — Complete naming conventions document
-2. **README.md** — Added Phase 0, updated decisions, added naming-taxonomy.md
-3. **implementation-plan.md** — Added Phase 0 and naming summary sections
-4. **handoff.md** — Added Phase 0 checklist, updated attribute names
-5. **rfc.md** — Added naming convention decision
-6. **architect-review.md** — Changed attribute naming from ADVISORY to RESOLVED
-
-### Status
+**Note:** Clean rename approach (no backward compatibility shims) since this is
+pre-production.
 
 **Ready for Implementation** — Phase 0 (attribute naming) should be done first,
 then Phases 1-5 as previously planned.

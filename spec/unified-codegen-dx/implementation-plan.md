@@ -232,11 +232,11 @@ naming conventions integrated from `.scratchpad/project-naming/`.
 
 ### Phase 0: Attribute Naming Alignment
 
-**Goal:** Introduce `Generate*`/`Define*` attribute naming with legacy shims.
+**Goal:** Rename attributes to `Generate*`/`Define*` convention (clean rename, no shims).
 
-**Files to Create:**
+**Files to Rename:**
 
-1. `src/EventSourcing.Aggregates.Abstractions/GenerateAggregateServiceAttribute.cs`
+1. `AggregateServiceAttribute.cs` → `GenerateAggregateServiceAttribute.cs`
 
    ```csharp
    /// <summary>
@@ -248,16 +248,9 @@ naming conventions integrated from `.scratchpad/project-naming/`.
        public GenerateAggregateServiceAttribute(string route) => Route = route;
        public string Route { get; }
    }
-
-   // Legacy shim
-   [Obsolete("Use GenerateAggregateServiceAttribute instead.")]
-   public sealed class AggregateServiceAttribute : GenerateAggregateServiceAttribute
-   {
-       public AggregateServiceAttribute(string route) : base(route) { }
-   }
    ```
 
-2. `src/EventSourcing.UxProjections.Abstractions/Attributes/GenerateProjectionApiAttribute.cs`
+2. `UxProjectionAttribute.cs` → `GenerateProjectionApiAttribute.cs`
 
    ```csharp
    /// <summary>
@@ -265,13 +258,9 @@ naming conventions integrated from `.scratchpad/project-naming/`.
    /// </summary>
    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
    public sealed class GenerateProjectionApiAttribute : Attribute { }
-
-   // Legacy shim
-   [Obsolete("Use GenerateProjectionApiAttribute instead.")]
-   public sealed class UxProjectionAttribute : GenerateProjectionApiAttribute { }
    ```
 
-3. `src/Inlet.Projection.Abstractions/DefineProjectionPathAttribute.cs`
+3. `ProjectionPathAttribute.cs` → `DefineProjectionPathAttribute.cs`
 
    ```csharp
    /// <summary>
@@ -283,20 +272,17 @@ naming conventions integrated from `.scratchpad/project-naming/`.
        public DefineProjectionPathAttribute(string path) => Path = path;
        public string Path { get; }
    }
-
-   // Legacy shim
-   [Obsolete("Use DefineProjectionPathAttribute instead.")]
-   public sealed class ProjectionPathAttribute : DefineProjectionPathAttribute
-   {
-       public ProjectionPathAttribute(string path) : base(path) { }
-   }
    ```
 
 **Generator Updates:**
 
-- Update `AggregateServiceGenerator` to recognize both attribute names
-- Update `ProjectionApiGenerator` to recognize both attribute names
-- Emit identical code for both during transition
+- Update `AggregateServiceGenerator` to look for `GenerateAggregateServiceAttribute`
+- Update `ProjectionApiGenerator` to look for `GenerateProjectionApiAttribute`
+
+**Usage Updates:**
+
+- Update all samples to use new attribute names
+- Update any Mississippi library usages
 
 **Validation:**
 
