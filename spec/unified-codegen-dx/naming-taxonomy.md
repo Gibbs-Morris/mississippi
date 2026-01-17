@@ -1,7 +1,7 @@
 # Naming and Taxonomy
 
-This document consolidates the project and attribute naming conventions from
-`.scratchpad/project-naming/` into the unified code generation plan.
+This document consolidates the project and attribute naming conventions for the
+unified code generation plan.
 
 ## Attribute Naming Convention
 
@@ -127,7 +127,7 @@ Strict separation between runtimes prevents dependency leakage.
 
 ## Current Boundary Violations (to be fixed)
 
-From `.scratchpad/project-naming/03-boundary-violations.md`:
+Known violations in the current codebase:
 
 1. **Orleans in Abstractions** — `*.Abstractions` projects pull Orleans SDK
 2. **WASM → Orleans** — `Inlet.Blazor.WebAssembly` transitively depends on Orleans
@@ -162,7 +162,6 @@ The unified code generation plan solves boundary violations by:
 
 ## References
 
-- Boundary rules: `.scratchpad/project-naming/00-boundary-rules.md`
-- Violations: `.scratchpad/project-naming/03-boundary-violations.md`
-- Target architecture: `.scratchpad/project-naming/04-target-architecture.md`
-- Project names: `.scratchpad/project-naming/06-project-names.md`
+- Unified codegen spec: `spec/unified-codegen-dx/`
+- Implementation plan: [implementation-plan.md](implementation-plan.md)
+- RFC: [rfc.md](rfc.md)

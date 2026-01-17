@@ -165,7 +165,7 @@ Orleans-free DTOs into a separate project using `PrivateAssets="all"`.
 
 **Evidence:**
 
-A proof-of-concept in `.scratchpad/poc-orleans-coexist/` demonstrated:
+A proof-of-concept validated the cross-project generation pattern:
 
 1. Generator scans `compilation.References` to find Domain assembly
 2. Generator finds types with `[GenerateClientDto]` marker attribute

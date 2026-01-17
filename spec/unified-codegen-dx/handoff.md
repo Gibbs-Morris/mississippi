@@ -52,7 +52,7 @@ need JSON serialization—no Orleans.
 
 **Concern:** Will Orleans generator conflict with Mississippi generator?
 
-**Answer:** ✅ **No.** POC in `.scratchpad/poc-orleans-coexist/` proves both work:
+**Answer:** ✅ **No.** A proof-of-concept validated both generators work:
 
 | Generator | Project | Output |
 |-----------|---------|--------|
@@ -181,7 +181,7 @@ Legacy attribute names remain as `[Obsolete]` shims during transition.
     </Project>
     ```
 
-    **Pattern validated via POC** (`.scratchpad/poc-cross-project-gen/`).
+    **Pattern validated via POC** (see POC Validation section above).
 
 - [ ] **4.2** Create `ClientDtoGenerator` in `EventSourcing.Generators`:
   - Strip `[Id]`, `[GenerateSerializer]`, `[Immutable]`, `[Alias]`

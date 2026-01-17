@@ -90,7 +90,7 @@ flowchart TB
 
 ## POC Validation: Dual Generator Coexistence
 
-A proof-of-concept in `.scratchpad/poc-orleans-coexist/` validated that:
+A proof-of-concept validated that:
 
 1. **Orleans generator still works** — Produces serialization code in Domain
 2. **Mississippi generator works** — Produces Orleans-free DTOs in Contracts
@@ -100,8 +100,8 @@ A proof-of-concept in `.scratchpad/poc-orleans-coexist/` validated that:
 ### POC Structure
 
 ```text
-.scratchpad/poc-orleans-coexist/
-├── Source.Domain/           # Orleans SDK + [GenerateSerializer] + [GenerateClientDto]
+# POC project structure (validated pattern)
+Source.Domain/           # Orleans SDK + [GenerateSerializer] + [GenerateClientDto]
 ├── Source.Generator/        # Mississippi generator (scans compilation.References)
 ├── Target.Contracts/        # PrivateAssets="all" ref to Domain
 └── Target.Client/           # References only Contracts
@@ -208,7 +208,7 @@ This proves:
 ## Naming and Taxonomy
 
 See [naming-taxonomy.md](naming-taxonomy.md) for the complete attribute and project
-naming conventions integrated from `.scratchpad/project-naming/`.
+naming conventions.
 
 ### Attribute Naming Summary
 
@@ -461,7 +461,7 @@ public sealed class GenerateClientDtoAttribute : Attribute
    </Project>
    ```
 
-   **Pattern validated via POC** (`.scratchpad/poc-cross-project-gen/`):
+   **Pattern validated via POC** (see POC Validation section above):
 
    - Generator scans `compilation.References` for Domain assembly
    - Generator finds types with `[GenerateClientDto]` marker
@@ -469,12 +469,15 @@ public sealed class GenerateClientDtoAttribute : Attribute
    - Client projects referencing this get **zero Orleans DLLs**
 
 3. Update `Cascade.Client.csproj`:
+
    - Replace `Cascade.Contracts` reference with `Cascade.Contracts.Generated`
 
 4. Delete manual DTOs:
+
    - `samples/Cascade/Cascade.Contracts/Projections/*.cs` (9 files)
 
 5. Update `Cascade.Contracts` to contain only:
+
    - `Api/` request/response DTOs (not projection DTOs)
    - `Storage/` types if needed
 

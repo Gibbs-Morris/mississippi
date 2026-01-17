@@ -14,7 +14,7 @@ validated the `PrivateAssets="all"` pattern.
 
 ### POC Validation (2025-01-17)
 
-A throwaway proof-of-concept in `.scratchpad/poc-orleans-coexist/` proved:
+A throwaway proof-of-concept validated the cross-project generation pattern:
 
 1. ✅ **Generators CAN read types from referenced assemblies** (not just source)
 2. ✅ **`PrivateAssets="all"` prevents Orleans from flowing transitively**

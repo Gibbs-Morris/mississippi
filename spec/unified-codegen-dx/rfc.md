@@ -186,7 +186,7 @@ The `ClientDtoGenerator` will emit a diagnostic if:
 **Concern:** Will Orleans source generator conflict with Mississippi generator?
 Both run on types with `[GenerateSerializer]` and `[GenerateClientDto]`.
 
-**Answer:** ✅ **No conflict.** POC in `.scratchpad/poc-orleans-coexist/` proves
+**Answer:** ✅ **No conflict.** A proof-of-concept validated that both generators
 both generators run independently:
 
 | Generator | Runs In | Produces | Conflict? |

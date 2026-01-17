@@ -262,7 +262,7 @@ Use `PrivateAssets="all"` pattern:
 
 ### POC Validation
 
-Built proof-of-concept in `.scratchpad/poc-cross-project-gen/`:
+Built proof-of-concept to validate cross-project generation pattern:
 
 **Structure:**
 
@@ -316,15 +316,15 @@ project generation pattern proven via POC. Next action: Begin Phase 1.
 
 ### Project Naming Integration
 
-Integrated `.scratchpad/project-naming/` work into unified codegen spec.
+Integrated project naming conventions into unified codegen spec.
 
-**Files reviewed:**
+**Key inputs (now inlined in naming-taxonomy.md):**
 
-- `00-boundary-rules.md` — Strict WASM/ASP.NET/Orleans separation rules
-- `03-boundary-violations.md` — 7 current violations in codebase
-- `04-target-architecture.md` — Project taxonomy with runtime suffixes
-- `05-migration-plan.md` — Phase 0-3 migration strategy
-- `06-project-names.md` — Complete project/attribute name mappings
+- Strict WASM/ASP.NET/Orleans boundary separation rules
+- Current boundary violations in codebase
+- Project taxonomy with runtime suffixes
+- Phase 0-3 migration strategy
+- Complete project/attribute name mappings
 
 ### Attribute Naming Convention Adopted
 

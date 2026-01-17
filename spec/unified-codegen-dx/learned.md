@@ -201,7 +201,7 @@ lines 98-105, 347).
 
 ## POC: Cross-Project Generator Coexistence
 
-**VERIFIED** via `.scratchpad/poc-orleans-coexist/`
+**VERIFIED** via proof-of-concept (see POC Validation section below)
 
 ### Key Finding: Generators CAN Read Referenced Assemblies
 
