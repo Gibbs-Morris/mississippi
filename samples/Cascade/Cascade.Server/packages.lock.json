@@ -1274,6 +1274,12 @@
       "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.OpenTelemetry.Extensions": {
+        "type": "Project",
+        "dependencies": {
+          "OpenTelemetry.Extensions.Hosting": "[1.14.0, )"
+        }
+      },
       "Mississippi.Reservoir": {
         "type": "Project",
         "dependencies": {

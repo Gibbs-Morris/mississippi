@@ -5,6 +5,7 @@
     <Project Path="src\Common.Abstractions\Common.Abstractions.csproj" />
     <Project Path="src\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
     <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
+    <Project Path="src\OpenTelemetry.Extensions\OpenTelemetry.Extensions.csproj" />
   </Folder>
   <Folder Name="/Framework/Aqueduct/">
     <Project Path="src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
@@ -62,6 +63,7 @@
     <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />
     <Project Path="tests\Common.Abstractions.L0Tests\Common.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Common.Cosmos.L0Tests\Common.Cosmos.L0Tests.csproj" />
+    <Project Path="tests\OpenTelemetry.Extensions.L0Tests\OpenTelemetry.Extensions.L0Tests.csproj" />
     <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
   </Folder>
   <Folder Name="/Tests/Aqueduct/">

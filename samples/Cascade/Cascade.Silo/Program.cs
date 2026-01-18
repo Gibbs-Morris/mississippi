@@ -18,6 +18,7 @@ using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.Inlet.Orleans;
+using Mississippi.OpenTelemetry.Extensions;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -38,15 +39,7 @@ builder.Services.AddOpenTelemetry()
         .AddRuntimeInstrumentation()
 
         // Mississippi framework meters
-        .AddMeter("Mississippi.EventSourcing.Brooks")
-        .AddMeter("Mississippi.EventSourcing.Aggregates")
-        .AddMeter("Mississippi.EventSourcing.Snapshots")
-        .AddMeter("Mississippi.EventSourcing.UxProjections")
-        .AddMeter("Mississippi.Aqueduct")
-        .AddMeter("Mississippi.Inlet")
-        .AddMeter("Mississippi.Storage.Cosmos")
-        .AddMeter("Mississippi.Storage.Snapshots")
-        .AddMeter("Mississippi.Storage.Locking")
+        .AddMississippiMeters()
 
         // Orleans meters
         .AddMeter("Microsoft.Orleans"))

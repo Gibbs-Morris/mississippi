@@ -32,6 +32,9 @@
     <!-- UX Projections API for minimal API endpoints -->
     <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
 
+    <!-- OpenTelemetry extensions -->
+    <ProjectReference Include="..\..\..\src\OpenTelemetry.Extensions\OpenTelemetry.Extensions.csproj" />
+
     <!-- Blazor WebAssembly hosting -->
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
   </ItemGroup>

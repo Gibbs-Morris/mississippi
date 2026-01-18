@@ -49,6 +49,9 @@
 
     <!-- Inlet Orleans for projection subscription grain -->
     <ProjectReference Include="..\..\..\src\Inlet.Orleans\Inlet.Orleans.csproj" />
+
+    <!-- OpenTelemetry extensions -->
+    <ProjectReference Include="..\..\..\src\OpenTelemetry.Extensions\OpenTelemetry.Extensions.csproj" />
   </ItemGroup>
 
 </Project>
