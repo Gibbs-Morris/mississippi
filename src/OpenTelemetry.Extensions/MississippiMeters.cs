@@ -61,7 +61,7 @@ public static class MississippiMeters
     /// <summary>
     ///     Gets all Mississippi meter names.
     /// </summary>
-    /// <returns>An array containing all meter names.</returns>
+    /// <value>A read-only list containing all meter names.</value>
     public static IReadOnlyList<string> All { get; } = new[]
     {
         Aqueduct,

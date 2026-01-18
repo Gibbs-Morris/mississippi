@@ -1,5 +1,3 @@
-using System.Linq;
-
 using Allure.Xunit.Attributes;
 
 using NSubstitute;
@@ -50,13 +48,14 @@ public sealed class MeterBuilderExtensionsTests
         mockBuilder.AddMississippiMeters();
 
         // Assert - verify AddMeter was called for each Mississippi meter
-        mockBuilder.Received().AddMeter(Arg.Is<string[]>(m => m.Contains(MississippiMeters.Aqueduct)));
-        mockBuilder.Received().AddMeter(Arg.Is<string[]>(m => m.Contains(MississippiMeters.Aggregates)));
-        mockBuilder.Received().AddMeter(Arg.Is<string[]>(m => m.Contains(MississippiMeters.Brooks)));
-        mockBuilder.Received().AddMeter(Arg.Is<string[]>(m => m.Contains(MississippiMeters.Inlet)));
-        mockBuilder.Received().AddMeter(Arg.Is<string[]>(m => m.Contains(MississippiMeters.Snapshots)));
-        mockBuilder.Received().AddMeter(Arg.Is<string[]>(m => m.Contains(MississippiMeters.StorageLocking)));
-        mockBuilder.Received().AddMeter(Arg.Is<string[]>(m => m.Contains(MississippiMeters.StorageSnapshots)));
-        mockBuilder.Received().AddMeter(Arg.Is<string[]>(m => m.Contains(MississippiMeters.UxProjections)));
+        // Note: AddMeter uses params string[], so .AddMeter("name") becomes .AddMeter(new[] { "name" })
+        mockBuilder.Received().AddMeter(MississippiMeters.Aqueduct);
+        mockBuilder.Received().AddMeter(MississippiMeters.Aggregates);
+        mockBuilder.Received().AddMeter(MississippiMeters.Brooks);
+        mockBuilder.Received().AddMeter(MississippiMeters.Inlet);
+        mockBuilder.Received().AddMeter(MississippiMeters.Snapshots);
+        mockBuilder.Received().AddMeter(MississippiMeters.StorageLocking);
+        mockBuilder.Received().AddMeter(MississippiMeters.StorageSnapshots);
+        mockBuilder.Received().AddMeter(MississippiMeters.UxProjections);
     }
 }
