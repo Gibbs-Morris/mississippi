@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Spring.Server" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+  </ItemGroup>
+
+</Project>

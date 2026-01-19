@@ -20,6 +20,13 @@
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
         <Project Path="samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj" />
     </Folder>
+    <Folder Name="/Samples/Spring/">
+        <Project Path="samples\Spring\Spring.Domain\Spring.Domain.csproj" />
+        <Project Path="samples\Spring\Spring.Client\Spring.Client.csproj" />
+        <Project Path="samples\Spring\Spring.Server\Spring.Server.csproj" />
+        <Project Path="samples\Spring\Spring.Silo\Spring.Silo.csproj" />
+        <Project Path="samples\Spring\Spring.AppHost\Spring.AppHost.csproj" />
+    </Folder>
     <Folder Name="/Framework/" />
 
     <Folder Name="/Framework/Core/">
