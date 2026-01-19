@@ -12,7 +12,9 @@
 else if (!string.IsNullOrEmpty(greeting))
 {
     <p>@greeting</p>
-    <p><small>Generated at: @generatedAt</small></p>
+    <p>
+        <small>Generated at: @generatedAt</small>
+    </p>
 }
 else if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -20,9 +22,13 @@ else if (!string.IsNullOrEmpty(errorMessage))
 }
 
 @code {
+
     private string? greeting;
+
     private string? generatedAt;
+
     private string? errorMessage;
+
     private bool isLoading;
 
     private async Task GreetAsync()
@@ -31,7 +37,6 @@ else if (!string.IsNullOrEmpty(errorMessage))
         greeting = null;
         errorMessage = null;
         generatedAt = null;
-
         try
         {
             GreetResultDto? result = await Http.GetFromJsonAsync<GreetResultDto>("/api/greet/World");
@@ -50,4 +55,5 @@ else if (!string.IsNullOrEmpty(errorMessage))
             isLoading = false;
         }
     }
+
 }

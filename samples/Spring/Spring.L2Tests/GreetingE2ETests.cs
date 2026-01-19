@@ -1,5 +1,6 @@
 using Spring.L2Tests.Pages;
 
+
 namespace Spring.L2Tests;
 
 /// <summary>
@@ -43,7 +44,6 @@ public sealed class GreetingE2ETests
     {
         // Arrange
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-
         IPage page = await fixture.CreatePageAsync();
         try
         {
@@ -63,43 +63,6 @@ public sealed class GreetingE2ETests
     }
 
     /// <summary>
-    ///     Verifies clicking the button invokes the Orleans grain and displays the greeting.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task SayHelloButtonShouldDisplayGreeting()
-    {
-        // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-
-        IPage page = await fixture.CreatePageAsync();
-        try
-        {
-            IndexPage indexPage = new(page);
-
-            await indexPage.NavigateAsync(fixture.ServerBaseUri);
-
-            // Act
-            await indexPage.ClickSayHelloAsync();
-            await indexPage.WaitForGreetingAsync(timeout: 30000);
-
-            // Assert
-            string? greeting = await indexPage.GetGreetingTextAsync();
-            greeting.Should().NotBeNullOrEmpty();
-            greeting.Should().Contain("Hello");
-            greeting.Should().Contain("World");
-
-            string? timestamp = await indexPage.GetGeneratedAtTextAsync();
-            timestamp.Should().NotBeNullOrEmpty();
-            timestamp.Should().Contain("Generated at:");
-        }
-        finally
-        {
-            await page.CloseAsync();
-        }
-    }
-
-    /// <summary>
     ///     Verifies multiple clicks work and update the timestamp.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
@@ -108,17 +71,15 @@ public sealed class GreetingE2ETests
     {
         // Arrange
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-
         IPage page = await fixture.CreatePageAsync();
         try
         {
             IndexPage indexPage = new(page);
-
             await indexPage.NavigateAsync(fixture.ServerBaseUri);
 
             // Act - First click
             await indexPage.ClickSayHelloAsync();
-            await indexPage.WaitForGreetingAsync(timeout: 30000);
+            await indexPage.WaitForGreetingAsync(30000);
             string? firstTimestamp = await indexPage.GetGeneratedAtTextAsync();
 
             // Small delay to ensure different timestamp
@@ -126,12 +87,46 @@ public sealed class GreetingE2ETests
 
             // Act - Second click
             await indexPage.ClickSayHelloAsync();
-            await indexPage.WaitForGreetingAsync(timeout: 30000);
+            await indexPage.WaitForGreetingAsync(30000);
             string? secondTimestamp = await indexPage.GetGeneratedAtTextAsync();
 
             // Assert - Both should have timestamps (may or may not differ depending on grain state)
             firstTimestamp.Should().NotBeNullOrEmpty();
             secondTimestamp.Should().NotBeNullOrEmpty();
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies clicking the button invokes the Orleans grain and displays the greeting.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task SayHelloButtonShouldDisplayGreeting()
+    {
+        // Arrange
+        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        IPage page = await fixture.CreatePageAsync();
+        try
+        {
+            IndexPage indexPage = new(page);
+            await indexPage.NavigateAsync(fixture.ServerBaseUri);
+
+            // Act
+            await indexPage.ClickSayHelloAsync();
+            await indexPage.WaitForGreetingAsync(30000);
+
+            // Assert
+            string? greeting = await indexPage.GetGreetingTextAsync();
+            greeting.Should().NotBeNullOrEmpty();
+            greeting.Should().Contain("Hello");
+            greeting.Should().Contain("World");
+            string? timestamp = await indexPage.GetGeneratedAtTextAsync();
+            timestamp.Should().NotBeNullOrEmpty();
+            timestamp.Should().Contain("Generated at:");
         }
         finally
         {

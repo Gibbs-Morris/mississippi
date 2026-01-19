@@ -32,10 +32,7 @@ builder.Services.AddOpenTelemetry()
 builder.AddKeyedAzureTableServiceClient("clustering");
 
 // Configure Orleans client - Aspire injects clustering config via environment variables
-builder.UseOrleansClient(clientBuilder =>
-{
-    clientBuilder.AddActivityPropagation();
-});
+builder.UseOrleansClient(clientBuilder => { clientBuilder.AddActivityPropagation(); });
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files
@@ -52,7 +49,7 @@ app.MapGet(
     ) =>
     {
         IGreeterGrain grain = grainFactory.GetGrain<IGreeterGrain>(name);
-        Spring.Domain.GreetResult grainResult = await grain.GreetAsync();
+        GreetResult grainResult = await grain.GreetAsync();
 
         // Map Orleans type to Client DTO
         GreetResultDto result = new()

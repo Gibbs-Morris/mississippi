@@ -1,6 +1,7 @@
-using System.Globalization;
+using System.Threading;
 
 using Projects;
+
 
 namespace Spring.L2Tests;
 
@@ -22,8 +23,11 @@ public sealed class SpringFixture
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
 
     private DistributedApplication? app;
+
     private IBrowser? browser;
+
     private bool disposed;
+
     private IPlaywright? playwright;
 
     /// <summary>
@@ -40,6 +44,21 @@ public sealed class SpringFixture
     ///     Gets the base URI for the Spring.Server application.
     /// </summary>
     public Uri ServerBaseUri { get; private set; } = new("about:blank");
+
+    /// <summary>
+    ///     Creates a new browser page for testing.
+    /// </summary>
+    /// <returns>A new browser page.</returns>
+    public async Task<IPage> CreatePageAsync()
+    {
+        if (browser is null)
+        {
+            throw new InvalidOperationException("Browser not initialized.");
+        }
+
+        IPage page = await browser.NewPageAsync();
+        return page;
+    }
 
     /// <inheritdoc />
     public void Dispose()
@@ -87,7 +106,6 @@ public sealed class SpringFixture
             // Start the Spring AppHost with Azurite emulator
             IDistributedApplicationTestingBuilder builder =
                 await DistributedApplicationTestingBuilder.CreateAsync<Spring_AppHost>();
-
             builder.Services.AddLogging(logging =>
             {
                 logging.SetMinimumLevel(LogLevel.Debug);
@@ -101,7 +119,7 @@ public sealed class SpringFixture
             await app.StartAsync().WaitAsync(DefaultTimeout);
 
             // Wait for container resources to be healthy (following official docs pattern)
-            using System.Threading.CancellationTokenSource cts = new(DefaultTimeout);
+            using CancellationTokenSource cts = new(DefaultTimeout);
 
             // Wait for Azure Storage emulator (Azurite)
             await app.ResourceNotifications.WaitForResourceHealthyAsync("storage", cts.Token)
@@ -116,11 +134,11 @@ public sealed class SpringFixture
 
             // Initialize Playwright
             playwright = await Playwright.CreateAsync();
-            browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-            {
-                Headless = true,
-            });
-
+            browser = await playwright.Chromium.LaunchAsync(
+                new()
+                {
+                    Headless = true,
+                });
             IsInitialized = true;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -133,21 +151,6 @@ public sealed class SpringFixture
         }
     }
 #pragma warning restore IDISP001
-
-    /// <summary>
-    ///     Creates a new browser page for testing.
-    /// </summary>
-    /// <returns>A new browser page.</returns>
-    public async Task<IPage> CreatePageAsync()
-    {
-        if (browser is null)
-        {
-            throw new InvalidOperationException("Browser not initialized.");
-        }
-
-        IPage page = await browser.NewPageAsync();
-        return page;
-    }
 }
 #pragma warning restore IDISP002
 #pragma warning restore IDISP003

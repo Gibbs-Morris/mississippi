@@ -25,7 +25,12 @@ public sealed class IndexPage
     /// <returns>A task representing the async operation.</returns>
     public async Task ClickSayHelloAsync()
     {
-        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Say Hello" })
+        await page.GetByRole(
+                AriaRole.Button,
+                new()
+                {
+                    Name = "Say Hello",
+                })
             .ClickAsync();
     }
 
@@ -67,11 +72,12 @@ public sealed class IndexPage
     {
         // The greeting is in a <p> element but not the one with <small> or error style
         // Look for paragraph that contains the greeting pattern
-        ILocator greetingLocator = page.Locator("p").Filter(new LocatorFilterOptions
-        {
-            HasText = "Hello",
-        });
-
+        ILocator greetingLocator = page.Locator("p")
+            .Filter(
+                new()
+                {
+                    HasText = "Hello",
+                });
         if (await greetingLocator.CountAsync() > 0)
         {
             return await greetingLocator.First.TextContentAsync();
@@ -84,8 +90,7 @@ public sealed class IndexPage
     ///     Gets the page title (h1 element).
     /// </summary>
     /// <returns>The page title.</returns>
-    public async Task<string?> GetTitleAsync() =>
-        await page.Locator("h1").TextContentAsync();
+    public async Task<string?> GetTitleAsync() => await page.Locator("h1").TextContentAsync();
 
     /// <summary>
     ///     Checks if the loading indicator is visible.
@@ -93,11 +98,12 @@ public sealed class IndexPage
     /// <returns>True if loading is visible.</returns>
     public async Task<bool> IsLoadingVisibleAsync()
     {
-        ILocator loadingLocator = page.Locator("p").Filter(new LocatorFilterOptions
-        {
-            HasText = "Loading...",
-        });
-
+        ILocator loadingLocator = page.Locator("p")
+            .Filter(
+                new()
+                {
+                    HasText = "Loading...",
+                });
         return await loadingLocator.CountAsync() > 0;
     }
 
@@ -112,11 +118,12 @@ public sealed class IndexPage
     )
     {
         ArgumentNullException.ThrowIfNull(baseUri);
-
-        await page.GotoAsync(baseUri.ToString(), new PageGotoOptions
-        {
-            WaitUntil = WaitUntilState.NetworkIdle,
-        });
+        await page.GotoAsync(
+            baseUri.ToString(),
+            new()
+            {
+                WaitUntil = WaitUntilState.NetworkIdle,
+            });
     }
 
     /// <summary>
@@ -128,14 +135,17 @@ public sealed class IndexPage
         float? timeout = null
     )
     {
-        await page.Locator("p").Filter(new LocatorFilterOptions
-            {
-                HasText = "Hello",
-            })
-            .WaitForAsync(new LocatorWaitForOptions
-            {
-                State = WaitForSelectorState.Visible,
-                Timeout = timeout,
-            });
+        await page.Locator("p")
+            .Filter(
+                new()
+                {
+                    HasText = "Hello",
+                })
+            .WaitForAsync(
+                new()
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = timeout,
+                });
     }
 }

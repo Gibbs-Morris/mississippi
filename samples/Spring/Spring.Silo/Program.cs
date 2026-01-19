@@ -31,10 +31,7 @@ builder.AddKeyedAzureTableServiceClient("clustering");
 builder.AddKeyedAzureBlobServiceClient("grainstate");
 
 // Configure Orleans silo - Aspire injects clustering config via environment variables
-builder.UseOrleans(siloBuilder =>
-{
-    siloBuilder.AddActivityPropagation();
-});
+builder.UseOrleans(siloBuilder => { siloBuilder.AddActivityPropagation(); });
 WebApplication app = builder.Build();
 
 // Health check endpoint for Aspire orchestration
