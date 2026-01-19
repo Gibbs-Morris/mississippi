@@ -24,6 +24,24 @@
         <IsTestProject>true</IsTestProject>
     </PropertyGroup>
 
+    <!-- Aspire AppHost projects: use OS-specific NuGet lock file paths to avoid churn from runtime-specific packages -->
+    <PropertyGroup>
+        <IsAspireAppHost Condition="'$(MSBuildProjectName)'=='Cascade.AppHost' Or '$(MSBuildProjectName)'=='Crescent.AppHost' Or '$(MSBuildProjectName)'=='Aqueduct.L2Tests.AppHost'">true</IsAspireAppHost>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(IsAspireAppHost)'=='true' And $([MSBuild]::IsOsPlatform('Windows'))">
+        <NuGetLockFilePath>$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.win-x64.lock.json'))</NuGetLockFilePath>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(IsAspireAppHost)'=='true' And $([MSBuild]::IsOsPlatform('Linux'))">
+        <NuGetLockFilePath>$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.linux-x64.lock.json'))</NuGetLockFilePath>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(IsAspireAppHost)'=='true' And $([MSBuild]::IsOsPlatform('OSX'))">
+        <_OsxArch>$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)</_OsxArch>
+        <NuGetLockFilePath Condition="'$(_OsxArch)'=='Arm64'">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-arm64.lock.json'))</NuGetLockFilePath>
+        <NuGetLockFilePath Condition="'$(_OsxArch)'=='X64'">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-x64.lock.json'))</NuGetLockFilePath>
+        <!-- Fallback for unexpected macOS architectures -->
+        <NuGetLockFilePath Condition="'$(NuGetLockFilePath)'==''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-$([System.String]::new($(_OsxArch)).ToLower()).lock.json'))</NuGetLockFilePath>
+    </PropertyGroup>
+
     <ItemGroup>
         <InternalsVisibleTo Include="$(AssemblyName).Tests" />
         <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
