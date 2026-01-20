@@ -5,6 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
         <ProjectReference Include="..\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
         <ProjectReference Include="..\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
     </ItemGroup>

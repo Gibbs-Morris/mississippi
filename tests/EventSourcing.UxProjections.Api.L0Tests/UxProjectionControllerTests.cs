@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
 
+using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
@@ -19,7 +20,7 @@ using Moq;
 namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="UxProjectionControllerBase{TProjection}" />.
+///     Tests for <see cref="UxProjectionControllerBase{TProjection, TDto}" /> using identity mapping.
 /// </summary>
 [AllureParentSuite("Event Sourcing")]
 [AllureSuite("UX Projections API")]
@@ -35,9 +36,15 @@ public sealed class UxProjectionControllerTests
     )
     {
         factoryMock ??= new();
+        Mock<IMapper<TestProjection, TestProjection>> mapperMock = new();
+        mapperMock.Setup(m => m.Map(It.IsAny<TestProjection>()))
+            .Returns((
+                TestProjection p
+            ) => p);
         TestableController controller = new(
             factoryMock.Object,
-            NullLogger<UxProjectionControllerBase<TestProjection>>.Instance);
+            mapperMock.Object,
+            NullLogger<UxProjectionControllerBase<TestProjection, TestProjection>>.Instance);
 
         // Set up HttpContext for header access
         DefaultHttpContext httpContext = new();
@@ -54,20 +61,23 @@ public sealed class UxProjectionControllerTests
     }
 
     /// <summary>
-    ///     A testable implementation of <see cref="UxProjectionControllerBase{TProjection}" />.
+    ///     A testable implementation of <see cref="UxProjectionControllerBase{TProjection, TDto}" />
+    ///     using identity mapping (TProjection == TDto).
     /// </summary>
-    private sealed class TestableController : UxProjectionControllerBase<TestProjection>
+    private sealed class TestableController : UxProjectionControllerBase<TestProjection, TestProjection>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TestableController" /> class.
         /// </summary>
         /// <param name="uxProjectionGrainFactory">Factory for resolving UX projection grains.</param>
+        /// <param name="mapper">Mapper for projection to DTO conversion (identity in this case).</param>
         /// <param name="logger">The logger for diagnostic output.</param>
         public TestableController(
             IUxProjectionGrainFactory uxProjectionGrainFactory,
-            ILogger<UxProjectionControllerBase<TestProjection>> logger
+            IMapper<TestProjection, TestProjection> mapper,
+            ILogger<UxProjectionControllerBase<TestProjection, TestProjection>> logger
         )
-            : base(uxProjectionGrainFactory, logger)
+            : base(uxProjectionGrainFactory, mapper, logger)
         {
         }
     }
@@ -98,9 +108,11 @@ public sealed class UxProjectionControllerTests
     public void ConstructorThrowsWhenFactoryIsNull()
     {
         // Act & Assert
+        Mock<IMapper<TestProjection, TestProjection>> mapperMock = new();
         Assert.Throws<ArgumentNullException>(() => new TestableController(
             null!,
-            NullLogger<UxProjectionControllerBase<TestProjection>>.Instance));
+            mapperMock.Object,
+            NullLogger<UxProjectionControllerBase<TestProjection, TestProjection>>.Instance));
     }
 
     /// <summary>

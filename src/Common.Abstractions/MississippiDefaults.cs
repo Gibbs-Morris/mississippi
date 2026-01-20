@@ -93,10 +93,22 @@ public static class MississippiDefaults
         public const string CosmosBrooks = "mississippi-cosmos-brooks";
 
         /// <summary>
+        ///     Key for the <c>CosmosClient</c> used for event brooks storage.
+        /// </summary>
+        /// <value>The value is <c>"mississippi-cosmos-brooks-client"</c>.</value>
+        public const string CosmosBrooksClient = "mississippi-cosmos-brooks-client";
+
+        /// <summary>
         ///     Key for the Cosmos container used for snapshots.
         /// </summary>
         /// <value>The value is <c>"mississippi-cosmos-snapshots"</c>.</value>
         public const string CosmosSnapshots = "mississippi-cosmos-snapshots";
+
+        /// <summary>
+        ///     Key for the <c>CosmosClient</c> used for snapshot storage.
+        /// </summary>
+        /// <value>The value is <c>"mississippi-cosmos-snapshots-client"</c>.</value>
+        public const string CosmosSnapshotsClient = "mississippi-cosmos-snapshots-client";
     }
 
     /// <summary>

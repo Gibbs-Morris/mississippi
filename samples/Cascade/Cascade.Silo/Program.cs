@@ -83,6 +83,16 @@ builder.Services.AddKeyedSingleton(
         _
     ) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
 
+// Forward the Aspire-registered Cosmos client to a shared Mississippi keyed service key
+// Both Brooks and Snapshots use the same Cosmos account but different containers
+const string sharedCosmosKey = "cascade-cosmos";
+builder.Services.AddKeyedSingleton(
+    sharedCosmosKey,
+    (
+        sp,
+        _
+    ) => sp.GetRequiredService<CosmosClient>());
+
 // Add Cascade domain services (aggregates, handlers, reducers, projections)
 builder.Services.AddCascadeDomain();
 
@@ -103,7 +113,9 @@ builder.Services.Configure<SnapshotRetentionOptions>(options => options.DefaultR
 // Configure Cosmos storage for Brooks (event streams)
 builder.Services.AddCosmosBrookStorageProvider(options =>
 {
+    options.CosmosClientServiceKey = sharedCosmosKey;
     options.DatabaseId = "cascade-web-db";
+    options.ContainerId = "events";
     options.QueryBatchSize = 50;
     options.MaxEventsPerBatch = 50;
 });
@@ -111,6 +123,7 @@ builder.Services.AddCosmosBrookStorageProvider(options =>
 // Configure Cosmos storage for Snapshots
 builder.Services.AddCosmosSnapshotStorageProvider(options =>
 {
+    options.CosmosClientServiceKey = sharedCosmosKey;
     options.DatabaseId = "cascade-web-db";
     options.ContainerId = "snapshots";
     options.QueryBatchSize = 100;

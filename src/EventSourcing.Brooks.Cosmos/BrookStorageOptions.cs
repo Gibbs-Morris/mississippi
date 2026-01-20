@@ -14,6 +14,18 @@ public sealed class BrookStorageOptions
     public string ContainerId { get; set; } = MississippiDefaults.ContainerIds.Brooks;
 
     /// <summary>
+    ///     Gets or sets the keyed service key used to resolve the <c>CosmosClient</c> from DI.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Defaults to <see cref="MississippiDefaults.ServiceKeys.CosmosBrooksClient" />.
+    ///         Override this to share a single <c>CosmosClient</c> across multiple storage providers
+    ///         or to use a custom keyed registration.
+    ///     </para>
+    /// </remarks>
+    public string CosmosClientServiceKey { get; set; } = MississippiDefaults.ServiceKeys.CosmosBrooksClient;
+
+    /// <summary>
     ///     Gets or sets the Cosmos DB database identifier.
     /// </summary>
     public string DatabaseId { get; set; } = MississippiDefaults.DatabaseId;

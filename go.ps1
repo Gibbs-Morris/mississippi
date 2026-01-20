@@ -8,6 +8,7 @@
 # Accept optional parameters forwarded from callers
 param(
     [switch]$SkipCleanup,
+    [switch]$IncludeMutation,
     [string]$Configuration = 'Release'
 )
 
@@ -22,12 +23,7 @@ Write-Host "Executing orchestrate-solutions.ps1 script..."
 
 try {
     # Execute the orchestrate script and wait for completion
-    if ($SkipCleanup) {
-        & $orchestrateScript -Configuration $Configuration -SkipCleanup
-    }
-    else {
-        & $orchestrateScript -Configuration $Configuration
-    }
+    & $orchestrateScript -Configuration $Configuration -SkipCleanup:$SkipCleanup -IncludeMutation:$IncludeMutation
     if ($LASTEXITCODE -ne 0) {
         throw "orchestrate-solutions.ps1 failed with exit code $LASTEXITCODE"
     }
