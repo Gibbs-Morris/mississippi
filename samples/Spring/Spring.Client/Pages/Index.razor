@@ -1,4 +1,5 @@
 @page "/"
+@using System.Text.Json
 @inject HttpClient Http
 
 <h1>Spring Sample</h1>
@@ -46,7 +47,15 @@ else if (!string.IsNullOrEmpty(errorMessage))
                 generatedAt = result.GeneratedAt.ToString("O");
             }
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        catch (TaskCanceledException ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        catch (JsonException ex)
         {
             errorMessage = $"Error: {ex.Message}";
         }

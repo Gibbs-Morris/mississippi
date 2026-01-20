@@ -9,6 +9,15 @@ namespace Spring.L2Tests;
 ///     xUnit fixture that starts the Spring AppHost with Azurite emulator and Playwright browser.
 ///     This fixture is shared across all tests in the collection to minimize startup overhead.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This class implements both <see cref="IAsyncLifetime" /> and <see cref="IDisposable" />.
+///         <see cref="IAsyncLifetime.DisposeAsync" /> is the primary cleanup path used by xUnit.
+///         The synchronous <see cref="IDisposable.Dispose" /> method exists as a fallback for edge cases
+///         where async disposal isn't invoked (e.g., finalizer scenarios or alternative test runners).
+///         Both methods share the same cleanup logic and are guarded against double-disposal.
+///     </para>
+/// </remarks>
 #pragma warning disable CA1515 // Types can be made internal - xUnit fixture must be public
 #pragma warning disable IDISP002 // Dispose member - disposed in DisposeAsync
 #pragma warning disable IDISP003 // Dispose previous before re-assigning - fields are null initially
