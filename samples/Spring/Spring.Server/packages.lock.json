@@ -830,10 +830,29 @@
         "resolved": "6.0.0",
         "contentHash": "TY8/9+tI0mNaUMgntOxxaq2ndTkdXqLSxvPmas7XEqOlv9lQtB7wLjYGd756lOaO7Dvb5r/WXhluM+0Xe87v5Q=="
       },
+      "Mississippi.Reservoir": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Reservoir.Blazor": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[9.0.11, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
       "spring.client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[9.0.11, )"
+          "Microsoft.AspNetCore.Components.WebAssembly": "[9.0.11, )",
+          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
         }
       },
       "spring.domain": {
