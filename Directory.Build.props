@@ -24,23 +24,41 @@
         <IsTestProject>true</IsTestProject>
     </PropertyGroup>
 
-    <!-- Aspire AppHost projects: use OS-specific NuGet lock file paths to avoid churn from runtime-specific packages -->
-    <PropertyGroup>
-        <IsAspireAppHost Condition="$([System.String]::Copy('$(MSBuildProjectName)').EndsWith('.AppHost'))">true</IsAspireAppHost>
+    <!-- Aspire AppHost projects: use OS/RID-specific NuGet lock file paths to avoid churn from runtime-specific packages -->
+    <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').EndsWith('.AppHost'))">
+
+        <!-- Prefer an explicit *single* RID (e.g. dotnet restore/publish -r win-x64).
+       Guard against accidental multi-values (semicolon list) which would produce an invalid filename on Windows. -->
+        <_LockRid Condition="'$(RuntimeIdentifier)' != '' and !$([System.String]::Copy('$(RuntimeIdentifier)').Contains(';'))">
+    $([System.String]::Copy('$(RuntimeIdentifier)').Trim())
+        </_LockRid>
+
+        <!-- Otherwise compute from host OS + *process* architecture -->
+        <_Arch Condition="'$(_LockRid)' == ''">$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</_Arch>
+
+        <_BaseOs Condition="'$(_LockRid)' == '' and $([MSBuild]::IsOsPlatform('Windows'))">win</_BaseOs>
+        <_BaseOs Condition="'$(_LockRid)' == '' and $([MSBuild]::IsOsPlatform('Linux'))">linux</_BaseOs>
+        <_BaseOs Condition="'$(_LockRid)' == '' and $([MSBuild]::IsOsPlatform('OSX'))">osx</_BaseOs>
+        <_BaseOs Condition="'$(_LockRid)' == '' and $([MSBuild]::IsOsPlatform('FreeBSD'))">freebsd</_BaseOs>
+
+        <!-- Linux: split glibc vs musl (Alpine etc.) -->
+        <_IsMusl Condition="'$(_BaseOs)' == 'linux' and $([System.IO.File]::Exists('/etc/alpine-release'))">true</_IsMusl>
+        <_IsMusl Condition="'$(_BaseOs)' == 'linux' and '$(_IsMusl)' == '' and $([System.String]::Copy('$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier)').Contains('musl'))">true</_IsMusl>
+
+        <_LockRid Condition="'$(_LockRid)' == '' and '$(_BaseOs)' == 'linux' and '$(_IsMusl)' == 'true'">linux-musl-$(_Arch)</_LockRid>
+        <_LockRid Condition="'$(_LockRid)' == '' and '$(_BaseOs)' != ''">$(_BaseOs)-$(_Arch)</_LockRid>
+
+        <!-- Last-resort fallback (can be distro/version specific) -->
+        <_LockRid Condition="'$(_LockRid)' == ''">
+    $([System.String]::Copy('$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier)').ToLowerInvariant())
+        </_LockRid>
+
+        <!-- One-line value to avoid accidental newline/whitespace in the path -->
+        <NuGetLockFilePath Condition="'$(_LockRid)' != ''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.$(_LockRid).lock.json'))</NuGetLockFilePath>
+
     </PropertyGroup>
-    <PropertyGroup Condition="'$(IsAspireAppHost)'=='true' And $([MSBuild]::IsOsPlatform('Windows'))">
-        <NuGetLockFilePath>$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.win-x64.lock.json'))</NuGetLockFilePath>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(IsAspireAppHost)'=='true' And $([MSBuild]::IsOsPlatform('Linux'))">
-        <NuGetLockFilePath>$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.linux-x64.lock.json'))</NuGetLockFilePath>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(IsAspireAppHost)'=='true' And $([MSBuild]::IsOsPlatform('OSX'))">
-        <_OsxArch>$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)</_OsxArch>
-        <NuGetLockFilePath Condition="'$(_OsxArch)'=='Arm64'">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-arm64.lock.json'))</NuGetLockFilePath>
-        <NuGetLockFilePath Condition="'$(_OsxArch)'=='X64'">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-x64.lock.json'))</NuGetLockFilePath>
-        <!-- Fallback for unexpected macOS architectures -->
-        <NuGetLockFilePath Condition="'$(NuGetLockFilePath)'==''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.osx-$([System.String]::new($(_OsxArch)).ToLower()).lock.json'))</NuGetLockFilePath>
-    </PropertyGroup>
+
+
 
     <ItemGroup>
         <InternalsVisibleTo Include="$(AssemblyName).Tests" />
