@@ -28,10 +28,8 @@
     <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').EndsWith('.AppHost'))">
 
         <!-- Prefer an explicit *single* RID (e.g. dotnet restore/publish -r win-x64).
-       Guard against accidental multi-values (semicolon list) which would produce an invalid filename on Windows. -->
-        <_LockRid Condition="'$(RuntimeIdentifier)' != '' and !$([System.String]::Copy('$(RuntimeIdentifier)').Contains(';'))">
-    $([System.String]::Copy('$(RuntimeIdentifier)').Trim())
-        </_LockRid>
+             Guard against accidental multi-values (semicolon list) which would produce an invalid filename on Windows. -->
+        <_LockRid Condition="'$(RuntimeIdentifier)' != '' and !$([System.String]::Copy('$(RuntimeIdentifier)').Contains(';'))">$([System.String]::Copy('$(RuntimeIdentifier)').Trim())</_LockRid>
 
         <!-- Otherwise compute from host OS + *process* architecture -->
         <_Arch Condition="'$(_LockRid)' == ''">$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</_Arch>
@@ -49,9 +47,7 @@
         <_LockRid Condition="'$(_LockRid)' == '' and '$(_BaseOs)' != ''">$(_BaseOs)-$(_Arch)</_LockRid>
 
         <!-- Last-resort fallback (can be distro/version specific) -->
-        <_LockRid Condition="'$(_LockRid)' == ''">
-    $([System.String]::Copy('$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier)').ToLowerInvariant())
-        </_LockRid>
+        <_LockRid Condition="'$(_LockRid)' == ''">$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier.ToLowerInvariant())</_LockRid>
 
         <!-- One-line value to avoid accidental newline/whitespace in the path -->
         <NuGetLockFilePath Condition="'$(_LockRid)' != ''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.$(_LockRid).lock.json'))</NuGetLockFilePath>
