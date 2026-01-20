@@ -1,68 +1,30 @@
 @page "/"
-@using System.Text.Json
-@inject HttpClient Http
+@inherits StoreComponent
 
 <h1>Spring Sample</h1>
 
-<button @onclick="GreetAsync">Say Hello</button>
+<button @onclick="Greet">Say Hello</button>
 
-@if (isLoading)
+@if (GreetState.IsLoading)
 {
     <p>Loading...</p>
 }
-else if (!string.IsNullOrEmpty(greeting))
+else if (!string.IsNullOrEmpty(GreetState.Greeting))
 {
-    <p>@greeting</p>
+    <p>@GreetState.Greeting</p>
     <p>
-        <small>Generated at: @generatedAt</small>
+        <small>Generated at: @GreetState.GeneratedAt?.ToString("O")</small>
     </p>
 }
-else if (!string.IsNullOrEmpty(errorMessage))
+else if (!string.IsNullOrEmpty(GreetState.ErrorMessage))
 {
-    <p style="color: red;">@errorMessage</p>
+    <p style="color: red;">@GreetState.ErrorMessage</p>
 }
 
 @code {
 
-    private string? greeting;
+    private GreetState GreetState => GetState<GreetState>();
 
-    private string? generatedAt;
-
-    private string? errorMessage;
-
-    private bool isLoading;
-
-    private async Task GreetAsync()
-    {
-        isLoading = true;
-        greeting = null;
-        errorMessage = null;
-        generatedAt = null;
-        try
-        {
-            GreetResultDto? result = await Http.GetFromJsonAsync<GreetResultDto>("/api/greet/World");
-            if (result is not null)
-            {
-                greeting = result.Greeting;
-                generatedAt = result.GeneratedAt.ToString("O");
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            errorMessage = $"Error: {ex.Message}";
-        }
-        catch (TaskCanceledException ex)
-        {
-            errorMessage = $"Error: {ex.Message}";
-        }
-        catch (JsonException ex)
-        {
-            errorMessage = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
+    private void Greet() => Dispatch(new GreetRequestedAction("World"));
 
 }
