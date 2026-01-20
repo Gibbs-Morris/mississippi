@@ -4,9 +4,7 @@ namespace Spring.L2Tests.Pages;
 ///     Page Object Model for the Spring sample Index page.
 ///     Encapsulates Playwright interactions with the greeting UI.
 /// </summary>
-#pragma warning disable CA1515 // Types can be made internal - used by test classes
 public sealed class IndexPage
-#pragma warning restore CA1515
 {
     private readonly IPage page;
 

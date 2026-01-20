@@ -50,7 +50,8 @@ public static class SnapshotStorageProviderRegistrations
         // Ensure container exists asynchronously on host start
         services.AddHostedService<CosmosContainerInitializer>();
 
-        // Provide container handle using keyed service to avoid conflicts with other Cosmos providers
+        // Provide container handle using keyed services to avoid conflicts with other Cosmos providers
+        // Uses CosmosClientServiceKey from options (defaults to MississippiDefaults.ServiceKeys.CosmosSnapshotsClient)
         services.AddKeyedSingleton<Container>(
             MississippiDefaults.ServiceKeys.CosmosSnapshots,
             (
@@ -58,8 +59,8 @@ public static class SnapshotStorageProviderRegistrations
                 _
             ) =>
             {
-                CosmosClient client = provider.GetRequiredService<CosmosClient>();
                 SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
+                CosmosClient client = provider.GetRequiredKeyedService<CosmosClient>(options.CosmosClientServiceKey);
                 Database database = client.GetDatabase(options.DatabaseId);
                 return database.GetContainer(options.ContainerId);
             });
@@ -67,20 +68,23 @@ public static class SnapshotStorageProviderRegistrations
     }
 
     /// <summary>
-    ///     Creates a <see cref="CosmosClient" /> from the supplied connection string and registers the Cosmos snapshot storage
+    ///     Creates a keyed <see cref="CosmosClient" /> from the supplied connection string and registers the Cosmos snapshot storage
     ///     provider.
     /// </summary>
     /// <param name="services">The service collection to update.</param>
     /// <param name="cosmosConnectionString">Cosmos connection string used for client creation.</param>
     /// <param name="configureOptions">Optional options configuration applied during registration.</param>
-    /// <returns>The service collection configured with a Cosmos client.</returns>
+    /// <returns>The service collection configured with a keyed Cosmos client.</returns>
     public static IServiceCollection AddCosmosSnapshotStorageProvider(
         this IServiceCollection services,
         string cosmosConnectionString,
         Action<SnapshotStorageOptions>? configureOptions = null
     )
     {
-        services.AddSingleton<CosmosClient>(_ => new(cosmosConnectionString));
+        // Register keyed CosmosClient for Snapshots storage
+        services.AddKeyedSingleton<CosmosClient>(
+            MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
+            (_, _) => new CosmosClient(cosmosConnectionString));
         if (configureOptions != null)
         {
             services.Configure(configureOptions);
@@ -127,24 +131,25 @@ public static class SnapshotStorageProviderRegistrations
 
         [SuppressMessage("Major Code Smell", "S1144", Justification = "Used by DI")]
         public CosmosContainerInitializer(
-            CosmosClient cosmosClient,
+            IServiceProvider serviceProvider,
             IOptions<SnapshotStorageOptions> options
         )
         {
-            CosmosClient = cosmosClient;
+            ServiceProvider = serviceProvider;
             Options = options;
         }
 
-        private CosmosClient CosmosClient { get; }
-
         private IOptions<SnapshotStorageOptions> Options { get; }
+
+        private IServiceProvider ServiceProvider { get; }
 
         public async Task StartAsync(
             CancellationToken cancellationToken
         )
         {
             SnapshotStorageOptions o = Options.Value;
-            DatabaseResponse db = await CosmosClient.CreateDatabaseIfNotExistsAsync(
+            CosmosClient cosmosClient = ServiceProvider.GetRequiredKeyedService<CosmosClient>(o.CosmosClientServiceKey);
+            DatabaseResponse db = await cosmosClient.CreateDatabaseIfNotExistsAsync(
                 o.DatabaseId,
                 cancellationToken: cancellationToken);
             Database database = db.Database;

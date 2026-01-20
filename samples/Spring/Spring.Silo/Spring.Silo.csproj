@@ -10,6 +10,9 @@
     <PackageReference Include="Aspire.Azure.Data.Tables" />
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
 
+    <!-- Aspire Cosmos DB integration for event sourcing storage -->
+    <PackageReference Include="Aspire.Microsoft.Azure.Cosmos" />
+
     <!-- OpenTelemetry for Aspire dashboard -->
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
@@ -25,6 +28,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj" />
+
+    <!-- Event Sourcing infrastructure -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
   </ItemGroup>
 
 </Project>

@@ -21,11 +21,30 @@
 
     <!-- Blazor WebAssembly hosting -->
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+
+    <!-- OpenAPI documentation -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj" />
     <ProjectReference Include="..\Spring.Client\Spring.Client.csproj" />
+
+    <!-- Event Sourcing API for aggregate controllers -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+
+    <!-- Event Sourcing Aggregates for DI registrations -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+
+    <!-- UxProjections API for projection controllers -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
+
+    <!-- UxProjections for DI registrations -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
+
+    <!-- JSON Serialization for event serialization -->
+    <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
   </ItemGroup>
 
 </Project>

@@ -64,7 +64,8 @@ public static class BrookStorageProviderRegistrations
         // Ensure Cosmos DB resources are created asynchronously on host start
         services.AddHostedService<CosmosContainerInitializer>();
 
-        // Configure Cosmos DB Container factory using keyed service to avoid conflicts with other Cosmos providers
+        // Configure Cosmos DB Container factory using keyed services to avoid conflicts with other Cosmos providers
+        // Uses CosmosClientServiceKey from options (defaults to MississippiDefaults.ServiceKeys.CosmosBrooksClient)
         services.AddKeyedSingleton<Container>(
             MississippiDefaults.ServiceKeys.CosmosBrooks,
             (
@@ -72,8 +73,8 @@ public static class BrookStorageProviderRegistrations
                 _
             ) =>
             {
-                CosmosClient cosmosClient = provider.GetRequiredService<CosmosClient>();
                 BrookStorageOptions options = provider.GetRequiredService<IOptions<BrookStorageOptions>>().Value;
+                CosmosClient cosmosClient = provider.GetRequiredKeyedService<CosmosClient>(options.CosmosClientServiceKey);
 
                 // Return a handle; CosmosContainerInitializer will ensure existence on startup
                 Database database = cosmosClient.GetDatabase(options.DatabaseId);
@@ -97,11 +98,15 @@ public static class BrookStorageProviderRegistrations
         Action<BrookStorageOptions>? configureOptions = null
     )
     {
-        // Register CosmosClient
-        services.AddSingleton<CosmosClient>(_ => new(cosmosConnectionString));
+        // Register keyed CosmosClient for Brooks storage
+        services.AddKeyedSingleton<CosmosClient>(
+            MississippiDefaults.ServiceKeys.CosmosBrooksClient,
+            (_, _) => new CosmosClient(cosmosConnectionString));
 
-        // Register BlobServiceClient for distributed locking
-        services.AddSingleton<BlobServiceClient>(_ => new(blobStorageConnectionString));
+        // Register keyed BlobServiceClient for distributed locking
+        services.AddKeyedSingleton(
+            MississippiDefaults.ServiceKeys.BlobLocking,
+            (_, _) => new BlobServiceClient(blobStorageConnectionString));
 
         // Configure options if provided
         if (configureOptions != null)
@@ -142,11 +147,15 @@ public static class BrookStorageProviderRegistrations
         IConfiguration configuration
     )
     {
-        // Register CosmosClient
-        services.AddSingleton<CosmosClient>(_ => new(cosmosConnectionString));
+        // Register keyed CosmosClient for Brooks storage
+        services.AddKeyedSingleton<CosmosClient>(
+            MississippiDefaults.ServiceKeys.CosmosBrooksClient,
+            (_, _) => new CosmosClient(cosmosConnectionString));
 
-        // Register BlobServiceClient for distributed locking
-        services.AddSingleton<BlobServiceClient>(_ => new(blobStorageConnectionString));
+        // Register keyed BlobServiceClient for distributed locking
+        services.AddKeyedSingleton(
+            MississippiDefaults.ServiceKeys.BlobLocking,
+            (_, _) => new BlobServiceClient(blobStorageConnectionString));
         services.Configure<BrookStorageOptions>(configuration);
         return services.AddCosmosBrookStorageProvider();
     }
@@ -174,26 +183,27 @@ public static class BrookStorageProviderRegistrations
             "S1144:Unused private members should be removed",
             Justification = "Constructed via DI reflection")]
         public CosmosContainerInitializer(
-            CosmosClient cosmosClient,
+            IServiceProvider serviceProvider,
             IOptions<BrookStorageOptions> options
         )
         {
-            CosmosClient = cosmosClient;
+            ServiceProvider = serviceProvider;
             Options = options;
         }
 
-        private CosmosClient CosmosClient { get; }
-
         private IOptions<BrookStorageOptions> Options { get; }
+
+        private IServiceProvider ServiceProvider { get; }
 
         public async Task StartAsync(
             CancellationToken cancellationToken
         )
         {
             BrookStorageOptions o = Options.Value;
+            CosmosClient cosmosClient = ServiceProvider.GetRequiredKeyedService<CosmosClient>(o.CosmosClientServiceKey);
 
             // Ensure database exists
-            DatabaseResponse dbResponse = await CosmosClient.CreateDatabaseIfNotExistsAsync(
+            DatabaseResponse dbResponse = await cosmosClient.CreateDatabaseIfNotExistsAsync(
                 o.DatabaseId,
                 cancellationToken: cancellationToken);
             Database database = dbResponse.Database;
