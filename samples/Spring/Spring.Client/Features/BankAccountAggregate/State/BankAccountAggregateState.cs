@@ -1,3 +1,4 @@
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Reservoir.Abstractions.State;
 
 
@@ -10,6 +11,7 @@ namespace Spring.Client.Features.BankAccountAggregate.State;
 ///     This state tracks the status of command execution (loading, success, failure).
 ///     It does NOT hold read model data - that belongs in the projection feature state.
 /// </remarks>
+[PendingSourceGenerator]
 internal sealed record BankAccountAggregateState : IFeatureState
 {
     /// <inheritdoc />

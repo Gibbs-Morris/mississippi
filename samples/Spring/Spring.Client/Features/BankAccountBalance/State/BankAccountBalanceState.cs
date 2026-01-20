@@ -1,3 +1,4 @@
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Reservoir.Abstractions.State;
 
 
@@ -10,6 +11,7 @@ namespace Spring.Client.Features.BankAccountBalance.State;
 ///     This state holds the read model data fetched from the projection API.
 ///     It does NOT track command execution - that belongs in the aggregate feature state.
 /// </remarks>
+[PendingSourceGenerator]
 internal sealed record BankAccountBalanceState : IFeatureState
 {
     /// <inheritdoc />

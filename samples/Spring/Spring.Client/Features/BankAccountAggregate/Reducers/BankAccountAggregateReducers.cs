@@ -1,3 +1,5 @@
+using Mississippi.Common.Abstractions.Attributes;
+
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.State;
 
@@ -7,6 +9,7 @@ namespace Spring.Client.Features.BankAccountAggregate.Reducers;
 /// <summary>
 ///     Pure reducer functions for the BankAccountAggregate feature state.
 /// </summary>
+[PendingSourceGenerator]
 internal static class BankAccountAggregateReducers
 {
     /// <summary>

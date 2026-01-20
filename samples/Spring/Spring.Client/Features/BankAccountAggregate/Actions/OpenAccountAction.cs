@@ -1,3 +1,4 @@
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
@@ -12,4 +13,5 @@ namespace Spring.Client.Features.BankAccountAggregate.Actions;
 /// <param name="AccountId">The aggregate ID to create.</param>
 /// <param name="HolderName">The name of the account holder.</param>
 /// <param name="InitialDeposit">The initial deposit amount.</param>
+[PendingSourceGenerator]
 internal sealed record OpenAccountAction(string AccountId, string HolderName, decimal InitialDeposit) : IAction;

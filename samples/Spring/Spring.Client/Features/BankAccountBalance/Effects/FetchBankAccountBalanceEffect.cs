@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
@@ -19,6 +20,7 @@ namespace Spring.Client.Features.BankAccountBalance.Effects;
 /// <summary>
 ///     Effect that handles fetching the BankAccountBalance projection data.
 /// </summary>
+[PendingSourceGenerator]
 internal sealed class FetchBankAccountBalanceEffect : IEffect
 {
     /// <summary>

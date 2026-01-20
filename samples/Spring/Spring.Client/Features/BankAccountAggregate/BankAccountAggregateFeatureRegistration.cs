@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Reservoir;
 
@@ -20,6 +21,7 @@ namespace Spring.Client.Features.BankAccountAggregate;
 ///     This feature handles the write side (command execution) for the BankAccount aggregate.
 ///     Derived from domain aggregate: <c>Spring.Domain.Aggregates.BankAccount</c>.
 /// </remarks>
+[PendingSourceGenerator]
 internal static class BankAccountAggregateFeatureRegistration
 {
     /// <summary>
@@ -32,9 +34,9 @@ internal static class BankAccountAggregateFeatureRegistration
     )
     {
         // Mappers (Action → DTO)
-        services.AddSingleton<IMapper<OpenAccountAction, OpenAccountRequestDto>, OpenAccountActionMapper>();
-        services.AddSingleton<IMapper<DepositFundsAction, DepositFundsRequestDto>, DepositFundsActionMapper>();
-        services.AddSingleton<IMapper<WithdrawFundsAction, WithdrawFundsRequestDto>, WithdrawFundsActionMapper>();
+        services.AddMapper<OpenAccountAction, OpenAccountRequestDto, OpenAccountActionMapper>();
+        services.AddMapper<DepositFundsAction, DepositFundsRequestDto, DepositFundsActionMapper>();
+        services.AddMapper<WithdrawFundsAction, WithdrawFundsRequestDto, WithdrawFundsActionMapper>();
 
         // Reducers
         services.AddReducer<SetAccountIdAction, BankAccountAggregateState>(BankAccountAggregateReducers.SetAccountId);

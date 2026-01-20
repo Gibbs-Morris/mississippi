@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -36,6 +37,7 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 ///         request DTO, keeping mapping logic in dedicated mapper classes.
 ///     </para>
 /// </remarks>
+[PendingSourceGenerator]
 internal abstract class CommandEffectBase<TAction, TRequestDto> : IEffect
     where TAction : IAction
     where TRequestDto : class

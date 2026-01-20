@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Reservoir;
 
 using Spring.Client.Features.BankAccountBalance.Actions;
@@ -17,6 +18,7 @@ namespace Spring.Client.Features.BankAccountBalance;
 ///     This feature handles the read side (projection queries) for the BankAccountBalance projection.
 ///     Derived from domain projection: <c>Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection</c>.
 /// </remarks>
+[PendingSourceGenerator]
 internal static class BankAccountBalanceFeatureRegistration
 {
     /// <summary>

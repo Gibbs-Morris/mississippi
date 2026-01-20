@@ -1,3 +1,6 @@
+using Mississippi.Common.Abstractions.Attributes;
+
+
 namespace Spring.Client.Features.BankAccountAggregate.Dtos;
 
 /// <summary>
@@ -8,4 +11,5 @@ namespace Spring.Client.Features.BankAccountAggregate.Dtos;
 /// </remarks>
 /// <param name="HolderName">The account holder name.</param>
 /// <param name="InitialDeposit">The initial deposit amount.</param>
+[PendingSourceGenerator]
 internal sealed record OpenAccountRequestDto(string HolderName, decimal InitialDeposit);

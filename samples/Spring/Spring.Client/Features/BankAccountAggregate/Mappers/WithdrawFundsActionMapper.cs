@@ -1,3 +1,4 @@
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Common.Abstractions.Mapping;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
@@ -9,6 +10,7 @@ namespace Spring.Client.Features.BankAccountAggregate.Mappers;
 /// <summary>
 ///     Maps <see cref="WithdrawFundsAction" /> to <see cref="WithdrawFundsRequestDto" />.
 /// </summary>
+[PendingSourceGenerator]
 internal sealed class WithdrawFundsActionMapper : IMapper<WithdrawFundsAction, WithdrawFundsRequestDto>
 {
     /// <inheritdoc />

@@ -1,3 +1,5 @@
+using Mississippi.Common.Abstractions.Attributes;
+
 using Spring.Client.Features.BankAccountBalance.Actions;
 using Spring.Client.Features.BankAccountBalance.State;
 
@@ -7,6 +9,7 @@ namespace Spring.Client.Features.BankAccountBalance.Reducers;
 /// <summary>
 ///     Pure reducer functions for the BankAccountBalance projection feature state.
 /// </summary>
+[PendingSourceGenerator]
 internal static class BankAccountBalanceReducers
 {
     /// <summary>

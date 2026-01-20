@@ -1,5 +1,6 @@
 using System.Net.Http;
 
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Common.Abstractions.Mapping;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
@@ -11,6 +12,7 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 /// <summary>
 ///     Effect that handles opening a bank account.
 /// </summary>
+[PendingSourceGenerator]
 internal sealed class OpenAccountEffect : CommandEffectBase<OpenAccountAction, OpenAccountRequestDto>
 {
     /// <summary>
