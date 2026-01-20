@@ -976,6 +976,23 @@
       "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Reservoir": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Reservoir.Blazor": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[9.0.11, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
       "spring.client": {
         "type": "Project",
         "dependencies": {
