@@ -49,9 +49,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v3.2.1
@@ -123,11 +123,12 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Checking for modifications after cleanup..."
-          # Exclude packages.lock.json files as Aspire dependencies may differ between platforms
-          $changes = git status --porcelain | Where-Object { $_ -notmatch 'packages\.lock\.json$' }
+          # Exclude packages lock files as Aspire dependencies may differ between platforms
+          # Matches both packages.lock.json and OS-specific variants like packages.linux-x64.lock.json
+          $changes = git status --porcelain | Where-Object { $_ -notmatch 'packages.*\.lock\.json$' }
           if ($changes) {
             Write-Host "ERROR: ReSharper cleanup modified files. The following changes are required:"
-            git diff --color=always -- . ':!**/packages.lock.json'
+            git diff --color=always -- . ':!**/packages*.lock.json'
             Write-Host ""
             Write-Host "To resolve this locally run:"
             $slnFileName = $env:SLN_FILE_NAME

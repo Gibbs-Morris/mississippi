@@ -1,0 +1,68 @@
+@page "/"
+@using System.Text.Json
+@inject HttpClient Http
+
+<h1>Spring Sample</h1>
+
+<button @onclick="GreetAsync">Say Hello</button>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (!string.IsNullOrEmpty(greeting))
+{
+    <p>@greeting</p>
+    <p>
+        <small>Generated at: @generatedAt</small>
+    </p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color: red;">@errorMessage</p>
+}
+
+@code {
+
+    private string? greeting;
+
+    private string? generatedAt;
+
+    private string? errorMessage;
+
+    private bool isLoading;
+
+    private async Task GreetAsync()
+    {
+        isLoading = true;
+        greeting = null;
+        errorMessage = null;
+        generatedAt = null;
+        try
+        {
+            GreetResultDto? result = await Http.GetFromJsonAsync<GreetResultDto>("/api/greet/World");
+            if (result is not null)
+            {
+                greeting = result.Greeting;
+                generatedAt = result.GeneratedAt.ToString("O");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        catch (TaskCanceledException ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        catch (JsonException ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+}

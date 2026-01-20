@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Aspire Testing Infrastructure -->
+    <PackageReference Include="Aspire.Hosting.Testing" />
+
+    <!-- Playwright for E2E browser testing -->
+    <PackageReference Include="Microsoft.Playwright" />
+
+    <!-- FluentAssertions for readable assertions -->
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Spring.AppHost\Spring.AppHost.csproj" />
+  </ItemGroup>
+</Project>

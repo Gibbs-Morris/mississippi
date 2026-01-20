@@ -5,7 +5,6 @@
         <File Path="global.json" />
     </Folder>
     <Folder Name="/Samples/" />
-
     <Folder Name="/Samples/Cascade/">
         <Project Path="samples\Cascade\Cascade.Domain\Cascade.Domain.csproj" />
         <Project Path="samples\Cascade\Cascade.Domain.L0Tests\Cascade.Domain.L0Tests.csproj" />
@@ -19,5 +18,13 @@
     <Folder Name="/Samples/Crescent/">
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
         <Project Path="samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj" />
+    </Folder>
+    <Folder Name="/Samples/Spring/">
+        <Project Path="samples\Spring\Spring.Domain\Spring.Domain.csproj" />
+        <Project Path="samples\Spring\Spring.Client\Spring.Client.csproj" />
+        <Project Path="samples\Spring\Spring.Server\Spring.Server.csproj" />
+        <Project Path="samples\Spring\Spring.Silo\Spring.Silo.csproj" />
+        <Project Path="samples\Spring\Spring.AppHost\Spring.AppHost.csproj" />
+        <Project Path="samples\Spring\Spring.L2Tests\Spring.L2Tests.csproj" />
     </Folder>
 </Solution>
