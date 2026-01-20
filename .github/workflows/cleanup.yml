@@ -1,15 +1,11 @@
 name: ReSharper Cleanup Check
 
 on:
-  push:
-    branches:
-      - main
-  merge_group:
   pull_request:
-    branches:
-      - main
-      - feature/**
-      - topic/**
+    branches: [ main, feature/**, topic/** ]
+  merge_group:
+  push:
+    branches: [ main ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -20,158 +16,147 @@ env:
   CONFIGURATION: Release
 
 jobs:
-  cleanup:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest ]
-        solution: [ mississippi.slnx, samples.slnx ]
+  discover-projects:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - id: set-matrix
+        shell: pwsh
+        run: |
+          $eventName = "${{ github.event_name }}"
+
+          # For PRs, try to scope to changed projects; otherwise run all.
+          $runAll = $false
+
+          if ($eventName -eq "pull_request") {
+            $base = "${{ github.event.pull_request.base.sha }}"
+            $head = "${{ github.event.pull_request.head.sha }}"
+            $changed = git diff --name-only $base $head
+
+            # If global formatting/settings inputs changed, run everything
+            if ($changed | Where-Object {
+              $_ -match '(^|/)\.editorconfig$' -or
+              $_ -match '\.DotSettings$' -or
+              $_ -match '(^|/)Directory\.Build\.(props|targets)$'
+            }) {
+              $runAll = $true
+            }
+
+            if (-not $runAll) {
+              # Heuristic: walk up from each changed file to find the nearest csproj
+              $projects = New-Object System.Collections.Generic.HashSet[string]
+              foreach ($f in $changed) {
+                if (-not (Test-Path $f)) { continue }
+                $dir = Split-Path $f -Parent
+                while ($dir -and $dir -ne "." -and (Test-Path $dir)) {
+                  $csproj = Get-ChildItem -Path $dir -Filter *.csproj -File -ErrorAction SilentlyContinue | Select-Object -First 1
+                  if ($csproj) {
+                    [void]$projects.Add($csproj.FullName)
+                    break
+                  }
+                  $dir = Split-Path $dir -Parent
+                }
+              }
+
+              if ($projects.Count -gt 0) {
+                $projectList = $projects | Sort-Object
+              } else {
+                $runAll = $true
+              }
+            }
+          } else {
+            $runAll = $true
+          }
+
+          if ($runAll) {
+            $projectList = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.csproj -File |
+              Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' } |
+              ForEach-Object { $_.FullName } |
+              Sort-Object
+          }
+
+          # Convert absolute paths to workspace-relative paths for cleaner logs
+          $rel = $projectList | ForEach-Object {
+            $_.Replace($env:GITHUB_WORKSPACE + [IO.Path]::DirectorySeparatorChar, "")
+          }
+
+          $matrixObj = @{ project = @($rel) }
+          $json = $matrixObj | ConvertTo-Json -Compress
+          "matrix=$json" >> $env:GITHUB_OUTPUT
+
+  cleanup:
+    needs: discover-projects
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true         # <-- key change for "fail fast"
+      max-parallel: 8         # tune to your runner capacity
+      matrix: ${{ fromJSON(needs.discover-projects.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
 
-      - name: Cache GitVersion tools
-        uses: actions/cache@v4
-        with:
-          path: ~/.gitversion
-          key: ${{ runner.os }}-gitversion
-          restore-keys: ${{ runner.os }}-gitversion
-
-      - name: Cache nugets
+      - name: Cache NuGet
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
+            ${{ runner.os }}-nuget-
 
       - name: Cache JetBrains analysis caches
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/.jb-caches
-          key: jb-${{ runner.os }}-${{ matrix.solution }}-${{ hashFiles('**/*.slnx', '**/*.csproj', '**/*.editorconfig', '**/*.DotSettings', '**/Directory.Build.props') }}
+          key: jb-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.editorconfig', '**/*.DotSettings', '**/Directory.Build.props', '**/Directory.Build.targets') }}
           restore-keys: |
-            jb-${{ runner.os }}-${{ matrix.solution }}-
             jb-${{ runner.os }}-
 
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v3.2.1
-        with:
-          versionSpec: "6.0.5"
-
-      - name: Determine Version
-        id: gitversion
-        uses: gittools/actions/gitversion/execute@v3.2.1
-        with:
-          useConfigFile: true
-
-      - name: Restore dotnet packages
-        run: |
-          dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
-
-      - name: Build dotnet projects
-        run: |
-          dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -warnaserror -p:Version=${{ steps.gitversion.outputs.SemVer }}
-
-      - name: Check for dotnet tools manifest
-        id: check-tools-manifest
+      - name: Restore .NET Tools (manifest required)
         shell: pwsh
         run: |
-          if (Test-Path ".config/dotnet-tools.json") {
-            echo "manifest_exists=true" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "manifest_exists=false" >> $env:GITHUB_OUTPUT
+          if (!(Test-Path ".config/dotnet-tools.json")) {
+            Write-Host "ERROR: Expected tool manifest at .config/dotnet-tools.json"
+            exit 1
           }
-
-      - name: Restore .NET Tools
-        if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
-        shell: pwsh
-        run: |
-          Write-Host "Restoring dotnet tools..."
           dotnet tool restore
-        continue-on-error: false
 
-      - name: Install ReSharper Global Tools
-        if: steps.check-tools-manifest.outputs.manifest_exists != 'true'
+      # JetBrains explicitly warns that without building, CleanupCode may not resolve binary references
+      # and may fail to clean up parts of the codebase.
+      - name: Build project (for full cleanup fidelity)
         shell: pwsh
         run: |
-          Write-Host "Installing JetBrains.ReSharper.GlobalTools..."
-          dotnet tool install -g JetBrains.ReSharper.GlobalTools
-        continue-on-error: false
+          dotnet build "${{ matrix.project }}" `
+            --configuration "${{ env.CONFIGURATION }}" `
+            -p:RunAnalyzers=false
 
-      - name: Generate legacy solution file
+      - name: Run ReSharper Cleanup Code (project)
         shell: pwsh
         run: |
-          $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
-          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
-          Write-Host "Generating $slnPath from $slnxPath ..."
-          dotnet tool run slngen "$slnxPath" --solutionfile "$slnPath" --launch false
-          Get-Item "$slnPath" | Format-List
-
-      - name: Run ReSharper Cleanup Code
-        shell: pwsh
-        run: |
-          $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
-          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
-          Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
-          $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
           dotnet tool run jb cleanupcode `
             --profile="Built-in: Full Cleanup" `
             --settings="${{ env.DOTSETTINGS_PATH }}" `
             --caches-home="${{ runner.temp }}/.jb-caches" `
             --no-updates `
-            "$slnPath" `
+            "${{ matrix.project }}" `
             --LogLevel=TRACE
-          $stopwatch.Stop()
-          $elapsed = $stopwatch.Elapsed
-          Write-Host ""
-          Write-Host "========================================" -ForegroundColor Cyan
-          Write-Host "CLEANUP TIMING SUMMARY" -ForegroundColor Cyan
-          Write-Host "========================================" -ForegroundColor Cyan
-          Write-Host "Solution: ${{ matrix.solution }}"
-          Write-Host "Duration: $($elapsed.ToString('hh\:mm\:ss\.fff'))"
-          Write-Host "Minutes:  $([math]::Round($elapsed.TotalMinutes, 2))"
-          Write-Host "========================================" -ForegroundColor Cyan
-          Write-Host ""
-          Write-Host "Cleanup completed."
-          echo "SLN_PATH=$slnPath" >> $env:GITHUB_ENV
-          $slnFileName = Split-Path -Path $slnPath -Leaf
-          echo "SLN_FILE_NAME=$slnFileName" >> $env:GITHUB_ENV
 
       - name: Check for Uncommitted Changes
         shell: pwsh
         run: |
-          Write-Host "Checking for modifications after cleanup..."
-          # Exclude packages lock files as Aspire dependencies may differ between platforms
-          # Matches both packages.lock.json and OS-specific variants like packages.linux-x64.lock.json
           $changes = git status --porcelain | Where-Object { $_ -notmatch 'packages.*\.lock\.json$' }
           if ($changes) {
-            Write-Host "ERROR: ReSharper cleanup modified files. The following changes are required:"
+            Write-Host "ERROR: ReSharper cleanup modified files. Diff:"
             git diff --color=always -- . ':!**/packages*.lock.json'
-            Write-Host ""
-            Write-Host "To resolve this locally run:"
-            $slnFileName = $env:SLN_FILE_NAME
-            if (-not $slnFileName -and $env:SLN_PATH) {
-              $slnFileName = Split-Path -Path $env:SLN_PATH -Leaf
-            }
-
-            if ([string]::IsNullOrWhiteSpace($slnFileName)) {
-              Write-Host "Unable to determine the solution file name for local cleanup. Check workflow logs for details."
-            }
-            else {
-              $localCommand = "dotnet tool run jb cleanupcode --profile=`"Built-in: Full Cleanup`" --settings=`"Directory.DotSettings`" $slnFileName"
-              Write-Host "Run the following from the repository root:"
-              Write-Host $localCommand
-            }
             exit 1
-          } else {
-            Write-Host "No modifications detected. Cleanup check passed."
           }
