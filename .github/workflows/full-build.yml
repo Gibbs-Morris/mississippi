@@ -1,14 +1,12 @@
 name: "Build (perfect)"
 on:
-  push:
-    branches:
-      - main
   merge_group:
   pull_request:
     branches:
       - main
       - feature/**
       - topic/**
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

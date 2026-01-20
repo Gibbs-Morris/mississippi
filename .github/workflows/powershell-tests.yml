@@ -1,15 +1,13 @@
 name: PowerShell Tests
 
 on:
-  push:
-    branches:
-      - main
   merge_group:
   pull_request:
     branches:
       - main
       - feature/**
       - topic/**
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -67,5 +65,4 @@ jobs:
       - name: Run PowerShell test orchestrator
         shell: pwsh
         run: pwsh ./eng/tests/orchestrate-powershell-tests.ps1
-
 
