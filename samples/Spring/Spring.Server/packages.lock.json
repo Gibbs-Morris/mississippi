@@ -986,6 +986,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",

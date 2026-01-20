@@ -74,7 +74,8 @@ public static class BrookStorageProviderRegistrations
             ) =>
             {
                 BrookStorageOptions options = provider.GetRequiredService<IOptions<BrookStorageOptions>>().Value;
-                CosmosClient cosmosClient = provider.GetRequiredKeyedService<CosmosClient>(options.CosmosClientServiceKey);
+                CosmosClient cosmosClient =
+                    provider.GetRequiredKeyedService<CosmosClient>(options.CosmosClientServiceKey);
 
                 // Return a handle; CosmosContainerInitializer will ensure existence on startup
                 Database database = cosmosClient.GetDatabase(options.DatabaseId);
@@ -101,12 +102,18 @@ public static class BrookStorageProviderRegistrations
         // Register keyed CosmosClient for Brooks storage
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosBrooksClient,
-            (_, _) => new CosmosClient(cosmosConnectionString));
+            (
+                _,
+                _
+            ) => new(cosmosConnectionString));
 
         // Register keyed BlobServiceClient for distributed locking
         services.AddKeyedSingleton(
             MississippiDefaults.ServiceKeys.BlobLocking,
-            (_, _) => new BlobServiceClient(blobStorageConnectionString));
+            (
+                _,
+                _
+            ) => new BlobServiceClient(blobStorageConnectionString));
 
         // Configure options if provided
         if (configureOptions != null)
@@ -150,12 +157,18 @@ public static class BrookStorageProviderRegistrations
         // Register keyed CosmosClient for Brooks storage
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosBrooksClient,
-            (_, _) => new CosmosClient(cosmosConnectionString));
+            (
+                _,
+                _
+            ) => new(cosmosConnectionString));
 
         // Register keyed BlobServiceClient for distributed locking
         services.AddKeyedSingleton(
             MississippiDefaults.ServiceKeys.BlobLocking,
-            (_, _) => new BlobServiceClient(blobStorageConnectionString));
+            (
+                _,
+                _
+            ) => new BlobServiceClient(blobStorageConnectionString));
         services.Configure<BrookStorageOptions>(configuration);
         return services.AddCosmosBrookStorageProvider();
     }

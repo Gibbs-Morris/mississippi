@@ -34,8 +34,7 @@ namespace Mississippi.Common.Abstractions.Attributes;
     AttributeTargets.Interface |
     AttributeTargets.Method |
     AttributeTargets.Property,
-    Inherited = false,
-    AllowMultiple = false)]
+    Inherited = false)]
 public sealed class PendingSourceGeneratorAttribute : Attribute
 {
     /// <summary>

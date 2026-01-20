@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <!-- Mississippi Event Sourcing Framework -->
+    <ProjectReference Include="..\..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />

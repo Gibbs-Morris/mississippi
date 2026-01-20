@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.EventSourcing.Reducers;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.UxProjections;

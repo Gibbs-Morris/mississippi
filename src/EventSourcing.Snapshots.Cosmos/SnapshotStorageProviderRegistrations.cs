@@ -68,7 +68,8 @@ public static class SnapshotStorageProviderRegistrations
     }
 
     /// <summary>
-    ///     Creates a keyed <see cref="CosmosClient" /> from the supplied connection string and registers the Cosmos snapshot storage
+    ///     Creates a keyed <see cref="CosmosClient" /> from the supplied connection string and registers the Cosmos snapshot
+    ///     storage
     ///     provider.
     /// </summary>
     /// <param name="services">The service collection to update.</param>
@@ -84,7 +85,10 @@ public static class SnapshotStorageProviderRegistrations
         // Register keyed CosmosClient for Snapshots storage
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
-            (_, _) => new CosmosClient(cosmosConnectionString));
+            (
+                _,
+                _
+            ) => new(cosmosConnectionString));
         if (configureOptions != null)
         {
             services.Configure(configureOptions);
