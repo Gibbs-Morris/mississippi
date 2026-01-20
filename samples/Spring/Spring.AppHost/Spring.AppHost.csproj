@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" />
     <ProjectReference Include="..\Spring.Server\Spring.Server.csproj" />
     <ProjectReference Include="..\Spring.Silo\Spring.Silo.csproj" />
   </ItemGroup>

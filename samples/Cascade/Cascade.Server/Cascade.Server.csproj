@@ -37,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" />
     <ProjectReference Include="..\Cascade.Domain\Cascade.Domain.csproj" />
     <ProjectReference Include="..\Cascade.Client\Cascade.Client.csproj" />
     <ProjectReference Include="..\Cascade.Contracts\Cascade.Contracts.csproj" />

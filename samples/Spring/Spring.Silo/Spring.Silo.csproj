@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" />
     <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj" />
   </ItemGroup>
 

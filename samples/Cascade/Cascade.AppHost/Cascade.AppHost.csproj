@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" />
     <ProjectReference Include="..\Cascade.Server\Cascade.Server.csproj" />
     <ProjectReference Include="..\Cascade.Silo\Cascade.Silo.csproj" />
   </ItemGroup>
