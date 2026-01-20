@@ -124,7 +124,70 @@ public sealed class CrescentFixture
         // Add snapshot caching infrastructure (required for aggregate grains)
         builder.Services.AddSnapshotCaching();
 
+        // Pre-register CosmosClient as keyed service with Gateway mode for Aspire emulator compatibility
+        // IMPORTANT: Must be registered BEFORE UseOrleans() so Orleans grains can resolve them
+        // See: https://github.com/dotnet/aspire/issues/5364
+        // Brooks expects it as a keyed service with key MississippiDefaults.ServiceKeys.CosmosBrooksClient
+        builder.Services.AddKeyedSingleton(
+            MississippiDefaults.ServiceKeys.CosmosBrooksClient,
+            (
+                _,
+                _
+            ) => new CosmosClient(
+                cosmosConnectionString,
+                new()
+                {
+                    ConnectionMode = ConnectionMode.Gateway,
+                    LimitToEndpoint = true,
+                }));
+
+        // Snapshots also need a keyed CosmosClient
+        builder.Services.AddKeyedSingleton(
+            MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
+            (
+                _,
+                _
+            ) => new CosmosClient(
+                cosmosConnectionString,
+                new()
+                {
+                    ConnectionMode = ConnectionMode.Gateway,
+                    LimitToEndpoint = true,
+                }));
+
+        // Pre-register BlobServiceClient as keyed service for distributed locking
+        // BlobDistributedLockManager uses [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)]
+        builder.Services.AddKeyedSingleton(
+            MississippiDefaults.ServiceKeys.BlobLocking,
+            (
+                _,
+                _
+            ) => new BlobServiceClient(blobConnectionString));
+
+        // Configure Cosmos DB storage for brooks (event streams)
+        // Use the overload without connection strings since we pre-registered the clients
+        builder.Services.AddCosmosBrookStorageProvider(o =>
+        {
+            o.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosBrooksClient;
+            o.DatabaseId = "aspire-l2tests";
+            o.QueryBatchSize = 50;
+            o.MaxEventsPerBatch = 50;
+        });
+
+        // Configure Cosmos DB storage for snapshots
+        builder.Services.AddCosmosSnapshotStorageProvider(options =>
+        {
+            options.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosSnapshotsClient;
+            options.DatabaseId = "aspire-l2tests";
+            options.ContainerId = "snapshots";
+            options.QueryBatchSize = 100;
+        });
+
+        // Register Counter aggregate domain (events, handlers, reducers, projections)
+        builder.Services.AddCounterAggregate();
+
         // Configure Orleans silo
+        // IMPORTANT: Must be after all service registrations so Orleans can see them
         builder.UseOrleans(silo =>
         {
             silo.UseLocalhostClustering()
@@ -141,45 +204,6 @@ public sealed class CrescentFixture
             // Tell Brooks which stream provider to use
             silo.AddEventSourcing();
         });
-
-        // Pre-register CosmosClient with Gateway mode for Aspire emulator compatibility
-        // See: https://github.com/dotnet/aspire/issues/5364
-        builder.Services.AddSingleton<CosmosClient>(_ => new(
-            cosmosConnectionString,
-            new()
-            {
-                ConnectionMode = ConnectionMode.Gateway,
-                LimitToEndpoint = true,
-            }));
-
-        // Pre-register BlobServiceClient as keyed service for distributed locking
-        // BlobDistributedLockManager uses [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)]
-        builder.Services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.BlobLocking,
-            (
-                _,
-                _
-            ) => new BlobServiceClient(blobConnectionString));
-
-        // Configure Cosmos DB storage for brooks (event streams)
-        // Use the overload without connection strings since we pre-registered the clients
-        builder.Services.AddCosmosBrookStorageProvider(o =>
-        {
-            o.DatabaseId = "aspire-l2tests";
-            o.QueryBatchSize = 50;
-            o.MaxEventsPerBatch = 50;
-        });
-
-        // Configure Cosmos DB storage for snapshots
-        builder.Services.AddCosmosSnapshotStorageProvider(options =>
-        {
-            options.DatabaseId = "aspire-l2tests";
-            options.ContainerId = "snapshots";
-            options.QueryBatchSize = 100;
-        });
-
-        // Register Counter aggregate domain (events, handlers, reducers, projections)
-        builder.Services.AddCounterAggregate();
         IHost host = builder.Build();
 
         // Pre-warm: ensure the database and containers exist
