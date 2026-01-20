@@ -37,7 +37,10 @@ public sealed class UxProjectionControllerTests
     {
         factoryMock ??= new();
         Mock<IMapper<TestProjection, TestProjection>> mapperMock = new();
-        mapperMock.Setup(m => m.Map(It.IsAny<TestProjection>())).Returns((TestProjection p) => p);
+        mapperMock.Setup(m => m.Map(It.IsAny<TestProjection>()))
+            .Returns((
+                TestProjection p
+            ) => p);
         TestableController controller = new(
             factoryMock.Object,
             mapperMock.Object,
