@@ -13,13 +13,10 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
-using Orleans;
 using Orleans.Hosting;
 
 using Scalar.AspNetCore;
 
-using Spring.Client;
-using Spring.Domain;
 using Spring.Server.Controllers.Aggregates.Mappers;
 using Spring.Server.Controllers.Projections.Mappers;
 
@@ -104,26 +101,6 @@ app.MapGet(
         {
             status = "healthy",
         }));
-
-// Map API endpoints
-app.MapGet(
-    "/api/greet/{name}",
-    async (
-        string name,
-        IGrainFactory grainFactory
-    ) =>
-    {
-        IGreeterGrain grain = grainFactory.GetGrain<IGreeterGrain>(name);
-        GreetResult grainResult = await grain.GreetAsync();
-
-        // Map Orleans type to Client DTO
-        GreetResultDto result = new()
-        {
-            Greeting = grainResult.Greeting,
-            GeneratedAt = grainResult.GeneratedAt,
-        };
-        return Results.Ok(result);
-    });
 
 // Fallback to index.html for SPA routing
 app.MapFallbackToFile("index.html");

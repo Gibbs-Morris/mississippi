@@ -6,10 +6,10 @@ using Mississippi.Common.Abstractions.Attributes;
 namespace Spring.Server.Controllers.Aggregates;
 
 /// <summary>
-///     Request to withdraw funds.
+///     Request to withdraw funds from a bank account.
 /// </summary>
 [PendingSourceGenerator]
-public sealed record WithdrawDto
+public sealed record WithdrawFundsDto
 {
     /// <summary>
     ///     Gets the amount to withdraw.

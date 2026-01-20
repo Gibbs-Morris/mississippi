@@ -1,30 +1,107 @@
 @page "/"
 @inherits StoreComponent
 
-<h1>Spring Sample</h1>
+<h1>Bank Account Demo</h1>
 
-<button @onclick="Greet">Say Hello</button>
+<div>
+    <label>Account ID:</label>
+    <input @bind="accountIdInput" placeholder="Enter account ID"/>
+    <button @onclick="SetAccountId">Set Account</button>
+</div>
 
-@if (GreetState.IsLoading)
+@if (!string.IsNullOrEmpty(AggregateState.AccountId))
 {
-    <p>Loading...</p>
-}
-else if (!string.IsNullOrEmpty(GreetState.Greeting))
-{
-    <p>@GreetState.Greeting</p>
-    <p>
-        <small>Generated at: @GreetState.GeneratedAt?.ToString("O")</small>
-    </p>
-}
-else if (!string.IsNullOrEmpty(GreetState.ErrorMessage))
-{
-    <p style="color: red;">@GreetState.ErrorMessage</p>
+    <h2>Account: @AggregateState.AccountId</h2>
+    <div>
+        <h3>Open Account</h3>
+        <input @bind="holderName" placeholder="Holder Name"/>
+        <input type="number" @bind="initialDeposit" placeholder="Initial Deposit"/>
+        <button @onclick="OpenAccount" disabled="@IsExecutingOrLoading">Open Account</button>
+    </div>
+    <div>
+        <h3>Deposit Funds</h3>
+        <input type="number" @bind="depositAmount"/>
+        <button @onclick="Deposit" disabled="@IsExecutingOrLoading">Deposit</button>
+    </div>
+    <div>
+        <h3>Withdraw Funds</h3>
+        <input type="number" @bind="withdrawAmount"/>
+        <button @onclick="Withdraw" disabled="@IsExecutingOrLoading">Withdraw</button>
+    </div>
+    <div>
+        <button @onclick="FetchBalance" disabled="@IsExecutingOrLoading">Refresh Balance</button>
+    </div>
+    @if (IsExecutingOrLoading)
+    {
+        <p>Loading...</p>
+    }
+
+    @if (BalanceState.Balance.HasValue)
+    {
+        <div>
+            <p>
+                <strong>Balance:</strong> @BalanceState.Balance.Value.ToString("C")
+            </p>
+            <p>
+                <strong>Holder:</strong> @BalanceState.HolderName
+            </p>
+            <p>
+                <strong>Status:</strong> @(BalanceState.IsOpen ? "Open" : "Closed")
+            </p>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p style="color: red;">@ErrorMessage</p>
+    }
+
+    @if (AggregateState.LastCommandSucceeded == true)
+    {
+        <p style="color: green;">Command succeeded!</p>
+    }
 }
 
 @code {
 
-    private GreetState GreetState => GetState<GreetState>();
+    private string accountIdInput = "";
 
-    private void Greet() => Dispatch(new GreetRequestedAction("World"));
+    private decimal depositAmount;
+
+    private string holderName = "";
+
+    private decimal initialDeposit;
+
+    private decimal withdrawAmount;
+
+    /// <summary>
+    ///     Gets the aggregate (write) feature state.
+    /// </summary>
+    private BankAccountAggregateState AggregateState => GetState<BankAccountAggregateState>();
+
+    /// <summary>
+    ///     Gets the projection (read) feature state.
+    /// </summary>
+    private BankAccountBalanceState BalanceState => GetState<BankAccountBalanceState>();
+
+    /// <summary>
+    ///     Gets a combined error message from either state.
+    /// </summary>
+    private string? ErrorMessage => AggregateState.ErrorMessage ?? BalanceState.ErrorMessage;
+
+    /// <summary>
+    ///     Gets whether any operation is in progress.
+    /// </summary>
+    private bool IsExecutingOrLoading => AggregateState.IsExecuting || BalanceState.IsLoading;
+
+    private void Deposit() => Dispatch(new DepositFundsAction(AggregateState.AccountId!, depositAmount));
+
+    private void FetchBalance() => Dispatch(new FetchBankAccountBalanceAction(AggregateState.AccountId!));
+
+    private void OpenAccount() => Dispatch(new OpenAccountAction(AggregateState.AccountId!, holderName, initialDeposit));
+
+    private void SetAccountId() => Dispatch(new SetAccountIdAction(accountIdInput));
+
+    private void Withdraw() => Dispatch(new WithdrawFundsAction(AggregateState.AccountId!, withdrawAmount));
 
 }

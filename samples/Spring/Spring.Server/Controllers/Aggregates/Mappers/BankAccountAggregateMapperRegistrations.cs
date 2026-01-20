@@ -24,8 +24,8 @@ internal static class BankAccountAggregateMapperRegistrations
     )
     {
         services.AddMapper<OpenAccountDto, OpenAccount, OpenAccountDtoMapper>();
-        services.AddMapper<DepositDto, DepositFunds, DepositDtoMapper>();
-        services.AddMapper<WithdrawDto, WithdrawFunds, WithdrawDtoMapper>();
+        services.AddMapper<DepositFundsDto, DepositFunds, DepositFundsDtoMapper>();
+        services.AddMapper<WithdrawFundsDto, WithdrawFunds, WithdrawFundsDtoMapper>();
         return services;
     }
 }

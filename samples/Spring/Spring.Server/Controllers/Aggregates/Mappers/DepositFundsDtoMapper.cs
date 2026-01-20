@@ -7,14 +7,14 @@ using Spring.Domain.Aggregates.BankAccount.Commands;
 namespace Spring.Server.Controllers.Aggregates.Mappers;
 
 /// <summary>
-///     Maps <see cref="WithdrawDto" /> to <see cref="WithdrawFunds" /> command.
+///     Maps <see cref="DepositFundsDto" /> to <see cref="DepositFunds" /> command.
 /// </summary>
 [PendingSourceGenerator]
-internal sealed class WithdrawDtoMapper : IMapper<WithdrawDto, WithdrawFunds>
+internal sealed class DepositFundsDtoMapper : IMapper<DepositFundsDto, DepositFunds>
 {
     /// <inheritdoc />
-    public WithdrawFunds Map(
-        WithdrawDto input
+    public DepositFunds Map(
+        DepositFundsDto input
     ) =>
         new()
         {

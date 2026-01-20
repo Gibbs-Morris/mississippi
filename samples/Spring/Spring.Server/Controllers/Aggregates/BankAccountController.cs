@@ -29,31 +29,31 @@ public sealed class BankAccountController : AggregateControllerBase<BankAccountA
     /// </summary>
     /// <param name="aggregateGrainFactory">Factory for resolving aggregate grains.</param>
     /// <param name="openAccountMapper">Mapper for open account DTOs.</param>
-    /// <param name="depositMapper">Mapper for deposit DTOs.</param>
-    /// <param name="withdrawMapper">Mapper for withdraw DTOs.</param>
+    /// <param name="depositFundsMapper">Mapper for deposit funds DTOs.</param>
+    /// <param name="withdrawFundsMapper">Mapper for withdraw funds DTOs.</param>
     /// <param name="logger">The logger for diagnostic output.</param>
     public BankAccountController(
         IAggregateGrainFactory aggregateGrainFactory,
         IMapper<OpenAccountDto, OpenAccount> openAccountMapper,
-        IMapper<DepositDto, DepositFunds> depositMapper,
-        IMapper<WithdrawDto, WithdrawFunds> withdrawMapper,
+        IMapper<DepositFundsDto, DepositFunds> depositFundsMapper,
+        IMapper<WithdrawFundsDto, WithdrawFunds> withdrawFundsMapper,
         ILogger<BankAccountController> logger
     )
         : base(logger)
     {
         AggregateGrainFactory = aggregateGrainFactory;
         OpenAccountMapper = openAccountMapper;
-        DepositMapper = depositMapper;
-        WithdrawMapper = withdrawMapper;
+        DepositFundsMapper = depositFundsMapper;
+        WithdrawFundsMapper = withdrawFundsMapper;
     }
 
     private IAggregateGrainFactory AggregateGrainFactory { get; }
 
-    private IMapper<DepositDto, DepositFunds> DepositMapper { get; }
+    private IMapper<DepositFundsDto, DepositFunds> DepositFundsMapper { get; }
 
     private IMapper<OpenAccountDto, OpenAccount> OpenAccountMapper { get; }
 
-    private IMapper<WithdrawDto, WithdrawFunds> WithdrawMapper { get; }
+    private IMapper<WithdrawFundsDto, WithdrawFunds> WithdrawFundsMapper { get; }
 
     /// <summary>
     ///     Deposits funds into the bank account.
@@ -63,14 +63,14 @@ public sealed class BankAccountController : AggregateControllerBase<BankAccountA
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The operation result.</returns>
     [HttpPost("deposit")]
-    public Task<ActionResult<OperationResult>> DepositAsync(
+    public Task<ActionResult<OperationResult>> DepositFundsAsync(
         [FromRoute] string id,
-        [FromBody] DepositDto request,
+        [FromBody] DepositFundsDto request,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(request);
-        return ExecuteAsync(id, DepositMapper.Map(request), ExecuteCommandAsync, cancellationToken);
+        return ExecuteAsync(id, DepositFundsMapper.Map(request), ExecuteCommandAsync, cancellationToken);
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public sealed class BankAccountController : AggregateControllerBase<BankAccountA
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The operation result.</returns>
     [HttpPost("open")]
-    public Task<ActionResult<OperationResult>> OpenAsync(
+    public Task<ActionResult<OperationResult>> OpenAccountAsync(
         [FromRoute] string id,
         [FromBody] OpenAccountDto request,
         CancellationToken cancellationToken = default
@@ -99,14 +99,14 @@ public sealed class BankAccountController : AggregateControllerBase<BankAccountA
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The operation result.</returns>
     [HttpPost("withdraw")]
-    public Task<ActionResult<OperationResult>> WithdrawAsync(
+    public Task<ActionResult<OperationResult>> WithdrawFundsAsync(
         [FromRoute] string id,
-        [FromBody] WithdrawDto request,
+        [FromBody] WithdrawFundsDto request,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(request);
-        return ExecuteAsync(id, WithdrawMapper.Map(request), ExecuteCommandAsync, cancellationToken);
+        return ExecuteAsync(id, WithdrawFundsMapper.Map(request), ExecuteCommandAsync, cancellationToken);
     }
 
     private Task<OperationResult> ExecuteCommandAsync<TCommand>(

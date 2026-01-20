@@ -7,10 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Reservoir;
 
 using Spring.Client;
-using Spring.Client.Features.Greet.Actions;
-using Spring.Client.Features.Greet.Effects;
-using Spring.Client.Features.Greet.Reducers;
-using Spring.Client.Features.Greet.State;
+using Spring.Client.Features.BankAccountAggregate;
+using Spring.Client.Features.BankAccountBalance;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -25,14 +23,13 @@ builder.Services.AddScoped(_ => new HttpClient
 });
 #pragma warning restore IDISP014
 
-// Register Reservoir reducers for the greet feature
-builder.Services.AddReducer<GreetLoadingAction, GreetState>(GreetReducers.Loading);
-builder.Services.AddReducer<GreetSucceededAction, GreetState>(GreetReducers.Succeeded);
-builder.Services.AddReducer<GreetFailedAction, GreetState>(GreetReducers.Failed);
+// Register features (one line per feature - scales cleanly)
+// Write side: aggregate commands
+builder.Services.AddBankAccountAggregateFeature();
 
-// Register effects
-builder.Services.AddEffect<GreetEffect>();
+// Read side: projection queries
+builder.Services.AddBankAccountBalanceFeature();
 
-// Register the Reservoir store (after all reducers and effects)
+// Register the Reservoir store (after all features)
 builder.Services.AddReservoir();
 await builder.Build().RunAsync();
