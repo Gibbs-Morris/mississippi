@@ -10,6 +10,24 @@ namespace Spring.Client.Features.Greet.Reducers;
 internal static class GreetReducers
 {
     /// <summary>
+    ///     Reduces the <see cref="GreetFailedAction" /> to set error state.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The action containing the error message.</param>
+    /// <returns>The new state with the error populated.</returns>
+    public static GreetState Failed(
+        GreetState state,
+        GreetFailedAction action
+    ) =>
+        state with
+        {
+            IsLoading = false,
+            ErrorMessage = action.ErrorMessage,
+            Greeting = null,
+            GeneratedAt = null,
+        };
+
+    /// <summary>
     ///     Reduces the <see cref="GreetLoadingAction" /> to set loading state.
     /// </summary>
     /// <param name="state">The current state.</param>
@@ -43,23 +61,5 @@ internal static class GreetReducers
             Greeting = action.Greeting,
             GeneratedAt = action.GeneratedAt,
             ErrorMessage = null,
-        };
-
-    /// <summary>
-    ///     Reduces the <see cref="GreetFailedAction" /> to set error state.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The action containing the error message.</param>
-    /// <returns>The new state with the error populated.</returns>
-    public static GreetState Failed(
-        GreetState state,
-        GreetFailedAction action
-    ) =>
-        state with
-        {
-            IsLoading = false,
-            ErrorMessage = action.ErrorMessage,
-            Greeting = null,
-            GeneratedAt = null,
         };
 }

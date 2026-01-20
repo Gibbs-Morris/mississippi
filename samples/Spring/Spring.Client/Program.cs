@@ -35,5 +35,4 @@ builder.Services.AddEffect<GreetEffect>();
 
 // Register the Reservoir store (after all reducers and effects)
 builder.Services.AddReservoir();
-
 await builder.Build().RunAsync();

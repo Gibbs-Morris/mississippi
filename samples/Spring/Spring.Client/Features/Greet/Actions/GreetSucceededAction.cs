@@ -10,7 +10,4 @@ namespace Spring.Client.Features.Greet.Actions;
 /// </summary>
 /// <param name="Greeting">The greeting message.</param>
 /// <param name="GeneratedAt">The timestamp when the greeting was generated.</param>
-internal sealed record GreetSucceededAction(
-    string Greeting,
-    DateTime GeneratedAt
-) : IAction;
+internal sealed record GreetSucceededAction(string Greeting, DateTime GeneratedAt) : IAction;

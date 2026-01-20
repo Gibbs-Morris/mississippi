@@ -57,7 +57,6 @@ internal sealed class GreetEffect : IEffect
         // Store result outside try block so we can yield after error handling
         GreetResultDto? result = null;
         string? errorMessage = null;
-
         try
         {
             result = await Http.GetFromJsonAsync<GreetResultDto>(

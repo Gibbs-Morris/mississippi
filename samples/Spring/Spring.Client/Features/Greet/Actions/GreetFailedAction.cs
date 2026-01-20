@@ -7,6 +7,4 @@ namespace Spring.Client.Features.Greet.Actions;
 ///     Action dispatched when a greeting request fails.
 /// </summary>
 /// <param name="ErrorMessage">The error message.</param>
-internal sealed record GreetFailedAction(
-    string ErrorMessage
-) : IAction;
+internal sealed record GreetFailedAction(string ErrorMessage) : IAction;
