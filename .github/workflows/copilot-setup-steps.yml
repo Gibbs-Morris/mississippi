@@ -85,29 +85,9 @@ jobs:
           set -euo pipefail
           dotnet tool restore
 
-      - name: Restore Mississippi solution packages
-        run: |
-          set -euo pipefail
-          dotnet restore mississippi.slnx
-
-      - name: Restore Samples solution packages
-        run: |
-          set -euo pipefail
-          dotnet restore samples.slnx
-
       - name: Prime GitVersion tool cache
         if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
         run: |
           set -euo pipefail
           dotnet tool run dotnet-gitversion /version
         continue-on-error: true
-
-      - name: Build Mississippi solution
-        run: |
-          set -euo pipefail
-          dotnet build mississippi.slnx --configuration Release --no-restore
-
-      - name: Build Samples solution
-        run: |
-          set -euo pipefail
-          dotnet build samples.slnx --configuration Release --no-restore
