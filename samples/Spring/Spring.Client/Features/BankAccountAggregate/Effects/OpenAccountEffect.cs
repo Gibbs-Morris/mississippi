@@ -32,5 +32,5 @@ internal sealed class OpenAccountEffect : CommandEffectBase<OpenAccountAction, O
     protected override string GetEndpoint(
         OpenAccountAction action
     ) =>
-        $"/api/aggregates/bankaccount/{action.AccountId}/open";
+        $"/api/aggregates/bankaccount/{action.BankAccountId}/open";
 }

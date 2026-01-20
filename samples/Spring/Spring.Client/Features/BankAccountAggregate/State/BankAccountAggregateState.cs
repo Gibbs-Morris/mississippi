@@ -18,9 +18,9 @@ internal sealed record BankAccountAggregateState : IFeatureState
     public static string FeatureKey => "bankAccountAggregate";
 
     /// <summary>
-    ///     Gets the currently selected account ID for command targeting.
+    ///     Gets the currently selected bank account ID for command targeting.
     /// </summary>
-    public string? AccountId { get; init; }
+    public string? BankAccountId { get; init; }
 
     /// <summary>
     ///     Gets the error code from the last failed command.

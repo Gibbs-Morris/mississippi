@@ -33,8 +33,7 @@ internal static class BankAccountBalanceFeatureRegistration
         // Reducers
         services.AddReducer<BankAccountBalanceLoadingAction, BankAccountBalanceState>(
             BankAccountBalanceReducers.Loading);
-        services.AddReducer<BankAccountBalanceLoadedAction, BankAccountBalanceState>(
-            BankAccountBalanceReducers.Loaded);
+        services.AddReducer<BankAccountBalanceLoadedAction, BankAccountBalanceState>(BankAccountBalanceReducers.Loaded);
         services.AddReducer<BankAccountBalanceFetchFailedAction, BankAccountBalanceState>(
             BankAccountBalanceReducers.FetchFailed);
 

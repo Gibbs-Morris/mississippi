@@ -39,13 +39,13 @@ public sealed class BankAccountIntegrationTests
     /// </summary>
     private static async Task<BankAccountBalanceResponse?> WaitForProjectionAsync(
         HttpClient client,
-        string accountId,
+        string bankAccountId,
         decimal expectedBalance
     )
     {
         DateTime deadline = DateTime.UtcNow.Add(EventualConsistencyTimeout);
         BankAccountBalanceResponse? lastResult = null;
-        Uri projectionUri = new($"api/projections/bank-account-balance/{accountId}", UriKind.Relative);
+        Uri projectionUri = new($"api/projections/bank-account-balance/{bankAccountId}", UriKind.Relative);
         while (DateTime.UtcNow < deadline)
         {
             using HttpResponseMessage response = await client.GetAsync(projectionUri);
@@ -103,7 +103,7 @@ public sealed class BankAccountIntegrationTests
         {
             BaseAddress = fixture.ServerBaseUri,
         };
-        string accountId = $"test-account-{Guid.NewGuid():N}";
+        string bankAccountId = $"test-account-{Guid.NewGuid():N}";
         const string holderName = "John Doe";
         const decimal initialDeposit = 100.00m;
         const decimal firstDeposit = 250.00m;
@@ -113,7 +113,7 @@ public sealed class BankAccountIntegrationTests
 
         // Act - Step 1: Open account with initial deposit
         using (HttpResponseMessage openResponse = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{accountId}/open", UriKind.Relative),
+                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/open", UriKind.Relative),
                    new
                    {
                        HolderName = holderName,
@@ -125,7 +125,7 @@ public sealed class BankAccountIntegrationTests
 
         // Act - Step 2: First deposit
         using (HttpResponseMessage deposit1Response = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{accountId}/deposit", UriKind.Relative),
+                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/deposit", UriKind.Relative),
                    new
                    {
                        Amount = firstDeposit,
@@ -136,7 +136,7 @@ public sealed class BankAccountIntegrationTests
 
         // Act - Step 3: Second deposit
         using (HttpResponseMessage deposit2Response = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{accountId}/deposit", UriKind.Relative),
+                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/deposit", UriKind.Relative),
                    new
                    {
                        Amount = secondDeposit,
@@ -147,7 +147,7 @@ public sealed class BankAccountIntegrationTests
 
         // Act - Step 4: Withdraw
         using (HttpResponseMessage withdrawResponse = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{accountId}/withdraw", UriKind.Relative),
+                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/withdraw", UriKind.Relative),
                    new
                    {
                        Amount = withdrawal,
@@ -157,7 +157,8 @@ public sealed class BankAccountIntegrationTests
         }
 
         // Act - Step 5: Wait for eventual consistency and poll projection
-        BankAccountBalanceResponse? projectionResult = await WaitForProjectionAsync(client, accountId, expectedBalance);
+        BankAccountBalanceResponse? projectionResult =
+            await WaitForProjectionAsync(client, bankAccountId, expectedBalance);
 
         // Assert
         projectionResult.Should().NotBeNull("projection should exist after commands");
@@ -179,13 +180,13 @@ public sealed class BankAccountIntegrationTests
         {
             BaseAddress = fixture.ServerBaseUri,
         };
-        string accountId = $"test-account-{Guid.NewGuid():N}";
+        string bankAccountId = $"test-account-{Guid.NewGuid():N}";
         const string holderName = "Jane Smith";
         const decimal initialDeposit = 500.00m;
 
         // Act - Open account
         using (HttpResponseMessage openResponse = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{accountId}/open", UriKind.Relative),
+                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/open", UriKind.Relative),
                    new
                    {
                        HolderName = holderName,
@@ -196,7 +197,8 @@ public sealed class BankAccountIntegrationTests
         }
 
         // Act - Wait for projection
-        BankAccountBalanceResponse? projectionResult = await WaitForProjectionAsync(client, accountId, initialDeposit);
+        BankAccountBalanceResponse? projectionResult =
+            await WaitForProjectionAsync(client, bankAccountId, initialDeposit);
 
         // Assert
         projectionResult.Should().NotBeNull("projection should exist after opening account");

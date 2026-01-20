@@ -20,7 +20,7 @@ namespace Spring.Server.Controllers.Projections;
 ///         It maps the projection to a DTO before returning the response.
 ///     </para>
 /// </remarks>
-[Route("api/projections/bank-account-balance/{entityId}")]
+[Route("api/projections/bank-account-balance/{bankAccountBalanceId}")]
 [PendingSourceGenerator]
 public sealed class BankAccountBalanceController
     : UxProjectionControllerBase<BankAccountBalanceProjection, BankAccountBalanceDto>

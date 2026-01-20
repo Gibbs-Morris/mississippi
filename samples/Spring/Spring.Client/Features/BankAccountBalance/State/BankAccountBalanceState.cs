@@ -18,14 +18,14 @@ internal sealed record BankAccountBalanceState : IFeatureState
     public static string FeatureKey => "bankAccountBalance";
 
     /// <summary>
-    ///     Gets the account ID this projection data belongs to.
-    /// </summary>
-    public string? AccountId { get; init; }
-
-    /// <summary>
     ///     Gets the current account balance.
     /// </summary>
     public decimal? Balance { get; init; }
+
+    /// <summary>
+    ///     Gets the bank account balance ID this projection data belongs to.
+    /// </summary>
+    public string? BankAccountBalanceId { get; init; }
 
     /// <summary>
     ///     Gets the error message from the last failed fetch.
