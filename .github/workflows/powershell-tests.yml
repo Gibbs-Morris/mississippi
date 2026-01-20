@@ -1,9 +1,7 @@
 name: PowerShell Tests
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
   merge_group:
   pull_request:
     branches:
