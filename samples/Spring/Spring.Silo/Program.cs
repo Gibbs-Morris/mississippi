@@ -1,7 +1,17 @@
+using Azure.Storage.Blobs;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
+using Mississippi.Common.Abstractions;
+using Mississippi.EventSourcing.Brooks;
+using Mississippi.EventSourcing.Brooks.Cosmos;
+using Mississippi.EventSourcing.Serialization.Json;
+using Mississippi.EventSourcing.Snapshots;
+using Mississippi.EventSourcing.Snapshots.Cosmos;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -10,8 +20,17 @@ using OpenTelemetry.Trace;
 using Orleans.Hosting;
 using Orleans.Runtime;
 
+using Spring.Domain.Aggregates.BankAccount;
+using Spring.Domain.Projections.BankAccountBalance;
+
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+// Register Spring domain aggregates
+builder.Services.AddBankAccountAggregate();
+
+// Register Spring domain projections
+builder.Services.AddBankAccountBalanceProjection();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
@@ -20,6 +39,16 @@ builder.Services.AddOpenTelemetry()
     .WithMetrics(metrics => metrics.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddRuntimeInstrumentation()
+
+        // Mississippi framework meters
+        .AddMeter("Mississippi.EventSourcing.Brooks")
+        .AddMeter("Mississippi.EventSourcing.Aggregates")
+        .AddMeter("Mississippi.EventSourcing.Snapshots")
+        .AddMeter("Mississippi.Storage.Cosmos")
+        .AddMeter("Mississippi.Storage.Snapshots")
+        .AddMeter("Mississippi.Storage.Locking")
+
+        // Orleans meters
         .AddMeter("Microsoft.Orleans"))
     .WithLogging()
     .UseOtlpExporter();
@@ -30,8 +59,70 @@ builder.Services.AddOpenTelemetry()
 builder.AddKeyedAzureTableServiceClient("clustering");
 builder.AddKeyedAzureBlobServiceClient("grainstate");
 
+// Add Aspire-managed Cosmos client for event sourcing storage (Brooks + Snapshots)
+// Gateway mode required for Aspire Cosmos emulator compatibility
+builder.AddAzureCosmosClient(
+    "cosmos",
+    configureClientOptions: options =>
+    {
+        options.ConnectionMode = ConnectionMode.Gateway;
+        options.LimitToEndpoint = true;
+    });
+
+// Add Blob client for distributed locking (Brooks)
+builder.AddKeyedAzureBlobServiceClient("blobs");
+
+// Forward the Aspire-registered blob client to the Brooks key used by BlobDistributedLockManager
+builder.Services.AddKeyedSingleton(
+    MississippiDefaults.ServiceKeys.BlobLocking,
+    (
+        sp,
+        _
+    ) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
+
+// Forward the Aspire-registered Cosmos client to a shared Mississippi keyed service key
+// Both Brooks and Snapshots use the same Cosmos account but different containers
+const string sharedCosmosKey = "spring-cosmos";
+builder.Services.AddKeyedSingleton(
+    sharedCosmosKey,
+    (
+        sp,
+        _
+    ) => sp.GetRequiredService<CosmosClient>());
+
+// Add event sourcing infrastructure
+builder.Services.AddJsonSerialization();
+builder.Services.AddEventSourcingByService();
+builder.Services.AddSnapshotCaching();
+
+// Configure Cosmos storage for Brooks (event streams)
+builder.Services.AddCosmosBrookStorageProvider(options =>
+{
+    options.CosmosClientServiceKey = sharedCosmosKey;
+    options.DatabaseId = "spring-db";
+    options.ContainerId = "events";
+    options.QueryBatchSize = 50;
+    options.MaxEventsPerBatch = 50;
+});
+
+// Configure Cosmos storage for Snapshots
+builder.Services.AddCosmosSnapshotStorageProvider(options =>
+{
+    options.CosmosClientServiceKey = sharedCosmosKey;
+    options.DatabaseId = "spring-db";
+    options.ContainerId = "snapshots";
+    options.QueryBatchSize = 100;
+});
+
 // Configure Orleans silo - Aspire injects clustering config via environment variables
-builder.UseOrleans(siloBuilder => { siloBuilder.AddActivityPropagation(); });
+builder.UseOrleans(siloBuilder =>
+{
+    siloBuilder.AddActivityPropagation();
+
+    // Configure event sourcing to use the Aspire-configured stream provider
+    // Must match the stream provider name configured in AppHost via WithMemoryStreaming
+    siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
+});
 WebApplication app = builder.Build();
 
 // Health check endpoint for Aspire orchestration

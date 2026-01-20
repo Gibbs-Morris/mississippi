@@ -21,6 +21,7 @@ Governing thought: Use consistent Allure attributes to map tests to architecture
 ## Scope and Audience
 
 Test authors using Allure.Xunit under `tests/`.
+Allure is only used with L0Tests and L1Tests.
 
 ## At-a-Glance Quick-Start
 

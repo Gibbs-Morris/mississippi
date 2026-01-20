@@ -18,13 +18,11 @@ namespace Spring.L2Tests;
 ///         Both methods share the same cleanup logic and are guarded against double-disposal.
 ///     </para>
 /// </remarks>
-#pragma warning disable CA1515 // Types can be made internal - xUnit fixture must be public
 #pragma warning disable IDISP002 // Dispose member - disposed in DisposeAsync
 #pragma warning disable IDISP003 // Dispose previous before re-assigning - fields are null initially
 public sealed class SpringFixture
     : IAsyncLifetime,
       IDisposable
-#pragma warning restore CA1515
 {
     /// <summary>
     ///     Default timeout for Playwright operations (in milliseconds).

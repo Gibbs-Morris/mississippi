@@ -8,9 +8,7 @@ namespace Spring.L2Tests;
 ///     Tests the full flow from Blazor UI through Orleans grain and back.
 /// </summary>
 [Collection(SpringTestCollection.Name)]
-#pragma warning disable CA1515 // Types can be made internal - xUnit test class must be public
 public sealed class GreetingE2ETests
-#pragma warning restore CA1515
 {
     private readonly SpringFixture fixture;
 

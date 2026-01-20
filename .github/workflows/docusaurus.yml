@@ -1,5 +1,6 @@
 name: "Docusaurus Build"
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -9,6 +10,9 @@ on:
       - main
       - feature/**
       - topic/**
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docusaurus.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

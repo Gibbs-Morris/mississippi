@@ -5,5 +5,6 @@
         <AssemblyName>$(MSBuildProjectName)</AssemblyName>
         <RootNamespace>$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
         <IsPackable>false</IsPackable>
+        <NoWarn>$(NoWarn);CA1515</NoWarn>
     </PropertyGroup>
 </Project>

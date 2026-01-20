@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Common.Abstractions;
+
 using Moq;
 
 
@@ -130,7 +132,7 @@ public sealed class CosmosContainerInitializerTests
             .ReturnsAsync(Mock.Of<ContainerResponse>());
         ServiceCollection services = new();
         services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
-        services.AddSingleton(cosmos.Object);
+        services.AddKeyedSingleton<CosmosClient>(MississippiDefaults.ServiceKeys.CosmosBrooksClient, cosmos.Object);
         services.AddCosmosBrookStorageProvider();
         using ServiceProvider provider = services.BuildServiceProvider();
         IHostedService hosted = provider.GetRequiredService<IHostedService>();
@@ -188,7 +190,7 @@ public sealed class CosmosContainerInitializerTests
         existingContainer.Setup(c => c.ReadContainerAsync(null, default)).ReturnsAsync(containerResp.Object);
         ServiceCollection services = new();
         services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
-        services.AddSingleton(cosmos.Object);
+        services.AddKeyedSingleton<CosmosClient>(MississippiDefaults.ServiceKeys.CosmosBrooksClient, cosmos.Object);
         services.AddCosmosBrookStorageProvider();
         using ServiceProvider provider = services.BuildServiceProvider();
         IHostedService hosted = provider.GetRequiredService<IHostedService>();
