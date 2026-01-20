@@ -53,6 +53,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
 
+      - name: Cache JetBrains analysis caches
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/.jb-caches
+          key: jb-${{ runner.os }}-${{ matrix.solution }}-${{ hashFiles('**/*.slnx', '**/*.csproj', '**/*.editorconfig', '**/*.DotSettings', '**/Directory.Build.props') }}
+          restore-keys: |
+            jb-${{ runner.os }}-${{ matrix.solution }}-
+            jb-${{ runner.os }}-
+
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v3.2.1
         with:
@@ -113,7 +122,25 @@ jobs:
           $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
           $slnPath = $slnxPath -replace '\.slnx$', '.sln'
           Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
-          dotnet tool run jb cleanupcode --profile="Built-in: Full Cleanup" --settings="${{ env.DOTSETTINGS_PATH }}" "$slnPath" --LogLevel=TRACE
+          $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+          dotnet tool run jb cleanupcode `
+            --profile="Built-in: Full Cleanup" `
+            --settings="${{ env.DOTSETTINGS_PATH }}" `
+            --caches-home="${{ runner.temp }}/.jb-caches" `
+            --no-updates `
+            "$slnPath" `
+            --LogLevel=TRACE
+          $stopwatch.Stop()
+          $elapsed = $stopwatch.Elapsed
+          Write-Host ""
+          Write-Host "========================================" -ForegroundColor Cyan
+          Write-Host "CLEANUP TIMING SUMMARY" -ForegroundColor Cyan
+          Write-Host "========================================" -ForegroundColor Cyan
+          Write-Host "Solution: ${{ matrix.solution }}"
+          Write-Host "Duration: $($elapsed.ToString('hh\:mm\:ss\.fff'))"
+          Write-Host "Minutes:  $([math]::Round($elapsed.TotalMinutes, 2))"
+          Write-Host "========================================" -ForegroundColor Cyan
+          Write-Host ""
           Write-Host "Cleanup completed."
           echo "SLN_PATH=$slnPath" >> $env:GITHUB_ENV
           $slnFileName = Split-Path -Path $slnPath -Leaf
