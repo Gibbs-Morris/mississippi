@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Meta-package that references all Mississippi silo libraries. Install this package in Orleans silo hosts that run aggregate grains and event sourcing infrastructure.</Description>
+    </PropertyGroup>
+</Project>

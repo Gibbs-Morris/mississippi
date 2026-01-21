@@ -54,6 +54,13 @@
     <Project Path="src\Inlet.Orleans\Inlet.Orleans.csproj" />
     <Project Path="src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
   </Folder>
+  <Folder Name="/Framework/SDK/">
+    <Project Path="src\Sdk.Client\Sdk.Client.csproj" />
+    <Project Path="src\Sdk.Server\Sdk.Server.csproj" />
+    <Project Path="src\Sdk.Silo\Sdk.Silo.csproj" />
+    <Project Path="src\Sdk.Client.Generators\Sdk.Client.Generators.csproj" />
+    <Project Path="src\Sdk.Server.Generators\Sdk.Server.Generators.csproj" />
+  </Folder>
   <Folder Name="/Tests/" />
 
   <Folder Name="/Tests/Core/">
@@ -110,6 +117,13 @@
     <Project Path="tests\Inlet.L0Tests\Inlet.L0Tests.csproj" />
     <Project Path="tests\Inlet.Orleans.L0Tests\Inlet.Orleans.L0Tests.csproj" />
     <Project Path="tests\Inlet.Orleans.SignalR.L0Tests\Inlet.Orleans.SignalR.L0Tests.csproj" />
+  </Folder>
+  <Folder Name="/Tests/SDK/">
+    <Project Path="tests\Sdk.Client.L0Tests\Sdk.Client.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Server.L0Tests\Sdk.Server.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Silo.L0Tests\Sdk.Silo.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Client.Generators.L0Tests\Sdk.Client.Generators.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Server.Generators.L0Tests\Sdk.Server.Generators.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Workflows/">
