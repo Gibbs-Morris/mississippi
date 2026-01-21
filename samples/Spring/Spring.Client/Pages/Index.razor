@@ -1,169 +1,288 @@
 @page "/"
 @inherits InletComponent
 
-<h1>Bank Account Demo</h1>
+@* ═══════════════════════════════════════════════════════════════════════════
+   Holographic Console Interface
+   Bank Account Operations Console — Mississippi Event Sourcing Demo
+   ═══════════════════════════════════════════════════════════════════════════ *@
 
-<div>
-    <label>Account ID:</label>
-    <input @bind="accountIdInput" placeholder="Enter account ID"/>
-    <button @onclick="SetEntityId">Set Account</button>
-</div>
+<article class="console" role="main" aria-labelledby="console-title">
+@* ─────────────────────────────────────────────────────────────────────────
+       Console Header — System identification
+       ───────────────────────────────────────────────────────────────────────── *@
+<header class="console__header">
+    <div>
+        <h1 id="console-title" class="console__title">Bank Account Operations</h1>
+        <p class="console__subtitle">Mississippi Event Sourcing Demo</p>
+    </div>
+    <div class="console__timestamp" aria-label="System timestamp">
+        <span>HUD</span> • <span>@DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")</span>
+    </div>
+</header>
+
+<div class="console__body">
+@* ─────────────────────────────────────────────────────────────────────
+           Command Panel — Entity Selection
+           ───────────────────────────────────────────────────────────────────── *@
+<section class="holo-panel holo-panel--command" aria-labelledby="entity-panel-title">
+    <header class="panel__header">
+        <span class="panel__icon" aria-hidden="true">
+            <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        </span>
+        <h2 id="entity-panel-title" class="panel__title">Entity Selection</h2>
+        <span class="panel__indicator" aria-hidden="true"></span>
+    </header>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="account-id-input" class="form-label">Account Identifier</label>
+            <input id="account-id-input"
+                   type="text"
+                   class="form-input"
+                   @bind="accountIdInput"
+                   placeholder="Enter account ID"
+                   aria-describedby="account-id-hint"/>
+            <span id="account-id-hint" class="visually-hidden">
+                Enter a unique account identifier to load or create an account
+            </span>
+        </div>
+        <button type="button"
+                class="holo-btn holo-btn--primary"
+                @onclick="SetEntityId"
+                aria-label="Set account entity">
+            Set Account
+        </button>
+    </div>
+</section>
 
 @if (!string.IsNullOrEmpty(AggregateState.EntityId))
 {
-    <h2>Account: @AggregateState.EntityId</h2>
-    <div>
-        <h3>Open Account</h3>
-        <input @bind="holderName" placeholder="Holder Name"/>
-        <input type="number" @bind="initialDeposit" placeholder="Initial Deposit"/>
-        <button @onclick="OpenAccount" disabled="@IsExecutingOrLoading">Open Account</button>
-    </div>
-    <div>
-        <h3>Deposit Funds</h3>
-        <input type="number" @bind="depositAmount"/>
-        <button @onclick="Deposit" disabled="@IsExecutingOrLoading">Deposit</button>
-    </div>
-    <div>
-        <h3>Withdraw Funds</h3>
-        <input type="number" @bind="withdrawAmount"/>
-        <button @onclick="Withdraw" disabled="@IsExecutingOrLoading">Withdraw</button>
-    </div>
-    @if (IsExecutingOrLoading)
-    {
-        <p>Loading...</p>
-    }
+    @* ─────────────────────────────────────────────────────────────────
+               Operations Panel — Account Commands
+               ─────────────────────────────────────────────────────────────── *@
+    <section class="holo-panel holo-panel--primary holo-panel--operations"
+             aria-labelledby="operations-panel-title"
+             aria-busy="@IsExecutingOrLoading">
+        <header class="panel__header">
+            <span class="panel__icon" aria-hidden="true">
+                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                    <line x1="1" y1="10" x2="23" y2="10"/>
+                </svg>
+            </span>
+            <h2 id="operations-panel-title" class="panel__title">
+                Account: <span class="visually-hidden">ID</span>@AggregateState.EntityId
+            </h2>
+            @if (IsExecutingOrLoading)
+            {
+                <span class="panel__indicator" aria-label="Operation in progress"></span>
+            }
+        </header>
 
-    @if (BalanceProjection is not null)
-    {
-        <div>
-            <p>
-                <strong>Balance:</strong> @BalanceProjection.Balance.ToString("C")
-            </p>
-            <p>
-                <strong>Holder:</strong> @BalanceProjection.HolderName
-            </p>
-            <p>
-                <strong>Status:</strong> @(BalanceProjection.IsOpen ? "Open" : "Closed")
+        <div class="stack">
+            @* Open Account Section *@
+            <fieldset class="stack--tight" disabled="@IsExecutingOrLoading">
+                <legend class="visually-hidden">Open Account</legend>
+                <div class="section-divider">
+                    <span class="section-divider__line" aria-hidden="true"></span>
+                    <span class="section-divider__label">Open Account</span>
+                    <span class="section-divider__line" aria-hidden="true"></span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="holder-name-input" class="form-label">Holder Name</label>
+                        <input id="holder-name-input"
+                               type="text"
+                               class="form-input"
+                               @bind="holderName"
+                               placeholder="Account holder name"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="initial-deposit-input" class="form-label">Initial Deposit</label>
+                        <input id="initial-deposit-input"
+                               type="number"
+                               class="form-input"
+                               @bind="initialDeposit"
+                               placeholder="0.00"
+                               step="0.01"
+                               min="0"/>
+                    </div>
+                    <button type="button"
+                            class="holo-btn"
+                            @onclick="OpenAccount"
+                            disabled="@IsExecutingOrLoading"
+                            aria-label="Open new account">
+                        Open Account
+                    </button>
+                </div>
+            </fieldset>
+
+            @* Deposit Section *@
+            <fieldset class="stack--tight" disabled="@IsExecutingOrLoading">
+                <legend class="visually-hidden">Deposit Funds</legend>
+                <div class="section-divider">
+                    <span class="section-divider__line" aria-hidden="true"></span>
+                    <span class="section-divider__label">Deposit Funds</span>
+                    <span class="section-divider__line" aria-hidden="true"></span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="deposit-amount-input" class="form-label">Amount</label>
+                        <input id="deposit-amount-input"
+                               type="number"
+                               class="form-input"
+                               @bind="depositAmount"
+                               placeholder="0.00"
+                               step="0.01"
+                               min="0"/>
+                    </div>
+                    <button type="button"
+                            class="holo-btn"
+                            @onclick="Deposit"
+                            disabled="@IsExecutingOrLoading"
+                            aria-label="Deposit funds">
+                        Deposit
+                    </button>
+                </div>
+            </fieldset>
+
+            @* Withdraw Section *@
+            <fieldset class="stack--tight" disabled="@IsExecutingOrLoading">
+                <legend class="visually-hidden">Withdraw Funds</legend>
+                <div class="section-divider">
+                    <span class="section-divider__line" aria-hidden="true"></span>
+                    <span class="section-divider__label">Withdraw Funds</span>
+                    <span class="section-divider__line" aria-hidden="true"></span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="withdraw-amount-input" class="form-label">Amount</label>
+                        <input id="withdraw-amount-input"
+                               type="number"
+                               class="form-input"
+                               @bind="withdrawAmount"
+                               placeholder="0.00"
+                               step="0.01"
+                               min="0"/>
+                    </div>
+                    <button type="button"
+                            class="holo-btn"
+                            @onclick="Withdraw"
+                            disabled="@IsExecutingOrLoading"
+                            aria-label="Withdraw funds">
+                        Withdraw
+                    </button>
+                </div>
+            </fieldset>
+        </div>
+
+        @* Loading indicator *@
+        @if (IsExecutingOrLoading)
+        {
+            <div class="loading-indicator" role="status" aria-live="polite">
+                <span class="loading-indicator__spinner" aria-hidden="true"></span>
+                <span class="loading-indicator__text">Processing...</span>
+            </div>
+        }
+    </section>
+    @* ─────────────────────────────────────────────────────────────────
+               Status Panel — Account Telemetry
+               ─────────────────────────────────────────────────────────────── *@
+    <section class="holo-panel holo-panel--status"
+             aria-labelledby="status-panel-title"
+             aria-live="polite"
+             aria-atomic="false">
+        <header class="panel__header">
+            <span class="panel__icon" aria-hidden="true">
+                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+            </span>
+            <h2 id="status-panel-title" class="panel__title">Account Status</h2>
+        </header>
+
+        @if (BalanceProjection is not null)
+        {
+            <div class="status-grid">
+                <div class="status-item status-item--highlight">
+                    <span class="status-item__label">Balance</span>
+                    <span class="status-item__value status-item__value--currency">
+                        @BalanceProjection.Balance.ToString("C")
+                    </span>
+                </div>
+                <div class="status-item">
+                    <span class="status-item__label">Holder</span>
+                    <span class="status-item__value">@BalanceProjection.HolderName</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-item__label">Status</span>
+                    <span class="status-badge @(BalanceProjection.IsOpen ? "status-badge--open" : "status-badge--closed")">
+                        <span class="status-badge__dot" aria-hidden="true"></span>
+                        @(BalanceProjection.IsOpen ? "Open" : "Closed")
+                    </span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <svg class="empty-state__icon" width="64" height="64" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+                <h3 class="empty-state__title">Awaiting Data</h3>
+                <p class="empty-state__description">
+                    Open an account to begin viewing real-time projection data.
+                </p>
+            </div>
+        }
+
+        @* Alerts *@
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="alert alert--error" role="alert">
+                <svg class="alert__icon" width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <span class="alert__message">@ErrorMessage</span>
+            </div>
+        }
+
+        @if (AggregateState.LastCommandSucceeded == true)
+        {
+            <div class="alert alert--success" role="status">
+                <svg class="alert__icon" width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="9 12 11 14 15 10"/>
+                </svg>
+                <span class="alert__message">Command executed successfully.</span>
+            </div>
+        }
+    </section>
+}
+else
+{
+    @* ─────────────────────────────────────────────────────────────────
+               Empty State — No entity selected
+               ─────────────────────────────────────────────────────────────── *@
+    <section class="holo-panel" style="grid-column: 1 / -1;">
+        <div class="empty-state">
+            <svg class="empty-state__icon" width="64" height="64" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <h3 class="empty-state__title">No Account Selected</h3>
+            <p class="empty-state__description">
+                Enter an account identifier above to access banking operations and real-time projections.
             </p>
         </div>
-    }
-
-    @if (!string.IsNullOrEmpty(ErrorMessage))
-    {
-        <p style="color: red;">@ErrorMessage</p>
-    }
-
-    @if (AggregateState.LastCommandSucceeded == true)
-    {
-        <p style="color: green;">Command succeeded!</p>
-    }
+    </section>
 }
-
-@code {
-
-    private string accountIdInput = "";
-
-    private decimal depositAmount;
-
-    private string holderName = "";
-
-    private decimal initialDeposit;
-
-    private string? subscribedEntityId;
-
-    private decimal withdrawAmount;
-
-    /// <summary>
-    ///     Gets the aggregate (write) feature state.
-    /// </summary>
-    private BankAccountAggregateState AggregateState => GetState<BankAccountAggregateState>();
-
-    /// <summary>
-    ///     Gets the projection data from the InletStore.
-    /// </summary>
-    private BankAccountBalanceProjectionDto? BalanceProjection => string.IsNullOrEmpty(AggregateState.EntityId) ? null : GetProjection<BankAccountBalanceProjectionDto>(AggregateState.EntityId);
-
-    /// <summary>
-    ///     Gets error message from aggregate state or projection error.
-    /// </summary>
-    private string? ErrorMessage
-    {
-        get
-        {
-            if (!string.IsNullOrEmpty(AggregateState.ErrorMessage))
-            {
-                return AggregateState.ErrorMessage;
-            }
-
-            if (!string.IsNullOrEmpty(AggregateState.EntityId))
-            {
-                Exception? projectionError = GetProjectionError<BankAccountBalanceProjectionDto>(AggregateState.EntityId);
-                return projectionError?.Message;
-            }
-
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets whether any operation is in progress.
-    /// </summary>
-    private bool IsExecutingOrLoading => AggregateState.IsExecuting || (!string.IsNullOrEmpty(AggregateState.EntityId) && IsProjectionLoading<BankAccountBalanceProjectionDto>(AggregateState.EntityId));
-
-    /// <inheritdoc />
-    protected override void Dispose(
-        bool disposing
-    )
-    {
-        // Unsubscribe when component is disposed
-        if (disposing && !string.IsNullOrEmpty(subscribedEntityId))
-        {
-            UnsubscribeFromProjection<BankAccountBalanceProjectionDto>(subscribedEntityId);
-        }
-
-        base.Dispose(disposing);
-    }
-
-    /// <inheritdoc />
-    protected override void OnAfterRender(
-        bool firstRender
-    )
-    {
-        base.OnAfterRender(firstRender);
-
-        // Manage subscription based on current entity ID
-        ManageProjectionSubscription();
-    }
-
-    private void Deposit() => Dispatch(new DepositFundsAction(AggregateState.EntityId!, depositAmount));
-
-    private void ManageProjectionSubscription()
-    {
-        string? currentEntityId = AggregateState.EntityId;
-
-        // If entity ID changed, update subscription
-        if (currentEntityId != subscribedEntityId)
-        {
-            // Unsubscribe from previous entity
-            if (!string.IsNullOrEmpty(subscribedEntityId))
-            {
-                UnsubscribeFromProjection<BankAccountBalanceProjectionDto>(subscribedEntityId);
-            }
-
-            // Subscribe to new entity
-            if (!string.IsNullOrEmpty(currentEntityId))
-            {
-                SubscribeToProjection<BankAccountBalanceProjectionDto>(currentEntityId);
-            }
-
-            subscribedEntityId = currentEntityId;
-        }
-    }
-
-    private void OpenAccount() => Dispatch(new OpenAccountAction(AggregateState.EntityId!, holderName, initialDeposit));
-
-    private void SetEntityId() => Dispatch(new SetEntityIdAction(accountIdInput));
-
-    private void Withdraw() => Dispatch(new WithdrawFundsAction(AggregateState.EntityId!, withdrawAmount));
-
-}
+</div>
+</article>
