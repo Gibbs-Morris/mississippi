@@ -29,7 +29,7 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Deposit",
+                    Name = "Deposit funds",
                 })
             .ClickAsync();
 
@@ -42,7 +42,7 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Open Account",
+                    Name = "Open new account",
                 })
             .ClickAsync();
 
@@ -55,7 +55,7 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Set Account",
+                    Name = "Set account entity",
                 })
             .ClickAsync();
 
@@ -68,7 +68,7 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Withdraw",
+                    Name = "Withdraw funds",
                 })
             .ClickAsync();
 
@@ -90,7 +90,7 @@ public sealed class IndexPage
     public async Task EnterDepositAmountAsync(
         decimal amount
     ) =>
-        await page.Locator("div:has(h3:text('Deposit Funds')) input[type='number']")
+        await page.Locator("#deposit-amount-input")
             .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
@@ -121,7 +121,7 @@ public sealed class IndexPage
     public async Task EnterWithdrawAmountAsync(
         decimal amount
     ) =>
-        await page.Locator("div:has(h3:text('Withdraw Funds')) input[type='number']")
+        await page.Locator("#withdraw-amount-input")
             .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
@@ -142,10 +142,10 @@ public sealed class IndexPage
     /// <summary>
     ///     Gets the displayed balance from the projection.
     /// </summary>
-    /// <returns>The balance text (e.g., "$100.00"), or null if not present.</returns>
+    /// <returns>The balance text (e.g., "£100.00" or "$100.00" depending on locale), or null if not present.</returns>
     public async Task<string?> GetBalanceTextAsync()
     {
-        ILocator balanceLocator = page.Locator("p:has(strong:text('Balance:'))");
+        ILocator balanceLocator = page.Locator(".status-item__value--currency");
         if (await balanceLocator.CountAsync() > 0)
         {
             return await balanceLocator.TextContentAsync();
@@ -160,7 +160,7 @@ public sealed class IndexPage
     /// <returns>The error message text, or null if not present.</returns>
     public async Task<string?> GetErrorMessageAsync()
     {
-        ILocator errorLocator = page.Locator("p[style*='color: red']");
+        ILocator errorLocator = page.Locator(".alert--error .alert__message");
         if (await errorLocator.CountAsync() > 0)
         {
             return await errorLocator.TextContentAsync();
@@ -175,7 +175,7 @@ public sealed class IndexPage
     /// <returns>The holder name text, or null if not present.</returns>
     public async Task<string?> GetHolderNameTextAsync()
     {
-        ILocator holderLocator = page.Locator("p:has(strong:text('Holder:'))");
+        ILocator holderLocator = page.Locator(".status-item:has(.status-item__label:text('Holder')) .status-item__value");
         if (await holderLocator.CountAsync() > 0)
         {
             return await holderLocator.TextContentAsync();
@@ -186,11 +186,15 @@ public sealed class IndexPage
 
     /// <summary>
     ///     Gets the displayed status from the projection.
+    ///     Targets the status badge within the Status label context to avoid matching
+    ///     the SignalR connection status badge.
     /// </summary>
     /// <returns>The status text (e.g., "Open"), or null if not present.</returns>
     public async Task<string?> GetStatusTextAsync()
     {
-        ILocator statusLocator = page.Locator("p:has(strong:text('Status:'))");
+        // Target the status badge that is a sibling of the "Status" label
+        // This distinguishes it from the SignalR connection status badge
+        ILocator statusLocator = page.Locator(".status-item:has(.status-item__label:text-is('Status')) .status-badge");
         if (await statusLocator.CountAsync() > 0)
         {
             return await statusLocator.TextContentAsync();
@@ -205,7 +209,7 @@ public sealed class IndexPage
     /// <returns>The success message text, or null if not present.</returns>
     public async Task<string?> GetSuccessMessageAsync()
     {
-        ILocator successLocator = page.Locator("p[style*='color: green']");
+        ILocator successLocator = page.Locator(".alert--success .alert__message");
         if (await successLocator.CountAsync() > 0)
         {
             return await successLocator.TextContentAsync();
@@ -239,12 +243,7 @@ public sealed class IndexPage
     /// <returns>True if loading is visible.</returns>
     public async Task<bool> IsLoadingVisibleAsync()
     {
-        ILocator loadingLocator = page.Locator("p")
-            .Filter(
-                new()
-                {
-                    HasText = "Loading...",
-                });
+        ILocator loadingLocator = page.Locator(".loading-indicator");
         return await loadingLocator.CountAsync() > 0;
     }
 
@@ -257,7 +256,7 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Open Account",
+                    Name = "Open new account",
                 })
             .IsDisabledAsync();
 
@@ -270,7 +269,7 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Withdraw",
+                    Name = "Withdraw funds",
                 })
             .IsDisabledAsync();
 
@@ -314,7 +313,7 @@ public sealed class IndexPage
     public async Task WaitForBalanceAsync(
         float? timeout = null
     ) =>
-        await page.Locator("p:has(strong:text('Balance:'))")
+        await page.Locator(".status-item--highlight")
             .WaitForAsync(
                 new()
                 {
@@ -325,14 +324,14 @@ public sealed class IndexPage
     /// <summary>
     ///     Waits for the balance projection to show a specific value.
     /// </summary>
-    /// <param name="expectedBalance">The expected balance formatted string (e.g., "$100.00").</param>
+    /// <param name="expectedBalance">The expected balance value (e.g., "100.00"). Currency-agnostic to support different locales.</param>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <returns>A task representing the wait operation.</returns>
     public async Task WaitForBalanceValueAsync(
         string expectedBalance,
         float? timeout = null
     ) =>
-        await page.Locator("p:has(strong:text('Balance:'))")
+        await page.Locator(".status-item--highlight")
             .Filter(
                 new()
                 {
@@ -353,7 +352,7 @@ public sealed class IndexPage
     public async Task WaitForCommandSuccessAsync(
         float? timeout = null
     ) =>
-        await page.Locator("p[style*='color: green']")
+        await page.Locator(".alert--success")
             .WaitForAsync(
                 new()
                 {
