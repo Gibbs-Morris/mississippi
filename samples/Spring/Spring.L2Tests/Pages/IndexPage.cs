@@ -123,12 +123,12 @@ public sealed class IndexPage
         await page.Locator("#withdraw-amount-input").FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
-    ///     Gets the displayed account header (e.g., "Account: test-123").
+    ///     Gets the displayed account header (entity ID from the entity switcher).
     /// </summary>
-    /// <returns>The account header text, or null if not present.</returns>
+    /// <returns>The account ID text, or null if not present.</returns>
     public async Task<string?> GetAccountHeaderAsync()
     {
-        ILocator accountHeader = page.Locator("#operations-panel-title");
+        ILocator accountHeader = page.Locator(".entity-switcher__id");
         if (await accountHeader.CountAsync() > 0)
         {
             return await accountHeader.TextContentAsync();

@@ -200,6 +200,13 @@ public sealed partial class Index
         }
     }
 
+    /// <summary>
+    ///     Dispatches multiple actions in rapid succession for stress-testing the event sourcing pipeline.
+    ///     This intentionally has no delay between dispatches to demonstrate SignalR projection update
+    ///     throughput and Orleans grain handling under load.
+    /// </summary>
+    /// <param name="actionFactory">Factory function creating the action to dispatch.</param>
+    /// <param name="count">Number of times to dispatch the action.</param>
     private void DispatchBurst(
         Func<IAction> actionFactory,
         int count
