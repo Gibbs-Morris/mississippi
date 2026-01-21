@@ -699,6 +699,14 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.EventSourcing.Reducers": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.11, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.1, )",
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Reducers.Abstractions": {
         "type": "Project"
       },
@@ -715,7 +723,7 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[9.2.1, )",
           "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"

@@ -5,6 +5,7 @@
         <PackageReference Include="System.Linq.Async"/>
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
         <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
     </ItemGroup>
