@@ -61,6 +61,21 @@ public sealed class SignalRConnectionActionsTests
     }
 
     /// <summary>
+    ///     Verifies that two SignalRConnectingAction instances are equal.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SignalRConnectingAction")]
+    public void SignalRConnectingActionInstancesAreEqual()
+    {
+        // Arrange
+        SignalRConnectingAction action1 = new();
+        SignalRConnectingAction action2 = new();
+
+        // Assert
+        Assert.Equal(action1, action2);
+    }
+
+    /// <summary>
     ///     Verifies that SignalRDisconnectedAction allows null error (intentional close).
     /// </summary>
     [Fact]
@@ -101,6 +116,54 @@ public sealed class SignalRConnectionActionsTests
 
         // Assert
         Assert.Equal(TestTimestamp, action.Timestamp);
+    }
+
+    /// <summary>
+    ///     Verifies that SignalRMessageReceivedAction with different timestamps are not equal.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SignalRMessageReceivedAction")]
+    public void SignalRMessageReceivedActionWithDifferentTimestampsAreNotEqual()
+    {
+        // Arrange
+        DateTimeOffset timestamp1 = new(2025, 1, 15, 12, 0, 0, TimeSpan.Zero);
+        DateTimeOffset timestamp2 = new(2025, 1, 15, 12, 0, 1, TimeSpan.Zero);
+
+        // Act
+        SignalRMessageReceivedAction action1 = new(timestamp1);
+        SignalRMessageReceivedAction action2 = new(timestamp2);
+
+        // Assert
+        Assert.NotEqual(action1, action2);
+    }
+
+    /// <summary>
+    ///     Verifies that RequestSignalRConnectionAction is a valid action record.
+    /// </summary>
+    [Fact]
+    [AllureFeature("RequestSignalRConnectionAction")]
+    public void RequestSignalRConnectionActionIsValidAction()
+    {
+        // Act
+        RequestSignalRConnectionAction action = new();
+
+        // Assert
+        Assert.NotNull(action);
+    }
+
+    /// <summary>
+    ///     Verifies that two RequestSignalRConnectionAction instances are equal.
+    /// </summary>
+    [Fact]
+    [AllureFeature("RequestSignalRConnectionAction")]
+    public void RequestSignalRConnectionActionInstancesAreEqual()
+    {
+        // Arrange
+        RequestSignalRConnectionAction action1 = new();
+        RequestSignalRConnectionAction action2 = new();
+
+        // Assert
+        Assert.Equal(action1, action2);
     }
 
     /// <summary>

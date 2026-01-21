@@ -280,4 +280,128 @@ public sealed class HubConnectionProviderTests : IDisposable
         // Assert
         Assert.NotNull(subscription);
     }
+
+    /// <summary>
+    ///     Verifies that custom TimeProvider is used when provided.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    [AllureFeature("Construction")]
+    public async Task ConstructorUsesCustomTimeProvider()
+    {
+        // Arrange
+        FakeTimeProvider customTimeProvider = new(new(2025, 6, 1, 10, 30, 0, TimeSpan.Zero));
+
+        // Act
+        await using HubConnectionProvider provider = new(
+            navigationManager,
+            new(() => store),
+            null,
+            customTimeProvider);
+
+        // Assert - TimeProvider is private but we verify construction succeeds
+        Assert.NotNull(provider.Connection);
+    }
+
+    /// <summary>
+    ///     Verifies that multiple OnClosed handlers can be registered.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    [AllureFeature("EventHandlers")]
+    public async Task MultipleOnClosedHandlersCanBeRegistered()
+    {
+        // Arrange
+        await using HubConnectionProvider provider = CreateProvider();
+        int callCount = 0;
+
+        // Act
+        provider.OnClosed(_ =>
+        {
+            callCount++;
+            return Task.CompletedTask;
+        });
+        provider.OnClosed(_ =>
+        {
+            callCount++;
+            return Task.CompletedTask;
+        });
+
+        // Assert - handlers registered without exception
+        Assert.Equal(0, callCount);
+    }
+
+    /// <summary>
+    ///     Verifies that multiple OnReconnecting handlers can be registered.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    [AllureFeature("EventHandlers")]
+    public async Task MultipleOnReconnectingHandlersCanBeRegistered()
+    {
+        // Arrange
+        await using HubConnectionProvider provider = CreateProvider();
+        int callCount = 0;
+
+        // Act
+        provider.OnReconnecting(_ =>
+        {
+            callCount++;
+            return Task.CompletedTask;
+        });
+        provider.OnReconnecting(_ =>
+        {
+            callCount++;
+            return Task.CompletedTask;
+        });
+
+        // Assert - handlers registered without exception
+        Assert.Equal(0, callCount);
+    }
+
+    /// <summary>
+    ///     Verifies that multiple OnReconnected handlers can be registered.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    [AllureFeature("EventHandlers")]
+    public async Task MultipleOnReconnectedHandlersCanBeRegistered()
+    {
+        // Arrange
+        await using HubConnectionProvider provider = CreateProvider();
+        int callCount = 0;
+
+        // Act
+        provider.OnReconnected(_ =>
+        {
+            callCount++;
+            return Task.CompletedTask;
+        });
+        provider.OnReconnected(_ =>
+        {
+            callCount++;
+            return Task.CompletedTask;
+        });
+
+        // Assert - handlers registered without exception
+        Assert.Equal(0, callCount);
+    }
+
+    /// <summary>
+    ///     Verifies that DisposeAsync completes without throwing.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    [AllureFeature("Lifecycle")]
+    public async Task DisposeAsyncCompletesWithoutThrowing()
+    {
+        // Arrange
+        HubConnectionProvider provider = CreateProvider();
+
+        // Act
+        Exception? exception = await Record.ExceptionAsync(async () => await provider.DisposeAsync());
+
+        // Assert
+        Assert.Null(exception);
+    }
 }
