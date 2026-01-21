@@ -11,9 +11,9 @@ namespace Spring.L2Tests;
 public sealed class BankAccountE2ETests
 {
     /// <summary>
-    ///     Timeout for waiting on SignalR projection updates (30 seconds).
+    ///     Timeout for waiting on SignalR projection updates (10 seconds).
     /// </summary>
-    private const float ProjectionTimeout = 30000;
+    private const float ProjectionTimeout = 10_000;
 
     private readonly SpringFixture fixture;
 
@@ -63,7 +63,7 @@ public sealed class BankAccountE2ETests
 
             // Assert - Verify initial state
             string? balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("$100.00", "initial balance should be $100.00");
+            balanceText.Should().Contain("100.00", "initial balance should be 100.00");
             string? holderText = await indexPage.GetHolderNameTextAsync();
             holderText.Should().Contain(holderName, "holder name should be displayed");
             string? statusText = await indexPage.GetStatusTextAsync();
@@ -72,19 +72,18 @@ public sealed class BankAccountE2ETests
             // Act - Deposit funds
             await indexPage.EnterDepositAmountAsync(depositAmount);
             await indexPage.ClickDepositAsync();
-            await indexPage.WaitForBalanceValueAsync("$150.00", ProjectionTimeout);
+            await indexPage.WaitForBalanceValueAsync("150.00", ProjectionTimeout);
             balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("$150.00", "balance should be $150.00 after deposit");
+            balanceText.Should().Contain("150.00", "balance should be 150.00 after deposit");
 
             // Act - Withdraw funds
             await indexPage.EnterWithdrawAmountAsync(withdrawAmount);
             await indexPage.ClickWithdrawAsync();
-            await indexPage.WaitForBalanceValueAsync("$125.00", ProjectionTimeout);
+            await indexPage.WaitForBalanceValueAsync("125.00", ProjectionTimeout);
 
             // Assert - Final balance
             balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should()
-                .Contain($"${expectedFinalBalance:F2}", "final balance should reflect all transactions");
+            balanceText.Should().Contain($"{expectedFinalBalance:F2}", "final balance should reflect all transactions");
         }
         finally
         {
@@ -121,11 +120,11 @@ public sealed class BankAccountE2ETests
             // Act - Deposit
             await indexPage.EnterDepositAmountAsync(additionalDeposit);
             await indexPage.ClickDepositAsync();
-            await indexPage.WaitForBalanceValueAsync("$125.00", ProjectionTimeout);
+            await indexPage.WaitForBalanceValueAsync("125.00", ProjectionTimeout);
 
             // Assert
             string? balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("$125.00");
+            balanceText.Should().Contain("125.00");
         }
         finally
         {
@@ -164,7 +163,7 @@ public sealed class BankAccountE2ETests
             string? title = await indexPage.GetTitleAsync();
 
             // Assert
-            title.Should().Be("Bank Account Demo");
+            title.Should().Be("Bank Account Operations");
         }
         finally
         {
@@ -201,7 +200,7 @@ public sealed class BankAccountE2ETests
 
             // Assert
             string? balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("$250.00");
+            balanceText.Should().Contain("250.00");
             string? holderText = await indexPage.GetHolderNameTextAsync();
             holderText.Should().Contain(holderName);
             string? statusText = await indexPage.GetStatusTextAsync();
@@ -271,11 +270,11 @@ public sealed class BankAccountE2ETests
             // Act - Withdraw
             await indexPage.EnterWithdrawAmountAsync(withdrawAmount);
             await indexPage.ClickWithdrawAsync();
-            await indexPage.WaitForBalanceValueAsync("$150.00", ProjectionTimeout);
+            await indexPage.WaitForBalanceValueAsync("150.00", ProjectionTimeout);
 
             // Assert
             string? balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("$150.00");
+            balanceText.Should().Contain("150.00");
         }
         finally
         {

@@ -26,15 +26,14 @@ public sealed class SpringFixture
 {
     /// <summary>
     ///     Default timeout for Playwright operations (in milliseconds).
-    ///     Set to 10 minutes to accommodate slow CI environments where
-    ///     Cosmos, Azure Storage, and Orleans infrastructure may take time to boot.
+    ///     Set to 1 minute which is generous for page operations while still failing fast.
     /// </summary>
-    private const float PlaywrightTimeoutMs = 600_000;
+    private const float PlaywrightTimeoutMs = 60_000;
 
     /// <summary>
     ///     Timeout to accommodate Azurite emulator startup.
     /// </summary>
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(2);
 
     private DistributedApplication? app;
 
