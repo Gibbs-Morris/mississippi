@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Sdk.Server.Generators\Sdk.Server.Generators.csproj" />
+    </ItemGroup>
+</Project>
