@@ -291,8 +291,8 @@
       "Mississippi.Common.Cosmos": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Azure.Cosmos": "[3.54.1, )",
-          "Microsoft.Extensions.Logging.Abstractions": "[9.0.1, )",
+          "Microsoft.Azure.Cosmos": "[3.57.0, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[10.0.2, )",
           "Mississippi.Common.Cosmos.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
@@ -302,9 +302,9 @@
       },
       "Microsoft.Azure.Cosmos": {
         "type": "CentralTransitive",
-        "requested": "[3.54.1, )",
-        "resolved": "3.54.1",
-        "contentHash": "AD/HvzCeHpLGWCysh3fpTHdmgnOh/+le9D7cjzvqJjxsbWW98vAWcaBxRDNjcudTnNBM0uLjy6oRQNqVm3aUNQ==",
+        "requested": "[3.57.0, )",
+        "resolved": "3.57.0",
+        "contentHash": "35uoYG8m7l0gEIRwV7z/1g1iewgMw7OiqBJV4uKkxjxQxc/rOgf9k5HgxQrAtOMgFtkBErU+/9e/2x8exzPNIg==",
         "dependencies": {
           "Azure.Core": "1.44.1",
           "Microsoft.Bcl.AsyncInterfaces": "6.0.0",
@@ -314,17 +314,17 @@
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[9.0.11, )",
-        "resolved": "9.0.1",
-        "contentHash": "Tr74eP0oQ3AyC24ch17N8PuEkrPbD0JqIfENCYqmgKYNOmL8wQKzLJu3ObxTUDrjnn4rHoR1qKa37/eQyHmCDA=="
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "zOIurr59+kUf9vNcsUkCvKWZv+fPosUZXURZesYkJCvl0EzTc9F7maAO4Cd2WEV7ZJJ0AZrFQvuH6Npph9wdBw=="
       },
       "Microsoft.Extensions.Logging.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[9.0.1, )",
-        "resolved": "9.0.1",
-        "contentHash": "w2gUqXN/jNIuvqYwX3lbXagsizVNXYyt6LlF57+tMve4JYCEgCMMAjRce6uKcDASJgpMbErRT1PfHy2OhbkqEA==",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "RZkez/JjpnO+MZ6efKkSynN6ZztLpw3WbxNzjLCPBd97wWj1S9ZYPWi0nmT4kWBRa6atHsdM1ydGkUr8GudyDQ==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.1"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.2"
         }
       },
       "Newtonsoft.Json": {
