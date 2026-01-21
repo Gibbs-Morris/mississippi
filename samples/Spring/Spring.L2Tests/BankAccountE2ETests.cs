@@ -11,9 +11,9 @@ namespace Spring.L2Tests;
 public sealed class BankAccountE2ETests
 {
     /// <summary>
-    ///     Timeout for waiting on SignalR projection updates (30 seconds).
+    ///     Timeout for waiting on SignalR projection updates (10 seconds).
     /// </summary>
-    private const float ProjectionTimeout = 30000;
+    private const float ProjectionTimeout = 10_000;
 
     private readonly SpringFixture fixture;
 
@@ -164,7 +164,7 @@ public sealed class BankAccountE2ETests
             string? title = await indexPage.GetTitleAsync();
 
             // Assert
-            title.Should().Be("Bank Account Demo");
+            title.Should().Be("Bank Account Operations");
         }
         finally
         {

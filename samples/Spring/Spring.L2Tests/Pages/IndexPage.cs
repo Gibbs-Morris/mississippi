@@ -101,7 +101,7 @@ public sealed class IndexPage
     public async Task EnterHolderNameAsync(
         string holderName
     ) =>
-        await page.GetByPlaceholder("Holder Name").FillAsync(holderName);
+        await page.Locator("#holder-name-input").FillAsync(holderName);
 
     /// <summary>
     ///     Enters the initial deposit amount for opening an account.
@@ -111,7 +111,7 @@ public sealed class IndexPage
     public async Task EnterInitialDepositAsync(
         decimal amount
     ) =>
-        await page.GetByPlaceholder("Initial Deposit").FillAsync(amount.ToString(CultureInfo.InvariantCulture));
+        await page.Locator("#initial-deposit-input").FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
     ///     Enters the withdraw amount.
@@ -130,7 +130,7 @@ public sealed class IndexPage
     /// <returns>The account header text, or null if not present.</returns>
     public async Task<string?> GetAccountHeaderAsync()
     {
-        ILocator accountHeader = page.Locator("h2");
+        ILocator accountHeader = page.Locator("#operations-panel-title");
         if (await accountHeader.CountAsync() > 0)
         {
             return await accountHeader.TextContentAsync();
