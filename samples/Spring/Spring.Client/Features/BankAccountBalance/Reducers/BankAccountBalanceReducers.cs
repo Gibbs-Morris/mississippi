@@ -41,7 +41,7 @@ internal static class BankAccountBalanceReducers
         state with
         {
             IsLoading = false,
-            BankAccountBalanceId = action.BankAccountBalanceId,
+            EntityId = action.EntityId,
             Balance = action.Balance,
             HolderName = action.HolderName,
             IsOpen = action.IsOpen,

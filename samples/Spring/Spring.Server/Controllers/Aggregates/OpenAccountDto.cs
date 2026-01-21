@@ -14,11 +14,13 @@ public sealed record OpenAccountDto
     /// <summary>
     ///     Gets the name of the account holder.
     /// </summary>
+    [JsonPropertyName("holderName")]
     [JsonRequired]
     public required string HolderName { get; init; }
 
     /// <summary>
     ///     Gets the initial deposit amount. Defaults to 0.
     /// </summary>
+    [JsonPropertyName("initialDeposit")]
     public decimal InitialDeposit { get; init; } = 0m;
 }

@@ -93,7 +93,17 @@ internal abstract class CommandEffectBase<TAction, TRequestDto> : IEffect
             string endpoint = GetEndpoint(typedAction);
             TRequestDto requestBody = Mapper.Map(typedAction);
             using HttpResponseMessage response = await Http.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
-            result = await response.Content.ReadFromJsonAsync<OperationResultDto>(cancellationToken);
+
+            // Check for non-success status codes before trying to parse response
+            if (!response.IsSuccessStatusCode)
+            {
+                string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                errorMessage = $"Server error ({(int)response.StatusCode}): {responseBody}";
+            }
+            else
+            {
+                result = await response.Content.ReadFromJsonAsync<OperationResultDto>(cancellationToken);
+            }
         }
         catch (HttpRequestException ex)
         {

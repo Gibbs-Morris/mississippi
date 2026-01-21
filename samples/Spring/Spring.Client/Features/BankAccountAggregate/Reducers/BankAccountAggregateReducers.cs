@@ -67,17 +67,17 @@ internal static class BankAccountAggregateReducers
         };
 
     /// <summary>
-    ///     Sets the bank account ID to target for commands.
+    ///     Sets the entity ID to target for commands.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The action containing the bank account ID.</param>
-    /// <returns>The new state with the bank account ID set.</returns>
-    public static BankAccountAggregateState SetBankAccountId(
+    /// <param name="action">The action containing the entity ID.</param>
+    /// <returns>The new state with the entity ID set.</returns>
+    public static BankAccountAggregateState SetEntityId(
         BankAccountAggregateState state,
-        SetBankAccountIdAction action
+        SetEntityIdAction action
     ) =>
         state with
         {
-            BankAccountId = action.BankAccountId,
+            EntityId = action.EntityId,
         };
 }

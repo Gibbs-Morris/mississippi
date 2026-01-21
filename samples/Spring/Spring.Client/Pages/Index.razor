@@ -6,12 +6,12 @@
 <div>
     <label>Account ID:</label>
     <input @bind="accountIdInput" placeholder="Enter account ID"/>
-    <button @onclick="SetBankAccountId">Set Account</button>
+    <button @onclick="SetEntityId">Set Account</button>
 </div>
 
-@if (!string.IsNullOrEmpty(AggregateState.BankAccountId))
+@if (!string.IsNullOrEmpty(AggregateState.EntityId))
 {
-    <h2>Account: @AggregateState.BankAccountId</h2>
+    <h2>Account: @AggregateState.EntityId</h2>
     <div>
         <h3>Open Account</h3>
         <input @bind="holderName" placeholder="Holder Name"/>
@@ -94,14 +94,14 @@
     /// </summary>
     private bool IsExecutingOrLoading => AggregateState.IsExecuting || BalanceState.IsLoading;
 
-    private void Deposit() => Dispatch(new DepositFundsAction(AggregateState.BankAccountId!, depositAmount));
+    private void Deposit() => Dispatch(new DepositFundsAction(AggregateState.EntityId!, depositAmount));
 
-    private void FetchBalance() => Dispatch(new FetchBankAccountBalanceAction(AggregateState.BankAccountId!));
+    private void FetchBalance() => Dispatch(new FetchBankAccountBalanceAction(AggregateState.EntityId!));
 
-    private void OpenAccount() => Dispatch(new OpenAccountAction(AggregateState.BankAccountId!, holderName, initialDeposit));
+    private void OpenAccount() => Dispatch(new OpenAccountAction(AggregateState.EntityId!, holderName, initialDeposit));
 
-    private void SetBankAccountId() => Dispatch(new SetBankAccountIdAction(accountIdInput));
+    private void SetEntityId() => Dispatch(new SetEntityIdAction(accountIdInput));
 
-    private void Withdraw() => Dispatch(new WithdrawFundsAction(AggregateState.BankAccountId!, withdrawAmount));
+    private void Withdraw() => Dispatch(new WithdrawFundsAction(AggregateState.EntityId!, withdrawAmount));
 
 }

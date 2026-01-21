@@ -20,7 +20,7 @@ namespace Spring.Server.Controllers.Aggregates;
 ///     Controller for BankAccount aggregate commands.
 ///     This is a test controller to exercise the aggregate via HTTP.
 /// </summary>
-[Route("api/aggregates/bankaccount/{bankAccountId}")]
+[Route("api/aggregates/bankaccount/{entityId}")]
 [PendingSourceGenerator]
 public sealed class BankAccountController : AggregateControllerBase<BankAccountAggregate>
 {
@@ -58,66 +58,66 @@ public sealed class BankAccountController : AggregateControllerBase<BankAccountA
     /// <summary>
     ///     Deposits funds into the bank account.
     /// </summary>
-    /// <param name="bankAccountId">The bank account identifier.</param>
+    /// <param name="entityId">The entity identifier.</param>
     /// <param name="request">The deposit request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The operation result.</returns>
     [HttpPost("deposit")]
     public Task<ActionResult<OperationResult>> DepositFundsAsync(
-        [FromRoute] string bankAccountId,
+        [FromRoute] string entityId,
         [FromBody] DepositFundsDto request,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(request);
-        return ExecuteAsync(bankAccountId, DepositFundsMapper.Map(request), ExecuteCommandAsync, cancellationToken);
+        return ExecuteAsync(entityId, DepositFundsMapper.Map(request), ExecuteCommandAsync, cancellationToken);
     }
 
     /// <summary>
     ///     Opens a new bank account.
     /// </summary>
-    /// <param name="bankAccountId">The bank account identifier.</param>
+    /// <param name="entityId">The entity identifier.</param>
     /// <param name="request">The open account request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The operation result.</returns>
     [HttpPost("open")]
     public Task<ActionResult<OperationResult>> OpenAccountAsync(
-        [FromRoute] string bankAccountId,
+        [FromRoute] string entityId,
         [FromBody] OpenAccountDto request,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(request);
-        return ExecuteAsync(bankAccountId, OpenAccountMapper.Map(request), ExecuteCommandAsync, cancellationToken);
+        return ExecuteAsync(entityId, OpenAccountMapper.Map(request), ExecuteCommandAsync, cancellationToken);
     }
 
     /// <summary>
     ///     Withdraws funds from the bank account.
     /// </summary>
-    /// <param name="bankAccountId">The bank account identifier.</param>
+    /// <param name="entityId">The entity identifier.</param>
     /// <param name="request">The withdrawal request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The operation result.</returns>
     [HttpPost("withdraw")]
     public Task<ActionResult<OperationResult>> WithdrawFundsAsync(
-        [FromRoute] string bankAccountId,
+        [FromRoute] string entityId,
         [FromBody] WithdrawFundsDto request,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(request);
-        return ExecuteAsync(bankAccountId, WithdrawFundsMapper.Map(request), ExecuteCommandAsync, cancellationToken);
+        return ExecuteAsync(entityId, WithdrawFundsMapper.Map(request), ExecuteCommandAsync, cancellationToken);
     }
 
     private Task<OperationResult> ExecuteCommandAsync<TCommand>(
-        string bankAccountId,
+        string entityId,
         TCommand command,
         CancellationToken cancellationToken
     )
         where TCommand : class
     {
         IGenericAggregateGrain<BankAccountAggregate> grain =
-            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(bankAccountId);
+            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(entityId);
         return grain.ExecuteAsync(command, cancellationToken);
     }
 }

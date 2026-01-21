@@ -10,8 +10,8 @@ namespace Spring.Client.Features.BankAccountAggregate.Actions;
 /// <remarks>
 ///     Derived from domain command: <c>Spring.Domain.Aggregates.BankAccount.Commands.OpenAccount</c>.
 /// </remarks>
-/// <param name="BankAccountId">The bank account ID to create.</param>
+/// <param name="EntityId">The entity ID to create.</param>
 /// <param name="HolderName">The name of the account holder.</param>
 /// <param name="InitialDeposit">The initial deposit amount.</param>
 [PendingSourceGenerator]
-internal sealed record OpenAccountAction(string BankAccountId, string HolderName, decimal InitialDeposit) : IAction;
+internal sealed record OpenAccountAction(string EntityId, string HolderName, decimal InitialDeposit) : IAction;

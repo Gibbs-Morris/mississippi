@@ -14,6 +14,7 @@ public sealed record WithdrawFundsDto
     /// <summary>
     ///     Gets the amount to withdraw.
     /// </summary>
+    [JsonPropertyName("amount")]
     [JsonRequired]
     public required decimal Amount { get; init; }
 }

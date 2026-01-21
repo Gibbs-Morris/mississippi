@@ -32,5 +32,5 @@ internal sealed class DepositFundsEffect : CommandEffectBase<DepositFundsAction,
     protected override string GetEndpoint(
         DepositFundsAction action
     ) =>
-        $"/api/aggregates/bankaccount/{action.BankAccountId}/deposit";
+        $"/api/aggregates/bankaccount/{action.EntityId}/deposit";
 }

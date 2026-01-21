@@ -39,8 +39,8 @@ internal static class BankAccountAggregateFeatureRegistration
         services.AddMapper<WithdrawFundsAction, WithdrawFundsRequestDto, WithdrawFundsActionMapper>();
 
         // Reducers
-        services.AddReducer<SetBankAccountIdAction, BankAccountAggregateState>(
-            BankAccountAggregateReducers.SetBankAccountId);
+        services.AddReducer<SetEntityIdAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.SetEntityId);
         services.AddReducer<CommandExecutingAction, BankAccountAggregateState>(
             BankAccountAggregateReducers.CommandExecuting);
         services.AddReducer<CommandSucceededAction, BankAccountAggregateState>(

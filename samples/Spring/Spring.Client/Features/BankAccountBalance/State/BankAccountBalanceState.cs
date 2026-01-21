@@ -23,9 +23,9 @@ internal sealed record BankAccountBalanceState : IFeatureState
     public decimal? Balance { get; init; }
 
     /// <summary>
-    ///     Gets the bank account balance ID this projection data belongs to.
+    ///     Gets the entity ID this projection data belongs to.
     /// </summary>
-    public string? BankAccountBalanceId { get; init; }
+    public string? EntityId { get; init; }
 
     /// <summary>
     ///     Gets the error message from the last failed fetch.

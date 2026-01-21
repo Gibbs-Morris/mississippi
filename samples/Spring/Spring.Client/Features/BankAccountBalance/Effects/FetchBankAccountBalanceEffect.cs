@@ -60,7 +60,7 @@ internal sealed class FetchBankAccountBalanceEffect : IEffect
         try
         {
             result = await Http.GetFromJsonAsync<BankAccountBalanceDto>(
-                $"/api/projections/bank-account-balance/{Uri.EscapeDataString(fetchAction.BankAccountBalanceId)}",
+                $"/api/projections/bank-account-balance/{Uri.EscapeDataString(fetchAction.EntityId)}",
                 cancellationToken);
         }
         catch (HttpRequestException ex)
@@ -89,7 +89,7 @@ internal sealed class FetchBankAccountBalanceEffect : IEffect
         }
 
         yield return new BankAccountBalanceLoadedAction(
-            fetchAction.BankAccountBalanceId,
+            fetchAction.EntityId,
             result.Balance,
             result.HolderName,
             result.IsOpen);

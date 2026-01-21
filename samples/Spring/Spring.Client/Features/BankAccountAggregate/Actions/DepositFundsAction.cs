@@ -10,7 +10,7 @@ namespace Spring.Client.Features.BankAccountAggregate.Actions;
 /// <remarks>
 ///     Derived from domain command: <c>Spring.Domain.Aggregates.BankAccount.Commands.DepositFunds</c>.
 /// </remarks>
-/// <param name="BankAccountId">The target bank account ID.</param>
+/// <param name="EntityId">The target entity ID.</param>
 /// <param name="Amount">The amount to deposit.</param>
 [PendingSourceGenerator]
-internal sealed record DepositFundsAction(string BankAccountId, decimal Amount) : IAction;
+internal sealed record DepositFundsAction(string EntityId, decimal Amount) : IAction;
