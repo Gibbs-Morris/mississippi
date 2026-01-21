@@ -2,7 +2,4 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Common.Abstractions\Common.Abstractions.csproj"/>
     </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="System.Linq.Async"/>
-    </ItemGroup>
 </Project>

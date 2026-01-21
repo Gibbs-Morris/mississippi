@@ -2,7 +2,6 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Orleans.TestingHost" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-        <PackageReference Include="System.Linq.Async"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />

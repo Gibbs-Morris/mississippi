@@ -8,7 +8,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 ## Technology Stack
 
-- **.NET 9.0** - Latest .NET runtime with C# 13.0
+- **.NET 10.0** - Latest .NET runtime with C# 14.0
 - **Microsoft Orleans** - Framework for building distributed applications
 - **Azure Cosmos DB** - Cloud-native NoSQL database integration
 
@@ -24,7 +24,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 ### Prerequisites
 
-- .NET 9.0 SDK or later
+- .NET 10.0 SDK or later
 - PowerShell 7.0 or later (for build scripts)
 - JetBrains Rider or other compatible IDE
 
