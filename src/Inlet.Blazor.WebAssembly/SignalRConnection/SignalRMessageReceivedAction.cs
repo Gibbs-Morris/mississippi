@@ -27,10 +27,8 @@ public sealed record SignalRMessageReceivedAction : IAction
     /// <param name="timestamp">The timestamp when the message was received.</param>
     public SignalRMessageReceivedAction(
         DateTimeOffset timestamp
-    )
-    {
+    ) =>
         Timestamp = timestamp;
-    }
 
     /// <summary>
     ///     Gets the timestamp when the message was received.

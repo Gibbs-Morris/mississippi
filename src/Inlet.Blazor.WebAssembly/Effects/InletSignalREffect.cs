@@ -40,8 +40,6 @@ internal sealed class InletSignalREffect
 
     private readonly Lazy<IInletStore> lazyStore;
 
-    private TimeProvider TimeProvider { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalREffect" /> class.
     /// </summary>
@@ -91,6 +89,8 @@ internal sealed class InletSignalREffect
     ///     on the store directly in their constructor.
     /// </summary>
     private IInletStore Store => lazyStore.Value;
+
+    private TimeProvider TimeProvider { get; }
 
     /// <inheritdoc />
     public bool CanHandle(

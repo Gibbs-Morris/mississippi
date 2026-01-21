@@ -21,8 +21,6 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
 
     private int reconnectAttemptCount;
 
-    private TimeProvider TimeProvider { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="HubConnectionProvider" /> class.
     /// </summary>
@@ -43,7 +41,6 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         ArgumentNullException.ThrowIfNull(lazyStore);
         this.lazyStore = lazyStore;
         TimeProvider = timeProvider ?? TimeProvider.System;
-
         InletSignalREffectOptions effectOptions = options ?? new InletSignalREffectOptions();
         Connection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri(effectOptions.HubPath))
             .WithAutomaticReconnect()
@@ -63,6 +60,8 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
 
     private IInletStore Store => lazyStore.Value;
 
+    private TimeProvider TimeProvider { get; }
+
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
@@ -81,9 +80,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         {
             Store.Dispatch(new SignalRConnectingAction());
             await Connection.StartAsync(cancellationToken);
-            Store.Dispatch(new SignalRConnectedAction(
-                Connection.ConnectionId,
-                TimeProvider.GetUtcNow()));
+            Store.Dispatch(new SignalRConnectedAction(Connection.ConnectionId, TimeProvider.GetUtcNow()));
         }
     }
 
@@ -123,9 +120,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     )
     {
         reconnectAttemptCount = 0;
-        Store.Dispatch(new SignalRDisconnectedAction(
-            exception?.Message,
-            TimeProvider.GetUtcNow()));
+        Store.Dispatch(new SignalRDisconnectedAction(exception?.Message, TimeProvider.GetUtcNow()));
         return Task.CompletedTask;
     }
 
@@ -134,9 +129,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     )
     {
         reconnectAttemptCount = 0;
-        Store.Dispatch(new SignalRReconnectedAction(
-            connectionId,
-            TimeProvider.GetUtcNow()));
+        Store.Dispatch(new SignalRReconnectedAction(connectionId, TimeProvider.GetUtcNow()));
         return Task.CompletedTask;
     }
 
@@ -145,9 +138,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     )
     {
         reconnectAttemptCount++;
-        Store.Dispatch(new SignalRReconnectingAction(
-            exception?.Message,
-            reconnectAttemptCount));
+        Store.Dispatch(new SignalRReconnectingAction(exception?.Message, reconnectAttemptCount));
         return Task.CompletedTask;
     }
 }

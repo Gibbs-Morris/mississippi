@@ -1,17 +1,14 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
-using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Blazor.WebAssembly.Effects;
 using Mississippi.Reservoir;
-using Mississippi.Reservoir.Abstractions;
-using Mississippi.Reservoir.Abstractions.Actions;
 
 
 namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.Effects;
@@ -25,9 +22,13 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.Effects;
 public sealed class HubConnectionProviderTests : IDisposable
 {
     private readonly NavigationManager navigationManager;
+
     private readonly ProjectionCache projectionCache;
+
     private readonly CompositeInletStore store;
+
     private readonly FakeTimeProvider timeProvider;
+
     private readonly Store underlyingStore;
 
     /// <summary>
@@ -36,10 +37,10 @@ public sealed class HubConnectionProviderTests : IDisposable
     public HubConnectionProviderTests()
     {
         navigationManager = CreateNavigationManager();
-        timeProvider = new FakeTimeProvider(new DateTimeOffset(2024, 1, 15, 12, 0, 0, TimeSpan.Zero));
-        projectionCache = new ProjectionCache();
-        underlyingStore = new Store();
-        store = new CompositeInletStore(underlyingStore, projectionCache);
+        timeProvider = new(new(2024, 1, 15, 12, 0, 0, TimeSpan.Zero));
+        projectionCache = new();
+        underlyingStore = new();
+        store = new(underlyingStore, projectionCache);
     }
 
     /// <inheritdoc />
@@ -49,34 +50,46 @@ public sealed class HubConnectionProviderTests : IDisposable
         underlyingStore.Dispose();
     }
 
-    /// <summary>
-    ///     Verifies that the constructor throws when navigationManager is null.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Construction")]
-    public void ConstructorThrowsWhenNavigationManagerIsNull()
-    {
-        // Arrange & Act
-        void Act() => _ = new HubConnectionProvider(
-            null!,
-            new Lazy<IInletStore>(() => store));
+    private static TestNavigationManager CreateNavigationManager() => new();
 
-        // Assert
-        Assert.Throws<ArgumentNullException>(Act);
+    private HubConnectionProvider CreateProvider() => new(navigationManager, new(() => store), null, timeProvider);
+
+    [SuppressMessage(
+        "Performance",
+        "S1144:Unused private types or members should be removed",
+        Justification = "Constructor implicitly used by CreateNavigationManager.")]
+    private sealed class TestNavigationManager : NavigationManager
+    {
+        public TestNavigationManager() => Initialize("https://localhost/", "https://localhost/");
+
+        protected override void NavigateToCore(
+            string uri,
+            bool forceLoad
+        )
+        {
+            // No-op for tests
+        }
     }
 
     /// <summary>
-    ///     Verifies that the constructor throws when lazyStore is null.
+    ///     Verifies that custom options are applied.
     /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
     [AllureFeature("Construction")]
-    public void ConstructorThrowsWhenLazyStoreIsNull()
+    public async Task ConstructorAppliesCustomOptions()
     {
-        // Arrange & Act
-        void Act() => _ = new HubConnectionProvider(navigationManager, null!);
+        // Arrange
+        InletSignalREffectOptions options = new()
+        {
+            HubPath = "/custom-hub",
+        };
+
+        // Act
+        await using HubConnectionProvider provider = new(navigationManager, new(() => store), options);
 
         // Assert
-        Assert.Throws<ArgumentNullException>(Act);
+        Assert.NotNull(provider.Connection);
     }
 
     /// <summary>
@@ -95,6 +108,84 @@ public sealed class HubConnectionProviderTests : IDisposable
     }
 
     /// <summary>
+    ///     Verifies that the constructor throws when lazyStore is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Construction")]
+    public void ConstructorThrowsWhenLazyStoreIsNull()
+    {
+        // Arrange & Act
+        void Act() => _ = new HubConnectionProvider(navigationManager, null!);
+
+        // Assert
+        Assert.Throws<ArgumentNullException>(Act);
+    }
+
+    /// <summary>
+    ///     Verifies that the constructor throws when navigationManager is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Construction")]
+    public void ConstructorThrowsWhenNavigationManagerIsNull()
+    {
+        // Arrange & Act
+        void Act() => _ = new HubConnectionProvider(null!, new(() => store));
+
+        // Assert
+        Assert.Throws<ArgumentNullException>(Act);
+    }
+
+    /// <summary>
+    ///     Verifies that default options are used when null is provided.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    [AllureFeature("Construction")]
+    public async Task ConstructorUsesDefaultOptionsWhenNull()
+    {
+        // Arrange & Act - should not throw
+        await using HubConnectionProvider provider = new(navigationManager, new(() => store));
+
+        // Assert
+        Assert.NotNull(provider.Connection);
+    }
+
+    /// <summary>
+    ///     Verifies that default TimeProvider is used when null is provided.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    [AllureFeature("Construction")]
+    public async Task ConstructorUsesDefaultTimeProviderWhenNull()
+    {
+        // Arrange & Act
+        await using HubConnectionProvider provider = new(navigationManager, new(() => store));
+
+        // Assert
+        Assert.NotNull(provider.Connection);
+    }
+
+    /// <summary>
+    ///     Verifies that DisposeAsync disposes the connection.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    [AllureFeature("Lifecycle")]
+    public async Task DisposeAsyncDisposesConnection()
+    {
+        // Arrange
+        HubConnectionProvider provider = CreateProvider();
+
+        // Act
+        await provider.DisposeAsync();
+
+        // Assert - connection should be disposed (will throw on use)
+        // Since HubConnection doesn't expose disposed state, we verify
+        // the method completes without throwing
+        Assert.True(true);
+    }
+
+    /// <summary>
     ///     Verifies that IsConnected returns false when not connected.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -110,45 +201,6 @@ public sealed class HubConnectionProviderTests : IDisposable
 
         // Assert
         Assert.False(result);
-    }
-
-    /// <summary>
-    ///     Verifies that default options are used when null is provided.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    [AllureFeature("Construction")]
-    public async Task ConstructorUsesDefaultOptionsWhenNull()
-    {
-        // Arrange & Act - should not throw
-        await using HubConnectionProvider provider = new(
-            navigationManager,
-            new Lazy<IInletStore>(() => store),
-            null);
-
-        // Assert
-        Assert.NotNull(provider.Connection);
-    }
-
-    /// <summary>
-    ///     Verifies that custom options are applied.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    [AllureFeature("Construction")]
-    public async Task ConstructorAppliesCustomOptions()
-    {
-        // Arrange
-        InletSignalREffectOptions options = new() { HubPath = "/custom-hub" };
-
-        // Act
-        await using HubConnectionProvider provider = new(
-            navigationManager,
-            new Lazy<IInletStore>(() => store),
-            options);
-
-        // Assert
-        Assert.NotNull(provider.Connection);
     }
 
     /// <summary>
@@ -171,29 +223,6 @@ public sealed class HubConnectionProviderTests : IDisposable
         });
 
         // Assert - we can't easily trigger Closed, but at least verify no exception
-        Assert.False(handlerCalled);
-    }
-
-    /// <summary>
-    ///     Verifies that OnReconnecting registers a handler without throwing.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    [AllureFeature("EventHandlers")]
-    public async Task OnReconnectingRegistersHandler()
-    {
-        // Arrange
-        await using HubConnectionProvider provider = CreateProvider();
-        bool handlerCalled = false;
-
-        // Act - should not throw
-        provider.OnReconnecting(_ =>
-        {
-            handlerCalled = true;
-            return Task.CompletedTask;
-        });
-
-        // Assert
         Assert.False(handlerCalled);
     }
 
@@ -221,6 +250,29 @@ public sealed class HubConnectionProviderTests : IDisposable
     }
 
     /// <summary>
+    ///     Verifies that OnReconnecting registers a handler without throwing.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    [AllureFeature("EventHandlers")]
+    public async Task OnReconnectingRegistersHandler()
+    {
+        // Arrange
+        await using HubConnectionProvider provider = CreateProvider();
+        bool handlerCalled = false;
+
+        // Act - should not throw
+        provider.OnReconnecting(_ =>
+        {
+            handlerCalled = true;
+            return Task.CompletedTask;
+        });
+
+        // Assert
+        Assert.False(handlerCalled);
+    }
+
+    /// <summary>
     ///     Verifies that RegisterHandler registers a hub method handler.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -234,74 +286,13 @@ public sealed class HubConnectionProviderTests : IDisposable
         // Act
         using IDisposable subscription = provider.RegisterHandler<string, int, bool>(
             "TestMethod",
-            (_, _, _) => Task.CompletedTask);
+            (
+                _,
+                _,
+                _
+            ) => Task.CompletedTask);
 
         // Assert
         Assert.NotNull(subscription);
-    }
-
-    /// <summary>
-    ///     Verifies that DisposeAsync disposes the connection.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    [AllureFeature("Lifecycle")]
-    public async Task DisposeAsyncDisposesConnection()
-    {
-        // Arrange
-        HubConnectionProvider provider = CreateProvider();
-
-        // Act
-        await provider.DisposeAsync();
-
-        // Assert - connection should be disposed (will throw on use)
-        // Since HubConnection doesn't expose disposed state, we verify
-        // the method completes without throwing
-        Assert.True(true);
-    }
-
-    /// <summary>
-    ///     Verifies that default TimeProvider is used when null is provided.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    [AllureFeature("Construction")]
-    public async Task ConstructorUsesDefaultTimeProviderWhenNull()
-    {
-        // Arrange & Act
-        await using HubConnectionProvider provider = new(
-            navigationManager,
-            new Lazy<IInletStore>(() => store),
-            null,
-            null);
-
-        // Assert
-        Assert.NotNull(provider.Connection);
-    }
-
-    private HubConnectionProvider CreateProvider() =>
-        new(
-            navigationManager,
-            new Lazy<IInletStore>(() => store),
-            null,
-            timeProvider);
-
-    private static TestNavigationManager CreateNavigationManager() => new();
-
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Performance",
-        "S1144:Unused private types or members should be removed",
-        Justification = "Constructor implicitly used by CreateNavigationManager.")]
-    private sealed class TestNavigationManager : NavigationManager
-    {
-        public TestNavigationManager() => Initialize("https://localhost/", "https://localhost/");
-
-        protected override void NavigateToCore(
-            string uri,
-            bool forceLoad
-        )
-        {
-            // No-op for tests
-        }
     }
 }

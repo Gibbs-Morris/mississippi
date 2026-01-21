@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 
@@ -42,17 +43,17 @@ public sealed partial class Index
     private BankAccountAggregateState AggregateState => GetState<BankAccountAggregateState>();
 
     /// <summary>
-    ///     Gets the SignalR connection state.
-    /// </summary>
-    private SignalRConnectionState ConnectionState => GetState<SignalRConnectionState>();
-
-    /// <summary>
     ///     Gets the projection data from the InletStore.
     /// </summary>
     private BankAccountBalanceProjectionDto? BalanceProjection =>
         string.IsNullOrEmpty(AggregateState.EntityId)
             ? null
             : GetProjection<BankAccountBalanceProjectionDto>(AggregateState.EntityId);
+
+    /// <summary>
+    ///     Gets the SignalR connection state.
+    /// </summary>
+    private SignalRConnectionState ConnectionState => GetState<SignalRConnectionState>();
 
     /// <summary>
     ///     Gets error message from aggregate state or projection error.
@@ -85,6 +86,11 @@ public sealed partial class Index
         (!string.IsNullOrEmpty(AggregateState.EntityId) &&
          IsProjectionLoading<BankAccountBalanceProjectionDto>(AggregateState.EntityId));
 
+    private static string FormatTimestamp(
+        DateTimeOffset? timestamp
+    ) =>
+        timestamp?.ToString("HH:mm:ss", CultureInfo.InvariantCulture) ?? "—";
+
     /// <inheritdoc />
     protected override void Dispose(
         bool disposing
@@ -108,6 +114,15 @@ public sealed partial class Index
     }
 
     private void Deposit() => Dispatch(new DepositFundsAction(AggregateState.EntityId!, depositAmount));
+
+    private string GetConnectionStatusClass() =>
+        ConnectionState.Status switch
+        {
+            SignalRConnectionStatus.Connected => "status-badge--open",
+            SignalRConnectionStatus.Connecting or SignalRConnectionStatus.Reconnecting => "status-badge--pending",
+            SignalRConnectionStatus.Disconnected => "status-badge--closed",
+            var _ => string.Empty,
+        };
 
     private void ManageProjectionSubscription()
     {
@@ -133,18 +148,4 @@ public sealed partial class Index
     private void SetEntityId() => Dispatch(new SetEntityIdAction(accountIdInput));
 
     private void Withdraw() => Dispatch(new WithdrawFundsAction(AggregateState.EntityId!, withdrawAmount));
-
-    private static string FormatTimestamp(
-        DateTimeOffset? timestamp
-    ) =>
-        timestamp?.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) ?? "—";
-
-    private string GetConnectionStatusClass() =>
-        ConnectionState.Status switch
-        {
-            SignalRConnectionStatus.Connected => "status-badge--open",
-            SignalRConnectionStatus.Connecting or SignalRConnectionStatus.Reconnecting => "status-badge--pending",
-            SignalRConnectionStatus.Disconnected => "status-badge--closed",
-            _ => string.Empty,
-        };
 }

@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 using Mississippi.Reservoir;
 
 
@@ -34,24 +33,15 @@ public static class SignalRConnectionRegistrations
     )
     {
         // Register reducers for each action
-        services.AddReducer<SignalRConnectingAction, SignalRConnectionState>(
-            SignalRConnectionReducers.OnConnecting);
-
-        services.AddReducer<SignalRConnectedAction, SignalRConnectionState>(
-            SignalRConnectionReducers.OnConnected);
-
+        services.AddReducer<SignalRConnectingAction, SignalRConnectionState>(SignalRConnectionReducers.OnConnecting);
+        services.AddReducer<SignalRConnectedAction, SignalRConnectionState>(SignalRConnectionReducers.OnConnected);
         services.AddReducer<SignalRReconnectingAction, SignalRConnectionState>(
             SignalRConnectionReducers.OnReconnecting);
-
-        services.AddReducer<SignalRReconnectedAction, SignalRConnectionState>(
-            SignalRConnectionReducers.OnReconnected);
-
+        services.AddReducer<SignalRReconnectedAction, SignalRConnectionState>(SignalRConnectionReducers.OnReconnected);
         services.AddReducer<SignalRDisconnectedAction, SignalRConnectionState>(
             SignalRConnectionReducers.OnDisconnected);
-
         services.AddReducer<SignalRMessageReceivedAction, SignalRConnectionState>(
             SignalRConnectionReducers.OnMessageReceived);
-
         return services;
     }
 }

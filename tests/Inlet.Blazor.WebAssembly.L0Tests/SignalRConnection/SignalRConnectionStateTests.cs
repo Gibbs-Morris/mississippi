@@ -14,20 +14,6 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.SignalRConnection;
 public sealed class SignalRConnectionStateTests
 {
     /// <summary>
-    ///     Verifies that the feature key is correct.
-    /// </summary>
-    [Fact]
-    [AllureFeature("FeatureKey")]
-    public void FeatureKeyReturnsExpectedValue()
-    {
-        // Act
-        string featureKey = SignalRConnectionState.FeatureKey;
-
-        // Assert
-        Assert.Equal("signalr-connection", featureKey);
-    }
-
-    /// <summary>
     ///     Verifies that default state has Disconnected status.
     /// </summary>
     [Fact]
@@ -71,6 +57,20 @@ public sealed class SignalRConnectionStateTests
 
         // Assert
         Assert.Equal(0, state.ReconnectAttemptCount);
+    }
+
+    /// <summary>
+    ///     Verifies that the feature key is correct.
+    /// </summary>
+    [Fact]
+    [AllureFeature("FeatureKey")]
+    public void FeatureKeyReturnsExpectedValue()
+    {
+        // Act
+        string featureKey = SignalRConnectionState.FeatureKey;
+
+        // Assert
+        Assert.Equal("signalr-connection", featureKey);
     }
 
     /// <summary>

@@ -17,9 +17,15 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 ///     <para>
 ///         Use cases include:
 ///         <list type="bullet">
-///             <item><description>Displaying connection status indicators</description></item>
-///             <item><description>Showing a panel when disconnected</description></item>
-///             <item><description>Animating on message receipt (heartbeat)</description></item>
+///             <item>
+///                 <description>Displaying connection status indicators</description>
+///             </item>
+///             <item>
+///                 <description>Showing a panel when disconnected</description>
+///             </item>
+///             <item>
+///                 <description>Animating on message receipt (heartbeat)</description>
+///             </item>
 ///         </list>
 ///     </para>
 /// </remarks>
@@ -36,11 +42,6 @@ public sealed record SignalRConnectionState : IFeatureState
     public string? ConnectionId { get; init; }
 
     /// <summary>
-    ///     Gets the last error message that occurred, if any.
-    /// </summary>
-    public string? LastError { get; init; }
-
-    /// <summary>
     ///     Gets the timestamp when the connection was last successfully established.
     /// </summary>
     public DateTimeOffset? LastConnectedAt { get; init; }
@@ -49,6 +50,11 @@ public sealed record SignalRConnectionState : IFeatureState
     ///     Gets the timestamp when the connection was last disconnected.
     /// </summary>
     public DateTimeOffset? LastDisconnectedAt { get; init; }
+
+    /// <summary>
+    ///     Gets the last error message that occurred, if any.
+    /// </summary>
+    public string? LastError { get; init; }
 
     /// <summary>
     ///     Gets the timestamp when the last message was received from the server.
