@@ -35,6 +35,12 @@
     <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+
+    <!-- Inlet Orleans for projection-to-brook registry -->
+    <ProjectReference Include="..\..\..\src\Inlet.Orleans\Inlet.Orleans.csproj" />
+
+    <!-- Aqueduct grains for SignalR backplane -->
+    <ProjectReference Include="..\..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
   </ItemGroup>
 
 </Project>

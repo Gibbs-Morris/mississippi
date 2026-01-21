@@ -371,7 +371,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         // Set up the fetcher to return a result (for refresh action to succeed)
         TestProjection projection = new("test", 42);
         fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ProjectionFetchResult(projection, 1L));
+            .ReturnsAsync(ProjectionFetchResult.Create(projection, 1L));
         RefreshProjectionAction<TestProjection> action = new(TestEntityId);
 
         // Act - enumerate to trigger execution
@@ -502,7 +502,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         hubProviderMock.Setup(h => h.EnsureConnectedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         TestProjection projection = new("test", 42);
         fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ProjectionFetchResult(projection, 1L));
+            .ReturnsAsync(ProjectionFetchResult.Create(projection, 1L));
         RefreshProjectionAction<TestProjection> action = new(TestEntityId);
 
         // Act
@@ -529,7 +529,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         hubProviderMock.Setup(h => h.EnsureConnectedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         TestProjection projection = new("test", 42);
         fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ProjectionFetchResult(projection, 1L));
+            .ReturnsAsync(ProjectionFetchResult.Create(projection, 1L));
         RefreshProjectionAction<TestProjection> action = new(TestEntityId);
 
         // Act
@@ -547,6 +547,37 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         Assert.Equal(TestEntityId, updatedAction.EntityId);
         Assert.Equal(projection, updatedAction.Data);
         Assert.Equal(1L, updatedAction.Version);
+    }
+
+    /// <summary>
+    ///     Verifies that HandleAsync yields updated action with null data when fetcher returns NotFound.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    [AllureFeature("HandleAsync")]
+    public async Task HandleRefreshYieldsUpdatedActionWithNullDataOnNotFound()
+    {
+        // Arrange
+        hubProviderMock.Setup(h => h.EnsureConnectedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProjectionFetchResult.NotFound);
+        RefreshProjectionAction<TestProjection> action = new(TestEntityId);
+
+        // Act
+        List<IAction> results = [];
+        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        {
+            results.Add(resultAction);
+        }
+
+        // Assert - should yield loading then updated with null data (not error)
+        Assert.Equal(2, results.Count);
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(results[0]);
+        ProjectionUpdatedAction<TestProjection> updatedAction =
+            Assert.IsType<ProjectionUpdatedAction<TestProjection>>(results[1]);
+        Assert.Equal(TestEntityId, updatedAction.EntityId);
+        Assert.Null(updatedAction.Data);
+        Assert.Equal(0L, updatedAction.Version);
     }
 
     /// <summary>

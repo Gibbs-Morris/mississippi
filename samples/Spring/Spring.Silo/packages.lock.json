@@ -960,6 +960,22 @@
           "System.Drawing.Common": "6.0.0"
         }
       },
+      "Mississippi.Aqueduct.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Aqueduct.Grains": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Server": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -1112,7 +1128,28 @@
           "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Inlet.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Orleans": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[9.2.1, )",
+          "Microsoft.Orleans.Streaming": "[9.2.1, )",
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Inlet.Projection.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
       "spring.domain": {

@@ -6,12 +6,14 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Aqueduct.Grains;
 using Mississippi.Common.Abstractions;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
+using Mississippi.Inlet.Orleans;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -90,6 +92,10 @@ builder.Services.AddKeyedSingleton(
         _
     ) => sp.GetRequiredService<CosmosClient>());
 
+// Add Inlet Orleans services for projection subscription management
+builder.Services.AddInletOrleans();
+builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
+
 // Add event sourcing infrastructure
 builder.Services.AddJsonSerialization();
 builder.Services.AddEventSourcingByService();
@@ -118,6 +124,9 @@ builder.Services.AddCosmosSnapshotStorageProvider(options =>
 builder.UseOrleans(siloBuilder =>
 {
     siloBuilder.AddActivityPropagation();
+
+    // Configure Aqueduct to use the Aspire-configured stream provider for SignalR backplane
+    siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
 
     // Configure event sourcing to use the Aspire-configured stream provider
     // Must match the stream provider name configured in AppHost via WithMemoryStreaming

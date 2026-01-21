@@ -196,7 +196,13 @@ internal sealed class InletSignalREffect
             yield break;
         }
 
-        yield return ProjectionActionFactory.CreateUpdated(projectionType, entityId, result.Data, result.Version);
+        // NotFound (404) is valid - projection has no events yet but subscription is active.
+        // Dispatch updated with null data; SignalR will push updates when events arrive.
+        yield return ProjectionActionFactory.CreateUpdated(
+            projectionType,
+            entityId,
+            result.IsNotFound ? null : result.Data,
+            result.Version);
     }
 
     private async IAsyncEnumerable<IAction> HandleSubscribeAsync(
@@ -298,7 +304,13 @@ internal sealed class InletSignalREffect
             yield break;
         }
 
-        yield return ProjectionActionFactory.CreateLoaded(projectionType, entityId, result.Data, result.Version);
+        // NotFound (404) is valid - projection has no events yet but subscription is active.
+        // Dispatch loaded with null data; SignalR will push updates when events arrive.
+        yield return ProjectionActionFactory.CreateLoaded(
+            projectionType,
+            entityId,
+            result.IsNotFound ? null : result.Data,
+            result.Version);
     }
 
     private async Task HandleUnsubscribeAsync(

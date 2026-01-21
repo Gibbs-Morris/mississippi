@@ -1,5 +1,5 @@
 @page "/"
-@inherits StoreComponent
+@inherits InletComponent
 
 <h1>Bank Account Demo</h1>
 
@@ -28,25 +28,22 @@
         <input type="number" @bind="withdrawAmount"/>
         <button @onclick="Withdraw" disabled="@IsExecutingOrLoading">Withdraw</button>
     </div>
-    <div>
-        <button @onclick="FetchBalance" disabled="@IsExecutingOrLoading">Refresh Balance</button>
-    </div>
     @if (IsExecutingOrLoading)
     {
         <p>Loading...</p>
     }
 
-    @if (BalanceState.Balance.HasValue)
+    @if (BalanceProjection is not null)
     {
         <div>
             <p>
-                <strong>Balance:</strong> @BalanceState.Balance.Value.ToString("C")
+                <strong>Balance:</strong> @BalanceProjection.Balance.ToString("C")
             </p>
             <p>
-                <strong>Holder:</strong> @BalanceState.HolderName
+                <strong>Holder:</strong> @BalanceProjection.HolderName
             </p>
             <p>
-                <strong>Status:</strong> @(BalanceState.IsOpen ? "Open" : "Closed")
+                <strong>Status:</strong> @(BalanceProjection.IsOpen ? "Open" : "Closed")
             </p>
         </div>
     }
@@ -72,6 +69,8 @@
 
     private decimal initialDeposit;
 
+    private string? subscribedEntityId;
+
     private decimal withdrawAmount;
 
     /// <summary>
@@ -80,23 +79,86 @@
     private BankAccountAggregateState AggregateState => GetState<BankAccountAggregateState>();
 
     /// <summary>
-    ///     Gets the projection (read) feature state.
+    ///     Gets the projection data from the InletStore.
     /// </summary>
-    private BankAccountBalanceState BalanceState => GetState<BankAccountBalanceState>();
+    private BankAccountBalanceProjectionDto? BalanceProjection => string.IsNullOrEmpty(AggregateState.EntityId) ? null : GetProjection<BankAccountBalanceProjectionDto>(AggregateState.EntityId);
 
     /// <summary>
-    ///     Gets a combined error message from either state.
+    ///     Gets error message from aggregate state or projection error.
     /// </summary>
-    private string? ErrorMessage => AggregateState.ErrorMessage ?? BalanceState.ErrorMessage;
+    private string? ErrorMessage
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(AggregateState.ErrorMessage))
+            {
+                return AggregateState.ErrorMessage;
+            }
+
+            if (!string.IsNullOrEmpty(AggregateState.EntityId))
+            {
+                Exception? projectionError = GetProjectionError<BankAccountBalanceProjectionDto>(AggregateState.EntityId);
+                return projectionError?.Message;
+            }
+
+            return null;
+        }
+    }
 
     /// <summary>
     ///     Gets whether any operation is in progress.
     /// </summary>
-    private bool IsExecutingOrLoading => AggregateState.IsExecuting || BalanceState.IsLoading;
+    private bool IsExecutingOrLoading => AggregateState.IsExecuting || (!string.IsNullOrEmpty(AggregateState.EntityId) && IsProjectionLoading<BankAccountBalanceProjectionDto>(AggregateState.EntityId));
+
+    /// <inheritdoc />
+    protected override void Dispose(
+        bool disposing
+    )
+    {
+        // Unsubscribe when component is disposed
+        if (disposing && !string.IsNullOrEmpty(subscribedEntityId))
+        {
+            UnsubscribeFromProjection<BankAccountBalanceProjectionDto>(subscribedEntityId);
+        }
+
+        base.Dispose(disposing);
+    }
+
+    /// <inheritdoc />
+    protected override void OnAfterRender(
+        bool firstRender
+    )
+    {
+        base.OnAfterRender(firstRender);
+
+        // Manage subscription based on current entity ID
+        ManageProjectionSubscription();
+    }
 
     private void Deposit() => Dispatch(new DepositFundsAction(AggregateState.EntityId!, depositAmount));
 
-    private void FetchBalance() => Dispatch(new FetchBankAccountBalanceAction(AggregateState.EntityId!));
+    private void ManageProjectionSubscription()
+    {
+        string? currentEntityId = AggregateState.EntityId;
+
+        // If entity ID changed, update subscription
+        if (currentEntityId != subscribedEntityId)
+        {
+            // Unsubscribe from previous entity
+            if (!string.IsNullOrEmpty(subscribedEntityId))
+            {
+                UnsubscribeFromProjection<BankAccountBalanceProjectionDto>(subscribedEntityId);
+            }
+
+            // Subscribe to new entity
+            if (!string.IsNullOrEmpty(currentEntityId))
+            {
+                SubscribeToProjection<BankAccountBalanceProjectionDto>(currentEntityId);
+            }
+
+            subscribedEntityId = currentEntityId;
+        }
+    }
 
     private void OpenAccount() => Dispatch(new OpenAccountAction(AggregateState.EntityId!, holderName, initialDeposit));
 

@@ -16,7 +16,7 @@ namespace Spring.Domain.Projections.BankAccountBalance;
 ///         It subscribes to events from the BankAccount aggregate: AccountOpened, FundsDeposited, FundsWithdrawn.
 ///     </para>
 /// </remarks>
-[ProjectionPath("spring/bank-account-balance")]
+[ProjectionPath("bank-account-balance")]
 [UxProjection]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTBALANCE")]
