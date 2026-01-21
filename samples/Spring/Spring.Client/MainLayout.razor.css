@@ -10,27 +10,14 @@
     overflow-x: hidden;
 }
 
-/* Ambient background grid pattern (subtle, barely visible) */
+/* Ambient background grid pattern — disabled for OLED (every lit pixel distracts) */
 .hud-shell::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-        linear-gradient(rgba(0, 153, 204, 0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 153, 204, 0.015) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
+    display: none;
 }
 
-/* Subtle vignette effect */
+/* Subtle vignette effect — disabled for OLED (adds blue tint to edges) */
 .hud-shell::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 13, 26, 0.4) 100%);
-    pointer-events: none;
-    z-index: 0;
+    display: none;
 }
 
 .hud-shell__content {

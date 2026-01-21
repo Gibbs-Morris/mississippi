@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 
 using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
+using Mississippi.Reservoir.Abstractions.Actions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.State;
@@ -27,11 +28,25 @@ public sealed partial class Index
 {
     private string accountIdInput = string.Empty;
 
+    private bool balanceJustChanged;
+
     private decimal depositAmount;
+
+    private bool holderJustChanged;
 
     private string holderName = string.Empty;
 
     private decimal initialDeposit;
+
+    private bool isConnectionModalOpen;
+
+    private decimal? previousBalance;
+
+    private string? previousHolderName;
+
+    private bool? previousIsOpen;
+
+    private bool statusJustChanged;
 
     private string? subscribedEntityId;
 
@@ -79,6 +94,11 @@ public sealed partial class Index
     }
 
     /// <summary>
+    ///     Gets a value indicating whether the SignalR connection is not established.
+    /// </summary>
+    private bool IsDisconnected => ConnectionState.Status != SignalRConnectionStatus.Connected;
+
+    /// <summary>
     ///     Gets a value indicating whether any operation is in progress.
     /// </summary>
     private bool IsExecutingOrLoading =>
@@ -111,9 +131,92 @@ public sealed partial class Index
     {
         base.OnAfterRender(firstRender);
         ManageProjectionSubscription();
+        DetectProjectionChanges();
     }
 
+    private void ClearEntity() => Dispatch(new SetEntityIdAction(string.Empty));
+
+    private void CloseConnectionModal() => isConnectionModalOpen = false;
+
     private void Deposit() => Dispatch(new DepositFundsAction(AggregateState.EntityId!, depositAmount));
+
+    private void DepositBurst20() => DispatchBurst(() => new DepositFundsAction(AggregateState.EntityId!, 5m), 20);
+
+    private void DepositBurst200() => DispatchBurst(() => new DepositFundsAction(AggregateState.EntityId!, 10m), 200);
+
+    private void DepositSingle100() => Dispatch(new DepositFundsAction(AggregateState.EntityId!, 100m));
+
+    /// <summary>
+    ///     Detects when projection values change and triggers update animations.
+    /// </summary>
+    private void DetectProjectionChanges()
+    {
+        decimal? currentBalance = BalanceProjection?.Balance;
+        string? currentHolder = BalanceProjection?.HolderName;
+        bool? currentIsOpen = BalanceProjection?.IsOpen;
+        bool needsRerender = false;
+
+        // Detect balance change
+        if (previousBalance.HasValue && currentBalance.HasValue && (previousBalance.Value != currentBalance.Value))
+        {
+            balanceJustChanged = true;
+            needsRerender = true;
+        }
+        else if (balanceJustChanged)
+        {
+            balanceJustChanged = false;
+        }
+
+        // Detect holder name change
+        if (previousHolderName is not null &&
+            currentHolder is not null &&
+            !string.Equals(previousHolderName, currentHolder, StringComparison.Ordinal))
+        {
+            holderJustChanged = true;
+            needsRerender = true;
+        }
+        else if (holderJustChanged)
+        {
+            holderJustChanged = false;
+        }
+
+        // Detect status (isOpen) change
+        if (previousIsOpen.HasValue && currentIsOpen.HasValue && (previousIsOpen.Value != currentIsOpen.Value))
+        {
+            statusJustChanged = true;
+            needsRerender = true;
+        }
+        else if (statusJustChanged)
+        {
+            statusJustChanged = false;
+        }
+
+        previousBalance = currentBalance;
+        previousHolderName = currentHolder;
+        previousIsOpen = currentIsOpen;
+        if (needsRerender)
+        {
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    ///     Dispatches multiple actions in rapid succession for stress-testing the event sourcing pipeline.
+    ///     This intentionally has no delay between dispatches to demonstrate SignalR projection update
+    ///     throughput and Orleans grain handling under load.
+    /// </summary>
+    /// <param name="actionFactory">Factory function creating the action to dispatch.</param>
+    /// <param name="count">Number of times to dispatch the action.</param>
+    private void DispatchBurst(
+        Func<IAction> actionFactory,
+        int count
+    )
+    {
+        for (int i = 0; i < count; i++)
+        {
+            Dispatch(actionFactory());
+        }
+    }
 
     private string GetConnectionStatusClass() =>
         ConnectionState.Status switch
@@ -145,7 +248,17 @@ public sealed partial class Index
 
     private void OpenAccount() => Dispatch(new OpenAccountAction(AggregateState.EntityId!, holderName, initialDeposit));
 
+    private void RequestReconnect() => Dispatch(new RequestSignalRConnectionAction());
+
     private void SetEntityId() => Dispatch(new SetEntityIdAction(accountIdInput));
 
+    private void ToggleConnectionModal() => isConnectionModalOpen = !isConnectionModalOpen;
+
     private void Withdraw() => Dispatch(new WithdrawFundsAction(AggregateState.EntityId!, withdrawAmount));
+
+    private void WithdrawBurst20() => DispatchBurst(() => new WithdrawFundsAction(AggregateState.EntityId!, 5m), 20);
+
+    private void WithdrawBurst200() => DispatchBurst(() => new WithdrawFundsAction(AggregateState.EntityId!, 10m), 200);
+
+    private void WithdrawSingle100() => Dispatch(new WithdrawFundsAction(AggregateState.EntityId!, 100m));
 }
