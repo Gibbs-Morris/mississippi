@@ -83,8 +83,7 @@ public sealed class BankAccountE2ETests
 
             // Assert - Final balance
             balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should()
-                .Contain($"{expectedFinalBalance:F2}", "final balance should reflect all transactions");
+            balanceText.Should().Contain($"{expectedFinalBalance:F2}", "final balance should reflect all transactions");
         }
         finally
         {

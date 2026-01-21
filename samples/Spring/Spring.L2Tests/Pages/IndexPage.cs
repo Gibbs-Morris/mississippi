@@ -90,8 +90,7 @@ public sealed class IndexPage
     public async Task EnterDepositAmountAsync(
         decimal amount
     ) =>
-        await page.Locator("#deposit-amount-input")
-            .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
+        await page.Locator("#deposit-amount-input").FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
     ///     Enters the holder name for opening an account.
@@ -121,8 +120,7 @@ public sealed class IndexPage
     public async Task EnterWithdrawAmountAsync(
         decimal amount
     ) =>
-        await page.Locator("#withdraw-amount-input")
-            .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
+        await page.Locator("#withdraw-amount-input").FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
     ///     Gets the displayed account header (e.g., "Account: test-123").
@@ -175,7 +173,8 @@ public sealed class IndexPage
     /// <returns>The holder name text, or null if not present.</returns>
     public async Task<string?> GetHolderNameTextAsync()
     {
-        ILocator holderLocator = page.Locator(".status-item:has(.status-item__label:text('Holder')) .status-item__value");
+        ILocator holderLocator =
+            page.Locator(".status-item:has(.status-item__label:text('Holder')) .status-item__value");
         if (await holderLocator.CountAsync() > 0)
         {
             return await holderLocator.TextContentAsync();
@@ -324,7 +323,10 @@ public sealed class IndexPage
     /// <summary>
     ///     Waits for the balance projection to show a specific value.
     /// </summary>
-    /// <param name="expectedBalance">The expected balance value (e.g., "100.00"). Currency-agnostic to support different locales.</param>
+    /// <param name="expectedBalance">
+    ///     The expected balance value (e.g., "100.00"). Currency-agnostic to support different
+    ///     locales.
+    /// </param>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <returns>A task representing the wait operation.</returns>
     public async Task WaitForBalanceValueAsync(
