@@ -38,11 +38,33 @@ public interface IHubConnectionProvider : IAsyncDisposable
     );
 
     /// <summary>
+    ///     Registers a handler for connection closed events.
+    /// </summary>
+    /// <param name="handler">The handler to invoke when the connection is closed.</param>
+    /// <remarks>
+    ///     The exception parameter will be null if the connection was closed intentionally.
+    /// </remarks>
+    void OnClosed(
+        Func<Exception?, Task> handler
+    );
+
+    /// <summary>
     ///     Registers a handler for reconnection events.
     /// </summary>
     /// <param name="handler">The handler to invoke when reconnected.</param>
     void OnReconnected(
         Func<string?, Task> handler
+    );
+
+    /// <summary>
+    ///     Registers a handler for reconnecting events.
+    /// </summary>
+    /// <param name="handler">The handler to invoke when reconnecting starts.</param>
+    /// <remarks>
+    ///     The exception parameter contains the error that caused the connection to be lost.
+    /// </remarks>
+    void OnReconnecting(
+        Func<Exception?, Task> handler
     );
 
     /// <summary>

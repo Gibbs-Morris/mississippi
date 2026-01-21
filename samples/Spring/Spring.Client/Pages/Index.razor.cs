@@ -1,5 +1,7 @@
 using System;
 
+using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
+
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.State;
 using Spring.Client.Features.BankAccountBalance.Dtos;
@@ -38,6 +40,11 @@ public sealed partial class Index
     ///     Gets the aggregate (write) feature state.
     /// </summary>
     private BankAccountAggregateState AggregateState => GetState<BankAccountAggregateState>();
+
+    /// <summary>
+    ///     Gets the SignalR connection state.
+    /// </summary>
+    private SignalRConnectionState ConnectionState => GetState<SignalRConnectionState>();
 
     /// <summary>
     ///     Gets the projection data from the InletStore.
@@ -126,4 +133,18 @@ public sealed partial class Index
     private void SetEntityId() => Dispatch(new SetEntityIdAction(accountIdInput));
 
     private void Withdraw() => Dispatch(new WithdrawFundsAction(AggregateState.EntityId!, withdrawAmount));
+
+    private static string FormatTimestamp(
+        DateTimeOffset? timestamp
+    ) =>
+        timestamp?.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) ?? "—";
+
+    private string GetConnectionStatusClass() =>
+        ConnectionState.Status switch
+        {
+            SignalRConnectionStatus.Connected => "status-badge--open",
+            SignalRConnectionStatus.Connecting or SignalRConnectionStatus.Reconnecting => "status-badge--pending",
+            SignalRConnectionStatus.Disconnected => "status-badge--closed",
+            _ => string.Empty,
+        };
 }

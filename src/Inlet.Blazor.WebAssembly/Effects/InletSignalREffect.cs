@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Abstractions.Actions;
+using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
@@ -39,6 +40,8 @@ internal sealed class InletSignalREffect
 
     private readonly Lazy<IInletStore> lazyStore;
 
+    private TimeProvider TimeProvider { get; }
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalREffect" /> class.
     /// </summary>
@@ -46,11 +49,15 @@ internal sealed class InletSignalREffect
     /// <param name="hubConnectionProvider">The hub connection provider.</param>
     /// <param name="projectionFetcher">The projection fetcher for retrieving projection data.</param>
     /// <param name="projectionDtoRegistry">The registry mapping DTO types to projection paths.</param>
+    /// <param name="timeProvider">
+    ///     The time provider for timestamps. If null, uses <see cref="TimeProvider.System" />.
+    /// </param>
     public InletSignalREffect(
         Lazy<IInletStore> lazyStore,
         IHubConnectionProvider hubConnectionProvider,
         IProjectionFetcher projectionFetcher,
-        IProjectionDtoRegistry projectionDtoRegistry
+        IProjectionDtoRegistry projectionDtoRegistry,
+        TimeProvider? timeProvider = null
     )
     {
         ArgumentNullException.ThrowIfNull(lazyStore);
@@ -61,6 +68,7 @@ internal sealed class InletSignalREffect
         this.hubConnectionProvider = hubConnectionProvider;
         ProjectionFetcher = projectionFetcher;
         ProjectionDtoRegistry = projectionDtoRegistry;
+        TimeProvider = timeProvider ?? TimeProvider.System;
 
         // Subscribe to projection update notifications from the server
         hubCallbackRegistration = hubConnectionProvider.RegisterHandler<string, string, long>(
@@ -90,6 +98,13 @@ internal sealed class InletSignalREffect
     )
     {
         ArgumentNullException.ThrowIfNull(action);
+
+        // Handle connection request action directly
+        if (action is RequestSignalRConnectionAction)
+        {
+            return true;
+        }
+
         Type actionType = action.GetType();
         if (!actionType.IsGenericType)
         {
@@ -125,8 +140,15 @@ internal sealed class InletSignalREffect
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
-        // Ensure connection is started
+        // Ensure connection is started (HubConnectionProvider handles state dispatching)
         await hubConnectionProvider.EnsureConnectedAsync(cancellationToken);
+
+        // For connection request, we're done after ensuring connection
+        if (action is RequestSignalRConnectionAction)
+        {
+            yield break;
+        }
+
         Type actionType = action.GetType();
         Type genericDef = actionType.GetGenericTypeDefinition();
         Type projectionType = actionType.GetGenericArguments()[0];
@@ -358,6 +380,10 @@ internal sealed class InletSignalREffect
         long newVersion
     )
     {
+        // Dispatch message received action for heartbeat/activity indicators
+        SignalRMessageReceivedAction messageReceivedAction = new(TimeProvider.GetUtcNow());
+        Store.Dispatch(messageReceivedAction);
+
         // Look up the DTO type for this path
         Type? dtoType = ProjectionDtoRegistry.GetDtoType(path);
         if (dtoType is null)

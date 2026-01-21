@@ -20,6 +20,61 @@
     </div>
 </header>
 
+@* ─────────────────────────────────────────────────────────────────────────
+   SignalR Connection Status — Real-time connection monitoring
+   ───────────────────────────────────────────────────────────────────────── *@
+<section class="holo-panel holo-panel--connection" aria-labelledby="connection-panel-title">
+    <header class="panel__header">
+        <span class="panel__icon" aria-hidden="true">
+            <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                <circle cx="12" cy="20" r="1"/>
+            </svg>
+        </span>
+        <h2 id="connection-panel-title" class="panel__title">SignalR Connection</h2>
+        <span class="status-badge @GetConnectionStatusClass()">
+            <span class="status-badge__dot" aria-hidden="true"></span>
+            @ConnectionState.Status
+        </span>
+    </header>
+
+    <div class="status-grid status-grid--compact">
+        <div class="status-item">
+            <span class="status-item__label">Status</span>
+            <span class="status-item__value">@ConnectionState.Status</span>
+        </div>
+        <div class="status-item">
+            <span class="status-item__label">Connection ID</span>
+            <span class="status-item__value">@(ConnectionState.ConnectionId ?? "—")</span>
+        </div>
+        <div class="status-item">
+            <span class="status-item__label">Reconnect Attempts</span>
+            <span class="status-item__value">@ConnectionState.ReconnectAttemptCount</span>
+        </div>
+        <div class="status-item">
+            <span class="status-item__label">Last Connected</span>
+            <span class="status-item__value">@FormatTimestamp(ConnectionState.LastConnectedAt)</span>
+        </div>
+        <div class="status-item">
+            <span class="status-item__label">Last Disconnected</span>
+            <span class="status-item__value">@FormatTimestamp(ConnectionState.LastDisconnectedAt)</span>
+        </div>
+        <div class="status-item">
+            <span class="status-item__label">Last Message</span>
+            <span class="status-item__value">@FormatTimestamp(ConnectionState.LastMessageReceivedAt)</span>
+        </div>
+        @if (ConnectionState.LastError is not null)
+        {
+            <div class="status-item status-item--error" style="grid-column: 1 / -1;">
+                <span class="status-item__label">Last Error</span>
+                <span class="status-item__value">@ConnectionState.LastError</span>
+            </div>
+        }
+    </div>
+</section>
+
 <div class="console__body">
 @* ─────────────────────────────────────────────────────────────────────
            Command Panel — Entity Selection
