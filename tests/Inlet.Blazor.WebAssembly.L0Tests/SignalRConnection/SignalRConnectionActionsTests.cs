@@ -209,4 +209,97 @@ public sealed class SignalRConnectionActionsTests
         Assert.Equal("Connection lost", action.Error);
         Assert.Equal(3, action.AttemptNumber);
     }
+
+    /// <summary>
+    ///     Verifies that RequestSignalRConnectionAction ToString returns expected value.
+    /// </summary>
+    [Fact]
+    [AllureFeature("RequestSignalRConnectionAction")]
+    public void RequestSignalRConnectionActionToStringReturnsValue()
+    {
+        // Arrange
+        RequestSignalRConnectionAction action = new();
+
+        // Act
+        string result = action.ToString();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Contains("RequestSignalRConnectionAction", result, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies that SignalRConnectingAction ToString returns expected value.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SignalRConnectingAction")]
+    public void SignalRConnectingActionToStringReturnsValue()
+    {
+        // Arrange
+        SignalRConnectingAction action = new();
+
+        // Act
+        string result = action.ToString();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Contains("SignalRConnectingAction", result, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies that SignalRMessageReceivedAction GetHashCode returns consistent value for same timestamp.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SignalRMessageReceivedAction")]
+    public void SignalRMessageReceivedActionGetHashCodeReturnsConsistentValue()
+    {
+        // Arrange
+        SignalRMessageReceivedAction action1 = new(TestTimestamp);
+        SignalRMessageReceivedAction action2 = new(TestTimestamp);
+
+        // Act
+        int hash1 = action1.GetHashCode();
+        int hash2 = action2.GetHashCode();
+
+        // Assert
+        Assert.Equal(hash1, hash2);
+    }
+
+    /// <summary>
+    ///     Verifies that RequestSignalRConnectionAction GetHashCode returns consistent value.
+    /// </summary>
+    [Fact]
+    [AllureFeature("RequestSignalRConnectionAction")]
+    public void RequestSignalRConnectionActionGetHashCodeReturnsConsistentValue()
+    {
+        // Arrange
+        RequestSignalRConnectionAction action1 = new();
+        RequestSignalRConnectionAction action2 = new();
+
+        // Act
+        int hash1 = action1.GetHashCode();
+        int hash2 = action2.GetHashCode();
+
+        // Assert
+        Assert.Equal(hash1, hash2);
+    }
+
+    /// <summary>
+    ///     Verifies that SignalRConnectingAction GetHashCode returns consistent value.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SignalRConnectingAction")]
+    public void SignalRConnectingActionGetHashCodeReturnsConsistentValue()
+    {
+        // Arrange
+        SignalRConnectingAction action1 = new();
+        SignalRConnectingAction action2 = new();
+
+        // Act
+        int hash1 = action1.GetHashCode();
+        int hash2 = action2.GetHashCode();
+
+        // Assert
+        Assert.Equal(hash1, hash2);
+    }
 }
