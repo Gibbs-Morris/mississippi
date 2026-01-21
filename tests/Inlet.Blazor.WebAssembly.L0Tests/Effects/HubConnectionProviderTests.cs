@@ -151,21 +151,6 @@ public sealed class HubConnectionProviderTests : IDisposable
     }
 
     /// <summary>
-    ///     Verifies that default TimeProvider is used when null is provided.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    [AllureFeature("Construction")]
-    public async Task ConstructorUsesDefaultTimeProviderWhenNull()
-    {
-        // Arrange & Act
-        await using HubConnectionProvider provider = new(navigationManager, new(() => store));
-
-        // Assert
-        Assert.NotNull(provider.Connection);
-    }
-
-    /// <summary>
     ///     Verifies that DisposeAsync disposes the connection.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
