@@ -11,12 +11,14 @@ This document describes the visual design, interaction patterns, and responsive 
 The interface establishes a clear 3-tier visual hierarchy:
 
 ### 1. Console Shell (Background Layer)
+
 - **Deep void canvas** (#000d1a → #001122 gradient) simulates empty space
 - **Ambient radial gradients** at top and bottom edges suggest distant nebulae
 - **Subtle grid overlay** (40px squares, near-invisible) implies sensor calibration marks
 - **Vignette effect** draws focus toward center content
 
 ### 2. Holographic Panels (Content Layer)
+
 - **Glass-effect containers** with frosted translucency (`backdrop-filter: blur`)
 - **Thin cyan borders** with controlled glow auras
 - **Corner bracket decorations** (top-left) add "engineered hardware" feel
@@ -24,6 +26,7 @@ The interface establishes a clear 3-tier visual hierarchy:
 - **Segmented dividers** (dashed lines, tick marks) separate content sections
 
 ### 3. Interactive Controls (Foreground Layer)
+
 - **High-contrast buttons** with layered glow states
 - **Monospace input fields** with clear focus rings
 - **Status readouts** in prominent typography with currency/telemetry styling
@@ -62,22 +65,26 @@ All sizes use `clamp()` for fluid scaling across viewport widths.
 ## Responsive Layout Adaptation
 
 ### Mobile (< 768px)
+
 - **Single column stack**: Entity Selection → Operations → Status panels flow vertically
 - **Full-width controls**: Buttons and inputs span the container
 - **Compact padding**: `--space-4` (1rem) margins
 - **Touch-friendly targets**: Minimum 44×44px tap zones
 
 ### Tablet / Laptop (768px – 1024px)
+
 - **Form rows**: Inputs + buttons align horizontally where space permits
 - **Two-column potential**: Panels may share horizontal space
 - **Increased padding**: `--space-8` (2rem)
 
 ### Desktop (1024px – 1440px)
+
 - **Grid layout**: 2-column arrangement with Operations panel spanning full height
 - **Clear zoning**: Command on left, Status on right
 - **Dashboard composition**: Panels breathe with generous internal spacing
 
 ### Ultrawide / 4K (1440px+)
+
 - **3 or 4 column grid**: Secondary zones (rails) on outer edges
 - **Centered max-width**: 2200px container prevents over-stretching
 - **Intentional whitespace**: Content doesn't stretch to fill; composition remains focused
@@ -88,10 +95,11 @@ All sizes use `clamp()` for fluid scaling across viewport widths.
 ## Motion & Animation Design
 
 ### Button Press Feedback
+
 1. **Idle**: Calm outline, glass fill, minimal inner glow
 2. **Hover**: Border brightens to cyan; inner glow layer fades in; subtle lift impression
 3. **Focus-visible**: 3px cyan ring with 15% opacity fill; strong keyboard visibility
-4. **Active/Pressed**: 
+4. **Active/Pressed**:
    - Transform: `scale(0.98)` for tactile "press" feel
    - Background saturates to higher cyan
    - Radial pulse pseudo-element expands briefly (150ms)
@@ -100,6 +108,7 @@ All sizes use `clamp()` for fluid scaling across viewport widths.
 All transitions use `150ms cubic-bezier(0.22, 1, 0.36, 1)` for snappy, premium feel.
 
 ### State Update Animations (Signal-driven)
+
 When projection data updates in real-time:
 
 1. **Value pulse animation**: Updated values briefly flash cyan with glow (`value-pulse` keyframes, 600ms)
@@ -108,7 +117,9 @@ When projection data updates in real-time:
 4. **Loading spinner**: Minimal border-spin animation (800ms linear) for in-progress operations
 
 ### Reduced Motion Support
+
 All animations respect `@media (prefers-reduced-motion: reduce)`:
+
 - Animations set to `duration: 0.01ms` or disabled
 - Static alternatives provided (e.g., solid spinner border instead of spinning)
 - No essential meaning conveyed only through motion
@@ -130,7 +141,7 @@ All animations respect `@media (prefers-reduced-motion: reduce)`:
 
 ## File Structure
 
-```
+```text
 Spring.Client/
 ├── Pages/
 │   ├── Index.razor          # View markup (semantic HTML, ARIA, CSS hooks)
@@ -159,4 +170,4 @@ This enables consistent theming and easy future customization.
 
 ---
 
-*Updated @DateTime.UtcNow.ToString("yyyy-MM-dd") — Holographic Console Interface v1.0*
+Updated: Holographic Console Interface v1.0
