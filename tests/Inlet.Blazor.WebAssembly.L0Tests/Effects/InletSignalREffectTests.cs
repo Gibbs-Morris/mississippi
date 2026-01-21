@@ -8,6 +8,7 @@ using Allure.Xunit.Attributes;
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Abstractions.Actions;
 using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
@@ -176,6 +177,23 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     {
         // Arrange
         RefreshProjectionAction<TestProjection> action = new(TestEntityId);
+
+        // Act
+        bool result = effect!.CanHandle(action);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    /// <summary>
+    ///     Verifies that CanHandle returns true for RequestSignalRConnectionAction.
+    /// </summary>
+    [Fact]
+    [AllureFeature("CanHandle")]
+    public void CanHandleReturnsTrueForRequestConnectionAction()
+    {
+        // Arrange
+        RequestSignalRConnectionAction action = new();
 
         // Act
         bool result = effect!.CanHandle(action);
@@ -358,6 +376,30 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     Verifies that HandleAsync connects and yields no actions for RequestSignalRConnectionAction.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    [AllureFeature("HandleAsync")]
+    public async Task HandleAsyncConnectionRequestConnectsAndYieldsNoActions()
+    {
+        // Arrange - set up EnsureConnectedAsync to succeed
+        hubProviderMock.Setup(h => h.EnsureConnectedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        RequestSignalRConnectionAction action = new();
+
+        // Act - enumerate to trigger execution
+        List<IAction> results = [];
+        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        {
+            results.Add(resultAction);
+        }
+
+        // Assert - should call EnsureConnectedAsync but yield no further actions
+        hubProviderMock.Verify(h => h.EnsureConnectedAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Empty(results);
+    }
+
+    /// <summary>
     ///     Verifies that HandleAsync calls EnsureConnectedAsync on the hub provider.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
@@ -371,7 +413,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         // Set up the fetcher to return a result (for refresh action to succeed)
         TestProjection projection = new("test", 42);
         fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ProjectionFetchResult(projection, 1L));
+            .ReturnsAsync(ProjectionFetchResult.Create(projection, 1L));
         RefreshProjectionAction<TestProjection> action = new(TestEntityId);
 
         // Act - enumerate to trigger execution
@@ -502,7 +544,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         hubProviderMock.Setup(h => h.EnsureConnectedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         TestProjection projection = new("test", 42);
         fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ProjectionFetchResult(projection, 1L));
+            .ReturnsAsync(ProjectionFetchResult.Create(projection, 1L));
         RefreshProjectionAction<TestProjection> action = new(TestEntityId);
 
         // Act
@@ -529,7 +571,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         hubProviderMock.Setup(h => h.EnsureConnectedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         TestProjection projection = new("test", 42);
         fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ProjectionFetchResult(projection, 1L));
+            .ReturnsAsync(ProjectionFetchResult.Create(projection, 1L));
         RefreshProjectionAction<TestProjection> action = new(TestEntityId);
 
         // Act
@@ -547,6 +589,37 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         Assert.Equal(TestEntityId, updatedAction.EntityId);
         Assert.Equal(projection, updatedAction.Data);
         Assert.Equal(1L, updatedAction.Version);
+    }
+
+    /// <summary>
+    ///     Verifies that HandleAsync yields updated action with null data when fetcher returns NotFound.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    [AllureFeature("HandleAsync")]
+    public async Task HandleRefreshYieldsUpdatedActionWithNullDataOnNotFound()
+    {
+        // Arrange
+        hubProviderMock.Setup(h => h.EnsureConnectedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        fetcherMock.Setup(f => f.FetchAsync(typeof(TestProjection), TestEntityId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProjectionFetchResult.NotFound);
+        RefreshProjectionAction<TestProjection> action = new(TestEntityId);
+
+        // Act
+        List<IAction> results = [];
+        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        {
+            results.Add(resultAction);
+        }
+
+        // Assert - should yield loading then updated with null data (not error)
+        Assert.Equal(2, results.Count);
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(results[0]);
+        ProjectionUpdatedAction<TestProjection> updatedAction =
+            Assert.IsType<ProjectionUpdatedAction<TestProjection>>(results[1]);
+        Assert.Equal(TestEntityId, updatedAction.EntityId);
+        Assert.Null(updatedAction.Data);
+        Assert.Equal(0L, updatedAction.Version);
     }
 
     /// <summary>
@@ -575,8 +648,11 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         Assert.NotNull(capturedCallback);
         await capturedCallback(TestProjectionPath, TestEntityId, 1L);
 
-        // Assert - store should not be called since not subscribed
-        storeMock.Verify(s => s.Dispatch(It.IsAny<IAction>()), Times.Never);
+        // Assert - SignalRMessageReceivedAction should be dispatched for heartbeat tracking
+        storeMock.Verify(s => s.Dispatch(It.IsAny<SignalRMessageReceivedAction>()), Times.Once);
+
+        // Assert - no projection-specific actions should be dispatched (not subscribed)
+        storeMock.Verify(s => s.Dispatch(It.IsAny<ProjectionLoadingAction<TestProjection>>()), Times.Never);
         await localEffect.DisposeAsync();
     }
 
@@ -606,8 +682,11 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         Assert.NotNull(capturedCallback);
         await capturedCallback("unregistered-path", TestEntityId, 1L);
 
-        // Assert - store should not be called since path is not registered
-        storeMock.Verify(s => s.Dispatch(It.IsAny<IAction>()), Times.Never);
+        // Assert - SignalRMessageReceivedAction should be dispatched for heartbeat tracking
+        storeMock.Verify(s => s.Dispatch(It.IsAny<SignalRMessageReceivedAction>()), Times.Once);
+
+        // Assert - no projection-specific actions should be dispatched (path not registered)
+        storeMock.Verify(s => s.Dispatch(It.IsAny<ProjectionLoadingAction<TestProjection>>()), Times.Never);
         await localEffect.DisposeAsync();
     }
 

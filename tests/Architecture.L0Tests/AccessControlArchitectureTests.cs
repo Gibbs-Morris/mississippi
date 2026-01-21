@@ -81,6 +81,8 @@ public sealed class AccessControlArchitectureTests : ArchitectureTestBase
             .And()
             .DoNotHaveNameEndingWith("State") // Orleans grain state must be public
             .And()
+            .DoNotHaveNameEndingWith("Action") // Redux/Flux actions are public API
+            .And()
             .DoNotHaveNameContaining("Reducer") // Reducers are public API
             .And()
             .DoNotHaveNameContaining("Store") // Stores are public API

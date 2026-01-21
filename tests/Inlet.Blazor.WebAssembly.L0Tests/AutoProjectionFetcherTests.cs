@@ -173,12 +173,12 @@ public sealed class AutoProjectionFetcherTests : IDisposable
     }
 
     /// <summary>
-    ///     FetchAsync should return null when server returns NotFound.
+    ///     FetchAsync should return NotFound sentinel when server returns NotFound.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
     [AllureFeature("Fetch")]
-    public async Task FetchAsyncReturnsNullWhenNotFoundAsync()
+    public async Task FetchAsyncReturnsNotFoundWhenServerReturnsNotFoundAsync()
     {
         // Arrange
         handler.SetResponse("/api/projections/test-projections/entity-123", HttpStatusCode.NotFound);
@@ -191,8 +191,11 @@ public sealed class AutoProjectionFetcherTests : IDisposable
             "entity-123",
             CancellationToken.None);
 
-        // Assert
-        Assert.Null(result);
+        // Assert - should return NotFound sentinel (not null)
+        Assert.NotNull(result);
+        Assert.True(result.IsNotFound);
+        Assert.Null(result.Data);
+        Assert.Equal(0, result.Version);
     }
 
     /// <summary>
@@ -376,6 +379,33 @@ public sealed class AutoProjectionFetcherTests : IDisposable
     }
 
     /// <summary>
+    ///     FetchAtVersionAsync should return NotFound sentinel when version not found.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    [AllureFeature("Fetch At Version")]
+    public async Task FetchAtVersionAsyncReturnsNotFoundWhenVersionNotFoundAsync()
+    {
+        // Arrange
+        handler.SetResponse("/api/projections/test-projections/entity-123/at/999", HttpStatusCode.NotFound);
+        ProjectionDtoRegistry registry = CreateRegistryWithTestProjection();
+        AutoProjectionFetcher fetcher = new(httpClient, registry);
+
+        // Act
+        ProjectionFetchResult? result = await fetcher.FetchAtVersionAsync(
+            typeof(TestProjection),
+            "entity-123",
+            999,
+            CancellationToken.None);
+
+        // Assert - should return NotFound sentinel (not null)
+        Assert.NotNull(result);
+        Assert.True(result.IsNotFound);
+        Assert.Null(result.Data);
+        Assert.Equal(0, result.Version);
+    }
+
+    /// <summary>
     ///     FetchAtVersionAsync should return null when projection type is not registered.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
@@ -392,30 +422,6 @@ public sealed class AutoProjectionFetcherTests : IDisposable
             typeof(TestProjection),
             "entity-123",
             5,
-            CancellationToken.None);
-
-        // Assert
-        Assert.Null(result);
-    }
-
-    /// <summary>
-    ///     FetchAtVersionAsync should return null when version not found.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test operation.</returns>
-    [Fact]
-    [AllureFeature("Fetch At Version")]
-    public async Task FetchAtVersionAsyncReturnsNullWhenVersionNotFoundAsync()
-    {
-        // Arrange
-        handler.SetResponse("/api/projections/test-projections/entity-123/at/999", HttpStatusCode.NotFound);
-        ProjectionDtoRegistry registry = CreateRegistryWithTestProjection();
-        AutoProjectionFetcher fetcher = new(httpClient, registry);
-
-        // Act
-        ProjectionFetchResult? result = await fetcher.FetchAtVersionAsync(
-            typeof(TestProjection),
-            "entity-123",
-            999,
             CancellationToken.None);
 
         // Assert

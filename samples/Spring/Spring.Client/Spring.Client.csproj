@@ -10,9 +10,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Inlet\Inlet.csproj" />
+    <ProjectReference Include="..\..\..\src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
     <ProjectReference Include="..\..\..\src\Reservoir\Reservoir.csproj" />
     <ProjectReference Include="..\..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
   </ItemGroup>

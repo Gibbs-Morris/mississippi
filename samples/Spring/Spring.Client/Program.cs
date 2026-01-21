@@ -4,13 +4,12 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Reservoir;
+using Mississippi.Inlet;
+using Mississippi.Inlet.Blazor.WebAssembly;
 
 using Spring.Client;
-using Spring.Client.Features.Greet.Actions;
-using Spring.Client.Features.Greet.Effects;
-using Spring.Client.Features.Greet.Reducers;
-using Spring.Client.Features.Greet.State;
+using Spring.Client.Features.BankAccountAggregate;
+using Spring.Client.Features.BankAccountBalance.Dtos;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -25,14 +24,14 @@ builder.Services.AddScoped(_ => new HttpClient
 });
 #pragma warning restore IDISP014
 
-// Register Reservoir reducers for the greet feature
-builder.Services.AddReducer<GreetLoadingAction, GreetState>(GreetReducers.Loading);
-builder.Services.AddReducer<GreetSucceededAction, GreetState>(GreetReducers.Succeeded);
-builder.Services.AddReducer<GreetFailedAction, GreetState>(GreetReducers.Failed);
+// Register features (one line per feature - scales cleanly)
+// Write side: aggregate commands
+builder.Services.AddBankAccountAggregateFeature();
 
-// Register effects
-builder.Services.AddEffect<GreetEffect>();
-
-// Register the Reservoir store (after all reducers and effects)
-builder.Services.AddReservoir();
+// Configure Inlet with SignalR effect for real-time projection updates
+// ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
+builder.Services.AddInlet();
+builder.Services.AddInletBlazorSignalR(signalR => signalR
+    .WithHubPath("/hubs/inlet")
+    .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
 await builder.Build().RunAsync();

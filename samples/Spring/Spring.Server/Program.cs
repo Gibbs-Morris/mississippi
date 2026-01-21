@@ -5,21 +5,22 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Aqueduct;
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.UxProjections;
+using Mississippi.Inlet.Orleans;
+using Mississippi.Inlet.Orleans.SignalR;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
-using Orleans;
 using Orleans.Hosting;
 
 using Scalar.AspNetCore;
 
-using Spring.Client;
-using Spring.Domain;
+using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Server.Controllers.Aggregates.Mappers;
 using Spring.Server.Controllers.Projections.Mappers;
 
@@ -72,6 +73,18 @@ builder.Services.AddAggregateSupport();
 // Add UX projection infrastructure support (IUxProjectionGrainFactory)
 builder.Services.AddUxProjections();
 
+// Add Aqueduct backplane for InletHub (registers IServerIdProvider and other dependencies)
+builder.Services.AddSignalR();
+builder.Services.AddAqueduct<InletHub>(options =>
+{
+    // Use the same stream provider configured by Aspire's WithMemoryStreaming
+    options.StreamProviderName = "StreamProvider";
+});
+
+// Add Inlet Orleans SignalR services for real-time projection updates
+builder.Services.AddInletOrleansWithSignalR();
+builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
+
 // Add aggregate DTO to command mappers
 builder.Services.AddBankAccountAggregateMappers();
 
@@ -96,6 +109,9 @@ app.MapScalarApiReference(options =>
 // Map controllers before API endpoints
 app.MapControllers();
 
+// Map Inlet hub for real-time projection updates
+app.MapInletHub();
+
 // Health check endpoint for Aspire resource health monitoring
 app.MapGet(
     "/health",
@@ -104,26 +120,6 @@ app.MapGet(
         {
             status = "healthy",
         }));
-
-// Map API endpoints
-app.MapGet(
-    "/api/greet/{name}",
-    async (
-        string name,
-        IGrainFactory grainFactory
-    ) =>
-    {
-        IGreeterGrain grain = grainFactory.GetGrain<IGreeterGrain>(name);
-        GreetResult grainResult = await grain.GreetAsync();
-
-        // Map Orleans type to Client DTO
-        GreetResultDto result = new()
-        {
-            Greeting = grainResult.Greeting,
-            GeneratedAt = grainResult.GeneratedAt,
-        };
-        return Results.Ok(result);
-    });
 
 // Fallback to index.html for SPA routing
 app.MapFallbackToFile("index.html");

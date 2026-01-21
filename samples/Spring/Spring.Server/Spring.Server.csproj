@@ -45,6 +45,9 @@
 
     <!-- JSON Serialization for event serialization -->
     <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+
+    <!-- Inlet Orleans SignalR for real-time projection updates -->
+    <ProjectReference Include="..\..\..\src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
   </ItemGroup>
 
 </Project>

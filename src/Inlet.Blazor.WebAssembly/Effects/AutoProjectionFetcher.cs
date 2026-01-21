@@ -118,7 +118,9 @@ public sealed class AutoProjectionFetcher : IProjectionFetcher
             cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            return null;
+            // 404 means no events yet - return NotFound sentinel (not null).
+            // The subscription is still valid and will receive SignalR updates.
+            return ProjectionFetchResult.NotFound;
         }
 
         response.EnsureSuccessStatusCode();
