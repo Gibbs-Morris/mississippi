@@ -201,7 +201,7 @@ public sealed class AggregateServiceGenerator : IIncrementalGenerator
     /// <param name=""command"">The command to execute.</param>
     /// <param name=""cancellationToken"">A token to cancel the operation.</param>
     /// <returns>The operation result.</returns>
-    [HttpPost(""{command.MethodName.ToLowerInvariant()}"")]
+    [HttpPost(""{ToLowerAscii(command.MethodName)}"")]
     [ProducesResponseType(typeof(OperationResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(OperationResult), StatusCodes.Status400BadRequest)]
     public virtual Task<ActionResult<OperationResult>> {command.MethodName}Async(
@@ -417,6 +417,30 @@ namespace {aggregate.Namespace};
                     MethodName = GetMethodName(handler.CommandTypeName),
                 });
         }
+    }
+
+    /// <summary>
+    ///     Converts an ASCII string to lowercase for use in URL routes.
+    /// </summary>
+    /// <remarks>
+    ///     This method avoids CA1308 by using ordinal character operations
+    ///     instead of culture-sensitive string methods.
+    /// </remarks>
+    private static string ToLowerAscii(
+        string value
+    )
+    {
+        char[] chars = value.ToCharArray();
+        for (int i = 0; i < chars.Length; i++)
+        {
+            char c = chars[i];
+            if ((c >= 'A') && (c <= 'Z'))
+            {
+                chars[i] = (char)(c + 32);
+            }
+        }
+
+        return new(chars);
     }
 
     /// <inheritdoc />

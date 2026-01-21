@@ -2,8 +2,9 @@
     <PropertyGroup>
         <Deterministic>true</Deterministic>
         <AnalysisMode>All</AnalysisMode>
-        <TargetFramework>net9.0</TargetFramework>
-        <LangVersion>13.0</LangVersion>
+        <AnalysisLevel>9</AnalysisLevel>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>14.0</LangVersion>
         <ImplicitUsings>false</ImplicitUsings>
         <Nullable>enable</Nullable>
         <ServerGarbageCollection>true</ServerGarbageCollection>

@@ -84,7 +84,11 @@ public sealed class BlobStorageTests
 
         // Act
         List<string> listedBlobNames = new();
-        await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(prefix: uniquePrefix))
+        await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(
+                           BlobTraits.None,
+                           BlobStates.None,
+                           uniquePrefix,
+                           CancellationToken.None))
         {
             listedBlobNames.Add(blobItem.Name);
         }

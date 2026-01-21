@@ -311,8 +311,7 @@ public sealed class AggregateControllerBaseTests
         TestCommand command = new("test");
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            controller.TestExecuteAsync<TestCommand>("entity-1", command, null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => controller.TestExecuteAsync("entity-1", command, null!));
     }
 
     /// <summary>
