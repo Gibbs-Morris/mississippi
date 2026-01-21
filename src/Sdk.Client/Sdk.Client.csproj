@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Meta-package that references all Mississippi client libraries. Install this package in Orleans client applications that consume aggregates and projections.</Description>
+    </PropertyGroup>
+</Project>

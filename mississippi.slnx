@@ -16,7 +16,6 @@
     <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
     <Project Path="src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
-    <Project Path="src\EventSourcing.Aggregates.Generators\EventSourcing.Aggregates.Generators.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Brooks/">
     <Project Path="src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
@@ -40,7 +39,6 @@
     <Project Path="src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
     <Project Path="src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
     <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
-    <Project Path="src\EventSourcing.UxProjections.Api.Generators\EventSourcing.UxProjections.Api.Generators.csproj" />
   </Folder>
   <Folder Name="/Framework/Reservoir/">
     <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
@@ -55,6 +53,13 @@
     <Project Path="src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
     <Project Path="src\Inlet.Orleans\Inlet.Orleans.csproj" />
     <Project Path="src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
+  </Folder>
+  <Folder Name="/Framework/SDK/">
+    <Project Path="src\Sdk.Client\Sdk.Client.csproj" />
+    <Project Path="src\Sdk.Server\Sdk.Server.csproj" />
+    <Project Path="src\Sdk.Silo\Sdk.Silo.csproj" />
+    <Project Path="src\Sdk.Client.Generators\Sdk.Client.Generators.csproj" />
+    <Project Path="src\Sdk.Server.Generators\Sdk.Server.Generators.csproj" />
   </Folder>
   <Folder Name="/Tests/" />
 
@@ -75,7 +80,6 @@
   <Folder Name="/Tests/EventSourcing/Aggregates/">
     <Project Path="tests\EventSourcing.Aggregates.Abstractions.L0Tests\EventSourcing.Aggregates.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Aggregates.Api.L0Tests\EventSourcing.Aggregates.Api.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Aggregates.Generators.L0Tests\EventSourcing.Aggregates.Generators.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Aggregates.L0Tests\EventSourcing.Aggregates.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Brooks/">
@@ -100,7 +104,6 @@
     <Project Path="tests\EventSourcing.UxProjections.Abstractions.L0Tests\EventSourcing.UxProjections.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.UxProjections.Api.Generators.L0Tests\EventSourcing.UxProjections.Api.Generators.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Reservoir/">
     <Project Path="tests\Reservoir.Abstractions.L0Tests\Reservoir.Abstractions.L0Tests.csproj" />
@@ -114,6 +117,13 @@
     <Project Path="tests\Inlet.L0Tests\Inlet.L0Tests.csproj" />
     <Project Path="tests\Inlet.Orleans.L0Tests\Inlet.Orleans.L0Tests.csproj" />
     <Project Path="tests\Inlet.Orleans.SignalR.L0Tests\Inlet.Orleans.SignalR.L0Tests.csproj" />
+  </Folder>
+  <Folder Name="/Tests/SDK/">
+    <Project Path="tests\Sdk.Client.L0Tests\Sdk.Client.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Server.L0Tests\Sdk.Server.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Silo.L0Tests\Sdk.Silo.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Client.Generators.L0Tests\Sdk.Client.Generators.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Server.Generators.L0Tests\Sdk.Server.Generators.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Workflows/">
