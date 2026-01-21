@@ -577,24 +577,13 @@
 }
 
 /* Animation delay stagger for panel variants — staggered fly-in effect */
+/* Panel accent borders — subtle left edge highlighting panel type */
 .holo-panel--open {
     animation-delay: 0.05s;
 }
 
 .holo-panel--deposit {
     animation-delay: 0.1s;
-}
-
-.holo-panel--withdraw {
-    animation-delay: 0.15s;
-}
-
-.holo-panel--status {
-    animation-delay: 0.2s;
-}
-
-/* Panel accent borders — subtle left edge highlighting panel type */
-.holo-panel--deposit {
     border-left: 2px solid rgba(0, 255, 136, 0.2);
 }
 
@@ -604,12 +593,17 @@
 }
 
 .holo-panel--withdraw {
+    animation-delay: 0.15s;
     border-left: 2px solid rgba(255, 170, 0, 0.2);
 }
 
 .holo-panel--withdraw:hover,
 .holo-panel--withdraw:focus-within {
     border-left-color: rgba(255, 170, 0, 0.4);
+}
+
+.holo-panel--status {
+    animation-delay: 0.2s;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
