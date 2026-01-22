@@ -2,6 +2,7 @@ using System;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 
@@ -25,6 +26,7 @@ namespace Cascade.Domain.Projections.ChannelSummary;
 [ProjectionPath("cascade/channel-summaries")]
 [BrookName("CASCADE", "CHAT", "CHANNEL")]
 [SnapshotStorageName("CASCADE", "CHAT", "CHANNELSUMMARY")]
+[GenerateProjectionEndpoints]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.ChannelSummary.ChannelSummaryProjection")]
 public sealed record ChannelSummaryProjection

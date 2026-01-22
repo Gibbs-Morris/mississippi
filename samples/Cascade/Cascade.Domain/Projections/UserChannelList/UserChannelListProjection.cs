@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 
@@ -24,6 +25,7 @@ namespace Cascade.Domain.Projections.UserChannelList;
 [ProjectionPath("cascade/users")]
 [BrookName("CASCADE", "CHAT", "USER")]
 [SnapshotStorageName("CASCADE", "CHAT", "USERCHANNELLIST")]
+[GenerateProjectionEndpoints]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.UserChannelList.UserChannelListProjection")]
 internal sealed record UserChannelListProjection
