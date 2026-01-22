@@ -27,7 +27,6 @@ using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.UxProjections;
-using Mississippi.EventSourcing.UxProjections.Api;
 using Mississippi.Inlet.Orleans;
 using Mississippi.Inlet.Orleans.SignalR;
 
