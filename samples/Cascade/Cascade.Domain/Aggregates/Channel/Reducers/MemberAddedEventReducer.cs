@@ -1,9 +1,9 @@
-using Cascade.Domain.Channel.Events;
+using Cascade.Domain.Aggregates.Channel.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
 
-namespace Cascade.Domain.Channel.Reducers;
+namespace Cascade.Domain.Aggregates.Channel.Reducers;
 
 /// <summary>
 ///     Reduces the <see cref="MemberAdded" /> event to produce a new <see cref="ChannelAggregate" />.

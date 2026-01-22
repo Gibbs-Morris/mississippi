@@ -2,17 +2,19 @@ using System;
 using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 
 
-namespace Cascade.Domain.Channel;
+namespace Cascade.Domain.Aggregates.Channel;
 
 /// <summary>
 ///     Represents the state of a channel aggregate.
 /// </summary>
 [BrookName("CASCADE", "CHAT", "CHANNEL")]
 [SnapshotStorageName("CASCADE", "CHAT", "CHANNELSTATE")]
+[GenerateAggregateEndpoints]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.ChannelAggregate")]
 internal sealed record ChannelAggregate

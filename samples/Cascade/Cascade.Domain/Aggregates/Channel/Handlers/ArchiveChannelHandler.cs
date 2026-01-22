@@ -1,30 +1,30 @@
 using System;
 using System.Collections.Generic;
 
-using Cascade.Domain.Channel.Commands;
-using Cascade.Domain.Channel.Events;
+using Cascade.Domain.Aggregates.Channel.Commands;
+using Cascade.Domain.Aggregates.Channel.Events;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
-namespace Cascade.Domain.Channel.Handlers;
+namespace Cascade.Domain.Aggregates.Channel.Handlers;
 
 /// <summary>
-///     Handles the <see cref="RemoveMember" /> command.
+///     Handles the <see cref="ArchiveChannel" /> command.
 /// </summary>
-internal sealed class RemoveMemberHandler : CommandHandlerBase<RemoveMember, ChannelAggregate>
+internal sealed class ArchiveChannelHandler : CommandHandlerBase<ArchiveChannel, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
-        RemoveMember command,
+        ArchiveChannel command,
         ChannelAggregate? state
     )
     {
-        if (string.IsNullOrWhiteSpace(command.UserId))
+        if (string.IsNullOrWhiteSpace(command.ArchivedBy))
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidCommand,
-                "User ID is required.");
+                "Archived by user ID is required.");
         }
 
         if (state is not { IsCreated: true })
@@ -38,22 +38,15 @@ internal sealed class RemoveMemberHandler : CommandHandlerBase<RemoveMember, Cha
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidState,
-                "Cannot remove members from an archived channel.");
-        }
-
-        if (!state.MemberIds.Contains(command.UserId))
-        {
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.InvalidState,
-                "User is not a member of the channel.");
+                "Channel is already archived.");
         }
 
         return OperationResult.Ok<IReadOnlyList<object>>(
         [
-            new MemberRemoved
+            new ChannelArchived
             {
-                UserId = command.UserId,
-                RemovedAt = DateTimeOffset.UtcNow,
+                ArchivedBy = command.ArchivedBy,
+                ArchivedAt = DateTimeOffset.UtcNow,
             },
         ]);
     }

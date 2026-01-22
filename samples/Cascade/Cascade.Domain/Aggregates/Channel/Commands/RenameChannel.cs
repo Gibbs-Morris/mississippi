@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.Channel.Commands;
+namespace Cascade.Domain.Aggregates.Channel.Commands;
 
 /// <summary>
 ///     Command to rename a channel.
 /// </summary>
+[GenerateCommand(Route = "rename")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.Commands.RenameChannel")]
 internal sealed record RenameChannel

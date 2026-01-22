@@ -1,6 +1,6 @@
 using System;
 
-using Cascade.Domain.Channel.Events;
+using Cascade.Domain.Aggregates.Channel.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
 

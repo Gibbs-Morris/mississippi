@@ -1,8 +1,8 @@
-using Cascade.Domain.Channel;
-using Cascade.Domain.Channel.Commands;
-using Cascade.Domain.Channel.Events;
-using Cascade.Domain.Channel.Handlers;
-using Cascade.Domain.Channel.Reducers;
+using Cascade.Domain.Aggregates.Channel;
+using Cascade.Domain.Aggregates.Channel.Commands;
+using Cascade.Domain.Aggregates.Channel.Events;
+using Cascade.Domain.Aggregates.Channel.Handlers;
+using Cascade.Domain.Aggregates.Channel.Reducers;
 using Cascade.Domain.Conversation;
 using Cascade.Domain.Conversation.Commands;
 using Cascade.Domain.Conversation.Events;

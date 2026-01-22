@@ -3,7 +3,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Cascade.Domain.Channel.Events;
+namespace Cascade.Domain.Aggregates.Channel.Events;
 
 /// <summary>
 ///     Event raised when a channel is renamed.

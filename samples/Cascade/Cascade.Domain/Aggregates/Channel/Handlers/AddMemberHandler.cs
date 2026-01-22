@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 
-using Cascade.Domain.Channel.Commands;
-using Cascade.Domain.Channel.Events;
+using Cascade.Domain.Aggregates.Channel.Commands;
+using Cascade.Domain.Aggregates.Channel.Events;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
-namespace Cascade.Domain.Channel.Handlers;
+namespace Cascade.Domain.Aggregates.Channel.Handlers;
 
 /// <summary>
 ///     Handles the <see cref="AddMember" /> command.

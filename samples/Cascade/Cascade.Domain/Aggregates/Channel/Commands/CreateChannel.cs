@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.Channel.Commands;
+namespace Cascade.Domain.Aggregates.Channel.Commands;
 
 /// <summary>
 ///     Command to create a new channel.
 /// </summary>
+[GenerateCommand(Route = "create")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.Commands.CreateChannel")]
 internal sealed record CreateChannel

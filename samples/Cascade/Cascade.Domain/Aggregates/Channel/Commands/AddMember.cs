@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.Channel.Commands;
+namespace Cascade.Domain.Aggregates.Channel.Commands;
 
 /// <summary>
 ///     Command to add a member to a channel.
 /// </summary>
+[GenerateCommand(Route = "add-member")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.Commands.AddMember")]
 internal sealed record AddMember

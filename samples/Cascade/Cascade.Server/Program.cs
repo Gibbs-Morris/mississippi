@@ -5,8 +5,8 @@ using Azure.Storage.Blobs;
 
 using Cascade.Contracts.Api;
 using Cascade.Contracts.Storage;
-using Cascade.Domain.Channel;
-using Cascade.Domain.Channel.Commands;
+using Cascade.Domain.Aggregates.Channel;
+using Cascade.Domain.Aggregates.Channel.Commands;
 using Cascade.Domain.Conversation;
 using Cascade.Domain.Conversation.Commands;
 using Cascade.Domain.Projections.ChannelMessages;

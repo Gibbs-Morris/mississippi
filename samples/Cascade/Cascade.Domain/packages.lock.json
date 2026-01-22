@@ -539,6 +539,9 @@
       "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Sdk.Generators.Abstractions": {
+        "type": "Project"
+      },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",
         "requested": "[2.8.0, )",

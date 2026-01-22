@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.Channel.Commands;
+namespace Cascade.Domain.Aggregates.Channel.Commands;
 
 /// <summary>
 ///     Command to archive a channel.
 /// </summary>
+[GenerateCommand(Route = "archive")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Channel.Commands.ArchiveChannel")]
 internal sealed record ArchiveChannel

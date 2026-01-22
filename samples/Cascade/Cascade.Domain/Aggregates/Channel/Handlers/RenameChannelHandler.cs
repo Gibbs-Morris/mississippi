@@ -1,30 +1,29 @@
-using System;
 using System.Collections.Generic;
 
-using Cascade.Domain.Channel.Commands;
-using Cascade.Domain.Channel.Events;
+using Cascade.Domain.Aggregates.Channel.Commands;
+using Cascade.Domain.Aggregates.Channel.Events;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
-namespace Cascade.Domain.Channel.Handlers;
+namespace Cascade.Domain.Aggregates.Channel.Handlers;
 
 /// <summary>
-///     Handles the <see cref="ArchiveChannel" /> command.
+///     Handles the <see cref="RenameChannel" /> command.
 /// </summary>
-internal sealed class ArchiveChannelHandler : CommandHandlerBase<ArchiveChannel, ChannelAggregate>
+internal sealed class RenameChannelHandler : CommandHandlerBase<RenameChannel, ChannelAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
-        ArchiveChannel command,
+        RenameChannel command,
         ChannelAggregate? state
     )
     {
-        if (string.IsNullOrWhiteSpace(command.ArchivedBy))
+        if (string.IsNullOrWhiteSpace(command.NewName))
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidCommand,
-                "Archived by user ID is required.");
+                "New name is required.");
         }
 
         if (state is not { IsCreated: true })
@@ -38,15 +37,15 @@ internal sealed class ArchiveChannelHandler : CommandHandlerBase<ArchiveChannel,
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidState,
-                "Channel is already archived.");
+                "Cannot rename an archived channel.");
         }
 
         return OperationResult.Ok<IReadOnlyList<object>>(
         [
-            new ChannelArchived
+            new ChannelRenamed
             {
-                ArchivedBy = command.ArchivedBy,
-                ArchivedAt = DateTimeOffset.UtcNow,
+                OldName = state.Name,
+                NewName = command.NewName,
             },
         ]);
     }
