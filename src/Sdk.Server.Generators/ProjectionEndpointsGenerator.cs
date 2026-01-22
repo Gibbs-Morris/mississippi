@@ -35,8 +35,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Sdk.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
+    private const string GeneratorName = "ProjectionEndpointsGenerator";
+
     private const string ProjectionPathAttributeFullName =
         "Mississippi.Inlet.Projection.Abstractions.ProjectionPathAttribute";
+
+    private const string ProjectionSuffix = "Projection";
 
     /// <summary>
     ///     Derives the output namespace from the projection namespace.
@@ -138,9 +142,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(projection.OutputNamespace);
         sb.AppendLine();
         string controllerName = GetControllerTypeName(projection);
-        string baseName = projection.Model.TypeName.Replace("Projection", string.Empty);
+        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
         sb.AppendSummary($"Controller for the {baseName} projection.");
-        sb.AppendGeneratedCodeAttribute("ProjectionEndpointsGenerator");
+        sb.AppendGeneratedCodeAttribute(GeneratorName);
         sb.AppendLine($"[Route(\"api/projections/{projection.Model.ProjectionPath}/{{entityId}}\")]");
         sb.AppendLine($"public sealed partial class {controllerName}");
         sb.IncreaseIndent();
@@ -183,7 +187,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(projection.OutputNamespace);
         sb.AppendLine();
         sb.AppendSummary($"Response DTO for the {projection.Model.TypeName}.");
-        sb.AppendGeneratedCodeAttribute("ProjectionEndpointsGenerator");
+        sb.AppendGeneratedCodeAttribute(GeneratorName);
         sb.AppendLine($"public sealed record {projection.Model.DtoTypeName}");
         sb.OpenBrace();
         foreach (PropertyModel prop in projection.Model.Properties)
@@ -214,7 +218,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendLine();
         string mapperName = GetMapperTypeName(projection);
         sb.AppendSummary($"Maps {projection.Model.TypeName} to {projection.Model.DtoTypeName}.");
-        sb.AppendGeneratedCodeAttribute("ProjectionEndpointsGenerator");
+        sb.AppendGeneratedCodeAttribute(GeneratorName);
         sb.AppendLine(
             $"internal sealed class {mapperName} : IMapper<{projection.Model.TypeName}, {projection.Model.DtoTypeName}>");
         sb.OpenBrace();
@@ -341,9 +345,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(projection.OutputNamespace + ".Mappers");
         sb.AppendLine();
         string registrationsName = GetRegistrationsTypeName(projection);
-        string baseName = projection.Model.TypeName.Replace("Projection", string.Empty);
+        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
         sb.AppendSummary($"Service registration for {baseName} projection mappers.");
-        sb.AppendGeneratedCodeAttribute("ProjectionEndpointsGenerator");
+        sb.AppendGeneratedCodeAttribute(GeneratorName);
         sb.AppendLine($"internal static class {registrationsName}");
         sb.OpenBrace();
         sb.AppendSummary($"Adds {baseName} projection mappers to the service collection.");
@@ -370,7 +374,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ProjectionInfo projection
     )
     {
-        string baseName = projection.Model.TypeName.Replace("Projection", string.Empty);
+        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
         return baseName + "Controller";
     }
 
@@ -440,7 +444,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ProjectionInfo projection
     )
     {
-        string baseName = projection.Model.TypeName.Replace("Projection", string.Empty);
+        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
         return baseName + "ProjectionMapperRegistrations";
     }
 

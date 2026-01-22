@@ -9,6 +9,13 @@ namespace Mississippi.Sdk.Generators.Core.Naming;
 /// </summary>
 public static class NamingConventions
 {
+    private const string AggregatesSegment = ".Aggregates.";
+    private const string ClientSegment = ".Client.";
+    private const string CommandsSuffix = ".Commands";
+    private const string DomainAggregatesSegment = ".Domain.Aggregates.";
+    private const string DomainSegment = ".Domain.";
+    private const string DomainSuffix = ".Domain";
+
     /// <summary>
     ///     Extracts the aggregate name from a domain command namespace.
     /// </summary>
@@ -26,14 +33,14 @@ public static class NamingConventions
         }
 
         // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → BankAccount
-        if (domainNamespace.Contains(".Domain.Aggregates.") &&
-            domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        if (domainNamespace.Contains(DomainAggregatesSegment) &&
+            domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
-            int aggregatesIndex = domainNamespace.IndexOf(".Aggregates.", StringComparison.Ordinal);
-            int commandsIndex = domainNamespace.LastIndexOf(".Commands", StringComparison.Ordinal);
+            int aggregatesIndex = domainNamespace.IndexOf(AggregatesSegment, StringComparison.Ordinal);
+            int commandsIndex = domainNamespace.LastIndexOf(CommandsSuffix, StringComparison.Ordinal);
             if ((aggregatesIndex > 0) && (commandsIndex > aggregatesIndex))
             {
-                int aggregateStart = aggregatesIndex + ".Aggregates.".Length;
+                int aggregateStart = aggregatesIndex + AggregatesSegment.Length;
                 return domainNamespace.Substring(aggregateStart, commandsIndex - aggregateStart);
             }
         }
@@ -76,21 +83,21 @@ public static class NamingConventions
         }
 
         // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Client.Features.BankAccountAggregate.Dtos
-        if (domainNamespace.Contains(".Domain.Aggregates.") &&
-            domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        if (domainNamespace.Contains(DomainAggregatesSegment) &&
+            domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
             // Extract product prefix (everything before .Domain)
-            int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
+            int domainIndex = domainNamespace.IndexOf(DomainSegment, StringComparison.Ordinal);
             if (domainIndex > 0)
             {
                 string product = domainNamespace.Substring(0, domainIndex);
 
                 // Extract aggregate name from after .Aggregates. and before .Commands
-                int aggregatesIndex = domainNamespace.IndexOf(".Aggregates.", StringComparison.Ordinal);
-                int commandsIndex = domainNamespace.LastIndexOf(".Commands", StringComparison.Ordinal);
+                int aggregatesIndex = domainNamespace.IndexOf(AggregatesSegment, StringComparison.Ordinal);
+                int commandsIndex = domainNamespace.LastIndexOf(CommandsSuffix, StringComparison.Ordinal);
                 if ((aggregatesIndex > 0) && (commandsIndex > aggregatesIndex))
                 {
-                    int aggregateStart = aggregatesIndex + ".Aggregates.".Length;
+                    int aggregateStart = aggregatesIndex + AggregatesSegment.Length;
                     string aggregateName = domainNamespace.Substring(aggregateStart, commandsIndex - aggregateStart);
                     return $"{product}.Client.Features.{aggregateName}Aggregate.Dtos";
                 }
@@ -98,12 +105,12 @@ public static class NamingConventions
         }
 
         // Fallback: Replace .Domain with .Client and add .Dtos suffix
-        if (domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        if (domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
-            string withoutCommands = domainNamespace.Substring(0, domainNamespace.Length - ".Commands".Length);
-            if (withoutCommands.Contains(".Domain."))
+            string withoutCommands = domainNamespace.Substring(0, domainNamespace.Length - CommandsSuffix.Length);
+            if (withoutCommands.Contains(DomainSegment))
             {
-                return withoutCommands.Replace(".Domain.", ".Client.") + ".Dtos";
+                return withoutCommands.Replace(DomainSegment, ClientSegment) + ".Dtos";
             }
         }
 
@@ -179,14 +186,14 @@ public static class NamingConventions
         }
 
         // Fallback: Replace .Domain with .Client
-        if (domainNamespace.EndsWith(".Domain", StringComparison.Ordinal))
+        if (domainNamespace.EndsWith(DomainSuffix, StringComparison.Ordinal))
         {
-            return domainNamespace.Substring(0, domainNamespace.Length - ".Domain".Length) + ".Client";
+            return domainNamespace.Substring(0, domainNamespace.Length - DomainSuffix.Length) + ".Client";
         }
 
-        if (domainNamespace.Contains(".Domain."))
+        if (domainNamespace.Contains(DomainSegment))
         {
-            return domainNamespace.Replace(".Domain.", ".Client.");
+            return domainNamespace.Replace(DomainSegment, ClientSegment);
         }
 
         // Last resort: just append .Client
@@ -300,11 +307,11 @@ public static class NamingConventions
         }
 
         // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Server.Controllers.Aggregates
-        if (domainNamespace.Contains(".Domain.Aggregates.") &&
-            domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        if (domainNamespace.Contains(DomainAggregatesSegment) &&
+            domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
             // Extract product prefix (everything before .Domain)
-            int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
+            int domainIndex = domainNamespace.IndexOf(DomainSegment, StringComparison.Ordinal);
             if (domainIndex > 0)
             {
                 string product = domainNamespace.Substring(0, domainIndex);
@@ -313,14 +320,14 @@ public static class NamingConventions
         }
 
         // Fallback: Replace .Domain with .Server
-        if (domainNamespace.EndsWith(".Domain", StringComparison.Ordinal))
+        if (domainNamespace.EndsWith(DomainSuffix, StringComparison.Ordinal))
         {
-            return domainNamespace.Substring(0, domainNamespace.Length - ".Domain".Length) + ".Server";
+            return domainNamespace.Substring(0, domainNamespace.Length - DomainSuffix.Length) + ".Server";
         }
 
-        if (domainNamespace.Contains(".Domain."))
+        if (domainNamespace.Contains(DomainSegment))
         {
-            return domainNamespace.Replace(".Domain.", ".Server.");
+            return domainNamespace.Replace(DomainSegment, ".Server.");
         }
 
         // Last resort: just append .Server
@@ -351,7 +358,7 @@ public static class NamingConventions
 
         // Pattern: Spring.Domain.Aggregates.BankAccount → Spring.Silo.Registrations
         // Pattern: Spring.Domain.Projections.BankAccountBalance → Spring.Silo.Registrations
-        int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
+        int domainIndex = domainNamespace.IndexOf(DomainSegment, StringComparison.Ordinal);
         if (domainIndex > 0)
         {
             string product = domainNamespace.Substring(0, domainIndex);
@@ -359,14 +366,14 @@ public static class NamingConventions
         }
 
         // Fallback: Replace .Domain with .Silo and add .Registrations
-        if (domainNamespace.EndsWith(".Domain", StringComparison.Ordinal))
+        if (domainNamespace.EndsWith(DomainSuffix, StringComparison.Ordinal))
         {
-            return domainNamespace.Substring(0, domainNamespace.Length - ".Domain".Length) + ".Silo.Registrations";
+            return domainNamespace.Substring(0, domainNamespace.Length - DomainSuffix.Length) + ".Silo.Registrations";
         }
 
-        if (domainNamespace.Contains(".Domain."))
+        if (domainNamespace.Contains(DomainSegment))
         {
-            return domainNamespace.Replace(".Domain.", ".Silo.") + ".Registrations";
+            return domainNamespace.Replace(DomainSegment, ".Silo.") + ".Registrations";
         }
 
         // Last resort: just append .Silo.Registrations
@@ -482,18 +489,18 @@ public static class NamingConventions
         }
 
         // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Client.Features.BankAccountAggregate.{subNamespace}
-        if (domainNamespace.Contains(".Domain.Aggregates.") &&
-            domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        if (domainNamespace.Contains(DomainAggregatesSegment) &&
+            domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
-            int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
+            int domainIndex = domainNamespace.IndexOf(DomainSegment, StringComparison.Ordinal);
             if (domainIndex > 0)
             {
                 string product = domainNamespace.Substring(0, domainIndex);
-                int aggregatesIndex = domainNamespace.IndexOf(".Aggregates.", StringComparison.Ordinal);
-                int commandsIndex = domainNamespace.LastIndexOf(".Commands", StringComparison.Ordinal);
+                int aggregatesIndex = domainNamespace.IndexOf(AggregatesSegment, StringComparison.Ordinal);
+                int commandsIndex = domainNamespace.LastIndexOf(CommandsSuffix, StringComparison.Ordinal);
                 if ((aggregatesIndex > 0) && (commandsIndex > aggregatesIndex))
                 {
-                    int aggregateStart = aggregatesIndex + ".Aggregates.".Length;
+                    int aggregateStart = aggregatesIndex + AggregatesSegment.Length;
                     string aggregateName = domainNamespace.Substring(aggregateStart, commandsIndex - aggregateStart);
                     return $"{product}.Client.Features.{aggregateName}Aggregate.{subNamespace}";
                 }
@@ -501,12 +508,12 @@ public static class NamingConventions
         }
 
         // Fallback
-        if (domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        if (domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
-            string withoutCommands = domainNamespace.Substring(0, domainNamespace.Length - ".Commands".Length);
-            if (withoutCommands.Contains(".Domain."))
+            string withoutCommands = domainNamespace.Substring(0, domainNamespace.Length - CommandsSuffix.Length);
+            if (withoutCommands.Contains(DomainSegment))
             {
-                return withoutCommands.Replace(".Domain.", ".Client.") + "." + subNamespace;
+                return withoutCommands.Replace(DomainSegment, ClientSegment) + "." + subNamespace;
             }
         }
 
