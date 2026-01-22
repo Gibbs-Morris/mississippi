@@ -19,7 +19,10 @@ namespace Mississippi.Sdk.Silo.Generators;
 /// <remarks>
 ///     <para>This generator produces:</para>
 ///     <list type="bullet">
-///         <item>Add{AggregateName}() extension method that registers event types, command handlers, reducers, and snapshot converters.</item>
+///         <item>
+///             Add{AggregateName}() extension method that registers event types, command handlers, reducers, and
+///             snapshot converters.
+///         </item>
 ///     </list>
 ///     <para>
 ///         The generator scans both the current compilation and referenced assemblies
@@ -106,14 +109,15 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             // Check if it extends CommandHandlerBase<,>
             INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
             if (constructedFrom is null ||
-                constructedFrom.MetadataName != "CommandHandlerBase`2" ||
-                constructedFrom.ContainingNamespace.ToDisplayString() != "Mississippi.EventSourcing.Aggregates.Abstractions")
+                (constructedFrom.MetadataName != "CommandHandlerBase`2") ||
+                (constructedFrom.ContainingNamespace.ToDisplayString() !=
+                 "Mississippi.EventSourcing.Aggregates.Abstractions"))
             {
                 continue;
             }
 
             // Verify the second type argument is our aggregate
-            if (baseType.TypeArguments.Length != 2 ||
+            if ((baseType.TypeArguments.Length != 2) ||
                 !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
             {
                 continue;
@@ -121,11 +125,8 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
 
             // Extract command type
             ITypeSymbol commandType = baseType.TypeArguments[0];
-            handlers.Add(new(
-                typeSymbol.ToDisplayString(),
-                typeSymbol.Name,
-                commandType.ToDisplayString(),
-                commandType.Name));
+            handlers.Add(
+                new(typeSymbol.ToDisplayString(), typeSymbol.Name, commandType.ToDisplayString(), commandType.Name));
         }
 
         return handlers;
@@ -166,14 +167,15 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             // Check if it extends EventReducerBase<,>
             INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
             if (constructedFrom is null ||
-                constructedFrom.MetadataName != "EventReducerBase`2" ||
-                constructedFrom.ContainingNamespace.ToDisplayString() != "Mississippi.EventSourcing.Reducers.Abstractions")
+                (constructedFrom.MetadataName != "EventReducerBase`2") ||
+                (constructedFrom.ContainingNamespace.ToDisplayString() !=
+                 "Mississippi.EventSourcing.Reducers.Abstractions"))
             {
                 continue;
             }
 
             // Verify the second type argument is our aggregate
-            if (baseType.TypeArguments.Length != 2 ||
+            if ((baseType.TypeArguments.Length != 2) ||
                 !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
             {
                 continue;
@@ -181,11 +183,8 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
 
             // Extract event type
             ITypeSymbol eventType = baseType.TypeArguments[0];
-            reducers.Add(new(
-                typeSymbol.ToDisplayString(),
-                typeSymbol.Name,
-                eventType.ToDisplayString(),
-                eventType.Name));
+            reducers.Add(
+                new(typeSymbol.ToDisplayString(), typeSymbol.Name, eventType.ToDisplayString(), eventType.Name));
         }
 
         return reducers;
@@ -223,16 +222,13 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         // Add using for reducers namespace
         string reducersNamespace = aggregate.Model.Namespace + ".Reducers";
         sb.AppendUsing(reducersNamespace);
-
         sb.AppendFileScopedNamespace(aggregate.OutputNamespace);
         sb.AppendLine();
-
         string registrationsName = $"{aggregate.Model.AggregateName}AggregateRegistrations";
         sb.AppendSummary($"Extension methods for registering {aggregate.Model.AggregateName} aggregate services.");
         sb.AppendGeneratedCodeAttribute("AggregateSiloRegistrationGenerator");
         sb.AppendLine($"public static class {registrationsName}");
         sb.OpenBrace();
-
         sb.AppendSummary($"Adds the {aggregate.Model.AggregateName} aggregate services to the service collection.");
         sb.AppendLine("/// <param name=\"services\">The service collection.</param>");
         sb.AppendLine("/// <returns>The service collection for chaining.</returns>");
@@ -282,7 +278,6 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("// Add snapshot state converter for aggregate snapshots");
         sb.AppendLine($"services.AddSnapshotStateConverter<{aggregate.Model.TypeName}>();");
         sb.AppendLine("return services;");
-
         sb.CloseBrace();
         sb.CloseBrace();
         return sb.ToString();
@@ -393,7 +388,7 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             : [];
 
         // Only generate if there are handlers or reducers
-        if (handlers.Count == 0 && reducers.Count == 0)
+        if ((handlers.Count == 0) && (reducers.Count == 0))
         {
             return null;
         }
@@ -437,33 +432,6 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Information about a command handler.
-    /// </summary>
-    private sealed class HandlerInfo
-    {
-        public HandlerInfo(
-            string fullTypeName,
-            string typeName,
-            string commandFullTypeName,
-            string commandTypeName
-        )
-        {
-            FullTypeName = fullTypeName;
-            TypeName = typeName;
-            CommandFullTypeName = commandFullTypeName;
-            CommandTypeName = commandTypeName;
-        }
-
-        public string CommandFullTypeName { get; }
-
-        public string CommandTypeName { get; }
-
-        public string FullTypeName { get; }
-
-        public string TypeName { get; }
-    }
-
-    /// <summary>
     ///     Information about an aggregate type with its handlers and reducers.
     /// </summary>
     private sealed class AggregateRegistrationInfo
@@ -488,6 +456,33 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         public string OutputNamespace { get; }
 
         public List<ReducerInfo> Reducers { get; }
+    }
+
+    /// <summary>
+    ///     Information about a command handler.
+    /// </summary>
+    private sealed class HandlerInfo
+    {
+        public HandlerInfo(
+            string fullTypeName,
+            string typeName,
+            string commandFullTypeName,
+            string commandTypeName
+        )
+        {
+            FullTypeName = fullTypeName;
+            TypeName = typeName;
+            CommandFullTypeName = commandFullTypeName;
+            CommandTypeName = commandTypeName;
+        }
+
+        public string CommandFullTypeName { get; }
+
+        public string CommandTypeName { get; }
+
+        public string FullTypeName { get; }
+
+        public string TypeName { get; }
     }
 
     /// <summary>

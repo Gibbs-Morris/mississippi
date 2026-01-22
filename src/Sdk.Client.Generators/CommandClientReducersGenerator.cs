@@ -18,7 +18,7 @@ namespace Mississippi.Sdk.Client.Generators;
 /// <remarks>
 ///     <para>
 ///         This generator produces one static reducer class per aggregate containing
-///         three reducer methods per command (Executing, Failed, Succeeded) plus a SetEntityId reducer.
+///         three reducer methods per command (Executing, Failed, Succeeded).
 ///         Each reducer delegates to <c>AggregateCommandStateReducers</c> helper methods.
 ///     </para>
 ///     <para>
@@ -165,26 +165,6 @@ public sealed class CommandClientReducersGenerator : IIncrementalGenerator
             isFirst = false;
             GenerateCommandReducers(sb, commandName, stateTypeName);
         }
-
-        // Generate SetEntityId reducer
-        sb.AppendLine();
-        sb.AppendLine("// Entity ID reducer");
-        sb.AppendLine();
-        sb.AppendLine("/// <summary>");
-        sb.AppendLine("///     Sets the entity ID to target for commands.");
-        sb.AppendLine("/// </summary>");
-        sb.AppendLine("/// <param name=\"state\">The current state.</param>");
-        sb.AppendLine("/// <param name=\"action\">The action containing the entity ID.</param>");
-        sb.AppendLine("/// <returns>The new state with the entity ID set.</returns>");
-        sb.AppendLine($"public static {stateTypeName} SetEntityId(");
-        sb.IncreaseIndent();
-        sb.AppendLine($"{stateTypeName} state,");
-        sb.AppendLine("SetEntityIdAction action");
-        sb.DecreaseIndent();
-        sb.AppendLine(") =>");
-        sb.IncreaseIndent();
-        sb.AppendLine("state with { EntityId = action.EntityId };");
-        sb.DecreaseIndent();
 
         sb.CloseBrace();
         context.AddSource($"{reducersTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));

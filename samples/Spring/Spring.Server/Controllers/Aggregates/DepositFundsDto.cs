@@ -4,7 +4,6 @@
 // Keeping this file commented out for reference during the generator development phase.
 
 #if FALSE // Replaced by generated code
-
 using System.Text.Json.Serialization;
 
 using Mississippi.Sdk.Generators.Abstractions;
@@ -25,5 +24,4 @@ public sealed record DepositFundsDto
     [JsonRequired]
     public required decimal Amount { get; init; }
 }
-
 #endif

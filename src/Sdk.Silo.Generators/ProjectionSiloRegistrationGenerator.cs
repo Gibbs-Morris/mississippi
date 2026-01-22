@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -101,14 +100,15 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             // Check if it extends EventReducerBase<,>
             INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
             if (constructedFrom is null ||
-                constructedFrom.MetadataName != "EventReducerBase`2" ||
-                constructedFrom.ContainingNamespace.ToDisplayString() != "Mississippi.EventSourcing.Reducers.Abstractions")
+                (constructedFrom.MetadataName != "EventReducerBase`2") ||
+                (constructedFrom.ContainingNamespace.ToDisplayString() !=
+                 "Mississippi.EventSourcing.Reducers.Abstractions"))
             {
                 continue;
             }
 
             // Verify the second type argument is our projection
-            if (baseType.TypeArguments.Length != 2 ||
+            if ((baseType.TypeArguments.Length != 2) ||
                 !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], projectionSymbol))
             {
                 continue;
@@ -116,12 +116,13 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
 
             // Extract event type
             ITypeSymbol eventType = baseType.TypeArguments[0];
-            reducers.Add(new(
-                typeSymbol.ToDisplayString(),
-                typeSymbol.Name,
-                eventType.ToDisplayString(),
-                eventType.Name,
-                TypeAnalyzer.GetFullNamespace(eventType)));
+            reducers.Add(
+                new(
+                    typeSymbol.ToDisplayString(),
+                    typeSymbol.Name,
+                    eventType.ToDisplayString(),
+                    eventType.Name,
+                    TypeAnalyzer.GetFullNamespace(eventType)));
         }
 
         return reducers;
@@ -151,7 +152,7 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         // Add usings for event namespaces (they may come from aggregate events)
         foreach (string eventNamespace in projection.Reducers.Select(r => r.EventNamespace).Distinct())
         {
-            if (!string.IsNullOrEmpty(eventNamespace) && eventNamespace != projection.Model.Namespace)
+            if (!string.IsNullOrEmpty(eventNamespace) && (eventNamespace != projection.Model.Namespace))
             {
                 sb.AppendUsing(eventNamespace);
             }
@@ -159,13 +160,11 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
 
         sb.AppendFileScopedNamespace(projection.OutputNamespace);
         sb.AppendLine();
-
         string registrationsName = $"{projection.Model.ProjectionName}ProjectionRegistrations";
         sb.AppendSummary($"Extension methods for registering {projection.Model.ProjectionName} projection services.");
         sb.AppendGeneratedCodeAttribute("ProjectionSiloRegistrationGenerator");
         sb.AppendLine($"public static class {registrationsName}");
         sb.OpenBrace();
-
         sb.AppendSummary($"Adds the {projection.Model.ProjectionName} projection services to the service collection.");
         sb.AppendLine("/// <param name=\"services\">The service collection.</param>");
         sb.AppendLine("/// <returns>The service collection for chaining.</returns>");
@@ -195,7 +194,6 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("// Add snapshot state converter for projection");
         sb.AppendLine($"services.AddSnapshotStateConverter<{projection.Model.TypeName}>();");
         sb.AppendLine("return services;");
-
         sb.CloseBrace();
         sb.CloseBrace();
         return sb.ToString();

@@ -4,7 +4,6 @@
 // Keeping this file commented out for reference during the generator development phase.
 
 #if FALSE // Replaced by generated code
-
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Sdk.Generators.Abstractions;
 
@@ -28,5 +27,4 @@ internal sealed class DepositFundsDtoMapper : IMapper<DepositFundsDto, DepositFu
             Amount = input.Amount,
         };
 }
-
 #endif

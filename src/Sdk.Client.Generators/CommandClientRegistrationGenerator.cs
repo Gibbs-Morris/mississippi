@@ -114,11 +114,6 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
 
         sb.AppendLine();
 
-        // SetEntityId reducer
-        sb.AppendLine("// Reducers - EntityId");
-        sb.AppendLine($"services.AddReducer<SetEntityIdAction, {stateTypeName}>({reducersTypeName}.SetEntityId);");
-        sb.AppendLine();
-
         // Command reducers section
         foreach (string commandName in aggregate.CommandNames.OrderBy(n => n))
         {

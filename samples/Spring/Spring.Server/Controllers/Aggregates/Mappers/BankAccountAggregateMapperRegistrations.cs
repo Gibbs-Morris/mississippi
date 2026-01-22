@@ -4,7 +4,6 @@
 // Keeping this file commented out for reference during the generator development phase.
 
 #if FALSE // Replaced by generated code
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -36,5 +35,4 @@ internal static class BankAccountAggregateMapperRegistrations
         return services;
     }
 }
-
 #endif

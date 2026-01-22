@@ -328,30 +328,6 @@ public static class NamingConventions
     }
 
     /// <summary>
-    ///     Removes a suffix from a type name if present.
-    /// </summary>
-    /// <param name="typeName">The type name.</param>
-    /// <param name="suffix">The suffix to remove.</param>
-    /// <returns>The type name without the suffix.</returns>
-    public static string RemoveSuffix(
-        string typeName,
-        string suffix
-    )
-    {
-        if (string.IsNullOrEmpty(typeName) || string.IsNullOrEmpty(suffix))
-        {
-            return typeName;
-        }
-
-        if (typeName.EndsWith(suffix, StringComparison.Ordinal))
-        {
-            return typeName.Substring(0, typeName.Length - suffix.Length);
-        }
-
-        return typeName;
-    }
-
-    /// <summary>
     ///     Converts a domain aggregate namespace to a silo registration namespace.
     /// </summary>
     /// <param name="domainNamespace">
@@ -395,6 +371,30 @@ public static class NamingConventions
 
         // Last resort: just append .Silo.Registrations
         return domainNamespace + ".Silo.Registrations";
+    }
+
+    /// <summary>
+    ///     Removes a suffix from a type name if present.
+    /// </summary>
+    /// <param name="typeName">The type name.</param>
+    /// <param name="suffix">The suffix to remove.</param>
+    /// <returns>The type name without the suffix.</returns>
+    public static string RemoveSuffix(
+        string typeName,
+        string suffix
+    )
+    {
+        if (string.IsNullOrEmpty(typeName) || string.IsNullOrEmpty(suffix))
+        {
+            return typeName;
+        }
+
+        if (typeName.EndsWith(suffix, StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - suffix.Length);
+        }
+
+        return typeName;
     }
 
     /// <summary>

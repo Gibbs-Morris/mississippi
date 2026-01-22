@@ -19,7 +19,7 @@ public sealed class ProjectionModel
     public ProjectionModel(
         INamedTypeSymbol typeSymbol
     )
-        : this(typeSymbol, string.Empty, "Dto")
+        : this(typeSymbol, string.Empty)
     {
     }
 

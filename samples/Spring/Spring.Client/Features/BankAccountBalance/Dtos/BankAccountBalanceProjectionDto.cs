@@ -52,4 +52,3 @@ public sealed record BankAccountBalanceProjectionDto
     public required bool IsOpen { get; init; }
 }
 #endif
-
