@@ -8,6 +8,9 @@
         <Description>Source generators for Mississippi server applications. Generates API controllers and service registrations from projection definitions.</Description>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     </ItemGroup>
 </Project>

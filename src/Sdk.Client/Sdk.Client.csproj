@@ -10,6 +10,7 @@
         <ProjectReference Include="..\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
         <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
         <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
+        <ProjectReference Include="..\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
         <ProjectReference Include="..\Sdk.Client.Generators\Sdk.Client.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 

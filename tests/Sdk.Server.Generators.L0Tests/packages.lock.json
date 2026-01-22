@@ -459,8 +459,14 @@
           "xunit.abstractions": "2.0.3"
         }
       },
-      "Mississippi.Sdk.Server.Generators": {
+      "Mississippi.Sdk.Generators.Abstractions": {
         "type": "Project"
+      },
+      "Mississippi.Sdk.Server.Generators": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+        }
       },
       "Microsoft.CodeAnalysis.CSharp": {
         "type": "CentralTransitive",

@@ -8,6 +8,9 @@
         <Description>Source generators for Mississippi Orleans silo applications. Generates aggregate and projection service registrations from domain definitions.</Description>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     </ItemGroup>
 </Project>

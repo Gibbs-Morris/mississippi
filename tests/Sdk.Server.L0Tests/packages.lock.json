@@ -388,8 +388,7 @@
       "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.0, )",
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.0, )"
         }
       },
       "Mississippi.EventSourcing.Aggregates": {
@@ -540,7 +539,8 @@
           "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Api": "[1.0.0, )",
-          "Mississippi.Inlet.Orleans.SignalR": "[1.0.0, )"
+          "Mississippi.Inlet.Orleans.SignalR": "[1.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "CloudNative.CloudEvents": {

@@ -659,7 +659,8 @@
           "Mississippi.Inlet": "[1.0.0, )",
           "Mississippi.Inlet.Blazor.WebAssembly": "[1.0.0, )",
           "Mississippi.Reservoir": "[1.0.0, )",
-          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
+          "Mississippi.Reservoir.Blazor": "[1.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Sdk.Generators.Abstractions": {
@@ -675,7 +676,8 @@
           "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Api": "[1.0.0, )",
-          "Mississippi.Inlet.Orleans.SignalR": "[1.0.0, )"
+          "Mississippi.Inlet.Orleans.SignalR": "[1.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "spring.client": {
@@ -684,8 +686,7 @@
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.2, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.2, )",
           "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.102, )",
-          "Mississippi.Sdk.Client": "[1.0.0, )",
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Mississippi.Sdk.Client": "[1.0.0, )"
         }
       },
       "spring.domain": {

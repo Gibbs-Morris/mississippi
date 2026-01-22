@@ -619,7 +619,8 @@
           "Mississippi.Inlet": "[1.0.0, )",
           "Mississippi.Inlet.Blazor.WebAssembly": "[1.0.0, )",
           "Mississippi.Reservoir": "[1.0.0, )",
-          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
+          "Mississippi.Reservoir.Blazor": "[1.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Sdk.Generators.Abstractions": {

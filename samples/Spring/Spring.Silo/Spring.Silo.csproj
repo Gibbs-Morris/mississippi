@@ -28,7 +28,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj" />
     <ProjectReference Include="..\..\..\src\Sdk.Silo\Sdk.Silo.csproj" />
-    <ProjectReference Include="..\..\..\src\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
