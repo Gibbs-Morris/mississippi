@@ -5,6 +5,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Sdk.Silo.Generators\Sdk.Silo.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
         <ProjectReference Include="..\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
         <ProjectReference Include="..\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
