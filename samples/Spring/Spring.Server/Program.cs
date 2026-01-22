@@ -23,7 +23,6 @@ using Scalar.AspNetCore;
 using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Server.Controllers.Aggregates.Mappers;
 using Spring.Server.Controllers.Projections.Mappers;
-using Spring.Server.Registrations;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -85,10 +84,6 @@ builder.Services.AddAqueduct<InletHub>(options =>
 // Add Inlet Orleans SignalR services for real-time projection updates
 builder.Services.AddInletOrleansWithSignalR();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
-
-// Add domain aggregate and projection registrations
-builder.Services.AddBankAccountAggregate();
-builder.Services.AddBankAccountBalanceProjection();
 
 // Add aggregate DTO to command mappers
 builder.Services.AddBankAccountAggregateMappers();
