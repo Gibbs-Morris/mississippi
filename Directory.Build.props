@@ -19,7 +19,11 @@
         <NoWarn>
             SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,CA1014,CA2007,CA1040,CA1812,CA1303,VSTHRD111,SA1201
         </NoWarn>
+    </PropertyGroup>
+    <!-- Emit compiler-generated files only when explicitly opted in (for generator debugging) -->
+    <PropertyGroup Condition="'$(EmitCompilerGeneratedFilesOptIn)' == 'true'">
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <IsPackable>false</IsPackable>

@@ -3,7 +3,7 @@
 //     Mississippi.Sdk.Server.Generators.CommandServerDtoGenerator/WithdrawFundsDto.g.cs
 // Keeping this file commented out for reference during the generator development phase.
 
-#if FALSE // Replaced by generated code
+#if false // Replaced by generated code
 using System.Text.Json.Serialization;
 
 using Mississippi.Sdk.Generators.Abstractions;

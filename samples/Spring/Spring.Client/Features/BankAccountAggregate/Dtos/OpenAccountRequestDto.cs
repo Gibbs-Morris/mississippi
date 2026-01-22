@@ -1,4 +1,4 @@
-#if FALSE // Replaced by CommandClientDtoGenerator - keep for reference
+#if false // Replaced by CommandClientDtoGenerator - keep for reference
 using Mississippi.Sdk.Generators.Abstractions;
 
 

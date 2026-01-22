@@ -110,7 +110,7 @@ public sealed class NamingConventionTests : ArchitectureTestBase
     [Fact]
     public void NamespacesShouldHaveAtMostTenSegments()
     {
-        // Pattern matches namespaces with more than 10 segments (11+ dots)
+        // Pattern matches namespaces with more than 10 segments (10+ dots)
         // 11 segments example: A.B.C.D.E.F.G.H.I.J.K has 10 dots
         IArchRule rule = Types()
             .That()

@@ -1,4 +1,4 @@
-#if FALSE // Replaced by source generator: CommandClientActionsGenerator
+#if false // Replaced by source generator: CommandClientActionsGenerator
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions;
 using Mississippi.Sdk.Generators.Abstractions;
 

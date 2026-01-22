@@ -1,4 +1,4 @@
-#if FALSE // Replaced by generated code
+#if false // Replaced by generated code
 // NOTE: The generated version is in:
 //   obj/[Config]/[TFM]/generated/Mississippi.Sdk.Server.Generators/
 //   Mississippi.Sdk.Server.Generators.AggregateControllerGenerator/BankAccountController.g.cs

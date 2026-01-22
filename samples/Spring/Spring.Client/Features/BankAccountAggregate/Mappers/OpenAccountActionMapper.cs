@@ -1,4 +1,4 @@
-#if FALSE // Replaced by source generator: CommandClientMappersGenerator
+#if false // Replaced by source generator: CommandClientMappersGenerator
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Sdk.Generators.Abstractions;
 

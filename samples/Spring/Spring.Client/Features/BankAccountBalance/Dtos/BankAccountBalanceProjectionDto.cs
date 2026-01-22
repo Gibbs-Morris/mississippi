@@ -1,4 +1,4 @@
-#if FALSE // Replaced by ProjectionClientDtoGenerator - keep for reference
+#if false // Replaced by ProjectionClientDtoGenerator - keep for reference
 // =============================================================================
 // HAND-CRAFTED REFERENCE IMPLEMENTATION
 // =============================================================================

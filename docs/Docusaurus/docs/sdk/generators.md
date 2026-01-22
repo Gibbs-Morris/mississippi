@@ -35,20 +35,18 @@ The generator produces:
 - `BankAccountBalanceProjectionMapperRegistrations` - DI wiring
 - `BankAccountBalanceController` - API controller
 
-### Source File Inclusion Pattern
+### Shared Generator Core Library
 
-Generator projects embed `Sdk.Generators.Core` via source inclusion rather than project references:
+Generator projects reference `Sdk.Generators.Core` as an analyzer dependency:
 
 ```xml
-<Compile Include="..\Sdk.Generators.Core\**\*.cs" LinkBase="Core" />
+<ProjectReference Include="..\Sdk.Generators.Core\Sdk.Generators.Core.csproj"
+                  OutputItemType="Analyzer"
+                  ReferenceOutputAssembly="true"
+                  PrivateAssets="all" />
 ```
 
-**Why?** Source generators execute inside the compiler process. The compiler does **not** automatically load:
-
-- Project reference DLLs
-- NuGet package dependencies
-
-Embedding source directly sidesteps assembly loading complexities entirely.
+The core library contains shared utilities for type analysis, source building, and naming conventions that all generators use. The `OutputItemType="Analyzer"` attribute is required because source generators run in the compiler host, which only loads assemblies explicitly marked as analyzers. Without this, the generator would throw `FileNotFoundException` at runtime when trying to load the Core DLL. The `PrivateAssets="all"` ensures the dependency doesn't flow transitively to consuming projects.
 
 ### ExcludeAssets=runtime for Client Projects
 
