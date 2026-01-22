@@ -10,11 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\Inlet\Inlet.csproj" />
-    <ProjectReference Include="..\..\..\src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
-    <ProjectReference Include="..\..\..\src\Reservoir\Reservoir.csproj" />
-    <ProjectReference Include="..\..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
+    <ProjectReference Include="..\..\..\src\Sdk.Client\Sdk.Client.csproj" />
   </ItemGroup>
 
 </Project>

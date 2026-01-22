@@ -703,6 +703,18 @@
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Sdk.Silo": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Aqueduct.Grains": "[1.0.0, )",
+          "Mississippi.EventSourcing.Aggregates.Api": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Cosmos": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Json": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Cosmos": "[1.0.0, )",
+          "Mississippi.Inlet.Orleans": "[1.0.0, )"
+        }
+      },
       "spring.domain": {
         "type": "Project",
         "dependencies": {

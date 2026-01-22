@@ -612,6 +612,16 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Sdk.Client": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet": "[1.0.0, )",
+          "Mississippi.Inlet.Blazor.WebAssembly": "[1.0.0, )",
+          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
+        }
+      },
       "Microsoft.AspNetCore.Components": {
         "type": "CentralTransitive",
         "requested": "[10.0.2, )",

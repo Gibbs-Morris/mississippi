@@ -1,5 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
     <PropertyGroup>
         <Description>Meta-package that references all Mississippi client libraries. Install this package in Orleans client applications that consume aggregates and projections.</Description>
     </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
+        <ProjectReference Include="..\Inlet\Inlet.csproj" />
+        <ProjectReference Include="..\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
+        <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
+        <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
+        <ProjectReference Include="..\Sdk.Client.Generators\Sdk.Client.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
 </Project>
