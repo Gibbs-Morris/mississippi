@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using Allure.Xunit.Attributes;
 using Allure.Xunit.Attributes.Steps;
 
-using Cascade.Domain.User;
-using Cascade.Domain.User.Commands;
-using Cascade.Domain.User.Events;
-using Cascade.Domain.User.Handlers;
+using Cascade.Domain.Aggregates.User;
+using Cascade.Domain.Aggregates.User.Commands;
+using Cascade.Domain.Aggregates.User.Events;
+using Cascade.Domain.Aggregates.User.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 

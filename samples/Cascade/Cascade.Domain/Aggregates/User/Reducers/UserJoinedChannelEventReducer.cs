@@ -1,11 +1,11 @@
 using System;
 
-using Cascade.Domain.User.Events;
+using Cascade.Domain.Aggregates.User.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
 
-namespace Cascade.Domain.User.Reducers;
+namespace Cascade.Domain.Aggregates.User.Reducers;
 
 /// <summary>
 ///     Reducer for <see cref="UserJoinedChannel" /> events.

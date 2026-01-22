@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 
-using Cascade.Domain.User.Commands;
-using Cascade.Domain.User.Events;
+using Cascade.Domain.Aggregates.User.Commands;
+using Cascade.Domain.Aggregates.User.Events;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
-namespace Cascade.Domain.User.Handlers;
+namespace Cascade.Domain.Aggregates.User.Handlers;
 
 /// <summary>
 ///     Command handler for updating a user's display name.

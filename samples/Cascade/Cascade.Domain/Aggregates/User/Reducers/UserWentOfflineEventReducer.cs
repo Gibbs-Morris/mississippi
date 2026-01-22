@@ -1,27 +1,27 @@
 using System;
 
-using Cascade.Domain.User.Events;
+using Cascade.Domain.Aggregates.User.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
 
-namespace Cascade.Domain.User.Reducers;
+namespace Cascade.Domain.Aggregates.User.Reducers;
 
 /// <summary>
-///     Reducer for <see cref="UserWentOnline" /> events.
+///     Reducer for <see cref="UserWentOffline" /> events.
 /// </summary>
-internal sealed class UserWentOnlineEventReducer : EventReducerBase<UserWentOnline, UserAggregate>
+internal sealed class UserWentOfflineEventReducer : EventReducerBase<UserWentOffline, UserAggregate>
 {
     /// <inheritdoc />
     protected override UserAggregate ReduceCore(
         UserAggregate state,
-        UserWentOnline @event
+        UserWentOffline @event
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
         return (state ?? new()) with
         {
-            IsOnline = true,
+            IsOnline = false,
             LastSeenAt = @event.Timestamp,
         };
     }

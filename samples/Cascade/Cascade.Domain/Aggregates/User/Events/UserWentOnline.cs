@@ -5,7 +5,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Cascade.Domain.User.Events;
+namespace Cascade.Domain.Aggregates.User.Events;
 
 /// <summary>
 ///     Event raised when a user comes online.

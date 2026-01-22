@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.User.Commands;
+namespace Cascade.Domain.Aggregates.User.Commands;
 
 /// <summary>
 ///     Command to register a new user.
 /// </summary>
+[GenerateCommand(Route = "register")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.Commands.RegisterUser")]
 internal sealed record RegisterUser

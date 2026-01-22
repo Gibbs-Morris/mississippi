@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.User.Commands;
+namespace Cascade.Domain.Aggregates.User.Commands;
 
 /// <summary>
 ///     Command to update a user's display name.
 /// </summary>
+[GenerateCommand(Route = "update-display-name")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.Commands.UpdateDisplayName")]
 internal sealed record UpdateDisplayName

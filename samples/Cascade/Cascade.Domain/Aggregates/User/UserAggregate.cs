@@ -3,11 +3,12 @@ using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 
 
-namespace Cascade.Domain.User;
+namespace Cascade.Domain.Aggregates.User;
 
 /// <summary>
 ///     Internal state for the user aggregate.
@@ -16,6 +17,7 @@ namespace Cascade.Domain.User;
 [BrookName("CASCADE", "CHAT", "USER")]
 [AggregateService("users")]
 [SnapshotStorageName("CASCADE", "CHAT", "USERSTATE")]
+[GenerateAggregateEndpoints]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.UserAggregate")]
 internal sealed record UserAggregate

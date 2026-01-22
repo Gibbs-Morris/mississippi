@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.User.Commands;
+namespace Cascade.Domain.Aggregates.User.Commands;
 
 /// <summary>
 ///     Command to record that a user has joined a channel.
 /// </summary>
+[GenerateCommand(Route = "join-channel")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.User.Commands.JoinChannel")]
 internal sealed record JoinChannel

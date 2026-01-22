@@ -8,6 +8,11 @@ using Cascade.Domain.Aggregates.Conversation.Commands;
 using Cascade.Domain.Aggregates.Conversation.Events;
 using Cascade.Domain.Aggregates.Conversation.Handlers;
 using Cascade.Domain.Aggregates.Conversation.Reducers;
+using Cascade.Domain.Aggregates.User;
+using Cascade.Domain.Aggregates.User.Commands;
+using Cascade.Domain.Aggregates.User.Events;
+using Cascade.Domain.Aggregates.User.Handlers;
+using Cascade.Domain.Aggregates.User.Reducers;
 using Cascade.Domain.Projections.ChannelMemberList;
 using Cascade.Domain.Projections.ChannelMessageIds;
 using Cascade.Domain.Projections.ChannelMessages;
@@ -15,11 +20,6 @@ using Cascade.Domain.Projections.OnlineUsers;
 using Cascade.Domain.Projections.UserChannelList;
 using Cascade.Domain.Projections.UserProfile;
 using Cascade.Domain.Projections.UserProfile.Reducers;
-using Cascade.Domain.User;
-using Cascade.Domain.User.Commands;
-using Cascade.Domain.User.Events;
-using Cascade.Domain.User.Handlers;
-using Cascade.Domain.User.Reducers;
 
 using Microsoft.Extensions.DependencyInjection;
 
