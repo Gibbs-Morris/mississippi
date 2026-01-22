@@ -1,6 +1,4 @@
-using System.Collections.Immutable;
-
-using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Commands;
+#if FALSE
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.State;
 using Mississippi.Sdk.Generators.Abstractions;
 
@@ -20,39 +18,9 @@ namespace Spring.Client.Features.BankAccountAggregate.State;
 ///     </para>
 /// </remarks>
 [PendingSourceGenerator]
-internal sealed record BankAccountAggregateState : IAggregateCommandState
+internal sealed record BankAccountAggregateState : AggregateCommandStateBase, IAggregateCommandState
 {
     /// <inheritdoc />
     public static string FeatureKey => "bankAccountAggregate";
-
-    /// <inheritdoc />
-    public ImmutableList<CommandHistoryEntry> CommandHistory { get; init; } = ImmutableList<CommandHistoryEntry>.Empty;
-
-    /// <summary>
-    ///     Gets the currently selected entity ID for command targeting.
-    /// </summary>
-    public string? EntityId { get; init; }
-
-    /// <summary>
-    ///     Gets the error code from the last failed command.
-    /// </summary>
-    public string? ErrorCode { get; init; }
-
-    /// <summary>
-    ///     Gets the error message from the last failed command.
-    /// </summary>
-    public string? ErrorMessage { get; init; }
-
-    /// <inheritdoc />
-    public ImmutableHashSet<string> InFlightCommands { get; init; } = ImmutableHashSet<string>.Empty;
-
-    /// <summary>
-    ///     Gets a value indicating whether any command is currently executing.
-    /// </summary>
-    public bool IsExecuting => !InFlightCommands.IsEmpty;
-
-    /// <summary>
-    ///     Gets a value indicating whether the last command succeeded.
-    /// </summary>
-    public bool? LastCommandSucceeded { get; init; }
 }
+#endif

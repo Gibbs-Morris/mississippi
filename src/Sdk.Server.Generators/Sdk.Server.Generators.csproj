@@ -9,12 +9,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <!-- Include shared generator utilities as source to avoid assembly loading issues -->
-        <Compile Include="..\Sdk.Generators.Core\Analysis\*.cs" Link="Core\Analysis\%(Filename)%(Extension)" />
-        <Compile Include="..\Sdk.Generators.Core\Emit\*.cs" Link="Core\Emit\%(Filename)%(Extension)" />
-        <Compile Include="..\Sdk.Generators.Core\Naming\*.cs" Link="Core\Naming\%(Filename)%(Extension)" />
+        <ProjectReference Include="..\Sdk.Generators.Core\Sdk.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />

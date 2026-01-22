@@ -88,6 +88,101 @@ public static class AggregateCommandStateReducers
         return (inFlight, history);
     }
 
+    /// <summary>
+    ///     Reduces the state when a command starts executing.
+    /// </summary>
+    /// <typeparam name="TState">The concrete state type derived from <see cref="State.AggregateCommandStateBase" />.</typeparam>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The executing action.</param>
+    /// <param name="maxHistoryEntries">Maximum history entries to retain.</param>
+    /// <returns>The new state with command tracked and error state cleared.</returns>
+    public static TState ReduceCommandExecuting<TState>(
+        TState state,
+        ICommandExecutingAction action,
+        int maxHistoryEntries = IAggregateCommandState.DefaultMaxHistoryEntries
+    )
+        where TState : AggregateCommandStateBase
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
+            action.CommandId,
+            action.CommandType,
+            action.Timestamp);
+        ImmutableHashSet<string> inFlight = state.InFlightCommands.Add(action.CommandId);
+        ImmutableList<CommandHistoryEntry> history = EnforceHistoryLimit(
+            state.CommandHistory.Add(entry),
+            maxHistoryEntries);
+        return state with
+        {
+            InFlightCommands = inFlight,
+            CommandHistory = history,
+            ErrorCode = null,
+            ErrorMessage = null,
+            LastCommandSucceeded = null,
+        };
+    }
+
+    /// <summary>
+    ///     Reduces the state when a command fails.
+    /// </summary>
+    /// <typeparam name="TState">The concrete state type derived from <see cref="State.AggregateCommandStateBase" />.</typeparam>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The failed action containing error details.</param>
+    /// <returns>The new state with error populated.</returns>
+    public static TState ReduceCommandFailed<TState>(
+        TState state,
+        ICommandFailedAction action
+    )
+        where TState : AggregateCommandStateBase
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        ImmutableHashSet<string> inFlight = state.InFlightCommands.Remove(action.CommandId);
+        ImmutableList<CommandHistoryEntry> history = UpdateHistoryEntry(
+            state.CommandHistory,
+            action.CommandId,
+            entry => entry.ToFailed(action.Timestamp, action.ErrorCode, action.ErrorMessage));
+        return state with
+        {
+            InFlightCommands = inFlight,
+            CommandHistory = history,
+            LastCommandSucceeded = false,
+            ErrorCode = action.ErrorCode,
+            ErrorMessage = action.ErrorMessage,
+        };
+    }
+
+    /// <summary>
+    ///     Reduces the state when a command succeeds.
+    /// </summary>
+    /// <typeparam name="TState">The concrete state type derived from <see cref="State.AggregateCommandStateBase" />.</typeparam>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The succeeded action.</param>
+    /// <returns>The new state with success set and errors cleared.</returns>
+    public static TState ReduceCommandSucceeded<TState>(
+        TState state,
+        ICommandSucceededAction action
+    )
+        where TState : AggregateCommandStateBase
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        ImmutableHashSet<string> inFlight = state.InFlightCommands.Remove(action.CommandId);
+        ImmutableList<CommandHistoryEntry> history = UpdateHistoryEntry(
+            state.CommandHistory,
+            action.CommandId,
+            entry => entry.ToSucceeded(action.Timestamp));
+        return state with
+        {
+            InFlightCommands = inFlight,
+            CommandHistory = history,
+            LastCommandSucceeded = true,
+            ErrorCode = null,
+            ErrorMessage = null,
+        };
+    }
+
     private static ImmutableList<CommandHistoryEntry> EnforceHistoryLimit(
         ImmutableList<CommandHistoryEntry> history,
         int maxEntries

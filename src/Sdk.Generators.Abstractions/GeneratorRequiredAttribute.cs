@@ -26,7 +26,7 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 ///             // Force this nullable property to be required
 ///             [GeneratorRequired]
 ///             public string? Email { get; init; }
-/// 
+///
 ///             // Force this non-nullable property to be optional
 ///             [GeneratorRequired(false)]
 ///             public string NickName { get; init; } = "Anonymous";

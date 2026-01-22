@@ -1,3 +1,4 @@
+#if FALSE // Replaced by ProjectionClientDtoGenerator - keep for reference
 // =============================================================================
 // HAND-CRAFTED REFERENCE IMPLEMENTATION
 // =============================================================================
@@ -12,7 +13,6 @@
 // The generator now produces this DTO automatically. This file is commented out
 // to avoid duplicate type definitions but preserved for testing and documentation.
 // =============================================================================
-/*
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Sdk.Generators.Abstractions;
 
@@ -51,5 +51,5 @@ public sealed record BankAccountBalanceProjectionDto
     /// </summary>
     public required bool IsOpen { get; init; }
 }
-*/
+#endif
 

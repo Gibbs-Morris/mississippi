@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -60,23 +61,6 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Generates all code for a command.
-    /// </summary>
-    private static void GenerateCode(
-        SourceProductionContext context,
-        CommandInfo command
-    )
-    {
-        // Generate DTO
-        string dtoSource = GenerateDto(command);
-        context.AddSource($"{command.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, System.Text.Encoding.UTF8));
-
-        // Generate Mapper
-        string mapperSource = GenerateMapper(command);
-        context.AddSource($"{GetMapperTypeName(command)}.g.cs", SourceText.From(mapperSource, System.Text.Encoding.UTF8));
-    }
-
-    /// <summary>
     ///     Generates all aggregate-level code (mapper registrations).
     /// </summary>
     private static void GenerateAggregateCode(
@@ -89,7 +73,24 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         string aggregateName = GetAggregateNameFromNamespace(aggregateGroup.Key);
         context.AddSource(
             $"{aggregateName}AggregateMapperRegistrations.g.cs",
-            SourceText.From(registrationsSource, System.Text.Encoding.UTF8));
+            SourceText.From(registrationsSource, Encoding.UTF8));
+    }
+
+    /// <summary>
+    ///     Generates all code for a command.
+    /// </summary>
+    private static void GenerateCode(
+        SourceProductionContext context,
+        CommandInfo command
+    )
+    {
+        // Generate DTO
+        string dtoSource = GenerateDto(command);
+        context.AddSource($"{command.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
+
+        // Generate Mapper
+        string mapperSource = GenerateMapper(command);
+        context.AddSource($"{GetMapperTypeName(command)}.g.cs", SourceText.From(mapperSource, Encoding.UTF8));
     }
 
     /// <summary>
@@ -218,20 +219,11 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.Extensions.DependencyInjection");
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
 
-        // Add using for each unique command namespace
-        HashSet<string> addedNamespaces = [];
-        foreach (CommandInfo command in aggregateGroup)
-        {
-            if (addedNamespaces.Add(command.Model.Namespace))
-            {
-                sb.AppendUsing(command.Model.Namespace);
-            }
-        }
-
+        // Add using for each unique command namespace using LINQ
+        aggregateGroup.Select(c => c.Model.Namespace).Distinct().ToList().ForEach(ns => sb.AppendUsing(ns));
         CommandInfo first = aggregateGroup.First();
         sb.AppendFileScopedNamespace(first.OutputNamespace + ".Mappers");
         sb.AppendLine();
-
         string aggregateName = GetAggregateNameFromNamespace(aggregateGroup.Key);
         string registrationsName = $"{aggregateName}AggregateMapperRegistrations";
         sb.AppendSummary($"Service registration for {aggregateName} aggregate DTO mappers.");
@@ -247,7 +239,6 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
-
         foreach (CommandInfo command in aggregateGroup)
         {
             sb.AppendLine(
@@ -289,14 +280,6 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Gets the mapper type name for a command.
-    /// </summary>
-    private static string GetMapperTypeName(
-        CommandInfo command
-    ) =>
-        command.Model.DtoTypeName + "Mapper";
-
-    /// <summary>
     ///     Gets command information from the compilation, including referenced assemblies.
     /// </summary>
     private static List<CommandInfo> GetCommandsFromCompilation(
@@ -320,6 +303,14 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
 
         return commands;
     }
+
+    /// <summary>
+    ///     Gets the mapper type name for a command.
+    /// </summary>
+    private static string GetMapperTypeName(
+        CommandInfo command
+    ) =>
+        command.Model.DtoTypeName + "Mapper";
 
     /// <summary>
     ///     Gets all referenced assemblies from the compilation.
@@ -358,18 +349,15 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         }
 
         // Get Route from named argument, fallback to kebab-case of type name
-        string? route = attr.NamedArguments
-            .FirstOrDefault(kvp => kvp.Key == "Route")
-            .Value.Value?.ToString();
+        string? route = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Route").Value.Value?.ToString();
         if (string.IsNullOrEmpty(route))
         {
             route = NamingConventions.ToKebabCase(typeSymbol.Name);
         }
 
         // Get HttpMethod from named argument, default to POST
-        string httpMethod = attr.NamedArguments
-            .FirstOrDefault(kvp => kvp.Key == "HttpMethod")
-            .Value.Value?.ToString() ?? "POST";
+        string httpMethod =
+            attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "HttpMethod").Value.Value?.ToString() ?? "POST";
 
         // Build command model
         CommandModel model = new(typeSymbol, route!, httpMethod);

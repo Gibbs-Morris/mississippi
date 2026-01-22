@@ -9,6 +9,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
+        <ProjectReference Include="..\Sdk.Generators.Core\Sdk.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />

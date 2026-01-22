@@ -77,7 +77,6 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Look for Commands sub-namespace
         INamespaceSymbol? commandsNs = aggregateNamespace.GetNamespaceMembers()
             .FirstOrDefault(ns => ns.Name == "Commands");
-
         if (commandsNs is null)
         {
             return commands;
@@ -88,16 +87,13 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         {
             AttributeData? attr = typeSymbol.GetAttributes()
                 .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, commandAttrSymbol));
-
             if (attr is null)
             {
                 continue;
             }
 
             // Get Route from named argument, fallback to kebab-case of type name
-            string? route = attr.NamedArguments
-                .FirstOrDefault(kvp => kvp.Key == "Route")
-                .Value.Value?.ToString();
+            string? route = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Route").Value.Value?.ToString();
             if (string.IsNullOrEmpty(route))
             {
                 route = NamingConventions.ToKebabCase(typeSymbol.Name);
@@ -105,13 +101,95 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
 
             // Get HttpMethod from named argument, default to POST
             string httpMethod = attr.NamedArguments
-                .FirstOrDefault(kvp => kvp.Key == "HttpMethod")
-                .Value.Value?.ToString() ?? "POST";
-
-            commands.Add(new CommandModel(typeSymbol, route!, httpMethod));
+                                    .FirstOrDefault(kvp => kvp.Key == "HttpMethod")
+                                    .Value.Value?.ToString() ??
+                                "POST";
+            commands.Add(new(typeSymbol, route!, httpMethod));
         }
 
         return commands;
+    }
+
+    /// <summary>
+    ///     Generates an action method for a command.
+    /// </summary>
+    private static void GenerateActionMethod(
+        SourceBuilder sb,
+        CommandModel command
+    )
+    {
+        string methodName = command.TypeName + "Async";
+        string httpAttribute = command.HttpMethod.ToUpperInvariant() switch
+        {
+            "GET" => "HttpGet",
+            "PUT" => "HttpPut",
+            "DELETE" => "HttpDelete",
+            "PATCH" => "HttpPatch",
+            var _ => "HttpPost",
+        };
+        sb.AppendSummary($"Executes the {command.TypeName} command.");
+        sb.AppendLine("/// <param name=\"entityId\">The entity identifier.</param>");
+        sb.AppendLine("/// <param name=\"request\">The command request.</param>");
+        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine("/// <returns>The operation result.</returns>");
+        sb.AppendLine($"[{httpAttribute}(\"{command.Route}\")]");
+        sb.AppendLine($"public Task<ActionResult<OperationResult>> {methodName}(");
+        sb.IncreaseIndent();
+        sb.AppendLine("[FromRoute] string entityId,");
+        sb.AppendLine($"[FromBody] {command.DtoTypeName} request,");
+        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.OpenBrace();
+        sb.AppendLine("ArgumentNullException.ThrowIfNull(request);");
+        sb.AppendLine(
+            $"return ExecuteAsync(entityId, {command.TypeName}Mapper.Map(request), ExecuteCommandAsync, cancellationToken);");
+        sb.CloseBrace();
+    }
+
+    /// <summary>
+    ///     Generates the constructor.
+    /// </summary>
+    private static void GenerateConstructor(
+        SourceBuilder sb,
+        AggregateInfo aggregate
+    )
+    {
+        sb.AppendSummary(
+            $"Initializes a new instance of the <see cref=\"{aggregate.Model.ControllerTypeName}\" /> class.");
+        sb.AppendLine("/// <param name=\"aggregateGrainFactory\">Factory for resolving aggregate grains.</param>");
+        aggregate.Commands.ToList()
+            .ForEach(command =>
+            {
+                string paramName = NamingConventions.ToCamelCase(command.TypeName) + "Mapper";
+                sb.AppendLine($"/// <param name=\"{paramName}\">Mapper for {command.TypeName} DTOs.</param>");
+            });
+        sb.AppendLine("/// <param name=\"logger\">The logger for diagnostic output.</param>");
+        sb.AppendLine($"public {aggregate.Model.ControllerTypeName}(");
+        sb.IncreaseIndent();
+        sb.AppendLine("IAggregateGrainFactory aggregateGrainFactory,");
+        aggregate.Commands.ToList()
+            .ForEach(command =>
+            {
+                string mapperType = $"IMapper<{command.DtoTypeName}, {command.TypeName}>";
+                string paramName = NamingConventions.ToCamelCase(command.TypeName) + "Mapper";
+                sb.AppendLine($"{mapperType} {paramName},");
+            });
+        sb.AppendLine($"ILogger<{aggregate.Model.ControllerTypeName}> logger");
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.IncreaseIndent();
+        sb.AppendLine(": base(logger)");
+        sb.DecreaseIndent();
+        sb.OpenBrace();
+        sb.AppendLine("AggregateGrainFactory = aggregateGrainFactory;");
+        aggregate.Commands.ToList()
+            .ForEach(command =>
+            {
+                string paramName = NamingConventions.ToCamelCase(command.TypeName) + "Mapper";
+                sb.AppendLine($"{command.TypeName}Mapper = {paramName};");
+            });
+        sb.CloseBrace();
     }
 
     /// <summary>
@@ -136,7 +214,6 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Add using for commands namespace
         string commandsNamespace = aggregate.Model.Namespace + ".Commands";
         sb.AppendUsing(commandsNamespace);
-
         sb.AppendFileScopedNamespace(aggregate.OutputNamespace);
         sb.AppendLine();
 
@@ -171,92 +248,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
 
         // ExecuteCommandAsync helper
         GenerateExecuteCommandMethod(sb, aggregate);
-
         sb.CloseBrace();
         return sb.ToString();
-    }
-
-    /// <summary>
-    ///     Generates the constructor.
-    /// </summary>
-    private static void GenerateConstructor(
-        SourceBuilder sb,
-        AggregateInfo aggregate
-    )
-    {
-        sb.AppendSummary($"Initializes a new instance of the <see cref=\"{aggregate.Model.ControllerTypeName}\" /> class.");
-        sb.AppendLine("/// <param name=\"aggregateGrainFactory\">Factory for resolving aggregate grains.</param>");
-        foreach (CommandModel command in aggregate.Commands)
-        {
-            string paramName = NamingConventions.ToCamelCase(command.TypeName) + "Mapper";
-            sb.AppendLine($"/// <param name=\"{paramName}\">Mapper for {command.TypeName} DTOs.</param>");
-        }
-
-        sb.AppendLine("/// <param name=\"logger\">The logger for diagnostic output.</param>");
-
-        sb.AppendLine($"public {aggregate.Model.ControllerTypeName}(");
-        sb.IncreaseIndent();
-        sb.AppendLine("IAggregateGrainFactory aggregateGrainFactory,");
-        foreach (CommandModel command in aggregate.Commands)
-        {
-            string mapperType = $"IMapper<{command.DtoTypeName}, {command.TypeName}>";
-            string paramName = NamingConventions.ToCamelCase(command.TypeName) + "Mapper";
-            sb.AppendLine($"{mapperType} {paramName},");
-        }
-
-        sb.AppendLine($"ILogger<{aggregate.Model.ControllerTypeName}> logger");
-        sb.DecreaseIndent();
-        sb.AppendLine(")");
-        sb.IncreaseIndent();
-        sb.AppendLine(": base(logger)");
-        sb.DecreaseIndent();
-        sb.OpenBrace();
-        sb.AppendLine("AggregateGrainFactory = aggregateGrainFactory;");
-        foreach (CommandModel command in aggregate.Commands)
-        {
-            string paramName = NamingConventions.ToCamelCase(command.TypeName) + "Mapper";
-            sb.AppendLine($"{command.TypeName}Mapper = {paramName};");
-        }
-
-        sb.CloseBrace();
-    }
-
-    /// <summary>
-    ///     Generates an action method for a command.
-    /// </summary>
-    private static void GenerateActionMethod(
-        SourceBuilder sb,
-        CommandModel command
-    )
-    {
-        string methodName = command.TypeName + "Async";
-        string httpAttribute = command.HttpMethod.ToUpperInvariant() switch
-        {
-            "GET" => "HttpGet",
-            "PUT" => "HttpPut",
-            "DELETE" => "HttpDelete",
-            "PATCH" => "HttpPatch",
-            _ => "HttpPost",
-        };
-
-        sb.AppendSummary($"Executes the {command.TypeName} command.");
-        sb.AppendLine("/// <param name=\"entityId\">The entity identifier.</param>");
-        sb.AppendLine("/// <param name=\"request\">The command request.</param>");
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
-        sb.AppendLine("/// <returns>The operation result.</returns>");
-        sb.AppendLine($"[{httpAttribute}(\"{command.Route}\")]");
-        sb.AppendLine($"public Task<ActionResult<OperationResult>> {methodName}(");
-        sb.IncreaseIndent();
-        sb.AppendLine("[FromRoute] string entityId,");
-        sb.AppendLine($"[FromBody] {command.DtoTypeName} request,");
-        sb.AppendLine("CancellationToken cancellationToken = default");
-        sb.DecreaseIndent();
-        sb.AppendLine(")");
-        sb.OpenBrace();
-        sb.AppendLine("ArgumentNullException.ThrowIfNull(request);");
-        sb.AppendLine(
-            $"return ExecuteAsync(entityId, {command.TypeName}Mapper.Map(request), ExecuteCommandAsync, cancellationToken);");
-        sb.CloseBrace();
     }
 
     /// <summary>
@@ -278,8 +271,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         sb.AppendLine("where TCommand : class");
         sb.DecreaseIndent();
         sb.OpenBrace();
-        sb.AppendLine(
-            $"IGenericAggregateGrain<{aggregate.Model.TypeName}> grain =");
+        sb.AppendLine($"IGenericAggregateGrain<{aggregate.Model.TypeName}> grain =");
         sb.IncreaseIndent();
         sb.AppendLine($"AggregateGrainFactory.GetGenericAggregate<{aggregate.Model.TypeName}>(entityId);");
         sb.DecreaseIndent();
@@ -300,8 +292,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         INamedTypeSymbol? aggregateAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateAggregateEndpointsAttributeFullName);
         INamedTypeSymbol? commandAttrSymbol = compilation.GetTypeByMetadataName(GenerateCommandAttributeFullName);
-
-        if ((aggregateAttrSymbol is null) || (commandAttrSymbol is null))
+        if (aggregateAttrSymbol is null || commandAttrSymbol is null)
         {
             return aggregates;
         }
@@ -351,7 +342,6 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Check for [GenerateAggregateEndpoints] attribute
         AttributeData? attr = typeSymbol.GetAttributes()
             .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, aggregateAttrSymbol));
-
         if (attr is null)
         {
             return null;
@@ -366,16 +356,15 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         string baseName = typeSymbol.Name.EndsWith("Aggregate", StringComparison.Ordinal)
             ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Aggregate".Length)
             : typeSymbol.Name;
-
         if (string.IsNullOrEmpty(routePrefix))
         {
             routePrefix = NamingConventions.ToKebabCase(baseName);
         }
 
         // Get FeatureKey from named argument, fallback to camelCase
-        string featureKey = attr.NamedArguments
-            .FirstOrDefault(kvp => kvp.Key == "FeatureKey")
-            .Value.Value?.ToString() ?? NamingConventions.ToCamelCase(baseName);
+        string featureKey =
+            attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "FeatureKey").Value.Value?.ToString() ??
+            NamingConventions.ToCamelCase(baseName);
 
         // Build aggregate model
         AggregateModel model = new(typeSymbol, routePrefix!, featureKey);
@@ -395,7 +384,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Use the Commands namespace to derive output namespace (same as DTOs)
         string commandsNamespace = model.Namespace + ".Commands";
         string outputNamespace = NamingConventions.GetServerCommandDtoNamespace(commandsNamespace);
-        return new AggregateInfo(model, commands, outputNamespace);
+        return new(model, commands, outputNamespace);
     }
 
     /// <summary>
@@ -425,7 +414,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
                     string controllerSource = GenerateController(aggregate);
                     spc.AddSource(
                         $"{aggregate.Model.ControllerTypeName}.g.cs",
-                        SourceText.From(controllerSource, System.Text.Encoding.UTF8));
+                        SourceText.From(controllerSource, Encoding.UTF8));
                 }
             });
     }

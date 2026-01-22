@@ -3,6 +3,8 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>14.0</LangVersion>
         <ImplicitUsings>false</ImplicitUsings>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <Description>Shared utilities for Mississippi source generators. Provides type analysis, naming conventions, and source code emission helpers.</Description>
     </PropertyGroup>
     <ItemGroup>

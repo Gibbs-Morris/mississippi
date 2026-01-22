@@ -8,17 +8,17 @@ using System.Threading.Tasks;
 
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Commands;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
-using Mississippi.Sdk.Generators.Abstractions;
 
 
-namespace Spring.Client.Features.BankAccountAggregate.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
 
 /// <summary>
 ///     Abstract base class for aggregate command effects that POST to command APIs.
 /// </summary>
-/// <typeparam name="TAction">The action type that triggers this effect.</typeparam>
+/// <typeparam name="TAction">The action type that triggers this effect. Must implement <see cref="ICommandAction" />.</typeparam>
 /// <typeparam name="TRequestDto">The DTO type to POST to the API.</typeparam>
 /// <typeparam name="TExecutingAction">The executing lifecycle action type.</typeparam>
 /// <typeparam name="TSucceededAction">The succeeded lifecycle action type.</typeparam>
@@ -37,11 +37,15 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 ///         <b>Lifecycle actions:</b> Use static abstract factory methods for creation,
 ///         eliminating the need for virtual overrides.
 ///     </para>
+///     <para>
+///         Derived types only need to implement <see cref="Route" /> to specify the command
+///         endpoint segment. The full URL is constructed as:
+///         <c>{AggregateRoutePrefix}/{EntityId}/{Route}</c>.
+///     </para>
 /// </remarks>
-[PendingSourceGenerator]
-internal abstract class
+public abstract class
     CommandEffectBase<TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction> : IEffect
-    where TAction : IAction
+    where TAction : ICommandAction
     where TRequestDto : class
     where TExecutingAction : ICommandExecutingAction<TExecutingAction>
     where TSucceededAction : ICommandSucceededAction<TSucceededAction>
@@ -68,6 +72,15 @@ internal abstract class
     }
 
     /// <summary>
+    ///     Gets the aggregate route prefix (e.g., "/api/aggregates/bank-account").
+    /// </summary>
+    /// <remarks>
+    ///     This should return the base path to the aggregate's command endpoints,
+    ///     not including the entity ID or command route segment.
+    /// </remarks>
+    protected abstract string AggregateRoutePrefix { get; }
+
+    /// <summary>
     ///     Gets the HTTP client for API calls.
     /// </summary>
     protected HttpClient Http { get; }
@@ -76,6 +89,14 @@ internal abstract class
     ///     Gets the mapper for action-to-DTO conversion.
     /// </summary>
     protected IMapper<TAction, TRequestDto> Mapper { get; }
+
+    /// <summary>
+    ///     Gets the command route segment (e.g., "deposit", "withdraw", "open").
+    /// </summary>
+    /// <remarks>
+    ///     This is appended to the aggregate route prefix and entity ID to form the full endpoint.
+    /// </remarks>
+    protected abstract string Route { get; }
 
     /// <summary>
     ///     Gets the time provider for timestamps.
@@ -160,11 +181,13 @@ internal abstract class
     }
 
     /// <summary>
-    ///     Gets the API endpoint for the command. Extract entity ID from the action.
+    ///     Gets the API endpoint for the command by combining the aggregate route prefix,
+    ///     entity ID, and command route.
     /// </summary>
     /// <param name="action">The action containing the entity ID.</param>
-    /// <returns>The API endpoint URL.</returns>
-    protected abstract string GetEndpoint(
+    /// <returns>The full API endpoint URL.</returns>
+    protected virtual string GetEndpoint(
         TAction action
-    );
+    ) =>
+        $"{AggregateRoutePrefix}/{action.EntityId}/{Route}";
 }

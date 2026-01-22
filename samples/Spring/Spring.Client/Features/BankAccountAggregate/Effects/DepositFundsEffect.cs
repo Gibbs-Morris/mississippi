@@ -1,7 +1,9 @@
+#if FALSE
 using System;
 using System.Net.Http;
 
 using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
 using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
@@ -34,8 +36,9 @@ internal sealed class DepositFundsEffect
     }
 
     /// <inheritdoc />
-    protected override string GetEndpoint(
-        DepositFundsAction action
-    ) =>
-        $"/api/aggregates/bank-account/{action.EntityId}/deposit";
+    protected override string AggregateRoutePrefix => "/api/aggregates/bank-account";
+
+    /// <inheritdoc />
+    protected override string Route => "deposit";
 }
+#endif

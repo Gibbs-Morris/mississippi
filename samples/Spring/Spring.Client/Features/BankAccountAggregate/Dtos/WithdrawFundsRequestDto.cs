@@ -1,3 +1,4 @@
+#if FALSE // Replaced by CommandClientDtoGenerator - keep for reference
 using Mississippi.Sdk.Generators.Abstractions;
 
 
@@ -12,3 +13,4 @@ namespace Spring.Client.Features.BankAccountAggregate.Dtos;
 /// <param name="Amount">The amount to withdraw.</param>
 [PendingSourceGenerator]
 internal sealed record WithdrawFundsRequestDto(decimal Amount);
+#endif

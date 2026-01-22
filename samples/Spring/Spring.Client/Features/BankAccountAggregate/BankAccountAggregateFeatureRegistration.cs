@@ -1,3 +1,4 @@
+#if FALSE
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -72,3 +73,4 @@ internal static class BankAccountAggregateFeatureRegistration
         return services;
     }
 }
+#endif

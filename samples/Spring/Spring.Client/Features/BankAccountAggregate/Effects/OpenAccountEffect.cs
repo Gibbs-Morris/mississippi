@@ -1,7 +1,9 @@
+#if FALSE
 using System;
 using System.Net.Http;
 
 using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
 using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
@@ -15,8 +17,7 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 /// </summary>
 [PendingSourceGenerator]
 internal sealed class OpenAccountEffect
-    : CommandEffectBase<OpenAccountAction, OpenAccountRequestDto, OpenAccountExecutingAction, OpenAccountSucceededAction
-        , OpenAccountFailedAction>
+    : CommandEffectBase<OpenAccountAction, OpenAccountRequestDto, OpenAccountExecutingAction, OpenAccountSucceededAction, OpenAccountFailedAction>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="OpenAccountEffect" /> class.
@@ -34,8 +35,9 @@ internal sealed class OpenAccountEffect
     }
 
     /// <inheritdoc />
-    protected override string GetEndpoint(
-        OpenAccountAction action
-    ) =>
-        $"/api/aggregates/bank-account/{action.EntityId}/open";
+    protected override string AggregateRoutePrefix => "/api/aggregates/bank-account";
+
+    /// <inheritdoc />
+    protected override string Route => "open";
 }
+#endif

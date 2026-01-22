@@ -1,3 +1,4 @@
+#if FALSE // Replaced by source generator: CommandClientActionsGenerator
 using System;
 
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions;
@@ -24,3 +25,4 @@ internal sealed record DepositFundsExecutingAction(string CommandId, string Comm
     ) =>
         new(commandId, commandType, timestamp);
 }
+#endif

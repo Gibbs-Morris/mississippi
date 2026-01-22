@@ -40,8 +40,8 @@ public sealed class CommandModel
 
         // Determine if this is a positional record (has primary constructor parameters)
         // Positional records have properties that correspond to constructor parameters
-        IMethodSymbol? primaryConstructor = typeSymbol.Constructors
-            .FirstOrDefault(c => c.Parameters.Length > 0 && !c.IsStatic);
+        IMethodSymbol? primaryConstructor =
+            typeSymbol.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
         IsPositionalRecord = typeSymbol.IsRecord && (primaryConstructor?.Parameters.Length > 0);
         PositionalConstructorParameterCount = IsPositionalRecord ? primaryConstructor!.Parameters.Length : 0;
 

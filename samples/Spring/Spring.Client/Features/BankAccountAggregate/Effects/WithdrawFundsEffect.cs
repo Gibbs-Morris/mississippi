@@ -1,7 +1,9 @@
+#if FALSE
 using System;
 using System.Net.Http;
 
 using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
 using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
@@ -34,8 +36,9 @@ internal sealed class WithdrawFundsEffect
     }
 
     /// <inheritdoc />
-    protected override string GetEndpoint(
-        WithdrawFundsAction action
-    ) =>
-        $"/api/aggregates/bank-account/{action.EntityId}/withdraw";
+    protected override string AggregateRoutePrefix => "/api/aggregates/bank-account";
+
+    /// <inheritdoc />
+    protected override string Route => "withdraw";
 }
+#endif

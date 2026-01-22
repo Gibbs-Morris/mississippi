@@ -1,3 +1,4 @@
+#if FALSE // Replaced by source generator: CommandClientActionsGenerator
 using System;
 
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions;
@@ -30,3 +31,4 @@ internal sealed record OpenAccountFailedAction(
     ) =>
         new(commandId, errorCode, errorMessage, timestamp);
 }
+#endif

@@ -10,6 +10,151 @@ namespace Mississippi.Sdk.Generators.Core.Naming;
 public static class NamingConventions
 {
     /// <summary>
+    ///     Extracts the aggregate name from a domain command namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The aggregate name (e.g., "BankAccount"), or null if not in expected format.</returns>
+    public static string? GetAggregateNameFromNamespace(
+        string domainNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(domainNamespace))
+        {
+            return null;
+        }
+
+        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → BankAccount
+        if (domainNamespace.Contains(".Domain.Aggregates.") &&
+            domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        {
+            int aggregatesIndex = domainNamespace.IndexOf(".Aggregates.", StringComparison.Ordinal);
+            int commandsIndex = domainNamespace.LastIndexOf(".Commands", StringComparison.Ordinal);
+            if ((aggregatesIndex > 0) && (commandsIndex > aggregatesIndex))
+            {
+                int aggregateStart = aggregatesIndex + ".Aggregates.".Length;
+                return domainNamespace.Substring(aggregateStart, commandsIndex - aggregateStart);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Converts a domain command namespace to a client Actions namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Actions").</returns>
+    public static string GetClientActionsNamespace(
+        string domainNamespace
+    ) =>
+        GetClientFeatureNamespace(domainNamespace, "Actions");
+
+    /// <summary>
+    ///     Converts a domain command namespace to a client DTO namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Dtos").</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Client.Features.{Aggregate}Aggregate.Dtos".
+    ///         Falls back to simple ".Domain" → ".Client" replacement if pattern doesn't match.
+    ///     </para>
+    /// </remarks>
+    public static string GetClientCommandDtoNamespace(
+        string domainNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(domainNamespace))
+        {
+            return domainNamespace;
+        }
+
+        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Client.Features.BankAccountAggregate.Dtos
+        if (domainNamespace.Contains(".Domain.Aggregates.") &&
+            domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        {
+            // Extract product prefix (everything before .Domain)
+            int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
+            if (domainIndex > 0)
+            {
+                string product = domainNamespace.Substring(0, domainIndex);
+
+                // Extract aggregate name from after .Aggregates. and before .Commands
+                int aggregatesIndex = domainNamespace.IndexOf(".Aggregates.", StringComparison.Ordinal);
+                int commandsIndex = domainNamespace.LastIndexOf(".Commands", StringComparison.Ordinal);
+                if ((aggregatesIndex > 0) && (commandsIndex > aggregatesIndex))
+                {
+                    int aggregateStart = aggregatesIndex + ".Aggregates.".Length;
+                    string aggregateName = domainNamespace.Substring(aggregateStart, commandsIndex - aggregateStart);
+                    return $"{product}.Client.Features.{aggregateName}Aggregate.Dtos";
+                }
+            }
+        }
+
+        // Fallback: Replace .Domain with .Client and add .Dtos suffix
+        if (domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        {
+            string withoutCommands = domainNamespace.Substring(0, domainNamespace.Length - ".Commands".Length);
+            if (withoutCommands.Contains(".Domain."))
+            {
+                return withoutCommands.Replace(".Domain.", ".Client.") + ".Dtos";
+            }
+        }
+
+        // Last resort: just append .Client.Dtos
+        return domainNamespace + ".Client.Dtos";
+    }
+
+    /// <summary>
+    ///     Converts a domain command namespace to a client Effects namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Effects").</returns>
+    public static string GetClientEffectsNamespace(
+        string domainNamespace
+    ) =>
+        GetClientFeatureNamespace(domainNamespace, "Effects");
+
+    /// <summary>
+    ///     Converts a domain command namespace to the client feature root namespace (without sub-namespace).
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate").</returns>
+    public static string GetClientFeatureRootNamespace(
+        string domainNamespace
+    )
+    {
+        string withSubNamespace = GetClientFeatureNamespace(domainNamespace, "Placeholder");
+
+        // Remove the ".Placeholder" suffix
+        return withSubNamespace.EndsWith(".Placeholder", StringComparison.Ordinal)
+            ? withSubNamespace.Substring(0, withSubNamespace.Length - ".Placeholder".Length)
+            : withSubNamespace;
+    }
+
+    /// <summary>
+    ///     Converts a domain command namespace to a client Mappers namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Mappers").</returns>
+    public static string GetClientMappersNamespace(
+        string domainNamespace
+    ) =>
+        GetClientFeatureNamespace(domainNamespace, "Mappers");
+
+    /// <summary>
     ///     Converts a domain namespace to a client namespace.
     /// </summary>
     /// <param name="domainNamespace">The domain namespace (e.g., "Spring.Domain.Projections.BankAccountBalance").</param>
@@ -49,6 +194,30 @@ public static class NamingConventions
     }
 
     /// <summary>
+    ///     Converts a domain command namespace to a client Reducers namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Reducers").</returns>
+    public static string GetClientReducersNamespace(
+        string domainNamespace
+    ) =>
+        GetClientFeatureNamespace(domainNamespace, "Reducers");
+
+    /// <summary>
+    ///     Converts a domain command namespace to a client State namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.State").</returns>
+    public static string GetClientStateNamespace(
+        string domainNamespace
+    ) =>
+        GetClientFeatureNamespace(domainNamespace, "State");
+
+    /// <summary>
     ///     Gets the command DTO name from a command type name.
     /// </summary>
     /// <param name="commandName">The command type name (e.g., "DepositFunds").</param>
@@ -59,6 +228,16 @@ public static class NamingConventions
         commandName + "Dto";
 
     /// <summary>
+    ///     Gets the command request DTO name for client-side from a command type name.
+    /// </summary>
+    /// <param name="commandName">The command type name (e.g., "DepositFunds").</param>
+    /// <returns>The request DTO name (e.g., "DepositFundsRequestDto").</returns>
+    public static string GetCommandRequestDtoName(
+        string commandName
+    ) =>
+        commandName + "RequestDto";
+
+    /// <summary>
     ///     Gets the DTO name from a projection type name.
     /// </summary>
     /// <param name="typeName">The projection type name (e.g., "BankAccountBalanceProjection").</param>
@@ -67,55 +246,6 @@ public static class NamingConventions
         string typeName
     ) =>
         typeName + "Dto";
-
-    /// <summary>
-    ///     Converts a domain command namespace to a server DTO namespace.
-    /// </summary>
-    /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
-    /// </param>
-    /// <returns>The server namespace (e.g., "Spring.Server.Controllers.Aggregates").</returns>
-    /// <remarks>
-    ///     <para>
-    ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Server.Controllers.Aggregates".
-    ///         Falls back to simple ".Domain" → ".Server" replacement if pattern doesn't match.
-    ///     </para>
-    /// </remarks>
-    public static string GetServerCommandDtoNamespace(
-        string domainNamespace
-    )
-    {
-        if (string.IsNullOrEmpty(domainNamespace))
-        {
-            return domainNamespace;
-        }
-
-        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Server.Controllers.Aggregates
-        if (domainNamespace.Contains(".Domain.Aggregates.") && domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
-        {
-            // Extract product prefix (everything before .Domain)
-            int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
-            if (domainIndex > 0)
-            {
-                string product = domainNamespace.Substring(0, domainIndex);
-                return product + ".Server.Controllers.Aggregates";
-            }
-        }
-
-        // Fallback: Replace .Domain with .Server
-        if (domainNamespace.EndsWith(".Domain", StringComparison.Ordinal))
-        {
-            return domainNamespace.Substring(0, domainNamespace.Length - ".Domain".Length) + ".Server";
-        }
-
-        if (domainNamespace.Contains(".Domain."))
-        {
-            return domainNamespace.Replace(".Domain.", ".Server.");
-        }
-
-        // Last resort: just append .Server
-        return domainNamespace + ".Server";
-    }
 
     /// <summary>
     ///     Gets the feature key from a type name by removing common suffixes and converting to camelCase.
@@ -148,6 +278,56 @@ public static class NamingConventions
     }
 
     /// <summary>
+    ///     Converts a domain command namespace to a server DTO namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The server namespace (e.g., "Spring.Server.Controllers.Aggregates").</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Server.Controllers.Aggregates".
+    ///         Falls back to simple ".Domain" → ".Server" replacement if pattern doesn't match.
+    ///     </para>
+    /// </remarks>
+    public static string GetServerCommandDtoNamespace(
+        string domainNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(domainNamespace))
+        {
+            return domainNamespace;
+        }
+
+        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Server.Controllers.Aggregates
+        if (domainNamespace.Contains(".Domain.Aggregates.") &&
+            domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        {
+            // Extract product prefix (everything before .Domain)
+            int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
+            if (domainIndex > 0)
+            {
+                string product = domainNamespace.Substring(0, domainIndex);
+                return product + ".Server.Controllers.Aggregates";
+            }
+        }
+
+        // Fallback: Replace .Domain with .Server
+        if (domainNamespace.EndsWith(".Domain", StringComparison.Ordinal))
+        {
+            return domainNamespace.Substring(0, domainNamespace.Length - ".Domain".Length) + ".Server";
+        }
+
+        if (domainNamespace.Contains(".Domain."))
+        {
+            return domainNamespace.Replace(".Domain.", ".Server.");
+        }
+
+        // Last resort: just append .Server
+        return domainNamespace + ".Server";
+    }
+
+    /// <summary>
     ///     Removes a suffix from a type name if present.
     /// </summary>
     /// <param name="typeName">The type name.</param>
@@ -169,6 +349,52 @@ public static class NamingConventions
         }
 
         return typeName;
+    }
+
+    /// <summary>
+    ///     Converts a domain aggregate namespace to a silo registration namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount").
+    /// </param>
+    /// <returns>The silo namespace (e.g., "Spring.Silo.Registrations").</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Replaces ".Domain.Aggregates.{Aggregate}" with ".Silo.Registrations".
+    ///         Falls back to simple ".Domain" → ".Silo" replacement if pattern doesn't match.
+    ///     </para>
+    /// </remarks>
+    public static string GetSiloRegistrationNamespace(
+        string domainNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(domainNamespace))
+        {
+            return domainNamespace;
+        }
+
+        // Pattern: Spring.Domain.Aggregates.BankAccount → Spring.Silo.Registrations
+        // Pattern: Spring.Domain.Projections.BankAccountBalance → Spring.Silo.Registrations
+        int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
+        if (domainIndex > 0)
+        {
+            string product = domainNamespace.Substring(0, domainIndex);
+            return product + ".Silo.Registrations";
+        }
+
+        // Fallback: Replace .Domain with .Silo and add .Registrations
+        if (domainNamespace.EndsWith(".Domain", StringComparison.Ordinal))
+        {
+            return domainNamespace.Substring(0, domainNamespace.Length - ".Domain".Length) + ".Silo.Registrations";
+        }
+
+        if (domainNamespace.Contains(".Domain."))
+        {
+            return domainNamespace.Replace(".Domain.", ".Silo.") + ".Registrations";
+        }
+
+        // Last resort: just append .Silo.Registrations
+        return domainNamespace + ".Silo.Registrations";
     }
 
     /// <summary>
@@ -237,5 +463,53 @@ public static class NamingConventions
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    ///     Converts a domain command namespace to a client feature sub-namespace.
+    /// </summary>
+    /// <param name="domainNamespace">The domain namespace.</param>
+    /// <param name="subNamespace">The sub-namespace (e.g., "Actions", "Mappers", "Dtos").</param>
+    /// <returns>The client feature namespace.</returns>
+    private static string GetClientFeatureNamespace(
+        string domainNamespace,
+        string subNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(domainNamespace))
+        {
+            return domainNamespace;
+        }
+
+        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Client.Features.BankAccountAggregate.{subNamespace}
+        if (domainNamespace.Contains(".Domain.Aggregates.") &&
+            domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        {
+            int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
+            if (domainIndex > 0)
+            {
+                string product = domainNamespace.Substring(0, domainIndex);
+                int aggregatesIndex = domainNamespace.IndexOf(".Aggregates.", StringComparison.Ordinal);
+                int commandsIndex = domainNamespace.LastIndexOf(".Commands", StringComparison.Ordinal);
+                if ((aggregatesIndex > 0) && (commandsIndex > aggregatesIndex))
+                {
+                    int aggregateStart = aggregatesIndex + ".Aggregates.".Length;
+                    string aggregateName = domainNamespace.Substring(aggregateStart, commandsIndex - aggregateStart);
+                    return $"{product}.Client.Features.{aggregateName}Aggregate.{subNamespace}";
+                }
+            }
+        }
+
+        // Fallback
+        if (domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        {
+            string withoutCommands = domainNamespace.Substring(0, domainNamespace.Length - ".Commands".Length);
+            if (withoutCommands.Contains(".Domain."))
+            {
+                return withoutCommands.Replace(".Domain.", ".Client.") + "." + subNamespace;
+            }
+        }
+
+        return domainNamespace + ".Client." + subNamespace;
     }
 }

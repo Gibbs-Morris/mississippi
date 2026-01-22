@@ -1,3 +1,4 @@
+#if FALSE // Replaced by CommandClientDtoGenerator - keep for reference
 using Mississippi.Sdk.Generators.Abstractions;
 
 
@@ -13,3 +14,4 @@ namespace Spring.Client.Features.BankAccountAggregate.Dtos;
 /// <param name="InitialDeposit">The initial deposit amount.</param>
 [PendingSourceGenerator]
 internal sealed record OpenAccountRequestDto(string HolderName, decimal InitialDeposit);
+#endif

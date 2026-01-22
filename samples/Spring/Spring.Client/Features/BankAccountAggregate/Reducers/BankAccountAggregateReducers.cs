@@ -1,7 +1,5 @@
-using System.Collections.Immutable;
-
+#if FALSE
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions;
-using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Commands;
 using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
@@ -13,6 +11,12 @@ namespace Spring.Client.Features.BankAccountAggregate.Reducers;
 /// <summary>
 ///     Pure reducer functions for the BankAccountAggregate feature state.
 /// </summary>
+/// <remarks>
+///     <para>
+///         Each command has three lifecycle reducers (Executing, Failed, Succeeded) that delegate
+///         to <see cref="AggregateCommandStateReducers" /> for the standard command tracking logic.
+///     </para>
+/// </remarks>
 [PendingSourceGenerator]
 internal static class BankAccountAggregateReducers
 {
@@ -27,19 +31,8 @@ internal static class BankAccountAggregateReducers
     public static BankAccountAggregateState DepositFundsExecuting(
         BankAccountAggregateState state,
         DepositFundsExecutingAction action
-    )
-    {
-        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> history) =
-            AggregateCommandStateReducers.ComputeCommandExecuting(state, action);
-        return state with
-        {
-            InFlightCommands = inFlight,
-            CommandHistory = history,
-            ErrorCode = null,
-            ErrorMessage = null,
-            LastCommandSucceeded = null,
-        };
-    }
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandExecuting(state, action);
 
     /// <summary>
     ///     Updates state when DepositFunds command fails.
@@ -50,19 +43,8 @@ internal static class BankAccountAggregateReducers
     public static BankAccountAggregateState DepositFundsFailed(
         BankAccountAggregateState state,
         DepositFundsFailedAction action
-    )
-    {
-        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> history) =
-            AggregateCommandStateReducers.ComputeCommandFailed(state, action);
-        return state with
-        {
-            InFlightCommands = inFlight,
-            CommandHistory = history,
-            LastCommandSucceeded = false,
-            ErrorCode = action.ErrorCode,
-            ErrorMessage = action.ErrorMessage,
-        };
-    }
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandFailed(state, action);
 
     /// <summary>
     ///     Updates state when DepositFunds command succeeds.
@@ -73,19 +55,9 @@ internal static class BankAccountAggregateReducers
     public static BankAccountAggregateState DepositFundsSucceeded(
         BankAccountAggregateState state,
         DepositFundsSucceededAction action
-    )
-    {
-        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> history) =
-            AggregateCommandStateReducers.ComputeCommandSucceeded(state, action);
-        return state with
-        {
-            InFlightCommands = inFlight,
-            CommandHistory = history,
-            LastCommandSucceeded = true,
-            ErrorCode = null,
-            ErrorMessage = null,
-        };
-    }
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandSucceeded(state, action);
+
     // OpenAccount reducers
 
     /// <summary>
@@ -97,19 +69,8 @@ internal static class BankAccountAggregateReducers
     public static BankAccountAggregateState OpenAccountExecuting(
         BankAccountAggregateState state,
         OpenAccountExecutingAction action
-    )
-    {
-        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> history) =
-            AggregateCommandStateReducers.ComputeCommandExecuting(state, action);
-        return state with
-        {
-            InFlightCommands = inFlight,
-            CommandHistory = history,
-            ErrorCode = null,
-            ErrorMessage = null,
-            LastCommandSucceeded = null,
-        };
-    }
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandExecuting(state, action);
 
     /// <summary>
     ///     Updates state when OpenAccount command fails.
@@ -120,19 +81,8 @@ internal static class BankAccountAggregateReducers
     public static BankAccountAggregateState OpenAccountFailed(
         BankAccountAggregateState state,
         OpenAccountFailedAction action
-    )
-    {
-        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> history) =
-            AggregateCommandStateReducers.ComputeCommandFailed(state, action);
-        return state with
-        {
-            InFlightCommands = inFlight,
-            CommandHistory = history,
-            LastCommandSucceeded = false,
-            ErrorCode = action.ErrorCode,
-            ErrorMessage = action.ErrorMessage,
-        };
-    }
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandFailed(state, action);
 
     /// <summary>
     ///     Updates state when OpenAccount command succeeds.
@@ -143,19 +93,8 @@ internal static class BankAccountAggregateReducers
     public static BankAccountAggregateState OpenAccountSucceeded(
         BankAccountAggregateState state,
         OpenAccountSucceededAction action
-    )
-    {
-        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> history) =
-            AggregateCommandStateReducers.ComputeCommandSucceeded(state, action);
-        return state with
-        {
-            InFlightCommands = inFlight,
-            CommandHistory = history,
-            LastCommandSucceeded = true,
-            ErrorCode = null,
-            ErrorMessage = null,
-        };
-    }
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandSucceeded(state, action);
 
     // Entity ID reducer
 
@@ -185,19 +124,8 @@ internal static class BankAccountAggregateReducers
     public static BankAccountAggregateState WithdrawFundsExecuting(
         BankAccountAggregateState state,
         WithdrawFundsExecutingAction action
-    )
-    {
-        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> history) =
-            AggregateCommandStateReducers.ComputeCommandExecuting(state, action);
-        return state with
-        {
-            InFlightCommands = inFlight,
-            CommandHistory = history,
-            ErrorCode = null,
-            ErrorMessage = null,
-            LastCommandSucceeded = null,
-        };
-    }
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandExecuting(state, action);
 
     /// <summary>
     ///     Updates state when WithdrawFunds command fails.
@@ -208,19 +136,8 @@ internal static class BankAccountAggregateReducers
     public static BankAccountAggregateState WithdrawFundsFailed(
         BankAccountAggregateState state,
         WithdrawFundsFailedAction action
-    )
-    {
-        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> history) =
-            AggregateCommandStateReducers.ComputeCommandFailed(state, action);
-        return state with
-        {
-            InFlightCommands = inFlight,
-            CommandHistory = history,
-            LastCommandSucceeded = false,
-            ErrorCode = action.ErrorCode,
-            ErrorMessage = action.ErrorMessage,
-        };
-    }
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandFailed(state, action);
 
     /// <summary>
     ///     Updates state when WithdrawFunds command succeeds.
@@ -231,17 +148,7 @@ internal static class BankAccountAggregateReducers
     public static BankAccountAggregateState WithdrawFundsSucceeded(
         BankAccountAggregateState state,
         WithdrawFundsSucceededAction action
-    )
-    {
-        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> history) =
-            AggregateCommandStateReducers.ComputeCommandSucceeded(state, action);
-        return state with
-        {
-            InFlightCommands = inFlight,
-            CommandHistory = history,
-            LastCommandSucceeded = true,
-            ErrorCode = null,
-            ErrorMessage = null,
-        };
-    }
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandSucceeded(state, action);
 }
+#endif

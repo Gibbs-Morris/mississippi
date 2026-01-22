@@ -16,6 +16,17 @@ public sealed class ProjectionModel
     ///     Initializes a new instance of the <see cref="ProjectionModel" /> class.
     /// </summary>
     /// <param name="typeSymbol">The type symbol representing the projection.</param>
+    public ProjectionModel(
+        INamedTypeSymbol typeSymbol
+    )
+        : this(typeSymbol, string.Empty, "Dto")
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ProjectionModel" /> class.
+    /// </summary>
+    /// <param name="typeSymbol">The type symbol representing the projection.</param>
     /// <param name="projectionPath">The projection path from [ProjectionPath] attribute.</param>
     /// <param name="dtoSuffix">The suffix for generated DTOs.</param>
     public ProjectionModel(
@@ -39,6 +50,11 @@ public sealed class ProjectionModel
         Namespace = TypeAnalyzer.GetFullNamespace(typeSymbol);
         ProjectionPath = projectionPath;
         DtoTypeName = TypeAnalyzer.GetDtoTypeName(typeSymbol, dtoSuffix);
+
+        // Derive projection name without "Projection" suffix
+        ProjectionName = TypeName.EndsWith("Projection", StringComparison.Ordinal)
+            ? TypeName.Substring(0, TypeName.Length - "Projection".Length)
+            : TypeName;
 
         // Extract properties
         Properties = typeSymbol.GetMembers()
@@ -85,6 +101,11 @@ public sealed class ProjectionModel
     ///     Gets the nested custom types that require their own DTOs.
     /// </summary>
     public ImmutableArray<string> NestedCustomTypes { get; }
+
+    /// <summary>
+    ///     Gets the projection name without the "Projection" suffix.
+    /// </summary>
+    public string ProjectionName { get; }
 
     /// <summary>
     ///     Gets the projection path from [ProjectionPath] attribute.
