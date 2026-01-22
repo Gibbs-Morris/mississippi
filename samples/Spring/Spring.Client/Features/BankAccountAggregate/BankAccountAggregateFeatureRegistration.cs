@@ -38,13 +38,32 @@ internal static class BankAccountAggregateFeatureRegistration
         services.AddMapper<DepositFundsAction, DepositFundsRequestDto, DepositFundsActionMapper>();
         services.AddMapper<WithdrawFundsAction, WithdrawFundsRequestDto, WithdrawFundsActionMapper>();
 
-        // Reducers
+        // Reducers - EntityId
         services.AddReducer<SetEntityIdAction, BankAccountAggregateState>(BankAccountAggregateReducers.SetEntityId);
-        services.AddReducer<CommandExecutingAction, BankAccountAggregateState>(
-            BankAccountAggregateReducers.CommandExecuting);
-        services.AddReducer<CommandSucceededAction, BankAccountAggregateState>(
-            BankAccountAggregateReducers.CommandSucceeded);
-        services.AddReducer<CommandFailedAction, BankAccountAggregateState>(BankAccountAggregateReducers.CommandFailed);
+
+        // Reducers - OpenAccount
+        services.AddReducer<OpenAccountExecutingAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.OpenAccountExecuting);
+        services.AddReducer<OpenAccountSucceededAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.OpenAccountSucceeded);
+        services.AddReducer<OpenAccountFailedAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.OpenAccountFailed);
+
+        // Reducers - DepositFunds
+        services.AddReducer<DepositFundsExecutingAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.DepositFundsExecuting);
+        services.AddReducer<DepositFundsSucceededAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.DepositFundsSucceeded);
+        services.AddReducer<DepositFundsFailedAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.DepositFundsFailed);
+
+        // Reducers - WithdrawFunds
+        services.AddReducer<WithdrawFundsExecutingAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.WithdrawFundsExecuting);
+        services.AddReducer<WithdrawFundsSucceededAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.WithdrawFundsSucceeded);
+        services.AddReducer<WithdrawFundsFailedAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.WithdrawFundsFailed);
 
         // Effects
         services.AddEffect<OpenAccountEffect>();

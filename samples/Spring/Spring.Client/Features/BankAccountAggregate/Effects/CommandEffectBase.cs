@@ -7,12 +7,10 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Sdk.Generators.Abstractions;
-
-using Spring.Client.Features.BankAccountAggregate.Actions;
-using Spring.Client.Features.BankAccountAggregate.Dtos;
 
 
 namespace Spring.Client.Features.BankAccountAggregate.Effects;
@@ -22,40 +20,49 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 /// </summary>
 /// <typeparam name="TAction">The action type that triggers this effect.</typeparam>
 /// <typeparam name="TRequestDto">The DTO type to POST to the API.</typeparam>
+/// <typeparam name="TExecutingAction">The executing lifecycle action type.</typeparam>
+/// <typeparam name="TSucceededAction">The succeeded lifecycle action type.</typeparam>
+/// <typeparam name="TFailedAction">The failed lifecycle action type.</typeparam>
 /// <remarks>
 ///     <para>
 ///         This base class provides the common HTTP POST pattern for aggregate commands:
-///         executing → POST → success/failure. All command effects share the same
-///         result action types since they update the same aggregate state.
+///         executing → POST → success/failure. Each command has its own lifecycle actions
+///         to enable per-command tracking and correlation.
 ///     </para>
 ///     <para>
 ///         <b>Key principle:</b> Effects extract all needed data from the action itself.
 ///         They do NOT read from state. This keeps effects decoupled from state evolution.
 ///     </para>
 ///     <para>
-///         <b>Mapping:</b> IMapper&lt;TAction, TRequestDto&gt; converts the action to the
-///         request DTO, keeping mapping logic in dedicated mapper classes.
+///         <b>Lifecycle actions:</b> Use static abstract factory methods for creation,
+///         eliminating the need for virtual overrides.
 ///     </para>
 /// </remarks>
 [PendingSourceGenerator]
-internal abstract class CommandEffectBase<TAction, TRequestDto> : IEffect
+internal abstract class CommandEffectBase<TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction> : IEffect
     where TAction : IAction
     where TRequestDto : class
+    where TExecutingAction : ICommandExecutingAction<TExecutingAction>
+    where TSucceededAction : ICommandSucceededAction<TSucceededAction>
+    where TFailedAction : ICommandFailedAction<TFailedAction>
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="CommandEffectBase{TAction, TRequestDto}" /> class.
+    ///     Initializes a new instance of the <see cref="CommandEffectBase{TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction}" /> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client for API calls.</param>
     /// <param name="mapper">The mapper for action-to-DTO conversion.</param>
+    /// <param name="timeProvider">The time provider for timestamps. If null, uses <see cref="TimeProvider.System" />.</param>
     protected CommandEffectBase(
         HttpClient httpClient,
-        IMapper<TAction, TRequestDto> mapper
+        IMapper<TAction, TRequestDto> mapper,
+        TimeProvider? timeProvider = null
     )
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(mapper);
         Http = httpClient;
         Mapper = mapper;
+        TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
     /// <summary>
@@ -67,6 +74,11 @@ internal abstract class CommandEffectBase<TAction, TRequestDto> : IEffect
     ///     Gets the mapper for action-to-DTO conversion.
     /// </summary>
     protected IMapper<TAction, TRequestDto> Mapper { get; }
+
+    /// <summary>
+    ///     Gets the time provider for timestamps.
+    /// </summary>
+    protected TimeProvider TimeProvider { get; }
 
     /// <inheritdoc />
     public bool CanHandle(
@@ -85,7 +97,11 @@ internal abstract class CommandEffectBase<TAction, TRequestDto> : IEffect
             yield break;
         }
 
-        yield return new CommandExecutingAction();
+        string commandId = Guid.NewGuid().ToString("N");
+        string commandType = typeof(TAction).Name;
+
+        yield return TExecutingAction.Create(commandId, commandType, TimeProvider.GetUtcNow());
+
         OperationResultDto? result = null;
         string? errorMessage = null;
         try
@@ -116,23 +132,23 @@ internal abstract class CommandEffectBase<TAction, TRequestDto> : IEffect
 
         if (errorMessage is not null)
         {
-            yield return new CommandFailedAction("HttpError", errorMessage);
+            yield return TFailedAction.Create(commandId, "HttpError", errorMessage, TimeProvider.GetUtcNow());
             yield break;
         }
 
         if (result is null)
         {
-            yield return new CommandFailedAction("NoResponse", "No response from server.");
+            yield return TFailedAction.Create(commandId, "NoResponse", "No response from server.", TimeProvider.GetUtcNow());
             yield break;
         }
 
         if (!result.Success)
         {
-            yield return new CommandFailedAction(result.ErrorCode ?? "Unknown", result.ErrorMessage ?? "Unknown error");
+            yield return TFailedAction.Create(commandId, result.ErrorCode ?? "Unknown", result.ErrorMessage ?? "Unknown error", TimeProvider.GetUtcNow());
             yield break;
         }
 
-        yield return new CommandSucceededAction();
+        yield return TSucceededAction.Create(commandId, TimeProvider.GetUtcNow());
     }
 
     /// <summary>

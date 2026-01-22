@@ -299,11 +299,6 @@
           "System.Composition": "9.0.0"
         }
       },
-      "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
-        "type": "Transitive",
-        "resolved": "10.0.102",
-        "contentHash": "Y8Xq5gLe6l3bW82uGJODzom5Z7pn+Y71BHObnmWF0LqbKFqfOOVDg76a2vyJnRLHn0X1LmsXSec/QdCWFOPl4A=="
-      },
       "Microsoft.Extensions.Azure": {
         "type": "Transitive",
         "resolved": "1.13.0",
@@ -560,7 +555,6 @@
           "Cascade.Contracts": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.2, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.2, )",
-          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.102, )",
           "Mississippi.Inlet": "[1.0.0, )",
           "Mississippi.Inlet.Blazor.WebAssembly": "[1.0.0, )",
           "Mississippi.Reservoir": "[1.0.0, )",
@@ -734,8 +728,15 @@
         "dependencies": {
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.2, )",
           "Mississippi.Inlet": "[1.0.0, )",
+          "Mississippi.Inlet.Blazor.WebAssembly.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Blazor": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Blazor.WebAssembly.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Orleans": {
