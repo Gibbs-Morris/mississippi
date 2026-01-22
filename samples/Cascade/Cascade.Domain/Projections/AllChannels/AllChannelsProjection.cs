@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 using Mississippi.Inlet.Projection.Abstractions;
 
 using Orleans;
@@ -27,7 +26,6 @@ namespace Cascade.Domain.Projections.AllChannels;
 ///     </para>
 /// </remarks>
 [ProjectionPath("cascade/discovery")]
-[UxProjection]
 [BrookName("CASCADE", "CHAT", "CHANNEL")]
 [SnapshotStorageName("CASCADE", "CHAT", "ALLCHANNELS")]
 [GenerateSerializer]

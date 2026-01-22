@@ -141,9 +141,6 @@ app.UseRouting();
 app.MapHub<MessageHub>("/hubs/messages");
 app.MapInletHub(); // Maps to /hubs/inlet for real-time projection updates
 
-// Map UX Projection endpoints - auto-discovers [UxProjection] types from scanned assemblies
-app.MapUxProjections(typeof(ChannelMessagesProjection).Assembly);
-
 // Map API endpoints
 app.MapGet(
     "/api/health",

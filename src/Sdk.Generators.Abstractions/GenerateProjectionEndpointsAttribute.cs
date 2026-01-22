@@ -8,8 +8,7 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Projections must also have <c>ProjectionPathAttribute</c> and
-///         <c>UxProjectionAttribute</c> applied for full generation.
+///         Projections must also have <c>ProjectionPathAttribute</c> applied for full generation.
 ///     </para>
 ///     <para>
 ///         When applied, the following code is generated:
@@ -38,7 +37,6 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 /// <example>
 ///     <code>
 ///         [ProjectionPath("bank-account-balance")]
-///         [UxProjection]
 ///         [GenerateProjectionEndpoints]
 ///         [BrookName("SPRING", "BANKING", "ACCOUNT")]
 ///         public sealed record BankAccountBalanceProjection

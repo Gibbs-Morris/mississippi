@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using Cascade.Domain.Projections.Message;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 using Mississippi.Inlet.Projection.Abstractions;
 
 using Orleans;
@@ -26,7 +25,6 @@ namespace Cascade.Domain.Projections.ChannelMessageIds;
 ///     </para>
 /// </remarks>
 [ProjectionPath("cascade/channel-message-ids")]
-[UxProjection]
 [BrookName("CASCADE", "CHAT", "CONVERSATION")]
 [SnapshotStorageName("CASCADE", "CHAT", "CHANNELMESSAGEIDS")]
 [GenerateSerializer]
