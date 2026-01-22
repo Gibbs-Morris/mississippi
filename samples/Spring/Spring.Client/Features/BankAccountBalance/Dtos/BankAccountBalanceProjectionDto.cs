@@ -1,4 +1,5 @@
 using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 
 namespace Spring.Client.Features.BankAccountBalance.Dtos;
@@ -16,6 +17,7 @@ namespace Spring.Client.Features.BankAccountBalance.Dtos;
 ///         for Inlet to correctly route subscription requests.
 ///     </para>
 /// </remarks>
+[PendingSourceGenerator]
 [ProjectionPath("bank-account-balance")]
 public sealed record BankAccountBalanceProjectionDto
 {
