@@ -1,6 +1,17 @@
-// NOTE: This file is commented out for testing purposes.
-// The generator now produces this DTO automatically via Sdk.Client.Generators.
-// Compare the generated output with this manual version to verify correctness.
+// =============================================================================
+// HAND-CRAFTED REFERENCE IMPLEMENTATION
+// =============================================================================
+// This file contains the original hand-crafted version of this type, created
+// before source generation was automated via Sdk.Client.Generators.
+//
+// Purpose:
+// - Serves as a reference implementation to validate generator output
+// - Enables test comparisons between generated and expected code
+// - Documents the intended structure and behavior of the generated type
+//
+// The generator now produces this DTO automatically. This file is commented out
+// to avoid duplicate type definitions but preserved for testing and documentation.
+// =============================================================================
 /*
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Sdk.Generators.Abstractions;
