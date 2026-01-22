@@ -81,12 +81,21 @@ public sealed class CommandClientStateGenerator : IIncrementalGenerator
         sb.AppendLine("///     <para>");
         sb.AppendLine("///         It does NOT hold read model data - that belongs in the projection feature state.");
         sb.AppendLine("///     </para>");
+        sb.AppendLine("///     <para>");
+        sb.AppendLine(
+            "///         The <see cref=\"EntityId\" /> property tracks which entity is currently targeted for commands.");
+        sb.AppendLine("///     </para>");
         sb.AppendLine("/// </remarks>");
         sb.AppendGeneratedCodeAttribute("CommandClientStateGenerator");
         sb.AppendLine($"internal sealed record {stateTypeName} : AggregateCommandStateBase, IAggregateCommandState");
         sb.OpenBrace();
         sb.AppendLine("/// <inheritdoc />");
         sb.AppendLine($"public static string FeatureKey => \"{featureKey}\";");
+        sb.AppendLine();
+        sb.AppendLine("/// <summary>");
+        sb.AppendLine("///     Gets the currently selected entity ID for command targeting.");
+        sb.AppendLine("/// </summary>");
+        sb.AppendLine("public string? EntityId { get; init; }");
         sb.CloseBrace();
         context.AddSource($"{stateTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }

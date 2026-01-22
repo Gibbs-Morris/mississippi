@@ -185,6 +185,7 @@ public sealed class CommandClientReducersGenerator : IIncrementalGenerator
         sb.IncreaseIndent();
         sb.AppendLine("state with { EntityId = action.EntityId };");
         sb.DecreaseIndent();
+
         sb.CloseBrace();
         context.AddSource($"{reducersTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }

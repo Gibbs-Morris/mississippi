@@ -1,4 +1,4 @@
-#if FALSE
+#if false
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -19,8 +19,14 @@ namespace Spring.Client.Features.BankAccountAggregate;
 ///     Extension methods for registering the BankAccountAggregate feature.
 /// </summary>
 /// <remarks>
-///     This feature handles the write side (command execution) for the BankAccount aggregate.
-///     Derived from domain aggregate: <c>Spring.Domain.Aggregates.BankAccount</c>.
+///     <para>
+///         This feature handles the write side (command execution) for the BankAccount aggregate.
+///         Derived from domain aggregate: <c>Spring.Domain.Aggregates.BankAccount</c>.
+///     </para>
+///     <para>
+///         Includes application-specific <see cref="SetEntityIdAction" /> registration for
+///         tracking which entity is selected in the UI.
+///     </para>
 /// </remarks>
 [PendingSourceGenerator]
 internal static class BankAccountAggregateFeatureRegistration

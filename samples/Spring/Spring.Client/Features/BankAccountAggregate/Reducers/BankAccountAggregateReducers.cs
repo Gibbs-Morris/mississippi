@@ -1,6 +1,5 @@
-#if FALSE
+#if false
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions;
-using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.State;
@@ -16,8 +15,11 @@ namespace Spring.Client.Features.BankAccountAggregate.Reducers;
 ///         Each command has three lifecycle reducers (Executing, Failed, Succeeded) that delegate
 ///         to <see cref="AggregateCommandStateReducers" /> for the standard command tracking logic.
 ///     </para>
+///     <para>
+///         The <see cref="SetEntityId" /> reducer is application-specific for tracking
+///         which entity is currently selected in the UI.
+///     </para>
 /// </remarks>
-[PendingSourceGenerator]
 internal static class BankAccountAggregateReducers
 {
     // DepositFunds reducers

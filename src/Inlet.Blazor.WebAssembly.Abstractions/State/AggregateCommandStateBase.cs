@@ -20,9 +20,6 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.State;
 ///             <description>In-flight command tracking via <see cref="InFlightCommands" />.</description>
 ///         </item>
 ///         <item>
-///             <description>Entity ID targeting for commands via <see cref="EntityId" />.</description>
-///         </item>
-///         <item>
 ///             <description>
 ///                 Error state from last failed command via <see cref="ErrorCode" /> and
 ///                 <see cref="ErrorMessage" />.
@@ -52,11 +49,6 @@ public abstract record AggregateCommandStateBase
     ///     Gets the history of command executions, ordered from oldest to newest.
     /// </summary>
     public ImmutableList<CommandHistoryEntry> CommandHistory { get; init; } = ImmutableList<CommandHistoryEntry>.Empty;
-
-    /// <summary>
-    ///     Gets the currently selected entity ID for command targeting.
-    /// </summary>
-    public string? EntityId { get; init; }
 
     /// <summary>
     ///     Gets the error code from the last failed command, or <c>null</c> if no error.
