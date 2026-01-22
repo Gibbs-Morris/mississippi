@@ -485,8 +485,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
-          "Microsoft.Orleans.Sdk": "[10.0.0, )",
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.0, )"
         }
       },
       "Mississippi.Inlet": {
@@ -511,8 +510,15 @@
           "Microsoft.AspNetCore.Components": "[10.0.2, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.2, )",
           "Mississippi.Inlet": "[1.0.0, )",
+          "Mississippi.Inlet.Blazor.WebAssembly.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Blazor": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Blazor.WebAssembly.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Projection.Abstractions": {

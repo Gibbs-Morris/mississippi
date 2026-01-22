@@ -517,6 +517,12 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Inlet.Blazor.WebAssembly.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
