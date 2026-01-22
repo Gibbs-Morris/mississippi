@@ -49,6 +49,16 @@ public static class NamingConventions
     }
 
     /// <summary>
+    ///     Gets the command DTO name from a command type name.
+    /// </summary>
+    /// <param name="commandName">The command type name (e.g., "DepositFunds").</param>
+    /// <returns>The DTO name (e.g., "DepositFundsDto").</returns>
+    public static string GetCommandDtoName(
+        string commandName
+    ) =>
+        commandName + "Dto";
+
+    /// <summary>
     ///     Gets the DTO name from a projection type name.
     /// </summary>
     /// <param name="typeName">The projection type name (e.g., "BankAccountBalanceProjection").</param>
@@ -57,6 +67,55 @@ public static class NamingConventions
         string typeName
     ) =>
         typeName + "Dto";
+
+    /// <summary>
+    ///     Converts a domain command namespace to a server DTO namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The server namespace (e.g., "Spring.Server.Controllers.Aggregates").</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Server.Controllers.Aggregates".
+    ///         Falls back to simple ".Domain" → ".Server" replacement if pattern doesn't match.
+    ///     </para>
+    /// </remarks>
+    public static string GetServerCommandDtoNamespace(
+        string domainNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(domainNamespace))
+        {
+            return domainNamespace;
+        }
+
+        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Server.Controllers.Aggregates
+        if (domainNamespace.Contains(".Domain.Aggregates.") && domainNamespace.EndsWith(".Commands", StringComparison.Ordinal))
+        {
+            // Extract product prefix (everything before .Domain)
+            int domainIndex = domainNamespace.IndexOf(".Domain.", StringComparison.Ordinal);
+            if (domainIndex > 0)
+            {
+                string product = domainNamespace.Substring(0, domainIndex);
+                return product + ".Server.Controllers.Aggregates";
+            }
+        }
+
+        // Fallback: Replace .Domain with .Server
+        if (domainNamespace.EndsWith(".Domain", StringComparison.Ordinal))
+        {
+            return domainNamespace.Substring(0, domainNamespace.Length - ".Domain".Length) + ".Server";
+        }
+
+        if (domainNamespace.Contains(".Domain."))
+        {
+            return domainNamespace.Replace(".Domain.", ".Server.");
+        }
+
+        // Last resort: just append .Server
+        return domainNamespace + ".Server";
+    }
 
     /// <summary>
     ///     Gets the feature key from a type name by removing common suffixes and converting to camelCase.

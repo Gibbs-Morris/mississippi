@@ -122,16 +122,38 @@ public sealed class PropertyModel
     )
     {
         // Check for initializer in declaring syntax
-        // This is a simplified check; full implementation would need syntax analysis
+        // This handles both regular property initializers (public int X { get; } = 5)
+        // and positional record parameter defaults (record Foo(int X = 5))
         foreach (SyntaxReference syntaxRef in propertySymbol.DeclaringSyntaxReferences)
         {
             SyntaxNode syntax = syntaxRef.GetSyntax();
             string syntaxText = syntax.ToString();
 
-            // Look for "= ..." pattern (property initializer)
-            if (syntaxText.Contains(" = ") || syntaxText.Contains("= "))
+            // Look for "= ..." pattern (property initializer or parameter default)
+            // Handle various spacing: "= 0", " = 0", "= default", etc.
+            if (syntaxText.Contains("= "))
             {
                 return true;
+            }
+        }
+
+        // For positional record properties, check if the associated parameter has a default
+        // Positional record properties are synthesized and may have empty DeclaringSyntaxReferences
+        // We need to check the containing type's primary constructor parameters
+        if (propertySymbol.ContainingType is INamedTypeSymbol containingType)
+        {
+            // Find matching primary constructor parameter by name
+            foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
+            {
+                // Primary constructor is the one generated from record parameters
+                foreach (IParameterSymbol parameter in constructor.Parameters)
+                {
+                    if (string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
+                        parameter.HasExplicitDefaultValue)
+                    {
+                        return true;
+                    }
+                }
             }
         }
 

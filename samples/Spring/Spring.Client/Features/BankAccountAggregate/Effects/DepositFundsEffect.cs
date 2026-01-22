@@ -37,5 +37,5 @@ internal sealed class DepositFundsEffect
     protected override string GetEndpoint(
         DepositFundsAction action
     ) =>
-        $"/api/aggregates/bankaccount/{action.EntityId}/deposit";
+        $"/api/aggregates/bank-account/{action.EntityId}/deposit";
 }

@@ -37,5 +37,5 @@ internal sealed class WithdrawFundsEffect
     protected override string GetEndpoint(
         WithdrawFundsAction action
     ) =>
-        $"/api/aggregates/bankaccount/{action.EntityId}/withdraw";
+        $"/api/aggregates/bank-account/{action.EntityId}/withdraw";
 }

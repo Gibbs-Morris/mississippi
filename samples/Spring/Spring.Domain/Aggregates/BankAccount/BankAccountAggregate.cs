@@ -1,4 +1,5 @@
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 
@@ -11,6 +12,7 @@ namespace Spring.Domain.Aggregates.BankAccount;
 /// </summary>
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
+[GenerateAggregateEndpoints]
 [GenerateSerializer]
 [Alias("Spring.Domain.BankAccount.BankAccountAggregate")]
 public sealed record BankAccountAggregate
