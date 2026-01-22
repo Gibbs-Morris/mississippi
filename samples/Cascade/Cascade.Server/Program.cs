@@ -259,7 +259,7 @@ app.MapPost(
 // │ These endpoints dispatch commands to Orleans aggregate grains.                  │
 // │                                                                                 │
 // │ ✅ Projection subscriptions and real-time updates are handled by Inlet.         │
-// │ ✅ MapUxProjections provides HTTP fallback for projection data.                  │
+// │ ✅ Generated projection controllers provide HTTP fallback for projection data.   │
 // │                                                                                 │
 // │ Command dispatch via HTTP is the current pattern. Future Inlet versions may    │
 // │ add SignalR-based command dispatch for reduced latency.                         │
@@ -446,8 +446,8 @@ app.MapPost(
                 });
     });
 
-// NOTE: Channel messages projection is now served via MapUxProjections at:
-// GET /api/projections/channel-messages/{entityId}
+// NOTE: Channel messages projection is served via generated projection controllers at:
+// GET /api/projections/cascade/channels/{entityId}
 // The endpoint includes ETag support for caching
 
 // Fallback to index.html for client-side routing
