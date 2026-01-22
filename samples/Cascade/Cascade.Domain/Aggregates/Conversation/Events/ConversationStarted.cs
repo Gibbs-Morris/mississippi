@@ -5,7 +5,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Cascade.Domain.Conversation.Events;
+namespace Cascade.Domain.Aggregates.Conversation.Events;
 
 /// <summary>
 ///     Event raised when a conversation is started.

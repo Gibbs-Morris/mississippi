@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using Cascade.Domain.Conversation.Commands;
-using Cascade.Domain.Conversation.Events;
+using Cascade.Domain.Aggregates.Conversation.Commands;
+using Cascade.Domain.Aggregates.Conversation.Events;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
-namespace Cascade.Domain.Conversation.Handlers;
+namespace Cascade.Domain.Aggregates.Conversation.Handlers;
 
 /// <summary>
 ///     Handles the <see cref="DeleteMessage" /> command.

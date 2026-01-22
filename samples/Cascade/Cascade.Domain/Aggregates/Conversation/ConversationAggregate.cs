@@ -2,17 +2,19 @@ using System;
 using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 
 
-namespace Cascade.Domain.Conversation;
+namespace Cascade.Domain.Aggregates.Conversation;
 
 /// <summary>
 ///     Represents the state of a conversation aggregate.
 /// </summary>
 [BrookName("CASCADE", "CHAT", "CONVERSATION")]
 [SnapshotStorageName("CASCADE", "CHAT", "CONVERSATIONSTATE")]
+[GenerateAggregateEndpoints]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Conversation.ConversationAggregate")]
 internal sealed record ConversationAggregate

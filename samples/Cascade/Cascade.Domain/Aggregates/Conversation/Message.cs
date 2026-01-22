@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Cascade.Domain.Conversation;
+namespace Cascade.Domain.Aggregates.Conversation;
 
 /// <summary>
 ///     Represents a message in a conversation.

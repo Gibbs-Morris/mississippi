@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.Conversation.Commands;
+namespace Cascade.Domain.Aggregates.Conversation.Commands;
 
 /// <summary>
 ///     Command to start a new conversation.
 /// </summary>
+[GenerateCommand(Route = "start")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Conversation.Commands.StartConversation")]
 internal sealed record StartConversation

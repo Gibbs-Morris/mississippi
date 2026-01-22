@@ -1,11 +1,11 @@
 using System.Collections.Immutable;
 
-using Cascade.Domain.Conversation.Events;
+using Cascade.Domain.Aggregates.Conversation.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
 
-namespace Cascade.Domain.Conversation.Reducers;
+namespace Cascade.Domain.Aggregates.Conversation.Reducers;
 
 /// <summary>
 ///     Reduces the <see cref="ConversationStarted" /> event to produce a new <see cref="ConversationAggregate" />.

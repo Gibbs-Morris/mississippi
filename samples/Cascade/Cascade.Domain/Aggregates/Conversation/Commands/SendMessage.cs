@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.Conversation.Commands;
+namespace Cascade.Domain.Aggregates.Conversation.Commands;
 
 /// <summary>
 ///     Command to send a message in a conversation.
 /// </summary>
+[GenerateCommand(Route = "send")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Conversation.Commands.SendMessage")]
 internal sealed record SendMessage

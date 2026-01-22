@@ -1,11 +1,14 @@
+using Mississippi.Sdk.Generators.Abstractions;
+
 using Orleans;
 
 
-namespace Cascade.Domain.Conversation.Commands;
+namespace Cascade.Domain.Aggregates.Conversation.Commands;
 
 /// <summary>
 ///     Command to delete a message in a conversation.
 /// </summary>
+[GenerateCommand(Route = "delete")]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Conversation.Commands.DeleteMessage")]
 internal sealed record DeleteMessage
