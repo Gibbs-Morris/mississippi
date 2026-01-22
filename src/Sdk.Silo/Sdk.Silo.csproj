@@ -6,10 +6,14 @@
 
     <ItemGroup>
         <ProjectReference Include="..\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+        <ProjectReference Include="..\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
         <ProjectReference Include="..\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
         <ProjectReference Include="..\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+        <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+        <ProjectReference Include="..\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
         <ProjectReference Include="..\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
         <ProjectReference Include="..\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+        <ProjectReference Include="..\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
         <ProjectReference Include="..\Inlet.Orleans\Inlet.Orleans.csproj" />
         <ProjectReference Include="..\Aqueduct.Grains\Aqueduct.Grains.csproj" />
     </ItemGroup>

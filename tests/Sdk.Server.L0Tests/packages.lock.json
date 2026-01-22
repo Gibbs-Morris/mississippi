@@ -450,6 +450,17 @@
           "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.EventSourcing.Snapshots": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Snapshots.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -520,7 +531,9 @@
         "dependencies": {
           "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
           "Mississippi.EventSourcing.Aggregates.Api": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
           "Mississippi.EventSourcing.Serialization.Json": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Api": "[1.0.0, )",
           "Mississippi.Inlet.Orleans.SignalR": "[1.0.0, )"

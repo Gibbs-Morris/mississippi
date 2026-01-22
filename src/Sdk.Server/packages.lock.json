@@ -298,6 +298,17 @@
           "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.EventSourcing.Snapshots": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Snapshots.Abstractions": {
         "type": "Project",
         "dependencies": {

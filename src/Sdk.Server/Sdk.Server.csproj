@@ -11,6 +11,8 @@
     <ItemGroup>
         <ProjectReference Include="..\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
         <ProjectReference Include="..\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+        <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+        <ProjectReference Include="..\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
         <ProjectReference Include="..\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
         <ProjectReference Include="..\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
         <ProjectReference Include="..\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />

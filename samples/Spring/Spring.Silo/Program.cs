@@ -22,8 +22,8 @@ using OpenTelemetry.Trace;
 using Orleans.Hosting;
 using Orleans.Runtime;
 
-using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Projections.BankAccountBalance;
+using Spring.Silo.Registrations;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);

@@ -6,10 +6,11 @@ using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.UxProjections;
 
 using Spring.Domain.Aggregates.BankAccount.Events;
+using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Domain.Projections.BankAccountBalance.Reducers;
 
 
-namespace Spring.Domain.Projections.BankAccountBalance;
+namespace Spring.Silo.Registrations;
 
 /// <summary>
 ///     Extension methods for registering bank account balance projection services.
