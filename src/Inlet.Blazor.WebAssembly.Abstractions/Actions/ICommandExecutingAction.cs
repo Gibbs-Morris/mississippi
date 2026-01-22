@@ -54,5 +54,9 @@ public interface ICommandExecutingAction<TSelf> : ICommandExecutingAction
     /// <param name="commandType">The name of the command type.</param>
     /// <param name="timestamp">The timestamp when the command started.</param>
     /// <returns>A new instance of the executing action.</returns>
-    static abstract TSelf Create(string commandId, string commandType, DateTimeOffset timestamp);
+    static abstract TSelf Create(
+        string commandId,
+        string commandType,
+        DateTimeOffset timestamp
+    );
 }

@@ -118,7 +118,8 @@ public sealed class NamingConventionTests : ArchitectureTestBase
             .And()
             .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
             .Should()
-            .NotResideInNamespaceMatching(@"^[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+.*$") // 11+ segments
+            .NotResideInNamespaceMatching(
+                @"^[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+.*$") // 11+ segments
             .Because("namespaces MUST have max ten PascalCase segments per naming.instructions.md")
             .WithoutRequiringPositiveResults();
         rule.Check(ArchitectureModel);

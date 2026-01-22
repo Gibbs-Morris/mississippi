@@ -20,69 +20,7 @@ public static class TypeAnalyzer
         "System",
         "Microsoft",
         "Orleans",
-        "Newtonsoft"
-    );
-
-    /// <summary>
-    ///     Determines whether a type is a framework type that should not be converted to a DTO.
-    /// </summary>
-    /// <param name="typeSymbol">The type symbol to analyze.</param>
-    /// <returns><c>true</c> if the type is a framework type; otherwise, <c>false</c>.</returns>
-    public static bool IsFrameworkType(
-        ITypeSymbol typeSymbol
-    )
-    {
-        if (typeSymbol is null)
-        {
-            return true;
-        }
-
-        // Special types (primitives) are always framework types
-        if (typeSymbol.SpecialType != SpecialType.None)
-        {
-            return true;
-        }
-
-        // Check namespace
-        string containingNamespace = GetFullNamespace(typeSymbol);
-        if (string.IsNullOrEmpty(containingNamespace))
-        {
-            return true;
-        }
-
-        return FrameworkNamespacePrefixes.Any(prefix =>
-            containingNamespace.StartsWith(prefix, StringComparison.Ordinal));
-    }
-
-    /// <summary>
-    ///     Determines whether a type is a collection type.
-    /// </summary>
-    /// <param name="typeSymbol">The type symbol to analyze.</param>
-    /// <returns><c>true</c> if the type is a collection type; otherwise, <c>false</c>.</returns>
-    public static bool IsCollectionType(
-        ITypeSymbol typeSymbol
-    )
-    {
-        if (typeSymbol is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        // Array types
-        if (typeSymbol is IArrayTypeSymbol)
-        {
-            return true;
-        }
-
-        // Check for generic collection interfaces
-        if (!namedType.IsGenericType)
-        {
-            return false;
-        }
-
-        string typeName = namedType.ConstructedFrom.ToDisplayString();
-        return IsKnownCollectionType(typeName);
-    }
+        "Newtonsoft");
 
     /// <summary>
     ///     Gets the element type of a collection.
@@ -98,8 +36,7 @@ public static class TypeAnalyzer
             return arrayType.ElementType;
         }
 
-        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType &&
-            namedType.TypeArguments.Length > 0)
+        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType && (namedType.TypeArguments.Length > 0))
         {
             return namedType.TypeArguments[0];
         }
@@ -152,46 +89,7 @@ public static class TypeAnalyzer
 
         // Remove common suffixes before adding Dto
         typeName = RemoveKnownSuffixes(typeName);
-
         return typeName + customTypeSuffix;
-    }
-
-    /// <summary>
-    ///     Determines whether a property requires a mapper for DTO conversion.
-    /// </summary>
-    /// <param name="propertyType">The property type symbol.</param>
-    /// <returns><c>true</c> if a mapper is required; otherwise, <c>false</c>.</returns>
-    public static bool RequiresMapper(
-        ITypeSymbol propertyType
-    )
-    {
-        // Check if it's a collection with custom element type
-        if (IsCollectionType(propertyType))
-        {
-            ITypeSymbol? elementType = GetCollectionElementType(propertyType);
-            return elementType is not null && !IsFrameworkType(elementType);
-        }
-
-        // Direct custom type
-        return !IsFrameworkType(propertyType);
-    }
-
-    /// <summary>
-    ///     Determines whether a property requires an enumerable mapper.
-    /// </summary>
-    /// <param name="propertyType">The property type symbol.</param>
-    /// <returns><c>true</c> if an enumerable mapper is required; otherwise, <c>false</c>.</returns>
-    public static bool RequiresEnumerableMapper(
-        ITypeSymbol propertyType
-    )
-    {
-        if (!IsCollectionType(propertyType))
-        {
-            return false;
-        }
-
-        ITypeSymbol? elementType = GetCollectionElementType(propertyType);
-        return elementType is not null && !IsFrameworkType(elementType);
     }
 
     /// <summary>
@@ -218,20 +116,102 @@ public static class TypeAnalyzer
     }
 
     /// <summary>
-    ///     Removes known suffixes from a type name.
+    ///     Determines whether a type is a collection type.
     /// </summary>
-    /// <param name="typeName">The type name.</param>
-    /// <returns>The type name without known suffixes.</returns>
-    private static string RemoveKnownSuffixes(
-        string typeName
+    /// <param name="typeSymbol">The type symbol to analyze.</param>
+    /// <returns><c>true</c> if the type is a collection type; otherwise, <c>false</c>.</returns>
+    public static bool IsCollectionType(
+        ITypeSymbol typeSymbol
     )
     {
-        string[] suffixes = { "Projection", "Aggregate", "State" };
-        string result = suffixes
-            .Where(suffix => typeName.EndsWith(suffix, StringComparison.Ordinal))
-            .Aggregate(typeName, (current, suffix) => current.Substring(0, current.Length - suffix.Length));
+        if (typeSymbol is not INamedTypeSymbol namedType)
+        {
+            return false;
+        }
 
-        return result == typeName ? typeName : result;
+        // Array types
+        if (typeSymbol is IArrayTypeSymbol)
+        {
+            return true;
+        }
+
+        // Check for generic collection interfaces
+        if (!namedType.IsGenericType)
+        {
+            return false;
+        }
+
+        string typeName = namedType.ConstructedFrom.ToDisplayString();
+        return IsKnownCollectionType(typeName);
+    }
+
+    /// <summary>
+    ///     Determines whether a type is a framework type that should not be converted to a DTO.
+    /// </summary>
+    /// <param name="typeSymbol">The type symbol to analyze.</param>
+    /// <returns><c>true</c> if the type is a framework type; otherwise, <c>false</c>.</returns>
+    public static bool IsFrameworkType(
+        ITypeSymbol typeSymbol
+    )
+    {
+        if (typeSymbol is null)
+        {
+            return true;
+        }
+
+        // Special types (primitives) are always framework types
+        if (typeSymbol.SpecialType != SpecialType.None)
+        {
+            return true;
+        }
+
+        // Check namespace
+        string containingNamespace = GetFullNamespace(typeSymbol);
+        if (string.IsNullOrEmpty(containingNamespace))
+        {
+            return true;
+        }
+
+        return FrameworkNamespacePrefixes.Any(prefix =>
+            containingNamespace.StartsWith(prefix, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Determines whether a property requires an enumerable mapper.
+    /// </summary>
+    /// <param name="propertyType">The property type symbol.</param>
+    /// <returns><c>true</c> if an enumerable mapper is required; otherwise, <c>false</c>.</returns>
+    public static bool RequiresEnumerableMapper(
+        ITypeSymbol propertyType
+    )
+    {
+        if (!IsCollectionType(propertyType))
+        {
+            return false;
+        }
+
+        ITypeSymbol? elementType = GetCollectionElementType(propertyType);
+        return elementType is not null && !IsFrameworkType(elementType);
+    }
+
+    /// <summary>
+    ///     Determines whether a property requires a mapper for DTO conversion.
+    /// </summary>
+    /// <param name="propertyType">The property type symbol.</param>
+    /// <returns><c>true</c> if a mapper is required; otherwise, <c>false</c>.</returns>
+    public static bool RequiresMapper(
+        ITypeSymbol propertyType
+    )
+    {
+        // Check if it's a collection with custom element type
+        if (IsCollectionType(propertyType))
+        {
+            ITypeSymbol? elementType = GetCollectionElementType(propertyType);
+            return elementType is not null && !IsFrameworkType(elementType);
+        }
+
+        // Direct custom type
+        return !IsFrameworkType(propertyType);
     }
 
     /// <summary>
@@ -241,18 +221,36 @@ public static class TypeAnalyzer
     /// <returns><c>true</c> if it's a known collection type.</returns>
     private static bool IsKnownCollectionType(
         string typeName
+    ) =>
+        typeName.StartsWith("System.Collections.", StringComparison.Ordinal) ||
+        typeName.StartsWith("System.Collections.Generic.", StringComparison.Ordinal) ||
+        typeName.StartsWith("System.Collections.Immutable.", StringComparison.Ordinal) ||
+        (typeName == "System.Collections.Generic.List<T>") ||
+        (typeName == "System.Collections.Generic.IList<T>") ||
+        (typeName == "System.Collections.Generic.ICollection<T>") ||
+        (typeName == "System.Collections.Generic.IEnumerable<T>") ||
+        (typeName == "System.Collections.Generic.IReadOnlyList<T>") ||
+        (typeName == "System.Collections.Generic.IReadOnlyCollection<T>") ||
+        (typeName == "System.Collections.Immutable.ImmutableArray<T>") ||
+        (typeName == "System.Collections.Immutable.ImmutableList<T>");
+
+    /// <summary>
+    ///     Removes known suffixes from a type name.
+    /// </summary>
+    /// <param name="typeName">The type name.</param>
+    /// <returns>The type name without known suffixes.</returns>
+    private static string RemoveKnownSuffixes(
+        string typeName
     )
     {
-        return typeName.StartsWith("System.Collections.", StringComparison.Ordinal) ||
-               typeName.StartsWith("System.Collections.Generic.", StringComparison.Ordinal) ||
-               typeName.StartsWith("System.Collections.Immutable.", StringComparison.Ordinal) ||
-               typeName == "System.Collections.Generic.List<T>" ||
-               typeName == "System.Collections.Generic.IList<T>" ||
-               typeName == "System.Collections.Generic.ICollection<T>" ||
-               typeName == "System.Collections.Generic.IEnumerable<T>" ||
-               typeName == "System.Collections.Generic.IReadOnlyList<T>" ||
-               typeName == "System.Collections.Generic.IReadOnlyCollection<T>" ||
-               typeName == "System.Collections.Immutable.ImmutableArray<T>" ||
-               typeName == "System.Collections.Immutable.ImmutableList<T>";
+        string[] suffixes = { "Projection", "Aggregate", "State" };
+        string result = suffixes.Where(suffix => typeName.EndsWith(suffix, StringComparison.Ordinal))
+            .Aggregate(
+                typeName,
+                (
+                    current,
+                    suffix
+                ) => current.Substring(0, current.Length - suffix.Length));
+        return result == typeName ? typeName : result;
     }
 }

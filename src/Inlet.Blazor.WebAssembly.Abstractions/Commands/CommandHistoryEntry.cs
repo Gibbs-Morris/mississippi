@@ -10,7 +10,10 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Commands;
 /// <param name="CommandType">The name of the command type.</param>
 /// <param name="Status">The current status of the command.</param>
 /// <param name="StartedAt">The timestamp when the command started executing.</param>
-/// <param name="CompletedAt">The timestamp when the command completed (succeeded or failed), or <c>null</c> if still executing.</param>
+/// <param name="CompletedAt">
+///     The timestamp when the command completed (succeeded or failed), or <c>null</c> if still
+///     executing.
+/// </param>
 /// <param name="ErrorCode">The error code if the command failed, or <c>null</c> otherwise.</param>
 /// <param name="ErrorMessage">The error message if the command failed, or <c>null</c> otherwise.</param>
 public sealed record CommandHistoryEntry(
@@ -30,16 +33,12 @@ public sealed record CommandHistoryEntry(
     /// <param name="commandType">The name of the command type.</param>
     /// <param name="startedAt">The timestamp when the command started.</param>
     /// <returns>A new history entry with <see cref="CommandStatus.Executing" /> status.</returns>
-    public static CommandHistoryEntry CreateExecuting(string commandId, string commandType, DateTimeOffset startedAt)
-        => new(commandId, commandType, CommandStatus.Executing, startedAt, null, null, null);
-
-    /// <summary>
-    ///     Creates a new history entry representing a succeeded state from an existing entry.
-    /// </summary>
-    /// <param name="completedAt">The timestamp when the command completed.</param>
-    /// <returns>A new history entry with <see cref="CommandStatus.Succeeded" /> status.</returns>
-    public CommandHistoryEntry ToSucceeded(DateTimeOffset completedAt)
-        => this with { Status = CommandStatus.Succeeded, CompletedAt = completedAt };
+    public static CommandHistoryEntry CreateExecuting(
+        string commandId,
+        string commandType,
+        DateTimeOffset startedAt
+    ) =>
+        new(commandId, commandType, CommandStatus.Executing, startedAt, null, null, null);
 
     /// <summary>
     ///     Creates a new history entry representing a failed state from an existing entry.
@@ -48,6 +47,30 @@ public sealed record CommandHistoryEntry(
     /// <param name="errorCode">The error code.</param>
     /// <param name="errorMessage">The error message.</param>
     /// <returns>A new history entry with <see cref="CommandStatus.Failed" /> status.</returns>
-    public CommandHistoryEntry ToFailed(DateTimeOffset completedAt, string? errorCode, string? errorMessage)
-        => this with { Status = CommandStatus.Failed, CompletedAt = completedAt, ErrorCode = errorCode, ErrorMessage = errorMessage };
+    public CommandHistoryEntry ToFailed(
+        DateTimeOffset completedAt,
+        string? errorCode,
+        string? errorMessage
+    ) =>
+        this with
+        {
+            Status = CommandStatus.Failed,
+            CompletedAt = completedAt,
+            ErrorCode = errorCode,
+            ErrorMessage = errorMessage,
+        };
+
+    /// <summary>
+    ///     Creates a new history entry representing a succeeded state from an existing entry.
+    /// </summary>
+    /// <param name="completedAt">The timestamp when the command completed.</param>
+    /// <returns>A new history entry with <see cref="CommandStatus.Succeeded" /> status.</returns>
+    public CommandHistoryEntry ToSucceeded(
+        DateTimeOffset completedAt
+    ) =>
+        this with
+        {
+            Status = CommandStatus.Succeeded,
+            CompletedAt = completedAt,
+        };
 }

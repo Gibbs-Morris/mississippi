@@ -25,6 +25,9 @@ internal sealed record BankAccountAggregateState : IAggregateCommandState
     /// <inheritdoc />
     public static string FeatureKey => "bankAccountAggregate";
 
+    /// <inheritdoc />
+    public ImmutableList<CommandHistoryEntry> CommandHistory { get; init; } = ImmutableList<CommandHistoryEntry>.Empty;
+
     /// <summary>
     ///     Gets the currently selected entity ID for command targeting.
     /// </summary>
@@ -40,6 +43,9 @@ internal sealed record BankAccountAggregateState : IAggregateCommandState
     /// </summary>
     public string? ErrorMessage { get; init; }
 
+    /// <inheritdoc />
+    public ImmutableHashSet<string> InFlightCommands { get; init; } = ImmutableHashSet<string>.Empty;
+
     /// <summary>
     ///     Gets a value indicating whether any command is currently executing.
     /// </summary>
@@ -49,10 +55,4 @@ internal sealed record BankAccountAggregateState : IAggregateCommandState
     ///     Gets a value indicating whether the last command succeeded.
     /// </summary>
     public bool? LastCommandSucceeded { get; init; }
-
-    /// <inheritdoc />
-    public ImmutableHashSet<string> InFlightCommands { get; init; } = ImmutableHashSet<string>.Empty;
-
-    /// <inheritdoc />
-    public ImmutableList<CommandHistoryEntry> CommandHistory { get; init; } = ImmutableList<CommandHistoryEntry>.Empty;
 }

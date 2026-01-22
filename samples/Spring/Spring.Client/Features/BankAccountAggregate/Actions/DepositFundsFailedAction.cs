@@ -22,6 +22,11 @@ internal sealed record DepositFundsFailedAction(
 ) : ICommandFailedAction<DepositFundsFailedAction>
 {
     /// <inheritdoc />
-    public static DepositFundsFailedAction Create(string commandId, string? errorCode, string? errorMessage, DateTimeOffset timestamp)
-        => new(commandId, errorCode, errorMessage, timestamp);
+    public static DepositFundsFailedAction Create(
+        string commandId,
+        string? errorCode,
+        string? errorMessage,
+        DateTimeOffset timestamp
+    ) =>
+        new(commandId, errorCode, errorMessage, timestamp);
 }

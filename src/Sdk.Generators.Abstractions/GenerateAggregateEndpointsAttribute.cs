@@ -53,6 +53,20 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 public sealed class GenerateAggregateEndpointsAttribute : Attribute
 {
     /// <summary>
+    ///     Gets or sets the feature key for client-side state management.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Defaults to camelCase of the aggregate name without the "Aggregate" suffix.
+    ///         For example, <c>BankAccountAggregate</c> becomes <c>bankAccount</c>.
+    ///     </para>
+    ///     <para>
+    ///         This key is used by Reservoir/Fluxor for state slice identification.
+    ///     </para>
+    /// </remarks>
+    public string? FeatureKey { get; set; }
+
+    /// <summary>
     ///     Gets or sets the route prefix for aggregate command endpoints.
     /// </summary>
     /// <remarks>
@@ -72,18 +86,4 @@ public sealed class GenerateAggregateEndpointsAttribute : Attribute
     ///     </code>
     /// </example>
     public string? RoutePrefix { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the feature key for client-side state management.
-    /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         Defaults to camelCase of the aggregate name without the "Aggregate" suffix.
-    ///         For example, <c>BankAccountAggregate</c> becomes <c>bankAccount</c>.
-    ///     </para>
-    ///     <para>
-    ///         This key is used by Reservoir/Fluxor for state slice identification.
-    ///     </para>
-    /// </remarks>
-    public string? FeatureKey { get; set; }
 }

@@ -22,6 +22,11 @@ internal sealed record OpenAccountFailedAction(
 ) : ICommandFailedAction<OpenAccountFailedAction>
 {
     /// <inheritdoc />
-    public static OpenAccountFailedAction Create(string commandId, string? errorCode, string? errorMessage, DateTimeOffset timestamp)
-        => new(commandId, errorCode, errorMessage, timestamp);
+    public static OpenAccountFailedAction Create(
+        string commandId,
+        string? errorCode,
+        string? errorMessage,
+        DateTimeOffset timestamp
+    ) =>
+        new(commandId, errorCode, errorMessage, timestamp);
 }

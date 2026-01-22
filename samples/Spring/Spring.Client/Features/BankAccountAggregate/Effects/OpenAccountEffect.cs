@@ -14,12 +14,9 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 ///     Effect that handles opening a bank account.
 /// </summary>
 [PendingSourceGenerator]
-internal sealed class OpenAccountEffect : CommandEffectBase<
-    OpenAccountAction,
-    OpenAccountRequestDto,
-    OpenAccountExecutingAction,
-    OpenAccountSucceededAction,
-    OpenAccountFailedAction>
+internal sealed class OpenAccountEffect
+    : CommandEffectBase<OpenAccountAction, OpenAccountRequestDto, OpenAccountExecutingAction, OpenAccountSucceededAction
+        , OpenAccountFailedAction>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="OpenAccountEffect" /> class.

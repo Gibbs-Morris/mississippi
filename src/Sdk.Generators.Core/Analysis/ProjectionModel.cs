@@ -41,8 +41,7 @@ public sealed class ProjectionModel
         DtoTypeName = TypeAnalyzer.GetDtoTypeName(typeSymbol, dtoSuffix);
 
         // Extract properties
-        Properties = typeSymbol
-            .GetMembers()
+        Properties = typeSymbol.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(p => p.DeclaredAccessibility == Accessibility.Public)
             .Where(p => !p.IsStatic)
@@ -51,32 +50,11 @@ public sealed class ProjectionModel
             .ToImmutableArray();
 
         // Determine which custom types need their own DTOs
-        NestedCustomTypes = Properties
-            .Where(p => p.RequiresMapper)
+        NestedCustomTypes = Properties.Where(p => p.RequiresMapper)
             .Select(p => p.RequiresEnumerableMapper ? p.ElementSourceTypeName! : p.SourceTypeName)
             .Distinct()
             .ToImmutableArray();
     }
-
-    /// <summary>
-    ///     Gets the type name (without namespace).
-    /// </summary>
-    public string TypeName { get; }
-
-    /// <summary>
-    ///     Gets the full type name (with namespace).
-    /// </summary>
-    public string FullTypeName { get; }
-
-    /// <summary>
-    ///     Gets the namespace of the projection.
-    /// </summary>
-    public string Namespace { get; }
-
-    /// <summary>
-    ///     Gets the projection path from [ProjectionPath] attribute.
-    /// </summary>
-    public string ProjectionPath { get; }
 
     /// <summary>
     ///     Gets the DTO type name.
@@ -84,14 +62,14 @@ public sealed class ProjectionModel
     public string DtoTypeName { get; }
 
     /// <summary>
-    ///     Gets the properties of the projection.
+    ///     Gets the full type name (with namespace).
     /// </summary>
-    public ImmutableArray<PropertyModel> Properties { get; }
+    public string FullTypeName { get; }
 
     /// <summary>
-    ///     Gets the nested custom types that require their own DTOs.
+    ///     Gets a value indicating whether any property requires an enumerable mapper.
     /// </summary>
-    public ImmutableArray<string> NestedCustomTypes { get; }
+    public bool HasEnumerableMappedProperties => Properties.Any(p => p.RequiresEnumerableMapper);
 
     /// <summary>
     ///     Gets a value indicating whether any property requires a mapper.
@@ -99,7 +77,27 @@ public sealed class ProjectionModel
     public bool HasMappedProperties => Properties.Any(p => p.RequiresMapper);
 
     /// <summary>
-    ///     Gets a value indicating whether any property requires an enumerable mapper.
+    ///     Gets the namespace of the projection.
     /// </summary>
-    public bool HasEnumerableMappedProperties => Properties.Any(p => p.RequiresEnumerableMapper);
+    public string Namespace { get; }
+
+    /// <summary>
+    ///     Gets the nested custom types that require their own DTOs.
+    /// </summary>
+    public ImmutableArray<string> NestedCustomTypes { get; }
+
+    /// <summary>
+    ///     Gets the projection path from [ProjectionPath] attribute.
+    /// </summary>
+    public string ProjectionPath { get; }
+
+    /// <summary>
+    ///     Gets the properties of the projection.
+    /// </summary>
+    public ImmutableArray<PropertyModel> Properties { get; }
+
+    /// <summary>
+    ///     Gets the type name (without namespace).
+    /// </summary>
+    public string TypeName { get; }
 }

@@ -32,13 +32,11 @@ public sealed class PropertyModel
         IsCollection = TypeAnalyzer.IsCollectionType(propertySymbol.Type);
         RequiresMapper = TypeAnalyzer.RequiresMapper(propertySymbol.Type);
         RequiresEnumerableMapper = TypeAnalyzer.RequiresEnumerableMapper(propertySymbol.Type);
-
         bool isNullableAnnotation = propertySymbol.Type.NullableAnnotation == NullableAnnotation.Annotated;
         bool isNullableValueType = propertySymbol.Type.IsValueType &&
                                    (propertySymbol.Type.OriginalDefinition.SpecialType ==
                                     SpecialType.System_Nullable_T);
         IsNullable = isNullableAnnotation || isNullableValueType;
-
         HasDefaultValue = HasPropertyDefaultValue(propertySymbol);
         IsRequired = !IsNullable && !HasDefaultValue;
 
@@ -55,54 +53,14 @@ public sealed class PropertyModel
     }
 
     /// <summary>
-    ///     Gets the property name.
-    /// </summary>
-    public string Name { get; }
-
-    /// <summary>
-    ///     Gets the source type name (fully qualified).
-    /// </summary>
-    public string SourceTypeName { get; }
-
-    /// <summary>
     ///     Gets the DTO type name.
     /// </summary>
     public string DtoTypeName { get; }
 
     /// <summary>
-    ///     Gets a value indicating whether this is a framework type.
+    ///     Gets the element DTO type name for collections, if applicable.
     /// </summary>
-    public bool IsFrameworkType { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether this is a collection type.
-    /// </summary>
-    public bool IsCollection { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether this property requires a mapper.
-    /// </summary>
-    public bool RequiresMapper { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether this property requires an enumerable mapper.
-    /// </summary>
-    public bool RequiresEnumerableMapper { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether this property is nullable.
-    /// </summary>
-    public bool IsNullable { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether this property has a default value.
-    /// </summary>
-    public bool HasDefaultValue { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether this property should be required in the DTO.
-    /// </summary>
-    public bool IsRequired { get; }
+    public string? ElementDtoTypeName { get; }
 
     /// <summary>
     ///     Gets the element source type name for collections, if applicable.
@@ -110,9 +68,49 @@ public sealed class PropertyModel
     public string? ElementSourceTypeName { get; }
 
     /// <summary>
-    ///     Gets the element DTO type name for collections, if applicable.
+    ///     Gets a value indicating whether this property has a default value.
     /// </summary>
-    public string? ElementDtoTypeName { get; }
+    public bool HasDefaultValue { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether this is a collection type.
+    /// </summary>
+    public bool IsCollection { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether this is a framework type.
+    /// </summary>
+    public bool IsFrameworkType { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether this property is nullable.
+    /// </summary>
+    public bool IsNullable { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether this property should be required in the DTO.
+    /// </summary>
+    public bool IsRequired { get; }
+
+    /// <summary>
+    ///     Gets the property name.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether this property requires an enumerable mapper.
+    /// </summary>
+    public bool RequiresEnumerableMapper { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether this property requires a mapper.
+    /// </summary>
+    public bool RequiresMapper { get; }
+
+    /// <summary>
+    ///     Gets the source type name (fully qualified).
+    /// </summary>
+    public string SourceTypeName { get; }
 
     /// <summary>
     ///     Determines whether a property has a default value.

@@ -24,7 +24,7 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 ///         }
 ///     </code>
 /// </example>
-[AttributeUsage(AttributeTargets.Property, Inherited = false)]
+[AttributeUsage(AttributeTargets.Property)]
 public sealed class GeneratorIgnoreAttribute : Attribute
 {
 }

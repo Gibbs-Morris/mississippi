@@ -47,5 +47,8 @@ public interface ICommandSucceededAction<TSelf> : ICommandSucceededAction
     /// <param name="commandId">The unique command invocation identifier.</param>
     /// <param name="timestamp">The timestamp when the command completed.</param>
     /// <returns>A new instance of the succeeded action.</returns>
-    static abstract TSelf Create(string commandId, DateTimeOffset timestamp);
+    static abstract TSelf Create(
+        string commandId,
+        DateTimeOffset timestamp
+    );
 }

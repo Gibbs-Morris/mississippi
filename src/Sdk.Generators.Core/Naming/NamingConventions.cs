@@ -10,6 +10,109 @@ namespace Mississippi.Sdk.Generators.Core.Naming;
 public static class NamingConventions
 {
     /// <summary>
+    ///     Converts a domain namespace to a client namespace.
+    /// </summary>
+    /// <param name="domainNamespace">The domain namespace (e.g., "Spring.Domain.Projections.BankAccountBalance").</param>
+    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountBalance.Dtos").</returns>
+    /// <remarks>
+    ///     Replaces ".Domain.Projections." with ".Client.Features." and appends ".Dtos".
+    ///     Falls back to simple ".Domain" → ".Client" replacement if pattern doesn't match.
+    /// </remarks>
+    public static string GetClientNamespace(
+        string domainNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(domainNamespace))
+        {
+            return domainNamespace;
+        }
+
+        // Pattern: Spring.Domain.Projections.X → Spring.Client.Features.X.Dtos
+        if (domainNamespace.Contains(".Domain.Projections."))
+        {
+            return domainNamespace.Replace(".Domain.Projections.", ".Client.Features.") + ".Dtos";
+        }
+
+        // Fallback: Replace .Domain with .Client
+        if (domainNamespace.EndsWith(".Domain", StringComparison.Ordinal))
+        {
+            return domainNamespace.Substring(0, domainNamespace.Length - ".Domain".Length) + ".Client";
+        }
+
+        if (domainNamespace.Contains(".Domain."))
+        {
+            return domainNamespace.Replace(".Domain.", ".Client.");
+        }
+
+        // Last resort: just append .Client
+        return domainNamespace + ".Client";
+    }
+
+    /// <summary>
+    ///     Gets the DTO name from a projection type name.
+    /// </summary>
+    /// <param name="typeName">The projection type name (e.g., "BankAccountBalanceProjection").</param>
+    /// <returns>The DTO name (e.g., "BankAccountBalanceProjectionDto").</returns>
+    public static string GetDtoName(
+        string typeName
+    ) =>
+        typeName + "Dto";
+
+    /// <summary>
+    ///     Gets the feature key from a type name by removing common suffixes and converting to camelCase.
+    /// </summary>
+    /// <param name="typeName">The type name (e.g., "BankAccountAggregate").</param>
+    /// <returns>The feature key (e.g., "bankAccount").</returns>
+    public static string GetFeatureKey(
+        string typeName
+    )
+    {
+        // Remove common suffixes
+        string baseName = RemoveSuffix(typeName, "Projection");
+        baseName = RemoveSuffix(baseName, "Aggregate");
+        return ToCamelCase(baseName);
+    }
+
+    /// <summary>
+    ///     Gets the route prefix from a type name by removing common suffixes and converting to kebab-case.
+    /// </summary>
+    /// <param name="typeName">The type name (e.g., "BankAccountBalanceProjection").</param>
+    /// <returns>The route prefix (e.g., "bank-account-balance").</returns>
+    public static string GetRoutePrefix(
+        string typeName
+    )
+    {
+        // Remove common suffixes
+        string baseName = RemoveSuffix(typeName, "Projection");
+        baseName = RemoveSuffix(baseName, "Aggregate");
+        return ToKebabCase(baseName);
+    }
+
+    /// <summary>
+    ///     Removes a suffix from a type name if present.
+    /// </summary>
+    /// <param name="typeName">The type name.</param>
+    /// <param name="suffix">The suffix to remove.</param>
+    /// <returns>The type name without the suffix.</returns>
+    public static string RemoveSuffix(
+        string typeName,
+        string suffix
+    )
+    {
+        if (string.IsNullOrEmpty(typeName) || string.IsNullOrEmpty(suffix))
+        {
+            return typeName;
+        }
+
+        if (typeName.EndsWith(suffix, StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - suffix.Length);
+        }
+
+        return typeName;
+    }
+
+    /// <summary>
     ///     Converts a PascalCase string to camelCase.
     /// </summary>
     /// <param name="value">The PascalCase string.</param>
@@ -55,7 +158,7 @@ public static class NamingConventions
             return value;
         }
 
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new();
         for (int i = 0; i < value.Length; i++)
         {
             char c = value[i];
@@ -75,113 +178,5 @@ public static class NamingConventions
         }
 
         return sb.ToString();
-    }
-
-    /// <summary>
-    ///     Removes a suffix from a type name if present.
-    /// </summary>
-    /// <param name="typeName">The type name.</param>
-    /// <param name="suffix">The suffix to remove.</param>
-    /// <returns>The type name without the suffix.</returns>
-    public static string RemoveSuffix(
-        string typeName,
-        string suffix
-    )
-    {
-        if (string.IsNullOrEmpty(typeName) || string.IsNullOrEmpty(suffix))
-        {
-            return typeName;
-        }
-
-        if (typeName.EndsWith(suffix, StringComparison.Ordinal))
-        {
-            return typeName.Substring(0, typeName.Length - suffix.Length);
-        }
-
-        return typeName;
-    }
-
-    /// <summary>
-    ///     Gets the route prefix from a type name by removing common suffixes and converting to kebab-case.
-    /// </summary>
-    /// <param name="typeName">The type name (e.g., "BankAccountBalanceProjection").</param>
-    /// <returns>The route prefix (e.g., "bank-account-balance").</returns>
-    public static string GetRoutePrefix(
-        string typeName
-    )
-    {
-        // Remove common suffixes
-        string baseName = RemoveSuffix(typeName, "Projection");
-        baseName = RemoveSuffix(baseName, "Aggregate");
-
-        return ToKebabCase(baseName);
-    }
-
-    /// <summary>
-    ///     Gets the feature key from a type name by removing common suffixes and converting to camelCase.
-    /// </summary>
-    /// <param name="typeName">The type name (e.g., "BankAccountAggregate").</param>
-    /// <returns>The feature key (e.g., "bankAccount").</returns>
-    public static string GetFeatureKey(
-        string typeName
-    )
-    {
-        // Remove common suffixes
-        string baseName = RemoveSuffix(typeName, "Projection");
-        baseName = RemoveSuffix(baseName, "Aggregate");
-
-        return ToCamelCase(baseName);
-    }
-
-    /// <summary>
-    ///     Gets the DTO name from a projection type name.
-    /// </summary>
-    /// <param name="typeName">The projection type name (e.g., "BankAccountBalanceProjection").</param>
-    /// <returns>The DTO name (e.g., "BankAccountBalanceProjectionDto").</returns>
-    public static string GetDtoName(
-        string typeName
-    )
-    {
-        return typeName + "Dto";
-    }
-
-    /// <summary>
-    ///     Converts a domain namespace to a client namespace.
-    /// </summary>
-    /// <param name="domainNamespace">The domain namespace (e.g., "Spring.Domain.Projections.BankAccountBalance").</param>
-    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountBalance.Dtos").</returns>
-    /// <remarks>
-    ///     Replaces ".Domain.Projections." with ".Client.Features." and appends ".Dtos".
-    ///     Falls back to simple ".Domain" → ".Client" replacement if pattern doesn't match.
-    /// </remarks>
-    public static string GetClientNamespace(
-        string domainNamespace
-    )
-    {
-        if (string.IsNullOrEmpty(domainNamespace))
-        {
-            return domainNamespace;
-        }
-
-        // Pattern: Spring.Domain.Projections.X → Spring.Client.Features.X.Dtos
-        if (domainNamespace.Contains(".Domain.Projections."))
-        {
-            return domainNamespace
-                .Replace(".Domain.Projections.", ".Client.Features.") + ".Dtos";
-        }
-
-        // Fallback: Replace .Domain with .Client
-        if (domainNamespace.EndsWith(".Domain", StringComparison.Ordinal))
-        {
-            return domainNamespace.Substring(0, domainNamespace.Length - ".Domain".Length) + ".Client";
-        }
-
-        if (domainNamespace.Contains(".Domain."))
-        {
-            return domainNamespace.Replace(".Domain.", ".Client.");
-        }
-
-        // Last resort: just append .Client
-        return domainNamespace + ".Client";
     }
 }

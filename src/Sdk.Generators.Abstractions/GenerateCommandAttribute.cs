@@ -48,6 +48,15 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 public sealed class GenerateCommandAttribute : Attribute
 {
     /// <summary>
+    ///     Gets or sets the HTTP method for this command endpoint.
+    /// </summary>
+    /// <remarks>
+    ///     Defaults to <c>POST</c>. Commands typically use POST for
+    ///     state-changing operations.
+    /// </remarks>
+    public string HttpMethod { get; set; } = "POST";
+
+    /// <summary>
     ///     Gets or sets the HTTP route segment for this command endpoint.
     /// </summary>
     /// <remarks>
@@ -67,13 +76,4 @@ public sealed class GenerateCommandAttribute : Attribute
     ///     </code>
     /// </example>
     public string? Route { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the HTTP method for this command endpoint.
-    /// </summary>
-    /// <remarks>
-    ///     Defaults to <c>POST</c>. Commands typically use POST for
-    ///     state-changing operations.
-    /// </remarks>
-    public string HttpMethod { get; set; } = "POST";
 }

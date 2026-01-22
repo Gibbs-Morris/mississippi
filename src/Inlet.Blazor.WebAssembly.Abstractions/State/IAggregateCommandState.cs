@@ -13,9 +13,15 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.State;
 ///     <para>
 ///         Aggregate states that implement this interface automatically gain:
 ///         <list type="bullet">
-///             <item><description>In-flight command tracking (currently executing commands).</description></item>
-///             <item><description>Command history with configurable maximum entries (FIFO eviction).</description></item>
-///             <item><description>Correlation between executing, succeeded, and failed lifecycle actions.</description></item>
+///             <item>
+///                 <description>In-flight command tracking (currently executing commands).</description>
+///             </item>
+///             <item>
+///                 <description>Command history with configurable maximum entries (FIFO eviction).</description>
+///             </item>
+///             <item>
+///                 <description>Correlation between executing, succeeded, and failed lifecycle actions.</description>
+///             </item>
 ///         </list>
 ///     </para>
 ///     <para>
@@ -34,12 +40,12 @@ public interface IAggregateCommandState : IFeatureState
     const int DefaultMaxHistoryEntries = 200;
 
     /// <summary>
-    ///     Gets the set of command IDs currently in flight (executing but not yet completed).
-    /// </summary>
-    ImmutableHashSet<string> InFlightCommands { get; init; }
-
-    /// <summary>
     ///     Gets the history of command executions, ordered from oldest to newest.
     /// </summary>
     ImmutableList<CommandHistoryEntry> CommandHistory { get; init; }
+
+    /// <summary>
+    ///     Gets the set of command IDs currently in flight (executing but not yet completed).
+    /// </summary>
+    ImmutableHashSet<string> InFlightCommands { get; init; }
 }

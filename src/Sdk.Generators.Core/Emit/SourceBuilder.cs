@@ -9,14 +9,35 @@ namespace Mississippi.Sdk.Generators.Core.Emit;
 /// </summary>
 public sealed class SourceBuilder
 {
-    private readonly StringBuilder builder = new StringBuilder();
+    private readonly StringBuilder builder = new();
+
     private int indentLevel;
+
     private bool startOfLine = true;
 
     /// <summary>
     ///     Gets the current indentation string.
     /// </summary>
-    private string Indent => new string(' ', indentLevel * 4);
+    private string Indent => new(' ', indentLevel * 4);
+
+    /// <summary>
+    ///     Appends text without a newline.
+    /// </summary>
+    /// <param name="text">The text to append.</param>
+    /// <returns>This builder for chaining.</returns>
+    public SourceBuilder Append(
+        string text
+    )
+    {
+        if (startOfLine)
+        {
+            builder.Append(Indent);
+            startOfLine = false;
+        }
+
+        builder.Append(text);
+        return this;
+    }
 
     /// <summary>
     ///     Appends the auto-generated file header.
@@ -31,15 +52,31 @@ public sealed class SourceBuilder
     }
 
     /// <summary>
-    ///     Appends a using directive.
+    ///     Opens a namespace block (file-scoped).
     /// </summary>
-    /// <param name="namespace">The namespace to use.</param>
+    /// <param name="namespace">The namespace.</param>
     /// <returns>This builder for chaining.</returns>
-    public SourceBuilder AppendUsing(
+    public SourceBuilder AppendFileScopedNamespace(
         string @namespace
     )
     {
-        AppendLine($"using {@namespace};");
+        AppendLine();
+        AppendLine($"namespace {@namespace};");
+        return this;
+    }
+
+    /// <summary>
+    ///     Appends a [GeneratedCode] attribute.
+    /// </summary>
+    /// <param name="generatorName">The generator name.</param>
+    /// <param name="version">The version.</param>
+    /// <returns>This builder for chaining.</returns>
+    public SourceBuilder AppendGeneratedCodeAttribute(
+        string generatorName,
+        string version = "1.0.0"
+    )
+    {
+        AppendLine($"[global::System.CodeDom.Compiler.GeneratedCode(\"{generatorName}\", \"{version}\")]");
         return this;
     }
 
@@ -74,35 +111,82 @@ public sealed class SourceBuilder
     }
 
     /// <summary>
-    ///     Appends text without a newline.
+    ///     Appends an XML documentation summary.
     /// </summary>
-    /// <param name="text">The text to append.</param>
+    /// <param name="summary">The summary text.</param>
     /// <returns>This builder for chaining.</returns>
-    public SourceBuilder Append(
-        string text
+    public SourceBuilder AppendSummary(
+        string summary
     )
     {
-        if (startOfLine)
-        {
-            builder.Append(Indent);
-            startOfLine = false;
-        }
-
-        builder.Append(text);
+        AppendLine("/// <summary>");
+        AppendLine($"///     {summary}");
+        AppendLine("/// </summary>");
         return this;
     }
 
     /// <summary>
-    ///     Opens a namespace block (file-scoped).
+    ///     Appends a using directive.
     /// </summary>
-    /// <param name="namespace">The namespace.</param>
+    /// <param name="namespace">The namespace to use.</param>
     /// <returns>This builder for chaining.</returns>
-    public SourceBuilder AppendFileScopedNamespace(
+    public SourceBuilder AppendUsing(
         string @namespace
     )
     {
-        AppendLine();
-        AppendLine($"namespace {@namespace};");
+        AppendLine($"using {@namespace};");
+        return this;
+    }
+
+    /// <summary>
+    ///     Closes a brace and decreases indentation.
+    /// </summary>
+    /// <returns>This builder for chaining.</returns>
+    public SourceBuilder CloseBrace()
+    {
+        indentLevel = Math.Max(0, indentLevel - 1);
+        AppendLine("}");
+        return this;
+    }
+
+    /// <summary>
+    ///     Closes the current block.
+    /// </summary>
+    /// <returns>This builder for chaining.</returns>
+    public SourceBuilder CloseNamespace()
+    {
+        CloseBrace();
+        return this;
+    }
+
+    /// <summary>
+    ///     Decreases the indentation level.
+    /// </summary>
+    /// <returns>This builder for chaining.</returns>
+    public SourceBuilder DecreaseIndent()
+    {
+        indentLevel = Math.Max(0, indentLevel - 1);
+        return this;
+    }
+
+    /// <summary>
+    ///     Increases the indentation level.
+    /// </summary>
+    /// <returns>This builder for chaining.</returns>
+    public SourceBuilder IncreaseIndent()
+    {
+        indentLevel++;
+        return this;
+    }
+
+    /// <summary>
+    ///     Opens a brace and increases indentation.
+    /// </summary>
+    /// <returns>This builder for chaining.</returns>
+    public SourceBuilder OpenBrace()
+    {
+        AppendLine("{");
+        indentLevel++;
         return this;
     }
 
@@ -122,90 +206,8 @@ public sealed class SourceBuilder
     }
 
     /// <summary>
-    ///     Closes the current block.
-    /// </summary>
-    /// <returns>This builder for chaining.</returns>
-    public SourceBuilder CloseNamespace()
-    {
-        CloseBrace();
-        return this;
-    }
-
-    /// <summary>
-    ///     Opens a brace and increases indentation.
-    /// </summary>
-    /// <returns>This builder for chaining.</returns>
-    public SourceBuilder OpenBrace()
-    {
-        AppendLine("{");
-        indentLevel++;
-        return this;
-    }
-
-    /// <summary>
-    ///     Closes a brace and decreases indentation.
-    /// </summary>
-    /// <returns>This builder for chaining.</returns>
-    public SourceBuilder CloseBrace()
-    {
-        indentLevel = Math.Max(0, indentLevel - 1);
-        AppendLine("}");
-        return this;
-    }
-
-    /// <summary>
-    ///     Appends an XML documentation summary.
-    /// </summary>
-    /// <param name="summary">The summary text.</param>
-    /// <returns>This builder for chaining.</returns>
-    public SourceBuilder AppendSummary(
-        string summary
-    )
-    {
-        AppendLine("/// <summary>");
-        AppendLine($"///     {summary}");
-        AppendLine("/// </summary>");
-        return this;
-    }
-
-    /// <summary>
-    ///     Appends a [GeneratedCode] attribute.
-    /// </summary>
-    /// <param name="generatorName">The generator name.</param>
-    /// <param name="version">The version.</param>
-    /// <returns>This builder for chaining.</returns>
-    public SourceBuilder AppendGeneratedCodeAttribute(
-        string generatorName,
-        string version = "1.0.0"
-    )
-    {
-        AppendLine($"[global::System.CodeDom.Compiler.GeneratedCode(\"{generatorName}\", \"{version}\")]");
-        return this;
-    }
-
-    /// <summary>
     ///     Gets the built source code.
     /// </summary>
     /// <returns>The source code string.</returns>
     public override string ToString() => builder.ToString();
-
-    /// <summary>
-    ///     Increases the indentation level.
-    /// </summary>
-    /// <returns>This builder for chaining.</returns>
-    public SourceBuilder IncreaseIndent()
-    {
-        indentLevel++;
-        return this;
-    }
-
-    /// <summary>
-    ///     Decreases the indentation level.
-    /// </summary>
-    /// <returns>This builder for chaining.</returns>
-    public SourceBuilder DecreaseIndent()
-    {
-        indentLevel = Math.Max(0, indentLevel - 1);
-        return this;
-    }
 }

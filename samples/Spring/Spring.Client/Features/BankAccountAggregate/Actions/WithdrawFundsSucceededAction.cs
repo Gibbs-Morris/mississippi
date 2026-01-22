@@ -12,12 +12,13 @@ namespace Spring.Client.Features.BankAccountAggregate.Actions;
 /// <param name="CommandId">The unique command invocation identifier.</param>
 /// <param name="Timestamp">The timestamp when the command completed.</param>
 [PendingSourceGenerator]
-internal sealed record WithdrawFundsSucceededAction(
-    string CommandId,
-    DateTimeOffset Timestamp
-) : ICommandSucceededAction<WithdrawFundsSucceededAction>
+internal sealed record WithdrawFundsSucceededAction(string CommandId, DateTimeOffset Timestamp)
+    : ICommandSucceededAction<WithdrawFundsSucceededAction>
 {
     /// <inheritdoc />
-    public static WithdrawFundsSucceededAction Create(string commandId, DateTimeOffset timestamp)
-        => new(commandId, timestamp);
+    public static WithdrawFundsSucceededAction Create(
+        string commandId,
+        DateTimeOffset timestamp
+    ) =>
+        new(commandId, timestamp);
 }

@@ -14,12 +14,9 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 ///     Effect that handles depositing funds into a bank account.
 /// </summary>
 [PendingSourceGenerator]
-internal sealed class DepositFundsEffect : CommandEffectBase<
-    DepositFundsAction,
-    DepositFundsRequestDto,
-    DepositFundsExecutingAction,
-    DepositFundsSucceededAction,
-    DepositFundsFailedAction>
+internal sealed class DepositFundsEffect
+    : CommandEffectBase<DepositFundsAction, DepositFundsRequestDto, DepositFundsExecutingAction,
+        DepositFundsSucceededAction, DepositFundsFailedAction>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="DepositFundsEffect" /> class.

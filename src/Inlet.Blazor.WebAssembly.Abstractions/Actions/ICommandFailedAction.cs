@@ -59,5 +59,10 @@ public interface ICommandFailedAction<TSelf> : ICommandFailedAction
     /// <param name="errorMessage">A human-readable description of the error.</param>
     /// <param name="timestamp">The timestamp when the command failed.</param>
     /// <returns>A new instance of the failed action.</returns>
-    static abstract TSelf Create(string commandId, string? errorCode, string? errorMessage, DateTimeOffset timestamp);
+    static abstract TSelf Create(
+        string commandId,
+        string? errorCode,
+        string? errorMessage,
+        DateTimeOffset timestamp
+    );
 }

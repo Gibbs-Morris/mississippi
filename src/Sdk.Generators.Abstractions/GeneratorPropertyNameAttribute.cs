@@ -22,14 +22,17 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 ///         // Generates: [JsonPropertyName("display_name")]
 ///     </code>
 /// </example>
-[AttributeUsage(AttributeTargets.Property, Inherited = false)]
+[AttributeUsage(AttributeTargets.Property)]
 public sealed class GeneratorPropertyNameAttribute : Attribute
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="GeneratorPropertyNameAttribute" /> class.
     /// </summary>
     /// <param name="name">The property name to use in generated DTOs.</param>
-    public GeneratorPropertyNameAttribute(string name) => Name = name;
+    public GeneratorPropertyNameAttribute(
+        string name
+    ) =>
+        Name = name;
 
     /// <summary>
     ///     Gets the property name to use in generated DTOs.

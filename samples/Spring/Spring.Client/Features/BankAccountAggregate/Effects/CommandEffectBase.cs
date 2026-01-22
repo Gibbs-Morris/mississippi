@@ -39,7 +39,8 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 ///     </para>
 /// </remarks>
 [PendingSourceGenerator]
-internal abstract class CommandEffectBase<TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction> : IEffect
+internal abstract class
+    CommandEffectBase<TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction> : IEffect
     where TAction : IAction
     where TRequestDto : class
     where TExecutingAction : ICommandExecutingAction<TExecutingAction>
@@ -47,11 +48,12 @@ internal abstract class CommandEffectBase<TAction, TRequestDto, TExecutingAction
     where TFailedAction : ICommandFailedAction<TFailedAction>
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="CommandEffectBase{TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction}" /> class.
+    ///     Initializes a new instance of the
+    ///     <see cref="CommandEffectBase{TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction}" /> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client for API calls.</param>
     /// <param name="mapper">The mapper for action-to-DTO conversion.</param>
-    /// <param name="timeProvider">The time provider for timestamps. If null, uses <see cref="TimeProvider.System" />.</param>
+    /// <param name="timeProvider">The time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
     protected CommandEffectBase(
         HttpClient httpClient,
         IMapper<TAction, TRequestDto> mapper,
@@ -99,9 +101,7 @@ internal abstract class CommandEffectBase<TAction, TRequestDto, TExecutingAction
 
         string commandId = Guid.NewGuid().ToString("N");
         string commandType = typeof(TAction).Name;
-
         yield return TExecutingAction.Create(commandId, commandType, TimeProvider.GetUtcNow());
-
         OperationResultDto? result = null;
         string? errorMessage = null;
         try
@@ -138,13 +138,21 @@ internal abstract class CommandEffectBase<TAction, TRequestDto, TExecutingAction
 
         if (result is null)
         {
-            yield return TFailedAction.Create(commandId, "NoResponse", "No response from server.", TimeProvider.GetUtcNow());
+            yield return TFailedAction.Create(
+                commandId,
+                "NoResponse",
+                "No response from server.",
+                TimeProvider.GetUtcNow());
             yield break;
         }
 
         if (!result.Success)
         {
-            yield return TFailedAction.Create(commandId, result.ErrorCode ?? "Unknown", result.ErrorMessage ?? "Unknown error", TimeProvider.GetUtcNow());
+            yield return TFailedAction.Create(
+                commandId,
+                result.ErrorCode ?? "Unknown",
+                result.ErrorMessage ?? "Unknown error",
+                TimeProvider.GetUtcNow());
             yield break;
         }
 

@@ -14,12 +14,9 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 ///     Effect that handles withdrawing funds from a bank account.
 /// </summary>
 [PendingSourceGenerator]
-internal sealed class WithdrawFundsEffect : CommandEffectBase<
-    WithdrawFundsAction,
-    WithdrawFundsRequestDto,
-    WithdrawFundsExecutingAction,
-    WithdrawFundsSucceededAction,
-    WithdrawFundsFailedAction>
+internal sealed class WithdrawFundsEffect
+    : CommandEffectBase<WithdrawFundsAction, WithdrawFundsRequestDto, WithdrawFundsExecutingAction,
+        WithdrawFundsSucceededAction, WithdrawFundsFailedAction>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="WithdrawFundsEffect" /> class.
