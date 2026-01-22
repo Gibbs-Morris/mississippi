@@ -5,7 +5,7 @@
         <ImplicitUsings>false</ImplicitUsings>
         <IsRoslynComponent>true</IsRoslynComponent>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-        <Description>Source generators for Mississippi server applications. Generates API controllers and service registrations from projection definitions.</Description>
+        <Description>Source generators for Mississippi Orleans silo applications. Generates aggregate and projection service registrations from domain definitions.</Description>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />

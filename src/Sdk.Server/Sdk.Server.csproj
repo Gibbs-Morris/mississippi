@@ -1,8 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
     <PropertyGroup>
         <Description>Meta-package that references all Mississippi server libraries. Install this package in ASP.NET API applications that host projections and command endpoints.</Description>
     </PropertyGroup>
+
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+        <ProjectReference Include="..\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+        <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+        <ProjectReference Include="..\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
+        <ProjectReference Include="..\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
+        <ProjectReference Include="..\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
+        <ProjectReference Include="..\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+        <ProjectReference Include="..\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
+        <ProjectReference Include="..\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
+        <ProjectReference Include="..\Sdk.Server.Generators\Sdk.Server.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
 </Project>

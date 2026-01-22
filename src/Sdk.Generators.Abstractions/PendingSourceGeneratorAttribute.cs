@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Common.Abstractions.Attributes;
+namespace Mississippi.Sdk.Generators.Abstractions;
 
 /// <summary>
 ///     Marks a manually implemented type or member as a candidate for future

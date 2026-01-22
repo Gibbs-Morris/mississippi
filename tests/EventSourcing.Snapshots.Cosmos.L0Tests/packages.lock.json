@@ -677,7 +677,8 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
-          "Microsoft.Orleans.Sdk": "[10.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Common.Cosmos": {
@@ -722,6 +723,9 @@
           "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
+      },
+      "Mississippi.Sdk.Generators.Abstractions": {
+        "type": "Project"
       },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",

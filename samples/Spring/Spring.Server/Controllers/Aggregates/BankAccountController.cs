@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Api;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Commands;

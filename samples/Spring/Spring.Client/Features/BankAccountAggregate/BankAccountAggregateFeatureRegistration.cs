@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Reservoir;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Dtos;

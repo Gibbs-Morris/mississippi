@@ -60,6 +60,10 @@
     <Project Path="src\Sdk.Silo\Sdk.Silo.csproj" />
     <Project Path="src\Sdk.Client.Generators\Sdk.Client.Generators.csproj" />
     <Project Path="src\Sdk.Server.Generators\Sdk.Server.Generators.csproj" />
+    <Project Path="src\Sdk.Silo.Generators\Sdk.Silo.Generators.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Sdk.Generators.Abstractions/Sdk.Generators.Abstractions.csproj" />
   </Folder>
   <Folder Name="/Tests/" />
 

@@ -1,23 +1,24 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Reducers;
 using Mississippi.EventSourcing.Snapshots;
+using Mississippi.Sdk.Generators.Abstractions;
 
+using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Commands;
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Aggregates.BankAccount.Handlers;
 using Spring.Domain.Aggregates.BankAccount.Reducers;
 
 
-namespace Spring.Domain.Aggregates.BankAccount;
+namespace Spring.Silo.Registrations;
 
 /// <summary>
 ///     Extension methods for registering bank account aggregate services.
 /// </summary>
 [PendingSourceGenerator]
-public static class BankAccountRegistrations
+public static class BankAccountAggregateRegistrations
 {
     /// <summary>
     ///     Adds the bank account aggregate services to the service collection.
