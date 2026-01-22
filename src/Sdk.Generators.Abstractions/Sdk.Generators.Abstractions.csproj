@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Lightweight abstractions containing attributes and marker types for Mississippi source generators. Reference this package to annotate types for code generation without taking dependencies on generator implementations.</Description>
+    </PropertyGroup>
+
+</Project>

@@ -236,7 +236,8 @@
       "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.Aggregates": {
@@ -372,6 +373,9 @@
         "type": "Project"
       },
       "Mississippi.Reservoir.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Sdk.Generators.Abstractions": {
         "type": "Project"
       },
       "CloudNative.CloudEvents": {

@@ -1,4 +1,4 @@
-using Mississippi.Common.Abstractions.Attributes;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.State;

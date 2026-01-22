@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.EventSourcing.Reducers;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.UxProjections;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Projections.BankAccountBalance;

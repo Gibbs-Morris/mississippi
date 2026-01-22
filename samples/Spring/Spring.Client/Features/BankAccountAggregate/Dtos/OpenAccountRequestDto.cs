@@ -1,4 +1,4 @@
-using Mississippi.Common.Abstractions.Attributes;
+using Mississippi.Sdk.Generators.Abstractions;
 
 
 namespace Spring.Client.Features.BankAccountAggregate.Dtos;

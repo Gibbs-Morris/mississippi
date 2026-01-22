@@ -27,6 +27,7 @@
     <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj" />
     <ProjectReference Include="..\Spring.Client\Spring.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Sdk.Server\Sdk.Server.csproj" />
+    <ProjectReference Include="..\..\..\src\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

@@ -703,6 +703,9 @@
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Sdk.Generators.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Sdk.Silo": {
         "type": "Project",
         "dependencies": {

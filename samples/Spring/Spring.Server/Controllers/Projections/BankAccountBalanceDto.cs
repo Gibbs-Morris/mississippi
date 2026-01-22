@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-using Mississippi.Common.Abstractions.Attributes;
+using Mississippi.Sdk.Generators.Abstractions;
 
 
 namespace Spring.Server.Controllers.Projections;

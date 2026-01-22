@@ -1,5 +1,5 @@
-using Mississippi.Common.Abstractions.Attributes;
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 
 namespace Spring.Client.Features.BankAccountAggregate.Actions;

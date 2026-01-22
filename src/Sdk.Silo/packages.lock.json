@@ -548,7 +548,8 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
-          "Microsoft.Orleans.Sdk": "[10.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Common.Cosmos": {
@@ -718,6 +719,9 @@
         "type": "Project"
       },
       "Mississippi.Reservoir.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Sdk.Generators.Abstractions": {
         "type": "Project"
       },
       "Azure.Storage.Blobs": {

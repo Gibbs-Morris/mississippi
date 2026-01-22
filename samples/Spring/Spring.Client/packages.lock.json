@@ -622,6 +622,9 @@
           "Mississippi.Reservoir.Blazor": "[1.0.0, )"
         }
       },
+      "Mississippi.Sdk.Generators.Abstractions": {
+        "type": "Project"
+      },
       "Microsoft.AspNetCore.Components": {
         "type": "CentralTransitive",
         "requested": "[10.0.2, )",

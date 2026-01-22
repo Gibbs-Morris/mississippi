@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Sdk.Client\Sdk.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
