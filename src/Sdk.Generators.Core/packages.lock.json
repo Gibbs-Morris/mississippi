@@ -164,12 +164,6 @@
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
         }
-      },
-      "Mississippi.Sdk.Generators.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.Sdk.Generators.Core": {
-        "type": "Project"
       }
     }
   }

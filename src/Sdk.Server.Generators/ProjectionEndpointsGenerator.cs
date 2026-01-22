@@ -1,0 +1,591 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
+
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+
+using Mississippi.Sdk.Generators.Core.Analysis;
+using Mississippi.Sdk.Generators.Core.Emit;
+
+
+namespace Mississippi.Sdk.Server.Generators;
+
+/// <summary>
+///     Generates server-side code for projections marked with [GenerateProjectionEndpoints].
+/// </summary>
+/// <remarks>
+///     <para>This generator produces:</para>
+///     <list type="bullet">
+///         <item>DTO record with mapped properties.</item>
+///         <item>Mapper implementing IMapper&lt;TProjection, TDto&gt;.</item>
+///         <item>Mapper registration extension method.</item>
+///         <item>Controller inheriting from UxProjectionControllerBase.</item>
+///     </list>
+///     <para>
+///         The generator scans both the current compilation and referenced assemblies
+///         to find projection types decorated with [GenerateProjectionEndpoints].
+///     </para>
+/// </remarks>
+[Generator(LanguageNames.CSharp)]
+public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
+{
+    private const string GenerateProjectionEndpointsAttributeFullName =
+        "Mississippi.Sdk.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
+
+    private const string ProjectionPathAttributeFullName =
+        "Mississippi.Inlet.Projection.Abstractions.ProjectionPathAttribute";
+
+    /// <summary>
+    ///     Initializes the generator pipeline.
+    /// </summary>
+    /// <param name="context">The initialization context.</param>
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        // Use the compilation provider to scan both current and referenced types
+        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider =
+            context.CompilationProvider.Select((compilation, _) =>
+                GetProjectionsFromCompilation(compilation));
+
+        // Register source output
+        context.RegisterSourceOutput(
+            projectionsProvider,
+            static (spc, projections) =>
+            {
+                foreach (ProjectionInfo projection in projections)
+                {
+                    GenerateCode(spc, projection);
+                }
+            });
+    }
+
+    /// <summary>
+    ///     Gets projection information from the compilation, including referenced assemblies.
+    /// </summary>
+    private static List<ProjectionInfo> GetProjectionsFromCompilation(
+        Compilation compilation
+    )
+    {
+        List<ProjectionInfo> projections = new List<ProjectionInfo>();
+
+        // Get the attribute symbols
+        INamedTypeSymbol? generateAttrSymbol =
+            compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+        INamedTypeSymbol? projectionPathAttrSymbol =
+            compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
+
+        if (generateAttrSymbol is null || projectionPathAttrSymbol is null)
+        {
+            return projections;
+        }
+
+        // Scan all assemblies referenced by this compilation
+        foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
+        {
+            FindProjectionsInNamespace(
+                referencedAssembly.GlobalNamespace,
+                generateAttrSymbol,
+                projectionPathAttrSymbol,
+                projections);
+        }
+
+        return projections;
+    }
+
+    /// <summary>
+    ///     Gets all referenced assemblies from the compilation.
+    /// </summary>
+    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
+        Compilation compilation
+    )
+    {
+        // Include the current assembly
+        yield return compilation.Assembly;
+
+        // Include all referenced assemblies
+        foreach (MetadataReference reference in compilation.References)
+        {
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
+            {
+                yield return assemblySymbol;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Recursively finds projections in a namespace.
+    /// </summary>
+    private static void FindProjectionsInNamespace(
+        INamespaceSymbol namespaceSymbol,
+        INamedTypeSymbol generateAttrSymbol,
+        INamedTypeSymbol projectionPathAttrSymbol,
+        List<ProjectionInfo> projections
+    )
+    {
+        // Check types in this namespace
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        {
+            ProjectionInfo? info = TryGetProjectionInfo(
+                typeSymbol, generateAttrSymbol, projectionPathAttrSymbol);
+            if (info is not null)
+            {
+                projections.Add(info);
+            }
+        }
+
+        // Recurse into nested namespaces
+        foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
+        {
+            FindProjectionsInNamespace(childNs, generateAttrSymbol, projectionPathAttrSymbol, projections);
+        }
+    }
+
+    /// <summary>
+    ///     Tries to get projection info from a type symbol.
+    /// </summary>
+    private static ProjectionInfo? TryGetProjectionInfo(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol generateAttrSymbol,
+        INamedTypeSymbol projectionPathAttrSymbol
+    )
+    {
+        // Check for [GenerateProjectionEndpoints] attribute
+        bool hasGenerateAttribute = typeSymbol.GetAttributes()
+            .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
+
+        if (!hasGenerateAttribute)
+        {
+            return null;
+        }
+
+        // Check for [ProjectionPath] attribute and get path
+        AttributeData? projectionPathAttr = typeSymbol.GetAttributes()
+            .FirstOrDefault(attr =>
+                SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol));
+
+        if (projectionPathAttr is null)
+        {
+            return null;
+        }
+
+        // Get the path from constructor argument
+        string? projectionPath = projectionPathAttr.ConstructorArguments
+            .FirstOrDefault()
+            .Value?.ToString();
+
+        if (string.IsNullOrEmpty(projectionPath))
+        {
+            return null;
+        }
+
+        // Create projection model
+        ProjectionModel model = new ProjectionModel(typeSymbol, projectionPath!);
+
+        // Determine output namespace (replace Domain with Server, add Controllers.Projections)
+        string outputNamespace = DeriveOutputNamespace(model.Namespace);
+
+        return new ProjectionInfo(model, outputNamespace);
+    }
+
+    /// <summary>
+    ///     Derives the output namespace from the projection namespace.
+    /// </summary>
+    private static string DeriveOutputNamespace(
+        string projectionNamespace
+    )
+    {
+        // Convert e.g. "Spring.Domain.Projections.BankAccountBalance"
+        // to "Spring.Server.Controllers.Projections"
+        // This is a simplified derivation - in practice the consuming project defines this
+        string[] parts = projectionNamespace.Split('.');
+        if (parts.Length >= 2)
+        {
+            // Replace "Domain" with "Server.Controllers" if present
+            int domainIndex = System.Array.FindIndex(parts, p => p == "Domain");
+            if (domainIndex >= 0)
+            {
+                string[] serverPath = { "Server", "Controllers", "Projections" };
+                return string.Join(
+                    ".",
+                    parts.Take(domainIndex)
+                         .Concat(serverPath));
+            }
+        }
+
+        // Fallback: append Controllers.Projections
+        return projectionNamespace + ".Controllers.Projections";
+    }
+
+    /// <summary>
+    ///     Generates all code for a projection.
+    /// </summary>
+    private static void GenerateCode(
+        SourceProductionContext context,
+        ProjectionInfo projection
+    )
+    {
+        // Generate DTO
+        string dtoSource = GenerateDto(projection);
+        context.AddSource(
+            $"{projection.Model.DtoTypeName}.g.cs",
+            SourceText.From(dtoSource, Encoding.UTF8));
+
+        // Generate Mapper
+        string mapperSource = GenerateMapper(projection);
+        context.AddSource(
+            $"{GetMapperTypeName(projection)}.g.cs",
+            SourceText.From(mapperSource, Encoding.UTF8));
+
+        // Generate Mapper Registrations
+        string registrationsSource = GenerateMapperRegistrations(projection);
+        context.AddSource(
+            $"{GetRegistrationsTypeName(projection)}.g.cs",
+            SourceText.From(registrationsSource, Encoding.UTF8));
+
+        // Generate Controller
+        string controllerSource = GenerateController(projection);
+        context.AddSource(
+            $"{GetControllerTypeName(projection)}.g.cs",
+            SourceText.From(controllerSource, Encoding.UTF8));
+    }
+
+    /// <summary>
+    ///     Generates the DTO record.
+    /// </summary>
+    private static string GenerateDto(
+        ProjectionInfo projection
+    )
+    {
+        SourceBuilder sb = new SourceBuilder();
+        sb.AppendAutoGeneratedHeader();
+        sb.AppendUsing("System.Text.Json.Serialization");
+        sb.AppendFileScopedNamespace(projection.OutputNamespace);
+        sb.AppendLine();
+
+        sb.AppendSummary($"Response DTO for the {projection.Model.TypeName}.");
+        sb.AppendGeneratedCodeAttribute("ProjectionEndpointsGenerator");
+        sb.AppendLine($"public sealed record {projection.Model.DtoTypeName}");
+        sb.OpenBrace();
+
+        foreach (PropertyModel prop in projection.Model.Properties)
+        {
+            sb.AppendSummary($"Gets the {prop.Name} value.");
+            sb.AppendLine("[JsonRequired]");
+            sb.AppendLine($"public required {prop.DtoTypeName} {prop.Name} {{ get; init; }}");
+            sb.AppendLine();
+        }
+
+        sb.CloseBrace();
+        return sb.ToString();
+    }
+
+    /// <summary>
+    ///     Generates the mapper class.
+    /// </summary>
+    private static string GenerateMapper(
+        ProjectionInfo projection
+    )
+    {
+        SourceBuilder sb = new SourceBuilder();
+        sb.AppendAutoGeneratedHeader();
+        sb.AppendUsing("System");
+        sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
+        sb.AppendUsing(projection.Model.Namespace);
+        sb.AppendFileScopedNamespace(projection.OutputNamespace + ".Mappers");
+        sb.AppendLine();
+
+        string mapperName = GetMapperTypeName(projection);
+        sb.AppendSummary($"Maps {projection.Model.TypeName} to {projection.Model.DtoTypeName}.");
+        sb.AppendGeneratedCodeAttribute("ProjectionEndpointsGenerator");
+        sb.AppendLine(
+            $"internal sealed class {mapperName} : IMapper<{projection.Model.TypeName}, {projection.Model.DtoTypeName}>");
+        sb.OpenBrace();
+
+        // Constructor with injected mappers for nested types
+        if (projection.Model.HasMappedProperties)
+        {
+            GenerateMapperConstructor(sb, projection);
+            sb.AppendLine();
+        }
+
+        // Map method
+        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine($"public {projection.Model.DtoTypeName} Map(");
+        sb.IncreaseIndent();
+        sb.AppendLine($"{projection.Model.TypeName} source");
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.OpenBrace();
+
+        sb.AppendLine("ArgumentNullException.ThrowIfNull(source);");
+        sb.AppendLine("return new()");
+        sb.OpenBrace();
+
+        for (int i = 0; i < projection.Model.Properties.Length; i++)
+        {
+            PropertyModel prop = projection.Model.Properties[i];
+            string comma = i < projection.Model.Properties.Length - 1 ? "," : string.Empty;
+
+            if (prop.RequiresEnumerableMapper)
+            {
+                // Collection with custom element type
+                sb.AppendLine($"{prop.Name} = {prop.Name}Mapper.Map(source.{prop.Name}).ToList(){comma}");
+            }
+            else if (prop.RequiresMapper)
+            {
+                // Single custom type
+                sb.AppendLine($"{prop.Name} = {prop.Name}Mapper.Map(source.{prop.Name}){comma}");
+            }
+            else
+            {
+                // Direct assignment
+                sb.AppendLine($"{prop.Name} = source.{prop.Name}{comma}");
+            }
+        }
+
+        sb.CloseBrace();
+        sb.AppendLine(";");
+        sb.CloseBrace();
+
+        sb.CloseBrace();
+        return sb.ToString();
+    }
+
+    /// <summary>
+    ///     Generates constructor for mapper with injected dependencies.
+    /// </summary>
+    private static void GenerateMapperConstructor(
+        SourceBuilder sb,
+        ProjectionInfo projection
+    )
+    {
+        sb.AppendSummary($"Initializes a new instance of the {GetMapperTypeName(projection)} class.");
+
+        ImmutableArray<PropertyModel> mappedProps = projection.Model.Properties
+            .Where(p => p.RequiresMapper)
+            .ToImmutableArray();
+
+        // Properties for injected mappers
+        foreach (PropertyModel prop in mappedProps)
+        {
+            if (prop.RequiresEnumerableMapper)
+            {
+                sb.AppendLine(
+                    $"private IEnumerableMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}> {prop.Name}Mapper {{ get; }}");
+            }
+            else
+            {
+                sb.AppendLine(
+                    $"private IMapper<{prop.SourceTypeName}, {prop.DtoTypeName}> {prop.Name}Mapper {{ get; }}");
+            }
+        }
+
+        sb.AppendLine();
+        sb.Append($"public {GetMapperTypeName(projection)}(");
+        sb.AppendLine();
+        sb.IncreaseIndent();
+
+        for (int i = 0; i < mappedProps.Length; i++)
+        {
+            PropertyModel prop = mappedProps[i];
+            string comma = i < mappedProps.Length - 1 ? "," : string.Empty;
+
+            string paramName = ToCamelCase(prop.Name) + "Mapper";
+            if (prop.RequiresEnumerableMapper)
+            {
+                sb.AppendLine(
+                    $"IEnumerableMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}> {paramName}{comma}");
+            }
+            else
+            {
+                sb.AppendLine($"IMapper<{prop.SourceTypeName}, {prop.DtoTypeName}> {paramName}{comma}");
+            }
+        }
+
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.OpenBrace();
+
+        for (int j = 0; j < mappedProps.Length; j++)
+        {
+            PropertyModel prop = mappedProps[j];
+            string paramName = ToCamelCase(prop.Name) + "Mapper";
+            sb.AppendLine($"{prop.Name}Mapper = {paramName};");
+        }
+
+        sb.CloseBrace();
+    }
+
+    /// <summary>
+    ///     Generates the mapper registration extension.
+    /// </summary>
+    private static string GenerateMapperRegistrations(
+        ProjectionInfo projection
+    )
+    {
+        SourceBuilder sb = new SourceBuilder();
+        sb.AppendAutoGeneratedHeader();
+        sb.AppendUsing("Microsoft.Extensions.DependencyInjection");
+        sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
+        sb.AppendUsing(projection.Model.Namespace);
+        sb.AppendFileScopedNamespace(projection.OutputNamespace + ".Mappers");
+        sb.AppendLine();
+
+        string registrationsName = GetRegistrationsTypeName(projection);
+        string baseName = projection.Model.TypeName.Replace("Projection", string.Empty);
+
+        sb.AppendSummary($"Service registration for {baseName} projection mappers.");
+        sb.AppendGeneratedCodeAttribute("ProjectionEndpointsGenerator");
+        sb.AppendLine($"internal static class {registrationsName}");
+        sb.OpenBrace();
+
+        sb.AppendSummary($"Adds {baseName} projection mappers to the service collection.");
+        sb.AppendLine("/// <param name=\"services\">The service collection.</param>");
+        sb.AppendLine("/// <returns>The service collection for chaining.</returns>");
+        sb.AppendLine($"public static IServiceCollection Add{baseName}ProjectionMappers(");
+        sb.IncreaseIndent();
+        sb.AppendLine("this IServiceCollection services");
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.OpenBrace();
+
+        sb.AppendLine(
+            $"services.AddMapper<{projection.Model.TypeName}, {projection.Model.DtoTypeName}, {GetMapperTypeName(projection)}>();");
+        sb.AppendLine("return services;");
+
+        sb.CloseBrace();
+        sb.CloseBrace();
+        return sb.ToString();
+    }
+
+    /// <summary>
+    ///     Generates the controller class.
+    /// </summary>
+    private static string GenerateController(
+        ProjectionInfo projection
+    )
+    {
+        SourceBuilder sb = new SourceBuilder();
+        sb.AppendAutoGeneratedHeader();
+        sb.AppendUsing("Microsoft.AspNetCore.Mvc");
+        sb.AppendUsing("Microsoft.Extensions.Logging");
+        sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
+        sb.AppendUsing("Mississippi.EventSourcing.UxProjections.Abstractions");
+        sb.AppendUsing("Mississippi.EventSourcing.UxProjections.Api");
+        sb.AppendUsing(projection.Model.Namespace);
+        sb.AppendFileScopedNamespace(projection.OutputNamespace);
+        sb.AppendLine();
+
+        string controllerName = GetControllerTypeName(projection);
+        string baseName = projection.Model.TypeName.Replace("Projection", string.Empty);
+
+        sb.AppendSummary($"Controller for the {baseName} projection.");
+        sb.AppendGeneratedCodeAttribute("ProjectionEndpointsGenerator");
+        sb.AppendLine($"[Route(\"api/projections/{projection.Model.ProjectionPath}/{{entityId}}\")]");
+        sb.AppendLine($"public sealed partial class {controllerName}");
+        sb.IncreaseIndent();
+        sb.AppendLine($": UxProjectionControllerBase<{projection.Model.TypeName}, {projection.Model.DtoTypeName}>");
+        sb.DecreaseIndent();
+        sb.OpenBrace();
+
+        // Constructor
+        sb.AppendSummary($"Initializes a new instance of the {controllerName} class.");
+        sb.AppendLine("/// <param name=\"uxProjectionGrainFactory\">Factory for resolving UX projection grains.</param>");
+        sb.AppendLine("/// <param name=\"mapper\">Mapper for projection to DTO conversion.</param>");
+        sb.AppendLine("/// <param name=\"logger\">The logger for diagnostic output.</param>");
+        sb.AppendLine($"public {controllerName}(");
+        sb.IncreaseIndent();
+        sb.AppendLine("IUxProjectionGrainFactory uxProjectionGrainFactory,");
+        sb.AppendLine($"IMapper<{projection.Model.TypeName}, {projection.Model.DtoTypeName}> mapper,");
+        sb.AppendLine($"ILogger<{controllerName}> logger");
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.IncreaseIndent();
+        sb.AppendLine(": base(uxProjectionGrainFactory, mapper, logger)");
+        sb.DecreaseIndent();
+        sb.OpenBrace();
+        sb.CloseBrace();
+
+        sb.CloseBrace();
+        return sb.ToString();
+    }
+
+    /// <summary>
+    ///     Gets the mapper type name.
+    /// </summary>
+    private static string GetMapperTypeName(
+        ProjectionInfo projection
+    ) =>
+        projection.Model.TypeName + "Mapper";
+
+    /// <summary>
+    ///     Gets the registrations type name.
+    /// </summary>
+    private static string GetRegistrationsTypeName(
+        ProjectionInfo projection
+    )
+    {
+        string baseName = projection.Model.TypeName.Replace("Projection", string.Empty);
+        return baseName + "ProjectionMapperRegistrations";
+    }
+
+    /// <summary>
+    ///     Gets the controller type name.
+    /// </summary>
+    private static string GetControllerTypeName(
+        ProjectionInfo projection
+    )
+    {
+        string baseName = projection.Model.TypeName.Replace("Projection", string.Empty);
+        return baseName + "Controller";
+    }
+
+    /// <summary>
+    ///     Converts PascalCase to camelCase.
+    /// </summary>
+    private static string ToCamelCase(
+        string value
+    )
+    {
+        if (string.IsNullOrEmpty(value) || value.Length < 2)
+        {
+            return value;
+        }
+
+        return char.ToLowerInvariant(value[0]) + value.Substring(1);
+    }
+
+    /// <summary>
+    ///     Holds projection information for generation.
+    /// </summary>
+    private sealed class ProjectionInfo
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ProjectionInfo" /> class.
+        /// </summary>
+        /// <param name="model">The projection model.</param>
+        /// <param name="outputNamespace">The output namespace for generated code.</param>
+        public ProjectionInfo(
+            ProjectionModel model,
+            string outputNamespace
+        )
+        {
+            Model = model;
+            OutputNamespace = outputNamespace;
+        }
+
+        /// <summary>
+        ///     Gets the projection model.
+        /// </summary>
+        public ProjectionModel Model { get; }
+
+        /// <summary>
+        ///     Gets the output namespace.
+        /// </summary>
+        public string OutputNamespace { get; }
+    }
+}

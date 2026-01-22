@@ -462,10 +462,14 @@
       "Mississippi.Sdk.Generators.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Sdk.Generators.Core": {
+        "type": "Project"
+      },
       "Mississippi.Sdk.Server.Generators": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )",
+          "Mississippi.Sdk.Generators.Core": "[1.0.0, )"
         }
       },
       "Microsoft.CodeAnalysis.CSharp": {

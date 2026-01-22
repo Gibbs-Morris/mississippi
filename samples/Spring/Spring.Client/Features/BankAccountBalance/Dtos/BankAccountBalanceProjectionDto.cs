@@ -1,3 +1,8 @@
+// NOTE: This file is commented out for testing purposes.
+// The generator now produces this DTO automatically via Sdk.Client.Generators.
+// Compare the generated output with this manual version to verify correctness.
+
+/*
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Sdk.Generators.Abstractions;
 
@@ -36,3 +41,4 @@ public sealed record BankAccountBalanceProjectionDto
     /// </summary>
     public required bool IsOpen { get; init; }
 }
+*/

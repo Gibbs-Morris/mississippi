@@ -1,3 +1,5 @@
+// COMMENTED OUT FOR SOURCE GENERATOR TESTING
+#if false
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -45,3 +47,4 @@ public sealed class BankAccountBalanceController
     {
     }
 }
+#endif

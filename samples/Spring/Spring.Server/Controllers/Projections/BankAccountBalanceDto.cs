@@ -1,3 +1,5 @@
+// COMMENTED OUT FOR SOURCE GENERATOR TESTING
+#if false
 using System.Text.Json.Serialization;
 
 using Mississippi.Sdk.Generators.Abstractions;
@@ -29,3 +31,4 @@ public sealed record BankAccountBalanceDto
     [JsonRequired]
     public required bool IsOpen { get; init; }
 }
+#endif

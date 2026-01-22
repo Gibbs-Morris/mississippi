@@ -1,3 +1,5 @@
+// COMMENTED OUT FOR SOURCE GENERATOR TESTING
+#if false
 using System;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -28,3 +30,4 @@ internal sealed class BankAccountBalanceProjectionMapper : IMapper<BankAccountBa
         };
     }
 }
+#endif

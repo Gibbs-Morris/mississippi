@@ -1,3 +1,5 @@
+// COMMENTED OUT FOR SOURCE GENERATOR TESTING
+#if false
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -27,3 +29,4 @@ internal static class BankAccountBalanceProjectionMapperRegistrations
         return services;
     }
 }
+#endif

@@ -167,6 +167,9 @@
       },
       "Mississippi.Sdk.Generators.Abstractions": {
         "type": "Project"
+      },
+      "Mississippi.Sdk.Generators.Core": {
+        "type": "Project"
       }
     }
   }

@@ -732,7 +732,8 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "Azure.Storage.Blobs": {

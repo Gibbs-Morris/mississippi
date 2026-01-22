@@ -694,7 +694,8 @@
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.2, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.2, )",
           "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.102, )",
-          "Mississippi.Sdk.Client": "[1.0.0, )"
+          "Mississippi.Sdk.Client": "[1.0.0, )",
+          "Spring.Domain": "[1.0.0, )"
         }
       },
       "spring.domain": {
@@ -706,7 +707,8 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "CloudNative.CloudEvents": {
