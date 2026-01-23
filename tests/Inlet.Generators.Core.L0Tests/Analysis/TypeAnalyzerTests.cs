@@ -13,7 +13,7 @@ using NSubstitute;
 namespace Mississippi.Inlet.Generators.Core.L0Tests.Analysis;
 
 /// <summary>
-///     Tests for <see cref="Sdk.Generators.Core.Analysis.TypeAnalyzer" /> type analysis utilities.
+///     Tests for <see cref="TypeAnalyzer" /> type analysis utilities.
 /// </summary>
 [AllureParentSuite("SDK")]
 [AllureSuite("Generators Core")]
