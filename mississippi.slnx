@@ -40,6 +40,11 @@
     <Project Path="src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
     <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
   </Folder>
+  <Folder Name="/Framework/Refraction/">
+    <Project Path="src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
+    <Project Path="src\Refraction\Refraction.csproj" />
+    <Project Path="src\Refraction.Pages\Refraction.Pages.csproj" />
+  </Folder>
   <Folder Name="/Framework/Reservoir/">
     <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
     <Project Path="src\Reservoir\Reservoir.csproj" />
@@ -111,6 +116,11 @@
     <Project Path="tests\EventSourcing.UxProjections.Abstractions.L0Tests\EventSourcing.UxProjections.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
+  </Folder>
+  <Folder Name="/Tests/Refraction/">
+    <Project Path="tests\Refraction.Abstractions.L0Tests\Refraction.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Refraction.L0Tests\Refraction.L0Tests.csproj" />
+    <Project Path="tests\Refraction.Pages.L0Tests\Refraction.Pages.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Reservoir/">
     <Project Path="tests\Reservoir.Abstractions.L0Tests\Reservoir.Abstractions.L0Tests.csproj" />

@@ -1,0 +1,14 @@
+@* NotificationPulse - non-intrusive alert indicator (state-down, events-up) *@
+
+<div class="rf-notification-pulse"
+     data-state="@State"
+     tabindex="0"
+     role="@RefractionAriaRoles.Status"
+     @onclick="HandleClickAsync"
+     @attributes="AdditionalAttributes">
+    <span class="rf-notification-pulse__dot"></span>
+    @if (ChildContent is not null)
+    {
+        <span class="rf-notification-pulse__content">@ChildContent</span>
+    }
+</div>

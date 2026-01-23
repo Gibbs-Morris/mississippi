@@ -1,0 +1,23 @@
+.rf-progress-arc {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+}
+
+.rf-progress-arc__svg {
+    width: 100%;
+    height: 100%;
+}
+
+.rf-progress-arc__track {
+    fill: none;
+    stroke: var(--rf-color-surface-glass);
+    stroke-width: 2;
+}
+
+.rf-progress-arc__fill {
+    fill: none;
+    stroke: var(--rf-color-action-primary);
+    stroke-width: 2;
+    stroke-linecap: round;
+}

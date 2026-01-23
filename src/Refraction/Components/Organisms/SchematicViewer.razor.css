@@ -1,0 +1,23 @@
+.rf-schematic-viewer {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    background-color: var(--rf-color-surface-void);
+    border: var(--rf-raw-stroke-hairline) solid var(--rf-color-text-muted);
+}
+
+.rf-schematic-viewer__viewport {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+}
+
+.rf-schematic-viewer__caption {
+    padding: var(--rf-raw-space-2) var(--rf-raw-space-3);
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-xs);
+    color: var(--rf-color-text-muted);
+    text-align: center;
+    border-top: var(--rf-raw-stroke-hairline) solid var(--rf-color-text-muted);
+}

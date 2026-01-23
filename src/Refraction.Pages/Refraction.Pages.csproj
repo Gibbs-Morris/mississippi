@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <!--
+        Blazor-specific warning overrides:
+        - BL0005: Allow setting component parameters outside of component (advanced composition patterns)
+        - BL0006: Allow RenderTreeBuilder usage for performance-critical rendering
+        These are justified for scene-level compositions that coordinate complex component hierarchies.
+    -->
+    <PropertyGroup>
+        <NoWarn>$(NoWarn);BL0005;BL0006</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Refraction\Refraction.csproj" />
+        <ProjectReference Include="..\Refraction.Abstractions\Refraction.Abstractions.csproj" />
+        <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
+    </ItemGroup>
+
+</Project>
