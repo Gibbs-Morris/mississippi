@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 title: Aqueduct
 description: High-level overview of the Orleans-backed SignalR backplane.
 ---

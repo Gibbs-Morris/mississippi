@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 title: UX Projections
 description: High-level overview of composable UX projections for read-optimized state.
 ---
