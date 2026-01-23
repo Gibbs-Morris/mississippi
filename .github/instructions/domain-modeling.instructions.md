@@ -53,7 +53,7 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 - `[BrookName]` **MUST** use format `("APPNAME", "MODULENAME", "NAME")` with uppercase alphanumeric values only. Why: Attribute validates at runtime.
 - `[EventStorageName]` and `[SnapshotStorageName]` **MUST** use format `("APPNAME", "MODULENAME", "NAME", version: n)` with version defaulting to 1; storage names **MUST NOT** change once persisted. Why: Enables safe refactoring while maintaining storage compatibility.
-- `[Alias]` values **MUST** match the fully qualified type name (e.g., `[Alias("Cascade.Domain.Channel.Events.ChannelCreated")]`). Why: Provides stable Orleans serialization identity across refactoring.
+- `[Alias]` values **MUST** match the fully qualified type name (e.g., `[Alias("Spring.Domain.Channel.Events.ChannelCreated")]`). Why: Provides stable Orleans serialization identity across refactoring.
 
 ### Registration
 
