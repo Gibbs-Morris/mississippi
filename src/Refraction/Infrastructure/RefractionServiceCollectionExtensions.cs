@@ -33,8 +33,5 @@ public static class RefractionServiceCollectionExtensions
     public static IServiceCollection AddRefraction(
         this IServiceCollection services
     ) =>
-        // Refraction is a pure component library - components receive all data via parameters.
-        // This extension point exists for future services (theming, focus management, etc.)
-        // that will be added via Refraction.Abstractions implementations.
         services;
 }

@@ -20,6 +20,5 @@ public static class RefractionPagesServiceCollectionExtensions
     public static IServiceCollection AddRefractionPages(
         this IServiceCollection services
     ) =>
-        // Future: register scene-level services, navigation coordinators, etc.
         services;
 }
