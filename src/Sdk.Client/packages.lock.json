@@ -503,6 +503,9 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Inlet.Generators.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
@@ -522,9 +525,6 @@
           "Microsoft.AspNetCore.Components": "[10.0.2, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
-      },
-      "Mississippi.Sdk.Generators.Abstractions": {
-        "type": "Project"
       },
       "Microsoft.AspNetCore.Components": {
         "type": "CentralTransitive",

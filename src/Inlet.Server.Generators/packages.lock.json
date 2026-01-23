@@ -149,10 +149,10 @@
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
         }
       },
-      "Mississippi.Sdk.Generators.Abstractions": {
+      "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Sdk.Generators.Core": {
+      "Mississippi.Inlet.Generators.Core": {
         "type": "Project"
       },
       "Microsoft.CodeAnalysis.Common": {

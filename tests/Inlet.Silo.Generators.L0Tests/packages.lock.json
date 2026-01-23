@@ -454,13 +454,13 @@
           "xunit.abstractions": "2.0.3"
         }
       },
-      "Mississippi.Sdk.Generators.Abstractions": {
+      "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Sdk.Silo.Generators": {
+      "Mississippi.Inlet.Silo.Generators": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "Newtonsoft.Json": {

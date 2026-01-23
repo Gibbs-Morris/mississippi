@@ -454,17 +454,13 @@
           "xunit.abstractions": "2.0.3"
         }
       },
-      "Mississippi.Sdk.Client.Generators": {
+      "Mississippi.Inlet.Client.Generators": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )",
-          "Mississippi.Sdk.Generators.Core": "[1.0.0, )"
+          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Sdk.Generators.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.Sdk.Generators.Core": {
+      "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
       "Newtonsoft.Json": {
