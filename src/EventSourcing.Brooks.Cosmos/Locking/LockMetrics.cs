@@ -124,7 +124,7 @@ internal static class LockMetrics
         string lockKey
     )
     {
-        // Lock keys are typically brook keys like "CASCADE|CHAT|CONVERSATION|demo-conversation"
+        // Lock keys are typically brook keys like "MYAPP|CHAT|CONVERSATION|demo-conversation"
         // Extract just the brook name portion for cardinality control
         int lastPipeIndex = lockKey.LastIndexOf('|');
         return lastPipeIndex > 0 ? lockKey[..lastPipeIndex] : lockKey;

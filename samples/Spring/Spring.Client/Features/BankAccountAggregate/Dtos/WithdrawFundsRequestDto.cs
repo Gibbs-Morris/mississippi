@@ -1,5 +1,5 @@
 #if false // Replaced by CommandClientDtoGenerator - keep for reference
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 
 namespace Spring.Client.Features.BankAccountAggregate.Dtos;

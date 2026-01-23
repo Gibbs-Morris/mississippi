@@ -22,7 +22,7 @@ public interface IProjectionDtoRegistry
     /// <summary>
     ///     Gets the DTO type for the specified path.
     /// </summary>
-    /// <param name="path">The projection path (e.g., "cascade/channels").</param>
+    /// <param name="path">The projection path (e.g., "chat/channels").</param>
     /// <returns>The DTO type if registered; otherwise, <c>null</c>.</returns>
     Type? GetDtoType(
         string path

@@ -63,16 +63,16 @@
     <Project Path="src\Sdk.Client\Sdk.Client.csproj" />
     <Project Path="src\Sdk.Server\Sdk.Server.csproj" />
     <Project Path="src\Sdk.Silo\Sdk.Silo.csproj" />
-    <Project Path="src\Sdk.Client.Generators\Sdk.Client.Generators.csproj" />
-    <Project Path="src\Sdk.Server.Generators\Sdk.Server.Generators.csproj" />
-    <Project Path="src\Sdk.Silo.Generators\Sdk.Silo.Generators.csproj" />
-    <Project Path="src\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
-    <Project Path="src\Sdk.Generators.Core\Sdk.Generators.Core.csproj" />
+    <Project Path="src\Inlet.Client.Generators\Inlet.Client.Generators.csproj" />
+    <Project Path="src\Inlet.Server.Generators\Inlet.Server.Generators.csproj" />
+    <Project Path="src\Inlet.Silo.Generators\Inlet.Silo.Generators.csproj" />
+    <Project Path="src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
+    <Project Path="src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" />
   </Folder>
   <Folder Name="/src/" />
   <Folder Name="/Tests/">
-    <Project Path="tests/Sdk.Generators.Core.L0Tests/Sdk.Generators.Core.L0Tests.csproj" />
-    <Project Path="tests/Sdk.Silo.Generators.L0Tests/Sdk.Silo.Generators.L0Tests.csproj" />
+    <Project Path="tests/Inlet.Generators.Core.L0Tests/Inlet.Generators.Core.L0Tests.csproj" />
+    <Project Path="tests/Inlet.Silo.Generators.L0Tests/Inlet.Silo.Generators.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Tests/Core/">
@@ -139,8 +139,8 @@
     <Project Path="tests\Sdk.Client.L0Tests\Sdk.Client.L0Tests.csproj" />
     <Project Path="tests\Sdk.Server.L0Tests\Sdk.Server.L0Tests.csproj" />
     <Project Path="tests\Sdk.Silo.L0Tests\Sdk.Silo.L0Tests.csproj" />
-    <Project Path="tests\Sdk.Client.Generators.L0Tests\Sdk.Client.Generators.L0Tests.csproj" />
-    <Project Path="tests\Sdk.Server.Generators.L0Tests\Sdk.Server.Generators.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Client.Generators.L0Tests\Inlet.Client.Generators.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Server.Generators.L0Tests\Inlet.Server.Generators.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Workflows/">

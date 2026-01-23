@@ -16,7 +16,7 @@
 #if false
 using System.Text.Json.Serialization;
 
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 
 namespace Spring.Server.Controllers.Projections;

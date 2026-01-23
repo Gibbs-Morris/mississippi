@@ -482,6 +482,9 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Inlet.Generators.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Inlet.Orleans": {
         "type": "Project",
         "dependencies": {
@@ -507,9 +510,6 @@
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Sdk.Generators.Abstractions": {
-        "type": "Project"
-      },
       "Mississippi.Sdk.Server": {
         "type": "Project",
         "dependencies": {
@@ -520,8 +520,8 @@
           "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Api": "[1.0.0, )",
-          "Mississippi.Inlet.Orleans.SignalR": "[1.0.0, )",
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Orleans.SignalR": "[1.0.0, )"
         }
       },
       "CloudNative.CloudEvents": {

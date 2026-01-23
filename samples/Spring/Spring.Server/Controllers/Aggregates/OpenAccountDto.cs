@@ -1,12 +1,12 @@
 // NOTE: This file has been replaced by source generation.
-// The generated version is in: obj/{Configuration}/net10.0/generated/Mississippi.Sdk.Server.Generators/
-//     Mississippi.Sdk.Server.Generators.CommandServerDtoGenerator/OpenAccountDto.g.cs
+// The generated version is in: obj/{Configuration}/net10.0/generated/Mississippi.Inlet.Server.Generators/
+//     Mississippi.Inlet.Server.Generators.CommandServerDtoGenerator/OpenAccountDto.g.cs
 // Keeping this file commented out for reference during the generator development phase.
 
 #if false // Replaced by generated code
 using System.Text.Json.Serialization;
 
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 
 namespace Spring.Server.Controllers.Aggregates;

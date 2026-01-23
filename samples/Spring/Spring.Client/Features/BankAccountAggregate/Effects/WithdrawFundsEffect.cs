@@ -4,7 +4,7 @@ using System.Net.Http;
 
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Dtos;

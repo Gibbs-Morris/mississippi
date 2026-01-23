@@ -1,6 +1,6 @@
 #if false
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.State;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 
 namespace Spring.Client.Features.BankAccountAggregate.State;
