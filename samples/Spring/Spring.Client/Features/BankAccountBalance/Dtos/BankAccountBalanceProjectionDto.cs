@@ -3,7 +3,7 @@
 // HAND-CRAFTED REFERENCE IMPLEMENTATION
 // =============================================================================
 // This file contains the original hand-crafted version of this type, created
-// before source generation was automated via Sdk.Client.Generators.
+// before source generation was automated via Inlet.Client.Generators.
 //
 // Purpose:
 // - Serves as a reference implementation to validate generator output
@@ -14,7 +14,7 @@
 // to avoid duplicate type definitions but preserved for testing and documentation.
 // =============================================================================
 using Mississippi.Inlet.Projection.Abstractions;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 
 namespace Spring.Client.Features.BankAccountBalance.Dtos;

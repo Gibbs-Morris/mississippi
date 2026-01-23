@@ -1,0 +1,7 @@
+# Inlet.Generators.Core.L0Tests - local overrides to root .editorconfig
+
+[*.cs]
+# CA1307: xUnit Assert.Contains and Assert.StartsWith for strings do not have
+# StringComparison overloads. The analyzer incorrectly flags these as needing
+# culture-aware comparison. This is a false positive for xUnit test assertions.
+dotnet_diagnostic.CA1307.severity = none

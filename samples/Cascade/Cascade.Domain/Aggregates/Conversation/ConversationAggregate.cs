@@ -2,7 +2,7 @@ using System;
 using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 using Orleans;
 

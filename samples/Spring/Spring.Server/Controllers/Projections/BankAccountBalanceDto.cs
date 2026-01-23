@@ -2,7 +2,7 @@
 // HAND-CRAFTED REFERENCE IMPLEMENTATION
 // =============================================================================
 // This file contains the original hand-crafted version of this DTO, created
-// before source generation was automated via Sdk.Server.Generators.
+// before source generation was automated via Inlet.Server.Generators.
 //
 // Purpose:
 // - Serves as a reference implementation to validate generator output
@@ -16,7 +16,7 @@
 #if false
 using System.Text.Json.Serialization;
 
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 
 namespace Spring.Server.Controllers.Projections;

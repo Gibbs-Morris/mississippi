@@ -2,7 +2,7 @@
 // HAND-CRAFTED REFERENCE IMPLEMENTATION
 // =============================================================================
 // This file contains the original hand-crafted version of this mapper, created
-// before source generation was automated via Sdk.Server.Generators.
+// before source generation was automated via Inlet.Server.Generators.
 //
 // Purpose:
 // - Serves as a reference implementation to validate generator output
@@ -18,7 +18,7 @@
 using System;
 
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Domain.Projections.BankAccountBalance;
 

@@ -2,7 +2,7 @@
 // HAND-CRAFTED REFERENCE IMPLEMENTATION
 // =============================================================================
 // This file contains the original hand-crafted version of this registration,
-// created before source generation was automated via Sdk.Silo.Generators.
+// created before source generation was automated via Inlet.Silo.Generators.
 //
 // Purpose:
 // - Serves as a reference implementation to validate generator output
@@ -20,7 +20,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Reducers;
 using Mississippi.EventSourcing.Snapshots;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Commands;

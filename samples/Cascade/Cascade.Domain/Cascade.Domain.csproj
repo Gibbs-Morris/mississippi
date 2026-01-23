@@ -10,6 +10,6 @@
         <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
         <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
         <ProjectReference Include="..\..\..\src\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
-        <ProjectReference Include="..\..\..\src\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     </ItemGroup>
 </Project>
