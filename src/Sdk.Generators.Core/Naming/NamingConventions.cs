@@ -10,10 +10,15 @@ namespace Mississippi.Sdk.Generators.Core.Naming;
 public static class NamingConventions
 {
     private const string AggregatesSegment = ".Aggregates.";
+
     private const string ClientSegment = ".Client.";
+
     private const string CommandsSuffix = ".Commands";
+
     private const string DomainAggregatesSegment = ".Domain.Aggregates.";
+
     private const string DomainSegment = ".Domain.";
+
     private const string DomainSuffix = ".Domain";
 
     /// <summary>
