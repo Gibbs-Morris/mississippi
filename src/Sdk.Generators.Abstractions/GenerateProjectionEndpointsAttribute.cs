@@ -38,7 +38,7 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 ///     <code>
 ///         [ProjectionPath("bank-account-balance")]
 ///         [GenerateProjectionEndpoints]
-///         [BrookName("SPRING", "BANKING", "ACCOUNT")]
+///         [BrookName("CONTOSO", "BANKING", "ACCOUNT")]
 ///         public sealed record BankAccountBalanceProjection
 ///         {
 ///             public decimal Balance { get; init; }

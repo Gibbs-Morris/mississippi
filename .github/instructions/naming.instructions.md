@@ -44,7 +44,7 @@ All C# contributors.
 | Aggregate reducer | `Reducer` | `ChannelCreatedReducer` |
 | Projection state | `Projection` | `UserProfileProjection` |
 | Projection reducer | `ProjectionReducer` | `UserRegisteredProjectionReducer` |
-| Registration class | `Registrations` | `SpringRegistrations` |
+| Registration class | `Registrations` | `ContosoRegistrations` |
 | LoggerExtensions | `LoggerExtensions` | `BrookWriterGrainLoggerExtensions` |
 
 ## References

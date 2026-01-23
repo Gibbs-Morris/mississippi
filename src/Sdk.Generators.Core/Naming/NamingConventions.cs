@@ -25,7 +25,7 @@ public static class NamingConventions
     ///     Extracts the aggregate name from a domain command namespace.
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
     /// <returns>The aggregate name (e.g., "BankAccount"), or null if not in expected format.</returns>
     public static string? GetAggregateNameFromNamespace(
@@ -37,7 +37,7 @@ public static class NamingConventions
             return null;
         }
 
-        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → BankAccount
+        // Pattern: Contoso.Domain.Aggregates.BankAccount.Commands → BankAccount
         if (domainNamespace.Contains(DomainAggregatesSegment) &&
             domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
@@ -57,9 +57,9 @@ public static class NamingConventions
     ///     Converts a domain command namespace to a client Actions namespace.
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Actions").</returns>
+    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountAggregate.Actions").</returns>
     public static string GetClientActionsNamespace(
         string domainNamespace
     ) =>
@@ -69,9 +69,9 @@ public static class NamingConventions
     ///     Converts a domain command namespace to a client DTO namespace.
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Dtos").</returns>
+    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountAggregate.Dtos").</returns>
     /// <remarks>
     ///     <para>
     ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Client.Features.{Aggregate}Aggregate.Dtos".
@@ -87,7 +87,7 @@ public static class NamingConventions
             return domainNamespace;
         }
 
-        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Client.Features.BankAccountAggregate.Dtos
+        // Pattern: Contoso.Domain.Aggregates.BankAccount.Commands → Contoso.Client.Features.BankAccountAggregate.Dtos
         if (domainNamespace.Contains(DomainAggregatesSegment) &&
             domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
@@ -127,9 +127,9 @@ public static class NamingConventions
     ///     Converts a domain command namespace to a client Effects namespace.
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Effects").</returns>
+    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountAggregate.Effects").</returns>
     public static string GetClientEffectsNamespace(
         string domainNamespace
     ) =>
@@ -139,9 +139,9 @@ public static class NamingConventions
     ///     Converts a domain command namespace to the client feature root namespace (without sub-namespace).
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate").</returns>
+    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountAggregate").</returns>
     public static string GetClientFeatureRootNamespace(
         string domainNamespace
     )
@@ -158,9 +158,9 @@ public static class NamingConventions
     ///     Converts a domain command namespace to a client Mappers namespace.
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Mappers").</returns>
+    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountAggregate.Mappers").</returns>
     public static string GetClientMappersNamespace(
         string domainNamespace
     ) =>
@@ -169,8 +169,8 @@ public static class NamingConventions
     /// <summary>
     ///     Converts a domain namespace to a client namespace.
     /// </summary>
-    /// <param name="domainNamespace">The domain namespace (e.g., "Spring.Domain.Projections.BankAccountBalance").</param>
-    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountBalance.Dtos").</returns>
+    /// <param name="domainNamespace">The domain namespace (e.g., "Contoso.Domain.Projections.BankAccountBalance").</param>
+    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountBalance.Dtos").</returns>
     /// <remarks>
     ///     Replaces ".Domain.Projections." with ".Client.Features." and appends ".Dtos".
     ///     Falls back to simple ".Domain" → ".Client" replacement if pattern doesn't match.
@@ -184,7 +184,7 @@ public static class NamingConventions
             return domainNamespace;
         }
 
-        // Pattern: Spring.Domain.Projections.X → Spring.Client.Features.X.Dtos
+        // Pattern: Contoso.Domain.Projections.X → Contoso.Client.Features.X.Dtos
         if (domainNamespace.Contains(".Domain.Projections."))
         {
             return domainNamespace.Replace(".Domain.Projections.", ".Client.Features.") + ".Dtos";
@@ -209,9 +209,9 @@ public static class NamingConventions
     ///     Converts a domain command namespace to a client Reducers namespace.
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.Reducers").</returns>
+    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountAggregate.Reducers").</returns>
     public static string GetClientReducersNamespace(
         string domainNamespace
     ) =>
@@ -221,9 +221,9 @@ public static class NamingConventions
     ///     Converts a domain command namespace to a client State namespace.
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The client namespace (e.g., "Spring.Client.Features.BankAccountAggregate.State").</returns>
+    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountAggregate.State").</returns>
     public static string GetClientStateNamespace(
         string domainNamespace
     ) =>
@@ -293,9 +293,9 @@ public static class NamingConventions
     ///     Converts a domain command namespace to a server DTO namespace.
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount.Commands").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The server namespace (e.g., "Spring.Server.Controllers.Aggregates").</returns>
+    /// <returns>The server namespace (e.g., "Contoso.Server.Controllers.Aggregates").</returns>
     /// <remarks>
     ///     <para>
     ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Server.Controllers.Aggregates".
@@ -311,7 +311,7 @@ public static class NamingConventions
             return domainNamespace;
         }
 
-        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Server.Controllers.Aggregates
+        // Pattern: Contoso.Domain.Aggregates.BankAccount.Commands → Contoso.Server.Controllers.Aggregates
         if (domainNamespace.Contains(DomainAggregatesSegment) &&
             domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
@@ -343,9 +343,9 @@ public static class NamingConventions
     ///     Converts a domain aggregate namespace to a silo registration namespace.
     /// </summary>
     /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Spring.Domain.Aggregates.BankAccount").
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount").
     /// </param>
-    /// <returns>The silo namespace (e.g., "Spring.Silo.Registrations").</returns>
+    /// <returns>The silo namespace (e.g., "Contoso.Silo.Registrations").</returns>
     /// <remarks>
     ///     <para>
     ///         Replaces ".Domain.Aggregates.{Aggregate}" with ".Silo.Registrations".
@@ -361,8 +361,8 @@ public static class NamingConventions
             return domainNamespace;
         }
 
-        // Pattern: Spring.Domain.Aggregates.BankAccount → Spring.Silo.Registrations
-        // Pattern: Spring.Domain.Projections.BankAccountBalance → Spring.Silo.Registrations
+        // Pattern: Contoso.Domain.Aggregates.BankAccount → Contoso.Silo.Registrations
+        // Pattern: Contoso.Domain.Projections.BankAccountBalance → Contoso.Silo.Registrations
         int domainIndex = domainNamespace.IndexOf(DomainSegment, StringComparison.Ordinal);
         if (domainIndex > 0)
         {
@@ -493,7 +493,7 @@ public static class NamingConventions
             return domainNamespace;
         }
 
-        // Pattern: Spring.Domain.Aggregates.BankAccount.Commands → Spring.Client.Features.BankAccountAggregate.{subNamespace}
+        // Pattern: Contoso.Domain.Aggregates.BankAccount.Commands → Contoso.Client.Features.BankAccountAggregate.{subNamespace}
         if (domainNamespace.Contains(DomainAggregatesSegment) &&
             domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {

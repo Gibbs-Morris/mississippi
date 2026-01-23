@@ -19,13 +19,13 @@ namespace Mississippi.Inlet.Projection.Abstractions;
 ///     <para>
 ///         The path follows a <c>{feature}/{module}</c> convention, for example:
 ///         <list type="bullet">
-///             <item><c>spring/channels</c> - Channel messages in the Spring sample</item>
+///             <item><c>chat/channels</c> - Channel messages projection</item>
 ///             <item><c>inventory/products</c> - Product projections in an inventory system</item>
 ///         </list>
 ///     </para>
 ///     <para>
 ///         Full entity paths are constructed by appending the entity ID:
-///         <c>{feature}/{module}/{entityId}</c>, for example <c>spring/channels/abc-123</c>.
+///         <c>{feature}/{module}/{entityId}</c>, for example <c>chat/channels/abc-123</c>.
 ///     </para>
 ///     <para>
 ///         The path is used for:
@@ -38,10 +38,10 @@ namespace Mississippi.Inlet.Projection.Abstractions;
 ///         Example usage:
 ///         <code>
 ///             // Server-side projection (in Domain project):
-///             [ProjectionPath("spring/channels")]
+///             [ProjectionPath("chat/channels")]
 ///             public sealed record ChannelMessagesProjection { ... }
 ///             // Client-side DTO (in Contracts project, WASM-safe):
-///             [ProjectionPath("spring/channels")]
+///             [ProjectionPath("chat/channels")]
 ///             public sealed record ChannelMessagesDto { ... }
 ///         </code>
 ///     </para>

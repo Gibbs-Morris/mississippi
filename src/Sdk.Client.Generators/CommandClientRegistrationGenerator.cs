@@ -21,8 +21,8 @@ namespace Mississippi.Sdk.Client.Generators;
 ///         all mappers, reducers, and effects for the aggregate's commands.
 ///     </para>
 ///     <para>
-///         Example: For commands in "Spring.Domain.Aggregates.BankAccount.Commands",
-///         generates "BankAccountAggregateFeatureRegistration" in "Spring.Client.Features.BankAccountAggregate".
+///         Example: For commands in "Contoso.Domain.Aggregates.BankAccount.Commands",
+///         generates "BankAccountAggregateFeatureRegistration" in "Contoso.Client.Features.BankAccountAggregate".
 ///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]

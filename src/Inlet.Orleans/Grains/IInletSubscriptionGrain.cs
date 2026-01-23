@@ -55,7 +55,7 @@ public interface IInletSubscriptionGrain : IGrainWithStringKey
     /// <summary>
     ///     Subscribes to a projection for version change notifications.
     /// </summary>
-    /// <param name="path">The projection path (e.g., "spring/channels").</param>
+    /// <param name="path">The projection path (e.g., "chat/channels").</param>
     /// <param name="entityId">The entity identifier.</param>
     /// <returns>A server-assigned subscription identifier.</returns>
     /// <remarks>

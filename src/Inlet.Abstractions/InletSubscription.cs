@@ -7,7 +7,7 @@ namespace Mississippi.Inlet.Abstractions;
 ///     Represents an active subscription to a projection.
 /// </summary>
 /// <param name="SubscriptionId">The unique subscription identifier.</param>
-/// <param name="Path">The projection path (e.g., "spring/channels").</param>
+/// <param name="Path">The projection path (e.g., "chat/channels").</param>
 /// <param name="EntityId">The entity identifier.</param>
 [GenerateSerializer]
 [Alias("Mississippi.Inlet.Abstractions.InletSubscription")]
