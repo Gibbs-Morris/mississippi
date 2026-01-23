@@ -64,7 +64,10 @@
     <Project Path="src\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
     <Project Path="src\Sdk.Generators.Core\Sdk.Generators.Core.csproj" />
   </Folder>
-  <Folder Name="/Tests/" />
+  <Folder Name="/src/" />
+  <Folder Name="/Tests/">
+    <Project Path="tests/Sdk.Generators.Core.L0Tests/Sdk.Generators.Core.L0Tests.csproj" />
+  </Folder>
 
   <Folder Name="/Tests/Core/">
     <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />
