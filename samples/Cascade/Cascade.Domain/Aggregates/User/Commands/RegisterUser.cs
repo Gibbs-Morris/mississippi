@@ -1,4 +1,4 @@
-using Mississippi.Inlet.Generators.Abstractions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 

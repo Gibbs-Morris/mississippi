@@ -563,8 +563,8 @@
           "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )",
-          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "cascade.grains.abstractions": {
@@ -728,9 +728,6 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Generators.Abstractions": {
-        "type": "Project"
-      },
       "Mississippi.Inlet.Orleans": {
         "type": "Project",
         "dependencies": {
@@ -767,6 +764,9 @@
         "dependencies": {
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
+      },
+      "Mississippi.Sdk.Generators.Abstractions": {
+        "type": "Project"
       },
       "Azure.Storage.Blobs": {
         "type": "CentralTransitive",

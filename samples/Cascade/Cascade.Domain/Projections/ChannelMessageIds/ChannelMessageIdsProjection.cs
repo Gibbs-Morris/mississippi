@@ -3,8 +3,8 @@ using System.Collections.Immutable;
 using Cascade.Domain.Projections.Message;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.Inlet.Generators.Abstractions;
 using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 

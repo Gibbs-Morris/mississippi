@@ -591,8 +591,8 @@
           "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )",
-          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
+          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Common.Abstractions": {
@@ -703,10 +703,10 @@
           "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Generators.Abstractions": {
+      "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Inlet.Projection.Abstractions": {
+      "Mississippi.Sdk.Generators.Abstractions": {
         "type": "Project"
       },
       "CloudNative.CloudEvents": {
