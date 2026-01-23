@@ -30,7 +30,6 @@ public class PropertyModelTests
     {
         // Capture elementType.Name immediately to avoid any lazy evaluation issues
         string elementTypeName = elementType.Name;
-
         INamedTypeSymbol namedType = Substitute.For<INamedTypeSymbol>();
         INamedTypeSymbol constructedFrom = Substitute.For<INamedTypeSymbol>();
         namedType.IsGenericType.Returns(true);
@@ -176,6 +175,18 @@ public class PropertyModelTests
     }
 
     /// <summary>
+    ///     ElementSourceTypeName should be null for non-collection.
+    /// </summary>
+    [Fact]
+    public void ElementSourceTypeNameNullForNonCollection()
+    {
+        ITypeSymbol intType = CreateFrameworkType();
+        IPropertySymbol propertySymbol = CreatePropertySymbol("Count", intType);
+        PropertyModel model = new(propertySymbol);
+        Assert.Null(model.ElementSourceTypeName);
+    }
+
+    /// <summary>
     ///     ElementSourceTypeName should be populated for framework collection with custom element type.
     /// </summary>
     /// <remarks>
@@ -193,18 +204,6 @@ public class PropertyModelTests
         PropertyModel model = new(propertySymbol);
         Assert.NotNull(model.ElementSourceTypeName);
         Assert.Equal("LineItem", model.ElementSourceTypeName);
-    }
-
-    /// <summary>
-    ///     ElementSourceTypeName should be null for non-collection.
-    /// </summary>
-    [Fact]
-    public void ElementSourceTypeNameNullForNonCollection()
-    {
-        ITypeSymbol intType = CreateFrameworkType();
-        IPropertySymbol propertySymbol = CreatePropertySymbol("Count", intType);
-        PropertyModel model = new(propertySymbol);
-        Assert.Null(model.ElementSourceTypeName);
     }
 
     /// <summary>
