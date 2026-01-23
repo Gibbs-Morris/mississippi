@@ -2,6 +2,8 @@ using System.Reflection;
 
 using Allure.Xunit.Attributes;
 
+using Bunit;
+
 using Microsoft.AspNetCore.Components;
 
 using Mississippi.Refraction.Components.Molecules;
@@ -14,7 +16,7 @@ namespace Mississippi.Refraction.L0Tests.Components.Molecules;
 /// </summary>
 [AllureSuite("Refraction")]
 [AllureSubSuite("Molecules")]
-public sealed class CommandOrbitTests
+public sealed class CommandOrbitTests : BunitContext
 {
     /// <summary>
     ///     CommandOrbit has AdditionalAttributes parameter with CaptureUnmatchedValues.
@@ -122,5 +124,51 @@ public sealed class CommandOrbitTests
 
         // Assert
         Assert.Equal(RefractionStates.Latent, orbit.State);
+    }
+
+    /// <summary>
+    ///     CommandOrbit renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("CommandOrbit")]
+    public void CommandOrbitRendersWithDefaultState()
+    {
+        // Act
+        using var cut = Render<CommandOrbit>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-command-orbit").GetAttribute("data-state");
+        Assert.Equal("latent", dataState);
+    }
+
+    /// <summary>
+    ///     CommandOrbit renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("CommandOrbit")]
+    public void CommandOrbitRendersCustomState()
+    {
+        // Act
+        using var cut = Render<CommandOrbit>(p => p
+            .Add(c => c.State, RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-command-orbit").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     CommandOrbit renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("CommandOrbit")]
+    public void CommandOrbitRendersAdditionalAttributes()
+    {
+        // Act
+        using var cut = Render<CommandOrbit>(p => p
+            .AddUnmatched("data-testid", "orbit-1"));
+
+        // Assert
+        Assert.Equal("orbit-1", cut.Find(".rf-command-orbit").GetAttribute("data-testid"));
     }
 }

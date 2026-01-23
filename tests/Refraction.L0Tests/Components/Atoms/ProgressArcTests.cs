@@ -2,6 +2,8 @@ using System.Reflection;
 
 using Allure.Xunit.Attributes;
 
+using Bunit;
+
 using Microsoft.AspNetCore.Components;
 
 using Mississippi.Refraction.Components.Atoms;
@@ -14,7 +16,7 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// </summary>
 [AllureSuite("Refraction")]
 [AllureSubSuite("Atoms")]
-public sealed class ProgressArcTests
+public sealed class ProgressArcTests : BunitContext
 {
     /// <summary>
     ///     ProgressArc has AdditionalAttributes parameter.
@@ -125,5 +127,65 @@ public sealed class ProgressArcTests
 
         // Assert
         Assert.Equal(RefractionStates.Determinate, component.State);
+    }
+
+    /// <summary>
+    ///     ProgressArc renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersWithDefaultState()
+    {
+        // Act
+        using var cut = Render<ProgressArc>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-progress-arc").GetAttribute("data-state");
+        Assert.Equal("determinate", dataState);
+    }
+
+    /// <summary>
+    ///     ProgressArc renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersCustomState()
+    {
+        // Act
+        using var cut = Render<ProgressArc>(p => p
+            .Add(c => c.State, RefractionStates.Indeterminate));
+
+        // Assert
+        string? dataState = cut.Find(".rf-progress-arc").GetAttribute("data-state");
+        Assert.Equal("indeterminate", dataState);
+    }
+
+    /// <summary>
+    ///     ProgressArc renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersAdditionalAttributes()
+    {
+        // Act
+        using var cut = Render<ProgressArc>(p => p
+            .AddUnmatched("data-testid", "progress-1"));
+
+        // Assert
+        Assert.Equal("progress-1", cut.Find(".rf-progress-arc").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     ProgressArc renders SVG element.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersSvgElement()
+    {
+        // Act
+        using var cut = Render<ProgressArc>();
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".rf-progress-arc__svg"));
     }
 }

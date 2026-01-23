@@ -1,6 +1,9 @@
+using System;
 using System.Reflection;
 
 using Allure.Xunit.Attributes;
+
+using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
@@ -14,7 +17,7 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// </summary>
 [AllureSuite("Refraction")]
 [AllureSubSuite("Atoms")]
-public sealed class InputFieldTests
+public sealed class InputFieldTests : BunitContext
 {
     /// <summary>
     ///     InputField has AdditionalAttributes parameter with CaptureUnmatchedValues.
@@ -249,5 +252,83 @@ public sealed class InputFieldTests
 
         // Assert
         Assert.Equal("text", inputField.Type);
+    }
+
+    /// <summary>
+    ///     InputField renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersWithDefaultState()
+    {
+        // Act
+        using var cut = Render<InputField>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
+        Assert.Equal("idle", dataState);
+    }
+
+    /// <summary>
+    ///     InputField renders label when provided.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersLabelWhenProvided()
+    {
+        // Act
+        using var cut = Render<InputField>(p => p
+            .Add(c => c.Label, "Test Label")
+            .Add(c => c.Id, "test-id"));
+
+        // Assert
+        string textContent = cut.Find(".rf-input-field__label").TextContent;
+        Assert.Contains("Test Label", textContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     InputField does not render label when empty.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldDoesNotRenderLabelWhenEmpty()
+    {
+        // Act
+        using var cut = Render<InputField>(p => p
+            .Add(c => c.Label, string.Empty));
+
+        // Assert
+        Assert.Empty(cut.FindAll(".rf-input-field__label"));
+    }
+
+    /// <summary>
+    ///     InputField renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersCustomState()
+    {
+        // Act
+        using var cut = Render<InputField>(p => p
+            .Add(c => c.State, RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     InputField renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersAdditionalAttributes()
+    {
+        // Act
+        using var cut = Render<InputField>(p => p
+            .AddUnmatched("data-testid", "input-1"));
+
+        // Assert
+        Assert.Equal("input-1", cut.Find(".rf-input-field").GetAttribute("data-testid"));
     }
 }

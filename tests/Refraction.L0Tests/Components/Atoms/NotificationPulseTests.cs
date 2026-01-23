@@ -2,6 +2,8 @@ using System.Reflection;
 
 using Allure.Xunit.Attributes;
 
+using Bunit;
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
@@ -15,7 +17,7 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// </summary>
 [AllureSuite("Refraction")]
 [AllureSubSuite("Atoms")]
-public sealed class NotificationPulseTests
+public sealed class NotificationPulseTests : BunitContext
 {
     /// <summary>
     ///     NotificationPulse has AdditionalAttributes parameter.
@@ -121,5 +123,65 @@ public sealed class NotificationPulseTests
 
         // Assert
         Assert.Equal(RefractionStates.New, component.State);
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersWithDefaultState()
+    {
+        // Act
+        using var cut = Render<NotificationPulse>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-notification-pulse").GetAttribute("data-state");
+        Assert.Equal("new", dataState);
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersCustomState()
+    {
+        // Act
+        using var cut = Render<NotificationPulse>(p => p
+            .Add(c => c.State, RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-notification-pulse").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersAdditionalAttributes()
+    {
+        // Act
+        using var cut = Render<NotificationPulse>(p => p
+            .AddUnmatched("data-testid", "pulse-1"));
+
+        // Assert
+        Assert.Equal("pulse-1", cut.Find(".rf-notification-pulse").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders dot indicator.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersDotIndicator()
+    {
+        // Act
+        using var cut = Render<NotificationPulse>();
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".rf-notification-pulse__dot"));
     }
 }

@@ -1,6 +1,9 @@
+using System;
 using System.Reflection;
 
 using Allure.Xunit.Attributes;
+
+using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
@@ -14,7 +17,7 @@ namespace Mississippi.Refraction.L0Tests.Components.Organisms;
 /// </summary>
 [AllureSuite("Refraction")]
 [AllureSubSuite("Organisms")]
-public sealed class SmokeConfirmTests
+public sealed class SmokeConfirmTests : BunitContext
 {
     /// <summary>
     ///     SmokeConfirm has AdditionalAttributes parameter.
@@ -171,5 +174,98 @@ public sealed class SmokeConfirmTests
 
         // Assert
         Assert.Equal(RefractionStates.Latent, component.State);
+    }
+
+    /// <summary>
+    ///     SmokeConfirm renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SmokeConfirm")]
+    public void SmokeConfirmRendersWithDefaultState()
+    {
+        // Act
+        using var cut = Render<SmokeConfirm>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-smoke-confirm").GetAttribute("data-state");
+        Assert.Equal("latent", dataState);
+    }
+
+    /// <summary>
+    ///     SmokeConfirm renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SmokeConfirm")]
+    public void SmokeConfirmRendersCustomState()
+    {
+        // Act
+        using var cut = Render<SmokeConfirm>(p => p
+            .Add(c => c.State, RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-smoke-confirm").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     SmokeConfirm renders title when provided.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SmokeConfirm")]
+    public void SmokeConfirmRendersTitleWhenProvided()
+    {
+        // Act
+        using var cut = Render<SmokeConfirm>(p => p
+            .Add(c => c.Title, "Test Title"));
+
+        // Assert
+        string textContent = cut.Find(".rf-smoke-confirm__title").TextContent;
+        Assert.Contains("Test Title", textContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     SmokeConfirm renders consequence when provided.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SmokeConfirm")]
+    public void SmokeConfirmRendersConsequenceWhenProvided()
+    {
+        // Act
+        using var cut = Render<SmokeConfirm>(p => p
+            .Add(c => c.Consequence, "This action is irreversible"));
+
+        // Assert
+        string textContent = cut.Find(".rf-smoke-confirm__consequence").TextContent;
+        Assert.Contains("This action is irreversible", textContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     SmokeConfirm renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SmokeConfirm")]
+    public void SmokeConfirmRendersAdditionalAttributes()
+    {
+        // Act
+        using var cut = Render<SmokeConfirm>(p => p
+            .AddUnmatched("data-testid", "confirm-1"));
+
+        // Assert
+        Assert.Equal("confirm-1", cut.Find(".rf-smoke-confirm").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     SmokeConfirm renders action buttons.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SmokeConfirm")]
+    public void SmokeConfirmRendersActionButtons()
+    {
+        // Act
+        using var cut = Render<SmokeConfirm>();
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".rf-smoke-confirm__cancel"));
+        Assert.NotEmpty(cut.FindAll(".rf-smoke-confirm__confirm"));
     }
 }

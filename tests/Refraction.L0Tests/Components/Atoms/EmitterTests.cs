@@ -1,6 +1,9 @@
+using System;
 using System.Reflection;
 
 using Allure.Xunit.Attributes;
+
+using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
@@ -14,7 +17,7 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// </summary>
 [AllureSuite("Refraction")]
 [AllureSubSuite("Atoms")]
-public sealed class EmitterTests
+public sealed class EmitterTests : BunitContext
 {
     /// <summary>
     ///     Emitter has AdditionalAttributes parameter with CaptureUnmatchedValues.
@@ -106,5 +109,65 @@ public sealed class EmitterTests
 
         // Assert
         Assert.Equal(RefractionStates.Idle, emitter.State);
+    }
+
+    /// <summary>
+    ///     Emitter renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Emitter")]
+    public void EmitterRendersWithDefaultState()
+    {
+        // Act
+        using var cut = Render<Emitter>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-emitter").GetAttribute("data-state");
+        Assert.Equal("idle", dataState);
+    }
+
+    /// <summary>
+    ///     Emitter renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Emitter")]
+    public void EmitterRendersCustomState()
+    {
+        // Act
+        using var cut = Render<Emitter>(p => p
+            .Add(c => c.State, RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-emitter").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     Emitter renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Emitter")]
+    public void EmitterRendersAdditionalAttributes()
+    {
+        // Act
+        using var cut = Render<Emitter>(p => p
+            .AddUnmatched("data-testid", "emitter-1"));
+
+        // Assert
+        Assert.Equal("emitter-1", cut.Find(".rf-emitter").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     Emitter renders seed indicator.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Emitter")]
+    public void EmitterRendersSeedIndicator()
+    {
+        // Act
+        using var cut = Render<Emitter>();
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".rf-emitter__seed"));
     }
 }
