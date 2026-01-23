@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 title: Aggregates
 description: High-level overview of command handling and event production for Mississippi event sourcing.
 ---

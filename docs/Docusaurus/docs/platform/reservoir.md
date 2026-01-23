@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 7
 title: Reservoir
 description: High-level overview of the Redux-style state container for Blazor/wasm apps.
 ---

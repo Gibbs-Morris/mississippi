@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 6
 title: Inlet
 description: High-level overview of the WASM ↔ ASP.NET bridge for projection subscriptions.
 ---
