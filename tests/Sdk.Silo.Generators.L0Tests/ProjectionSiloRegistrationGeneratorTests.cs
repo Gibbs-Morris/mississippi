@@ -142,6 +142,48 @@ public class ProjectionSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Generated class name should follow naming convention.
+    /// </summary>
+    [Fact]
+    public void GeneratedClassNameFollowsNamingConvention()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Sdk.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+
+                                        namespace TestApp.Domain.Projections.AccountBalance.Events
+                                        {
+                                            public sealed record BalanceUpdated { }
+                                        }
+
+                                        namespace TestApp.Domain.Projections.AccountBalance.Reducers
+                                        {
+                                            public class BalanceUpdatedReducer : EventReducerBase<TestApp.Domain.Projections.AccountBalance.Events.BalanceUpdated, TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>
+                                            {
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, projectionSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "public static class AccountBalanceProjectionRegistrations",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated file should have auto-generated header.
     /// </summary>
     [Fact]
@@ -426,6 +468,59 @@ public class ProjectionSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Generated registrations should handle multiple reducers for same projection.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsHandlesMultipleReducers()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Sdk.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+
+                                        namespace TestApp.Domain.Projections.AccountBalance.Events
+                                        {
+                                            public sealed record BalanceIncreased { }
+                                            public sealed record BalanceDecreased { }
+                                        }
+
+                                        namespace TestApp.Domain.Projections.AccountBalance.Reducers
+                                        {
+                                            public class BalanceIncreasedReducer : EventReducerBase<TestApp.Domain.Projections.AccountBalance.Events.BalanceIncreased, TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>
+                                            {
+                                            }
+
+                                            public class BalanceDecreasedReducer : EventReducerBase<TestApp.Domain.Projections.AccountBalance.Events.BalanceDecreased, TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>
+                                            {
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, projectionSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+
+        // Both reducers should be registered
+        Assert.Contains(
+            "services.AddReducer<BalanceIncreased, AccountBalanceProjection, BalanceIncreasedReducer>();",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "services.AddReducer<BalanceDecreased, AccountBalanceProjection, BalanceDecreasedReducer>();",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated registrations should include using statements for namespaces.
     /// </summary>
     [Fact]
@@ -549,6 +644,26 @@ public class ProjectionSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Generator should produce no output when no projections are present.
+    /// </summary>
+    [Fact]
+    public void GeneratorProducesNoOutputWhenNoProjections()
+    {
+        const string source = """
+                              namespace TestApp
+                              {
+                                  public class RegularClass
+                                  {
+                                      public string Name { get; set; }
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, source);
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
     ///     Generator should produce no output when projection has no reducers.
     /// </summary>
     [Fact]
@@ -570,26 +685,6 @@ public class ProjectionSiloRegistrationGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
-        Assert.Empty(runResult.GeneratedTrees);
-    }
-
-    /// <summary>
-    ///     Generator should produce no output when no projections are present.
-    /// </summary>
-    [Fact]
-    public void GeneratorProducesNoOutputWhenNoProjections()
-    {
-        const string source = """
-                              namespace TestApp
-                              {
-                                  public class RegularClass
-                                  {
-                                      public string Name { get; set; }
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeAndBaseStubs, source);
         Assert.Empty(runResult.GeneratedTrees);
     }
 
@@ -697,100 +792,5 @@ public class ProjectionSiloRegistrationGeneratorTests
             StringComparison.Ordinal));
         Assert.True(hasAccountBalanceRegistrations);
         Assert.True(hasTransactionHistoryRegistrations);
-    }
-
-    /// <summary>
-    ///     Generated registrations should handle multiple reducers for same projection.
-    /// </summary>
-    [Fact]
-    public void GeneratedRegistrationsHandlesMultipleReducers()
-    {
-        const string projectionSource = """
-                                        using Mississippi.Sdk.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
-
-                                        namespace TestApp.Domain.Projections.AccountBalance
-                                        {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
-                                            public sealed record AccountBalanceProjection
-                                            {
-                                                public decimal Balance { get; init; }
-                                            }
-                                        }
-
-                                        namespace TestApp.Domain.Projections.AccountBalance.Events
-                                        {
-                                            public sealed record BalanceIncreased { }
-                                            public sealed record BalanceDecreased { }
-                                        }
-
-                                        namespace TestApp.Domain.Projections.AccountBalance.Reducers
-                                        {
-                                            public class BalanceIncreasedReducer : EventReducerBase<TestApp.Domain.Projections.AccountBalance.Events.BalanceIncreased, TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>
-                                            {
-                                            }
-
-                                            public class BalanceDecreasedReducer : EventReducerBase<TestApp.Domain.Projections.AccountBalance.Events.BalanceDecreased, TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>
-                                            {
-                                            }
-                                        }
-                                        """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeAndBaseStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-
-        // Both reducers should be registered
-        Assert.Contains(
-            "services.AddReducer<BalanceIncreased, AccountBalanceProjection, BalanceIncreasedReducer>();",
-            generatedCode,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "services.AddReducer<BalanceDecreased, AccountBalanceProjection, BalanceDecreasedReducer>();",
-            generatedCode,
-            StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generated class name should follow naming convention.
-    /// </summary>
-    [Fact]
-    public void GeneratedClassNameFollowsNamingConvention()
-    {
-        const string projectionSource = """
-                                        using Mississippi.Sdk.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
-
-                                        namespace TestApp.Domain.Projections.AccountBalance
-                                        {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
-                                            public sealed record AccountBalanceProjection
-                                            {
-                                                public decimal Balance { get; init; }
-                                            }
-                                        }
-
-                                        namespace TestApp.Domain.Projections.AccountBalance.Events
-                                        {
-                                            public sealed record BalanceUpdated { }
-                                        }
-
-                                        namespace TestApp.Domain.Projections.AccountBalance.Reducers
-                                        {
-                                            public class BalanceUpdatedReducer : EventReducerBase<TestApp.Domain.Projections.AccountBalance.Events.BalanceUpdated, TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>
-                                            {
-                                            }
-                                        }
-                                        """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeAndBaseStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains(
-            "public static class AccountBalanceProjectionRegistrations",
-            generatedCode,
-            StringComparison.Ordinal);
     }
 }

@@ -54,7 +54,6 @@ public class CommandClientStateGeneratorTests
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-
         string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
@@ -67,7 +66,6 @@ public class CommandClientStateGeneratorTests
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
                 NullableContextOptions.Enable));
-
         CommandClientStateGenerator generator = new();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
         driver = driver.RunGeneratorsAndUpdateCompilation(
@@ -75,6 +73,29 @@ public class CommandClientStateGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Generated state file should have correct naming convention.
+    /// </summary>
+    [Fact]
+    public void GeneratedStateFileHasCorrectName()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        Assert.Contains("OrderAggregateState.g.cs", runResult.GeneratedTrees[0].FilePath, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -103,30 +124,6 @@ public class CommandClientStateGeneratorTests
     }
 
     /// <summary>
-    ///     Generated state should be internal sealed record.
-    /// </summary>
-    [Fact]
-    public void GeneratedStateIsInternalSealedRecord()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("internal sealed record OrderAggregateState", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Generated state should have feature key.
     /// </summary>
     [Fact]
@@ -149,6 +146,30 @@ public class CommandClientStateGeneratorTests
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("FeatureKey =>", generatedCode, StringComparison.Ordinal);
         Assert.Contains("orderAggregate", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated state should be internal sealed record.
+    /// </summary>
+    [Fact]
+    public void GeneratedStateIsInternalSealedRecord()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("internal sealed record OrderAggregateState", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -200,31 +221,5 @@ public class CommandClientStateGeneratorTests
 
         // One state per aggregate, not per command
         Assert.Single(runResult.GeneratedTrees);
-    }
-
-    /// <summary>
-    ///     Generated state file should have correct naming convention.
-    /// </summary>
-    [Fact]
-    public void GeneratedStateFileHasCorrectName()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        Assert.Contains(
-            "OrderAggregateState.g.cs",
-            runResult.GeneratedTrees[0].FilePath,
-            StringComparison.Ordinal);
     }
 }

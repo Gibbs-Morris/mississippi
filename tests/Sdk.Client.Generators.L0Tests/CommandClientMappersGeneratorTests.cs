@@ -54,7 +54,6 @@ public class CommandClientMappersGeneratorTests
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-
         string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
@@ -67,7 +66,6 @@ public class CommandClientMappersGeneratorTests
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
                 NullableContextOptions.Enable));
-
         CommandClientMappersGenerator generator = new();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
         driver = driver.RunGeneratorsAndUpdateCompilation(
@@ -75,6 +73,29 @@ public class CommandClientMappersGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Generated mapper file should have correct naming convention.
+    /// </summary>
+    [Fact]
+    public void GeneratedMapperFileHasCorrectName()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        Assert.Contains("PlaceOrderActionMapper.g.cs", runResult.GeneratedTrees[0].FilePath, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -103,10 +124,10 @@ public class CommandClientMappersGeneratorTests
     }
 
     /// <summary>
-    ///     Generated mapper should be internal sealed class.
+    ///     Generated mapper should have Map method.
     /// </summary>
     [Fact]
-    public void GeneratedMapperIsInternalSealedClass()
+    public void GeneratedMapperHasMapMethod()
     {
         const string commandSource = """
                                      using Mississippi.Sdk.Generators.Abstractions;
@@ -123,7 +144,10 @@ public class CommandClientMappersGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, commandSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("internal sealed class PlaceOrderActionMapper", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public PlaceOrderRequestDto Map(PlaceOrderAction input)",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -151,10 +175,10 @@ public class CommandClientMappersGeneratorTests
     }
 
     /// <summary>
-    ///     Generated mapper should have Map method.
+    ///     Generated mapper should be internal sealed class.
     /// </summary>
     [Fact]
-    public void GeneratedMapperHasMapMethod()
+    public void GeneratedMapperIsInternalSealedClass()
     {
         const string commandSource = """
                                      using Mississippi.Sdk.Generators.Abstractions;
@@ -171,7 +195,7 @@ public class CommandClientMappersGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, commandSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("public PlaceOrderRequestDto Map(PlaceOrderAction input)", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("internal sealed class PlaceOrderActionMapper", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -229,31 +253,5 @@ public class CommandClientMappersGeneratorTests
             StringComparison.Ordinal));
         Assert.True(hasPlaceOrderMapper);
         Assert.True(hasCancelOrderMapper);
-    }
-
-    /// <summary>
-    ///     Generated mapper file should have correct naming convention.
-    /// </summary>
-    [Fact]
-    public void GeneratedMapperFileHasCorrectName()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        Assert.Contains(
-            "PlaceOrderActionMapper.g.cs",
-            runResult.GeneratedTrees[0].FilePath,
-            StringComparison.Ordinal);
     }
 }

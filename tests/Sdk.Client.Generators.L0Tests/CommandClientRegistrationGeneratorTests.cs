@@ -54,7 +54,6 @@ public class CommandClientRegistrationGeneratorTests
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-
         string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
@@ -67,7 +66,6 @@ public class CommandClientRegistrationGeneratorTests
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
                 NullableContextOptions.Enable));
-
         CommandClientRegistrationGenerator generator = new();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
         driver = driver.RunGeneratorsAndUpdateCompilation(
@@ -75,6 +73,32 @@ public class CommandClientRegistrationGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Generated registration file should have correct naming convention.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationFileHasCorrectName()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        Assert.Contains(
+            "OrderAggregateFeatureRegistration.g.cs",
+            runResult.GeneratedTrees[0].FilePath,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -103,30 +127,6 @@ public class CommandClientRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generated registration should be internal static class.
-    /// </summary>
-    [Fact]
-    public void GeneratedRegistrationIsInternalStaticClass()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("internal static class OrderAggregateFeatureRegistration", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Generated registration should have extension method.
     /// </summary>
     [Fact]
@@ -149,6 +149,57 @@ public class CommandClientRegistrationGeneratorTests
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("AddOrderAggregateFeature(", generatedCode, StringComparison.Ordinal);
         Assert.Contains("this IServiceCollection services", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated registration should be internal static class.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationIsInternalStaticClass()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "internal static class OrderAggregateFeatureRegistration",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated registration should register effects.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationRegistersEffects()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("AddEffect<", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -197,30 +248,6 @@ public class CommandClientRegistrationGeneratorTests
             RunGenerator(AttributeStubs, commandSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("AddReducer<", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generated registration should register effects.
-    /// </summary>
-    [Fact]
-    public void GeneratedRegistrationRegistersEffects()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("AddEffect<", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -277,31 +304,5 @@ public class CommandClientRegistrationGeneratorTests
         // Should register both commands
         Assert.Contains("PlaceOrderEffect", generatedCode, StringComparison.Ordinal);
         Assert.Contains("CancelOrderEffect", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generated registration file should have correct naming convention.
-    /// </summary>
-    [Fact]
-    public void GeneratedRegistrationFileHasCorrectName()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        Assert.Contains(
-            "OrderAggregateFeatureRegistration.g.cs",
-            runResult.GeneratedTrees[0].FilePath,
-            StringComparison.Ordinal);
     }
 }

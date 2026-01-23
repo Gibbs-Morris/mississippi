@@ -54,7 +54,6 @@ public class CommandClientActionsGeneratorTests
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-
         string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
@@ -67,7 +66,6 @@ public class CommandClientActionsGeneratorTests
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
                 NullableContextOptions.Enable));
-
         CommandClientActionsGenerator generator = new();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
         driver = driver.RunGeneratorsAndUpdateCompilation(
@@ -103,56 +101,6 @@ public class CommandClientActionsGeneratorTests
     }
 
     /// <summary>
-    ///     Generator should produce four action types per command.
-    /// </summary>
-    [Fact]
-    public void GeneratorProducesFourActionTypesPerCommand()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-
-        // Should generate: PlaceOrderAction, PlaceOrderExecutingAction, PlaceOrderSucceededAction, PlaceOrderFailedAction
-        Assert.Equal(4, runResult.GeneratedTrees.Length);
-    }
-
-    /// <summary>
-    ///     Generated actions should include primary action.
-    /// </summary>
-    [Fact]
-    public void GeneratedActionsIncludePrimaryAction()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        bool hasPrimaryAction = runResult.GeneratedTrees.Any(t =>
-            t.FilePath.Contains("PlaceOrderAction.g.cs", StringComparison.Ordinal));
-        Assert.True(hasPrimaryAction);
-    }
-
-    /// <summary>
     ///     Generated actions should include executing action.
     /// </summary>
     [Fact]
@@ -172,34 +120,10 @@ public class CommandClientActionsGeneratorTests
                                      """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, commandSource);
-        bool hasExecutingAction = runResult.GeneratedTrees.Any(t =>
-            t.FilePath.Contains("PlaceOrderExecutingAction.g.cs", StringComparison.Ordinal));
+        bool hasExecutingAction = runResult.GeneratedTrees.Any(t => t.FilePath.Contains(
+            "PlaceOrderExecutingAction.g.cs",
+            StringComparison.Ordinal));
         Assert.True(hasExecutingAction);
-    }
-
-    /// <summary>
-    ///     Generated actions should include succeeded action.
-    /// </summary>
-    [Fact]
-    public void GeneratedActionsIncludeSucceededAction()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        bool hasSucceededAction = runResult.GeneratedTrees.Any(t =>
-            t.FilePath.Contains("PlaceOrderSucceededAction.g.cs", StringComparison.Ordinal));
-        Assert.True(hasSucceededAction);
     }
 
     /// <summary>
@@ -222,9 +146,87 @@ public class CommandClientActionsGeneratorTests
                                      """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, commandSource);
-        bool hasFailedAction = runResult.GeneratedTrees.Any(t =>
-            t.FilePath.Contains("PlaceOrderFailedAction.g.cs", StringComparison.Ordinal));
+        bool hasFailedAction = runResult.GeneratedTrees.Any(t => t.FilePath.Contains(
+            "PlaceOrderFailedAction.g.cs",
+            StringComparison.Ordinal));
         Assert.True(hasFailedAction);
+    }
+
+    /// <summary>
+    ///     Generated actions should include primary action.
+    /// </summary>
+    [Fact]
+    public void GeneratedActionsIncludePrimaryAction()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        bool hasPrimaryAction = runResult.GeneratedTrees.Any(t => t.FilePath.Contains(
+            "PlaceOrderAction.g.cs",
+            StringComparison.Ordinal));
+        Assert.True(hasPrimaryAction);
+    }
+
+    /// <summary>
+    ///     Generated actions should include succeeded action.
+    /// </summary>
+    [Fact]
+    public void GeneratedActionsIncludeSucceededAction()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        bool hasSucceededAction = runResult.GeneratedTrees.Any(t => t.FilePath.Contains(
+            "PlaceOrderSucceededAction.g.cs",
+            StringComparison.Ordinal));
+        Assert.True(hasSucceededAction);
+    }
+
+    /// <summary>
+    ///     Generator should produce four action types per command.
+    /// </summary>
+    [Fact]
+    public void GeneratorProducesFourActionTypesPerCommand()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+
+        // Should generate: PlaceOrderAction, PlaceOrderExecutingAction, PlaceOrderSucceededAction, PlaceOrderFailedAction
+        Assert.Equal(4, runResult.GeneratedTrees.Length);
     }
 
     /// <summary>

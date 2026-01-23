@@ -54,7 +54,6 @@ public class CommandClientEffectsGeneratorTests
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-
         string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
@@ -67,7 +66,6 @@ public class CommandClientEffectsGeneratorTests
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
                 NullableContextOptions.Enable));
-
         CommandClientEffectsGenerator generator = new();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
         driver = driver.RunGeneratorsAndUpdateCompilation(
@@ -75,6 +73,54 @@ public class CommandClientEffectsGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Generated effect file should have correct naming convention.
+    /// </summary>
+    [Fact]
+    public void GeneratedEffectFileHasCorrectName()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        Assert.Contains("PlaceOrderEffect.g.cs", runResult.GeneratedTrees[0].FilePath, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated effect should have aggregate route prefix.
+    /// </summary>
+    [Fact]
+    public void GeneratedEffectHasAggregateRoutePrefix()
+    {
+        const string commandSource = """
+                                     using Mississippi.Sdk.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("AggregateRoutePrefix =>", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("/api/aggregates/order", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -103,30 +149,6 @@ public class CommandClientEffectsGeneratorTests
     }
 
     /// <summary>
-    ///     Generated effect should be internal sealed class.
-    /// </summary>
-    [Fact]
-    public void GeneratedEffectIsInternalSealedClass()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("internal sealed class PlaceOrderEffect", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Generated effect should have route property.
     /// </summary>
     [Fact]
@@ -151,10 +173,10 @@ public class CommandClientEffectsGeneratorTests
     }
 
     /// <summary>
-    ///     Generated effect should have aggregate route prefix.
+    ///     Generated effect should be internal sealed class.
     /// </summary>
     [Fact]
-    public void GeneratedEffectHasAggregateRoutePrefix()
+    public void GeneratedEffectIsInternalSealedClass()
     {
         const string commandSource = """
                                      using Mississippi.Sdk.Generators.Abstractions;
@@ -171,8 +193,7 @@ public class CommandClientEffectsGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, commandSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("AggregateRoutePrefix =>", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("/api/aggregates/order", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("internal sealed class PlaceOrderEffect", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -230,31 +251,5 @@ public class CommandClientEffectsGeneratorTests
             StringComparison.Ordinal));
         Assert.True(hasPlaceOrderEffect);
         Assert.True(hasCancelOrderEffect);
-    }
-
-    /// <summary>
-    ///     Generated effect file should have correct naming convention.
-    /// </summary>
-    [Fact]
-    public void GeneratedEffectFileHasCorrectName()
-    {
-        const string commandSource = """
-                                     using Mississippi.Sdk.Generators.Abstractions;
-
-                                     namespace TestApp.Domain.Aggregates.Order.Commands
-                                     {
-                                         [GenerateCommand]
-                                         public sealed record PlaceOrder
-                                         {
-                                             public string ProductId { get; init; }
-                                         }
-                                     }
-                                     """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, commandSource);
-        Assert.Contains(
-            "PlaceOrderEffect.g.cs",
-            runResult.GeneratedTrees[0].FilePath,
-            StringComparison.Ordinal);
     }
 }

@@ -93,6 +93,34 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Generated DTO file should have correct naming convention.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoFileHasCorrectName()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Sdk.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Contains(
+            "AccountBalanceProjectionDto.g.cs",
+            runResult.GeneratedTrees[0].FilePath,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated DTO should have auto-generated header.
     /// </summary>
     [Fact]
@@ -197,61 +225,6 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
-    ///     Generated DTO should have XML documentation.
-    /// </summary>
-    [Fact]
-    public void GeneratedDtoHasXmlDocumentation()
-    {
-        const string projectionSource = """
-                                        using Mississippi.Sdk.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
-
-                                        namespace TestApp.Domain.Projections.AccountBalance
-                                        {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
-                                            public sealed record AccountBalanceProjection
-                                            {
-                                                public decimal Balance { get; init; }
-                                            }
-                                        }
-                                        """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("/// <summary>", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("Client-side DTO", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generated DTO file should have correct naming convention.
-    /// </summary>
-    [Fact]
-    public void GeneratedDtoFileHasCorrectName()
-    {
-        const string projectionSource = """
-                                        using Mississippi.Sdk.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
-
-                                        namespace TestApp.Domain.Projections.AccountBalance
-                                        {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
-                                            public sealed record AccountBalanceProjection
-                                            {
-                                                public decimal Balance { get; init; }
-                                            }
-                                        }
-                                        """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, projectionSource);
-        Assert.Contains(
-            "AccountBalanceProjectionDto.g.cs",
-            runResult.GeneratedTrees[0].FilePath,
-            StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Generated DTO should have properties from projection.
     /// </summary>
     [Fact]
@@ -280,6 +253,59 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Generated DTO should have XML documentation.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoHasXmlDocumentation()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Sdk.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("/// <summary>", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("Client-side DTO", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated DTO should include using statement for ProjectionPath attribute.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoIncludesUsingStatement()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Sdk.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("using Mississippi.Inlet.Projection.Abstractions;", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated DTO namespace should follow client convention.
     /// </summary>
     [Fact]
@@ -304,7 +330,10 @@ public class ProjectionClientDtoGeneratorTests
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
 
         // Domain.Projections.* -> Client.Features.*.Dtos
-        Assert.Contains("namespace TestApp.Client.Features.AccountBalance.Dtos;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "namespace TestApp.Client.Features.AccountBalance.Dtos;",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -416,34 +445,5 @@ public class ProjectionClientDtoGeneratorTests
             StringComparison.Ordinal));
         Assert.True(hasAccountBalanceDto);
         Assert.True(hasTransactionHistoryDto);
-    }
-
-    /// <summary>
-    ///     Generated DTO should include using statement for ProjectionPath attribute.
-    /// </summary>
-    [Fact]
-    public void GeneratedDtoIncludesUsingStatement()
-    {
-        const string projectionSource = """
-                                        using Mississippi.Sdk.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
-
-                                        namespace TestApp.Domain.Projections.AccountBalance
-                                        {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
-                                            public sealed record AccountBalanceProjection
-                                            {
-                                                public decimal Balance { get; init; }
-                                            }
-                                        }
-                                        """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains(
-            "using Mississippi.Inlet.Projection.Abstractions;",
-            generatedCode,
-            StringComparison.Ordinal);
     }
 }
