@@ -1,8 +1,8 @@
 using System;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 
@@ -28,9 +28,9 @@ namespace Cascade.Domain.Projections.Message;
 ///     </para>
 /// </remarks>
 [ProjectionPath("cascade/messages")]
-[UxProjection]
 [BrookName("CASCADE", "CHAT", "CONVERSATION")]
 [SnapshotStorageName("CASCADE", "CHAT", "MESSAGE")]
+[GenerateProjectionEndpoints]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.Message.MessageProjection")]
 public sealed record MessageProjection

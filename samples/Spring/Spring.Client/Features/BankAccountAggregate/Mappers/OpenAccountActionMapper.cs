@@ -1,3 +1,4 @@
+#if false // Replaced by source generator: CommandClientMappersGenerator
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Sdk.Generators.Abstractions;
 
@@ -19,3 +20,4 @@ internal sealed class OpenAccountActionMapper : IMapper<OpenAccountAction, OpenA
     ) =>
         new(input.HolderName, input.InitialDeposit);
 }
+#endif

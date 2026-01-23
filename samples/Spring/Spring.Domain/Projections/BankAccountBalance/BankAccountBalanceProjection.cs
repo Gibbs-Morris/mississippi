@@ -1,6 +1,6 @@
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 
@@ -17,9 +17,9 @@ namespace Spring.Domain.Projections.BankAccountBalance;
 ///     </para>
 /// </remarks>
 [ProjectionPath("bank-account-balance")]
-[UxProjection]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTBALANCE")]
+[GenerateProjectionEndpoints]
 [GenerateSerializer]
 [Alias("Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection")]
 public sealed record BankAccountBalanceProjection

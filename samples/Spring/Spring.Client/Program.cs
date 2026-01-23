@@ -10,6 +10,7 @@ using Mississippi.Inlet.Blazor.WebAssembly;
 using Spring.Client;
 using Spring.Client.Features.BankAccountAggregate;
 using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features.EntitySelection;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -27,6 +28,9 @@ builder.Services.AddScoped(_ => new HttpClient
 // Register features (one line per feature - scales cleanly)
 // Write side: aggregate commands
 builder.Services.AddBankAccountAggregateFeature();
+
+// Navigation/UI: entity selection
+builder.Services.AddEntitySelectionFeature();
 
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching

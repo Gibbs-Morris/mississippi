@@ -66,11 +66,14 @@
     <Project Path="src\Sdk.Client.Generators\Sdk.Client.Generators.csproj" />
     <Project Path="src\Sdk.Server.Generators\Sdk.Server.Generators.csproj" />
     <Project Path="src\Sdk.Silo.Generators\Sdk.Silo.Generators.csproj" />
+    <Project Path="src\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
+    <Project Path="src\Sdk.Generators.Core\Sdk.Generators.Core.csproj" />
   </Folder>
-  <Folder Name="/src/">
-    <Project Path="src/Sdk.Generators.Abstractions/Sdk.Generators.Abstractions.csproj" />
+  <Folder Name="/src/" />
+  <Folder Name="/Tests/">
+    <Project Path="tests/Sdk.Generators.Core.L0Tests/Sdk.Generators.Core.L0Tests.csproj" />
+    <Project Path="tests/Sdk.Silo.Generators.L0Tests/Sdk.Silo.Generators.L0Tests.csproj" />
   </Folder>
-  <Folder Name="/Tests/" />
 
   <Folder Name="/Tests/Core/">
     <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />

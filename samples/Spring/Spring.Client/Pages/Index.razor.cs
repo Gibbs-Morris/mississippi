@@ -7,6 +7,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.State;
 using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features.EntitySelection;
 
 
 namespace Spring.Client.Pages;
@@ -61,9 +62,9 @@ public sealed partial class Index
     ///     Gets the projection data from the InletStore.
     /// </summary>
     private BankAccountBalanceProjectionDto? BalanceProjection =>
-        string.IsNullOrEmpty(AggregateState.EntityId)
+        string.IsNullOrEmpty(SelectedEntityId)
             ? null
-            : GetProjection<BankAccountBalanceProjectionDto>(AggregateState.EntityId);
+            : GetProjection<BankAccountBalanceProjectionDto>(SelectedEntityId);
 
     /// <summary>
     ///     Gets the SignalR connection state.
@@ -82,10 +83,9 @@ public sealed partial class Index
                 return AggregateState.ErrorMessage;
             }
 
-            if (!string.IsNullOrEmpty(AggregateState.EntityId))
+            if (!string.IsNullOrEmpty(SelectedEntityId))
             {
-                Exception? projectionError =
-                    GetProjectionError<BankAccountBalanceProjectionDto>(AggregateState.EntityId);
+                Exception? projectionError = GetProjectionError<BankAccountBalanceProjectionDto>(SelectedEntityId);
                 return projectionError?.Message;
             }
 
@@ -103,8 +103,13 @@ public sealed partial class Index
     /// </summary>
     private bool IsExecutingOrLoading =>
         AggregateState.IsExecuting ||
-        (!string.IsNullOrEmpty(AggregateState.EntityId) &&
-         IsProjectionLoading<BankAccountBalanceProjectionDto>(AggregateState.EntityId));
+        (!string.IsNullOrEmpty(SelectedEntityId) &&
+         IsProjectionLoading<BankAccountBalanceProjectionDto>(SelectedEntityId));
+
+    /// <summary>
+    ///     Gets the currently selected entity ID from entity selection state.
+    /// </summary>
+    private string? SelectedEntityId => GetState<EntitySelectionState>().EntityId;
 
     private static string FormatTimestamp(
         DateTimeOffset? timestamp
@@ -138,13 +143,13 @@ public sealed partial class Index
 
     private void CloseConnectionModal() => isConnectionModalOpen = false;
 
-    private void Deposit() => Dispatch(new DepositFundsAction(AggregateState.EntityId!, depositAmount));
+    private void Deposit() => Dispatch(new DepositFundsAction(SelectedEntityId!, depositAmount));
 
-    private void DepositBurst20() => DispatchBurst(() => new DepositFundsAction(AggregateState.EntityId!, 5m), 20);
+    private void DepositBurst20() => DispatchBurst(() => new DepositFundsAction(SelectedEntityId!, 5m), 20);
 
-    private void DepositBurst200() => DispatchBurst(() => new DepositFundsAction(AggregateState.EntityId!, 10m), 200);
+    private void DepositBurst200() => DispatchBurst(() => new DepositFundsAction(SelectedEntityId!, 10m), 200);
 
-    private void DepositSingle100() => Dispatch(new DepositFundsAction(AggregateState.EntityId!, 100m));
+    private void DepositSingle100() => Dispatch(new DepositFundsAction(SelectedEntityId!, 100m));
 
     /// <summary>
     ///     Detects when projection values change and triggers update animations.
@@ -229,7 +234,7 @@ public sealed partial class Index
 
     private void ManageProjectionSubscription()
     {
-        string? currentEntityId = AggregateState.EntityId;
+        string? currentEntityId = SelectedEntityId;
         if (currentEntityId != subscribedEntityId)
         {
             if (!string.IsNullOrEmpty(subscribedEntityId))
@@ -246,7 +251,7 @@ public sealed partial class Index
         }
     }
 
-    private void OpenAccount() => Dispatch(new OpenAccountAction(AggregateState.EntityId!, holderName, initialDeposit));
+    private void OpenAccount() => Dispatch(new OpenAccountAction(SelectedEntityId!, holderName, initialDeposit));
 
     private void RequestReconnect() => Dispatch(new RequestSignalRConnectionAction());
 
@@ -254,11 +259,11 @@ public sealed partial class Index
 
     private void ToggleConnectionModal() => isConnectionModalOpen = !isConnectionModalOpen;
 
-    private void Withdraw() => Dispatch(new WithdrawFundsAction(AggregateState.EntityId!, withdrawAmount));
+    private void Withdraw() => Dispatch(new WithdrawFundsAction(SelectedEntityId!, withdrawAmount));
 
-    private void WithdrawBurst20() => DispatchBurst(() => new WithdrawFundsAction(AggregateState.EntityId!, 5m), 20);
+    private void WithdrawBurst20() => DispatchBurst(() => new WithdrawFundsAction(SelectedEntityId!, 5m), 20);
 
-    private void WithdrawBurst200() => DispatchBurst(() => new WithdrawFundsAction(AggregateState.EntityId!, 10m), 200);
+    private void WithdrawBurst200() => DispatchBurst(() => new WithdrawFundsAction(SelectedEntityId!, 10m), 200);
 
-    private void WithdrawSingle100() => Dispatch(new WithdrawFundsAction(AggregateState.EntityId!, 100m));
+    private void WithdrawSingle100() => Dispatch(new WithdrawFundsAction(SelectedEntityId!, 100m));
 }

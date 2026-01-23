@@ -1,3 +1,9 @@
+// NOTE: This file has been replaced by source generation.
+// The generated version is in: obj/{Configuration}/net10.0/generated/Mississippi.Sdk.Server.Generators/
+//     Mississippi.Sdk.Server.Generators.CommandServerDtoGenerator/OpenAccountDto.g.cs
+// Keeping this file commented out for reference during the generator development phase.
+
+#if false // Replaced by generated code
 using System.Text.Json.Serialization;
 
 using Mississippi.Sdk.Generators.Abstractions;
@@ -24,3 +30,4 @@ public sealed record OpenAccountDto
     [JsonPropertyName("initialDeposit")]
     public decimal InitialDeposit { get; init; } = 0m;
 }
+#endif

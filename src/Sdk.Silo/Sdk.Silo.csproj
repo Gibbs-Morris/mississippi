@@ -6,7 +6,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
-        <ProjectReference Include="..\Sdk.Silo.Generators\Sdk.Silo.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\Sdk.Silo.Generators\Sdk.Silo.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>

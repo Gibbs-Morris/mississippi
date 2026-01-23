@@ -1,4 +1,20 @@
+#if false // Replaced by ProjectionClientDtoGenerator - keep for reference
+// =============================================================================
+// HAND-CRAFTED REFERENCE IMPLEMENTATION
+// =============================================================================
+// This file contains the original hand-crafted version of this type, created
+// before source generation was automated via Sdk.Client.Generators.
+//
+// Purpose:
+// - Serves as a reference implementation to validate generator output
+// - Enables test comparisons between generated and expected code
+// - Documents the intended structure and behavior of the generated type
+//
+// The generator now produces this DTO automatically. This file is commented out
+// to avoid duplicate type definitions but preserved for testing and documentation.
+// =============================================================================
 using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 
 namespace Spring.Client.Features.BankAccountBalance.Dtos;
@@ -16,6 +32,7 @@ namespace Spring.Client.Features.BankAccountBalance.Dtos;
 ///         for Inlet to correctly route subscription requests.
 ///     </para>
 /// </remarks>
+[PendingSourceGenerator]
 [ProjectionPath("bank-account-balance")]
 public sealed record BankAccountBalanceProjectionDto
 {
@@ -34,3 +51,4 @@ public sealed record BankAccountBalanceProjectionDto
     /// </summary>
     public required bool IsOpen { get; init; }
 }
+#endif

@@ -5,13 +5,13 @@ using Azure.Storage.Blobs;
 
 using Cascade.Contracts.Api;
 using Cascade.Contracts.Storage;
-using Cascade.Domain.Channel;
-using Cascade.Domain.Channel.Commands;
-using Cascade.Domain.Conversation;
-using Cascade.Domain.Conversation.Commands;
+using Cascade.Domain.Aggregates.Channel;
+using Cascade.Domain.Aggregates.Channel.Commands;
+using Cascade.Domain.Aggregates.Conversation;
+using Cascade.Domain.Aggregates.Conversation.Commands;
+using Cascade.Domain.Aggregates.User;
+using Cascade.Domain.Aggregates.User.Commands;
 using Cascade.Domain.Projections.ChannelMessages;
-using Cascade.Domain.User;
-using Cascade.Domain.User.Commands;
 using Cascade.Grains.Abstractions;
 using Cascade.Server.Hubs;
 using Cascade.Server.Services;
@@ -27,7 +27,6 @@ using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.UxProjections;
-using Mississippi.EventSourcing.UxProjections.Api;
 using Mississippi.Inlet.Orleans;
 using Mississippi.Inlet.Orleans.SignalR;
 
@@ -140,9 +139,6 @@ app.UseRouting();
 // Map SignalR hubs
 app.MapHub<MessageHub>("/hubs/messages");
 app.MapInletHub(); // Maps to /hubs/inlet for real-time projection updates
-
-// Map UX Projection endpoints - auto-discovers [UxProjection] types from scanned assemblies
-app.MapUxProjections(typeof(ChannelMessagesProjection).Assembly);
 
 // Map API endpoints
 app.MapGet(
@@ -262,7 +258,7 @@ app.MapPost(
 // │ These endpoints dispatch commands to Orleans aggregate grains.                  │
 // │                                                                                 │
 // │ ✅ Projection subscriptions and real-time updates are handled by Inlet.         │
-// │ ✅ MapUxProjections provides HTTP fallback for projection data.                  │
+// │ ✅ Generated projection controllers provide HTTP fallback for projection data.   │
 // │                                                                                 │
 // │ Command dispatch via HTTP is the current pattern. Future Inlet versions may    │
 // │ add SignalR-based command dispatch for reduced latency.                         │
@@ -449,8 +445,8 @@ app.MapPost(
                 });
     });
 
-// NOTE: Channel messages projection is now served via MapUxProjections at:
-// GET /api/projections/channel-messages/{entityId}
+// NOTE: Channel messages projection is served via generated projection controllers at:
+// GET /api/projections/cascade/channels/{entityId}
 // The endpoint includes ETag support for caching
 
 // Fallback to index.html for client-side routing

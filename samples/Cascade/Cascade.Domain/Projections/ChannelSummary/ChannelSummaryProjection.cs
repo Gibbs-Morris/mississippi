@@ -1,8 +1,8 @@
 using System;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.EventSourcing.UxProjections.Abstractions.Attributes;
 using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Sdk.Generators.Abstractions;
 
 using Orleans;
 
@@ -24,9 +24,9 @@ namespace Cascade.Domain.Projections.ChannelSummary;
 ///     </para>
 /// </remarks>
 [ProjectionPath("cascade/channel-summaries")]
-[UxProjection]
 [BrookName("CASCADE", "CHAT", "CHANNEL")]
 [SnapshotStorageName("CASCADE", "CHAT", "CHANNELSUMMARY")]
+[GenerateProjectionEndpoints]
 [GenerateSerializer]
 [Alias("Cascade.Domain.Projections.ChannelSummary.ChannelSummaryProjection")]
 public sealed record ChannelSummaryProjection

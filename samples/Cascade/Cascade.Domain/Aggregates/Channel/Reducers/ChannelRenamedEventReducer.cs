@@ -1,0 +1,22 @@
+using Cascade.Domain.Aggregates.Channel.Events;
+
+using Mississippi.EventSourcing.Reducers.Abstractions;
+
+
+namespace Cascade.Domain.Aggregates.Channel.Reducers;
+
+/// <summary>
+///     Reduces the <see cref="ChannelRenamed" /> event to produce a new <see cref="ChannelAggregate" />.
+/// </summary>
+internal sealed class ChannelRenamedEventReducer : EventReducerBase<ChannelRenamed, ChannelAggregate>
+{
+    /// <inheritdoc />
+    protected override ChannelAggregate ReduceCore(
+        ChannelAggregate state,
+        ChannelRenamed eventData
+    ) =>
+        state with
+        {
+            Name = eventData.NewName,
+        };
+}

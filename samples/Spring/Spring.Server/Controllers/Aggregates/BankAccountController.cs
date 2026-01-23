@@ -1,3 +1,7 @@
+#if false // Replaced by generated code
+// NOTE: The generated version is in:
+//   obj/[Config]/[TFM]/generated/Mississippi.Sdk.Server.Generators/
+//   Mississippi.Sdk.Server.Generators.AggregateControllerGenerator/BankAccountController.g.cs
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +24,7 @@ namespace Spring.Server.Controllers.Aggregates;
 ///     Controller for BankAccount aggregate commands.
 ///     This is a test controller to exercise the aggregate via HTTP.
 /// </summary>
-[Route("api/aggregates/bankaccount/{entityId}")]
+[Route("api/aggregates/bank-account/{entityId}")]
 [PendingSourceGenerator]
 public sealed class BankAccountController : AggregateControllerBase<BankAccountAggregate>
 {
@@ -121,3 +125,4 @@ public sealed class BankAccountController : AggregateControllerBase<BankAccountA
         return grain.ExecuteAsync(command, cancellationToken);
     }
 }
+#endif

@@ -24,9 +24,9 @@
     </button>
 </header>
 
-<div class="console__body @(string.IsNullOrEmpty(AggregateState.EntityId) ? "console__body--focused" : "")">
+<div class="console__body @(string.IsNullOrEmpty(SelectedEntityId) ? "console__body--focused" : "")">
 
-@if (string.IsNullOrEmpty(AggregateState.EntityId))
+@if (string.IsNullOrEmpty(SelectedEntityId))
 {
     @* ─────────────────────────────────────────────────────────────────
                Focused Entity Selection — Centered when no entity
@@ -72,7 +72,7 @@ else
                ─────────────────────────────────────────────────────────────── *@
     <div class="entity-switcher">
         <span class="entity-switcher__label">Account:</span>
-        <span class="entity-switcher__id">@AggregateState.EntityId</span>
+        <span class="entity-switcher__id">@SelectedEntityId</span>
         <button type="button"
                 class="holo-btn holo-btn--sm holo-btn--ghost"
                 @onclick="ClearEntity"

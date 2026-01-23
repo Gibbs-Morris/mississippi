@@ -1,3 +1,4 @@
+#if false
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -18,8 +19,14 @@ namespace Spring.Client.Features.BankAccountAggregate;
 ///     Extension methods for registering the BankAccountAggregate feature.
 /// </summary>
 /// <remarks>
-///     This feature handles the write side (command execution) for the BankAccount aggregate.
-///     Derived from domain aggregate: <c>Spring.Domain.Aggregates.BankAccount</c>.
+///     <para>
+///         This feature handles the write side (command execution) for the BankAccount aggregate.
+///         Derived from domain aggregate: <c>Spring.Domain.Aggregates.BankAccount</c>.
+///     </para>
+///     <para>
+///         Includes application-specific <see cref="SetEntityIdAction" /> registration for
+///         tracking which entity is selected in the UI.
+///     </para>
 /// </remarks>
 [PendingSourceGenerator]
 internal static class BankAccountAggregateFeatureRegistration
@@ -38,13 +45,32 @@ internal static class BankAccountAggregateFeatureRegistration
         services.AddMapper<DepositFundsAction, DepositFundsRequestDto, DepositFundsActionMapper>();
         services.AddMapper<WithdrawFundsAction, WithdrawFundsRequestDto, WithdrawFundsActionMapper>();
 
-        // Reducers
+        // Reducers - EntityId
         services.AddReducer<SetEntityIdAction, BankAccountAggregateState>(BankAccountAggregateReducers.SetEntityId);
-        services.AddReducer<CommandExecutingAction, BankAccountAggregateState>(
-            BankAccountAggregateReducers.CommandExecuting);
-        services.AddReducer<CommandSucceededAction, BankAccountAggregateState>(
-            BankAccountAggregateReducers.CommandSucceeded);
-        services.AddReducer<CommandFailedAction, BankAccountAggregateState>(BankAccountAggregateReducers.CommandFailed);
+
+        // Reducers - OpenAccount
+        services.AddReducer<OpenAccountExecutingAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.OpenAccountExecuting);
+        services.AddReducer<OpenAccountSucceededAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.OpenAccountSucceeded);
+        services.AddReducer<OpenAccountFailedAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.OpenAccountFailed);
+
+        // Reducers - DepositFunds
+        services.AddReducer<DepositFundsExecutingAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.DepositFundsExecuting);
+        services.AddReducer<DepositFundsSucceededAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.DepositFundsSucceeded);
+        services.AddReducer<DepositFundsFailedAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.DepositFundsFailed);
+
+        // Reducers - WithdrawFunds
+        services.AddReducer<WithdrawFundsExecutingAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.WithdrawFundsExecuting);
+        services.AddReducer<WithdrawFundsSucceededAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.WithdrawFundsSucceeded);
+        services.AddReducer<WithdrawFundsFailedAction, BankAccountAggregateState>(
+            BankAccountAggregateReducers.WithdrawFundsFailed);
 
         // Effects
         services.AddEffect<OpenAccountEffect>();
@@ -53,3 +79,4 @@ internal static class BankAccountAggregateFeatureRegistration
         return services;
     }
 }
+#endif

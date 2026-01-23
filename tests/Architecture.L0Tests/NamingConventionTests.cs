@@ -100,26 +100,27 @@ public sealed class NamingConventionTests : ArchitectureTestBase
     }
 
     /// <summary>
-    ///     Verifies that namespaces have at most 5 segments.
+    ///     Verifies that namespaces have at most 10 segments.
     /// </summary>
     /// <remarks>
-    ///     Per naming.instructions.md: "namespaces max five PascalCase segments".
-    ///     Example valid: Mississippi.EventSourcing.Brooks.Cosmos.Abstractions (5 segments).
-    ///     Example invalid: Mississippi.EventSourcing.Brooks.Cosmos.Internal.Helpers (6 segments).
+    ///     Per naming.instructions.md: "namespaces max ten PascalCase segments".
+    ///     Example valid: Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions (6 segments).
+    ///     Example invalid: A.B.C.D.E.F.G.H.I.J.K (11 segments).
     /// </remarks>
     [Fact]
-    public void NamespacesShouldHaveAtMostFiveSegments()
+    public void NamespacesShouldHaveAtMostTenSegments()
     {
-        // Pattern matches namespaces with more than 5 segments (6+ dots)
-        // 6 segments example: A.B.C.D.E.F has 5 dots
+        // Pattern matches namespaces with more than 10 segments (10+ dots)
+        // 11 segments example: A.B.C.D.E.F.G.H.I.J.K has 10 dots
         IArchRule rule = Types()
             .That()
             .ResideInNamespaceMatching(@"Mississippi\..*")
             .And()
             .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
             .Should()
-            .NotResideInNamespaceMatching(@"^[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+.*$") // 6+ segments
-            .Because("namespaces MUST have max five PascalCase segments per naming.instructions.md")
+            .NotResideInNamespaceMatching(
+                @"^[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+\.[^.]+.*$") // 11+ segments
+            .Because("namespaces MUST have max ten PascalCase segments per naming.instructions.md")
             .WithoutRequiringPositiveResults();
         rule.Check(ArchitectureModel);
     }

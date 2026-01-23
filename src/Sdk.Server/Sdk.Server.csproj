@@ -18,7 +18,7 @@
         <ProjectReference Include="..\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
         <ProjectReference Include="..\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
         <ProjectReference Include="..\Sdk.Generators.Abstractions\Sdk.Generators.Abstractions.csproj" />
-        <ProjectReference Include="..\Sdk.Server.Generators\Sdk.Server.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\Sdk.Server.Generators\Sdk.Server.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     </ItemGroup>
 
 </Project>

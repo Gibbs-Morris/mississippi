@@ -1,6 +1,9 @@
+#if false
+using System;
 using System.Net.Http;
 
 using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
 using Mississippi.Sdk.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
@@ -13,24 +16,28 @@ namespace Spring.Client.Features.BankAccountAggregate.Effects;
 ///     Effect that handles opening a bank account.
 /// </summary>
 [PendingSourceGenerator]
-internal sealed class OpenAccountEffect : CommandEffectBase<OpenAccountAction, OpenAccountRequestDto>
+internal sealed class OpenAccountEffect
+    : CommandEffectBase<OpenAccountAction, OpenAccountRequestDto, OpenAccountExecutingAction, OpenAccountSucceededAction, OpenAccountFailedAction>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="OpenAccountEffect" /> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client for API calls.</param>
     /// <param name="mapper">The mapper for action-to-DTO conversion.</param>
+    /// <param name="timeProvider">The time provider for timestamps.</param>
     public OpenAccountEffect(
         HttpClient httpClient,
-        IMapper<OpenAccountAction, OpenAccountRequestDto> mapper
+        IMapper<OpenAccountAction, OpenAccountRequestDto> mapper,
+        TimeProvider? timeProvider = null
     )
-        : base(httpClient, mapper)
+        : base(httpClient, mapper, timeProvider)
     {
     }
 
     /// <inheritdoc />
-    protected override string GetEndpoint(
-        OpenAccountAction action
-    ) =>
-        $"/api/aggregates/bankaccount/{action.EntityId}/open";
+    protected override string AggregateRoutePrefix => "/api/aggregates/bank-account";
+
+    /// <inheritdoc />
+    protected override string Route => "open";
 }
+#endif
