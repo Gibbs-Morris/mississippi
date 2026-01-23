@@ -5,16 +5,6 @@
         <File Path="global.json" />
     </Folder>
     <Folder Name="/Samples/" />
-    <Folder Name="/Samples/Cascade/">
-        <Project Path="samples\Cascade\Cascade.Domain\Cascade.Domain.csproj" />
-        <Project Path="samples\Cascade\Cascade.Domain.L0Tests\Cascade.Domain.L0Tests.csproj" />
-        <Project Path="samples\Cascade\Cascade.Grains.Abstractions\Cascade.Grains.Abstractions.csproj" />
-        <Project Path="samples\Cascade\Cascade.Contracts\Cascade.Contracts.csproj" />
-        <Project Path="samples\Cascade\Cascade.Client\Cascade.Client.csproj" />
-        <Project Path="samples\Cascade\Cascade.Server\Cascade.Server.csproj" />
-        <Project Path="samples\Cascade\Cascade.Silo\Cascade.Silo.csproj" />
-        <Project Path="samples\Cascade\Cascade.AppHost\Cascade.AppHost.csproj" />
-    </Folder>
     <Folder Name="/Samples/Crescent/">
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
         <Project Path="samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj" />
