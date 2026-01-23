@@ -330,6 +330,9 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Inlet.Generators.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Inlet.Orleans": {
         "type": "Project",
         "dependencies": {
@@ -353,9 +356,6 @@
         "type": "Project"
       },
       "Mississippi.Reservoir.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.Sdk.Generators.Abstractions": {
         "type": "Project"
       },
       "CloudNative.CloudEvents": {

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Common" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Inlet.Silo.Generators\Inlet.Silo.Generators.csproj" />
+    </ItemGroup>
+</Project>
