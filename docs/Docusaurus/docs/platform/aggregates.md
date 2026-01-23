@@ -22,3 +22,5 @@ Aggregates sit upstream of brooks. They translate commands into events that are 
 
 - [IGenericAggregateGrain](../../../../src/EventSourcing.Aggregates.Abstractions/IGenericAggregateGrain.cs)
 - [IRootCommandHandler](../../../../src/EventSourcing.Aggregates.Abstractions/IRootCommandHandler.cs)
+- [GenerateAggregateEndpointsAttribute](../../../../src/Sdk.Generators.Abstractions/GenerateAggregateEndpointsAttribute.cs) — marks an aggregate for endpoint code generation
+- [GenerateCommandAttribute](../../../../src/Sdk.Generators.Abstractions/GenerateCommandAttribute.cs) — marks a command for endpoint code generation
