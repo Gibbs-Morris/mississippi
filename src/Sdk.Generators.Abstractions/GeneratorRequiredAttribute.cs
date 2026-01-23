@@ -19,20 +19,6 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 ///         Use this attribute to override the default inference when needed.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed record CreateUser
-///         {
-///             // Force this nullable property to be required
-///             [GeneratorRequired]
-///             public string? Email { get; init; }
-///
-///             // Force this non-nullable property to be optional
-///             [GeneratorRequired(false)]
-///             public string NickName { get; init; } = "Anonymous";
-///         }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class GeneratorRequiredAttribute : Attribute
 {

@@ -67,6 +67,7 @@
   <Folder Name="/src/" />
   <Folder Name="/Tests/">
     <Project Path="tests/Sdk.Generators.Core.L0Tests/Sdk.Generators.Core.L0Tests.csproj" />
+    <Project Path="tests/Sdk.Silo.Generators.L0Tests/Sdk.Silo.Generators.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Tests/Core/">

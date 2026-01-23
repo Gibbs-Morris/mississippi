@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 
 using Allure.Xunit.Attributes;
 
@@ -32,32 +30,32 @@ public class RoslynCompilationTests
     ///     Minimal attribute stubs needed for compilation without referencing the full SDK.
     /// </summary>
     private const string AttributeStubs = """
-        namespace Mississippi.Sdk.Generators.Abstractions
-        {
-            using System;
+                                          namespace Mississippi.Sdk.Generators.Abstractions
+                                          {
+                                              using System;
 
-            [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-            public sealed class GenerateAggregateEndpointsAttribute : Attribute
-            {
-                public string? FeatureKey { get; set; }
-                public string? RoutePrefix { get; set; }
-            }
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateAggregateEndpointsAttribute : Attribute
+                                              {
+                                                  public string? FeatureKey { get; set; }
+                                                  public string? RoutePrefix { get; set; }
+                                              }
 
-            [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-            public sealed class GenerateCommandAttribute : Attribute
-            {
-                public string HttpMethod { get; set; } = "POST";
-                public string Route { get; set; } = "";
-            }
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateCommandAttribute : Attribute
+                                              {
+                                                  public string HttpMethod { get; set; } = "POST";
+                                                  public string Route { get; set; } = "";
+                                              }
 
-            [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-            public sealed class GenerateProjectionEndpointsAttribute : Attribute
-            {
-                public string? FeatureKey { get; set; }
-                public string? RoutePrefix { get; set; }
-            }
-        }
-        """;
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateProjectionEndpointsAttribute : Attribute
+                                              {
+                                                  public string? FeatureKey { get; set; }
+                                                  public string? RoutePrefix { get; set; }
+                                              }
+                                          }
+                                          """;
 
     /// <summary>
     ///     Creates a Roslyn compilation from the provided source code.
@@ -66,18 +64,15 @@ public class RoslynCompilationTests
         params string[] sources
     )
     {
-        SyntaxTree[] syntaxTrees = sources
-            .Select(s => CSharpSyntaxTree.ParseText(s))
-            .ToArray();
+        SyntaxTree[] syntaxTrees = sources.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray();
 
         // Get all framework references needed for compilation
         string runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-
         List<MetadataReference> references =
         [
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll"))
+            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
         ];
 
         // Add netstandard if available (for compatibility)
@@ -91,8 +86,8 @@ public class RoslynCompilationTests
             "TestAssembly",
             syntaxTrees,
             references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                .WithNullableContextOptions(NullableContextOptions.Enable));
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
+                NullableContextOptions.Enable));
     }
 
     /// <summary>
@@ -102,31 +97,27 @@ public class RoslynCompilationTests
     public void AggregateModelAnalyzesRealAggregateType()
     {
         const string aggregateSource = """
-            using Mississippi.Sdk.Generators.Abstractions;
+                                       using Mississippi.Sdk.Generators.Abstractions;
 
-            namespace Spring.Domain.Aggregates.BankAccount
-            {
-                [GenerateAggregateEndpoints]
-                public sealed record BankAccountAggregate
-                {
-                    public decimal Balance { get; init; }
-                    public bool IsOpen { get; init; }
-                    public string HolderName { get; init; } = string.Empty;
-                }
-            }
-            """;
-
+                                       namespace Spring.Domain.Aggregates.BankAccount
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record BankAccountAggregate
+                                           {
+                                               public decimal Balance { get; init; }
+                                               public bool IsOpen { get; init; }
+                                               public string HolderName { get; init; } = string.Empty;
+                                           }
+                                       }
+                                       """;
         CSharpCompilation compilation = CreateCompilation(AttributeStubs, aggregateSource);
         INamedTypeSymbol? aggregateSymbol = compilation.GetTypeByMetadataName(
             "Spring.Domain.Aggregates.BankAccount.BankAccountAggregate");
-
         Assert.NotNull(aggregateSymbol);
-
         AggregateModel model = new(
             aggregateSymbol,
             NamingConventions.GetRoutePrefix(aggregateSymbol.Name),
             NamingConventions.GetFeatureKey(aggregateSymbol.Name));
-
         Assert.Equal("BankAccountAggregate", model.TypeName);
         Assert.Equal("BankAccount", model.AggregateName);
         Assert.Equal("BankAccountController", model.ControllerTypeName);
@@ -142,23 +133,19 @@ public class RoslynCompilationTests
     public void CommandModelAnalyzesPositionalRecordCommand()
     {
         const string commandSource = """
-            using Mississippi.Sdk.Generators.Abstractions;
+                                     using Mississippi.Sdk.Generators.Abstractions;
 
-            namespace Spring.Domain.Aggregates.BankAccount.Commands
-            {
-                [GenerateCommand(Route = "open")]
-                public sealed record OpenAccount(string HolderName, decimal InitialDeposit = 0);
-            }
-            """;
-
+                                     namespace Spring.Domain.Aggregates.BankAccount.Commands
+                                     {
+                                         [GenerateCommand(Route = "open")]
+                                         public sealed record OpenAccount(string HolderName, decimal InitialDeposit = 0);
+                                     }
+                                     """;
         CSharpCompilation compilation = CreateCompilation(AttributeStubs, commandSource);
         INamedTypeSymbol? commandSymbol = compilation.GetTypeByMetadataName(
             "Spring.Domain.Aggregates.BankAccount.Commands.OpenAccount");
-
         Assert.NotNull(commandSymbol);
-
         CommandModel model = new(commandSymbol, "open", "POST");
-
         Assert.Equal("OpenAccount", model.TypeName);
         Assert.Equal("OpenAccountDto", model.DtoTypeName);
         Assert.Equal("open", model.Route);
@@ -179,26 +166,22 @@ public class RoslynCompilationTests
     public void CommandModelAnalyzesStandardRecordCommand()
     {
         const string commandSource = """
-            using Mississippi.Sdk.Generators.Abstractions;
+                                     using Mississippi.Sdk.Generators.Abstractions;
 
-            namespace Spring.Domain.Aggregates.BankAccount.Commands
-            {
-                [GenerateCommand(Route = "deposit")]
-                public sealed record DepositFunds
-                {
-                    public decimal Amount { get; init; }
-                }
-            }
-            """;
-
+                                     namespace Spring.Domain.Aggregates.BankAccount.Commands
+                                     {
+                                         [GenerateCommand(Route = "deposit")]
+                                         public sealed record DepositFunds
+                                         {
+                                             public decimal Amount { get; init; }
+                                         }
+                                     }
+                                     """;
         CSharpCompilation compilation = CreateCompilation(AttributeStubs, commandSource);
         INamedTypeSymbol? commandSymbol = compilation.GetTypeByMetadataName(
             "Spring.Domain.Aggregates.BankAccount.Commands.DepositFunds");
-
         Assert.NotNull(commandSymbol);
-
         CommandModel model = new(commandSymbol, "deposit", "POST");
-
         Assert.Equal("DepositFunds", model.TypeName);
         Assert.Equal("DepositFundsDto", model.DtoTypeName);
 
@@ -215,23 +198,19 @@ public class RoslynCompilationTests
     public void GetFullNamespaceReturnsCorrectNamespaceFromCompilation()
     {
         const string source = """
-            namespace Spring.Domain.Aggregates.BankAccount.Commands
-            {
-                public sealed record DepositFunds
-                {
-                    public decimal Amount { get; init; }
-                }
-            }
-            """;
-
+                              namespace Spring.Domain.Aggregates.BankAccount.Commands
+                              {
+                                  public sealed record DepositFunds
+                                  {
+                                      public decimal Amount { get; init; }
+                                  }
+                              }
+                              """;
         CSharpCompilation compilation = CreateCompilation(source);
         INamedTypeSymbol? typeSymbol = compilation.GetTypeByMetadataName(
             "Spring.Domain.Aggregates.BankAccount.Commands.DepositFunds");
-
         Assert.NotNull(typeSymbol);
-
         string ns = TypeAnalyzer.GetFullNamespace(typeSymbol);
-
         Assert.Equal("Spring.Domain.Aggregates.BankAccount.Commands", ns);
     }
 
@@ -242,26 +221,22 @@ public class RoslynCompilationTests
     public void IsCollectionTypeReturnsTrueForGenericListFromCompilation()
     {
         const string source = """
-            using System.Collections.Generic;
+                              using System.Collections.Generic;
 
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    public List<string> Items { get; set; }
-                }
-            }
-            """;
-
+                              namespace TestNamespace
+                              {
+                                  public class TestClass
+                                  {
+                                      public List<string> Items { get; set; }
+                                  }
+                              }
+                              """;
         CSharpCompilation compilation = CreateCompilation(source);
         INamedTypeSymbol? typeSymbol = compilation.GetTypeByMetadataName("TestNamespace.TestClass");
-
         Assert.NotNull(typeSymbol);
-
         IPropertySymbol? property = typeSymbol.GetMembers()
             .OfType<IPropertySymbol>()
             .FirstOrDefault(p => p.Name == "Items");
-
         Assert.NotNull(property);
         Assert.True(TypeAnalyzer.IsCollectionType(property.Type));
     }
@@ -273,19 +248,17 @@ public class RoslynCompilationTests
     public void IsFrameworkTypeReturnsFalseForCustomTypesFromCompilation()
     {
         const string source = """
-            namespace Spring.Domain.ValueObjects
-            {
-                public record Address
-                {
-                    public string Street { get; init; }
-                    public string City { get; init; }
-                }
-            }
-            """;
-
+                              namespace Spring.Domain.ValueObjects
+                              {
+                                  public record Address
+                                  {
+                                      public string Street { get; init; }
+                                      public string City { get; init; }
+                                  }
+                              }
+                              """;
         CSharpCompilation compilation = CreateCompilation(source);
         INamedTypeSymbol? typeSymbol = compilation.GetTypeByMetadataName("Spring.Domain.ValueObjects.Address");
-
         Assert.NotNull(typeSymbol);
         Assert.False(TypeAnalyzer.IsFrameworkType(typeSymbol));
     }
@@ -297,32 +270,26 @@ public class RoslynCompilationTests
     public void IsFrameworkTypeReturnsTrueForSystemTypesFromCompilation()
     {
         const string source = """
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    public string Name { get; set; }
-                    public int Count { get; set; }
-                    public decimal Amount { get; set; }
-                }
-            }
-            """;
-
+                              namespace TestNamespace
+                              {
+                                  public class TestClass
+                                  {
+                                      public string Name { get; set; }
+                                      public int Count { get; set; }
+                                      public decimal Amount { get; set; }
+                                  }
+                              }
+                              """;
         CSharpCompilation compilation = CreateCompilation(source);
         INamedTypeSymbol? typeSymbol = compilation.GetTypeByMetadataName("TestNamespace.TestClass");
-
         Assert.NotNull(typeSymbol);
-
         ImmutableArray<ISymbol> properties = typeSymbol.GetMembers();
-
         IPropertySymbol? nameProp = properties.OfType<IPropertySymbol>().FirstOrDefault(p => p.Name == "Name");
         IPropertySymbol? countProp = properties.OfType<IPropertySymbol>().FirstOrDefault(p => p.Name == "Count");
         IPropertySymbol? amountProp = properties.OfType<IPropertySymbol>().FirstOrDefault(p => p.Name == "Amount");
-
         Assert.NotNull(nameProp);
         Assert.NotNull(countProp);
         Assert.NotNull(amountProp);
-
         Assert.True(TypeAnalyzer.IsFrameworkType(nameProp.Type));
         Assert.True(TypeAnalyzer.IsFrameworkType(countProp.Type));
         Assert.True(TypeAnalyzer.IsFrameworkType(amountProp.Type));
@@ -335,28 +302,24 @@ public class RoslynCompilationTests
     public void ProjectionModelAnalyzesRealProjectionType()
     {
         const string projectionSource = """
-            using Mississippi.Sdk.Generators.Abstractions;
+                                        using Mississippi.Sdk.Generators.Abstractions;
 
-            namespace Spring.Domain.Projections.BankAccountBalance
-            {
-                [GenerateProjectionEndpoints]
-                public sealed record BankAccountBalanceProjection
-                {
-                    public decimal Balance { get; init; }
-                    public string HolderName { get; init; } = string.Empty;
-                    public bool IsOpen { get; init; }
-                }
-            }
-            """;
-
+                                        namespace Spring.Domain.Projections.BankAccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            public sealed record BankAccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                                public string HolderName { get; init; } = string.Empty;
+                                                public bool IsOpen { get; init; }
+                                            }
+                                        }
+                                        """;
         CSharpCompilation compilation = CreateCompilation(AttributeStubs, projectionSource);
         INamedTypeSymbol? projectionSymbol = compilation.GetTypeByMetadataName(
             "Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection");
-
         Assert.NotNull(projectionSymbol);
-
         ProjectionModel model = new(projectionSymbol, "/bank-account-balance");
-
         Assert.Equal("BankAccountBalanceProjection", model.TypeName);
         Assert.Equal("BankAccountBalance", model.ProjectionName);
         Assert.Equal("BankAccountBalanceDto", model.DtoTypeName);
@@ -372,39 +335,35 @@ public class RoslynCompilationTests
     public void ProjectionModelDetectsNestedCustomTypesFromCompilation()
     {
         const string source = """
-            using Mississippi.Sdk.Generators.Abstractions;
+                              using Mississippi.Sdk.Generators.Abstractions;
 
-            namespace Spring.Domain.ValueObjects
-            {
-                public record Address
-                {
-                    public string Street { get; init; }
-                    public string City { get; init; }
-                }
-            }
+                              namespace Spring.Domain.ValueObjects
+                              {
+                                  public record Address
+                                  {
+                                      public string Street { get; init; }
+                                      public string City { get; init; }
+                                  }
+                              }
 
-            namespace Spring.Domain.Projections.Customer
-            {
-                using Spring.Domain.ValueObjects;
+                              namespace Spring.Domain.Projections.Customer
+                              {
+                                  using Spring.Domain.ValueObjects;
 
-                [GenerateProjectionEndpoints]
-                public sealed record CustomerProjection
-                {
-                    public string Name { get; init; } = string.Empty;
-                    public Address BillingAddress { get; init; }
-                    public Address ShippingAddress { get; init; }
-                }
-            }
-            """;
-
+                                  [GenerateProjectionEndpoints]
+                                  public sealed record CustomerProjection
+                                  {
+                                      public string Name { get; init; } = string.Empty;
+                                      public Address BillingAddress { get; init; }
+                                      public Address ShippingAddress { get; init; }
+                                  }
+                              }
+                              """;
         CSharpCompilation compilation = CreateCompilation(AttributeStubs, source);
         INamedTypeSymbol? projectionSymbol = compilation.GetTypeByMetadataName(
             "Spring.Domain.Projections.Customer.CustomerProjection");
-
         Assert.NotNull(projectionSymbol);
-
         ProjectionModel model = new(projectionSymbol, "/customers");
-
         Assert.True(model.HasMappedProperties);
         Assert.Single(model.NestedCustomTypes);
         Assert.Equal("Address", model.NestedCustomTypes[0]);
@@ -421,30 +380,25 @@ public class RoslynCompilationTests
     public void PropertyModelAnalyzesNullableValueTypesFromCompilation()
     {
         const string source = """
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    public string RequiredName { get; set; } = string.Empty;
-                    public int RequiredCount { get; set; }
-                    public int? OptionalCount { get; set; }
-                    public decimal? OptionalAmount { get; set; }
-                }
-            }
-            """;
-
+                              namespace TestNamespace
+                              {
+                                  public class TestClass
+                                  {
+                                      public string RequiredName { get; set; } = string.Empty;
+                                      public int RequiredCount { get; set; }
+                                      public int? OptionalCount { get; set; }
+                                      public decimal? OptionalAmount { get; set; }
+                                  }
+                              }
+                              """;
         CSharpCompilation compilation = CreateCompilation(source);
         INamedTypeSymbol? typeSymbol = compilation.GetTypeByMetadataName("TestNamespace.TestClass");
-
         Assert.NotNull(typeSymbol);
-
         IPropertySymbol[] properties = typeSymbol.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(p => !p.IsStatic && p.GetMethod is not null)
             .ToArray();
-
         Assert.Equal(4, properties.Length);
-
         PropertyModel requiredNameModel = new(properties.First(p => p.Name == "RequiredName"));
         PropertyModel requiredCountModel = new(properties.First(p => p.Name == "RequiredCount"));
         PropertyModel optionalCountModel = new(properties.First(p => p.Name == "OptionalCount"));
@@ -470,30 +424,27 @@ public class RoslynCompilationTests
     public void TypeAnalyzerGetDtoTypeNameTransformsTypesFromCompilation()
     {
         const string source = """
-            namespace Spring.Domain.Aggregates.BankAccount
-            {
-                public sealed record BankAccountAggregate
-                {
-                    public decimal Balance { get; init; }
-                }
-            }
+                              namespace Spring.Domain.Aggregates.BankAccount
+                              {
+                                  public sealed record BankAccountAggregate
+                                  {
+                                      public decimal Balance { get; init; }
+                                  }
+                              }
 
-            namespace Spring.Domain.Projections.BankAccountBalance
-            {
-                public sealed record BankAccountBalanceProjection
-                {
-                    public decimal Balance { get; init; }
-                }
-            }
-            """;
-
+                              namespace Spring.Domain.Projections.BankAccountBalance
+                              {
+                                  public sealed record BankAccountBalanceProjection
+                                  {
+                                      public decimal Balance { get; init; }
+                                  }
+                              }
+                              """;
         CSharpCompilation compilation = CreateCompilation(source);
-
         INamedTypeSymbol? aggregateSymbol = compilation.GetTypeByMetadataName(
             "Spring.Domain.Aggregates.BankAccount.BankAccountAggregate");
         INamedTypeSymbol? projectionSymbol = compilation.GetTypeByMetadataName(
             "Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection");
-
         Assert.NotNull(aggregateSymbol);
         Assert.NotNull(projectionSymbol);
 
