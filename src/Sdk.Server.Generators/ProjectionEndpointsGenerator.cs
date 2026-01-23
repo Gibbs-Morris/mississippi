@@ -49,8 +49,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         string projectionNamespace
     )
     {
-        // Convert e.g. "Spring.Domain.Projections.BankAccountBalance"
-        // to "Spring.Server.Controllers.Projections"
+        // Convert e.g. "Contoso.Domain.Projections.BankAccountBalance"
+        // to "Contoso.Server.Controllers.Projections"
         // This is a simplified derivation - in practice the consuming project defines this
         string[] parts = projectionNamespace.Split('.');
         if (parts.Length >= 2)

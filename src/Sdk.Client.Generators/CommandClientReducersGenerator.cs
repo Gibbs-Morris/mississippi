@@ -22,8 +22,8 @@ namespace Mississippi.Sdk.Client.Generators;
 ///         Each reducer delegates to <c>AggregateCommandStateReducers</c> helper methods.
 ///     </para>
 ///     <para>
-///         Example: For commands in "Spring.Domain.Aggregates.BankAccount.Commands",
-///         generates "BankAccountAggregateReducers" in "Spring.Client.Features.BankAccountAggregate.Reducers".
+///         Example: For commands in "Contoso.Domain.Aggregates.BankAccount.Commands",
+///         generates "BankAccountAggregateReducers" in "Contoso.Client.Features.BankAccountAggregate.Reducers".
 ///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]

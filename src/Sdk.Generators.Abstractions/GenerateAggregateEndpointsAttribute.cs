@@ -38,8 +38,8 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 /// </remarks>
 /// <example>
 ///     <code>
-///         [BrookName("SPRING", "BANKING", "ACCOUNT")]
-///         [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
+///         [BrookName("CONTOSO", "BANKING", "ACCOUNT")]
+///         [SnapshotStorageName("CONTOSO", "BANKING", "ACCOUNTSTATE")]
 ///         [GenerateAggregateEndpoints]
 ///         [GenerateSerializer]
 ///         public sealed record BankAccountAggregate

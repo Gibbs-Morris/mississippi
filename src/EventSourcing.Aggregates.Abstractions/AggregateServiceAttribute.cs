@@ -35,7 +35,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 /// <example>
 ///     <code>
 ///         [AggregateService("users")]
-///         [BrookName("CASCADE", "CHAT", "USER")]
+///         [BrookName("MYAPP", "CHAT", "USER")]
 ///         [GenerateSerializer]
 ///         public sealed record class UserAggregate { ... }
 ///     </code>

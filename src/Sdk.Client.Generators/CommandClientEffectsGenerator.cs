@@ -21,8 +21,8 @@ namespace Mississippi.Sdk.Client.Generators;
 ///         <c>CommandEffectBase</c> with the appropriate type parameters and route configuration.
 ///     </para>
 ///     <para>
-///         Example: For "DepositFunds" command in "Spring.Domain.Aggregates.BankAccount.Commands",
-///         generates "DepositFundsEffect" in "Spring.Client.Features.BankAccountAggregate.Effects".
+///         Example: For "DepositFunds" command in "Contoso.Domain.Aggregates.BankAccount.Commands",
+///         generates "DepositFundsEffect" in "Contoso.Client.Features.BankAccountAggregate.Effects".
 ///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]

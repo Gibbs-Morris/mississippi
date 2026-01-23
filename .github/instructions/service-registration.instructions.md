@@ -44,7 +44,7 @@ For domain models using Mississippi event sourcing:
 
 | Method Pattern | Purpose | Example |
 |----------------|---------|---------|
-| `Add{Domain}Domain()` | Public entry point | `AddCascadeDomain()` |
+| `Add{Domain}Domain()` | Public entry point | `AddContosoDomain()` |
 | `Add{Aggregate}Aggregate()` | Private per-aggregate | `AddChannelAggregate()` |
 | `Add{Projection}Projection()` | Private per-projection | `AddUserProfileProjection()` |
 

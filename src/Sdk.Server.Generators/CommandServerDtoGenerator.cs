@@ -255,7 +255,7 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     ///     Gets the aggregate name from a command namespace.
     /// </summary>
     /// <remarks>
-    ///     Extracts "BankAccount" from "Spring.Domain.Aggregates.BankAccount.Commands".
+    ///     Extracts "BankAccount" from "Contoso.Domain.Aggregates.BankAccount.Commands".
     /// </remarks>
     private static string GetAggregateNameFromNamespace(
         string commandNamespace

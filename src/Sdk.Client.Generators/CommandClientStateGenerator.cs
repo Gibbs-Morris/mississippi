@@ -22,8 +22,8 @@ namespace Mississippi.Sdk.Client.Generators;
 ///         The state record has a <c>FeatureKey</c> property derived from the aggregate name.
 ///     </para>
 ///     <para>
-///         Example: For commands in "Spring.Domain.Aggregates.BankAccount.Commands",
-///         generates "BankAccountAggregateState" in "Spring.Client.Features.BankAccountAggregate.State".
+///         Example: For commands in "Contoso.Domain.Aggregates.BankAccount.Commands",
+///         generates "BankAccountAggregateState" in "Contoso.Client.Features.BankAccountAggregate.State".
 ///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]

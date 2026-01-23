@@ -74,7 +74,7 @@ public sealed class InletHub : Hub<IInletHubClient>
     /// <summary>
     ///     Subscribes to projection updates for an entity.
     /// </summary>
-    /// <param name="path">The projection path (e.g., "cascade/channels").</param>
+    /// <param name="path">The projection path (e.g., "chat/channels").</param>
     /// <param name="entityId">The entity identifier.</param>
     /// <returns>The subscription identifier.</returns>
     /// <remarks>

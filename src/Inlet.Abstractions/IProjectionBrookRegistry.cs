@@ -31,7 +31,7 @@ public interface IProjectionBrookRegistry
     /// <summary>
     ///     Gets the brook name for a projection path.
     /// </summary>
-    /// <param name="path">The projection path (e.g., "cascade/channels").</param>
+    /// <param name="path">The projection path (e.g., "chat/channels").</param>
     /// <returns>The brook name for the projection, or null if not registered.</returns>
     string? GetBrookName(
         string path
