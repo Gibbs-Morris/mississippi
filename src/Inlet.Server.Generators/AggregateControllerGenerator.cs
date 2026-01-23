@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -44,13 +45,14 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol aggregateAttrSymbol,
         INamedTypeSymbol commandAttrSymbol,
-        List<AggregateInfo> aggregates
+        List<AggregateInfo> aggregates,
+        string targetRootNamespace
     )
     {
         // Check types in this namespace
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            AggregateInfo? info = TryGetAggregateInfo(typeSymbol, aggregateAttrSymbol, commandAttrSymbol);
+            AggregateInfo? info = TryGetAggregateInfo(typeSymbol, aggregateAttrSymbol, commandAttrSymbol, targetRootNamespace);
             if (info is not null)
             {
                 aggregates.Add(info);
@@ -60,7 +62,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Recurse into nested namespaces
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindAggregatesInNamespace(childNs, aggregateAttrSymbol, commandAttrSymbol, aggregates);
+            FindAggregatesInNamespace(childNs, aggregateAttrSymbol, commandAttrSymbol, aggregates, targetRootNamespace);
         }
     }
 
@@ -283,7 +285,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
     ///     Gets aggregate information from the compilation, including referenced assemblies.
     /// </summary>
     private static List<AggregateInfo> GetAggregatesFromCompilation(
-        Compilation compilation
+        Compilation compilation,
+        string targetRootNamespace
     )
     {
         List<AggregateInfo> aggregates = [];
@@ -304,7 +307,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
                 referencedAssembly.GlobalNamespace,
                 aggregateAttrSymbol,
                 commandAttrSymbol,
-                aggregates);
+                aggregates,
+                targetRootNamespace);
         }
 
         return aggregates;
@@ -336,7 +340,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
     private static AggregateInfo? TryGetAggregateInfo(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol aggregateAttrSymbol,
-        INamedTypeSymbol commandAttrSymbol
+        INamedTypeSymbol commandAttrSymbol,
+        string targetRootNamespace
     )
     {
         // Check for [GenerateAggregateEndpoints] attribute
@@ -383,7 +388,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
 
         // Use the Commands namespace to derive output namespace (same as DTOs)
         string commandsNamespace = model.Namespace + ".Commands";
-        string outputNamespace = NamingConventions.GetServerCommandDtoNamespace(commandsNamespace);
+        string outputNamespace = NamingConventions.GetServerCommandDtoNamespace(commandsNamespace, targetRootNamespace);
         return new(model, commands, outputNamespace);
     }
 
@@ -395,11 +400,21 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
+        // Combine compilation with options provider
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
+            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = context.CompilationProvider.Select((
-            compilation,
+        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
+            source,
             _
-        ) => GetAggregatesFromCompilation(compilation));
+        ) =>
+        {
+            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, source.Compilation);
+            return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
+        });
 
         // Register source output
         context.RegisterSourceOutput(

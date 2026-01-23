@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -151,7 +152,8 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
     ///     Gets aggregates from command models by grouping on aggregate name.
     /// </summary>
     private static List<AggregateInfo> GetAggregatesFromCommands(
-        List<CommandModel> commands
+        List<CommandModel> commands,
+        string targetRootNamespace
     )
     {
         return commands.Select(c => new
@@ -164,13 +166,13 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
             .Select(g =>
             {
                 CommandModel firstCommand = g.First().Command;
-                string featureNamespace = NamingConventions.GetClientFeatureRootNamespace(firstCommand.Namespace);
-                string stateNamespace = NamingConventions.GetClientStateNamespace(firstCommand.Namespace);
-                string reducersNamespace = NamingConventions.GetClientReducersNamespace(firstCommand.Namespace);
-                string actionsNamespace = NamingConventions.GetClientActionsNamespace(firstCommand.Namespace);
-                string effectsNamespace = NamingConventions.GetClientEffectsNamespace(firstCommand.Namespace);
-                string dtosNamespace = NamingConventions.GetClientCommandDtoNamespace(firstCommand.Namespace);
-                string mappersNamespace = NamingConventions.GetClientMappersNamespace(firstCommand.Namespace);
+                string featureNamespace = NamingConventions.GetClientFeatureRootNamespace(firstCommand.Namespace, targetRootNamespace);
+                string stateNamespace = NamingConventions.GetClientStateNamespace(firstCommand.Namespace, targetRootNamespace);
+                string reducersNamespace = NamingConventions.GetClientReducersNamespace(firstCommand.Namespace, targetRootNamespace);
+                string actionsNamespace = NamingConventions.GetClientActionsNamespace(firstCommand.Namespace, targetRootNamespace);
+                string effectsNamespace = NamingConventions.GetClientEffectsNamespace(firstCommand.Namespace, targetRootNamespace);
+                string dtosNamespace = NamingConventions.GetClientCommandDtoNamespace(firstCommand.Namespace, targetRootNamespace);
+                string mappersNamespace = NamingConventions.GetClientMappersNamespace(firstCommand.Namespace, targetRootNamespace);
                 AggregateInfo aggregate = new(
                     g.Key,
                     featureNamespace,
@@ -263,13 +265,19 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = context.CompilationProvider.Select((
-            compilation,
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
+            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+
+        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
+            source,
             _
         ) =>
         {
-            List<CommandModel> commands = GetCommandsFromCompilation(compilation);
-            return GetAggregatesFromCommands(commands);
+            List<CommandModel> commands = GetCommandsFromCompilation(source.Compilation);
+            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, source.Compilation);
+            return GetAggregatesFromCommands(commands, targetRootNamespace);
         });
         context.RegisterSourceOutput(
             aggregatesProvider,

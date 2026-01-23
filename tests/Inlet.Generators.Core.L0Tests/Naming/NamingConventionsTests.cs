@@ -655,4 +655,151 @@ public class NamingConventionsTests
         string result = NamingConventions.ToKebabCase(null!);
         Assert.Null(result);
     }
+
+    /// <summary>
+    ///     GetClientActionsNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientActionsNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientActionsNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Actions", result);
+    }
+
+    /// <summary>
+    ///     GetClientCommandDtoNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientCommandDtoNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientCommandDtoNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Dtos", result);
+    }
+
+    /// <summary>
+    ///     GetClientEffectsNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientEffectsNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientEffectsNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Effects", result);
+    }
+
+    /// <summary>
+    ///     GetClientFeatureRootNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientFeatureRootNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientFeatureRootNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate", result);
+    }
+
+    /// <summary>
+    ///     GetClientMappersNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientMappersNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientMappersNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Mappers", result);
+    }
+
+    /// <summary>
+    ///     GetClientNamespace with targetRootNamespace should use target namespace for projections.
+    /// </summary>
+    [Fact]
+    public void GetClientNamespaceWithTargetUsesTargetNamespaceForProjections()
+    {
+        string result = NamingConventions.GetClientNamespace(
+            "MyApp.CoreDomainLogic.Projections.BankAccountBalance",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountBalance.Dtos", result);
+    }
+
+    /// <summary>
+    ///     GetClientNamespace with targetRootNamespace should return fallback for empty source.
+    /// </summary>
+    [Fact]
+    public void GetClientNamespaceWithTargetReturnsFallbackForEmptySource()
+    {
+        string result = NamingConventions.GetClientNamespace(
+            string.Empty,
+            "MyApp.BlazorClient");
+        Assert.Equal(string.Empty, result);
+    }
+
+    /// <summary>
+    ///     GetClientReducersNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientReducersNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientReducersNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Reducers", result);
+    }
+
+    /// <summary>
+    ///     GetClientStateNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientStateNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientStateNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.State", result);
+    }
+
+    /// <summary>
+    ///     Target-aware methods should work with standard Domain pattern.
+    /// </summary>
+    [Fact]
+    public void TargetAwareMethodsWorkWithStandardDomainPattern()
+    {
+        string result = NamingConventions.GetClientActionsNamespace(
+            "Spring.Domain.Aggregates.BankAccount.Commands",
+            "Spring.Client");
+        Assert.Equal("Spring.Client.Features.BankAccountAggregate.Actions", result);
+    }
+
+    /// <summary>
+    ///     Target-aware methods should return empty when source is empty.
+    /// </summary>
+    [Fact]
+    public void TargetAwareMethodsReturnEmptyWhenSourceEmpty()
+    {
+        string result = NamingConventions.GetClientActionsNamespace(
+            string.Empty,
+            "MyApp.BlazorClient");
+        Assert.Equal(string.Empty, result);
+    }
+
+    /// <summary>
+    ///     Target-aware methods should produce result based on target even when empty (caller responsibility to validate).
+    /// </summary>
+    [Fact]
+    public void TargetAwareMethodsUseTargetEvenWhenEmpty()
+    {
+        // When target is empty, it still produces a result - caller is responsible for providing valid target
+        string result = NamingConventions.GetClientFeatureRootNamespace(
+            "Spring.Domain.Aggregates.BankAccount.Commands",
+            string.Empty);
+
+        // Produces ".Features.BankAccountAggregate" with empty prefix - this is expected
+        Assert.Equal(".Features.BankAccountAggregate", result);
+    }
 }

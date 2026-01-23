@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -95,7 +96,8 @@ public sealed class CommandClientStateGenerator : IIncrementalGenerator
     ///     Gets aggregates from command models by grouping on aggregate name.
     /// </summary>
     private static List<AggregateInfo> GetAggregatesFromCommands(
-        List<CommandModel> commands
+        List<CommandModel> commands,
+        string targetRootNamespace
     )
     {
         return commands.Select(c => new
@@ -108,7 +110,7 @@ public sealed class CommandClientStateGenerator : IIncrementalGenerator
             .Select(g =>
             {
                 CommandModel firstCommand = g.First().Command;
-                string stateNamespace = NamingConventions.GetClientStateNamespace(firstCommand.Namespace);
+                string stateNamespace = NamingConventions.GetClientStateNamespace(firstCommand.Namespace, targetRootNamespace);
                 return new AggregateInfo(g.Key, stateNamespace, firstCommand.Namespace);
             })
             .ToList();
@@ -187,13 +189,19 @@ public sealed class CommandClientStateGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = context.CompilationProvider.Select((
-            compilation,
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
+            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+
+        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
+            source,
             _
         ) =>
         {
-            List<CommandModel> commands = GetCommandsFromCompilation(compilation);
-            return GetAggregatesFromCommands(commands);
+            List<CommandModel> commands = GetCommandsFromCompilation(source.Compilation);
+            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, source.Compilation);
+            return GetAggregatesFromCommands(commands, targetRootNamespace);
         });
         context.RegisterSourceOutput(
             aggregatesProvider,

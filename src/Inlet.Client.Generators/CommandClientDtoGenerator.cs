@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -38,13 +39,14 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
     private static void FindCommandsInNamespace(
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol generateAttrSymbol,
+        string targetRootNamespace,
         List<CommandInfo> commands
     )
     {
         // Check types in this namespace
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            CommandInfo? info = TryGetCommandInfo(typeSymbol, generateAttrSymbol);
+            CommandInfo? info = TryGetCommandInfo(typeSymbol, generateAttrSymbol, targetRootNamespace);
             if (info is not null)
             {
                 commands.Add(info);
@@ -54,7 +56,7 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
         // Recurse into nested namespaces
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindCommandsInNamespace(childNs, generateAttrSymbol, commands);
+            FindCommandsInNamespace(childNs, generateAttrSymbol, targetRootNamespace, commands);
         }
     }
 
@@ -95,7 +97,8 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
     ///     Gets command information from the compilation, including referenced assemblies.
     /// </summary>
     private static List<CommandInfo> GetCommandsFromCompilation(
-        Compilation compilation
+        Compilation compilation,
+        AnalyzerConfigOptionsProvider optionsProvider
     )
     {
         List<CommandInfo> commands = new();
@@ -107,10 +110,15 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
             return commands;
         }
 
+        // Get the target root namespace from MSBuild properties
+        optionsProvider.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
+        optionsProvider.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
+        string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, compilation);
+
         // Scan all assemblies referenced by this compilation
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
-            FindCommandsInNamespace(referencedAssembly.GlobalNamespace, generateAttrSymbol, commands);
+            FindCommandsInNamespace(referencedAssembly.GlobalNamespace, generateAttrSymbol, targetRootNamespace, commands);
         }
 
         return commands;
@@ -141,7 +149,8 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
     /// </summary>
     private static CommandInfo? TryGetCommandInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol generateAttrSymbol
+        INamedTypeSymbol generateAttrSymbol,
+        string targetRootNamespace
     )
     {
         // Check for [GenerateCommand] attribute
@@ -165,7 +174,7 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
 
         // Build command model
         CommandModel model = new(typeSymbol, route!, httpMethod);
-        string outputNamespace = NamingConventions.GetClientCommandDtoNamespace(model.Namespace);
+        string outputNamespace = NamingConventions.GetClientCommandDtoNamespace(model.Namespace, targetRootNamespace);
         string requestDtoTypeName = NamingConventions.GetCommandRequestDtoName(model.TypeName);
         return new(model, outputNamespace, requestDtoTypeName);
     }
@@ -178,11 +187,15 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<CommandInfo>> commandsProvider = context.CompilationProvider.Select((
-            compilation,
+        // Combine compilation with analyzer config options to get target namespace
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
+            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+
+        // Use the combined provider to scan referenced assemblies with target namespace awareness
+        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
+            source,
             _
-        ) => GetCommandsFromCompilation(compilation));
+        ) => GetCommandsFromCompilation(source.Compilation, source.Options));
 
         // Register source output
         context.RegisterSourceOutput(
