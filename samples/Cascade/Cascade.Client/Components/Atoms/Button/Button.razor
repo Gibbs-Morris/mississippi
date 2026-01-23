@@ -1,9 +1,0 @@
-@* Button - Atomic component for interactive buttons with multiple variants *@
-
-<button type="@Type"
-        class="btn @VariantClass @SizeClass @(FullWidth ? "btn--full" : "")"
-        disabled="@Disabled"
-        @onclick="HandleClickAsync"
-        @attributes="AdditionalAttributes">
-    @ChildContent
-</button>
