@@ -1,4 +1,5 @@
-using Mississippi.Reservoir.Abstractions.Actions;
+#if false // Replaced by source generator: CommandClientActionsGenerator
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions;
 using Mississippi.Sdk.Generators.Abstractions;
 
 
@@ -14,4 +15,5 @@ namespace Spring.Client.Features.BankAccountAggregate.Actions;
 /// <param name="HolderName">The name of the account holder.</param>
 /// <param name="InitialDeposit">The initial deposit amount.</param>
 [PendingSourceGenerator]
-internal sealed record OpenAccountAction(string EntityId, string HolderName, decimal InitialDeposit) : IAction;
+internal sealed record OpenAccountAction(string EntityId, string HolderName, decimal InitialDeposit) : ICommandAction;
+#endif

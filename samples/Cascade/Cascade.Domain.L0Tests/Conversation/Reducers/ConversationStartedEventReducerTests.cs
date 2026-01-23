@@ -3,9 +3,9 @@ using System;
 using Allure.Xunit.Attributes;
 using Allure.Xunit.Attributes.Steps;
 
-using Cascade.Domain.Conversation;
-using Cascade.Domain.Conversation.Events;
-using Cascade.Domain.Conversation.Reducers;
+using Cascade.Domain.Aggregates.Conversation;
+using Cascade.Domain.Aggregates.Conversation.Events;
+using Cascade.Domain.Aggregates.Conversation.Reducers;
 
 
 namespace Cascade.Domain.L0Tests.Conversation.Reducers;

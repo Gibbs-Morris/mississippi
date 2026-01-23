@@ -113,7 +113,7 @@ public sealed class BankAccountIntegrationTests
 
         // Act - Step 1: Open account with initial deposit
         using (HttpResponseMessage openResponse = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/open", UriKind.Relative),
+                   new Uri($"api/aggregates/bank-account/{bankAccountId}/open", UriKind.Relative),
                    new
                    {
                        HolderName = holderName,
@@ -125,7 +125,7 @@ public sealed class BankAccountIntegrationTests
 
         // Act - Step 2: First deposit
         using (HttpResponseMessage deposit1Response = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/deposit", UriKind.Relative),
+                   new Uri($"api/aggregates/bank-account/{bankAccountId}/deposit", UriKind.Relative),
                    new
                    {
                        Amount = firstDeposit,
@@ -136,7 +136,7 @@ public sealed class BankAccountIntegrationTests
 
         // Act - Step 3: Second deposit
         using (HttpResponseMessage deposit2Response = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/deposit", UriKind.Relative),
+                   new Uri($"api/aggregates/bank-account/{bankAccountId}/deposit", UriKind.Relative),
                    new
                    {
                        Amount = secondDeposit,
@@ -147,7 +147,7 @@ public sealed class BankAccountIntegrationTests
 
         // Act - Step 4: Withdraw
         using (HttpResponseMessage withdrawResponse = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/withdraw", UriKind.Relative),
+                   new Uri($"api/aggregates/bank-account/{bankAccountId}/withdraw", UriKind.Relative),
                    new
                    {
                        Amount = withdrawal,
@@ -186,7 +186,7 @@ public sealed class BankAccountIntegrationTests
 
         // Act - Open account
         using (HttpResponseMessage openResponse = await client.PostAsJsonAsync(
-                   new Uri($"api/aggregates/bankaccount/{bankAccountId}/open", UriKind.Relative),
+                   new Uri($"api/aggregates/bank-account/{bankAccountId}/open", UriKind.Relative),
                    new
                    {
                        HolderName = holderName,

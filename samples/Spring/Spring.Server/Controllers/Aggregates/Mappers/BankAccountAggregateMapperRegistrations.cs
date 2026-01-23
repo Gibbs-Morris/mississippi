@@ -1,3 +1,9 @@
+// NOTE: This file has been replaced by source generation.
+// The generated version is in: obj/{Configuration}/net10.0/generated/Mississippi.Sdk.Server.Generators/
+//     Mississippi.Sdk.Server.Generators.CommandServerDtoGenerator/BankAccountAggregateMapperRegistrations.g.cs
+// Keeping this file commented out for reference during the generator development phase.
+
+#if false // Replaced by generated code
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -29,3 +35,4 @@ internal static class BankAccountAggregateMapperRegistrations
         return services;
     }
 }
+#endif

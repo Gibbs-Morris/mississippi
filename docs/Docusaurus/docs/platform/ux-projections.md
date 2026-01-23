@@ -21,5 +21,5 @@ UX projections consume brooks and feed client-facing state via Inlet and Reservo
 ## Source code reference
 
 - [IUxProjectionGrain](../../../../src/EventSourcing.UxProjections.Abstractions/IUxProjectionGrain.cs)
-- [UxProjectionAttribute](../../../../src/EventSourcing.UxProjections.Abstractions/Attributes/UxProjectionAttribute.cs)
+- [GenerateProjectionEndpointsAttribute](../../../../src/Sdk.Generators.Abstractions/GenerateProjectionEndpointsAttribute.cs) — marks a projection for endpoint code generation
 - [UxProjectionChangedEvent](../../../../src/EventSourcing.UxProjections.Abstractions/Subscriptions/UxProjectionChangedEvent.cs)

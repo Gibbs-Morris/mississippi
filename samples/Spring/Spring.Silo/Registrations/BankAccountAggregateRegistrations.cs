@@ -1,3 +1,20 @@
+// =============================================================================
+// HAND-CRAFTED REFERENCE IMPLEMENTATION
+// =============================================================================
+// This file contains the original hand-crafted version of this registration,
+// created before source generation was automated via Sdk.Silo.Generators.
+//
+// Purpose:
+// - Serves as a reference implementation to validate generator output
+// - Enables test comparisons between generated and expected code
+// - Documents the intended DI registration pattern for the generated registration
+//
+// The generator now produces this registration automatically. This file is
+// commented out to avoid duplicate type definitions but preserved for testing
+// and documentation.
+// =============================================================================
+
+#if false
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Aggregates;
@@ -52,3 +69,4 @@ public static class BankAccountAggregateRegistrations
         return services;
     }
 }
+#endif

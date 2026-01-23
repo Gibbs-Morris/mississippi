@@ -1,3 +1,19 @@
+// =============================================================================
+// HAND-CRAFTED REFERENCE IMPLEMENTATION
+// =============================================================================
+// This file contains the original hand-crafted version of this DTO, created
+// before source generation was automated via Sdk.Server.Generators.
+//
+// Purpose:
+// - Serves as a reference implementation to validate generator output
+// - Enables test comparisons between generated and expected code
+// - Documents the intended structure and behavior of the generated DTO
+//
+// The generator now produces this DTO automatically. This file is commented out
+// to avoid duplicate type definitions but preserved for testing and documentation.
+// =============================================================================
+
+#if false
 using System.Text.Json.Serialization;
 
 using Mississippi.Sdk.Generators.Abstractions;
@@ -29,3 +45,4 @@ public sealed record BankAccountBalanceDto
     [JsonRequired]
     public required bool IsOpen { get; init; }
 }
+#endif

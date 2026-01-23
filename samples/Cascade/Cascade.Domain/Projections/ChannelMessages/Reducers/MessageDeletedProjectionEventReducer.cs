@@ -1,6 +1,6 @@
 using System;
 
-using Cascade.Domain.Conversation.Events;
+using Cascade.Domain.Aggregates.Conversation.Events;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
 

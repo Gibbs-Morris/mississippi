@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using Allure.Xunit.Attributes;
 using Allure.Xunit.Attributes.Steps;
 
-using Cascade.Domain.Channel;
-using Cascade.Domain.Channel.Commands;
-using Cascade.Domain.Channel.Events;
-using Cascade.Domain.Channel.Handlers;
+using Cascade.Domain.Aggregates.Channel;
+using Cascade.Domain.Aggregates.Channel.Commands;
+using Cascade.Domain.Aggregates.Channel.Events;
+using Cascade.Domain.Aggregates.Channel.Handlers;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 

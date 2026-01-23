@@ -3,9 +3,9 @@ using System;
 using Allure.Xunit.Attributes;
 using Allure.Xunit.Attributes.Steps;
 
+using Cascade.Domain.Aggregates.User.Events;
 using Cascade.Domain.Projections.UserProfile;
 using Cascade.Domain.Projections.UserProfile.Reducers;
-using Cascade.Domain.User.Events;
 
 
 namespace Cascade.Domain.L0Tests.Projections.UserProfile.Reducers;

@@ -1,4 +1,5 @@
-using Mississippi.Sdk.Generators.Abstractions;
+#if false
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.State;
@@ -9,62 +10,95 @@ namespace Spring.Client.Features.BankAccountAggregate.Reducers;
 /// <summary>
 ///     Pure reducer functions for the BankAccountAggregate feature state.
 /// </summary>
-[PendingSourceGenerator]
+/// <remarks>
+///     <para>
+///         Each command has three lifecycle reducers (Executing, Failed, Succeeded) that delegate
+///         to <see cref="AggregateCommandStateReducers" /> for the standard command tracking logic.
+///     </para>
+///     <para>
+///         The <see cref="SetEntityId" /> reducer is application-specific for tracking
+///         which entity is currently selected in the UI.
+///     </para>
+/// </remarks>
 internal static class BankAccountAggregateReducers
 {
+    // DepositFunds reducers
+
     /// <summary>
-    ///     Sets executing state when a command starts.
+    ///     Updates state when DepositFunds command starts executing.
     /// </summary>
     /// <param name="state">The current state.</param>
     /// <param name="action">The action to reduce.</param>
-    /// <returns>The new state with executing set to true.</returns>
-    public static BankAccountAggregateState CommandExecuting(
+    /// <returns>The new state with command tracked.</returns>
+    public static BankAccountAggregateState DepositFundsExecuting(
         BankAccountAggregateState state,
-        CommandExecutingAction action
+        DepositFundsExecutingAction action
     ) =>
-        state with
-        {
-            IsExecuting = true,
-            ErrorCode = null,
-            ErrorMessage = null,
-            LastCommandSucceeded = null,
-        };
+        AggregateCommandStateReducers.ReduceCommandExecuting(state, action);
 
     /// <summary>
-    ///     Sets error state when a command fails.
+    ///     Updates state when DepositFunds command fails.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The action containing the error details.</param>
-    /// <returns>The new state with the error populated.</returns>
-    public static BankAccountAggregateState CommandFailed(
+    /// <param name="action">The action containing error details.</param>
+    /// <returns>The new state with error populated.</returns>
+    public static BankAccountAggregateState DepositFundsFailed(
         BankAccountAggregateState state,
-        CommandFailedAction action
+        DepositFundsFailedAction action
     ) =>
-        state with
-        {
-            IsExecuting = false,
-            LastCommandSucceeded = false,
-            ErrorCode = action.ErrorCode,
-            ErrorMessage = action.ErrorMessage,
-        };
+        AggregateCommandStateReducers.ReduceCommandFailed(state, action);
 
     /// <summary>
-    ///     Sets success state when a command completes.
+    ///     Updates state when DepositFunds command succeeds.
     /// </summary>
     /// <param name="state">The current state.</param>
     /// <param name="action">The action to reduce.</param>
-    /// <returns>The new state with success set to true.</returns>
-    public static BankAccountAggregateState CommandSucceeded(
+    /// <returns>The new state with success set.</returns>
+    public static BankAccountAggregateState DepositFundsSucceeded(
         BankAccountAggregateState state,
-        CommandSucceededAction action
+        DepositFundsSucceededAction action
     ) =>
-        state with
-        {
-            IsExecuting = false,
-            LastCommandSucceeded = true,
-            ErrorCode = null,
-            ErrorMessage = null,
-        };
+        AggregateCommandStateReducers.ReduceCommandSucceeded(state, action);
+
+    // OpenAccount reducers
+
+    /// <summary>
+    ///     Updates state when OpenAccount command starts executing.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The action to reduce.</param>
+    /// <returns>The new state with command tracked.</returns>
+    public static BankAccountAggregateState OpenAccountExecuting(
+        BankAccountAggregateState state,
+        OpenAccountExecutingAction action
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandExecuting(state, action);
+
+    /// <summary>
+    ///     Updates state when OpenAccount command fails.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The action containing error details.</param>
+    /// <returns>The new state with error populated.</returns>
+    public static BankAccountAggregateState OpenAccountFailed(
+        BankAccountAggregateState state,
+        OpenAccountFailedAction action
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandFailed(state, action);
+
+    /// <summary>
+    ///     Updates state when OpenAccount command succeeds.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The action to reduce.</param>
+    /// <returns>The new state with success set.</returns>
+    public static BankAccountAggregateState OpenAccountSucceeded(
+        BankAccountAggregateState state,
+        OpenAccountSucceededAction action
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandSucceeded(state, action);
+
+    // Entity ID reducer
 
     /// <summary>
     ///     Sets the entity ID to target for commands.
@@ -80,4 +114,43 @@ internal static class BankAccountAggregateReducers
         {
             EntityId = action.EntityId,
         };
+
+    // WithdrawFunds reducers
+
+    /// <summary>
+    ///     Updates state when WithdrawFunds command starts executing.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The action to reduce.</param>
+    /// <returns>The new state with command tracked.</returns>
+    public static BankAccountAggregateState WithdrawFundsExecuting(
+        BankAccountAggregateState state,
+        WithdrawFundsExecutingAction action
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandExecuting(state, action);
+
+    /// <summary>
+    ///     Updates state when WithdrawFunds command fails.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The action containing error details.</param>
+    /// <returns>The new state with error populated.</returns>
+    public static BankAccountAggregateState WithdrawFundsFailed(
+        BankAccountAggregateState state,
+        WithdrawFundsFailedAction action
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandFailed(state, action);
+
+    /// <summary>
+    ///     Updates state when WithdrawFunds command succeeds.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The action to reduce.</param>
+    /// <returns>The new state with success set.</returns>
+    public static BankAccountAggregateState WithdrawFundsSucceeded(
+        BankAccountAggregateState state,
+        WithdrawFundsSucceededAction action
+    ) =>
+        AggregateCommandStateReducers.ReduceCommandSucceeded(state, action);
 }
+#endif

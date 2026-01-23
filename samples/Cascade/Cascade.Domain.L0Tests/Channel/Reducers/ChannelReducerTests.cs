@@ -4,9 +4,9 @@ using System.Collections.Immutable;
 using Allure.Xunit.Attributes;
 using Allure.Xunit.Attributes.Steps;
 
-using Cascade.Domain.Channel;
-using Cascade.Domain.Channel.Events;
-using Cascade.Domain.Channel.Reducers;
+using Cascade.Domain.Aggregates.Channel;
+using Cascade.Domain.Aggregates.Channel.Events;
+using Cascade.Domain.Aggregates.Channel.Reducers;
 
 
 namespace Cascade.Domain.L0Tests.Channel.Reducers;

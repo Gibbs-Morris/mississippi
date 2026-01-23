@@ -1,3 +1,20 @@
+// =============================================================================
+// HAND-CRAFTED REFERENCE IMPLEMENTATION
+// =============================================================================
+// This file contains the original hand-crafted version of this controller,
+// created before source generation was automated via Sdk.Server.Generators.
+//
+// Purpose:
+// - Serves as a reference implementation to validate generator output
+// - Enables test comparisons between generated and expected code
+// - Documents the intended structure and behavior of the generated controller
+//
+// The generator now produces this controller automatically. This file is
+// commented out to avoid duplicate type definitions but preserved for testing
+// and documentation.
+// =============================================================================
+
+#if false
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -45,3 +62,4 @@ public sealed class BankAccountBalanceController
     {
     }
 }
+#endif
