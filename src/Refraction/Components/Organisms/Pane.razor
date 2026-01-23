@@ -1,0 +1,23 @@
+@* Pane - primary content surface *@
+
+<section class="rf-pane"
+         data-variant="@Variant"
+         data-state="@State"
+         data-depth="@Depth"
+         @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <header class="rf-pane__header">
+            <h2 class="rf-pane__title">@Title</h2>
+        </header>
+    }
+    <div class="rf-pane__content">
+        @ChildContent
+    </div>
+    @if (Footer is not null)
+    {
+        <footer class="rf-pane__footer">
+            @Footer
+        </footer>
+    }
+</section>
