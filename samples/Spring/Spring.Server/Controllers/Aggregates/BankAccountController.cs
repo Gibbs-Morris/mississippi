@@ -1,7 +1,7 @@
 #if false // Replaced by generated code
 // NOTE: The generated version is in:
-//   obj/[Config]/[TFM]/generated/Mississippi.Sdk.Server.Generators/
-//   Mississippi.Sdk.Server.Generators.AggregateControllerGenerator/BankAccountController.g.cs
+//   obj/[Config]/[TFM]/generated/Mississippi.Inlet.Server.Generators/
+//   Mississippi.Inlet.Server.Generators.AggregateControllerGenerator/BankAccountController.g.cs
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Api;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Commands;

@@ -2,7 +2,7 @@
 using System;
 
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 
 namespace Spring.Client.Features.BankAccountAggregate.Actions;

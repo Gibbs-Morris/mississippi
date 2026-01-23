@@ -1,13 +1,13 @@
 // NOTE: This file has been replaced by source generation.
-// The generated version is in: obj/{Configuration}/net10.0/generated/Mississippi.Sdk.Server.Generators/
-//     Mississippi.Sdk.Server.Generators.CommandServerDtoGenerator/BankAccountAggregateMapperRegistrations.g.cs
+// The generated version is in: obj/{Configuration}/net10.0/generated/Mississippi.Inlet.Server.Generators/
+//     Mississippi.Inlet.Server.Generators.CommandServerDtoGenerator/BankAccountAggregateMapperRegistrations.g.cs
 // Keeping this file commented out for reference during the generator development phase.
 
 #if false // Replaced by generated code
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount.Commands;
 

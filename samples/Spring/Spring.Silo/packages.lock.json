@@ -667,6 +667,9 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Inlet.Generators.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Inlet.Orleans": {
         "type": "Project",
         "dependencies": {
@@ -684,9 +687,6 @@
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Sdk.Generators.Abstractions": {
-        "type": "Project"
-      },
       "Mississippi.Sdk.Silo": {
         "type": "Project",
         "dependencies": {
@@ -700,8 +700,8 @@
           "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
           "Mississippi.EventSourcing.Snapshots.Cosmos": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )",
-          "Mississippi.Inlet.Orleans": "[1.0.0, )",
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Orleans": "[1.0.0, )"
         }
       },
       "spring.domain": {
@@ -713,8 +713,8 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
         }
       },
       "Azure.Storage.Blobs": {

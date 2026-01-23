@@ -644,6 +644,9 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Inlet.Generators.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
@@ -671,13 +674,10 @@
           "Mississippi.Inlet": "[1.0.0, )",
           "Mississippi.Inlet.Blazor.WebAssembly": "[1.0.0, )",
           "Mississippi.Inlet.Blazor.WebAssembly.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir": "[1.0.0, )",
-          "Mississippi.Reservoir.Blazor": "[1.0.0, )",
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
         }
-      },
-      "Mississippi.Sdk.Generators.Abstractions": {
-        "type": "Project"
       },
       "spring.domain": {
         "type": "Project",
@@ -688,8 +688,8 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
-          "Mississippi.Sdk.Generators.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
         }
       },
       "CloudNative.CloudEvents": {

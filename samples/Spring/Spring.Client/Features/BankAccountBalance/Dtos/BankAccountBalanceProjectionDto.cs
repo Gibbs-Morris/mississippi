@@ -14,7 +14,7 @@
 // to avoid duplicate type definitions but preserved for testing and documentation.
 // =============================================================================
 using Mississippi.Inlet.Projection.Abstractions;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 
 namespace Spring.Client.Features.BankAccountBalance.Dtos;
