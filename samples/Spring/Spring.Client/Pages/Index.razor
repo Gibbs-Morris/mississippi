@@ -1,442 +1,202 @@
 @page "/"
 @inherits InletComponent
 
-@* ═══════════════════════════════════════════════════════════════════════════
-   Holographic Console Interface
-   Bank Account Operations Console — Mississippi Event Sourcing Demo
-   ═══════════════════════════════════════════════════════════════════════════ *@
+<article>
+    <header>
+        <h1>Bank Account Operations</h1>
+        <p>Mississippi Event Sourcing Demo</p>
+        <button type="button" @onclick="ToggleConnectionModal">
+            @ConnectionState.Status
+        </button>
+    </header>
 
-<article class="console" role="main" aria-labelledby="console-title">
-@* ─────────────────────────────────────────────────────────────────────────
-       Console Header — System identification
-       ───────────────────────────────────────────────────────────────────────── *@
-<header class="console__header">
-    <div>
-        <h1 id="console-title" class="console__title">Bank Account Operations</h1>
-        <p class="console__subtitle">Mississippi Event Sourcing Demo</p>
-    </div>
-    <button type="button"
-            class="connection-indicator @GetConnectionStatusClass()"
-            @onclick="ToggleConnectionModal"
-            aria-label="Connection status: @ConnectionState.Status. Click for details.">
-        <span class="connection-indicator__dot" aria-hidden="true"></span>
-        <span class="connection-indicator__text">@ConnectionState.Status</span>
-    </button>
-</header>
-
-<div class="console__body @(string.IsNullOrEmpty(SelectedEntityId) ? "console__body--focused" : "")">
-
-@if (string.IsNullOrEmpty(SelectedEntityId))
-{
-    @* ─────────────────────────────────────────────────────────────────
-               Focused Entity Selection — Centered when no entity
-               ─────────────────────────────────────────────────────────────── *@
-    <section class="holo-panel holo-panel--focused" aria-labelledby="entity-panel-title">
-        <header class="panel__header panel__header--centered">
-            <span class="panel__icon" aria-hidden="true">
-                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="12"/>
-                    <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-            </span>
-            <h2 id="entity-panel-title" class="panel__title">Select Account</h2>
-        </header>
-        <p class="panel__description">Enter an account identifier to begin banking operations.</p>
-        <div class="form-row form-row--centered">
-            <div class="form-group form-group--wide">
-                <label for="account-id-input" class="form-label">Account Identifier</label>
+    @if (string.IsNullOrEmpty(SelectedEntityId))
+    {
+        <section>
+            <h2>Select Account</h2>
+            <p>Enter an account identifier to begin banking operations.</p>
+            <div>
+                <label for="account-id-input">Account Identifier</label>
                 <input id="account-id-input"
                        type="text"
-                       class="form-input form-input--lg"
                        @bind="accountIdInput"
-                       placeholder="Enter account ID"
-                       aria-describedby="account-id-hint"/>
-                <span id="account-id-hint" class="visually-hidden">
-                    Enter a unique account identifier to load or create an account
-                </span>
+                       placeholder="Enter account ID"/>
             </div>
-            <button type="button"
-                    class="holo-btn holo-btn--primary holo-btn--lg"
-                    @onclick="SetEntityId"
-                    aria-label="Set account entity">
-                Continue
-            </button>
+            <button type="button" @onclick="SetEntityId">Continue</button>
+        </section>
+    }
+    else
+    {
+        <div>
+            <span>Account: @SelectedEntityId</span>
+            <button type="button" @onclick="ClearEntity">Switch</button>
         </div>
-    </section>
-}
-else
-{
-    @* ─────────────────────────────────────────────────────────────────
-               Compact Entity Switcher — Inline when entity is active
-               ─────────────────────────────────────────────────────────────── *@
-    <div class="entity-switcher">
-        <span class="entity-switcher__label">Account:</span>
-        <span class="entity-switcher__id">@SelectedEntityId</span>
-        <button type="button"
-                class="holo-btn holo-btn--sm holo-btn--ghost"
-                @onclick="ClearEntity"
-                aria-label="Switch account">
-            Switch
-        </button>
-    </div>
-    @* ─────────────────────────────────────────────────────────────────
-               Open Account Panel
-               ─────────────────────────────────────────────────────────────── *@
-    <section class="holo-panel holo-panel--open"
-             aria-labelledby="open-panel-title"
-             aria-busy="@IsExecutingOrLoading">
-        <header class="panel__header">
-            <span class="panel__icon" aria-hidden="true">
-                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="8.5" cy="7" r="4"/>
-                    <line x1="20" y1="8" x2="20" y2="14"/>
-                    <line x1="23" y1="11" x2="17" y2="11"/>
-                </svg>
-            </span>
-            <h2 id="open-panel-title" class="panel__title">Open Account</h2>
-        </header>
-        <fieldset class="stack--tight" disabled="@IsExecutingOrLoading">
-            <legend class="visually-hidden">Open Account</legend>
-            <div class="form-group">
-                <label for="holder-name-input" class="form-label">Holder Name</label>
-                <input id="holder-name-input"
-                       type="text"
-                       class="form-input"
-                       @bind="holderName"
-                       placeholder="Account holder name"/>
-            </div>
-            <div class="form-group">
-                <label for="initial-deposit-input" class="form-label">Initial Deposit</label>
-                <input id="initial-deposit-input"
-                       type="number"
-                       class="form-input"
-                       @bind="initialDeposit"
-                       placeholder="0.00"
-                       step="0.01"
-                       min="0"/>
-            </div>
-            <button type="button"
-                    class="holo-btn holo-btn--primary holo-btn--full"
-                    @onclick="OpenAccount"
-                    disabled="@IsExecutingOrLoading"
-                    aria-label="Open new account">
-                Open Account
-            </button>
-        </fieldset>
-    </section>
-    @* ─────────────────────────────────────────────────────────────────
-               Deposit Panel
-               ─────────────────────────────────────────────────────────────── *@
-    <section class="holo-panel holo-panel--deposit"
-             aria-labelledby="deposit-panel-title"
-             aria-busy="@IsExecutingOrLoading">
-        <header class="panel__header">
-            <span class="panel__icon panel__icon--success" aria-hidden="true">
-                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <polyline points="19 12 12 19 5 12"/>
-                </svg>
-            </span>
-            <h2 id="deposit-panel-title" class="panel__title">Deposit</h2>
-        </header>
-        <fieldset class="stack--tight" disabled="@IsExecutingOrLoading">
-            <legend class="visually-hidden">Deposit Funds</legend>
-            <div class="form-group">
-                <label for="deposit-amount-input" class="form-label">Amount</label>
-                <input id="deposit-amount-input"
-                       type="number"
-                       class="form-input"
-                       @bind="depositAmount"
-                       placeholder="0.00"
-                       step="0.01"
-                       min="0"/>
-            </div>
-            <button type="button"
-                    class="holo-btn holo-btn--success holo-btn--full"
-                    @onclick="Deposit"
-                    disabled="@IsExecutingOrLoading"
-                    aria-label="Deposit funds">
-                Deposit
-            </button>
-            <div class="quick-actions">
-                <span class="quick-actions__label">Quick:</span>
-                <button type="button"
-                        class="holo-btn holo-btn--sm"
-                        @onclick="DepositSingle100"
-                        disabled="@IsExecutingOrLoading"
-                        aria-label="Deposit 100 once">
-                    +$100
+        <section>
+            <h2>Open Account</h2>
+            <fieldset disabled="@IsExecutingOrLoading">
+                <legend>Open Account</legend>
+                <div>
+                    <label for="holder-name-input">Holder Name</label>
+                    <input id="holder-name-input"
+                           type="text"
+                           @bind="holderName"
+                           placeholder="Account holder name"/>
+                </div>
+                <div>
+                    <label for="initial-deposit-input">Initial Deposit</label>
+                    <input id="initial-deposit-input"
+                           type="number"
+                           @bind="initialDeposit"
+                           placeholder="0.00"
+                           step="0.01"
+                           min="0"/>
+                </div>
+                <button type="button" @onclick="OpenAccount" disabled="@IsExecutingOrLoading">
+                    Open Account
                 </button>
-                <button type="button"
-                        class="holo-btn holo-btn--sm"
-                        @onclick="DepositBurst20"
-                        disabled="@IsExecutingOrLoading"
-                        aria-label="Deposit 5 twenty times">
-                    20×$5
-                </button>
-                <button type="button"
-                        class="holo-btn holo-btn--sm"
-                        @onclick="DepositBurst200"
-                        disabled="@IsExecutingOrLoading"
-                        aria-label="Deposit 10 two hundred times">
-                    200×$10
-                </button>
-            </div>
-        </fieldset>
-    </section>
-    @* ─────────────────────────────────────────────────────────────────
-               Withdraw Panel
-               ─────────────────────────────────────────────────────────────── *@
-    <section class="holo-panel holo-panel--withdraw"
-             aria-labelledby="withdraw-panel-title"
-             aria-busy="@IsExecutingOrLoading">
-        <header class="panel__header">
-            <span class="panel__icon panel__icon--warning" aria-hidden="true">
-                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="19" x2="12" y2="5"/>
-                    <polyline points="5 12 12 5 19 12"/>
-                </svg>
-            </span>
-            <h2 id="withdraw-panel-title" class="panel__title">Withdraw</h2>
-        </header>
-        <fieldset class="stack--tight" disabled="@IsExecutingOrLoading">
-            <legend class="visually-hidden">Withdraw Funds</legend>
-            <div class="form-group">
-                <label for="withdraw-amount-input" class="form-label">Amount</label>
-                <input id="withdraw-amount-input"
-                       type="number"
-                       class="form-input"
-                       @bind="withdrawAmount"
-                       placeholder="0.00"
-                       step="0.01"
-                       min="0"/>
-            </div>
-            <button type="button"
-                    class="holo-btn holo-btn--warning holo-btn--full"
-                    @onclick="Withdraw"
-                    disabled="@IsExecutingOrLoading"
-                    aria-label="Withdraw funds">
-                Withdraw
-            </button>
-            <div class="quick-actions">
-                <span class="quick-actions__label">Quick:</span>
-                <button type="button"
-                        class="holo-btn holo-btn--sm"
-                        @onclick="WithdrawSingle100"
-                        disabled="@IsExecutingOrLoading"
-                        aria-label="Withdraw 100 once">
-                    -$100
-                </button>
-                <button type="button"
-                        class="holo-btn holo-btn--sm"
-                        @onclick="WithdrawBurst20"
-                        disabled="@IsExecutingOrLoading"
-                        aria-label="Withdraw 5 twenty times">
-                    20×$5
-                </button>
-                <button type="button"
-                        class="holo-btn holo-btn--sm"
-                        @onclick="WithdrawBurst200"
-                        disabled="@IsExecutingOrLoading"
-                        aria-label="Withdraw 10 two hundred times">
-                    200×$10
-                </button>
-            </div>
-        </fieldset>
-    </section>
-    @* ─────────────────────────────────────────────────────────────────
-               Status Panel — Account Telemetry
-               ─────────────────────────────────────────────────────────────── *@
-    <section class="holo-panel holo-panel--status"
-             aria-labelledby="status-panel-title"
-             aria-live="polite"
-             aria-atomic="false">
-        <header class="panel__header">
-            <span class="panel__icon" aria-hidden="true">
-                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                </svg>
-            </span>
-            <h2 id="status-panel-title" class="panel__title">Account Status</h2>
-        </header>
+            </fieldset>
+        </section>
+        <section>
+            <h2>Deposit</h2>
+            <fieldset disabled="@IsExecutingOrLoading">
+                <legend>Deposit Funds</legend>
+                <div>
+                    <label for="deposit-amount-input">Amount</label>
+                    <input id="deposit-amount-input"
+                           type="number"
+                           @bind="depositAmount"
+                           placeholder="0.00"
+                           step="0.01"
+                           min="0"/>
+                </div>
+                <button type="button" @onclick="Deposit" disabled="@IsExecutingOrLoading">Deposit</button>
+                <div>
+                    <span>Quick:</span>
+                    <button type="button" @onclick="DepositSingle100" disabled="@IsExecutingOrLoading">+$100</button>
+                    <button type="button" @onclick="DepositBurst20" disabled="@IsExecutingOrLoading">20×$5</button>
+                    <button type="button" @onclick="DepositBurst200" disabled="@IsExecutingOrLoading">200×$10</button>
+                </div>
+            </fieldset>
+        </section>
+        <section>
+            <h2>Withdraw</h2>
+            <fieldset disabled="@IsExecutingOrLoading">
+                <legend>Withdraw Funds</legend>
+                <div>
+                    <label for="withdraw-amount-input">Amount</label>
+                    <input id="withdraw-amount-input"
+                           type="number"
+                           @bind="withdrawAmount"
+                           placeholder="0.00"
+                           step="0.01"
+                           min="0"/>
+                </div>
+                <button type="button" @onclick="Withdraw" disabled="@IsExecutingOrLoading">Withdraw</button>
+                <div>
+                    <span>Quick:</span>
+                    <button type="button" @onclick="WithdrawSingle100" disabled="@IsExecutingOrLoading">-$100</button>
+                    <button type="button" @onclick="WithdrawBurst20" disabled="@IsExecutingOrLoading">20×$5</button>
+                    <button type="button" @onclick="WithdrawBurst200" disabled="@IsExecutingOrLoading">200×$10</button>
+                </div>
+            </fieldset>
+        </section>
+        <section>
+            <h2>Account Status</h2>
+            @if (BalanceProjection is not null)
+            {
+                <div>
+                    <div>
+                        <span>Balance:</span>
+                        <span>@BalanceProjection.Balance.ToString("C")</span>
+                    </div>
+                    <div>
+                        <span>Holder:</span>
+                        <span>@BalanceProjection.HolderName</span>
+                    </div>
+                    <div>
+                        <span>Status:</span>
+                        <span>@(BalanceProjection.IsOpen ? "Open" : "Closed")</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <h3>Awaiting Data</h3>
+                    <p>Open an account to begin viewing real-time projection data.</p>
+                </div>
+            }
 
-        @if (BalanceProjection is not null)
-        {
-            <div class="status-grid">
-                <div class="status-item status-item--highlight">
-                    <span class="status-item__label">Balance</span>
-                    <span class="status-item__value status-item__value--currency"
-                          data-updated="@(balanceJustChanged ? "true" : null)">
-                        @BalanceProjection.Balance.ToString("C")
-                    </span>
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div role="alert">
+                    <strong>Error:</strong> @ErrorMessage
                 </div>
-                <div class="status-item">
-                    <span class="status-item__label">Holder</span>
-                    <span class="status-item__value"
-                          data-updated="@(holderJustChanged ? "true" : null)">
-                        @BalanceProjection.HolderName
-                    </span>
-                </div>
-                <div class="status-item">
-                    <span class="status-item__label">Status</span>
-                    <span class="status-badge @(BalanceProjection.IsOpen ? "status-badge--open" : "status-badge--closed")"
-                          data-updated="@(statusJustChanged ? "true" : null)">
-                        <span class="status-badge__dot" aria-hidden="true"></span>
-                        @(BalanceProjection.IsOpen ? "Open" : "Closed")
-                    </span>
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="empty-state">
-                <svg class="empty-state__icon" width="64" height="64" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
-                <h3 class="empty-state__title">Awaiting Data</h3>
-                <p class="empty-state__description">
-                    Open an account to begin viewing real-time projection data.
-                </p>
-            </div>
-        }
+            }
 
-        @* Alerts *@
-        @if (!string.IsNullOrEmpty(ErrorMessage))
-        {
-            <div class="alert alert--error" role="alert">
-                <svg class="alert__icon" width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="15" y1="9" x2="9" y2="15"/>
-                    <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
-                <span class="alert__message">@ErrorMessage</span>
-            </div>
-        }
+            @if (AggregateState.LastCommandSucceeded == true)
+            {
+                <div role="status">
+                    Command executed successfully.
+                </div>
+            }
+        </section>
+    }
 
-        @if (AggregateState.LastCommandSucceeded == true)
-        {
-            <div class="alert alert--success" role="status">
-                <svg class="alert__icon" width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="9 12 11 14 15 10"/>
-                </svg>
-                <span class="alert__message">Command executed successfully.</span>
-            </div>
-        }
-    </section>
-}
-</div>
-
-@* ─────────────────────────────────────────────────────────────────────────
-   Connection Details Modal
-   ───────────────────────────────────────────────────────────────────────── *@
-@if (isConnectionModalOpen)
-{
-    <div class="modal-backdrop" @onclick="CloseConnectionModal" aria-hidden="true"></div>
-    <dialog class="modal" open aria-labelledby="connection-modal-title" aria-modal="true">
-        <header class="modal__header">
-            <span class="panel__icon" aria-hidden="true">
-                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-                    <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-                    <circle cx="12" cy="20" r="1"/>
-                </svg>
-            </span>
-            <h2 id="connection-modal-title" class="modal__title">SignalR Connection</h2>
-            <button type="button"
-                    class="modal__close"
-                    @onclick="CloseConnectionModal"
-                    aria-label="Close modal">
-                <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-        </header>
-        <div class="modal__body">
-            <div class="status-grid status-grid--compact">
-                <div class="status-item">
-                    <span class="status-item__label">Status</span>
-                    <span class="status-badge @GetConnectionStatusClass()">
-                        <span class="status-badge__dot" aria-hidden="true"></span>
-                        @ConnectionState.Status
-                    </span>
+    @if (isConnectionModalOpen)
+    {
+        <dialog open>
+            <header>
+                <h2>SignalR Connection</h2>
+                <button type="button" @onclick="CloseConnectionModal">Close</button>
+            </header>
+            <div>
+                <div>
+                    <span>Status:</span> <span>@ConnectionState.Status</span>
                 </div>
-                <div class="status-item">
-                    <span class="status-item__label">Connection ID</span>
-                    <span class="status-item__value">@(ConnectionState.ConnectionId ?? "—")</span>
+                <div>
+                    <span>Connection ID:</span> <span>@(ConnectionState.ConnectionId ?? "—")</span>
                 </div>
-                <div class="status-item">
-                    <span class="status-item__label">Reconnect Attempts</span>
-                    <span class="status-item__value">@ConnectionState.ReconnectAttemptCount</span>
+                <div>
+                    <span>Reconnect Attempts:</span> <span>@ConnectionState.ReconnectAttemptCount</span>
                 </div>
-                <div class="status-item">
-                    <span class="status-item__label">Last Connected</span>
-                    <span class="status-item__value">@FormatTimestamp(ConnectionState.LastConnectedAt)</span>
+                <div>
+                    <span>Last Connected:</span> <span>@FormatTimestamp(ConnectionState.LastConnectedAt)</span>
                 </div>
-                <div class="status-item">
-                    <span class="status-item__label">Last Disconnected</span>
-                    <span class="status-item__value">@FormatTimestamp(ConnectionState.LastDisconnectedAt)</span>
+                <div>
+                    <span>Last Disconnected:</span> <span>@FormatTimestamp(ConnectionState.LastDisconnectedAt)</span>
                 </div>
-                <div class="status-item">
-                    <span class="status-item__label">Last Message</span>
-                    <span class="status-item__value">@FormatTimestamp(ConnectionState.LastMessageReceivedAt)</span>
+                <div>
+                    <span>Last Message:</span> <span>@FormatTimestamp(ConnectionState.LastMessageReceivedAt)</span>
                 </div>
                 @if (ConnectionState.LastError is not null)
                 {
-                    <div class="status-item status-item--error" style="grid-column: 1 / -1;">
-                        <span class="status-item__label">Last Error</span>
-                        <span class="status-item__value">@ConnectionState.LastError</span>
+                    <div>
+                        <span>Last Error:</span> <span>@ConnectionState.LastError</span>
                     </div>
                 }
             </div>
-        </div>
-    </dialog>
-}
+        </dialog>
+    }
 
-@* ─────────────────────────────────────────────────────────────────────────
-   Disconnection Blocking Modal — Shown when SignalR is not connected
-   ───────────────────────────────────────────────────────────────────────── *@
-@if (IsDisconnected)
-{
-    <div class="modal-backdrop modal-backdrop--error" aria-hidden="true"></div>
-    <dialog class="modal modal--error" open aria-labelledby="disconnection-modal-title" aria-modal="true">
-        <header class="modal__header">
-            <span class="panel__icon panel__icon--error" aria-hidden="true">
-                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="15" y1="9" x2="9" y2="15"/>
-                    <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
-            </span>
-            <h2 id="disconnection-modal-title" class="modal__title modal__title--error">Connection Lost</h2>
-        </header>
-        <div class="modal__body modal__body--centered">
-            <div class="disconnection-status">
-                <span class="disconnection-status__spinner" aria-hidden="true"></span>
-                <span class="disconnection-status__text">@ConnectionState.Status</span>
+    @if (IsDisconnected)
+    {
+        <dialog open>
+            <header>
+                <h2>Connection Lost</h2>
+            </header>
+            <div>
+                <p>@ConnectionState.Status</p>
+                @if (ConnectionState.ReconnectAttemptCount > 0)
+                {
+                    <p>Reconnect Attempt @ConnectionState.ReconnectAttemptCount</p>
+                }
+                @if (ConnectionState.LastError is not null)
+                {
+                    <p>@ConnectionState.LastError</p>
+                }
+                <button type="button" @onclick="RequestReconnect">Reconnect</button>
             </div>
-            @if (ConnectionState.ReconnectAttemptCount > 0)
-            {
-                <p class="disconnection-status__attempts">
-                    Reconnect Attempt <span class="disconnection-status__count">@ConnectionState.ReconnectAttemptCount</span>
-                </p>
-            }
-            @if (ConnectionState.LastError is not null)
-            {
-                <p class="disconnection-status__error">@ConnectionState.LastError</p>
-            }
-            <button type="button"
-                    class="holo-btn holo-btn--primary"
-                    @onclick="RequestReconnect"
-                    aria-label="Attempt to reconnect">
-                Reconnect
-            </button>
-        </div>
-    </dialog>
-}
+        </dialog>
+    }
 </article>

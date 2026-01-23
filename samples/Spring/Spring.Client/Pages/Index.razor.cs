@@ -223,15 +223,6 @@ public sealed partial class Index
         }
     }
 
-    private string GetConnectionStatusClass() =>
-        ConnectionState.Status switch
-        {
-            SignalRConnectionStatus.Connected => "status-badge--open",
-            SignalRConnectionStatus.Connecting or SignalRConnectionStatus.Reconnecting => "status-badge--pending",
-            SignalRConnectionStatus.Disconnected => "status-badge--closed",
-            var _ => string.Empty,
-        };
-
     private void ManageProjectionSubscription()
     {
         string? currentEntityId = SelectedEntityId;
