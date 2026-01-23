@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 
 namespace Spring.L2Tests.Pages;
@@ -7,7 +8,7 @@ namespace Spring.L2Tests.Pages;
 ///     Page Object Model for the Spring sample Index page (Bank Account Demo).
 ///     Encapsulates Playwright interactions with the bank account UI.
 /// </summary>
-public sealed class IndexPage
+public sealed partial class IndexPage
 {
     private readonly IPage page;
 
@@ -21,6 +22,31 @@ public sealed class IndexPage
         this.page = page;
 
     /// <summary>
+    ///     Checks if the loading indicator is visible.
+    ///     Note: Loading indicator was removed in the unstyled version.
+    /// </summary>
+    /// <returns>Always returns false as loading indicator no longer exists.</returns>
+    public static Task<bool> IsLoadingVisibleAsync() => Task.FromResult(false);
+
+    /// <summary>
+    ///     Regex pattern to match "Account: " prefix for account header.
+    /// </summary>
+    [GeneratedRegex("^Account:")]
+    private static partial Regex AccountHeaderPattern();
+
+    /// <summary>
+    ///     Regex pattern to match the "Deposit" button text exactly (not quick deposit buttons).
+    /// </summary>
+    [GeneratedRegex("^Deposit$")]
+    private static partial Regex DepositButtonPattern();
+
+    /// <summary>
+    ///     Regex pattern to match the "Withdraw" button text exactly (not quick withdraw buttons).
+    /// </summary>
+    [GeneratedRegex("^Withdraw$")]
+    private static partial Regex WithdrawButtonPattern();
+
+    /// <summary>
     ///     Clicks the Deposit button.
     /// </summary>
     /// <returns>A task representing the async operation.</returns>
@@ -29,7 +55,7 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Deposit funds",
+                    NameRegex = DepositButtonPattern(),
                 })
             .ClickAsync();
 
@@ -42,12 +68,13 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Open new account",
+                    Name = "Open Account",
+                    Exact = true,
                 })
             .ClickAsync();
 
     /// <summary>
-    ///     Clicks the Set Account button.
+    ///     Clicks the Set Account button (Continue).
     /// </summary>
     /// <returns>A task representing the async operation.</returns>
     public async Task ClickSetAccountAsync() =>
@@ -55,7 +82,8 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Set account entity",
+                    Name = "Continue",
+                    Exact = true,
                 })
             .ClickAsync();
 
@@ -68,7 +96,7 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Withdraw funds",
+                    NameRegex = WithdrawButtonPattern(),
                 })
             .ClickAsync();
 
@@ -123,15 +151,24 @@ public sealed class IndexPage
         await page.Locator("#withdraw-amount-input").FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
-    ///     Gets the displayed account header (entity ID from the entity switcher).
+    ///     Gets the displayed account header (entity ID from the account switcher).
     /// </summary>
     /// <returns>The account ID text, or null if not present.</returns>
     public async Task<string?> GetAccountHeaderAsync()
     {
-        ILocator accountHeader = page.Locator(".entity-switcher__id");
+        // The account header shows "Account: {id}" in a span within the header
+        ILocator accountHeader = page.Locator("article > div > span")
+            .Filter(
+                new()
+                {
+                    HasTextRegex = AccountHeaderPattern(),
+                });
         if (await accountHeader.CountAsync() > 0)
         {
-            return await accountHeader.TextContentAsync();
+            string? text = await accountHeader.TextContentAsync();
+
+            // Extract just the ID from "Account: {id}"
+            return text?.Replace("Account:", string.Empty, StringComparison.Ordinal).Trim();
         }
 
         return null;
@@ -143,10 +180,12 @@ public sealed class IndexPage
     /// <returns>The balance text (e.g., "£100.00" or "$100.00" depending on locale), or null if not present.</returns>
     public async Task<string?> GetBalanceTextAsync()
     {
-        ILocator balanceLocator = page.Locator(".status-item__value--currency");
-        if (await balanceLocator.CountAsync() > 0)
+        // Balance is shown as "Balance:" label followed by the value span
+        ILocator balanceSection = page.Locator("section:has(h2:text-is('Account Status'))");
+        ILocator balanceValue = balanceSection.Locator("div:has(span:text-is('Balance:')) > span").Last;
+        if (await balanceValue.CountAsync() > 0)
         {
-            return await balanceLocator.TextContentAsync();
+            return await balanceValue.TextContentAsync();
         }
 
         return null;
@@ -158,10 +197,13 @@ public sealed class IndexPage
     /// <returns>The error message text, or null if not present.</returns>
     public async Task<string?> GetErrorMessageAsync()
     {
-        ILocator errorLocator = page.Locator(".alert--error .alert__message");
+        ILocator errorLocator = page.Locator("div[role='alert']");
         if (await errorLocator.CountAsync() > 0)
         {
-            return await errorLocator.TextContentAsync();
+            string? text = await errorLocator.TextContentAsync();
+
+            // Remove the "Error:" prefix
+            return text?.Replace("Error:", string.Empty, StringComparison.Ordinal).Trim();
         }
 
         return null;
@@ -173,11 +215,12 @@ public sealed class IndexPage
     /// <returns>The holder name text, or null if not present.</returns>
     public async Task<string?> GetHolderNameTextAsync()
     {
-        ILocator holderLocator =
-            page.Locator(".status-item:has(.status-item__label:text('Holder')) .status-item__value");
-        if (await holderLocator.CountAsync() > 0)
+        // Holder is shown as "Holder:" label followed by the value span
+        ILocator holderSection = page.Locator("section:has(h2:text-is('Account Status'))");
+        ILocator holderValue = holderSection.Locator("div:has(span:text-is('Holder:')) > span").Last;
+        if (await holderValue.CountAsync() > 0)
         {
-            return await holderLocator.TextContentAsync();
+            return await holderValue.TextContentAsync();
         }
 
         return null;
@@ -185,18 +228,16 @@ public sealed class IndexPage
 
     /// <summary>
     ///     Gets the displayed status from the projection.
-    ///     Targets the status badge within the Status label context to avoid matching
-    ///     the SignalR connection status badge.
     /// </summary>
     /// <returns>The status text (e.g., "Open"), or null if not present.</returns>
     public async Task<string?> GetStatusTextAsync()
     {
-        // Target the status badge that is a sibling of the "Status" label
-        // This distinguishes it from the SignalR connection status badge
-        ILocator statusLocator = page.Locator(".status-item:has(.status-item__label:text-is('Status')) .status-badge");
-        if (await statusLocator.CountAsync() > 0)
+        // Status is shown as "Status:" label followed by the value span
+        ILocator statusSection = page.Locator("section:has(h2:text-is('Account Status'))");
+        ILocator statusValue = statusSection.Locator("div:has(span:text-is('Status:')) > span").Last;
+        if (await statusValue.CountAsync() > 0)
         {
-            return await statusLocator.TextContentAsync();
+            return await statusValue.TextContentAsync();
         }
 
         return null;
@@ -208,7 +249,7 @@ public sealed class IndexPage
     /// <returns>The success message text, or null if not present.</returns>
     public async Task<string?> GetSuccessMessageAsync()
     {
-        ILocator successLocator = page.Locator(".alert--success .alert__message");
+        ILocator successLocator = page.Locator("div[role='status']");
         if (await successLocator.CountAsync() > 0)
         {
             return await successLocator.TextContentAsync();
@@ -232,19 +273,9 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Deposit",
+                    NameRegex = DepositButtonPattern(),
                 })
             .IsDisabledAsync();
-
-    /// <summary>
-    ///     Checks if the loading indicator is visible.
-    /// </summary>
-    /// <returns>True if loading is visible.</returns>
-    public async Task<bool> IsLoadingVisibleAsync()
-    {
-        ILocator loadingLocator = page.Locator(".loading-indicator");
-        return await loadingLocator.CountAsync() > 0;
-    }
 
     /// <summary>
     ///     Checks if the Open Account button is disabled.
@@ -255,7 +286,8 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Open new account",
+                    Name = "Open Account",
+                    Exact = true,
                 })
             .IsDisabledAsync();
 
@@ -268,7 +300,7 @@ public sealed class IndexPage
                 AriaRole.Button,
                 new()
                 {
-                    Name = "Withdraw funds",
+                    NameRegex = WithdrawButtonPattern(),
                 })
             .IsDisabledAsync();
 
@@ -312,7 +344,7 @@ public sealed class IndexPage
     public async Task WaitForBalanceAsync(
         float? timeout = null
     ) =>
-        await page.Locator(".status-item--highlight")
+        await page.Locator("section:has(h2:text-is('Account Status')) div:has(span:text-is('Balance:'))")
             .WaitForAsync(
                 new()
                 {
@@ -333,7 +365,7 @@ public sealed class IndexPage
         string expectedBalance,
         float? timeout = null
     ) =>
-        await page.Locator(".status-item--highlight")
+        await page.Locator("section:has(h2:text-is('Account Status')) div:has(span:text-is('Balance:'))")
             .Filter(
                 new()
                 {
@@ -354,7 +386,7 @@ public sealed class IndexPage
     public async Task WaitForCommandSuccessAsync(
         float? timeout = null
     ) =>
-        await page.Locator(".alert--success")
+        await page.Locator("div[role='status']")
             .WaitForAsync(
                 new()
                 {
