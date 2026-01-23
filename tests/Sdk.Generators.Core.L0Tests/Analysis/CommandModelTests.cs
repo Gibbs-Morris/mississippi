@@ -34,6 +34,7 @@ public class CommandModelTests
         INamespaceSymbol namespaceSymbol = Substitute.For<INamespaceSymbol>();
         typeSymbol.Name.Returns(name);
         typeSymbol.ToDisplayString().Returns($"MyApp.Domain.Commands.{name}");
+        typeSymbol.ToDisplayString(Arg.Any<SymbolDisplayFormat>()).Returns($"global::MyApp.Domain.Commands.{name}");
         typeSymbol.SpecialType.Returns(SpecialType.None);
         typeSymbol.IsRecord.Returns(isRecord);
         namespaceSymbol.IsGlobalNamespace.Returns(false);
@@ -57,6 +58,7 @@ public class CommandModelTests
         INamespaceSymbol namespaceSymbol = Substitute.For<INamespaceSymbol>();
         typeSymbol.Name.Returns(name);
         typeSymbol.ToDisplayString().Returns($"MyApp.Domain.Commands.{name}");
+        typeSymbol.ToDisplayString(Arg.Any<SymbolDisplayFormat>()).Returns($"global::MyApp.Domain.Commands.{name}");
         typeSymbol.SpecialType.Returns(SpecialType.None);
         typeSymbol.IsRecord.Returns(false);
         namespaceSymbol.IsGlobalNamespace.Returns(false);
@@ -80,6 +82,7 @@ public class CommandModelTests
         INamespaceSymbol namespaceSymbol = Substitute.For<INamespaceSymbol>();
         typeSymbol.Name.Returns(name);
         typeSymbol.ToDisplayString().Returns($"MyApp.Domain.Commands.{name}");
+        typeSymbol.ToDisplayString(Arg.Any<SymbolDisplayFormat>()).Returns($"global::MyApp.Domain.Commands.{name}");
         typeSymbol.SpecialType.Returns(SpecialType.None);
         typeSymbol.IsRecord.Returns(false);
         namespaceSymbol.IsGlobalNamespace.Returns(false);
@@ -175,14 +178,14 @@ public class CommandModelTests
     }
 
     /// <summary>
-    ///     FullTypeName should return fully qualified name.
+    ///     FullTypeName should return fully qualified name with global:: prefix.
     /// </summary>
     [Fact]
     public void FullTypeNameReturnsFullyQualifiedName()
     {
         INamedTypeSymbol typeSymbol = CreateCommandTypeSymbol("CreateOrder");
         CommandModel model = new(typeSymbol, "create", "POST");
-        Assert.Equal("MyApp.Domain.Commands.CreateOrder", model.FullTypeName);
+        Assert.Equal("global::MyApp.Domain.Commands.CreateOrder", model.FullTypeName);
     }
 
     /// <summary>

@@ -46,7 +46,7 @@ public sealed class ProjectionModel
         }
 
         TypeName = typeSymbol.Name;
-        FullTypeName = typeSymbol.ToDisplayString();
+        FullTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         Namespace = TypeAnalyzer.GetFullNamespace(typeSymbol);
         ProjectionPath = projectionPath;
         DtoTypeName = TypeAnalyzer.GetDtoTypeName(typeSymbol, dtoSuffix);

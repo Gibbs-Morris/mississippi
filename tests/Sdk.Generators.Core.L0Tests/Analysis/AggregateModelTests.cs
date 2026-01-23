@@ -31,6 +31,7 @@ public class AggregateModelTests
         INamespaceSymbol namespaceSymbol = Substitute.For<INamespaceSymbol>();
         typeSymbol.Name.Returns(name);
         typeSymbol.ToDisplayString().Returns($"{namespaceName}.{name}");
+        typeSymbol.ToDisplayString(Arg.Any<SymbolDisplayFormat>()).Returns($"global::{namespaceName}.{name}");
         namespaceSymbol.IsGlobalNamespace.Returns(false);
         namespaceSymbol.ToDisplayString().Returns(namespaceName);
         typeSymbol.ContainingNamespace.Returns(namespaceSymbol);
@@ -122,14 +123,14 @@ public class AggregateModelTests
     }
 
     /// <summary>
-    ///     FullTypeName should return fully qualified name.
+    ///     FullTypeName should return fully qualified name with global:: prefix.
     /// </summary>
     [Fact]
     public void FullTypeNameReturnsFullyQualifiedName()
     {
         INamedTypeSymbol typeSymbol = CreateNamedTypeSymbol("CustomerAggregate", "MyApp.Domain");
         AggregateModel model = new(typeSymbol, "api/customers", "customers");
-        Assert.Equal("MyApp.Domain.CustomerAggregate", model.FullTypeName);
+        Assert.Equal("global::MyApp.Domain.CustomerAggregate", model.FullTypeName);
     }
 
     /// <summary>

@@ -41,10 +41,12 @@ public sealed class PropertyModel
         IsRequired = !IsNullable && !HasDefaultValue;
 
         // For collections with custom element types, extract the element info
-        if (IsCollection && !IsFrameworkType)
+        // Check the element type regardless of whether the collection itself is a framework type
+        // (e.g., ImmutableList<MessageItem> is a framework collection containing custom elements)
+        if (IsCollection)
         {
             ITypeSymbol? elementType = TypeAnalyzer.GetCollectionElementType(propertySymbol.Type);
-            if (elementType is not null)
+            if (elementType is not null && !TypeAnalyzer.IsFrameworkType(elementType))
             {
                 ElementSourceTypeName = elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
                 ElementDtoTypeName = TypeAnalyzer.GetDtoTypeName(elementType, customTypeSuffix);

@@ -102,7 +102,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             }
 
             first = false;
-            sb.Append($"{prop.SourceTypeName} {prop.Name}");
+            sb.Append($"{prop.DtoTypeName} {prop.Name}");
         }
 
         sb.AppendLine(");");

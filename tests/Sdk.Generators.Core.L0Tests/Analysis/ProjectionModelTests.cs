@@ -86,6 +86,7 @@ public class ProjectionModelTests
         INamespaceSymbol namespaceSymbol = Substitute.For<INamespaceSymbol>();
         typeSymbol.Name.Returns(name);
         typeSymbol.ToDisplayString().Returns($"MyApp.Domain.Projections.{name}");
+        typeSymbol.ToDisplayString(Arg.Any<SymbolDisplayFormat>()).Returns($"global::MyApp.Domain.Projections.{name}");
         typeSymbol.SpecialType.Returns(SpecialType.None);
         namespaceSymbol.IsGlobalNamespace.Returns(false);
         namespaceSymbol.ToDisplayString().Returns("MyApp.Domain.Projections");
@@ -106,6 +107,7 @@ public class ProjectionModelTests
         INamespaceSymbol namespaceSymbol = Substitute.For<INamespaceSymbol>();
         typeSymbol.Name.Returns(name);
         typeSymbol.ToDisplayString().Returns($"MyApp.Domain.Projections.{name}");
+        typeSymbol.ToDisplayString(Arg.Any<SymbolDisplayFormat>()).Returns($"global::MyApp.Domain.Projections.{name}");
         typeSymbol.SpecialType.Returns(SpecialType.None);
         namespaceSymbol.IsGlobalNamespace.Returns(false);
         namespaceSymbol.ToDisplayString().Returns("MyApp.Domain.Projections");
@@ -126,6 +128,7 @@ public class ProjectionModelTests
         INamespaceSymbol namespaceSymbol = Substitute.For<INamespaceSymbol>();
         typeSymbol.Name.Returns(name);
         typeSymbol.ToDisplayString().Returns($"MyApp.Domain.Projections.{name}");
+        typeSymbol.ToDisplayString(Arg.Any<SymbolDisplayFormat>()).Returns($"global::MyApp.Domain.Projections.{name}");
         typeSymbol.SpecialType.Returns(SpecialType.None);
         namespaceSymbol.IsGlobalNamespace.Returns(false);
         namespaceSymbol.ToDisplayString().Returns("MyApp.Domain.Projections");
@@ -186,14 +189,14 @@ public class ProjectionModelTests
     }
 
     /// <summary>
-    ///     FullTypeName should return fully qualified name.
+    ///     FullTypeName should return fully qualified name with global:: prefix.
     /// </summary>
     [Fact]
     public void FullTypeNameReturnsFullyQualifiedName()
     {
         INamedTypeSymbol typeSymbol = CreateProjectionTypeSymbol("OrderProjection");
         ProjectionModel model = new(typeSymbol, "/orders");
-        Assert.Equal("MyApp.Domain.Projections.OrderProjection", model.FullTypeName);
+        Assert.Equal("global::MyApp.Domain.Projections.OrderProjection", model.FullTypeName);
     }
 
     /// <summary>

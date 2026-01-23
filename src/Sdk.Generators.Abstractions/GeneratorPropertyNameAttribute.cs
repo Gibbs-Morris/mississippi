@@ -17,7 +17,7 @@ namespace Mississippi.Sdk.Generators.Abstractions;
 ///         public sealed record UpdateProfile
 ///         {
 ///             [GeneratorPropertyName("display_name")]
-///             public string DisplayName { get; init; }
+///             public required string DisplayName { get; init; }
 ///         }
 ///         // Generates: [JsonPropertyName("display_name")]
 ///     </code>

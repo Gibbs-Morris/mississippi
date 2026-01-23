@@ -32,7 +32,7 @@ public sealed class CommandModel
         }
 
         TypeName = typeSymbol.Name;
-        FullTypeName = typeSymbol.ToDisplayString();
+        FullTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         Namespace = TypeAnalyzer.GetFullNamespace(typeSymbol);
         Route = route ?? throw new ArgumentNullException(nameof(route));
         HttpMethod = httpMethod ?? throw new ArgumentNullException(nameof(httpMethod));

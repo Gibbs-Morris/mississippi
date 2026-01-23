@@ -188,12 +188,14 @@ public static class AggregateCommandStateReducers
         int maxEntries
     )
     {
-        while (history.Count > maxEntries)
+        if (history.Count <= maxEntries)
         {
-            history = history.RemoveAt(0);
+            return history;
         }
 
-        return history;
+        // Remove oldest entries in a single operation to avoid intermediate allocations
+        int removeCount = history.Count - maxEntries;
+        return history.RemoveRange(0, removeCount);
     }
 
     private static ImmutableList<CommandHistoryEntry> UpdateHistoryEntry(

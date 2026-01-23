@@ -28,7 +28,7 @@ public sealed class AggregateModel
         }
 
         TypeName = typeSymbol.Name;
-        FullTypeName = typeSymbol.ToDisplayString();
+        FullTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         Namespace = TypeAnalyzer.GetFullNamespace(typeSymbol);
         RoutePrefix = routePrefix ?? throw new ArgumentNullException(nameof(routePrefix));
         FeatureKey = featureKey ?? throw new ArgumentNullException(nameof(featureKey));

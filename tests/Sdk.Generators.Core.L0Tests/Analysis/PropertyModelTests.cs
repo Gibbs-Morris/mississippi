@@ -28,6 +28,9 @@ public class PropertyModelTests
         ITypeSymbol elementType
     )
     {
+        // Capture elementType.Name immediately to avoid any lazy evaluation issues
+        string elementTypeName = elementType.Name;
+
         INamedTypeSymbol namedType = Substitute.For<INamedTypeSymbol>();
         INamedTypeSymbol constructedFrom = Substitute.For<INamedTypeSymbol>();
         namedType.IsGenericType.Returns(true);
@@ -39,7 +42,7 @@ public class PropertyModelTests
         namedType.NullableAnnotation.Returns(NullableAnnotation.NotAnnotated);
         namedType.IsValueType.Returns(false);
         namedType.OriginalDefinition.Returns(namedType);
-        namedType.ToDisplayString(Arg.Any<SymbolDisplayFormat?>()).Returns($"{collectionName}<{elementType.Name}>");
+        namedType.ToDisplayString(Arg.Any<SymbolDisplayFormat?>()).Returns($"{collectionName}<{elementTypeName}>");
 
         // For IsFrameworkType check - collections from System namespace are framework types
         INamespaceSymbol namespaceSymbol = Substitute.For<INamespaceSymbol>();
@@ -56,6 +59,8 @@ public class PropertyModelTests
         string name
     )
     {
+        // Use ITypeSymbol directly (not INamedTypeSymbol) to avoid pattern matching issues
+        // where the code checks "typeSymbol is INamedTypeSymbol { IsGenericType: true }"
         ITypeSymbol typeSymbol = Substitute.For<ITypeSymbol>();
         INamespaceSymbol namespaceSymbol = Substitute.For<INamespaceSymbol>();
         typeSymbol.Name.Returns(name);
@@ -66,6 +71,8 @@ public class PropertyModelTests
         namespaceSymbol.IsGlobalNamespace.Returns(false);
         namespaceSymbol.ToDisplayString().Returns("MyApp.Domain");
         typeSymbol.ContainingNamespace.Returns(namespaceSymbol);
+        typeSymbol.ToDisplayString().Returns(name);
+        typeSymbol.ToDisplayString(Arg.Any<SymbolDisplayFormat>()).Returns(name);
         typeSymbol.ToDisplayString(Arg.Any<SymbolDisplayFormat?>()).Returns(name);
         return typeSymbol;
     }
@@ -150,40 +157,42 @@ public class PropertyModelTests
     }
 
     /// <summary>
-    ///     ElementDtoTypeName should be null for framework collection types.
+    ///     ElementDtoTypeName should be populated for framework collection with custom element type.
     /// </summary>
     /// <remarks>
-    ///     The implementation only populates element info when the collection type itself
-    ///     is not a framework type (e.g., a custom collection class). Standard collections
-    ///     like List&lt;T&gt; are framework types so element info is not populated.
+    ///     The implementation populates element info when the element type is a custom type,
+    ///     regardless of whether the collection itself is a framework type. This enables proper
+    ///     DTO generation for collections like List&lt;CustomType&gt;.
     /// </remarks>
     [Fact]
-    public void ElementDtoTypeNameNullForFrameworkCollectionType()
+    public void ElementDtoTypeNamePopulatedForFrameworkCollectionWithCustomElementType()
     {
         ITypeSymbol customType = CreateCustomType("LineItem");
         INamedTypeSymbol listType = CreateCollectionType("List", customType);
         IPropertySymbol propertySymbol = CreatePropertySymbol("Items", listType);
         PropertyModel model = new(propertySymbol);
-        Assert.Null(model.ElementDtoTypeName);
+        Assert.NotNull(model.ElementDtoTypeName);
+        Assert.Equal("LineItemDto", model.ElementDtoTypeName);
     }
 
     /// <summary>
-    ///     ElementSourceTypeName should be null for framework collection types.
+    ///     ElementSourceTypeName should be populated for framework collection with custom element type.
     /// </summary>
     /// <remarks>
-    ///     The implementation only populates element info when the collection type itself
-    ///     is not a framework type (e.g., a custom collection class). Standard collections
-    ///     like List&lt;T&gt; are framework types so element info is not populated.
+    ///     The implementation populates element info when the element type is a custom type,
+    ///     regardless of whether the collection itself is a framework type. This enables proper
+    ///     mapper generation for collections like List&lt;CustomType&gt;.
     /// </remarks>
     [Fact]
-    public void ElementSourceTypeNameNullForFrameworkCollectionType()
+    public void ElementSourceTypeNamePopulatedForFrameworkCollectionWithCustomElementType()
     {
         ITypeSymbol customType = CreateCustomType("LineItem");
         customType.ToDisplayString(Arg.Any<SymbolDisplayFormat?>()).Returns("LineItem");
         INamedTypeSymbol listType = CreateCollectionType("List", customType);
         IPropertySymbol propertySymbol = CreatePropertySymbol("Items", listType);
         PropertyModel model = new(propertySymbol);
-        Assert.Null(model.ElementSourceTypeName);
+        Assert.NotNull(model.ElementSourceTypeName);
+        Assert.Equal("LineItem", model.ElementSourceTypeName);
     }
 
     /// <summary>

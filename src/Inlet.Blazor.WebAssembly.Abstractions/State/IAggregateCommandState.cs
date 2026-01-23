@@ -32,10 +32,18 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.State;
 public interface IAggregateCommandState : IFeatureState
 {
     /// <summary>
-    ///     Gets the maximum number of command history entries to retain.
+    ///     Gets the default maximum number of command history entries to retain.
     /// </summary>
     /// <remarks>
-    ///     When exceeded, oldest entries are removed (FIFO eviction).
+    ///     <para>
+    ///         This constant provides a sensible default for implementations that do not
+    ///         specify a custom limit. When the history exceeds this limit, oldest entries
+    ///         are removed (FIFO eviction).
+    ///     </para>
+    ///     <para>
+    ///         Implementations can pass a different value to
+    ///         <see cref="AggregateCommandStateReducers" /> methods to override this default.
+    ///     </para>
     /// </remarks>
     const int DefaultMaxHistoryEntries = 200;
 
