@@ -76,13 +76,17 @@ jobs:
         run: |
           dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
 
+      - name: Restore dotnet tools
+        run: |
+          dotnet tool restore
+
       - name: Build dotnet projects
         run: |
           dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
       - name: Install Playwright Browsers
         run: |
-          npx playwright install --with-deps
+          dotnet playwright install --with-deps
 
       - name: Run L2 Tests
         run: |
