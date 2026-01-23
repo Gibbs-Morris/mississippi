@@ -20,6 +20,21 @@ namespace Mississippi.Refraction.L0Tests.Components.Organisms;
 public sealed class SchematicViewerTests : BunitContext
 {
     /// <summary>
+    ///     SchematicViewer does not render caption when empty.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SchematicViewer")]
+    public void SchematicViewerDoesNotRenderCaptionWhenEmpty()
+    {
+        // Act
+        using IRenderedComponent<SchematicViewer> cut =
+            Render<SchematicViewer>(p => p.Add(c => c.Caption, string.Empty));
+
+        // Assert
+        Assert.Empty(cut.FindAll(".rf-schematic-viewer__caption"));
+    }
+
+    /// <summary>
     ///     SchematicViewer has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
@@ -98,6 +113,99 @@ public sealed class SchematicViewerTests : BunitContext
     }
 
     /// <summary>
+    ///     SchematicViewer renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SchematicViewer")]
+    public void SchematicViewerRendersAdditionalAttributes()
+    {
+        // Act
+        using IRenderedComponent<SchematicViewer> cut =
+            Render<SchematicViewer>(p => p.AddUnmatched("data-testid", "viewer-1"));
+
+        // Assert
+        Assert.Equal("viewer-1", cut.Find(".rf-schematic-viewer").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     SchematicViewer renders caption when provided.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SchematicViewer")]
+    public void SchematicViewerRendersCaptionWhenProvided()
+    {
+        // Act
+        using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>(p => p.Add(
+            c => c.Caption,
+            "Test Caption"));
+
+        // Assert
+        string textContent = cut.Find(".rf-schematic-viewer__caption").TextContent;
+        Assert.Contains("Test Caption", textContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     SchematicViewer renders child content in viewport.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SchematicViewer")]
+    public void SchematicViewerRendersChildContentInViewport()
+    {
+        // Act
+        using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>(p => p.AddChildContent(
+            "<svg class='test-schematic'></svg>"));
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".rf-schematic-viewer__viewport .test-schematic"));
+    }
+
+    /// <summary>
+    ///     SchematicViewer renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SchematicViewer")]
+    public void SchematicViewerRendersCustomState()
+    {
+        // Act
+        using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>(p => p.Add(
+            c => c.State,
+            RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-schematic-viewer").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     SchematicViewer renders viewport.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SchematicViewer")]
+    public void SchematicViewerRendersViewport()
+    {
+        // Act
+        using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>();
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".rf-schematic-viewer__viewport"));
+    }
+
+    /// <summary>
+    ///     SchematicViewer renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("SchematicViewer")]
+    public void SchematicViewerRendersWithDefaultState()
+    {
+        // Act
+        using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-schematic-viewer").GetAttribute("data-state");
+        Assert.Equal("idle", dataState);
+    }
+
+    /// <summary>
     ///     SchematicViewer State defaults to Idle.
     /// </summary>
     [Fact]
@@ -109,96 +217,5 @@ public sealed class SchematicViewerTests : BunitContext
 
         // Assert
         Assert.Equal(RefractionStates.Idle, component.State);
-    }
-
-    /// <summary>
-    ///     SchematicViewer renders with default state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersWithDefaultState()
-    {
-        // Act
-        using var cut = Render<SchematicViewer>();
-
-        // Assert
-        string? dataState = cut.Find(".rf-schematic-viewer").GetAttribute("data-state");
-        Assert.Equal("idle", dataState);
-    }
-
-    /// <summary>
-    ///     SchematicViewer renders custom state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersCustomState()
-    {
-        // Act
-        using var cut = Render<SchematicViewer>(p => p
-            .Add(c => c.State, RefractionStates.Active));
-
-        // Assert
-        string? dataState = cut.Find(".rf-schematic-viewer").GetAttribute("data-state");
-        Assert.Equal("active", dataState);
-    }
-
-    /// <summary>
-    ///     SchematicViewer renders caption when provided.
-    /// </summary>
-    [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersCaptionWhenProvided()
-    {
-        // Act
-        using var cut = Render<SchematicViewer>(p => p
-            .Add(c => c.Caption, "Test Caption"));
-
-        // Assert
-        string textContent = cut.Find(".rf-schematic-viewer__caption").TextContent;
-        Assert.Contains("Test Caption", textContent, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     SchematicViewer does not render caption when empty.
-    /// </summary>
-    [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerDoesNotRenderCaptionWhenEmpty()
-    {
-        // Act
-        using var cut = Render<SchematicViewer>(p => p
-            .Add(c => c.Caption, string.Empty));
-
-        // Assert
-        Assert.Empty(cut.FindAll(".rf-schematic-viewer__caption"));
-    }
-
-    /// <summary>
-    ///     SchematicViewer renders additional attributes.
-    /// </summary>
-    [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersAdditionalAttributes()
-    {
-        // Act
-        using var cut = Render<SchematicViewer>(p => p
-            .AddUnmatched("data-testid", "viewer-1"));
-
-        // Assert
-        Assert.Equal("viewer-1", cut.Find(".rf-schematic-viewer").GetAttribute("data-testid"));
-    }
-
-    /// <summary>
-    ///     SchematicViewer renders viewport.
-    /// </summary>
-    [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersViewport()
-    {
-        // Act
-        using var cut = Render<SchematicViewer>();
-
-        // Assert
-        Assert.NotEmpty(cut.FindAll(".rf-schematic-viewer__viewport"));
     }
 }

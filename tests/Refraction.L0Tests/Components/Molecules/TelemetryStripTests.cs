@@ -80,6 +80,68 @@ public sealed class TelemetryStripTests : BunitContext
     }
 
     /// <summary>
+    ///     TelemetryStrip renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("TelemetryStrip")]
+    public void TelemetryStripRendersAdditionalAttributes()
+    {
+        // Act
+        using IRenderedComponent<TelemetryStrip> cut =
+            Render<TelemetryStrip>(p => p.AddUnmatched("data-testid", "strip-1"));
+
+        // Assert
+        Assert.Equal("strip-1", cut.Find(".rf-telemetry-strip").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     TelemetryStrip renders child content.
+    /// </summary>
+    [Fact]
+    [AllureFeature("TelemetryStrip")]
+    public void TelemetryStripRendersChildContent()
+    {
+        // Act
+        using IRenderedComponent<TelemetryStrip> cut = Render<TelemetryStrip>(p => p.AddChildContent(
+            "<span class='test-telemetry'>Telemetry Data</span>"));
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".test-telemetry"));
+    }
+
+    /// <summary>
+    ///     TelemetryStrip renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("TelemetryStrip")]
+    public void TelemetryStripRendersCustomState()
+    {
+        // Act
+        using IRenderedComponent<TelemetryStrip> cut = Render<TelemetryStrip>(p => p.Add(
+            c => c.State,
+            RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-telemetry-strip").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     TelemetryStrip renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("TelemetryStrip")]
+    public void TelemetryStripRendersWithDefaultState()
+    {
+        // Act
+        using IRenderedComponent<TelemetryStrip> cut = Render<TelemetryStrip>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-telemetry-strip").GetAttribute("data-state");
+        Assert.Equal("quiet", dataState);
+    }
+
+    /// <summary>
     ///     TelemetryStrip State defaults to Quiet.
     /// </summary>
     [Fact]
@@ -91,51 +153,5 @@ public sealed class TelemetryStripTests : BunitContext
 
         // Assert
         Assert.Equal(RefractionStates.Quiet, component.State);
-    }
-
-    /// <summary>
-    ///     TelemetryStrip renders with default state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("TelemetryStrip")]
-    public void TelemetryStripRendersWithDefaultState()
-    {
-        // Act
-        using var cut = Render<TelemetryStrip>();
-
-        // Assert
-        string? dataState = cut.Find(".rf-telemetry-strip").GetAttribute("data-state");
-        Assert.Equal("quiet", dataState);
-    }
-
-    /// <summary>
-    ///     TelemetryStrip renders custom state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("TelemetryStrip")]
-    public void TelemetryStripRendersCustomState()
-    {
-        // Act
-        using var cut = Render<TelemetryStrip>(p => p
-            .Add(c => c.State, RefractionStates.Active));
-
-        // Assert
-        string? dataState = cut.Find(".rf-telemetry-strip").GetAttribute("data-state");
-        Assert.Equal("active", dataState);
-    }
-
-    /// <summary>
-    ///     TelemetryStrip renders additional attributes.
-    /// </summary>
-    [Fact]
-    [AllureFeature("TelemetryStrip")]
-    public void TelemetryStripRendersAdditionalAttributes()
-    {
-        // Act
-        using var cut = Render<TelemetryStrip>(p => p
-            .AddUnmatched("data-testid", "strip-1"));
-
-        // Assert
-        Assert.Equal("strip-1", cut.Find(".rf-telemetry-strip").GetAttribute("data-testid"));
     }
 }

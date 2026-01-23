@@ -20,6 +20,37 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 public sealed class InputFieldTests : BunitContext
 {
     /// <summary>
+    ///     InputField associates label with input via Id.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldAssociatesLabelWithInputViaId()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p
+            .Add(c => c.Label, "Username")
+            .Add(c => c.Id, "username-field"));
+
+        // Assert
+        Assert.Equal("username-field", cut.Find(".rf-input-field__label").GetAttribute("for"));
+        Assert.Equal("username-field", cut.Find(".rf-input-field__input").GetAttribute("id"));
+    }
+
+    /// <summary>
+    ///     InputField does not render label when empty.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldDoesNotRenderLabelWhenEmpty()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Label, string.Empty));
+
+        // Assert
+        Assert.Empty(cut.FindAll(".rf-input-field__label"));
+    }
+
+    /// <summary>
     ///     InputField has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
@@ -227,6 +258,199 @@ public sealed class InputFieldTests : BunitContext
     }
 
     /// <summary>
+    ///     InputField invokes OnBlur when input loses focus.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldInvokesOnBlurWhenInputLosesFocus()
+    {
+        // Arrange
+        bool wasBlurred = false;
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(
+            c => c.OnBlur,
+            _ => { wasBlurred = true; }));
+
+        // Act
+        cut.Find(".rf-input-field__input").Blur();
+
+        // Assert
+        Assert.True(wasBlurred);
+    }
+
+    /// <summary>
+    ///     InputField invokes OnFocus when input receives focus.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldInvokesOnFocusWhenInputReceivesFocus()
+    {
+        // Arrange
+        bool wasFocused = false;
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(
+            c => c.OnFocus,
+            _ => { wasFocused = true; }));
+
+        // Act
+        cut.Find(".rf-input-field__input").Focus();
+
+        // Assert
+        Assert.True(wasFocused);
+    }
+
+    /// <summary>
+    ///     InputField invokes ValueChanged when input changes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldInvokesValueChangedWhenInputChanges()
+    {
+        // Arrange
+        string? receivedValue = null;
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(
+            c => c.ValueChanged,
+            value => { receivedValue = value; }));
+
+        // Act
+        cut.Find(".rf-input-field__input").Input("new value");
+
+        // Assert
+        Assert.Equal("new value", receivedValue);
+    }
+
+    /// <summary>
+    ///     InputField renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersAdditionalAttributes()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.AddUnmatched("data-testid", "input-1"));
+
+        // Assert
+        Assert.Equal("input-1", cut.Find(".rf-input-field").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     InputField renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersCustomState()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(
+            c => c.State,
+            RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     InputField renders disabled state correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersDisabledStateCorrectly()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsDisabled, true));
+
+        // Assert
+        Assert.True(cut.Find(".rf-input-field__input").HasAttribute("disabled"));
+    }
+
+    /// <summary>
+    ///     InputField renders input type correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersInputTypeCorrectly()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Type, "password"));
+
+        // Assert
+        Assert.Equal("password", cut.Find(".rf-input-field__input").GetAttribute("type"));
+    }
+
+    /// <summary>
+    ///     InputField renders label when provided.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersLabelWhenProvided()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p
+            .Add(c => c.Label, "Test Label")
+            .Add(c => c.Id, "test-id"));
+
+        // Assert
+        string textContent = cut.Find(".rf-input-field__label").TextContent;
+        Assert.Contains("Test Label", textContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     InputField renders placeholder correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersPlaceholderCorrectly()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Placeholder, "Enter value"));
+
+        // Assert
+        Assert.Equal("Enter value", cut.Find(".rf-input-field__input").GetAttribute("placeholder"));
+    }
+
+    /// <summary>
+    ///     InputField renders readonly state correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersReadOnlyStateCorrectly()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsReadOnly, true));
+
+        // Assert
+        Assert.True(cut.Find(".rf-input-field__input").HasAttribute("readonly"));
+    }
+
+    /// <summary>
+    ///     InputField renders value correctly.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersValueCorrectly()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Value, "Initial value"));
+
+        // Assert
+        Assert.Equal("Initial value", cut.Find(".rf-input-field__input").GetAttribute("value"));
+    }
+
+    /// <summary>
+    ///     InputField renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("InputField")]
+    public void InputFieldRendersWithDefaultState()
+    {
+        // Act
+        using IRenderedComponent<InputField> cut = Render<InputField>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
+        Assert.Equal("idle", dataState);
+    }
+
+    /// <summary>
     ///     InputField State defaults to Idle.
     /// </summary>
     [Fact]
@@ -252,83 +476,5 @@ public sealed class InputFieldTests : BunitContext
 
         // Assert
         Assert.Equal("text", inputField.Type);
-    }
-
-    /// <summary>
-    ///     InputField renders with default state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersWithDefaultState()
-    {
-        // Act
-        using var cut = Render<InputField>();
-
-        // Assert
-        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
-        Assert.Equal("idle", dataState);
-    }
-
-    /// <summary>
-    ///     InputField renders label when provided.
-    /// </summary>
-    [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersLabelWhenProvided()
-    {
-        // Act
-        using var cut = Render<InputField>(p => p
-            .Add(c => c.Label, "Test Label")
-            .Add(c => c.Id, "test-id"));
-
-        // Assert
-        string textContent = cut.Find(".rf-input-field__label").TextContent;
-        Assert.Contains("Test Label", textContent, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     InputField does not render label when empty.
-    /// </summary>
-    [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldDoesNotRenderLabelWhenEmpty()
-    {
-        // Act
-        using var cut = Render<InputField>(p => p
-            .Add(c => c.Label, string.Empty));
-
-        // Assert
-        Assert.Empty(cut.FindAll(".rf-input-field__label"));
-    }
-
-    /// <summary>
-    ///     InputField renders custom state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersCustomState()
-    {
-        // Act
-        using var cut = Render<InputField>(p => p
-            .Add(c => c.State, RefractionStates.Active));
-
-        // Assert
-        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
-        Assert.Equal("active", dataState);
-    }
-
-    /// <summary>
-    ///     InputField renders additional attributes.
-    /// </summary>
-    [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersAdditionalAttributes()
-    {
-        // Act
-        using var cut = Render<InputField>(p => p
-            .AddUnmatched("data-testid", "input-1"));
-
-        // Assert
-        Assert.Equal("input-1", cut.Find(".rf-input-field").GetAttribute("data-testid"));
     }
 }

@@ -113,6 +113,68 @@ public sealed class CommandOrbitTests : BunitContext
     }
 
     /// <summary>
+    ///     CommandOrbit renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("CommandOrbit")]
+    public void CommandOrbitRendersAdditionalAttributes()
+    {
+        // Act
+        using IRenderedComponent<CommandOrbit>
+            cut = Render<CommandOrbit>(p => p.AddUnmatched("data-testid", "orbit-1"));
+
+        // Assert
+        Assert.Equal("orbit-1", cut.Find(".rf-command-orbit").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     CommandOrbit renders child content.
+    /// </summary>
+    [Fact]
+    [AllureFeature("CommandOrbit")]
+    public void CommandOrbitRendersChildContent()
+    {
+        // Act
+        using IRenderedComponent<CommandOrbit> cut = Render<CommandOrbit>(p => p.AddChildContent(
+            "<span class='test-action'>Action 1</span>"));
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".test-action"));
+    }
+
+    /// <summary>
+    ///     CommandOrbit renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("CommandOrbit")]
+    public void CommandOrbitRendersCustomState()
+    {
+        // Act
+        using IRenderedComponent<CommandOrbit> cut = Render<CommandOrbit>(p => p.Add(
+            c => c.State,
+            RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-command-orbit").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     CommandOrbit renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("CommandOrbit")]
+    public void CommandOrbitRendersWithDefaultState()
+    {
+        // Act
+        using IRenderedComponent<CommandOrbit> cut = Render<CommandOrbit>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-command-orbit").GetAttribute("data-state");
+        Assert.Equal("latent", dataState);
+    }
+
+    /// <summary>
     ///     CommandOrbit State defaults to Latent.
     /// </summary>
     [Fact]
@@ -124,51 +186,5 @@ public sealed class CommandOrbitTests : BunitContext
 
         // Assert
         Assert.Equal(RefractionStates.Latent, orbit.State);
-    }
-
-    /// <summary>
-    ///     CommandOrbit renders with default state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("CommandOrbit")]
-    public void CommandOrbitRendersWithDefaultState()
-    {
-        // Act
-        using var cut = Render<CommandOrbit>();
-
-        // Assert
-        string? dataState = cut.Find(".rf-command-orbit").GetAttribute("data-state");
-        Assert.Equal("latent", dataState);
-    }
-
-    /// <summary>
-    ///     CommandOrbit renders custom state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("CommandOrbit")]
-    public void CommandOrbitRendersCustomState()
-    {
-        // Act
-        using var cut = Render<CommandOrbit>(p => p
-            .Add(c => c.State, RefractionStates.Active));
-
-        // Assert
-        string? dataState = cut.Find(".rf-command-orbit").GetAttribute("data-state");
-        Assert.Equal("active", dataState);
-    }
-
-    /// <summary>
-    ///     CommandOrbit renders additional attributes.
-    /// </summary>
-    [Fact]
-    [AllureFeature("CommandOrbit")]
-    public void CommandOrbitRendersAdditionalAttributes()
-    {
-        // Act
-        using var cut = Render<CommandOrbit>(p => p
-            .AddUnmatched("data-testid", "orbit-1"));
-
-        // Assert
-        Assert.Equal("orbit-1", cut.Find(".rf-command-orbit").GetAttribute("data-testid"));
     }
 }

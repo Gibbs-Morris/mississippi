@@ -116,6 +116,127 @@ public sealed class ProgressArcTests : BunitContext
     }
 
     /// <summary>
+    ///     ProgressArc renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersAdditionalAttributes()
+    {
+        // Act
+        using IRenderedComponent<ProgressArc> cut =
+            Render<ProgressArc>(p => p.AddUnmatched("data-testid", "progress-1"));
+
+        // Assert
+        Assert.Equal("progress-1", cut.Find(".rf-progress-arc").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     ProgressArc renders aria-valuemax attribute.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersAriaValuemaxAttribute()
+    {
+        // Act
+        using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>(p => p.Add(c => c.Max, 200));
+
+        // Assert
+        string? ariaValuemax = cut.Find(".rf-progress-arc").GetAttribute("aria-valuemax");
+        Assert.Equal("200", ariaValuemax);
+    }
+
+    /// <summary>
+    ///     ProgressArc renders aria-valuemin attribute.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersAriaValueminAttribute()
+    {
+        // Act
+        using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>(p => p.Add(c => c.Min, 10));
+
+        // Assert
+        string? ariaValuemin = cut.Find(".rf-progress-arc").GetAttribute("aria-valuemin");
+        Assert.Equal("10", ariaValuemin);
+    }
+
+    /// <summary>
+    ///     ProgressArc renders aria-valuenow attribute.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersAriaValuenowAttribute()
+    {
+        // Act
+        using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>(p => p.Add(c => c.Value, 50));
+
+        // Assert
+        string? ariaValuenow = cut.Find(".rf-progress-arc").GetAttribute("aria-valuenow");
+        Assert.Equal("50", ariaValuenow);
+    }
+
+    /// <summary>
+    ///     ProgressArc renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersCustomState()
+    {
+        // Act
+        using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>(p => p.Add(
+            c => c.State,
+            RefractionStates.Indeterminate));
+
+        // Assert
+        string? dataState = cut.Find(".rf-progress-arc").GetAttribute("data-state");
+        Assert.Equal("indeterminate", dataState);
+    }
+
+    /// <summary>
+    ///     ProgressArc renders SVG element.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersSvgElement()
+    {
+        // Act
+        using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>();
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".rf-progress-arc__svg"));
+    }
+
+    /// <summary>
+    ///     ProgressArc renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersWithDefaultState()
+    {
+        // Act
+        using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-progress-arc").GetAttribute("data-state");
+        Assert.Equal("determinate", dataState);
+    }
+
+    /// <summary>
+    ///     ProgressArc renders with progressbar role for accessibility.
+    /// </summary>
+    [Fact]
+    [AllureFeature("ProgressArc")]
+    public void ProgressArcRendersWithProgressbarRoleForAccessibility()
+    {
+        // Act
+        using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>();
+
+        // Assert
+        string? role = cut.Find(".rf-progress-arc").GetAttribute("role");
+        Assert.Equal("progressbar", role);
+    }
+
+    /// <summary>
     ///     ProgressArc State defaults to Determinate.
     /// </summary>
     [Fact]
@@ -130,62 +251,16 @@ public sealed class ProgressArcTests : BunitContext
     }
 
     /// <summary>
-    ///     ProgressArc renders with default state.
+    ///     ProgressArc Value defaults to 0.
     /// </summary>
     [Fact]
     [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersWithDefaultState()
+    public void ProgressArcValueDefaultsToZero()
     {
-        // Act
-        using var cut = Render<ProgressArc>();
+        // Arrange
+        ProgressArc component = new();
 
         // Assert
-        string? dataState = cut.Find(".rf-progress-arc").GetAttribute("data-state");
-        Assert.Equal("determinate", dataState);
-    }
-
-    /// <summary>
-    ///     ProgressArc renders custom state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersCustomState()
-    {
-        // Act
-        using var cut = Render<ProgressArc>(p => p
-            .Add(c => c.State, RefractionStates.Indeterminate));
-
-        // Assert
-        string? dataState = cut.Find(".rf-progress-arc").GetAttribute("data-state");
-        Assert.Equal("indeterminate", dataState);
-    }
-
-    /// <summary>
-    ///     ProgressArc renders additional attributes.
-    /// </summary>
-    [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersAdditionalAttributes()
-    {
-        // Act
-        using var cut = Render<ProgressArc>(p => p
-            .AddUnmatched("data-testid", "progress-1"));
-
-        // Assert
-        Assert.Equal("progress-1", cut.Find(".rf-progress-arc").GetAttribute("data-testid"));
-    }
-
-    /// <summary>
-    ///     ProgressArc renders SVG element.
-    /// </summary>
-    [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersSvgElement()
-    {
-        // Act
-        using var cut = Render<ProgressArc>();
-
-        // Assert
-        Assert.NotEmpty(cut.FindAll(".rf-progress-arc__svg"));
+        Assert.Equal(0d, component.Value);
     }
 }

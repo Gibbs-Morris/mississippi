@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 
 using Allure.Xunit.Attributes;
@@ -112,6 +113,139 @@ public sealed class NotificationPulseTests : BunitContext
     }
 
     /// <summary>
+    ///     NotificationPulse invokes OnExpand when clicked.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseInvokesOnExpandWhenClicked()
+    {
+        // Arrange
+        bool wasExpanded = false;
+        MouseEventArgs? receivedArgs = null;
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p.Add(
+            c => c.OnExpand,
+            args =>
+            {
+                wasExpanded = true;
+                receivedArgs = args;
+            }));
+
+        // Act
+        cut.Find(".rf-notification-pulse").Click();
+
+        // Assert
+        Assert.True(wasExpanded);
+        Assert.NotNull(receivedArgs);
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersAdditionalAttributes()
+    {
+        // Act
+        using IRenderedComponent<NotificationPulse> cut =
+            Render<NotificationPulse>(p => p.AddUnmatched("data-testid", "pulse-1"));
+
+        // Assert
+        Assert.Equal("pulse-1", cut.Find(".rf-notification-pulse").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders child content.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersChildContent()
+    {
+        // Act
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p.AddChildContent(
+            "<span>Test Content</span>"));
+
+        // Assert
+        string textContent = cut.Find(".rf-notification-pulse__content").TextContent;
+        Assert.Contains("Test Content", textContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders custom state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersCustomState()
+    {
+        // Act
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p.Add(
+            c => c.State,
+            RefractionStates.Active));
+
+        // Assert
+        string? dataState = cut.Find(".rf-notification-pulse").GetAttribute("data-state");
+        Assert.Equal("active", dataState);
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders dot indicator.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersDotIndicator()
+    {
+        // Act
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".rf-notification-pulse__dot"));
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersWithDefaultState()
+    {
+        // Act
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-notification-pulse").GetAttribute("data-state");
+        Assert.Equal("new", dataState);
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders with status role for accessibility.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersWithStatusRoleForAccessibility()
+    {
+        // Act
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
+
+        // Assert
+        string? role = cut.Find(".rf-notification-pulse").GetAttribute("role");
+        Assert.Equal("status", role);
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders with tabindex for keyboard accessibility.
+    /// </summary>
+    [Fact]
+    [AllureFeature("NotificationPulse")]
+    public void NotificationPulseRendersWithTabindexForKeyboardAccessibility()
+    {
+        // Act
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
+
+        // Assert
+        string? tabindex = cut.Find(".rf-notification-pulse").GetAttribute("tabindex");
+        Assert.Equal("0", tabindex);
+    }
+
+    /// <summary>
     ///     NotificationPulse State defaults to New.
     /// </summary>
     [Fact]
@@ -123,65 +257,5 @@ public sealed class NotificationPulseTests : BunitContext
 
         // Assert
         Assert.Equal(RefractionStates.New, component.State);
-    }
-
-    /// <summary>
-    ///     NotificationPulse renders with default state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("NotificationPulse")]
-    public void NotificationPulseRendersWithDefaultState()
-    {
-        // Act
-        using var cut = Render<NotificationPulse>();
-
-        // Assert
-        string? dataState = cut.Find(".rf-notification-pulse").GetAttribute("data-state");
-        Assert.Equal("new", dataState);
-    }
-
-    /// <summary>
-    ///     NotificationPulse renders custom state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("NotificationPulse")]
-    public void NotificationPulseRendersCustomState()
-    {
-        // Act
-        using var cut = Render<NotificationPulse>(p => p
-            .Add(c => c.State, RefractionStates.Active));
-
-        // Assert
-        string? dataState = cut.Find(".rf-notification-pulse").GetAttribute("data-state");
-        Assert.Equal("active", dataState);
-    }
-
-    /// <summary>
-    ///     NotificationPulse renders additional attributes.
-    /// </summary>
-    [Fact]
-    [AllureFeature("NotificationPulse")]
-    public void NotificationPulseRendersAdditionalAttributes()
-    {
-        // Act
-        using var cut = Render<NotificationPulse>(p => p
-            .AddUnmatched("data-testid", "pulse-1"));
-
-        // Assert
-        Assert.Equal("pulse-1", cut.Find(".rf-notification-pulse").GetAttribute("data-testid"));
-    }
-
-    /// <summary>
-    ///     NotificationPulse renders dot indicator.
-    /// </summary>
-    [Fact]
-    [AllureFeature("NotificationPulse")]
-    public void NotificationPulseRendersDotIndicator()
-    {
-        // Act
-        using var cut = Render<NotificationPulse>();
-
-        // Assert
-        Assert.NotEmpty(cut.FindAll(".rf-notification-pulse__dot"));
     }
 }

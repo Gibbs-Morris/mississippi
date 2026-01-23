@@ -34,6 +34,34 @@ public sealed class PaneTests : BunitContext
     }
 
     /// <summary>
+    ///     Pane does not render footer when null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneDoesNotRenderFooterWhenNull()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>();
+
+        // Assert
+        Assert.Empty(cut.FindAll(".rf-pane__footer"));
+    }
+
+    /// <summary>
+    ///     Pane does not render header when title is empty.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneDoesNotRenderHeaderWhenTitleIsEmpty()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(c => c.Title, string.Empty));
+
+        // Assert
+        Assert.Empty(cut.FindAll(".rf-pane__header"));
+    }
+
+    /// <summary>
     ///     Pane has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
@@ -160,6 +188,142 @@ public sealed class PaneTests : BunitContext
     }
 
     /// <summary>
+    ///     Pane renders additional attributes.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneRendersAdditionalAttributes()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>(p => p.AddUnmatched("data-testid", "pane-1"));
+
+        // Assert
+        Assert.Equal("pane-1", cut.Find(".rf-pane").GetAttribute("data-testid"));
+    }
+
+    /// <summary>
+    ///     Pane renders child content.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneRendersChildContent()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>(p => p.AddChildContent(
+            "<span class='test-content'>Main Content</span>"));
+
+        // Assert
+        Assert.NotEmpty(cut.FindAll(".rf-pane__content .test-content"));
+    }
+
+    /// <summary>
+    ///     Pane renders custom depth.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneRendersCustomDepth()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(c => c.Depth, RefractionDepthBands.Far));
+
+        // Assert
+        string? dataDepth = cut.Find(".rf-pane").GetAttribute("data-depth");
+        Assert.Equal("far", dataDepth);
+    }
+
+    /// <summary>
+    ///     Pane renders custom variant.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneRendersCustomVariant()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(c => c.Variant, RefractionPaneVariants.Orbital));
+
+        // Assert
+        string? dataVariant = cut.Find(".rf-pane").GetAttribute("data-variant");
+        Assert.Equal("orbital", dataVariant);
+    }
+
+    /// <summary>
+    ///     Pane renders default depth.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneRendersDefaultDepth()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>();
+
+        // Assert
+        string? dataDepth = cut.Find(".rf-pane").GetAttribute("data-depth");
+        Assert.Equal("mid", dataDepth);
+    }
+
+    /// <summary>
+    ///     Pane renders default variant.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneRendersDefaultVariant()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>();
+
+        // Assert
+        string? dataVariant = cut.Find(".rf-pane").GetAttribute("data-variant");
+        Assert.Equal("primary", dataVariant);
+    }
+
+    /// <summary>
+    ///     Pane renders footer when provided.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneRendersFooterWhenProvided()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(
+            c => c.Footer,
+            builder => builder.AddContent(0, "Footer Content")));
+
+        // Assert
+        string textContent = cut.Find(".rf-pane__footer").TextContent;
+        Assert.Contains("Footer Content", textContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Pane renders title when provided.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneRendersTitleWhenProvided()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(c => c.Title, "Test Title"));
+
+        // Assert
+        string textContent = cut.Find(".rf-pane__title").TextContent;
+        Assert.Contains("Test Title", textContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Pane renders with default state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Pane")]
+    public void PaneRendersWithDefaultState()
+    {
+        // Act
+        using IRenderedComponent<Pane> cut = Render<Pane>();
+
+        // Assert
+        string? dataState = cut.Find(".rf-pane").GetAttribute("data-state");
+        Assert.Equal("idle", dataState);
+    }
+
+    /// <summary>
     ///     Pane State defaults to Idle.
     /// </summary>
     [Fact]
@@ -185,96 +349,5 @@ public sealed class PaneTests : BunitContext
 
         // Assert
         Assert.Equal(RefractionPaneVariants.Primary, pane.Variant);
-    }
-
-    /// <summary>
-    ///     Pane renders with default state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersWithDefaultState()
-    {
-        // Act
-        using var cut = Render<Pane>();
-
-        // Assert
-        string? dataState = cut.Find(".rf-pane").GetAttribute("data-state");
-        Assert.Equal("idle", dataState);
-    }
-
-    /// <summary>
-    ///     Pane renders default variant.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersDefaultVariant()
-    {
-        // Act
-        using var cut = Render<Pane>();
-
-        // Assert
-        string? dataVariant = cut.Find(".rf-pane").GetAttribute("data-variant");
-        Assert.Equal("primary", dataVariant);
-    }
-
-    /// <summary>
-    ///     Pane renders default depth.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersDefaultDepth()
-    {
-        // Act
-        using var cut = Render<Pane>();
-
-        // Assert
-        string? dataDepth = cut.Find(".rf-pane").GetAttribute("data-depth");
-        Assert.Equal("mid", dataDepth);
-    }
-
-    /// <summary>
-    ///     Pane renders title when provided.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersTitleWhenProvided()
-    {
-        // Act
-        using var cut = Render<Pane>(p => p
-            .Add(c => c.Title, "Test Title"));
-
-        // Assert
-        string textContent = cut.Find(".rf-pane__title").TextContent;
-        Assert.Contains("Test Title", textContent, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Pane does not render header when title is empty.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Pane")]
-    public void PaneDoesNotRenderHeaderWhenTitleIsEmpty()
-    {
-        // Act
-        using var cut = Render<Pane>(p => p
-            .Add(c => c.Title, string.Empty));
-
-        // Assert
-        Assert.Empty(cut.FindAll(".rf-pane__header"));
-    }
-
-    /// <summary>
-    ///     Pane renders additional attributes.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersAdditionalAttributes()
-    {
-        // Act
-        using var cut = Render<Pane>(p => p
-            .AddUnmatched("data-testid", "pane-1"));
-
-        // Assert
-        Assert.Equal("pane-1", cut.Find(".rf-pane").GetAttribute("data-testid"));
     }
 }
