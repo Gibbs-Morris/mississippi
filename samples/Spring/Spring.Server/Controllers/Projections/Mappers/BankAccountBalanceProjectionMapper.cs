@@ -18,7 +18,7 @@
 using System;
 
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Sdk.Generators.Abstractions;
+using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Domain.Projections.BankAccountBalance;
 
