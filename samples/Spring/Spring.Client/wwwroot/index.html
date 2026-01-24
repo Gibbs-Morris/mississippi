@@ -4,135 +4,16 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <meta name="color-scheme" content="dark"/>
-    <meta name="theme-color" content="#000000"/>
-    <meta name="description" content="Mississippi Event Sourcing Demo - Bank Account Operations Console"/>
-    <title>Spring Sample — Holographic Console</title>
+    <meta name="description" content="Mississippi Event Sourcing Demo - Bank Account Operations"/>
+    <title>Spring Sample</title>
     <base href="/"/>
-
-    <!-- Google Fonts: Holographic console typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
 
     <!-- Blazor CSS isolation bundle -->
     <link href="Spring.Client.styles.css" rel="stylesheet"/>
-
-    <style>
-        /* ═══════════════════════════════════════════════════════════════════
-           Holographic Console Base Reset
-           ═══════════════════════════════════════════════════════════════════ */
-
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-        }
-
-        * {
-            margin: 0;
-        }
-
-        html {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
-        }
-
-        body {
-            font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-            font-size: 16px;
-            line-height: 1.5;
-            color: #e8f4ff;
-            background: #000000;
-            min-height: 100vh;
-        }
-
-        img,
-        picture,
-        video,
-        canvas,
-        svg {
-            display: block;
-            max-width: 100%;
-        }
-
-        input,
-        button,
-        textarea,
-        select {
-            font: inherit;
-        }
-
-        p,
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            overflow-wrap: break-word;
-        }
-
-        /* Focus visible baseline */
-        :focus-visible {
-            outline: 2px solid #00d4ff;
-            outline-offset: 2px;
-        }
-
-        /* Reduced motion preference */
-        @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-
-        /* Loading state */
-        #app {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.875rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: #0099cc;
-        }
-
-        #app::before {
-            content: '';
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            margin-right: 12px;
-            border: 2px solid rgba(0, 153, 204, 0.3);
-            border-top-color: #00d4ff;
-            border-radius: 50%;
-            animation: hud-spin 0.8s linear infinite;
-        }
-
-        @keyframes hud-spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            #app::before {
-                animation: none;
-                border-color: #00d4ff;
-            }
-        }
-    </style>
 </head>
 
 <body>
-<div id="app">Initializing Systems...</div>
+<div id="app">Loading...</div>
 <script src="_framework/blazor.webassembly.js"></script>
 </body>
 
