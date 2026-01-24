@@ -2,15 +2,19 @@
 
 ## Overview
 
-Add server-side event effects to the aggregate system, allowing users to define asynchronous side effects that run after events are persisted.
+Add server-side event effects to the aggregate system, allowing users to define asynchronous side effects that run after events are persisted. Effects run via a stateless worker grain for throughput isolation.
 
 ## Size Assessment: Large
 
 - Multiple new types across abstractions and implementations
+- New grain (`IEffectDispatcherGrain`) for throughput isolation
+- New gateway (`IAggregateCommandGateway`) for saga patterns
 - Source generator modifications
 - Changes to GenericAggregateGrain
 - New folder convention in domain projects
 - Comprehensive tests required
+
+---
 
 ## Phase 1: Abstractions (EventSourcing.Aggregates.Abstractions)
 
@@ -83,7 +87,7 @@ public abstract class EventEffectBase<TEvent, TAggregate> : IEventEffect<TEvent,
         return Task.CompletedTask;
     }
 
-    protected abstract Task HandleAsync(
+    public abstract Task HandleAsync(
         TEvent eventData,
         string aggregateKey,
         CancellationToken cancellationToken
@@ -91,44 +95,235 @@ public abstract class EventEffectBase<TEvent, TAggregate> : IEventEffect<TEvent,
 }
 ```
 
-### Step 1.3: Add IRootEventEffectDispatcher Interface
+### Step 1.3: Add IEffectDispatcherGrain Interface
 
-**File:** `src/EventSourcing.Aggregates.Abstractions/IRootEventEffectDispatcher.cs`
+**File:** `src/EventSourcing.Aggregates.Abstractions/IEffectDispatcherGrain.cs`
 
 ```csharp
 namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 
 /// <summary>
-///     Dispatches domain events to registered event effects.
+///     Stateless worker grain that dispatches event effects asynchronously.
 /// </summary>
-public interface IRootEventEffectDispatcher<TAggregate>
+/// <remarks>
+///     This grain receives fire-and-forget calls via [OneWay], allowing the
+///     aggregate grain to return immediately while effects run in the background.
+/// </remarks>
+[StatelessWorker]
+[Alias("Mississippi.EventSourcing.Aggregates.Abstractions.IEffectDispatcherGrain")]
+public interface IEffectDispatcherGrain : IGrainWithStringKey
 {
     /// <summary>
-    ///     Dispatches events to applicable effects.
+    ///     Dispatches effects for the given events asynchronously.
     /// </summary>
+    [Alias("DispatchAsync")]
+    [OneWay]
     Task DispatchAsync(
-        IReadOnlyList<object> events,
+        string aggregateTypeName,
         string aggregateKey,
-        CancellationToken cancellationToken
+        IReadOnlyList<object> events,
+        CancellationToken cancellationToken = default
     );
 }
 ```
 
+### Step 1.4: Add IAggregateCommandGateway Interface (Saga Support)
+
+**File:** `src/EventSourcing.Aggregates.Abstractions/IAggregateCommandGateway.cs`
+
+```csharp
+namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+
+/// <summary>
+///     Gateway for sending commands to aggregates from within effects.
+/// </summary>
+/// <remarks>
+///     This enables saga patterns where effects orchestrate cross-aggregate workflows.
+/// </remarks>
+public interface IAggregateCommandGateway
+{
+    /// <summary>
+    ///     Sends a command to the specified aggregate.
+    /// </summary>
+    Task<TResult> SendCommandAsync<TAggregate, TResult>(
+        string aggregateKey,
+        ICommand<TAggregate, TResult> command,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    ///     Sends a command to the specified aggregate (fire-and-forget).
+    /// </summary>
+    Task SendCommandAsync<TAggregate>(
+        string aggregateKey,
+        ICommand<TAggregate, Unit> command,
+        CancellationToken cancellationToken = default
+    );
+}
+```
+
+---
+
 ## Phase 2: Implementation (EventSourcing.Aggregates)
 
-### Step 2.1: Add RootEventEffectDispatcher
+### Step 2.1: Add EffectDispatcherGrain
 
-**File:** `src/EventSourcing.Aggregates/RootEventEffectDispatcher.cs`
+**File:** `src/EventSourcing.Aggregates/EffectDispatcherGrain.cs`
 
-- Implement `IRootEventEffectDispatcher<TAggregate>`
-- Inject `IEnumerable<IEventEffect<TAggregate>>`
-- Build frozen dictionary index by event type (like RootReducer)
-- Iterate events, find matching effects, await each effect
-- Catch and log exceptions per effect (don't let one failure stop others)
+```csharp
+namespace Mississippi.EventSourcing.Aggregates;
 
-### Step 2.2: Add Effect Registration Methods
+/// <summary>
+///     Stateless worker grain that dispatches event effects asynchronously.
+/// </summary>
+[StatelessWorker]
+public sealed class EffectDispatcherGrain : Grain, IEffectDispatcherGrain
+{
+    private IServiceProvider ServiceProvider { get; }
+    private ILogger<EffectDispatcherGrain> Logger { get; }
 
-**File:** `src/EventSourcing.Aggregates/AggregateRegistrations.cs`
+    public EffectDispatcherGrain(
+        IServiceProvider serviceProvider,
+        ILogger<EffectDispatcherGrain> logger)
+    {
+        ServiceProvider = serviceProvider;
+        Logger = logger;
+    }
+
+    public async Task DispatchAsync(
+        string aggregateTypeName,
+        string aggregateKey,
+        IReadOnlyList<object> events,
+        CancellationToken cancellationToken = default)
+    {
+        // Resolve effects by aggregate type name from DI
+        // Use a registry that maps type names to effect collections
+        var effectRegistry = ServiceProvider.GetRequiredService<IEffectRegistry>();
+        var effects = effectRegistry.GetEffects(aggregateTypeName);
+
+        foreach (var eventData in events)
+        {
+            foreach (var effect in effects)
+            {
+                if (!effect.CanHandle(eventData))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    await effect.HandleAsync(eventData, aggregateKey, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected; don't log as error
+                }
+                catch (Exception ex)
+                {
+                    Logger.EffectFailed(effect.GetType().Name, aggregateKey, ex);
+                }
+            }
+        }
+    }
+}
+```
+
+### Step 2.2: Add IEffectRegistry Interface and Implementation
+
+**File:** `src/EventSourcing.Aggregates.Abstractions/IEffectRegistry.cs`
+
+```csharp
+namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+
+/// <summary>
+///     Registry for resolving event effects by aggregate type name.
+/// </summary>
+public interface IEffectRegistry
+{
+    /// <summary>
+    ///     Gets effects registered for the specified aggregate type.
+    /// </summary>
+    IEnumerable<object> GetEffects(string aggregateTypeName);
+}
+```
+
+**File:** `src/EventSourcing.Aggregates/EffectRegistry.cs`
+
+```csharp
+namespace Mississippi.EventSourcing.Aggregates;
+
+/// <summary>
+///     Default implementation of <see cref="IEffectRegistry"/>.
+/// </summary>
+public sealed class EffectRegistry : IEffectRegistry
+{
+    private readonly IServiceProvider serviceProvider;
+    private readonly ConcurrentDictionary<string, Type> aggregateTypeCache = new();
+
+    public EffectRegistry(IServiceProvider serviceProvider)
+    {
+        this.serviceProvider = serviceProvider;
+    }
+
+    public IEnumerable<object> GetEffects(string aggregateTypeName)
+    {
+        // Build generic type IEventEffect<TAggregate> and resolve from DI
+        // Cache type lookups for performance
+        var aggregateType = aggregateTypeCache.GetOrAdd(
+            aggregateTypeName,
+            name => AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .FirstOrDefault(t => t.FullName == name)
+                ?? throw new InvalidOperationException($"Aggregate type '{name}' not found"));
+
+        var effectType = typeof(IEventEffect<>).MakeGenericType(aggregateType);
+        return serviceProvider.GetServices(effectType).Cast<object>();
+    }
+}
+```
+
+### Step 2.3: Add AggregateCommandGateway (Saga Support)
+
+**File:** `src/EventSourcing.Aggregates/AggregateCommandGateway.cs`
+
+```csharp
+namespace Mississippi.EventSourcing.Aggregates;
+
+/// <summary>
+///     Gateway for sending commands to aggregates from effects.
+/// </summary>
+public sealed class AggregateCommandGateway : IAggregateCommandGateway
+{
+    private IGrainFactory GrainFactory { get; }
+
+    public AggregateCommandGateway(IGrainFactory grainFactory)
+    {
+        GrainFactory = grainFactory;
+    }
+
+    public async Task<TResult> SendCommandAsync<TAggregate, TResult>(
+        string aggregateKey,
+        ICommand<TAggregate, TResult> command,
+        CancellationToken cancellationToken = default)
+    {
+        var grain = GrainFactory.GetGrain<IGenericAggregateGrain<TAggregate>>(aggregateKey);
+        return await grain.ExecuteCommandAsync(command, cancellationToken);
+    }
+
+    public async Task SendCommandAsync<TAggregate>(
+        string aggregateKey,
+        ICommand<TAggregate, Unit> command,
+        CancellationToken cancellationToken = default)
+    {
+        var grain = GrainFactory.GetGrain<IGenericAggregateGrain<TAggregate>>(aggregateKey);
+        await grain.ExecuteCommandAsync(command, cancellationToken);
+    }
+}
+```
+
+### Step 2.4: Add Effect Registration Methods
+
+**File:** `src/EventSourcing.Aggregates/AggregateRegistrations.cs` (extend existing)
 
 Add methods:
 ```csharp
@@ -139,49 +334,51 @@ public static IServiceCollection AddEventEffect<TEvent, TAggregate, TEffect>(
 {
     services.AddTransient<IEventEffect<TAggregate>, TEffect>();
     services.AddTransient<IEventEffect<TEvent, TAggregate>, TEffect>();
-    services.AddRootEventEffectDispatcher<TAggregate>();
     return services;
 }
 
-public static IServiceCollection AddRootEventEffectDispatcher<TAggregate>(
+public static IServiceCollection AddEffectInfrastructure(
     this IServiceCollection services
 )
 {
-    services.TryAddTransient<IRootEventEffectDispatcher<TAggregate>, RootEventEffectDispatcher<TAggregate>>();
+    services.TryAddSingleton<IEffectRegistry, EffectRegistry>();
+    services.TryAddSingleton<IAggregateCommandGateway, AggregateCommandGateway>();
     return services;
 }
 ```
 
-### Step 2.3: Modify GenericAggregateGrain
+### Step 2.5: Modify GenericAggregateGrain
 
 **File:** `src/EventSourcing.Aggregates/GenericAggregateGrain.cs`
 
 Changes:
-1. Inject `IRootEventEffectDispatcher<TAggregate>` (optional - may not be registered)
-2. After `AppendEventsAsync()` succeeds, call dispatcher
-3. Use fire-and-forget or timeout pattern to avoid blocking
+1. After `AppendEventsAsync()` succeeds, dispatch effects via `IEffectDispatcherGrain`
+2. Use fire-and-forget (`[OneWay]` + `_ =`) pattern (matching snapshot persistence)
 
 ```csharp
-// After events persisted successfully
-if (events.Count > 0 && RootEventEffectDispatcher is not null)
+// After events persisted and reduced
+if (events.Count > 0)
 {
-    // Fire-and-forget with error handling
-    _ = DispatchEffectsAsync(events, brookKey, cancellationToken);
+    // Fire-and-forget: dispatcher grain is [StatelessWorker] with [OneWay]
+    var dispatcherGrain = GrainFactory.GetGrain<IEffectDispatcherGrain>(Guid.NewGuid().ToString());
+    _ = dispatcherGrain.DispatchAsync(
+        typeof(TAggregate).FullName!,
+        this.GetPrimaryKeyString(),
+        events,
+        CancellationToken.None  // Don't pass caller's token to fire-and-forget
+    );
 }
 ```
 
-**Decision needed:** Should this be fire-and-forget or awaited?
-- Proposal: Add configuration option, default to fire-and-forget for performance
+### Step 2.6: Add Logger Extensions
 
-### Step 2.4: Add Logger Extensions
-
-**File:** `src/EventSourcing.Aggregates/RootEventEffectDispatcherLoggerExtensions.cs`
+**File:** `src/EventSourcing.Aggregates/EffectDispatcherLoggerExtensions.cs`
 
 Add logging methods for:
-- Effect dispatching started
-- Effect matched
-- Effect completed
-- Effect failed (with exception)
+- `DispatchingEffects(aggregateType, aggregateKey, eventCount)`
+- `EffectMatched(effectType, eventType)`  
+- `EffectCompleted(effectType, durationMs)`
+- `EffectFailed(effectType, aggregateKey, exception)`
 
 ## Phase 3: Source Generator Updates
 
@@ -337,19 +534,30 @@ Ensure all public APIs have complete XML documentation.
 | Generator breaks existing projects | Effects are opt-in; no effects = no change |
 | Circular dependency in DI | Effects are transient, resolved at dispatch time |
 
-## Open Design Decisions
+## Resolved Design Decisions
 
 1. **Fire-and-forget vs awaited effects**
-   - Current proposal: fire-and-forget by default
-   - Could add: `[AwaitEffect]` attribute or configuration
+   - **RESOLVED:** Fire-and-forget via `[StatelessWorker]` grain with `[OneWay]`
+   - Matches existing pattern in `ISnapshotPersisterGrain`
+   - Preserves aggregate throughput
 
-2. **Effect ordering**
-   - Current proposal: no guaranteed order
-   - Could add: priority attribute
+2. **Effect execution context**
+   - **RESOLVED:** Effects run in `EffectDispatcherGrain` (stateless worker)
+   - Aggregate grain returns immediately after dispatching
+   - Effects can await external calls without blocking aggregate
 
-3. **Effect retry/resilience**
-   - Current proposal: no retry, effects handle their own resilience
-   - Could add: integration with Polly via DI
+3. **Cross-aggregate communication (Saga support)**
+   - **RESOLVED:** Effects inject `IAggregateCommandGateway`
+   - Enables saga patterns where effects orchestrate multi-aggregate workflows
+   - Gateway wraps `IGrainFactory` to send commands to other aggregates
 
-4. **Client-side naming change (ActionEffect)**
+4. **Effect ordering**
+   - Current: No guaranteed order (parallel-safe implementation)
+   - Future: Could add priority attribute if needed
+
+5. **Effect retry/resilience**
+   - Current: No retry; effects handle their own resilience via DI (Polly, etc.)
+   - Future: Could add optional retry wrapper
+
+6. **Client-side naming change (ActionEffect)**
    - Defer to separate PR to avoid scope creep

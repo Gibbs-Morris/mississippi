@@ -21,6 +21,27 @@
 - [AggregateRegistrations.cs](../../src/EventSourcing.Aggregates/AggregateRegistrations.cs) - DI registration
 - [ReducerRegistrations.cs](../../src/EventSourcing.Reducers/ReducerRegistrations.cs) - Reducer DI registration
 
+### Orleans Throughput Patterns (Verified)
+
+**Grain Concurrency:**
+- Orleans grains are **single-threaded** and **non-reentrant** by default
+- A grain blocked on `await` cannot process other requests
+- `[Reentrant]` allows interleaving but requires careful state management
+- `[AlwaysInterleave]` on a method allows it to interleave with other calls
+
+**Fire-and-Forget Pattern (exists in codebase):**
+- [ISnapshotPersisterGrain.cs](../../src/EventSourcing.Snapshots.Abstractions/ISnapshotPersisterGrain.cs):
+  - Uses `[StatelessWorker]` for auto-scaling
+  - Uses `[OneWay]` attribute for fire-and-forget
+  - Caller uses `_ = grain.MethodAsync()` pattern
+- [SnapshotCacheGrain.cs](../../src/EventSourcing.Snapshots/SnapshotCacheGrain.cs#L270):
+  - `_ = persisterGrain.PersistAsync(envelope);` - fire-and-forget call
+
+**StatelessWorker Grains:**
+- Auto-scale based on load
+- No affinity to specific silo
+- Ideal for CPU/IO-bound work that doesn't need state
+
 ### Client-Side Redux Store (Reservoir)
 
 **Flow:** Action → Middleware → Reducers → Effects → (more Actions)
@@ -38,6 +59,11 @@
 - [ActionReducerBase.cs](../../src/Reservoir.Abstractions/ActionReducerBase.cs) - Base class for reducers
 - [CommandEffectBase.cs](../../src/Inlet.Blazor.WebAssembly.Abstractions/Effects/CommandEffectBase.cs) - Base for command-posting effects
 - [Store.cs](../../src/Reservoir/Store.cs) - Dispatches actions, runs reducers, triggers effects async
+
+**Effect Triggering (verified in Store.cs lines 230-330):**
+- `CoreDispatch()` calls `_ = TriggerEffectsAsync(action)` - fire-and-forget!
+- Effects run asynchronously after reducers complete
+- Effect exceptions are swallowed to prevent breaking dispatch
 
 ### Source Generators
 
@@ -57,7 +83,7 @@
 
 | Side | Reducer Type | Effect Type |
 |------|-------------|-------------|
-| Server (Events) | `EventReducerBase<TEvent, TProjection>` | **DOES NOT EXIST** |
+| Server (Events) | `EventReducerBase<TEvent, TProjection>` | **PROPOSED: `EventEffectBase<TEvent, TAggregate>`** |
 | Client (Actions) | `ActionReducerBase<TAction, TState>` | `IEffect` / `CommandEffectBase` |
 
 ## Registration Patterns
@@ -85,8 +111,22 @@ services.AddEffect<DepositFundsEffect>();
 2. **Reducers are pure** - Transform state based on events, no side effects
 3. **Client effects are async** - Return `IAsyncEnumerable<IAction>` to allow streaming multiple actions
 4. **Client effects run AFTER reducers** - In `Store.CoreDispatch()`: reducers → notify listeners → trigger effects
-5. **GenericAggregateGrain** - The only grain-level component; handles command execution and event persistence
-6. **No server-side effect concept exists** - Post-event side effects would need to be added
+5. **Client effects use fire-and-forget** - `_ = TriggerEffectsAsync(action)` pattern
+6. **GenericAggregateGrain** - The only grain-level component; handles command execution and event persistence
+7. **[OneWay] pattern exists** - Used for snapshot persistence; directly applicable to effects
+8. **No server-side effect concept exists** - Post-event side effects would need to be added
+
+## Saga Pattern Research (External)
+
+**Choreography vs Orchestration:**
+- **Choreography:** Each service publishes events, others react (no coordinator)
+- **Orchestration:** Central saga coordinator tells participants what to do (recommended for complex workflows)
+
+**Key Insight:** A saga IS an aggregate if modeled correctly:
+- State: CurrentStep, CompletedSteps, FailedSteps
+- Commands: StartSaga, StepCompleted, StepFailed
+- Events: SagaStarted, StepExecuted, SagaCompleted, SagaCompensated
+- Effects: Call other aggregates to execute saga steps
 
 ## Event Lifecycle in GenericAggregateGrain
 

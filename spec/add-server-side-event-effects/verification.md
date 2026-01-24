@@ -14,6 +14,11 @@
 | C8 | Handlers use IRootCommandHandler for composition | VERIFIED |
 | C9 | Server reducers are named EventReducer, client reducers are ActionReducer | VERIFIED |
 | C10 | Client effects use IEffect interface, not "ActionEffect" | VERIFIED |
+| C11 | Orleans grains are single-threaded and non-reentrant by default | VERIFIED |
+| C12 | Codebase has existing [OneWay] + [StatelessWorker] fire-and-forget pattern | VERIFIED |
+| C13 | Client Store uses fire-and-forget for effects: `_ = TriggerEffectsAsync()` | VERIFIED |
+| C14 | Effects running inline in aggregate would block subsequent commands | VERIFIED |
+| C15 | Saga patterns can be implemented via effects calling other aggregates | VERIFIED |
 
 ## Verification Questions
 
@@ -98,27 +103,62 @@
 
 **Q14:** Could running effects cause grain activation delays?
 - **Answer:** Yes, if effects are awaited. The grain is single-threaded, so long-running effects would block subsequent commands.
-- **Mitigation:** Consider fire-and-forget or timeout for effects.
+- **Mitigation:** Use fire-and-forget via `[OneWay]` stateless worker grain (same pattern as snapshot persistence).
+
+**Q15:** Does the codebase have existing fire-and-forget grain patterns?
+- **Answer:** YES! `ISnapshotPersisterGrain` uses `[StatelessWorker]` + `[OneWay]` for fire-and-forget.
+- **Evidence:** 
+  - [ISnapshotPersisterGrain.cs#L39](../../src/EventSourcing.Snapshots.Abstractions/ISnapshotPersisterGrain.cs) - `[OneWay]` attribute
+  - [SnapshotCacheGrain.cs#L270](../../src/EventSourcing.Snapshots/SnapshotCacheGrain.cs) - `_ = persisterGrain.PersistAsync(envelope)` pattern
+
+**Q16:** What is the purpose of `[OneWay]` attribute in Orleans?
+- **Answer:** Marks a grain method as fire-and-forget. The caller doesn't wait for completion; the method may not have even started when the call returns.
+- **Evidence:** Microsoft Orleans documentation + existing usage in `ISnapshotPersisterGrain`
+
+**Q17:** What is the purpose of `[StatelessWorker]` attribute in Orleans?
+- **Answer:** Creates an auto-scaling pool of grain instances. No state affinity; Orleans creates new activations as needed based on load. Ideal for CPU/IO-bound work.
+- **Evidence:** Microsoft Orleans documentation
+
+### Throughput Questions
+
+**Q18:** How does the client Store handle effect errors?
+- **Answer:** Swallows exceptions. Effects should emit error actions; failures don't break dispatch.
+- **Evidence:** [Store.cs#L296-L330](../../src/Reservoir/Store.cs) - try/catch around `effect.HandleAsync()` with empty catch blocks
+
+**Q19:** Does the client Store await effects?
+- **Answer:** NO - it uses fire-and-forget: `_ = TriggerEffectsAsync(action)`
+- **Evidence:** [Store.cs#L245](../../src/Reservoir/Store.cs)
+
+### Saga Pattern Questions
+
+**Q20:** Can an aggregate grain call other aggregate grains via IGrainFactory?
+- **Answer:** Yes, grains can inject `IGrainFactory` and call other grains. However, this creates coupling.
+- **Evidence:** Standard Orleans pattern; no code-level restriction
+
+**Q21:** Could effects call other aggregates via a gateway?
+- **Answer:** Yes, effects could inject `IAggregateCommandGateway` which wraps `IGrainFactory` to send commands to aggregates.
+- **Evidence:** Design decision for this RFC
 
 ### Naming Questions
 
-**Q15:** Is there already a type named IEventEffect or EventEffectBase in the codebase?
+**Q22:** Is there already a type named IEventEffect or EventEffectBase in the codebase?
 - **Answer:** No
 - **Evidence:** grep search for "IEventEffect|EventEffectBase" returns no matches
 
-**Q16:** Are there any existing attributes that could conflict with effect discovery?
+**Q23:** Are there any existing attributes that could conflict with effect discovery?
 - **Answer:** No; `[GenerateCommand]` and `[GenerateAggregateEndpoints]` are the relevant attributes
 - **Evidence:** Reviewed Inlet.Generators.Abstractions
 
 ## What Changed After Verification
 
-1. **Confirmed fire-and-forget may be needed** - Client Store uses fire-and-forget (`_ = TriggerEffectsAsync`); server should consider similar pattern to avoid blocking.
+1. **Fire-and-forget pattern confirmed** - Both client Store (`_ = TriggerEffectsAsync`) and snapshot persistence (`[OneWay]` + stateless worker) use fire-and-forget. Effects MUST use the same pattern for throughput.
 
-2. **Generator pattern is clear** - Must add `FindEffectsForAggregate()` method similar to handlers/reducers, looking in `{Aggregate}/Effects/` namespace for types extending `EventEffectBase<,>`.
+2. **EffectDispatcherGrain required** - To avoid blocking the aggregate grain, effects run in a separate `[StatelessWorker]` grain with `[OneWay]` calls.
 
-3. **Registration pattern is clear** - Need `AddEventEffect<TEvent, TAggregate, TEffect>()` that:
-   - Registers as `IEventEffect<TAggregate>`
-   - Registers as `IEventEffect<TEvent, TAggregate>`
-   - Calls `AddRootEventEffectDispatcher<TAggregate>()`
+3. **IAggregateCommandGateway enables sagas** - Effects can inject a gateway to send commands to other aggregates, enabling saga orchestration patterns.
 
-4. **Interface design confirmed** - Server effects should be simpler than client effects (return Task, not IAsyncEnumerable) since server-side doesn't have a dispatch loop.
+4. **Generator pattern is clear** - Must add `FindEffectsForAggregate()` method similar to handlers/reducers, looking in `{Aggregate}/Effects/` namespace for types extending `EventEffectBase<,>`.
+
+5. **Registration pattern is clear** - Need `AddEventEffect<TEvent, TAggregate, TEffect>()` and infrastructure registration.
+
+6. **Unified mental model** - Client (Action→Reducer→Effect) and Server (Event→Reducer→Effect) follow the same pattern. Saga is just an aggregate whose effects call other aggregates.
