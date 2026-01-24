@@ -143,7 +143,7 @@ dotnet add package Mississippi.Sdk.Server
 dotnet add package Mississippi.Sdk.Silo
 ```
 
-See [SDK Reference](./platform/sdk.md) for what each package includes.
+See [SDK Reference](../platform/sdk.md) for what each package includes.
 
 ## Pluggable Storage Providers
 

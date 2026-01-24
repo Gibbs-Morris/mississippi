@@ -359,7 +359,7 @@ See [Custom Snapshot Storage](./custom-snapshot-storage.md) for implementation g
 | --- | --- |
 | High-frequency events (100+/day) | 50-100 |
 | Medium-frequency events | 100-200 |
-| Low-frequency events (<10/day) | 200-500 |
+| Low-frequency events (fewer than 10/day) | 200-500 |
 | Complex state computation | Lower modulus |
 | Simple state (few fields) | Higher modulus |
 
