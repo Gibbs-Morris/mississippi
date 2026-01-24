@@ -7,6 +7,28 @@ namespace Mississippi.Inlet.Generators.Core.Naming;
 /// <summary>
 ///     Provides naming convention utilities for source generators.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This class provides two sets of methods:
+///         <list type="bullet">
+///             <item>
+///                 <term>Legacy methods</term>
+///                 <description>
+///                     Methods that use hardcoded ".Domain" → ".Client"/".Server"/".Silo" transforms.
+///                     These work when the source namespace follows the pattern "Product.Domain.Aggregates...".
+///                 </description>
+///             </item>
+///             <item>
+///                 <term>Target-aware methods</term>
+///                 <description>
+///                     Overloads that accept a <c>targetRootNamespace</c> parameter, enabling namespace-agnostic
+///                     generation. These work with any source namespace pattern (e.g.,
+///                     "Product.CoreDomainLogic.Aggregates...").
+///                 </description>
+///             </item>
+///         </list>
+///     </para>
+/// </remarks>
 public static class NamingConventions
 {
     private const string AggregatesSegment = ".Aggregates.";
@@ -20,6 +42,8 @@ public static class NamingConventions
     private const string DomainSegment = ".Domain.";
 
     private const string DomainSuffix = ".Domain";
+
+    private const string FeaturesSegment = "Features";
 
     /// <summary>
     ///     Extracts the aggregate name from a domain command namespace.
@@ -64,6 +88,18 @@ public static class NamingConventions
         string domainNamespace
     ) =>
         GetClientFeatureNamespace(domainNamespace, "Actions");
+
+    /// <summary>
+    ///     Converts a source namespace to a client Actions namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace containing the command.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <returns>The client Actions namespace.</returns>
+    public static string GetClientActionsNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    ) =>
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "Actions");
 
     /// <summary>
     ///     Converts a domain command namespace to a client DTO namespace.
@@ -124,6 +160,21 @@ public static class NamingConventions
     }
 
     /// <summary>
+    ///     Converts a source namespace to a client DTO namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">
+    ///     The source namespace containing the command (e.g.,
+    ///     "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <param name="targetRootNamespace">The target project's root namespace (e.g., "MyApp.BlazorWasm").</param>
+    /// <returns>The client namespace (e.g., "MyApp.BlazorWasm.Features.BankAccountAggregate.Dtos").</returns>
+    public static string GetClientCommandDtoNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    ) =>
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "Dtos");
+
+    /// <summary>
     ///     Converts a domain command namespace to a client Effects namespace.
     /// </summary>
     /// <param name="domainNamespace">
@@ -134,6 +185,18 @@ public static class NamingConventions
         string domainNamespace
     ) =>
         GetClientFeatureNamespace(domainNamespace, "Effects");
+
+    /// <summary>
+    ///     Converts a source namespace to a client Effects namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace containing the command.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <returns>The client Effects namespace.</returns>
+    public static string GetClientEffectsNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    ) =>
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "Effects");
 
     /// <summary>
     ///     Converts a domain command namespace to the client feature root namespace (without sub-namespace).
@@ -155,6 +218,33 @@ public static class NamingConventions
     }
 
     /// <summary>
+    ///     Gets the client feature root namespace (without sub-namespace) using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace containing the command.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <returns>The client feature root namespace (e.g., "MyApp.BlazorWasm.Features.BankAccountAggregate").</returns>
+    public static string GetClientFeatureRootNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    )
+    {
+        // Guard against empty target - fall back to legacy behavior
+        if (string.IsNullOrWhiteSpace(targetRootNamespace))
+        {
+            return GetClientFeatureRootNamespace(sourceNamespace);
+        }
+
+        string? aggregateName = TargetNamespaceResolver.ExtractAggregateName(sourceNamespace);
+        if (!string.IsNullOrEmpty(aggregateName))
+        {
+            return $"{targetRootNamespace}.{FeaturesSegment}.{aggregateName}Aggregate";
+        }
+
+        // Fallback to legacy behavior
+        return GetClientFeatureRootNamespace(sourceNamespace);
+    }
+
+    /// <summary>
     ///     Converts a domain command namespace to a client Mappers namespace.
     /// </summary>
     /// <param name="domainNamespace">
@@ -165,6 +255,18 @@ public static class NamingConventions
         string domainNamespace
     ) =>
         GetClientFeatureNamespace(domainNamespace, "Mappers");
+
+    /// <summary>
+    ///     Converts a source namespace to a client Mappers namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace containing the command.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <returns>The client Mappers namespace.</returns>
+    public static string GetClientMappersNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    ) =>
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "Mappers");
 
     /// <summary>
     ///     Converts a domain namespace to a client namespace.
@@ -206,6 +308,35 @@ public static class NamingConventions
     }
 
     /// <summary>
+    ///     Converts a source projection namespace to a client namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">
+    ///     The source namespace containing the projection (e.g.,
+    ///     "MyApp.CoreDomainLogic.Projections.BankAccountBalance").
+    /// </param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <returns>The client namespace (e.g., "MyApp.BlazorWasm.Features.BankAccountBalance.Dtos").</returns>
+    public static string GetClientNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(sourceNamespace) || string.IsNullOrEmpty(targetRootNamespace))
+        {
+            return GetClientNamespace(sourceNamespace);
+        }
+
+        string? projectionName = TargetNamespaceResolver.ExtractProjectionName(sourceNamespace);
+        if (!string.IsNullOrEmpty(projectionName))
+        {
+            return $"{targetRootNamespace}.{FeaturesSegment}.{projectionName}.Dtos";
+        }
+
+        // Fallback to legacy behavior
+        return GetClientNamespace(sourceNamespace);
+    }
+
+    /// <summary>
     ///     Converts a domain command namespace to a client Reducers namespace.
     /// </summary>
     /// <param name="domainNamespace">
@@ -218,6 +349,18 @@ public static class NamingConventions
         GetClientFeatureNamespace(domainNamespace, "Reducers");
 
     /// <summary>
+    ///     Converts a source namespace to a client Reducers namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace containing the command.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <returns>The client Reducers namespace.</returns>
+    public static string GetClientReducersNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    ) =>
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "Reducers");
+
+    /// <summary>
     ///     Converts a domain command namespace to a client State namespace.
     /// </summary>
     /// <param name="domainNamespace">
@@ -228,6 +371,18 @@ public static class NamingConventions
         string domainNamespace
     ) =>
         GetClientFeatureNamespace(domainNamespace, "State");
+
+    /// <summary>
+    ///     Converts a source namespace to a client State namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace containing the command.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <returns>The client State namespace.</returns>
+    public static string GetClientStateNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    ) =>
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "State");
 
     /// <summary>
     ///     Gets the command DTO name from a command type name.
@@ -340,6 +495,26 @@ public static class NamingConventions
     }
 
     /// <summary>
+    ///     Converts a source namespace to a server DTO namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace containing the command.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace (e.g., "MyApp.AspServer").</param>
+    /// <returns>The server namespace (e.g., "MyApp.AspServer.Controllers.Aggregates").</returns>
+    public static string GetServerCommandDtoNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(sourceNamespace) || string.IsNullOrEmpty(targetRootNamespace))
+        {
+            return GetServerCommandDtoNamespace(sourceNamespace);
+        }
+
+        // For server, we always use Controllers.Aggregates
+        return $"{targetRootNamespace}.Controllers.Aggregates";
+    }
+
+    /// <summary>
     ///     Converts a domain aggregate namespace to a silo registration namespace.
     /// </summary>
     /// <param name="domainNamespace">
@@ -383,6 +558,25 @@ public static class NamingConventions
 
         // Last resort: just append .Silo.Registrations
         return domainNamespace + ".Silo.Registrations";
+    }
+
+    /// <summary>
+    ///     Converts a source namespace to a silo registration namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace containing the aggregate or projection.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace (e.g., "MyApp.OrleansSilo").</param>
+    /// <returns>The silo namespace (e.g., "MyApp.OrleansSilo.Registrations").</returns>
+    public static string GetSiloRegistrationNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(sourceNamespace) || string.IsNullOrEmpty(targetRootNamespace))
+        {
+            return GetSiloRegistrationNamespace(sourceNamespace);
+        }
+
+        return $"{targetRootNamespace}.Registrations";
     }
 
     /// <summary>
@@ -523,5 +717,34 @@ public static class NamingConventions
         }
 
         return domainNamespace + ".Client." + subNamespace;
+    }
+
+    /// <summary>
+    ///     Converts a source namespace to a client feature sub-namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <param name="subNamespace">The sub-namespace (e.g., "Actions", "Mappers", "Dtos").</param>
+    /// <returns>The client feature namespace.</returns>
+    private static string GetClientFeatureNamespace(
+        string sourceNamespace,
+        string targetRootNamespace,
+        string subNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(sourceNamespace) || string.IsNullOrEmpty(targetRootNamespace))
+        {
+            return GetClientFeatureNamespace(sourceNamespace, subNamespace);
+        }
+
+        // Extract aggregate name from source namespace (works with any naming pattern)
+        string? aggregateName = TargetNamespaceResolver.ExtractAggregateName(sourceNamespace);
+        if (!string.IsNullOrEmpty(aggregateName))
+        {
+            return $"{targetRootNamespace}.{FeaturesSegment}.{aggregateName}Aggregate.{subNamespace}";
+        }
+
+        // Fallback to legacy behavior
+        return GetClientFeatureNamespace(sourceNamespace, subNamespace);
     }
 }

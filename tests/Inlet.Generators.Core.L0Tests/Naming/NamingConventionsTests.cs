@@ -96,6 +96,18 @@ public class NamingConventionsTests
     }
 
     /// <summary>
+    ///     GetClientActionsNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientActionsNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientActionsNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Actions", result);
+    }
+
+    /// <summary>
     ///     GetClientCommandDtoNamespace should convert valid domain pattern.
     /// </summary>
     [Fact]
@@ -146,6 +158,18 @@ public class NamingConventionsTests
     }
 
     /// <summary>
+    ///     GetClientCommandDtoNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientCommandDtoNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientCommandDtoNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Dtos", result);
+    }
+
+    /// <summary>
     ///     GetClientEffectsNamespace should convert domain namespace to client effects namespace.
     /// </summary>
     [Fact]
@@ -153,6 +177,18 @@ public class NamingConventionsTests
     {
         string result = NamingConventions.GetClientEffectsNamespace("Spring.Domain.Aggregates.BankAccount.Commands");
         Assert.Equal("Spring.Client.Features.BankAccountAggregate.Effects", result);
+    }
+
+    /// <summary>
+    ///     GetClientEffectsNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientEffectsNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientEffectsNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Effects", result);
     }
 
     /// <summary>
@@ -167,6 +203,18 @@ public class NamingConventionsTests
     }
 
     /// <summary>
+    ///     GetClientFeatureRootNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientFeatureRootNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientFeatureRootNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate", result);
+    }
+
+    /// <summary>
     ///     GetClientMappersNamespace should convert domain namespace to client mappers namespace.
     /// </summary>
     [Fact]
@@ -174,6 +222,18 @@ public class NamingConventionsTests
     {
         string result = NamingConventions.GetClientMappersNamespace("Spring.Domain.Aggregates.BankAccount.Commands");
         Assert.Equal("Spring.Client.Features.BankAccountAggregate.Mappers", result);
+    }
+
+    /// <summary>
+    ///     GetClientMappersNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientMappersNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientMappersNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Mappers", result);
     }
 
     /// <summary>
@@ -237,6 +297,28 @@ public class NamingConventionsTests
     }
 
     /// <summary>
+    ///     GetClientNamespace with targetRootNamespace should return fallback for empty source.
+    /// </summary>
+    [Fact]
+    public void GetClientNamespaceWithTargetReturnsFallbackForEmptySource()
+    {
+        string result = NamingConventions.GetClientNamespace(string.Empty, "MyApp.BlazorClient");
+        Assert.Equal(string.Empty, result);
+    }
+
+    /// <summary>
+    ///     GetClientNamespace with targetRootNamespace should use target namespace for projections.
+    /// </summary>
+    [Fact]
+    public void GetClientNamespaceWithTargetUsesTargetNamespaceForProjections()
+    {
+        string result = NamingConventions.GetClientNamespace(
+            "MyApp.CoreDomainLogic.Projections.BankAccountBalance",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountBalance.Dtos", result);
+    }
+
+    /// <summary>
     ///     GetClientReducersNamespace should convert domain namespace to client reducers namespace.
     /// </summary>
     [Fact]
@@ -247,6 +329,18 @@ public class NamingConventionsTests
     }
 
     /// <summary>
+    ///     GetClientReducersNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientReducersNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientReducersNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Reducers", result);
+    }
+
+    /// <summary>
     ///     GetClientStateNamespace should convert domain namespace to client state namespace.
     /// </summary>
     [Fact]
@@ -254,6 +348,18 @@ public class NamingConventionsTests
     {
         string result = NamingConventions.GetClientStateNamespace("Spring.Domain.Aggregates.BankAccount.Commands");
         Assert.Equal("Spring.Client.Features.BankAccountAggregate.State", result);
+    }
+
+    /// <summary>
+    ///     GetClientStateNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientStateNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientStateNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.State", result);
     }
 
     /// <summary>
@@ -524,6 +630,43 @@ public class NamingConventionsTests
     {
         string result = NamingConventions.RemoveSuffix("BankAccount", "Projection");
         Assert.Equal("BankAccount", result);
+    }
+
+    /// <summary>
+    ///     Target-aware methods should fall back to legacy behavior when target is empty.
+    /// </summary>
+    [Fact]
+    public void TargetAwareMethodsFallBackToLegacyWhenTargetEmpty()
+    {
+        // When target is empty, fall back to legacy behavior to avoid invalid namespaces
+        string result = NamingConventions.GetClientFeatureRootNamespace(
+            "Spring.Domain.Aggregates.BankAccount.Commands",
+            string.Empty);
+
+        // Falls back to legacy behavior: Spring.Domain → Spring.Client
+        Assert.Equal("Spring.Client.Features.BankAccountAggregate", result);
+    }
+
+    /// <summary>
+    ///     Target-aware methods should return empty when source is empty.
+    /// </summary>
+    [Fact]
+    public void TargetAwareMethodsReturnEmptyWhenSourceEmpty()
+    {
+        string result = NamingConventions.GetClientActionsNamespace(string.Empty, "MyApp.BlazorClient");
+        Assert.Equal(string.Empty, result);
+    }
+
+    /// <summary>
+    ///     Target-aware methods should work with standard Domain pattern.
+    /// </summary>
+    [Fact]
+    public void TargetAwareMethodsWorkWithStandardDomainPattern()
+    {
+        string result = NamingConventions.GetClientActionsNamespace(
+            "Spring.Domain.Aggregates.BankAccount.Commands",
+            "Spring.Client");
+        Assert.Equal("Spring.Client.Features.BankAccountAggregate.Actions", result);
     }
 
     /// <summary>

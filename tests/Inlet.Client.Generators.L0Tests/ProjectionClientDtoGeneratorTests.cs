@@ -51,6 +51,11 @@ public class ProjectionClientDtoGeneratorTests
     /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.
     /// </summary>
+    /// <param name="sources">The source code to compile.</param>
+    /// <remarks>
+    ///     The compilation uses "TestApp.Client" as the assembly name, which the generator uses as the
+    ///     target root namespace when no RootNamespace MSBuild property is available.
+    /// </remarks>
     private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
         RunResult) RunGenerator(
             params string[] sources
@@ -75,8 +80,10 @@ public class ProjectionClientDtoGeneratorTests
             references.Add(MetadataReference.CreateFromFile(netstandardPath));
         }
 
+        // Use "TestApp.Client" as assembly name - the generator will use this as the target root namespace
+        // when no RootNamespace MSBuild property is available
         CSharpCompilation compilation = CSharpCompilation.Create(
-            "TestAssembly",
+            "TestApp.Client",
             syntaxTrees,
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(

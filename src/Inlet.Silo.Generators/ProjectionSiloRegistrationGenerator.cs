@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -42,7 +43,8 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol projectionAttrSymbol,
         INamedTypeSymbol? reducerBaseSymbol,
-        List<ProjectionRegistrationInfo> projections
+        List<ProjectionRegistrationInfo> projections,
+        string targetRootNamespace
     )
     {
         // Check types in this namespace
@@ -51,7 +53,8 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             ProjectionRegistrationInfo? info = TryGetProjectionInfo(
                 typeSymbol,
                 projectionAttrSymbol,
-                reducerBaseSymbol);
+                reducerBaseSymbol,
+                targetRootNamespace);
             if (info is not null)
             {
                 projections.Add(info);
@@ -61,7 +64,12 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         // Recurse into nested namespaces
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindProjectionsInNamespace(childNs, projectionAttrSymbol, reducerBaseSymbol, projections);
+            FindProjectionsInNamespace(
+                childNs,
+                projectionAttrSymbol,
+                reducerBaseSymbol,
+                projections,
+                targetRootNamespace);
         }
     }
 
@@ -203,7 +211,8 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
     ///     Gets projection information from the compilation, including referenced assemblies.
     /// </summary>
     private static List<ProjectionRegistrationInfo> GetProjectionsFromCompilation(
-        Compilation compilation
+        Compilation compilation,
+        string targetRootNamespace
     )
     {
         List<ProjectionRegistrationInfo> projections = [];
@@ -226,7 +235,8 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
                 referencedAssembly.GlobalNamespace,
                 projectionAttrSymbol,
                 reducerBaseSymbol,
-                projections);
+                projections,
+                targetRootNamespace);
         }
 
         return projections;
@@ -258,7 +268,8 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
     private static ProjectionRegistrationInfo? TryGetProjectionInfo(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol projectionAttrSymbol,
-        INamedTypeSymbol? reducerBaseSymbol
+        INamedTypeSymbol? reducerBaseSymbol,
+        string targetRootNamespace
     )
     {
         // Check for [GenerateProjectionEndpoints] attribute
@@ -285,7 +296,7 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         // Output namespace: {ProductRoot}.Silo.Registrations
-        string outputNamespace = NamingConventions.GetSiloRegistrationNamespace(model.Namespace);
+        string outputNamespace = NamingConventions.GetSiloRegistrationNamespace(model.Namespace, targetRootNamespace);
         return new(model, reducers, outputNamespace);
     }
 
@@ -297,12 +308,28 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
+        // Combine compilation with options provider
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<ProjectionRegistrationInfo>> projectionsProvider =
-            context.CompilationProvider.Select((
-                compilation,
-                _
-            ) => GetProjectionsFromCompilation(compilation));
+        IncrementalValueProvider<List<ProjectionRegistrationInfo>> projectionsProvider = compilationAndOptions.Select((
+            source,
+            _
+        ) =>
+        {
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
+            return GetProjectionsFromCompilation(source.Compilation, targetRootNamespace);
+        });
 
         // Register source output
         context.RegisterSourceOutput(

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -66,11 +67,12 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
     /// </summary>
     private static void GenerateClientDto(
         SourceProductionContext context,
-        ProjectionInfo projection
+        ProjectionInfo projection,
+        string targetRootNamespace
     )
     {
         // Use client namespace convention
-        string clientNamespace = NamingConventions.GetClientNamespace(projection.Namespace);
+        string clientNamespace = NamingConventions.GetClientNamespace(projection.Namespace, targetRootNamespace);
         string dtoName = NamingConventions.GetDtoName(projection.TypeName);
         StringBuilder sb = new();
 
@@ -208,23 +210,42 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
+        // Combine compilation with options provider
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider = context.CompilationProvider.Select((
-            compilation,
-            _
-        ) => GetProjectionsFromCompilation(compilation));
+        IncrementalValueProvider<(List<ProjectionInfo> Projections, string TargetRootNamespace)> projectionsProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) =>
+            {
+                List<ProjectionInfo> projections = GetProjectionsFromCompilation(source.Compilation);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                return (projections, targetRootNamespace);
+            });
 
         // Register source output
         context.RegisterSourceOutput(
             projectionsProvider,
             static (
                 spc,
-                projections
+                data
             ) =>
             {
-                foreach (ProjectionInfo projection in projections)
+                foreach (ProjectionInfo projection in data.Projections)
                 {
-                    GenerateClientDto(spc, projection);
+                    GenerateClientDto(spc, projection, data.TargetRootNamespace);
                 }
             });
     }

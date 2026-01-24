@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -60,14 +61,15 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
     /// </summary>
     private static void GenerateEffect(
         SourceProductionContext context,
-        CommandModel command
+        CommandModel command,
+        string targetRootNamespace
     )
     {
         string commandName = command.TypeName;
         string effectTypeName = commandName + "Effect";
-        string effectsNamespace = NamingConventions.GetClientEffectsNamespace(command.Namespace);
-        string actionsNamespace = NamingConventions.GetClientActionsNamespace(command.Namespace);
-        string dtosNamespace = NamingConventions.GetClientCommandDtoNamespace(command.Namespace);
+        string effectsNamespace = NamingConventions.GetClientEffectsNamespace(command.Namespace, targetRootNamespace);
+        string actionsNamespace = NamingConventions.GetClientActionsNamespace(command.Namespace, targetRootNamespace);
+        string dtosNamespace = NamingConventions.GetClientCommandDtoNamespace(command.Namespace, targetRootNamespace);
 
         // Derive aggregate route prefix from namespace
         string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(command.Namespace);
@@ -140,25 +142,34 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Gets command models from the compilation.
+    ///     Gets command models and target namespace from the compilation.
     /// </summary>
-    private static List<CommandModel> GetCommandsFromCompilation(
-        Compilation compilation
+    private static (List<CommandModel> Commands, string TargetRootNamespace) GetCommandsAndTargetFromCompilation(
+        Compilation compilation,
+        AnalyzerConfigOptionsProvider optionsProvider
     )
     {
         List<CommandModel> commands = new();
         INamedTypeSymbol? generateAttrSymbol = compilation.GetTypeByMetadataName(GenerateCommandAttributeFullName);
         if (generateAttrSymbol is null)
         {
-            return commands;
+            return (commands, string.Empty);
         }
 
+        optionsProvider.GlobalOptions.TryGetValue(
+            TargetNamespaceResolver.RootNamespaceProperty,
+            out string? rootNamespace);
+        optionsProvider.GlobalOptions.TryGetValue(
+            TargetNamespaceResolver.AssemblyNameProperty,
+            out string? assemblyName);
+        string targetRootNamespace =
+            TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, compilation);
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
             FindCommandsInNamespace(referencedAssembly.GlobalNamespace, generateAttrSymbol, commands);
         }
 
-        return commands;
+        return (commands, targetRootNamespace);
     }
 
     /// <summary>
@@ -212,20 +223,23 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<List<CommandModel>> commandsProvider = context.CompilationProvider.Select((
-            compilation,
-            _
-        ) => GetCommandsFromCompilation(compilation));
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<(List<CommandModel> Commands, string TargetRootNamespace)> commandsProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) => GetCommandsAndTargetFromCompilation(source.Compilation, source.Options));
         context.RegisterSourceOutput(
             commandsProvider,
             static (
                 spc,
-                commands
+                data
             ) =>
             {
-                foreach (CommandModel command in commands)
+                foreach (CommandModel command in data.Commands)
                 {
-                    GenerateEffect(spc, command);
+                    GenerateEffect(spc, command, data.TargetRootNamespace);
                 }
             });
     }

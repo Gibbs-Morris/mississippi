@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -174,7 +175,8 @@ public sealed class CommandClientReducersGenerator : IIncrementalGenerator
     ///     Gets aggregates from command models by grouping on aggregate name.
     /// </summary>
     private static List<AggregateInfo> GetAggregatesFromCommands(
-        List<CommandModel> commands
+        List<CommandModel> commands,
+        string targetRootNamespace
     )
     {
         Dictionary<string, AggregateInfo> aggregates = new();
@@ -188,9 +190,12 @@ public sealed class CommandClientReducersGenerator : IIncrementalGenerator
 
             if (!aggregates.TryGetValue(aggregateName, out AggregateInfo? aggregate))
             {
-                string stateNamespace = NamingConventions.GetClientStateNamespace(command.Namespace);
-                string reducersNamespace = NamingConventions.GetClientReducersNamespace(command.Namespace);
-                string actionsNamespace = NamingConventions.GetClientActionsNamespace(command.Namespace);
+                string stateNamespace =
+                    NamingConventions.GetClientStateNamespace(command.Namespace, targetRootNamespace);
+                string reducersNamespace =
+                    NamingConventions.GetClientReducersNamespace(command.Namespace, targetRootNamespace);
+                string actionsNamespace =
+                    NamingConventions.GetClientActionsNamespace(command.Namespace, targetRootNamespace);
                 aggregate = new(aggregateName, stateNamespace, reducersNamespace, actionsNamespace);
                 aggregates[aggregateName] = aggregate;
             }
@@ -274,13 +279,25 @@ public sealed class CommandClientReducersGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = context.CompilationProvider.Select((
-            compilation,
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
+            source,
             _
         ) =>
         {
-            List<CommandModel> commands = GetCommandsFromCompilation(compilation);
-            return GetAggregatesFromCommands(commands);
+            List<CommandModel> commands = GetCommandsFromCompilation(source.Compilation);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
+            return GetAggregatesFromCommands(commands, targetRootNamespace);
         });
         context.RegisterSourceOutput(
             aggregatesProvider,

@@ -70,8 +70,10 @@ public class AggregateControllerGeneratorTests
             references.Add(MetadataReference.CreateFromFile(netstandardPath));
         }
 
+        // Use "TestApp.Server" as assembly name - the generator will use this as the target root namespace
+        // when no RootNamespace MSBuild property is available
         CSharpCompilation compilation = CSharpCompilation.Create(
-            "TestAssembly",
+            "TestApp.Server",
             syntaxTrees,
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(

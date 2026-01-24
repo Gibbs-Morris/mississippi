@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -40,13 +41,14 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     private static void FindCommandsInNamespace(
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol generateAttrSymbol,
-        List<CommandInfo> commands
+        List<CommandInfo> commands,
+        string targetRootNamespace
     )
     {
         // Check types in this namespace
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            CommandInfo? info = TryGetCommandInfo(typeSymbol, generateAttrSymbol);
+            CommandInfo? info = TryGetCommandInfo(typeSymbol, generateAttrSymbol, targetRootNamespace);
             if (info is not null)
             {
                 commands.Add(info);
@@ -56,7 +58,7 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         // Recurse into nested namespaces
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindCommandsInNamespace(childNs, generateAttrSymbol, commands);
+            FindCommandsInNamespace(childNs, generateAttrSymbol, commands, targetRootNamespace);
         }
     }
 
@@ -283,7 +285,8 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     ///     Gets command information from the compilation, including referenced assemblies.
     /// </summary>
     private static List<CommandInfo> GetCommandsFromCompilation(
-        Compilation compilation
+        Compilation compilation,
+        string targetRootNamespace
     )
     {
         List<CommandInfo> commands = new();
@@ -298,7 +301,11 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         // Scan all assemblies referenced by this compilation
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
-            FindCommandsInNamespace(referencedAssembly.GlobalNamespace, generateAttrSymbol, commands);
+            FindCommandsInNamespace(
+                referencedAssembly.GlobalNamespace,
+                generateAttrSymbol,
+                commands,
+                targetRootNamespace);
         }
 
         return commands;
@@ -337,7 +344,8 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     /// </summary>
     private static CommandInfo? TryGetCommandInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol generateAttrSymbol
+        INamedTypeSymbol generateAttrSymbol,
+        string targetRootNamespace
     )
     {
         // Check for [GenerateCommand] attribute
@@ -361,7 +369,7 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
 
         // Build command model
         CommandModel model = new(typeSymbol, route!, httpMethod);
-        string outputNamespace = NamingConventions.GetServerCommandDtoNamespace(model.Namespace);
+        string outputNamespace = NamingConventions.GetServerCommandDtoNamespace(model.Namespace, targetRootNamespace);
         return new(model, outputNamespace);
     }
 
@@ -373,11 +381,28 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
+        // Combine compilation with options provider
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<CommandInfo>> commandsProvider = context.CompilationProvider.Select((
-            compilation,
+        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
+            source,
             _
-        ) => GetCommandsFromCompilation(compilation));
+        ) =>
+        {
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
+            return GetCommandsFromCompilation(source.Compilation, targetRootNamespace);
+        });
 
         // Register source output for individual commands (DTOs and mappers)
         context.RegisterSourceOutput(
