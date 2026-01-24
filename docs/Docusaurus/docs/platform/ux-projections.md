@@ -4,8 +4,6 @@ title: UX Projections
 description: Composable, read-optimized views for client UX state
 ---
 
-# UX Projections
-
 UX projections are small, composable, read-optimized views of event streams designed specifically for client UI state. They follow the "atomic design" principle applied to data models—many small projections that compose together rather than one large monolithic view.
 
 ## Overview

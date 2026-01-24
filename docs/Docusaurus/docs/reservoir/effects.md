@@ -4,8 +4,6 @@ title: Effects
 description: Handle asynchronous operations like API calls, timers, and navigation
 ---
 
-# Effects
-
 Effects handle asynchronous operations triggered by actions. While reducers must be pure and synchronous, effects can perform API calls, interact with browser APIs, set timers, and emit new actions over time. Effects are where side effects belong in a Reservoir application.
 
 ## When to Use Effects

@@ -4,8 +4,6 @@ title: Reservoir Overview
 description: A Redux-inspired state management library for .NET Blazor applications
 ---
 
-# Reservoir
-
 Reservoir is a Redux-inspired state management library for .NET applications, designed specifically for Blazor WebAssembly and Blazor Server scenarios. It provides a predictable, unidirectional data flow that makes your application state easy to understand, test, and debug.
 
 ## Key Concepts

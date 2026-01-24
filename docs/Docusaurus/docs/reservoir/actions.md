@@ -4,8 +4,6 @@ title: Actions
 description: Define events and intents that trigger state changes in Reservoir
 ---
 
-# Actions
-
 Actions are the sole mechanism for triggering state changes in a Reservoir application. They represent events that have occurred or intents from users and systems. Actions flow through the store, are processed by reducers to update state, and may trigger effects for asynchronous operations.
 
 ## The IAction Interface

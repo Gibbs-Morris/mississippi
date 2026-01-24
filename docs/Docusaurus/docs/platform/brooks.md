@@ -4,8 +4,6 @@ title: Brooks
 description: Append-only event streams for Mississippi event sourcing
 ---
 
-# Brooks
-
 Brooks are Mississippi's append-only event streams. They provide the persistence layer for event sourcing—storing immutable events that aggregates produce and projections consume.
 
 ## Overview

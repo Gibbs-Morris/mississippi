@@ -4,8 +4,6 @@ title: Store
 description: The central state container that coordinates actions, reducers, and effects
 ---
 
-# Store
-
 The Store is the central state container in Reservoir. It holds all feature states, coordinates action dispatch, and notifies subscribers when state changes. The Store is the single source of truth for your application's state.
 
 ## Core Responsibilities

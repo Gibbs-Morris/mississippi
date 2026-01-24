@@ -4,8 +4,6 @@ title: Getting Started
 description: Build your first Reservoir application step-by-step
 ---
 
-# Getting Started
-
 This guide walks you through building a complete Blazor application with Reservoir state management. You'll create a simple shopping cart that demonstrates all core concepts: actions, reducers, effects, and the store.
 
 ## Prerequisites

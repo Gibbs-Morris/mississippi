@@ -4,8 +4,6 @@ title: State
 description: Define feature states that represent slices of your application state tree
 ---
 
-# State
-
 Feature states are the building blocks of your Reservoir application state tree. Each feature state represents an isolated slice of state—such as a shopping cart, user session, or UI settings—that can be managed independently.
 
 ## The IFeatureState Interface

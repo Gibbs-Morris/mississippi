@@ -4,8 +4,6 @@ title: Reducers
 description: Transform state in response to actions with pure, predictable functions
 ---
 
-# Reducers
-
 Reducers are pure functions that specify how the application state changes in response to actions. Given the current state and an action, a reducer returns the new state. Reducers are the only place where state transitions occur, making them the single source of truth for how your application behaves.
 
 ## Core Principles

@@ -4,8 +4,6 @@ title: Aggregates
 description: Command handling and event production in Mississippi event sourcing
 ---
 
-# Aggregates
-
 Aggregates are the command-processing core of Mississippi event sourcing. They enforce business rules, validate commands against current state, and emit domain events that become the immutable source of truth.
 
 ## Overview
