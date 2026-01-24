@@ -261,13 +261,21 @@ public sealed class CommandClientActionsGenerator : IIncrementalGenerator
             return commands;
         }
 
-        optionsProvider.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
-        optionsProvider.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
-        string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, compilation);
-
+        optionsProvider.GlobalOptions.TryGetValue(
+            TargetNamespaceResolver.RootNamespaceProperty,
+            out string? rootNamespace);
+        optionsProvider.GlobalOptions.TryGetValue(
+            TargetNamespaceResolver.AssemblyNameProperty,
+            out string? assemblyName);
+        string targetRootNamespace =
+            TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, compilation);
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
-            FindCommandsInNamespace(referencedAssembly.GlobalNamespace, generateAttrSymbol, targetRootNamespace, commands);
+            FindCommandsInNamespace(
+                referencedAssembly.GlobalNamespace,
+                generateAttrSymbol,
+                targetRootNamespace,
+                commands);
         }
 
         return commands;
@@ -328,9 +336,8 @@ public sealed class CommandClientActionsGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
-            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
         IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
             source,
             _

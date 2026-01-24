@@ -111,14 +111,23 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
         }
 
         // Get the target root namespace from MSBuild properties
-        optionsProvider.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
-        optionsProvider.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
-        string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, compilation);
+        optionsProvider.GlobalOptions.TryGetValue(
+            TargetNamespaceResolver.RootNamespaceProperty,
+            out string? rootNamespace);
+        optionsProvider.GlobalOptions.TryGetValue(
+            TargetNamespaceResolver.AssemblyNameProperty,
+            out string? assemblyName);
+        string targetRootNamespace =
+            TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, compilation);
 
         // Scan all assemblies referenced by this compilation
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
-            FindCommandsInNamespace(referencedAssembly.GlobalNamespace, generateAttrSymbol, targetRootNamespace, commands);
+            FindCommandsInNamespace(
+                referencedAssembly.GlobalNamespace,
+                generateAttrSymbol,
+                targetRootNamespace,
+                commands);
         }
 
         return commands;
@@ -188,8 +197,8 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
     )
     {
         // Combine compilation with analyzer config options to get target namespace
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
-            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the combined provider to scan referenced assemblies with target namespace awareness
         IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((

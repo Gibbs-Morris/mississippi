@@ -18,6 +18,13 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Naming;
 [AllureSubSuite("Target Namespace Resolver")]
 public class TargetNamespaceResolverTests
 {
+    private static Compilation CreateCompilation(
+        string assemblyName
+    ) =>
+        CSharpCompilation.Create(
+            assemblyName,
+            references: [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]);
+
     /// <summary>
     ///     AssemblyNameProperty should have correct value.
     /// </summary>
@@ -33,8 +40,7 @@ public class TargetNamespaceResolverTests
     [Fact]
     public void ExtractAggregateNameExtractsFromDomainPattern()
     {
-        string? result = TargetNamespaceResolver.ExtractAggregateName(
-            "Spring.Domain.Aggregates.BankAccount.Commands");
+        string? result = TargetNamespaceResolver.ExtractAggregateName("Spring.Domain.Aggregates.BankAccount.Commands");
         Assert.Equal("BankAccount", result);
     }
 
@@ -55,8 +61,7 @@ public class TargetNamespaceResolverTests
     [Fact]
     public void ExtractAggregateNameExtractsWithoutCommandsSuffix()
     {
-        string? result = TargetNamespaceResolver.ExtractAggregateName(
-            "MyApp.Aggregates.Order");
+        string? result = TargetNamespaceResolver.ExtractAggregateName("MyApp.Aggregates.Order");
         Assert.Equal("Order", result);
     }
 
@@ -97,8 +102,7 @@ public class TargetNamespaceResolverTests
     [Fact]
     public void ExtractProductPrefixExtractsFromAggregatesPattern()
     {
-        string result = TargetNamespaceResolver.ExtractProductPrefix(
-            "Contoso.Aggregates.BankAccount.Commands");
+        string result = TargetNamespaceResolver.ExtractProductPrefix("Contoso.Aggregates.BankAccount.Commands");
         Assert.Equal("Contoso", result);
     }
 
@@ -108,8 +112,7 @@ public class TargetNamespaceResolverTests
     [Fact]
     public void ExtractProductPrefixExtractsFromDomainPattern()
     {
-        string result = TargetNamespaceResolver.ExtractProductPrefix(
-            "Contoso.Domain.Aggregates.BankAccount.Commands");
+        string result = TargetNamespaceResolver.ExtractProductPrefix("Contoso.Domain.Aggregates.BankAccount.Commands");
         Assert.Equal("Contoso", result);
     }
 
@@ -130,8 +133,7 @@ public class TargetNamespaceResolverTests
     [Fact]
     public void ExtractProductPrefixExtractsFromProjectionsPattern()
     {
-        string result = TargetNamespaceResolver.ExtractProductPrefix(
-            "Contoso.Projections.BankAccountBalance");
+        string result = TargetNamespaceResolver.ExtractProductPrefix("Contoso.Projections.BankAccountBalance");
         Assert.Equal("Contoso", result);
     }
 
@@ -161,8 +163,7 @@ public class TargetNamespaceResolverTests
     [Fact]
     public void ExtractProjectionNameExtractsFromDomainPattern()
     {
-        string? result = TargetNamespaceResolver.ExtractProjectionName(
-            "Spring.Domain.Projections.BankAccountBalance");
+        string? result = TargetNamespaceResolver.ExtractProjectionName("Spring.Domain.Projections.BankAccountBalance");
         Assert.Equal("BankAccountBalance", result);
     }
 
@@ -183,8 +184,7 @@ public class TargetNamespaceResolverTests
     [Fact]
     public void ExtractProjectionNameHandlesNestedProjections()
     {
-        string? result = TargetNamespaceResolver.ExtractProjectionName(
-            "MyApp.Projections.BankAccount.Balance");
+        string? result = TargetNamespaceResolver.ExtractProjectionName("MyApp.Projections.BankAccount.Balance");
         Assert.Equal("BankAccount.Balance", result);
     }
 
@@ -228,8 +228,7 @@ public class TargetNamespaceResolverTests
     [Fact]
     public void GetTargetRootNamespaceThrowsForNullCompilation()
     {
-        Assert.Throws<ArgumentNullException>(() =>
-            TargetNamespaceResolver.GetTargetRootNamespace("ns", "asm", null!));
+        Assert.Throws<ArgumentNullException>(() => TargetNamespaceResolver.GetTargetRootNamespace("ns", "asm", null!));
     }
 
     /// <summary>
@@ -253,10 +252,7 @@ public class TargetNamespaceResolverTests
     public void GetTargetRootNamespaceUsesAssemblyNameWhenRootNamespaceNull()
     {
         Compilation compilation = CreateCompilation("TestAssembly");
-        string result = TargetNamespaceResolver.GetTargetRootNamespace(
-            null,
-            "MyApp.Client.Assembly",
-            compilation);
+        string result = TargetNamespaceResolver.GetTargetRootNamespace(null, "MyApp.Client.Assembly", compilation);
         Assert.Equal("MyApp.Client.Assembly", result);
     }
 
@@ -267,10 +263,7 @@ public class TargetNamespaceResolverTests
     public void GetTargetRootNamespaceUsesCompilationAssemblyNameAsFallback()
     {
         Compilation compilation = CreateCompilation("FallbackAssemblyName");
-        string result = TargetNamespaceResolver.GetTargetRootNamespace(
-            null,
-            null,
-            compilation);
+        string result = TargetNamespaceResolver.GetTargetRootNamespace(null, null, compilation);
         Assert.Equal("FallbackAssemblyName", result);
     }
 
@@ -282,11 +275,4 @@ public class TargetNamespaceResolverTests
     {
         Assert.Equal("build_property.RootNamespace", TargetNamespaceResolver.RootNamespaceProperty);
     }
-
-    private static Compilation CreateCompilation(
-        string assemblyName
-    ) =>
-        CSharpCompilation.Create(
-            assemblyName,
-            references: [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]);
 }

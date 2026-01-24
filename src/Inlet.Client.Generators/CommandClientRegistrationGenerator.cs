@@ -166,13 +166,22 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
             .Select(g =>
             {
                 CommandModel firstCommand = g.First().Command;
-                string featureNamespace = NamingConventions.GetClientFeatureRootNamespace(firstCommand.Namespace, targetRootNamespace);
-                string stateNamespace = NamingConventions.GetClientStateNamespace(firstCommand.Namespace, targetRootNamespace);
-                string reducersNamespace = NamingConventions.GetClientReducersNamespace(firstCommand.Namespace, targetRootNamespace);
-                string actionsNamespace = NamingConventions.GetClientActionsNamespace(firstCommand.Namespace, targetRootNamespace);
-                string effectsNamespace = NamingConventions.GetClientEffectsNamespace(firstCommand.Namespace, targetRootNamespace);
-                string dtosNamespace = NamingConventions.GetClientCommandDtoNamespace(firstCommand.Namespace, targetRootNamespace);
-                string mappersNamespace = NamingConventions.GetClientMappersNamespace(firstCommand.Namespace, targetRootNamespace);
+                string featureNamespace = NamingConventions.GetClientFeatureRootNamespace(
+                    firstCommand.Namespace,
+                    targetRootNamespace);
+                string stateNamespace =
+                    NamingConventions.GetClientStateNamespace(firstCommand.Namespace, targetRootNamespace);
+                string reducersNamespace =
+                    NamingConventions.GetClientReducersNamespace(firstCommand.Namespace, targetRootNamespace);
+                string actionsNamespace =
+                    NamingConventions.GetClientActionsNamespace(firstCommand.Namespace, targetRootNamespace);
+                string effectsNamespace =
+                    NamingConventions.GetClientEffectsNamespace(firstCommand.Namespace, targetRootNamespace);
+                string dtosNamespace = NamingConventions.GetClientCommandDtoNamespace(
+                    firstCommand.Namespace,
+                    targetRootNamespace);
+                string mappersNamespace =
+                    NamingConventions.GetClientMappersNamespace(firstCommand.Namespace, targetRootNamespace);
                 AggregateInfo aggregate = new(
                     g.Key,
                     featureNamespace,
@@ -265,18 +274,24 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
-            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
         IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
             source,
             _
         ) =>
         {
             List<CommandModel> commands = GetCommandsFromCompilation(source.Compilation);
-            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, source.Compilation);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
             return GetAggregatesFromCommands(commands, targetRootNamespace);
         });
         context.RegisterSourceOutput(

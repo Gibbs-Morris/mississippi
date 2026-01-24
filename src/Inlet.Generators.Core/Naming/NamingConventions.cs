@@ -22,7 +22,8 @@ namespace Mississippi.Inlet.Generators.Core.Naming;
 ///                 <term>Target-aware methods</term>
 ///                 <description>
 ///                     Overloads that accept a <c>targetRootNamespace</c> parameter, enabling namespace-agnostic
-///                     generation. These work with any source namespace pattern (e.g., "Product.CoreDomainLogic.Aggregates...").
+///                     generation. These work with any source namespace pattern (e.g.,
+///                     "Product.CoreDomainLogic.Aggregates...").
 ///                 </description>
 ///             </item>
 ///         </list>
@@ -161,7 +162,10 @@ public static class NamingConventions
     /// <summary>
     ///     Converts a source namespace to a client DTO namespace using the target project's root namespace.
     /// </summary>
-    /// <param name="sourceNamespace">The source namespace containing the command (e.g., "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands").</param>
+    /// <param name="sourceNamespace">
+    ///     The source namespace containing the command (e.g.,
+    ///     "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands").
+    /// </param>
     /// <param name="targetRootNamespace">The target project's root namespace (e.g., "MyApp.BlazorWasm").</param>
     /// <returns>The client namespace (e.g., "MyApp.BlazorWasm.Features.BankAccountAggregate.Dtos").</returns>
     public static string GetClientCommandDtoNamespace(
@@ -300,7 +304,10 @@ public static class NamingConventions
     /// <summary>
     ///     Converts a source projection namespace to a client namespace using the target project's root namespace.
     /// </summary>
-    /// <param name="sourceNamespace">The source namespace containing the projection (e.g., "MyApp.CoreDomainLogic.Projections.BankAccountBalance").</param>
+    /// <param name="sourceNamespace">
+    ///     The source namespace containing the projection (e.g.,
+    ///     "MyApp.CoreDomainLogic.Projections.BankAccountBalance").
+    /// </param>
     /// <param name="targetRootNamespace">The target project's root namespace.</param>
     /// <returns>The client namespace (e.g., "MyApp.BlazorWasm.Features.BankAccountBalance.Dtos").</returns>
     public static string GetClientNamespace(

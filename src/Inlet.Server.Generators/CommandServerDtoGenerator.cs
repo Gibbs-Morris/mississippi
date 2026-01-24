@@ -301,7 +301,11 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         // Scan all assemblies referenced by this compilation
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
-            FindCommandsInNamespace(referencedAssembly.GlobalNamespace, generateAttrSymbol, commands, targetRootNamespace);
+            FindCommandsInNamespace(
+                referencedAssembly.GlobalNamespace,
+                generateAttrSymbol,
+                commands,
+                targetRootNamespace);
         }
 
         return commands;
@@ -378,8 +382,8 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     )
     {
         // Combine compilation with options provider
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
-            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
         IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
@@ -387,9 +391,16 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
             _
         ) =>
         {
-            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, source.Compilation);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
             return GetCommandsFromCompilation(source.Compilation, targetRootNamespace);
         });
 

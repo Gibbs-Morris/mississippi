@@ -79,8 +79,10 @@ public class AggregateSiloRegistrationGeneratorTests
             references.Add(MetadataReference.CreateFromFile(netstandardPath));
         }
 
+        // Use "TestApp.Silo" as assembly name - the generator will use this as the target root namespace
+        // when no RootNamespace MSBuild property is available
         CSharpCompilation compilation = CSharpCompilation.Create(
-            "TestAssembly",
+            "TestApp.Silo",
             syntaxTrees,
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(

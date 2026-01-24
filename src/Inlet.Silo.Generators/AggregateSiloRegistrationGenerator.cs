@@ -73,7 +73,13 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         // Recurse into nested namespaces
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindAggregatesInNamespace(childNs, aggregateAttrSymbol, handlerBaseSymbol, reducerBaseSymbol, aggregates, targetRootNamespace);
+            FindAggregatesInNamespace(
+                childNs,
+                aggregateAttrSymbol,
+                handlerBaseSymbol,
+                reducerBaseSymbol,
+                aggregates,
+                targetRootNamespace);
         }
     }
 
@@ -413,21 +419,27 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     )
     {
         // Combine compilation with options provider
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
-            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<AggregateRegistrationInfo>> aggregatesProvider =
-            compilationAndOptions.Select((
-                source,
-                _
-            ) =>
-            {
-                source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
-                source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
-                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, source.Compilation);
-                return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
-            });
+        IncrementalValueProvider<List<AggregateRegistrationInfo>> aggregatesProvider = compilationAndOptions.Select((
+            source,
+            _
+        ) =>
+        {
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
+            return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
+        });
 
         // Register source output
         context.RegisterSourceOutput(

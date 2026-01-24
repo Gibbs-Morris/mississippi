@@ -211,21 +211,29 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
     )
     {
         // Combine compilation with options provider
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
-            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<(List<ProjectionInfo> Projections, string TargetRootNamespace)> projectionsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            List<ProjectionInfo> projections = GetProjectionsFromCompilation(source.Compilation);
-            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, source.Compilation);
-            return (projections, targetRootNamespace);
-        });
+        IncrementalValueProvider<(List<ProjectionInfo> Projections, string TargetRootNamespace)> projectionsProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) =>
+            {
+                List<ProjectionInfo> projections = GetProjectionsFromCompilation(source.Compilation);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                return (projections, targetRootNamespace);
+            });
 
         // Register source output
         context.RegisterSourceOutput(

@@ -110,7 +110,8 @@ public sealed class CommandClientStateGenerator : IIncrementalGenerator
             .Select(g =>
             {
                 CommandModel firstCommand = g.First().Command;
-                string stateNamespace = NamingConventions.GetClientStateNamespace(firstCommand.Namespace, targetRootNamespace);
+                string stateNamespace =
+                    NamingConventions.GetClientStateNamespace(firstCommand.Namespace, targetRootNamespace);
                 return new AggregateInfo(g.Key, stateNamespace, firstCommand.Namespace);
             })
             .ToList();
@@ -189,18 +190,24 @@ public sealed class CommandClientStateGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
-            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
         IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
             source,
             _
         ) =>
         {
             List<CommandModel> commands = GetCommandsFromCompilation(source.Compilation);
-            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, source.Compilation);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
             return GetAggregatesFromCommands(commands, targetRootNamespace);
         });
         context.RegisterSourceOutput(

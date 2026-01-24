@@ -57,33 +57,6 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Gets command models and target namespace from the compilation.
-    /// </summary>
-    private static (List<CommandModel> Commands, string TargetNamespace) GetCommandsAndTargetFromCompilation(
-        Compilation compilation,
-        AnalyzerConfigOptionsProvider optionsProvider
-    )
-    {
-        List<CommandModel> commands = new();
-        INamedTypeSymbol? generateAttrSymbol = compilation.GetTypeByMetadataName(GenerateCommandAttributeFullName);
-        if (generateAttrSymbol is null)
-        {
-            return (commands, string.Empty);
-        }
-
-        optionsProvider.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty, out string? rootNamespace);
-        optionsProvider.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty, out string? assemblyName);
-        string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, compilation);
-
-        foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
-        {
-            FindCommandsInNamespace(referencedAssembly.GlobalNamespace, generateAttrSymbol, commands);
-        }
-
-        return (commands, targetRootNamespace);
-    }
-
-    /// <summary>
     ///     Generates the effect class for a command.
     /// </summary>
     private static void GenerateEffect(
@@ -169,6 +142,37 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Gets command models and target namespace from the compilation.
+    /// </summary>
+    private static (List<CommandModel> Commands, string TargetNamespace) GetCommandsAndTargetFromCompilation(
+        Compilation compilation,
+        AnalyzerConfigOptionsProvider optionsProvider
+    )
+    {
+        List<CommandModel> commands = new();
+        INamedTypeSymbol? generateAttrSymbol = compilation.GetTypeByMetadataName(GenerateCommandAttributeFullName);
+        if (generateAttrSymbol is null)
+        {
+            return (commands, string.Empty);
+        }
+
+        optionsProvider.GlobalOptions.TryGetValue(
+            TargetNamespaceResolver.RootNamespaceProperty,
+            out string? rootNamespace);
+        optionsProvider.GlobalOptions.TryGetValue(
+            TargetNamespaceResolver.AssemblyNameProperty,
+            out string? assemblyName);
+        string targetRootNamespace =
+            TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, compilation);
+        foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
+        {
+            FindCommandsInNamespace(referencedAssembly.GlobalNamespace, generateAttrSymbol, commands);
+        }
+
+        return (commands, targetRootNamespace);
+    }
+
+    /// <summary>
     ///     Gets all referenced assemblies from the compilation.
     /// </summary>
     private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
@@ -219,15 +223,13 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> compilationAndOptions =
-            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
         IncrementalValueProvider<(List<CommandModel> Commands, string TargetNamespace)> commandsProvider =
             compilationAndOptions.Select((
                 source,
                 _
             ) => GetCommandsAndTargetFromCompilation(source.Compilation, source.Options));
-
         context.RegisterSourceOutput(
             commandsProvider,
             static (
