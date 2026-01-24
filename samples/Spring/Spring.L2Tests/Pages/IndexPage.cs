@@ -365,7 +365,7 @@ public sealed partial class IndexPage
         string expectedBalance,
         float? timeout = null
     ) =>
-        await page.Locator("section:has(h2:text-is('Account Status')) div:has(span:text-is('Balance:'))")
+        await page.Locator("section:has(h2:text-is('Account Status')) div > div:has(> span:text-is('Balance:'))")
             .Filter(
                 new()
                 {
