@@ -147,19 +147,18 @@ See [SDK Reference](./platform/sdk.md) for what each package includes.
 ## Pluggable Storage Providers
 
 Mississippi abstracts storage behind provider interfaces. The default providers
-use Azure services, but you can swap them:
+use Cosmos DB, but you can swap them:
 
 | Abstraction | Default Provider | Can Replace With |
 | --- | --- | --- |
-| `IBrookStorage` | Cosmos DB | SQL Server, PostgreSQL, custom |
-| `ISnapshotStorage` | Azure Blob | File system, S3, custom |
-| `IProjectionCache` | Orleans grain state | Redis, custom |
+| `IBrookStorageProvider` | Cosmos DB | SQL Server, PostgreSQL, custom |
+| `ISnapshotStorageProvider` | Cosmos DB | File system, S3, custom |
 
 To replace a provider, implement the interface and register it in DI:
 
 ```csharp
 // Replace the default Cosmos brook storage
-services.AddSingleton<IBrookStorage, SqlServerBrookStorage>();
+services.AddSingleton<IBrookStorageProvider, SqlServerBrookStorageProvider>();
 ```
 
 This pluggability means you can start with Azure defaults and migrate to other

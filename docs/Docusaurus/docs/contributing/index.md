@@ -39,7 +39,7 @@ description: One-sentence description (max 160 chars)
 | Tutorial | Teach through doing | "Your First Aggregate" |
 | How-to Guide | Solve a problem | "Add Custom Storage" |
 | Concept | Explain ideas | "Event Sourcing Basics" |
-| Reference | Specifications | "IBrookStorage API" |
+| Reference | Specifications | "IBrookStorageProvider API" |
 
 ### Validation
 

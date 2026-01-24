@@ -178,8 +178,8 @@ All external dependencies are **abstracted behind interfaces**:
 
 | Component | Interface | Default Provider | Alternatives |
 | --- | --- | --- | --- |
-| Event storage | `IBrookStorage` | Cosmos DB | SQL Server, PostgreSQL |
-| Snapshots | `ISnapshotStorage` | Azure Blob | S3, file system |
+| Event storage | `IBrookStorageProvider` | Cosmos DB | SQL Server, PostgreSQL |
+| Snapshots | `ISnapshotStorageProvider` | Cosmos DB | S3, file system |
 | Serialization | `IEventSerializer` | System.Text.Json | MessagePack, custom |
 
 To swap a provider, implement the interface and register it:
@@ -189,7 +189,7 @@ To swap a provider, implement the interface and register it:
 services.AddCosmosBrookStorage(options => ...);
 
 // Later, migrate to PostgreSQL
-services.AddSingleton<IBrookStorage, PostgresBrookStorage>();
+services.AddSingleton<IBrookStorageProvider, PostgresBrookStorageProvider>();
 ```
 
 This means your business logic is **decoupled from infrastructure choices**.

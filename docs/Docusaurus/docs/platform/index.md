@@ -28,8 +28,8 @@ Components that support custom implementations:
 
 | Component | Interface | Default | Documentation |
 | --- | --- | --- | --- |
-| Event storage | `IBrookStorage` | Cosmos DB | [Custom Event Storage](./custom-event-storage.md) |
-| Snapshots | `ISnapshotStorage` | Azure Blob | [Custom Snapshot Storage](./custom-snapshot-storage.md) |
+| Event storage | `IBrookStorageProvider` | Cosmos DB | [Custom Event Storage](./custom-event-storage.md) |
+| Snapshots | `ISnapshotStorageProvider` | Cosmos DB | [Custom Snapshot Storage](./custom-snapshot-storage.md) |
 
 ## SDK Packages
 

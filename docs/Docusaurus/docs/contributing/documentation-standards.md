@@ -68,7 +68,7 @@ tone.
 | **Tutorial** | Teach through doing | Guided, encouraging | "Your First Aggregate" |
 | **How-to Guide** | Solve a specific problem | Direct, practical | "How to Add Custom Storage" |
 | **Concept** | Explain ideas and architecture | Educational, thorough | "Event Sourcing Fundamentals" |
-| **Reference** | Provide specifications | Precise, complete | "IBrookStorage Interface" |
+| **Reference** | Provide specifications | Precise, complete | "IBrookStorageProvider Interface" |
 
 ### Naming Conventions
 
