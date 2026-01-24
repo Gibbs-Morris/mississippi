@@ -180,7 +180,7 @@ All external dependencies are **abstracted behind interfaces**:
 | --- | --- | --- | --- |
 | Event storage | `IBrookStorageProvider` | Cosmos DB | SQL Server, PostgreSQL |
 | Snapshots | `ISnapshotStorageProvider` | Cosmos DB | S3, file system |
-| Serialization | `IEventSerializer` | System.Text.Json | MessagePack, custom |
+| Serialization | `ISerializationProvider` | System.Text.Json | MessagePack, custom |
 
 To swap a provider, implement the interface and register it:
 
