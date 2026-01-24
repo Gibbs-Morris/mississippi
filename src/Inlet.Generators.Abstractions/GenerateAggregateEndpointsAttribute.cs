@@ -96,7 +96,7 @@ public sealed class GenerateAggregateEndpointsAttribute : Attribute
     public string? DefaultAuthorizeRoles { get; set; }
 
     /// <summary>
-    ///     Gets or sets whether all commands on this aggregate require authentication by default.
+    ///     Gets or sets a value indicating whether all commands on this aggregate require authentication by default.
     /// </summary>
     /// <remarks>
     ///     <para>
@@ -127,7 +127,7 @@ public sealed class GenerateAggregateEndpointsAttribute : Attribute
     public string? FeatureKey { get; set; }
 
     /// <summary>
-    ///     Gets or sets whether to generate the ASP.NET controller for this aggregate.
+    ///     Gets or sets a value indicating whether to generate the ASP.NET controller for this aggregate.
     /// </summary>
     /// <remarks>
     ///     <para>
@@ -148,7 +148,7 @@ public sealed class GenerateAggregateEndpointsAttribute : Attribute
     public bool GenerateController { get; set; } = true;
 
     /// <summary>
-    ///     Gets or sets whether to generate silo registration code for this aggregate.
+    ///     Gets or sets a value indicating whether to generate silo registration code for this aggregate.
     /// </summary>
     /// <remarks>
     ///     <para>
