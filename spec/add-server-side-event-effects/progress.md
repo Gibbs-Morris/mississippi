@@ -1,5 +1,49 @@
 # Progress Log
 
+## 2026-01-24 (Session 2 continued) - Persona Reviews
+
+### User Request
+
+User requested 4 persona-based design reviews:
+1. Developer - focus on dev experience, debugging, testing
+2. Architect - focus on SOLID, DRY, KISS, avoid overengineering
+3. Dev Manager - focus on maintainability, long-term costs
+4. DevOps Engineer - focus on scalability, pods, locks, observability
+
+### Reviews Created
+
+Created 5 review documents in `reviews/` folder:
+
+1. **developer-review.md** - DX analysis
+   - Key concern: Debugging fire-and-forget
+   - Recommendation: Add EffectContext, testing examples, development mode
+
+2. **architect-review.md** - SOLID/DRY/KISS analysis
+   - Key concern: IEffectRegistry uses reflection
+   - Recommendation: Replace with .NET 8 keyed services
+   - Consider deferring IAggregateCommandGateway to saga PR
+
+3. **dev-manager-review.md** - Maintainability analysis
+   - Key concern: Documentation must ship with feature
+   - Created checklist for code reviews and onboarding
+
+4. **devops-review.md** - Operations analysis
+   - Key concern: At-most-once semantics not documented
+   - Recommendations: Observability, idempotency, graceful shutdown
+
+5. **summary.md** - Consolidated findings
+   - P0 items: Observability, at-most-once docs, testing examples, keyed services
+   - P1 items: Idempotency guidance, graceful shutdown, gateway scope
+   - Suggested implementation order
+
+### Status Update
+
+- Changed README status to "Under Review (Persona Reviews Complete)"
+- Added review summary table to README
+- Awaiting user decision on review feedback
+
+---
+
 ## 2026-01-24 (Session 2) - Throughput and Saga Research
 
 ### User Questions Addressed

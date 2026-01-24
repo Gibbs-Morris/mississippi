@@ -1,6 +1,6 @@
 # Add Server-Side Event Effects
 
-**Status:** Ready for Review  
+**Status:** Under Review (Persona Reviews Complete)  
 **Task Size:** Large  
 **Approval Checkpoint:** Yes (new public API/contract, cross-component change, saga pattern foundation)
 
@@ -13,6 +13,27 @@ Add support for server-side effects in aggregate grains, mirroring the existing 
 2. Effects can call other aggregates via `IAggregateCommandGateway` (enables saga patterns)
 3. Fire-and-forget execution (same pattern as snapshot persistence and client Store)
 
+## Reviews Complete
+
+Four persona-based reviews have been completed:
+
+| Persona | Verdict | Document |
+|---------|---------|----------|
+| Developer | ✅ Approve | [developer-review.md](./reviews/developer-review.md) |
+| Architect | ⚠️ Conditional | [architect-review.md](./reviews/architect-review.md) |
+| Dev Manager | ✅ Approve | [dev-manager-review.md](./reviews/dev-manager-review.md) |
+| DevOps Engineer | ⚠️ Conditional | [devops-review.md](./reviews/devops-review.md) |
+
+**Consolidated Summary:** [reviews/summary.md](./reviews/summary.md)
+
+### Key Actions from Reviews
+
+1. **Replace `IEffectRegistry` with .NET 8 keyed services** - Avoid reflection, AOT-compatible
+2. **Add observability** - Metrics, structured logging, trace propagation required
+3. **Document at-most-once semantics** - Effects can be lost during pod termination
+4. **Add idempotency guidance** - Document patterns, consider base class
+5. **Decision needed:** Include `IAggregateCommandGateway` now or defer to saga PR?
+
 ## Key Links
 
 - [learned.md](./learned.md) - Verified repository facts
@@ -20,6 +41,7 @@ Add support for server-side effects in aggregate grains, mirroring the existing 
 - [verification.md](./verification.md) - Claim verification
 - [implementation-plan.md](./implementation-plan.md) - Detailed implementation steps
 - [progress.md](./progress.md) - Work log
+- [reviews/](./reviews/) - Persona review documents
 
 ## Resolved Questions
 
