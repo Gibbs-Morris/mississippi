@@ -13,6 +13,8 @@ Systematic documentation of Mississippi framework concepts in the Docusaurus sit
 
 ## Topics to Document
 
+### Reservoir (Client-Side State Management)
+
 | # | Topic | Status | Doc Path |
 |---|-------|--------|----------|
 | 1 | Reservoir Overview | ✅ Exists | `docs/reservoir/index.md` |
@@ -21,6 +23,11 @@ Systematic documentation of Mississippi framework concepts in the Docusaurus sit
 | 4 | Effects | ✅ Exists | `docs/reservoir/effects.md` |
 | 5 | Store | ✅ Exists | `docs/reservoir/store.md` |
 | 6 | State & Registration | 🔄 Needs expansion | `docs/reservoir/state.md` |
+
+### Platform (Event Sourcing Core)
+
+| # | Topic | Status | Doc Path |
+|---|-------|--------|----------|
 | 7 | Domain Model (Aggregates) | 🔄 Needs expansion | `docs/platform/aggregates.md` |
 | 8 | Commands & Command Handlers | ⏳ Pending | `docs/platform/commands.md` |
 | 9 | Domain Events & Event Reducers | ⏳ Pending | `docs/platform/events.md` |
@@ -29,6 +36,32 @@ Systematic documentation of Mississippi framework concepts in the Docusaurus sit
 | 12 | Custom Event Storage Provider | ⏳ Pending | `docs/platform/custom-event-storage.md` |
 | 13 | Snapshots | ⏳ Pending | `docs/platform/snapshots.md` |
 | 14 | Custom Snapshot Storage Provider | ⏳ Pending | `docs/platform/custom-snapshot-storage.md` |
+
+### Aqueduct (Standalone Orleans Stream Processing)
+
+| # | Topic | Status | Doc Path |
+|---|-------|--------|----------|
+| 15 | Aqueduct Overview | ⏳ Pending | `docs/platform/aqueduct.md` |
+| 16 | Aqueduct Standalone Usage | ⏳ Pending | `docs/platform/aqueduct-standalone.md` |
+| 17 | Aqueduct Registration | ⏳ Pending | (in aqueduct.md) |
+
+### Inlet (Client-Server Bridge with Source Generation)
+
+| # | Topic | Status | Doc Path |
+|---|-------|--------|----------|
+| 18 | Inlet Overview | 🔄 Needs expansion | `docs/platform/inlet.md` |
+| 19 | Source Generators (Client/Server/Silo) | ⏳ Pending | `docs/platform/inlet-generators.md` |
+| 20 | WASM Client Integration | ⏳ Pending | `docs/platform/inlet-wasm.md` |
+| 21 | Live Updates & SignalR | ⏳ Pending | `docs/platform/inlet-live-updates.md` |
+
+### SDK Reference Packages
+
+| # | Topic | Status | Doc Path |
+|---|-------|--------|----------|
+| 22 | SDK Overview | ⏳ Pending | `docs/platform/sdk.md` |
+| 23 | Sdk.Client | ⏳ Pending | (in sdk.md) |
+| 24 | Sdk.Server | ⏳ Pending | (in sdk.md) |
+| 25 | Sdk.Silo | ⏳ Pending | (in sdk.md) |
 
 ## Links
 

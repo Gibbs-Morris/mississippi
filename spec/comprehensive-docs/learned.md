@@ -29,6 +29,31 @@
 - `src/Reservoir.Abstractions/` - Interfaces and contracts
 - `src/Reservoir.Blazor/` - Blazor integration
 
+### Aqueduct (Orleans Stream Processing)
+- `src/Aqueduct/` - Implementation
+- `src/Aqueduct.Abstractions/` - Contracts
+- `src/Aqueduct.Grains/` - Orleans grain implementations
+
+### Inlet (Client-Server Bridge)
+- `src/Inlet/` - Core implementation
+- `src/Inlet.Abstractions/` - Contracts
+- `src/Inlet.Blazor.Server/` - Blazor Server integration
+- `src/Inlet.Blazor.WebAssembly/` - WASM client integration
+- `src/Inlet.Blazor.WebAssembly.Abstractions/` - WASM contracts
+- `src/Inlet.Client.Generators/` - Source generators for client
+- `src/Inlet.Server.Generators/` - Source generators for server
+- `src/Inlet.Silo.Generators/` - Source generators for Orleans silo
+- `src/Inlet.Generators.Abstractions/` - Shared generator contracts
+- `src/Inlet.Generators.Core/` - Shared generator logic
+- `src/Inlet.Orleans/` - Orleans integration
+- `src/Inlet.Orleans.SignalR/` - SignalR for live updates
+- `src/Inlet.Projection.Abstractions/` - Projection contracts
+
+### SDK Reference Packages
+- `src/Sdk.Client/` - Client-side SDK (references Reservoir, Inlet.Blazor.WebAssembly)
+- `src/Sdk.Server/` - Server-side SDK (references API layers, Inlet.Server)
+- `src/Sdk.Silo/` - Orleans silo SDK (references grains, storage, Inlet.Silo)
+
 ### Event Sourcing - Aggregates
 - `src/EventSourcing.Aggregates/` - Implementation
 - `src/EventSourcing.Aggregates.Abstractions/` - Contracts
