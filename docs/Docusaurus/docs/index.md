@@ -138,7 +138,7 @@ public static CartState Reduce(CartState state, AddToCart action)
     => state with { Items = state.Items.Add(action.Product) };
 ```
 
-→ [Learn more about Reservoir](./reservoir/index.md)
+→ [Learn more about Reservoir](./platform/reservoir/)
 
 ## How the Pieces Connect
 
@@ -202,7 +202,7 @@ Beyond the six core concepts, Mississippi includes:
 
 1. Read the [Getting Started](./getting-started/index.md) guide for installation
 2. Explore [Components](./platform/index.md) for a component-by-component tour
-3. Try the [Reservoir Tutorial](./reservoir/getting-started.md) to build a client app
+3. Try the [Reservoir Tutorial](./platform/reservoir/getting-started.md) to build a client app
 
 **If you're building a specific feature:**
 
@@ -210,7 +210,7 @@ Beyond the six core concepts, Mississippi includes:
 - Event storage → [Brooks](./platform/brooks.md)
 - Read models → [UX Projections](./platform/ux-projections.md)
 - Real-time updates → [Aqueduct](./platform/aqueduct.md) and [Inlet](./platform/inlet.md)
-- Client state → [Reservoir](./reservoir/index.md)
+- Client state → [Reservoir](./platform/reservoir/)
 
 **If you want to see working code:**
 

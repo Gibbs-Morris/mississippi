@@ -19,7 +19,7 @@ Components are listed in data-flow order (server to client):
 | [Snapshots](./snapshots.md) | Accelerated projection rebuilds | Silo |
 | [Aqueduct](./aqueduct.md) | Orleans-backed SignalR backplane | Silo + Server |
 | [Inlet](./inlet.md) | Real-time projection subscriptions | All tiers |
-| [Reservoir](./reservoir.md) | Redux-style client state container | Client |
+| [Reservoir](./reservoir/) | Redux-style client state container | Client |
 | [Refraction](./refraction.md) | Planned component library | Client |
 
 ## Extensibility
@@ -57,4 +57,4 @@ Reduce boilerplate with source generators:
 
 - [Architecture](../concepts/architecture.md) — Deployment stack diagram
 - [Getting Started](../getting-started/index.md) — Installation and setup
-- [Reservoir](../reservoir/index.md) — Client state management detail
+- [Reservoir](./reservoir/) — Client state management detail

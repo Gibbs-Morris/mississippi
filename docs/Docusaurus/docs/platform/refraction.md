@@ -30,5 +30,5 @@ Refraction is in planning. This page will be updated when implementation begins.
 
 ## Related Documentation
 
-- [Reservoir](./reservoir.md) — Client state management
+- [Reservoir](./reservoir/) — Client state management
 - [Inlet](./inlet.md) — Projection subscriptions and live updates

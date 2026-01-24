@@ -41,7 +41,7 @@ See the [SDK Reference](../platform/sdk.md) for package contents.
 If you're building a Blazor WebAssembly app and want Redux-style state
 management:
 
-→ [Reservoir Getting Started](../reservoir/getting-started.md)
+→ [Reservoir Getting Started](../platform/reservoir/getting-started.md)
 
 This tutorial builds a shopping cart with actions, reducers, and effects.
 
@@ -132,7 +132,7 @@ builder.Services.AddInletClient(options =>
 
 - [Concepts](../concepts/index.md) — Understand the architecture
 - [Components](../platform/index.md) — Learn each component in depth
-- [Reservoir Tutorial](../reservoir/getting-started.md) — Build a client app
+- [Reservoir Tutorial](../platform/reservoir/getting-started.md) — Build a client app
 
 ## Related Topics
 
