@@ -22,6 +22,37 @@ Developers need comprehensive documentation to understand:
 - Adding new features
 - API reference generation (separate concern)
 
+## Key Concepts to Document
+
+### Architecture & Design Patterns
+
+Critical guidance for developers:
+
+1. **Aggregate Design for Orleans**
+   - Aggregates run single-threaded in Orleans grains
+   - Actor model means one aggregate = one grain = one thread
+   - Wrong design can create bottlenecks (e.g., "god aggregate" that handles too much)
+   - Guide: Keep aggregates focused, partition by natural boundaries
+
+2. **UX Projection Design (Atomic Data Models)**
+   - Small, composable projections like "atomic design" but for data
+   - Don't create monolithic projections that return everything
+   - Each projection serves a specific UI need
+   - Compose multiple small projections rather than one large one
+   - Guide: Think atoms, molecules, organisms for your data models
+
+3. **Scaling Patterns**
+   - Good: Many small aggregates that partition naturally (per-user, per-order, per-item)
+   - Bad: Single aggregate that handles all users/orders (bottleneck)
+   - Good: Small projections that update independently
+   - Bad: Large projections that recompute on every event
+
+4. **Anti-Patterns to Document**
+   - "God aggregate" - single aggregate handling too many concerns
+   - "Monolithic projection" - one projection returning entire domain state
+   - "Hot grain" - aggregate that becomes a contention point
+   - "Over-fetching" - projections that return more data than needed
+
 ## Current State
 
 ### Well Documented

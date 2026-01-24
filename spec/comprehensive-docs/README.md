@@ -63,6 +63,15 @@ Systematic documentation of Mississippi framework concepts in the Docusaurus sit
 | 24 | Sdk.Server | ⏳ Pending | (in sdk.md) |
 | 25 | Sdk.Silo | ⏳ Pending | (in sdk.md) |
 
+### Architecture & Design Guidance
+
+| # | Topic | Status | Doc Path |
+|---|-------|--------|----------|
+| 26 | Design Patterns & Anti-Patterns | ⏳ Pending | `docs/platform/design-patterns.md` |
+| 27 | Aggregate Design (Orleans Threading) | ⏳ Pending | (in design-patterns.md) |
+| 28 | UX Projection Design (Atomic/Composable) | ⏳ Pending | (in design-patterns.md) |
+| 29 | Scaling & Bottleneck Avoidance | ⏳ Pending | (in design-patterns.md) |
+
 ## Links
 
 - [Learned Facts](learned.md)
