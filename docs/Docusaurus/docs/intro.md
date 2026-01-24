@@ -193,6 +193,11 @@ Beyond the six core concepts, Mississippi includes:
 
 ## Where to Go Next
 
+**Understand the architecture:**
+
+1. [Architecture](./architecture.md) — Deployment stack showing where components live
+2. [Why Mississippi?](./why-mississippi.md) — Enterprise benefits and comparisons
+
 **If you're new to Mississippi:**
 
 1. Read [Framework Overview](./platform/index.md) for a component-by-component tour
