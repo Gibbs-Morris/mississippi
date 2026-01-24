@@ -157,7 +157,7 @@ public sealed partial class IndexPage
     public async Task<string?> GetAccountHeaderAsync()
     {
         // The account header shows "Account: {id}" in a span within the header
-        ILocator accountHeader = page.Locator("article > div > span")
+        ILocator accountHeader = page.Locator("main > div > span")
             .Filter(
                 new()
                 {
@@ -344,7 +344,7 @@ public sealed partial class IndexPage
     public async Task WaitForBalanceAsync(
         float? timeout = null
     ) =>
-        await page.Locator("section:has(h2:text-is('Account Status')) div:has(span:text-is('Balance:'))")
+        await page.Locator("section:has(h2:text-is('Account Status')) div > div:has(> span:text-is('Balance:'))")
             .WaitForAsync(
                 new()
                 {
