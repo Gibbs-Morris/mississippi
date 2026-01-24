@@ -18,7 +18,7 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Naming;
 [AllureSubSuite("Target Namespace Resolver")]
 public class TargetNamespaceResolverTests
 {
-    private static Compilation CreateCompilation(
+    private static CSharpCompilation CreateCompilation(
         string assemblyName
     ) =>
         CSharpCompilation.Create(
