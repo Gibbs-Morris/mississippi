@@ -14,22 +14,22 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 /// <summary>
-///     Client-side effect that handles projection subscription actions via SignalR.
+///     Client-side action effect that handles projection subscription actions via SignalR.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This effect connects to the InletHub on the server and manages projection
+///         This action effect connects to the InletHub on the server and manages projection
 ///         subscriptions for Blazor clients. When a projection is updated on the server,
-///         this effect uses the registered <see cref="IProjectionFetcher" /> to retrieve
+///         this action effect uses the registered <see cref="IProjectionFetcher" /> to retrieve
 ///         the updated data and dispatches a <see cref="ProjectionUpdatedAction{T}" />
 ///         to update the store.
 ///     </para>
 /// </remarks>
-internal sealed class InletSignalREffect
-    : IEffect,
+internal sealed class InletSignalRActionEffect
+    : IActionEffect,
       IAsyncDisposable
 {
     private readonly ConcurrentDictionary<(Type ProjectionType, string EntityId), string> activeSubscriptions = new();
@@ -41,7 +41,7 @@ internal sealed class InletSignalREffect
     private readonly Lazy<IInletStore> lazyStore;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="InletSignalREffect" /> class.
+    ///     Initializes a new instance of the <see cref="InletSignalRActionEffect" /> class.
     /// </summary>
     /// <param name="lazyStore">Lazy reference to the store (avoids circular dependency).</param>
     /// <param name="hubConnectionProvider">The hub connection provider.</param>
@@ -50,7 +50,7 @@ internal sealed class InletSignalREffect
     /// <param name="timeProvider">
     ///     The time provider for timestamps. If null, uses <see cref="TimeProvider.System" />.
     /// </param>
-    public InletSignalREffect(
+    public InletSignalRActionEffect(
         Lazy<IInletStore> lazyStore,
         IHubConnectionProvider hubConnectionProvider,
         IProjectionFetcher projectionFetcher,
@@ -85,7 +85,7 @@ internal sealed class InletSignalREffect
 
     /// <summary>
     ///     Gets the store lazily to avoid circular dependency during DI resolution.
-    ///     The store resolves effects during construction, so effects cannot depend
+    ///     The store resolves action effects during construction, so action effects cannot depend
     ///     on the store directly in their constructor.
     /// </summary>
     private IInletStore Store => lazyStore.Value;
@@ -174,7 +174,7 @@ internal sealed class InletSignalREffect
         }
     }
 
-#pragma warning disable CA1031 // Effect converts exceptions to error actions instead of crashing
+#pragma warning disable CA1031 // Action effect converts exceptions to error actions instead of crashing
     private async IAsyncEnumerable<IAction> HandleRefreshAsync(
         Type projectionType,
         string entityId,

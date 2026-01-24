@@ -3,29 +3,29 @@ using System;
 using System.Net.Http;
 
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.ActionEffects;
 using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Dtos;
 
 
-namespace Spring.Client.Features.BankAccountAggregate.Effects;
+namespace Spring.Client.Features.BankAccountAggregate.ActionEffects;
 
 /// <summary>
-///     Effect that handles opening a bank account.
+///     Action effect that handles opening a bank account.
 /// </summary>
 [PendingSourceGenerator]
-internal sealed class OpenAccountEffect
-    : CommandEffectBase<OpenAccountAction, OpenAccountRequestDto, OpenAccountExecutingAction, OpenAccountSucceededAction, OpenAccountFailedAction>
+internal sealed class OpenAccountActionEffect
+    : CommandActionEffectBase<OpenAccountAction, OpenAccountRequestDto, OpenAccountExecutingAction, OpenAccountSucceededAction, OpenAccountFailedAction>
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="OpenAccountEffect" /> class.
+    ///     Initializes a new instance of the <see cref="OpenAccountActionEffect" /> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client for API calls.</param>
     /// <param name="mapper">The mapper for action-to-DTO conversion.</param>
     /// <param name="timeProvider">The time provider for timestamps.</param>
-    public OpenAccountEffect(
+    public OpenAccountActionEffect(
         HttpClient httpClient,
         IMapper<OpenAccountAction, OpenAccountRequestDto> mapper,
         TimeProvider? timeProvider = null

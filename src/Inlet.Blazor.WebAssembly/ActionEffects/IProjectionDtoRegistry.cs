@@ -4,7 +4,7 @@ using System.Reflection;
 using Mississippi.Inlet.Projection.Abstractions;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 /// <summary>
 ///     Registry that maps projection paths to client-side DTO types.

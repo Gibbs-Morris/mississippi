@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 /// <summary>
 ///     Represents the result of fetching a projection.

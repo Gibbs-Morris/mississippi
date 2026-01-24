@@ -6,12 +6,12 @@ description: High-level overview of the Redux-style state container for Blazor/w
 
 # Reservoir
 
-Reservoir is Mississippi’s Redux-style state management framework for Blazor WebAssembly and Blazor Server apps. It provides a predictable store, actions, reducers, and effects.
+Reservoir is Mississippi's Redux-style state management framework for Blazor WebAssembly and Blazor Server apps. It provides a predictable store, actions, reducers, and action effects.
 
 ## Purpose
 
 - Centralize client state with a single store.
-- Dispatch actions that reducers and effects can handle.
+- Dispatch actions that reducers and action effects can handle.
 - Keep UI components subscribed to state changes.
 
 ## Where it fits

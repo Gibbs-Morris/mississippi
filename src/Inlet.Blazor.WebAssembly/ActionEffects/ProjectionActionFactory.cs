@@ -4,7 +4,7 @@ using Mississippi.Inlet.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 /// <summary>
 ///     Factory for creating projection-related actions.
@@ -12,7 +12,7 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
 /// <remarks>
 ///     <para>
 ///         This factory encapsulates the reflection-based creation of generic action types,
-///         providing a cleaner API for the <see cref="InletSignalREffect" /> and enabling
+///         providing a cleaner API for the <see cref="InletSignalRActionEffect" /> and enabling
 ///         isolated unit testing.
 ///     </para>
 /// </remarks>

@@ -8,7 +8,7 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Dispatching this action triggers the <see cref="Effects.InletSignalREffect" />
+///         Dispatching this action triggers the <see cref="ActionEffects.InletSignalRActionEffect" />
 ///         to call <c>EnsureConnectedAsync</c> on the hub connection provider. This allows
 ///         components to eagerly establish the SignalR connection before subscribing to
 ///         any projections.

@@ -11,17 +11,17 @@ namespace Mississippi.Reservoir.Abstractions;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Effects run after reducers have processed an action. They can perform async operations
+///         Action effects run after reducers have processed an action. They can perform async operations
 ///         like HTTP calls, timers, or navigation, and emit new actions as results.
 ///     </para>
 ///     <para>
-///         Effects return <see cref="IAsyncEnumerable{T}" /> to support streaming multiple actions
+///         Action effects return <see cref="IAsyncEnumerable{T}" /> to support streaming multiple actions
 ///         over time (e.g., progress updates, polling results).
 ///     </para>
 /// </remarks>
 /// <example>
 ///     <code>
-///         public sealed class SaveDataEffect : IEffect
+///         public sealed class SaveDataActionEffect : IActionEffect
 ///         {
 ///             public bool CanHandle(IAction action) => action is SaveDataAction;
 ///
@@ -38,7 +38,7 @@ namespace Mississippi.Reservoir.Abstractions;
 ///         }
 ///     </code>
 /// </example>
-public interface IEffect
+public interface IActionEffect
 {
     /// <summary>
     ///     Determines whether this effect can handle the given action.

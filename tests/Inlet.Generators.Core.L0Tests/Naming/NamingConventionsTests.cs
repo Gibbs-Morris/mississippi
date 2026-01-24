@@ -86,6 +86,29 @@ public class NamingConventionsTests
     }
 
     /// <summary>
+    ///     GetClientActionEffectsNamespace should convert domain namespace to client action effects namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientActionEffectsNamespaceConvertsValidPattern()
+    {
+        string result =
+            NamingConventions.GetClientActionEffectsNamespace("Spring.Domain.Aggregates.BankAccount.Commands");
+        Assert.Equal("Spring.Client.Features.BankAccountAggregate.ActionEffects", result);
+    }
+
+    /// <summary>
+    ///     GetClientActionEffectsNamespace with targetRootNamespace should use target namespace.
+    /// </summary>
+    [Fact]
+    public void GetClientActionEffectsNamespaceWithTargetUsesTargetNamespace()
+    {
+        string result = NamingConventions.GetClientActionEffectsNamespace(
+            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
+            "MyApp.BlazorClient");
+        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.ActionEffects", result);
+    }
+
+    /// <summary>
     ///     GetClientActionsNamespace should convert domain namespace to client actions namespace.
     /// </summary>
     [Fact]
@@ -167,28 +190,6 @@ public class NamingConventionsTests
             "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
             "MyApp.BlazorClient");
         Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Dtos", result);
-    }
-
-    /// <summary>
-    ///     GetClientEffectsNamespace should convert domain namespace to client effects namespace.
-    /// </summary>
-    [Fact]
-    public void GetClientEffectsNamespaceConvertsValidPattern()
-    {
-        string result = NamingConventions.GetClientEffectsNamespace("Spring.Domain.Aggregates.BankAccount.Commands");
-        Assert.Equal("Spring.Client.Features.BankAccountAggregate.Effects", result);
-    }
-
-    /// <summary>
-    ///     GetClientEffectsNamespace with targetRootNamespace should use target namespace.
-    /// </summary>
-    [Fact]
-    public void GetClientEffectsNamespaceWithTargetUsesTargetNamespace()
-    {
-        string result = NamingConventions.GetClientEffectsNamespace(
-            "MyApp.CoreDomainLogic.Aggregates.BankAccount.Commands",
-            "MyApp.BlazorClient");
-        Assert.Equal("MyApp.BlazorClient.Features.BankAccountAggregate.Effects", result);
     }
 
     /// <summary>

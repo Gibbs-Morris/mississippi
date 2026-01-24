@@ -7,17 +7,17 @@ using Allure.Xunit.Attributes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Time.Testing;
 
-using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 using Mississippi.Reservoir;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.ActionEffects;
 
 /// <summary>
 ///     Tests for <see cref="HubConnectionProvider" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.Blazor.WebAssembly")]
-[AllureSuite("Effects")]
+[AllureSuite("Action Effects")]
 [AllureSubSuite("HubConnectionProvider")]
 public sealed class HubConnectionProviderTests : IDisposable
 {
@@ -80,7 +80,7 @@ public sealed class HubConnectionProviderTests : IDisposable
     public async Task ConstructorAppliesCustomOptions()
     {
         // Arrange
-        InletSignalREffectOptions options = new()
+        InletSignalRActionEffectOptions options = new()
         {
             HubPath = "/custom-hub",
         };

@@ -13,12 +13,15 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.ActionEffects;
 
 /// <summary>
-///     Abstract base class for aggregate command effects that POST to command APIs.
+///     Abstract base class for aggregate command action effects that POST to command APIs.
 /// </summary>
-/// <typeparam name="TAction">The action type that triggers this effect. Must implement <see cref="ICommandAction" />.</typeparam>
+/// <typeparam name="TAction">
+///     The action type that triggers this action effect. Must implement
+///     <see cref="ICommandAction" />.
+/// </typeparam>
 /// <typeparam name="TRequestDto">The DTO type to POST to the API.</typeparam>
 /// <typeparam name="TExecutingAction">The executing lifecycle action type.</typeparam>
 /// <typeparam name="TSucceededAction">The succeeded lifecycle action type.</typeparam>
@@ -30,8 +33,8 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
 ///         to enable per-command tracking and correlation.
 ///     </para>
 ///     <para>
-///         <b>Key principle:</b> Effects extract all needed data from the action itself.
-///         They do NOT read from state. This keeps effects decoupled from state evolution.
+///         <b>Key principle:</b> Action effects extract all needed data from the action itself.
+///         They do NOT read from state. This keeps action effects decoupled from state evolution.
 ///     </para>
 ///     <para>
 ///         <b>Lifecycle actions:</b> Use static abstract factory methods for creation,
@@ -44,7 +47,7 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
 ///     </para>
 /// </remarks>
 public abstract class
-    CommandEffectBase<TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction> : IEffect
+    CommandActionEffectBase<TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction> : IActionEffect
     where TAction : ICommandAction
     where TRequestDto : class
     where TExecutingAction : ICommandExecutingAction<TExecutingAction>
@@ -53,12 +56,13 @@ public abstract class
 {
     /// <summary>
     ///     Initializes a new instance of the
-    ///     <see cref="CommandEffectBase{TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction}" /> class.
+    ///     <see cref="CommandActionEffectBase{TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction}" />
+    ///     class.
     /// </summary>
     /// <param name="httpClient">The HTTP client for API calls.</param>
     /// <param name="mapper">The mapper for action-to-DTO conversion.</param>
     /// <param name="timeProvider">The time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
-    protected CommandEffectBase(
+    protected CommandActionEffectBase(
         HttpClient httpClient,
         IMapper<TAction, TRequestDto> mapper,
         TimeProvider? timeProvider = null

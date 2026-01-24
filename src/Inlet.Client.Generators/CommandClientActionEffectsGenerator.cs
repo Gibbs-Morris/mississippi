@@ -14,20 +14,20 @@ using Mississippi.Inlet.Generators.Core.Naming;
 namespace Mississippi.Inlet.Client.Generators;
 
 /// <summary>
-///     Generates client-side effect classes for commands marked with [GenerateCommand].
+///     Generates client-side action effect classes for commands marked with [GenerateCommand].
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This generator produces one effect class per command that extends
-///         <c>CommandEffectBase</c> with the appropriate type parameters and route configuration.
+///         This generator produces one action effect class per command that extends
+///         <c>CommandActionEffectBase</c> with the appropriate type parameters and route configuration.
 ///     </para>
 ///     <para>
 ///         Example: For "DepositFunds" command in "Contoso.Domain.Aggregates.BankAccount.Commands",
-///         generates "DepositFundsEffect" in "Contoso.Client.Features.BankAccountAggregate.Effects".
+///         generates "DepositFundsActionEffect" in "Contoso.Client.Features.BankAccountAggregate.ActionEffects".
 ///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]
-public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
+public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
 {
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
@@ -57,17 +57,18 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Generates the effect class for a command.
+    ///     Generates the action effect class for a command.
     /// </summary>
-    private static void GenerateEffect(
+    private static void GenerateActionEffect(
         SourceProductionContext context,
         CommandModel command,
         string targetRootNamespace
     )
     {
         string commandName = command.TypeName;
-        string effectTypeName = commandName + "Effect";
-        string effectsNamespace = NamingConventions.GetClientEffectsNamespace(command.Namespace, targetRootNamespace);
+        string effectTypeName = commandName + "ActionEffect";
+        string effectsNamespace =
+            NamingConventions.GetClientActionEffectsNamespace(command.Namespace, targetRootNamespace);
         string actionsNamespace = NamingConventions.GetClientActionsNamespace(command.Namespace, targetRootNamespace);
         string dtosNamespace = NamingConventions.GetClientCommandDtoNamespace(command.Namespace, targetRootNamespace);
 
@@ -85,24 +86,24 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("using System.Net.Http;");
         sb.AppendLine();
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
-        sb.AppendUsing("Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects");
+        sb.AppendUsing("Mississippi.Inlet.Blazor.WebAssembly.Abstractions.ActionEffects");
         sb.AppendLine();
         sb.AppendLine($"using {actionsNamespace};");
         sb.AppendLine($"using {dtosNamespace};");
         sb.AppendFileScopedNamespace(effectsNamespace);
         sb.AppendLine();
-        sb.AppendSummary($"Effect that handles the {commandName} command.");
+        sb.AppendSummary($"Action effect that handles the {commandName} command.");
         sb.AppendLine("/// <remarks>");
         sb.AppendLine("///     <para>");
-        sb.AppendLine($"///         This effect posts to the {aggregateRouteSegment} aggregate endpoint");
+        sb.AppendLine($"///         This action effect posts to the {aggregateRouteSegment} aggregate endpoint");
         sb.AppendLine($"///         at <c>/api/aggregates/{aggregateRouteSegment}/{{entityId}}/{command.Route}</c>.");
         sb.AppendLine("///     </para>");
         sb.AppendLine("/// </remarks>");
-        sb.AppendGeneratedCodeAttribute("CommandClientEffectsGenerator");
+        sb.AppendGeneratedCodeAttribute("CommandClientActionEffectsGenerator");
         sb.AppendLine($"internal sealed class {effectTypeName}");
         sb.IncreaseIndent();
         sb.AppendLine(
-            $": CommandEffectBase<{commandName}Action, {commandName}RequestDto, {commandName}ExecutingAction,");
+            $": CommandActionEffectBase<{commandName}Action, {commandName}RequestDto, {commandName}ExecutingAction,");
         sb.AppendLine($"    {commandName}SucceededAction, {commandName}FailedAction>");
         sb.DecreaseIndent();
         sb.OpenBrace();
@@ -239,7 +240,7 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
             {
                 foreach (CommandModel command in data.Commands)
                 {
-                    GenerateEffect(spc, command, data.TargetRootNamespace);
+                    GenerateActionEffect(spc, command, data.TargetRootNamespace);
                 }
             });
     }

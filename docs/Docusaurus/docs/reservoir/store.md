@@ -1,7 +1,7 @@
 ---
 sidebar_position: 6
 title: Store
-description: The central state container that coordinates actions, reducers, and effects
+description: The central state container that coordinates actions, reducers, and action effects
 ---
 
 # Store
@@ -13,9 +13,9 @@ The Store is the central state container in Reservoir. It holds all feature stat
 The Store handles:
 
 1. **State management** — Holds and provides access to feature states
-2. **Action dispatch** — Routes actions through middleware, reducers, and effects
+2. **Action dispatch** — Routes actions through middleware, reducers, and action effects
 3. **Subscription management** — Notifies listeners when state changes
-4. **Effect coordination** — Triggers async effects after reducer processing
+4. **Action effect coordination** — Triggers async action effects after reducer processing
 
 ## The IStore Interface
 
@@ -27,7 +27,7 @@ public interface IStore : IDisposable
 {
     /// <summary>
     /// Dispatches an action to the store.
-    /// Actions are processed by middleware, then reducers, then effects.
+    /// Actions are processed by middleware, then reducers, then action effects.
     /// </summary>
     void Dispatch(IAction action);
 
@@ -62,10 +62,10 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.Services.AddReducer<IncrementAction, CounterState>(
     (state, action) => state with { Count = state.Count + 1 });
 
-// Register effects
-builder.Services.AddEffect<LoadDataEffect>();
+// Register action effects
+builder.Services.AddActionEffect<LoadDataActionEffect>();
 
-// Register the store (after all reducers and effects)
+// Register the store (after all reducers and action effects)
 builder.Services.AddReservoir();
 
 await builder.Build().RunAsync();
@@ -83,8 +83,8 @@ builder.Services.AddReducer<ProductsLoadingAction, CartState>(CartReducers.Produ
 builder.Services.AddReducer<ProductsLoadedAction, CartState>(CartReducers.ProductsLoaded);
 builder.Services.AddReducer<ProductsLoadFailedAction, CartState>(CartReducers.ProductsLoadFailed);
 
-// 2. Register effects
-builder.Services.AddEffect<LoadProductsEffect>();
+// 2. Register action effects
+builder.Services.AddActionEffect<LoadProductsActionEffect>();
 
 // 3. Register optional middleware
 builder.Services.AddMiddleware<LoggingMiddleware>();
@@ -98,7 +98,7 @@ builder.Services.AddReservoir();
 The `AddReservoir()` method:
 
 1. Collects all registered `IFeatureStateRegistration` instances
-2. Collects all registered `IEffect` instances  
+2. Collects all registered `IActionEffect` instances  
 3. Collects all registered `IMiddleware` instances
 4. Creates a scoped `IStore` with these dependencies
 
@@ -106,7 +106,7 @@ The `AddReservoir()` method:
 // The store is registered with scoped lifetime
 services.TryAddScoped<IStore>(sp => new Store(
     sp.GetServices<IFeatureStateRegistration>(),
-    sp.GetServices<IEffect>(),
+    sp.GetServices<IActionEffect>(),
     sp.GetServices<IMiddleware>()));
 ```
 
@@ -125,8 +125,8 @@ flowchart TD
     subgraph Core["Core Dispatch"]
         Reducers["1. Reducers update state"]
         Listeners["2. Listeners notified"]
-        Effects["3. Effects triggered (async)"]
-        Reducers --> Listeners --> Effects
+        ActionEffects["3. Action effects triggered (async)"]
+        Reducers --> Listeners --> ActionEffects
     end
     
     Dispatch --> M1
@@ -143,9 +143,9 @@ flowchart TD
 | Middleware | Synchronous | Yes |
 | Reducers | Synchronous | Yes |
 | Listener notification | Synchronous | Yes |
-| Effects | Asynchronous | No |
+| Action effects | Asynchronous | No |
 
-The `Dispatch` method returns immediately after reducers and listeners run. Effects execute asynchronously and may dispatch additional actions.
+The `Dispatch` method returns immediately after reducers and listeners run. Action effects execute asynchronously and may dispatch additional actions.
 
 ## Accessing State
 
@@ -493,13 +493,13 @@ builder.Services.AddReducer<ProductsLoadingAction, CartState>(CartReducers.Produ
 builder.Services.AddReducer<ProductsLoadedAction, CartState>(CartReducers.ProductsLoaded);
 builder.Services.AddReducer<ProductsLoadFailedAction, CartState>(CartReducers.ProductsLoadFailed);
 
-// Register effects
-builder.Services.AddEffect<LoadProductsEffect>();
+// Register action effects
+builder.Services.AddActionEffect<LoadProductsActionEffect>();
 
 // Register optional middleware
 builder.Services.AddMiddleware<LoggingMiddleware>();
 
-// Register the store (after all reducers and effects)
+// Register the store (after all reducers and action effects)
 builder.Services.AddReservoir();
 
 await builder.Build().RunAsync();
@@ -564,4 +564,4 @@ else
 
 - Review [Actions](./actions.md) for defining what the store processes
 - See [Reducers](./reducers.md) for implementing state transformations
-- Learn about [Effects](./effects.md) for async operations
+- Learn about [Action Effects](./action-effects.md) for async operations

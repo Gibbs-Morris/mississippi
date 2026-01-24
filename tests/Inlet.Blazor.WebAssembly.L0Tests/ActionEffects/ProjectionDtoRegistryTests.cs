@@ -2,17 +2,17 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 using Mississippi.Inlet.Projection.Abstractions;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.ActionEffects;
 
 /// <summary>
 ///     Tests for <see cref="ProjectionDtoRegistry" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.Blazor.WebAssembly")]
-[AllureSuite("Effects")]
+[AllureSuite("Action Effects")]
 [AllureSubSuite("ProjectionDtoRegistry")]
 public sealed class ProjectionDtoRegistryTests
 {

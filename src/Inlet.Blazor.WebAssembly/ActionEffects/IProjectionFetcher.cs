@@ -3,14 +3,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 /// <summary>
 ///     Interface for fetching projection data from the server.
 /// </summary>
 /// <remarks>
 ///     Implementations are responsible for retrieving projection data via HTTP
-///     or other transport mechanisms. The fetcher is invoked by <see cref="InletSignalREffect" />
+///     or other transport mechanisms. The fetcher is invoked by <see cref="InletSignalRActionEffect" />
 ///     when a subscription is created or when a projection update notification is received.
 /// </remarks>
 public interface IProjectionFetcher
