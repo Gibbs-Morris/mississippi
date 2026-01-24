@@ -356,6 +356,12 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
             return null;
         }
 
+        // Check if controller generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(attr, "GenerateController"))
+        {
+            return null;
+        }
+
         // Get RoutePrefix from named argument, fallback to kebab-case of type name
         string? routePrefix = attr.NamedArguments
             .FirstOrDefault(kvp => kvp.Key == "RoutePrefix")

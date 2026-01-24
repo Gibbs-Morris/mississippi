@@ -168,6 +168,12 @@ public sealed class CommandClientMappersGenerator : IIncrementalGenerator
             return null;
         }
 
+        // Check if client mapper generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(attr, "GenerateClientMapper"))
+        {
+            return null;
+        }
+
         string? route = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Route").Value.Value?.ToString();
         if (string.IsNullOrEmpty(route))
         {

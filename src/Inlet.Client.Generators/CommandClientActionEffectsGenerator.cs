@@ -205,6 +205,12 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
             return null;
         }
 
+        // Check if client effect generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(attr, "GenerateClientEffect"))
+        {
+            return null;
+        }
+
         string? route = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Route").Value.Value?.ToString();
         if (string.IsNullOrEmpty(route))
         {

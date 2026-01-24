@@ -356,6 +356,12 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
             return null;
         }
 
+        // Check if server DTO generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(attr, "GenerateServerDto"))
+        {
+            return null;
+        }
+
         // Get Route from named argument, fallback to kebab-case of type name
         string? route = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Route").Value.Value?.ToString();
         if (string.IsNullOrEmpty(route))

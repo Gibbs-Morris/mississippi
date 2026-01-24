@@ -23,6 +23,33 @@ public static class TypeAnalyzer
         "Newtonsoft");
 
     /// <summary>
+    ///     Gets a boolean property value from an attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute data.</param>
+    /// <param name="propertyName">The name of the property to read.</param>
+    /// <param name="defaultValue">The default value if the property is not set.</param>
+    /// <returns>The property value, or the default if not set.</returns>
+    public static bool GetBooleanProperty(
+        AttributeData attribute,
+        string propertyName,
+        bool defaultValue = true
+    )
+    {
+        if (attribute is null)
+        {
+            return defaultValue;
+        }
+
+        KeyValuePair<string, TypedConstant> kvp = attribute.NamedArguments.FirstOrDefault(x => x.Key == propertyName);
+        if (kvp.Key is null || kvp.Value.IsNull)
+        {
+            return defaultValue;
+        }
+
+        return kvp.Value.Value is bool value ? value : defaultValue;
+    }
+
+    /// <summary>
     ///     Gets the element type of a collection.
     /// </summary>
     /// <param name="typeSymbol">The collection type symbol.</param>

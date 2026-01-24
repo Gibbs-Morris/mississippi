@@ -368,6 +368,12 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             return null;
         }
 
+        // Check if silo registration generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(attr, "GenerateSiloRegistrations"))
+        {
+            return null;
+        }
+
         // Get RoutePrefix from named argument, fallback to kebab-case of type name
         string? routePrefix = attr.NamedArguments
             .FirstOrDefault(kvp => kvp.Key == "RoutePrefix")

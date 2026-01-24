@@ -280,6 +280,12 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             return null;
         }
 
+        // Check if silo registration generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(attr, "GenerateSiloRegistrations"))
+        {
+            return null;
+        }
+
         // Build projection model
         ProjectionModel model = new(typeSymbol);
 

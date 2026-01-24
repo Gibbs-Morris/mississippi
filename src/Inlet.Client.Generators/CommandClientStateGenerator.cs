@@ -171,6 +171,12 @@ public sealed class CommandClientStateGenerator : IIncrementalGenerator
             return null;
         }
 
+        // Check if client state generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(attr, "GenerateClientState"))
+        {
+            return null;
+        }
+
         string? route = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Route").Value.Value?.ToString();
         if (string.IsNullOrEmpty(route))
         {

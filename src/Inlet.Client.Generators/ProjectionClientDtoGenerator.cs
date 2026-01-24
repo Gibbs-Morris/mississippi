@@ -174,9 +174,15 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
     )
     {
         // Check for [GenerateProjectionEndpoints] attribute
-        bool hasGenerateAttribute = typeSymbol.GetAttributes()
-            .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
-        if (!hasGenerateAttribute)
+        AttributeData? generateAttr = typeSymbol.GetAttributes()
+            .FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
+        if (generateAttr is null)
+        {
+            return null;
+        }
+
+        // Check if client subscription generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(generateAttr, "GenerateClientSubscription"))
         {
             return null;
         }

@@ -314,6 +314,12 @@ public sealed class CommandClientActionsGenerator : IIncrementalGenerator
             return null;
         }
 
+        // Check if client actions generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(attr, "GenerateClientActions"))
+        {
+            return null;
+        }
+
         string? route = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Route").Value.Value?.ToString();
         if (string.IsNullOrEmpty(route))
         {
