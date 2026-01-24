@@ -1,17 +1,17 @@
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.ActionEffects;
 
 /// <summary>
-///     Tests for <see cref="InletSignalREffectOptions" />.
+///     Tests for <see cref="InletSignalRActionEffectOptions" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.Blazor.WebAssembly")]
-[AllureSuite("Effects")]
-[AllureSubSuite("InletSignalREffectOptions")]
-public sealed class InletSignalREffectOptionsTests
+[AllureSuite("Action Effects")]
+[AllureSubSuite("InletSignalRActionEffectOptions")]
+public sealed class InletSignalRActionEffectOptionsTests
 {
     /// <summary>
     ///     HubPath should be initializable with custom value.
@@ -21,7 +21,7 @@ public sealed class InletSignalREffectOptionsTests
     public void HubPathCanBeInitialized()
     {
         // Arrange & Act
-        InletSignalREffectOptions sut = new()
+        InletSignalRActionEffectOptions sut = new()
         {
             HubPath = "/api/signalr",
         };
@@ -38,7 +38,7 @@ public sealed class InletSignalREffectOptionsTests
     public void HubPathCanBeSet()
     {
         // Arrange
-        InletSignalREffectOptions sut = new();
+        InletSignalRActionEffectOptions sut = new();
         const string customPath = "/custom/signalr/hub";
 
         // Act
@@ -56,7 +56,7 @@ public sealed class InletSignalREffectOptionsTests
     public void HubPathDefaultsToHubsInlet()
     {
         // Arrange & Act
-        InletSignalREffectOptions sut = new();
+        InletSignalRActionEffectOptions sut = new();
 
         // Assert
         Assert.Equal("/hubs/inlet", sut.HubPath);

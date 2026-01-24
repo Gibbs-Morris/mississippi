@@ -29,25 +29,9 @@ public sealed class ReservoirRegistrationsTests
     private sealed record TestAction : IAction;
 
     /// <summary>
-    ///     Test reducer implementation.
+    ///     Test action effect implementation.
     /// </summary>
-    private sealed class TestActionReducer : ActionReducerBase<TestAction, TestFeatureState>
-    {
-        /// <inheritdoc />
-        public override TestFeatureState Reduce(
-            TestFeatureState state,
-            TestAction action
-        ) =>
-            state with
-            {
-                Counter = state.Counter + 1,
-            };
-    }
-
-    /// <summary>
-    ///     Test effect implementation.
-    /// </summary>
-    private sealed class TestEffect : IEffect
+    private sealed class TestActionEffect : IActionEffect
     {
         /// <inheritdoc />
         public bool CanHandle(
@@ -65,6 +49,22 @@ public sealed class ReservoirRegistrationsTests
             yield break;
         }
 #pragma warning restore CS1998
+    }
+
+    /// <summary>
+    ///     Test reducer implementation.
+    /// </summary>
+    private sealed class TestActionReducer : ActionReducerBase<TestAction, TestFeatureState>
+    {
+        /// <inheritdoc />
+        public override TestFeatureState Reduce(
+            TestFeatureState state,
+            TestAction action
+        ) =>
+            state with
+            {
+                Counter = state.Counter + 1,
+            };
     }
 
     /// <summary>
@@ -95,19 +95,19 @@ public sealed class ReservoirRegistrationsTests
     }
 
     /// <summary>
-    ///     AddEffect should register effect in DI.
+    ///     AddActionEffect should register action effect in DI.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddEffectRegistersEffectInDI()
+    public void AddActionEffectRegistersActionEffectInDI()
     {
         // Arrange
         ServiceCollection services = [];
 
         // Act
-        services.AddEffect<TestEffect>();
+        services.AddActionEffect<TestActionEffect>();
         using ServiceProvider provider = services.BuildServiceProvider();
-        IEnumerable<IEffect> effects = provider.GetServices<IEffect>();
+        IEnumerable<IActionEffect> effects = provider.GetServices<IActionEffect>();
 
         // Assert
         Assert.Single(effects);

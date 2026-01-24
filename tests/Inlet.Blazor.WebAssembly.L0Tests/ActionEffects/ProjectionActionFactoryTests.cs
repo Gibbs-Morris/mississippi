@@ -3,11 +3,11 @@ using System;
 using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Abstractions.Actions;
-using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.ActionEffects;
 
 /// <summary>
 ///     Tests for <see cref="ProjectionActionFactory" />.

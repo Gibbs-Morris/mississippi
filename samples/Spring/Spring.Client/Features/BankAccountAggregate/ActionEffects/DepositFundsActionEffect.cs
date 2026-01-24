@@ -3,30 +3,30 @@ using System;
 using System.Net.Http;
 
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.ActionEffects;
 using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Dtos;
 
 
-namespace Spring.Client.Features.BankAccountAggregate.Effects;
+namespace Spring.Client.Features.BankAccountAggregate.ActionEffects;
 
 /// <summary>
-///     Effect that handles depositing funds into a bank account.
+///     Action effect that handles depositing funds into a bank account.
 /// </summary>
 [PendingSourceGenerator]
-internal sealed class DepositFundsEffect
-    : CommandEffectBase<DepositFundsAction, DepositFundsRequestDto, DepositFundsExecutingAction,
+internal sealed class DepositFundsActionEffect
+    : CommandActionEffectBase<DepositFundsAction, DepositFundsRequestDto, DepositFundsExecutingAction,
         DepositFundsSucceededAction, DepositFundsFailedAction>
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="DepositFundsEffect" /> class.
+    ///     Initializes a new instance of the <see cref="DepositFundsActionEffect" /> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client for API calls.</param>
     /// <param name="mapper">The mapper for action-to-DTO conversion.</param>
     /// <param name="timeProvider">The time provider for timestamps.</param>
-    public DepositFundsEffect(
+    public DepositFundsActionEffect(
         HttpClient httpClient,
         IMapper<DepositFundsAction, DepositFundsRequestDto> mapper,
         TimeProvider? timeProvider = null

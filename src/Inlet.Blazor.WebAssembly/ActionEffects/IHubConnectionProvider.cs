@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 /// <summary>
 ///     Provides access to a SignalR hub connection for projection subscriptions.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This interface enables testability by allowing the <see cref="InletSignalREffect" />
+///         This interface enables testability by allowing the <see cref="InletSignalRActionEffect" />
 ///         to use a mockable hub connection provider instead of creating the connection directly.
 ///     </para>
 /// </remarks>

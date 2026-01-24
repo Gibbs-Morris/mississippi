@@ -27,12 +27,12 @@ public static class ReservoirRegistrations
     ///     following the Fluxor pattern. In Blazor WASM, scoped behaves as singleton.
     ///     In Blazor Server, each circuit gets its own effect instances.
     /// </remarks>
-    public static IServiceCollection AddEffect<TEffect>(
+    public static IServiceCollection AddActionEffect<TEffect>(
         this IServiceCollection services
     )
-        where TEffect : class, IEffect
+        where TEffect : class, IActionEffect
     {
-        services.AddScoped<IEffect, TEffect>();
+        services.AddScoped<IActionEffect, TEffect>();
         return services;
     }
 
@@ -135,7 +135,7 @@ public static class ReservoirRegistrations
         ArgumentNullException.ThrowIfNull(services);
         services.TryAddScoped<IStore>(sp => new Store(
             sp.GetServices<IFeatureStateRegistration>(),
-            sp.GetServices<IEffect>(),
+            sp.GetServices<IActionEffect>(),
             sp.GetServices<IMiddleware>()));
         return services;
     }

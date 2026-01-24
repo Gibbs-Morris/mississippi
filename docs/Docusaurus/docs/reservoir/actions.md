@@ -264,5 +264,5 @@ public class ProductService
 ## Next Steps
 
 - Learn how [Reducers](./reducers.md) transform state in response to actions
-- Understand how [Effects](./effects.md) handle asynchronous operations triggered by actions
+- Understand how [Action Effects](./action-effects.md) handle asynchronous operations triggered by actions
 - See how the [Store](./store.md) coordinates the action dispatch lifecycle

@@ -2,7 +2,7 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 
 namespace Mississippi.Inlet.Blazor.WebAssembly;
@@ -38,7 +38,7 @@ public static class InletBlazorRegistrations
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="services" /> is null.</exception>
     /// <remarks>
     ///     <para>
-    ///         This registers the <see cref="InletSignalREffect" /> which handles projection
+    ///         This registers the <see cref="InletSignalRActionEffect" /> which handles projection
     ///         subscription actions via SignalR. The effect requires an <see cref="IProjectionFetcher" />
     ///         to be registered.
     ///     </para>

@@ -1,4 +1,4 @@
-﻿using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions;
 
 
 namespace Mississippi.Aqueduct.Abstractions;

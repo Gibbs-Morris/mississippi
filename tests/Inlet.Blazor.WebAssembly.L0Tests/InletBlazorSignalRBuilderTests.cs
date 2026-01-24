@@ -9,7 +9,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Reservoir.Abstractions;
 
@@ -149,11 +149,11 @@ public sealed class InletBlazorSignalRBuilderTests
     }
 
     /// <summary>
-    ///     Build should register InletSignalREffect.
+    ///     Build should register InletSignalRActionEffect.
     /// </summary>
     [Fact]
     [AllureFeature("Build")]
-    public void BuildRegistersInletSignalREffect()
+    public void BuildRegistersInletSignalRActionEffect()
     {
         // Arrange
         ServiceCollection services = new();
@@ -164,9 +164,9 @@ public sealed class InletBlazorSignalRBuilderTests
             builder,
             null);
 
-        // Assert - Check that IEffect is registered for InletSignalREffect
+        // Assert - Check that IActionEffect is registered for InletSignalRActionEffect
         ServiceDescriptor? effectDescriptor = services.FirstOrDefault(sd =>
-            (sd.ServiceType == typeof(IEffect)) && (sd.ImplementationType == typeof(InletSignalREffect)));
+            (sd.ServiceType == typeof(IActionEffect)) && (sd.ImplementationType == typeof(InletSignalRActionEffect)));
         Assert.NotNull(effectDescriptor);
     }
 
@@ -189,7 +189,7 @@ public sealed class InletBlazorSignalRBuilderTests
 
         // Assert
         ServiceDescriptor? optionsDescriptor =
-            services.FirstOrDefault(sd => sd.ServiceType == typeof(InletSignalREffectOptions));
+            services.FirstOrDefault(sd => sd.ServiceType == typeof(InletSignalRActionEffectOptions));
         Assert.NotNull(optionsDescriptor);
         Assert.Equal(ServiceLifetime.Singleton, optionsDescriptor.Lifetime);
     }

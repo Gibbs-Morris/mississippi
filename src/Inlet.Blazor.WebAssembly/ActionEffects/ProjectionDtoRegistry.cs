@@ -5,7 +5,7 @@ using System.Reflection;
 using Mississippi.Inlet.Projection.Abstractions;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 /// <summary>
 ///     Thread-safe implementation of <see cref="IProjectionDtoRegistry" />.

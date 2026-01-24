@@ -9,7 +9,7 @@ using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 /// <summary>
 ///     Default implementation of <see cref="IHubConnectionProvider" /> that creates
@@ -33,7 +33,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     public HubConnectionProvider(
         NavigationManager navigationManager,
         Lazy<IInletStore> lazyStore,
-        InletSignalREffectOptions? options = null,
+        InletSignalRActionEffectOptions? options = null,
         TimeProvider? timeProvider = null
     )
     {
@@ -41,7 +41,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         ArgumentNullException.ThrowIfNull(lazyStore);
         this.lazyStore = lazyStore;
         TimeProvider = timeProvider ?? TimeProvider.System;
-        InletSignalREffectOptions effectOptions = options ?? new InletSignalREffectOptions();
+        InletSignalRActionEffectOptions effectOptions = options ?? new InletSignalRActionEffectOptions();
         Connection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri(effectOptions.HubPath))
             .WithAutomaticReconnect()
             .Build();

@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Reservoir;
@@ -22,7 +22,7 @@ public sealed class InletBlazorSignalRBuilder
 {
     private readonly List<Assembly> assembliesToScan = [];
 
-    private InletSignalREffectOptions options = new();
+    private InletSignalRActionEffectOptions options = new();
 
     private Type? projectionFetcherType;
 
@@ -153,12 +153,12 @@ public sealed class InletBlazorSignalRBuilder
         Services.TryAddScoped<IHubConnectionProvider, HubConnectionProvider>();
 
         // Register Lazy<IInletStore> to break the circular dependency:
-        // Store resolves IEffect[] → InletSignalREffect needs Store.
+        // Store resolves IActionEffect[] → InletSignalRActionEffect needs Store.
         // By using Lazy<IInletStore>, the effect defers resolution until first use.
         Services.TryAddScoped<Lazy<IInletStore>>(sp => new(() => sp.GetRequiredService<IInletStore>()));
 
         // Register the SignalR effect for projection subscriptions
-        Services.AddEffect<InletSignalREffect>();
+        Services.AddActionEffect<InletSignalRActionEffect>();
 
         // Register the SignalR connection feature (state, reducers, and lifecycle effect)
         Services.AddSignalRConnectionFeature();

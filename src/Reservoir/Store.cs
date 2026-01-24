@@ -15,11 +15,11 @@ namespace Mississippi.Reservoir;
 
 /// <summary>
 ///     Central state container implementing Redux-like dispatch pattern.
-///     Supports local feature states with actions, action reducers, middleware, and effects.
+///     Supports local feature states with actions, action reducers, middleware, and action effects.
 /// </summary>
 public class Store : IStore
 {
-    private readonly ConcurrentDictionary<string, IEffect> effects = new();
+    private readonly ConcurrentDictionary<string, IActionEffect> actionEffects = new();
 
     private readonly ConcurrentDictionary<string, object> featureStates = new();
 
@@ -44,11 +44,11 @@ public class Store : IStore
     ///     Initializes a new instance of the <see cref="Store" /> class with DI-resolved components.
     /// </summary>
     /// <param name="featureRegistrations">The feature state registrations to initialize.</param>
-    /// <param name="effectsCollection">The effects to register for handling async operations.</param>
+    /// <param name="effectsCollection">The action effects to register for handling async operations.</param>
     /// <param name="middlewaresCollection">The middlewares to register in the dispatch pipeline.</param>
     public Store(
         IEnumerable<IFeatureStateRegistration> featureRegistrations,
-        IEnumerable<IEffect> effectsCollection,
+        IEnumerable<IActionEffect> effectsCollection,
         IEnumerable<IMiddleware> middlewaresCollection
     )
     {
@@ -66,10 +66,10 @@ public class Store : IStore
             }
         }
 
-        // Register effects
-        foreach (IEffect effect in effectsCollection)
+        // Register action effects
+        foreach (IActionEffect actionEffect in effectsCollection)
         {
-            RegisterEffect(effect);
+            RegisterActionEffect(actionEffect);
         }
 
         // Register middleware
@@ -119,18 +119,18 @@ public class Store : IStore
     }
 
     /// <summary>
-    ///     Registers an effect for handling async operations.
+    ///     Registers an action effect for handling async operations.
     /// </summary>
-    /// <param name="effect">The effect instance.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="effect" /> is null.</exception>
-    public void RegisterEffect(
-        IEffect effect
+    /// <param name="actionEffect">The action effect instance.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="actionEffect" /> is null.</exception>
+    public void RegisterActionEffect(
+        IActionEffect actionEffect
     )
     {
-        ArgumentNullException.ThrowIfNull(effect);
+        ArgumentNullException.ThrowIfNull(actionEffect);
         ObjectDisposedException.ThrowIf(disposed, this);
-        string key = effect.GetType().FullName ?? effect.GetType().Name;
-        effects[key] = effect;
+        string key = actionEffect.GetType().FullName ?? actionEffect.GetType().Name;
+        actionEffects[key] = actionEffect;
     }
 
     /// <summary>
@@ -183,10 +183,10 @@ public class Store : IStore
                 listeners.Clear();
             }
 
-            // Dispose any effects that implement IDisposable
-            foreach (IEffect effect in effects.Values)
+            // Dispose any action effects that implement IDisposable
+            foreach (IActionEffect actionEffect in actionEffects.Values)
             {
-                if (effect is IDisposable disposable)
+                if (actionEffect is IDisposable disposable)
                 {
                     disposable.Dispose();
                 }
@@ -194,14 +194,14 @@ public class Store : IStore
 
             featureStates.Clear();
             rootReducers.Clear();
-            effects.Clear();
+            actionEffects.Clear();
             middlewares.Clear();
         }
     }
 
     /// <summary>
     ///     Hook for derived classes to process actions after action reducers run.
-    ///     Called before effects are triggered.
+    ///     Called before action effects are triggered.
     /// </summary>
     /// <param name="action">The action being dispatched.</param>
     protected virtual void OnActionDispatched(
@@ -241,7 +241,7 @@ public class Store : IStore
         // Notify listeners of state change
         NotifyListeners();
 
-        // Finally, trigger effects asynchronously
+        // Finally, trigger action effects asynchronously
         _ = TriggerEffectsAsync(action);
     }
 
@@ -297,16 +297,16 @@ public class Store : IStore
         IAction action
     )
     {
-        foreach (IEffect effect in effects.Values)
+        foreach (IActionEffect actionEffect in actionEffects.Values)
         {
-            if (!effect.CanHandle(action))
+            if (!actionEffect.CanHandle(action))
             {
                 continue;
             }
 
             try
             {
-                await foreach (IAction resultAction in effect.HandleAsync(action, CancellationToken.None))
+                await foreach (IAction resultAction in actionEffect.HandleAsync(action, CancellationToken.None))
                 {
                     Dispatch(resultAction);
                 }
@@ -317,7 +317,7 @@ public class Store : IStore
             }
             catch (Exception)
             {
-                // Effects should handle their own errors by emitting error actions.
+                // Action effects should handle their own errors by emitting error actions.
                 // Swallow exceptions here to prevent effect failures from breaking dispatch.
             }
         }
