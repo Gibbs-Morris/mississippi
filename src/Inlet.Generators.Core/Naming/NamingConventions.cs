@@ -228,6 +228,12 @@ public static class NamingConventions
         string targetRootNamespace
     )
     {
+        // Guard against empty target - fall back to legacy behavior
+        if (string.IsNullOrWhiteSpace(targetRootNamespace))
+        {
+            return GetClientFeatureRootNamespace(sourceNamespace);
+        }
+
         string? aggregateName = TargetNamespaceResolver.ExtractAggregateName(sourceNamespace);
         if (!string.IsNullOrEmpty(aggregateName))
         {

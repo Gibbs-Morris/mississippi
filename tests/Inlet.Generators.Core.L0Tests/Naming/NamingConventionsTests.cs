@@ -633,6 +633,21 @@ public class NamingConventionsTests
     }
 
     /// <summary>
+    ///     Target-aware methods should fall back to legacy behavior when target is empty.
+    /// </summary>
+    [Fact]
+    public void TargetAwareMethodsFallBackToLegacyWhenTargetEmpty()
+    {
+        // When target is empty, fall back to legacy behavior to avoid invalid namespaces
+        string result = NamingConventions.GetClientFeatureRootNamespace(
+            "Spring.Domain.Aggregates.BankAccount.Commands",
+            string.Empty);
+
+        // Falls back to legacy behavior: Spring.Domain → Spring.Client
+        Assert.Equal("Spring.Client.Features.BankAccountAggregate", result);
+    }
+
+    /// <summary>
     ///     Target-aware methods should return empty when source is empty.
     /// </summary>
     [Fact]
@@ -640,21 +655,6 @@ public class NamingConventionsTests
     {
         string result = NamingConventions.GetClientActionsNamespace(string.Empty, "MyApp.BlazorClient");
         Assert.Equal(string.Empty, result);
-    }
-
-    /// <summary>
-    ///     Target-aware methods should produce result based on target even when empty (caller responsibility to validate).
-    /// </summary>
-    [Fact]
-    public void TargetAwareMethodsUseTargetEvenWhenEmpty()
-    {
-        // When target is empty, it still produces a result - caller is responsible for providing valid target
-        string result = NamingConventions.GetClientFeatureRootNamespace(
-            "Spring.Domain.Aggregates.BankAccount.Commands",
-            string.Empty);
-
-        // Produces ".Features.BankAccountAggregate" with empty prefix - this is expected
-        Assert.Equal(".Features.BankAccountAggregate", result);
     }
 
     /// <summary>

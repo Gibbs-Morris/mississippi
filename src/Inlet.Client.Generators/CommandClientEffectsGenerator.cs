@@ -144,7 +144,7 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
     /// <summary>
     ///     Gets command models and target namespace from the compilation.
     /// </summary>
-    private static (List<CommandModel> Commands, string TargetNamespace) GetCommandsAndTargetFromCompilation(
+    private static (List<CommandModel> Commands, string TargetRootNamespace) GetCommandsAndTargetFromCompilation(
         Compilation compilation,
         AnalyzerConfigOptionsProvider optionsProvider
     )
@@ -225,7 +225,7 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<(List<CommandModel> Commands, string TargetNamespace)> commandsProvider =
+        IncrementalValueProvider<(List<CommandModel> Commands, string TargetRootNamespace)> commandsProvider =
             compilationAndOptions.Select((
                 source,
                 _
@@ -239,7 +239,7 @@ public sealed class CommandClientEffectsGenerator : IIncrementalGenerator
             {
                 foreach (CommandModel command in data.Commands)
                 {
-                    GenerateEffect(spc, command, data.TargetNamespace);
+                    GenerateEffect(spc, command, data.TargetRootNamespace);
                 }
             });
     }
