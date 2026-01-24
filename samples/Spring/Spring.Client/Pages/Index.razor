@@ -1,11 +1,15 @@
 @page "/"
 @inherits InletComponent
 
-<article>
+<main>
     <header>
         <h1>Bank Account Operations</h1>
         <p>Mississippi Event Sourcing Demo</p>
-        <button type="button" @onclick="ToggleConnectionModal">
+        <button type="button"
+                aria-label="Connection status"
+                aria-haspopup="dialog"
+                aria-expanded="@isConnectionModalOpen"
+                @onclick="ToggleConnectionModal">
             @ConnectionState.Status
         </button>
     </header>
@@ -134,7 +138,7 @@
                 </div>
             }
 
-            @if (AggregateState.LastCommandSucceeded == true)
+            @if (AggregateState.LastCommandSucceeded is true)
             {
                 <div role="status">
                     Command executed successfully.
@@ -199,4 +203,4 @@
             </div>
         </dialog>
     }
-</article>
+</main>
