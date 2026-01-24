@@ -51,19 +51,20 @@
 | Store | `src/Reservoir/Store.cs` | Central state container |
 | Actions | `Spring.Client/.../Actions/*.cs` | Records implementing `IAction` |
 | ActionReducers | `Spring.Client/.../Reducers/*.cs` | Static methods or classes extending `ActionReducerBase<TAction, TState>` |
-| Effects | `Spring.Client/.../Effects/*.cs` | Classes implementing `IEffect` |
+| ActionEffects | `Spring.Client/.../ActionEffects/*.cs` | Classes implementing `IActionEffect` |
 
 **Key Files:**
-- [IEffect.cs](../../src/Reservoir.Abstractions/IEffect.cs) - Effect interface (CanHandle + HandleAsync returning IAsyncEnumerable<IAction>)
+- [IActionEffect.cs](../../src/Reservoir.Abstractions/IActionEffect.cs) - Client effect interface (renamed from IEffect in PR #231)
 - [IActionReducer.cs](../../src/Reservoir.Abstractions/IActionReducer.cs) - Client reducer interface
 - [ActionReducerBase.cs](../../src/Reservoir.Abstractions/ActionReducerBase.cs) - Base class for reducers
-- [CommandEffectBase.cs](../../src/Inlet.Blazor.WebAssembly.Abstractions/Effects/CommandEffectBase.cs) - Base for command-posting effects
+- [CommandActionEffectBase.cs](../../src/Inlet.Blazor.WebAssembly.Abstractions/ActionEffects/CommandActionEffectBase.cs) - Base for command-posting effects
 - [Store.cs](../../src/Reservoir/Store.cs) - Dispatches actions, runs reducers, triggers effects async
 
-**Effect Triggering (verified in Store.cs lines 230-330):**
+**Effect Triggering (verified in Store.cs):**
 - `CoreDispatch()` calls `_ = TriggerEffectsAsync(action)` - fire-and-forget!
 - Effects run asynchronously after reducers complete
 - Effect exceptions are swallowed to prevent breaking dispatch
+- **Note:** Client effects are fire-and-forget to keep UI responsive
 
 ### Source Generators
 
@@ -72,26 +73,26 @@
   - Generates `Add{Aggregate}Aggregate()` extension methods
   - Scans `Handlers/` sub-namespace for handlers extending `CommandHandlerBase<,>`
   - Scans `Reducers/` sub-namespace for reducers extending `EventReducerBase<,>`
+  - **Will scan `Effects/` sub-namespace for effects extending `EventEffectBase<,>`**
   - Registers: event types, command handlers, reducers, snapshot converters
 
 **Client-Side:**
-- [CommandClientEffectsGenerator.cs](../../src/Inlet.Client.Generators/CommandClientEffectsGenerator.cs) - Generates effect classes extending `CommandEffectBase`
+- [CommandClientEffectsGenerator.cs](../../src/Inlet.Client.Generators/CommandClientEffectsGenerator.cs) - Generates effect classes
 - [CommandClientReducersGenerator.cs](../../src/Inlet.Client.Generators/CommandClientReducersGenerator.cs) - Generates aggregate reducer classes
 - [CommandClientRegistrationGenerator.cs](../../src/Inlet.Client.Generators/CommandClientRegistrationGenerator.cs) - Generates feature registration
 
-### Naming Conventions Observed
+### Naming Conventions (Final)
 
 | Side | Reducer Type | Effect Type |
 |------|-------------|-------------|
-| Server (Events) | `EventReducerBase<TEvent, TProjection>` | **PROPOSED: `EventEffectBase<TEvent, TAggregate>`** |
-| Client (Actions) | `ActionReducerBase<TAction, TState>` | `IEffect` / `CommandEffectBase` |
+| Server (Events) | `EventReducerBase<TEvent, TProjection>` | `EventEffectBase<TEvent, TAggregate>` |
+| Client (Actions) | `ActionReducerBase<TAction, TState>` | `IActionEffect` / `CommandActionEffectBase` |
 
 ## Registration Patterns
 
 ### Server Reducer Registration
 ```csharp
 services.AddReducer<AccountOpened, BankAccountAggregate, AccountOpenedReducer>();
-// Uses ReducerRegistrations.AddReducer<TEvent, TProjection, TReducer>()
 ```
 
 ### Server Handler Registration
@@ -99,36 +100,41 @@ services.AddReducer<AccountOpened, BankAccountAggregate, AccountOpenedReducer>()
 services.AddCommandHandler<OpenAccount, BankAccountAggregate, OpenAccountHandler>();
 ```
 
-### Client Effect Registration
+### Server Effect Registration (NEW)
 ```csharp
-services.AddEffect<DepositFundsEffect>();
-// Uses ReservoirRegistrations.AddEffect<TEffect>()
+services.AddEventEffect<AccountOpened, BankAccountAggregate, AccountOpenedEffect>();
+services.AddEventEffectDispatcher<BankAccountAggregate>();
 ```
 
-## Key Design Observations
+### Client Effect Registration
+```csharp
+services.AddActionEffect<DepositFundsActionEffect>();
+```
 
-1. **Handlers produce events synchronously** - `CommandHandlerBase.Handle()` returns `OperationResult<IReadOnlyList<object>>` (events)
-2. **Reducers are pure** - Transform state based on events, no side effects
-3. **Client effects are async** - Return `IAsyncEnumerable<IAction>` to allow streaming multiple actions
-4. **Client effects run AFTER reducers** - In `Store.CoreDispatch()`: reducers → notify listeners → trigger effects
-5. **Client effects use fire-and-forget** - `_ = TriggerEffectsAsync(action)` pattern
-6. **GenericAggregateGrain** - The only grain-level component; handles command execution and event persistence
-7. **[OneWay] pattern exists** - Used for snapshot persistence; directly applicable to effects
-8. **No server-side effect concept exists** - Post-event side effects would need to be added
+## Key Design Decisions (Final)
 
-## Saga Pattern Research (External)
+1. **Server effects run inside grain** - Blocking, sequential, in grain context
+2. **No state parameter** - Aligned with client-side IActionEffect pattern
+3. **EffectContext provides brook info** - Can read events if state needed (edge case)
+4. **Effects yield events via IAsyncEnumerable** - Supports LLM streaming scenarios
+5. **Events persisted immediately on yield** - Real-time projection updates
+6. **Concurrency differs from client** - Server blocks (grain model), client fire-and-forget (UI)
+7. **Full observability** - Metrics, logging, warnings for >1s effects
+8. **Recursion limit** - Max 10 iterations to prevent infinite loops
 
-**Choreography vs Orchestration:**
-- **Choreography:** Each service publishes events, others react (no coordinator)
-- **Orchestration:** Central saga coordinator tells participants what to do (recommended for complex workflows)
+## Client vs Server Effect Comparison
 
-**Key Insight:** A saga IS an aggregate if modeled correctly:
-- State: CurrentStep, CompletedSteps, FailedSteps
-- Commands: StartSaga, StepCompleted, StepFailed
-- Events: SagaStarted, StepExecuted, SagaCompleted, SagaCompensated
-- Effects: Call other aggregates to execute saga steps
+| Aspect | Client (IActionEffect) | Server (IEventEffect) |
+|--------|----------------------|----------------------|
+| Trigger | `IAction` | `object` (event) |
+| Yields | `IAction` | `object` (events) |
+| State access | ❌ No | ❌ No |
+| Context | None | `EffectContext` |
+| Return type | `IAsyncEnumerable<IAction>` | `IAsyncEnumerable<object>` |
+| Execution | Fire-and-forget | **Blocking** |
+| Why | UI must stay responsive | Grain single-threaded model |
 
-## Event Lifecycle in GenericAggregateGrain
+## Event Lifecycle in GenericAggregateGrain (To-Be)
 
 ```
 ExecuteInternalAsync():
@@ -138,8 +144,11 @@ ExecuteInternalAsync():
   4. RootCommandHandler.Handle(command, state) → events
   5. BrookEventConverter.ToStorageEvents(events)
   6. BrookWriterGrain.AppendEventsAsync(events)
-  7. Update lastKnownPosition
-  8. Return OperationResult.Ok()
+  7. RootReducer.Reduce(events, state) → newState
+  8. **NEW: Build EffectContext(aggregateKey, brookName, aggregateTypeName)**
+  9. **NEW: Loop effects until no more yielded events (max 10 iterations)**
+     - RootEventEffectDispatcher.DispatchAsync(pendingEvents, context)
+     - For each yielded event: persist immediately, reduce
+  10. Update lastKnownPosition
+  11. Return OperationResult.Ok()
 ```
-
-**MISSING:** No hook for running side effects after step 6 (events persisted).

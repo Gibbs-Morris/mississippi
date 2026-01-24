@@ -1,5 +1,35 @@
 # Progress Log
 
+## 2026-01-24 (Session 4) - Spec Consolidation
+
+### Consolidation Actions
+
+Cleaned up outdated spec files to ensure a single source of truth:
+
+| Action | Files | Reason |
+|--------|-------|--------|
+| Deleted | `implementation-plan.md` (v1) | Superseded by v3.1 |
+| Deleted | `implementation-plan-v2.md` | Superseded by v3.1 |
+| Deleted | `implementation-plan-v3.md` | Superseded by v3.1 |
+| Renamed | `implementation-plan-v3.1.md` → `implementation-plan.md` | Single canonical plan |
+| Replaced | `rfc.md` | Updated with final design decisions |
+| Updated | `learned.md` | Corrected naming (IActionEffect), added final design |
+| Updated | `README.md` | Fixed links, updated scope and decisions |
+
+### Final Design (v3.1)
+
+Key decisions finalized in alignment discussion:
+- **No state parameter** - Aligned with client-side IActionEffect pattern
+- **EffectContext with brook info** - `AggregateKey`, `BrookName`, `AggregateTypeName`
+- **Full observability** - OpenTelemetry metrics, structured logging, warnings >1s
+- **Concurrency difference justified** - Server blocks (grain model), client fire-and-forget (UI)
+
+### Ready for Implementation
+
+Spec now has single source of truth. Ready for user approval to begin implementation.
+
+---
+
 ## 2026-01-24 (Session 3) - Design Pivot to In-Grain Effects
 
 ### User Request
@@ -22,22 +52,18 @@ User pivoted to a simpler approach after overnight consideration:
 | Return type | `Task` (void) | **`IAsyncEnumerable<object>`** |
 | Error handling | Swallowed | **Propagates to command** |
 
-### Removed from v2 (Not Needed for In-Grain)
+### Subsequently Refined (v3 → v3.1)
 
-- ~~EffectDispatcherGrain (StatelessWorker)~~
-- ~~OneWay attribute / fire-and-forget~~
-- ~~EffectContext record (state available directly)~~
-- ~~IdempotentEffectBase (effects transactional with command)~~
-- ~~Observability infrastructure (simple logging sufficient)~~
-- ~~Graceful shutdown handling~~
-- ~~IAggregateCommandGateway (defer to saga PR)~~
+| Aspect | v3 | v3.1 |
+|--------|----|----|
+| State access | Yes | **No (aligned with client)** |
+| Context | None | **EffectContext** |
+| Observability | Basic | **Full (metrics + logging)** |
 
 ### Branch Updated
 
 - Rebased on origin/main to get IEffect → IActionEffect rename (PR #231)
-- Created `implementation-plan-v3.md` with simplified in-grain design
-- Updated README to reflect v3 approach
-- Task size reduced from Large to Medium
+- Created final implementation plan with all decisions
 
 ---
 

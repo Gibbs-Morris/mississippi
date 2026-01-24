@@ -52,20 +52,21 @@ Major simplification from v2 fire-and-forget approach:
 
 ## Key Links
 
-- [implementation-plan-v3.md](./implementation-plan-v3.md) - **Current plan (in-grain approach)**
-- [implementation-plan-v2.md](./implementation-plan-v2.md) - Superseded (fire-and-forget)
-- [implementation-plan.md](./implementation-plan.md) - Original (superseded)
-- [rfc.md](./rfc.md) - Original design document
+- [implementation-plan.md](./implementation-plan.md) - **Current plan (v3.1 final)**
+- [rfc.md](./rfc.md) - Design document (final)
+- [learned.md](./learned.md) - Verified repository facts
 - [progress.md](./progress.md) - Work log
-- [reviews/](./reviews/) - Persona review documents (informed v2, led to v3 simplification)
+- [reviews/](./reviews/) - Persona review documents (informed design evolution)
 
 ## Scope
 
 ### In Scope (This PR)
+- `EffectContext` record with `AggregateKey`, `BrookName`, `AggregateTypeName`
 - `IEventEffect<TAggregate>` interface with `IAsyncEnumerable<object>` return
 - `EventEffectBase<TEvent, TAggregate>` base class
 - `SimpleEventEffectBase<TEvent, TAggregate>` for effects that don't yield events
 - `IRootEventEffectDispatcher<TAggregate>` for grain integration
+- `EventEffectMetrics` and `EventEffectLoggerExtensions` for observability
 - Source generator updates to discover `Effects/` sub-namespace
 - GenericAggregateGrain modification to run effects after events
 - Sample effect in Spring.Domain.Aggregates.BankAccount
@@ -76,13 +77,15 @@ Major simplification from v2 fire-and-forget approach:
 - Fire-and-forget/background effects (different use case)
 - Effect retry/resilience (users use Polly via DI)
 
-## Removed from v2
+## Design Decisions Summary
 
-These were needed for fire-and-forget but not for in-grain:
-- ~~EffectDispatcherGrain (StatelessWorker)~~
-- ~~OneWay attribute / fire-and-forget~~
-- ~~EffectContext record (state is available directly)~~
-- ~~IdempotentEffectBase (effects are transactional with command)~~
+| Decision | Rationale |
+|----------|-----------|
+| No state parameter | Aligned with client-side IActionEffect pattern |
+| EffectContext with brook info | Allows reading events if state needed (edge case) |
+| Blocking execution | Orleans single-threaded grain model, transactional consistency |
+| Immediate event persistence | Real-time projection updates during streaming |
+| Full observability | Metrics + logging + warnings for >1s effects |
 - ~~Observability infrastructure (simple logging sufficient)~~
 - ~~Graceful shutdown handling~~
 - ~~At-most-once semantics documentation~~

@@ -1,35 +1,112 @@
-# Implementation Plan
+# Implementation Plan v3.1 - In-Grain Effects (Final)
 
-## Overview
+**Updated with observability, concurrency reasoning, and aligned interface design (2026-01-24)**
 
-Add server-side event effects to the aggregate system, allowing users to define asynchronous side effects that run after events are persisted. Effects run via a stateless worker grain for throughput isolation.
+## Executive Summary
 
-## Size Assessment: Large
-
-- Multiple new types across abstractions and implementations
-- New grain (`IEffectDispatcherGrain`) for throughput isolation
-- New gateway (`IAggregateCommandGateway`) for saga patterns
-- Source generator modifications
-- Changes to GenericAggregateGrain
-- New folder convention in domain projects
-- Comprehensive tests required
+Server-side event effects run **inside the aggregate grain**, **block until complete**, and **yield events** that are persisted in real-time. This enables data enrichment, LLM streaming, and multi-step API workflows where projections update progressively as events are yielded.
 
 ---
 
-## Phase 1: Abstractions (EventSourcing.Aggregates.Abstractions)
+## Design Principles
 
-### Step 1.1: Add IEventEffect Interface
+### 1. Align with Client-Side Pattern
 
-**File:** `src/EventSourcing.Aggregates.Abstractions/IEventEffect.cs`
+| Aspect | Client (IActionEffect) | Server (IEventEffect) |
+|--------|----------------------|----------------------|
+| Trigger | `IAction` | `object` (event) |
+| Yields | `IAction` | `object` (events) |
+| State access | ❌ No (inject IStore if needed) | ❌ No (read brook if needed) |
+| Context | None | `EffectContext` (brook info) |
+| Return type | `IAsyncEnumerable<IAction>` | `IAsyncEnumerable<object>` |
+
+**Key Decision:** No state parameter. Effects are decoupled from state. If an effect needs state (edge case), it can read the event stream via the provided `EffectContext.BrookName`.
+
+### 2. Concurrency Model Differs (Justified)
+
+| Aspect | Client (WASM) | Server (Orleans) |
+|--------|--------------|------------------|
+| Execution | Fire-and-forget, concurrent | **Blocking, sequential** |
+| Why | UI must stay responsive | Grain single-threaded model |
+| New actions/events during effect | ✅ Yes, dispatched immediately | ❌ No, grain blocked |
+
+**Rationale:** The difference is intentional:
+- **Client:** Browser UI cannot block. Effects run concurrently while user continues interacting.
+- **Server:** Orleans grains are single-threaded. Effects block to maintain consistency and enable transactional event chains.
+
+### 3. Real-Time Projection Updates
+
+Effects that yield events over time (e.g., LLM streaming) benefit from the decoupled projection model:
+
+```
+Command → Handler → Event1 (persisted) → Effect starts
+                                              ↓
+                                        yield TokenEvent1 → persisted → projection updates → UI sees it
+                                              ↓
+                                        yield TokenEvent2 → persisted → projection updates → UI sees it
+                                              ↓
+                                        yield CompletedEvent → persisted → projection updates
+                                              ↓
+                                        Effect ends → Command returns
+```
+
+Projections are decoupled, so events arrive at the UX in real-time, not batched at command completion.
+
+---
+
+## Interface Design
+
+### EffectContext
 
 ```csharp
 namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 
 /// <summary>
-///     Defines an event effect that handles side effects for domain events.
+///     Context information provided to event effects.
+/// </summary>
+/// <param name="AggregateKey">The aggregate key (brook key).</param>
+/// <param name="BrookName">The brook name where events are persisted.</param>
+/// <param name="AggregateTypeName">The full type name of the aggregate.</param>
+[GenerateSerializer]
+[Immutable]
+public sealed record EffectContext(
+    string AggregateKey,
+    string BrookName,
+    string AggregateTypeName
+);
+```
+
+### IEventEffect Interface
+
+```csharp
+namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+
+/// <summary>
+///     Handles side effects triggered by domain events within the aggregate grain.
 /// </summary>
 /// <typeparam name="TAggregate">The aggregate state type.</typeparam>
-public interface IEventEffect<in TAggregate>
+/// <remarks>
+///     <para>
+///         Event effects run synchronously within the grain context after events are
+///         persisted. They block the grain until complete, ensuring effects finish
+///         before the next command is processed.
+///     </para>
+///     <para>
+///         Effects can yield additional events via <see cref="IAsyncEnumerable{T}"/>,
+///         enabling streaming scenarios (e.g., LLM token streaming, progressive data fetch).
+///         Yielded events are persisted immediately, allowing projections to update in real-time.
+///     </para>
+///     <para>
+///         <b>Performance guidance:</b> Effects should complete quickly (sub-second typical).
+///         A warning is logged if an effect takes longer than 1 second. For long-running
+///         background work, consider Orleans reminders or external workflow systems.
+///     </para>
+///     <para>
+///         <b>State access:</b> Effects do not receive state directly (aligned with client-side
+///         pattern). If state is needed, read the event stream via <see cref="EffectContext.BrookName"/>.
+///     </para>
+/// </remarks>
+public interface IEventEffect<TAggregate>
 {
     /// <summary>
     ///     Determines whether this effect can handle the given event.
@@ -37,36 +114,24 @@ public interface IEventEffect<in TAggregate>
     bool CanHandle(object eventData);
 
     /// <summary>
-    ///     Handles the event asynchronously.
+    ///     Handles the event and optionally yields additional events.
     /// </summary>
-    Task HandleAsync(
+    /// <param name="eventData">The event that was persisted.</param>
+    /// <param name="context">Context information about the aggregate and brook.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    ///     An async enumerable of additional events to persist.
+    ///     Yielded events are persisted immediately, enabling real-time projection updates.
+    /// </returns>
+    IAsyncEnumerable<object> HandleAsync(
         object eventData,
-        string aggregateKey,
-        CancellationToken cancellationToken
-    );
-}
-
-/// <summary>
-///     Defines an event effect that handles a specific event type.
-/// </summary>
-/// <typeparam name="TEvent">The event type to handle.</typeparam>
-/// <typeparam name="TAggregate">The aggregate state type.</typeparam>
-public interface IEventEffect<in TEvent, in TAggregate> : IEventEffect<TAggregate>
-{
-    /// <summary>
-    ///     Handles the typed event asynchronously.
-    /// </summary>
-    Task HandleAsync(
-        TEvent eventData,
-        string aggregateKey,
+        EffectContext context,
         CancellationToken cancellationToken
     );
 }
 ```
 
-### Step 1.2: Add EventEffectBase
-
-**File:** `src/EventSourcing.Aggregates.Abstractions/EventEffectBase.cs`
+### EventEffectBase
 
 ```csharp
 namespace Mississippi.EventSourcing.Aggregates.Abstractions;
@@ -74,153 +139,248 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 /// <summary>
 ///     Base class for event effects that handle a specific event type.
 /// </summary>
-public abstract class EventEffectBase<TEvent, TAggregate> : IEventEffect<TEvent, TAggregate>
+public abstract class EventEffectBase<TEvent, TAggregate> : IEventEffect<TAggregate>
 {
+    /// <inheritdoc />
     public bool CanHandle(object eventData) => eventData is TEvent;
 
-    public Task HandleAsync(object eventData, string aggregateKey, CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public IAsyncEnumerable<object> HandleAsync(
+        object eventData,
+        EffectContext context,
+        CancellationToken cancellationToken)
     {
         if (eventData is TEvent typedEvent)
         {
-            return HandleAsync(typedEvent, aggregateKey, cancellationToken);
+            return HandleAsync(typedEvent, context, cancellationToken);
         }
-        return Task.CompletedTask;
+        return AsyncEnumerable.Empty<object>();
     }
 
-    public abstract Task HandleAsync(
+    /// <summary>
+    ///     Handles the event and optionally yields additional events.
+    /// </summary>
+    public abstract IAsyncEnumerable<object> HandleAsync(
         TEvent eventData,
-        string aggregateKey,
+        EffectContext context,
         CancellationToken cancellationToken
     );
 }
 ```
 
-### Step 1.3: Add IEffectDispatcherGrain Interface
-
-**File:** `src/EventSourcing.Aggregates.Abstractions/IEffectDispatcherGrain.cs`
+### SimpleEventEffectBase (No Yielded Events)
 
 ```csharp
 namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 
 /// <summary>
-///     Stateless worker grain that dispatches event effects asynchronously.
+///     Base class for simple event effects that perform side operations without yielding events.
 /// </summary>
 /// <remarks>
-///     This grain receives fire-and-forget calls via [OneWay], allowing the
-///     aggregate grain to return immediately while effects run in the background.
+///     Use when your effect performs a side operation (logging, notification, external API call)
+///     but doesn't need to yield additional events.
 /// </remarks>
-[StatelessWorker]
-[Alias("Mississippi.EventSourcing.Aggregates.Abstractions.IEffectDispatcherGrain")]
-public interface IEffectDispatcherGrain : IGrainWithStringKey
+public abstract class SimpleEventEffectBase<TEvent, TAggregate> : EventEffectBase<TEvent, TAggregate>
 {
-    /// <summary>
-    ///     Dispatches effects for the given events asynchronously.
-    /// </summary>
-    [Alias("DispatchAsync")]
-    [OneWay]
-    Task DispatchAsync(
-        string aggregateTypeName,
-        string aggregateKey,
-        IReadOnlyList<object> events,
-        CancellationToken cancellationToken = default
-    );
-}
-```
-
-### Step 1.4: Add IAggregateCommandGateway Interface (Saga Support)
-
-**File:** `src/EventSourcing.Aggregates.Abstractions/IAggregateCommandGateway.cs`
-
-```csharp
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
-
-/// <summary>
-///     Gateway for sending commands to aggregates from within effects.
-/// </summary>
-/// <remarks>
-///     This enables saga patterns where effects orchestrate cross-aggregate workflows.
-/// </remarks>
-public interface IAggregateCommandGateway
-{
-    /// <summary>
-    ///     Sends a command to the specified aggregate.
-    /// </summary>
-    Task<TResult> SendCommandAsync<TAggregate, TResult>(
-        string aggregateKey,
-        ICommand<TAggregate, TResult> command,
-        CancellationToken cancellationToken = default
-    );
+    /// <inheritdoc />
+    public sealed override async IAsyncEnumerable<object> HandleAsync(
+        TEvent eventData,
+        EffectContext context,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await HandleSimpleAsync(eventData, context, cancellationToken);
+        yield break;
+    }
 
     /// <summary>
-    ///     Sends a command to the specified aggregate (fire-and-forget).
+    ///     Handles the event without yielding additional events.
     /// </summary>
-    Task SendCommandAsync<TAggregate>(
-        string aggregateKey,
-        ICommand<TAggregate, Unit> command,
-        CancellationToken cancellationToken = default
+    protected abstract Task HandleSimpleAsync(
+        TEvent eventData,
+        EffectContext context,
+        CancellationToken cancellationToken
     );
 }
 ```
 
 ---
 
-## Phase 2: Implementation (EventSourcing.Aggregates)
+## Observability (Required)
 
-### Step 2.1: Add EffectDispatcherGrain
+Effects must have comprehensive logging and metrics for production debugging and performance monitoring.
 
-**File:** `src/EventSourcing.Aggregates/EffectDispatcherGrain.cs`
+### Metrics (OpenTelemetry)
+
+```csharp
+namespace Mississippi.EventSourcing.Aggregates.Observability;
+
+/// <summary>
+///     Metrics for event effect execution.
+/// </summary>
+public sealed class EventEffectMetrics
+{
+    private readonly Counter<long> executionCounter;
+    private readonly Counter<long> errorCounter;
+    private readonly Histogram<double> durationHistogram;
+    private readonly Counter<long> slowEffectCounter;
+
+    public EventEffectMetrics(IMeterFactory meterFactory)
+    {
+        var meter = meterFactory.Create("Mississippi.EventSourcing.Aggregates.Effects");
+        
+        executionCounter = meter.CreateCounter<long>(
+            "effect.execution.total",
+            description: "Total number of effect executions");
+        
+        errorCounter = meter.CreateCounter<long>(
+            "effect.execution.errors",
+            description: "Total failed effect executions");
+        
+        durationHistogram = meter.CreateHistogram<double>(
+            "effect.execution.duration",
+            unit: "ms",
+            description: "Effect execution duration in milliseconds");
+        
+        slowEffectCounter = meter.CreateCounter<long>(
+            "effect.execution.slow",
+            description: "Effects that took longer than 1 second");
+    }
+
+    public void RecordExecution(string effectType, string eventType, TimeSpan duration, bool success)
+    {
+        executionCounter.Add(1, 
+            new("effect.type", effectType), 
+            new("event.type", eventType),
+            new("success", success));
+        
+        durationHistogram.Record(duration.TotalMilliseconds, 
+            new("effect.type", effectType),
+            new("event.type", eventType));
+        
+        if (!success)
+        {
+            errorCounter.Add(1, new("effect.type", effectType), new("event.type", eventType));
+        }
+        
+        if (duration.TotalSeconds > 1.0)
+        {
+            slowEffectCounter.Add(1, new("effect.type", effectType), new("event.type", eventType));
+        }
+    }
+}
+```
+
+### Logger Extensions
 
 ```csharp
 namespace Mississippi.EventSourcing.Aggregates;
 
 /// <summary>
-///     Stateless worker grain that dispatches event effects asynchronously.
+///     Logger extensions for event effect observability.
 /// </summary>
-[StatelessWorker]
-public sealed class EffectDispatcherGrain : Grain, IEffectDispatcherGrain
+internal static partial class EventEffectLoggerExtensions
 {
-    private IServiceProvider ServiceProvider { get; }
-    private ILogger<EffectDispatcherGrain> Logger { get; }
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message = "Effect {EffectType} starting for event {EventType} on aggregate {AggregateKey}")]
+    public static partial void EffectStarting(
+        this ILogger logger,
+        string effectType,
+        string eventType,
+        string aggregateKey);
 
-    public EffectDispatcherGrain(
-        IServiceProvider serviceProvider,
-        ILogger<EffectDispatcherGrain> logger)
-    {
-        ServiceProvider = serviceProvider;
-        Logger = logger;
-    }
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message = "Effect {EffectType} yielded event {YieldedEventType} for aggregate {AggregateKey}")]
+    public static partial void EffectYieldedEvent(
+        this ILogger logger,
+        string effectType,
+        string yieldedEventType,
+        string aggregateKey);
 
-    public async Task DispatchAsync(
-        string aggregateTypeName,
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message = "Effect {EffectType} completed for event {EventType} on aggregate {AggregateKey} in {DurationMs}ms")]
+    public static partial void EffectCompleted(
+        this ILogger logger,
+        string effectType,
+        string eventType,
         string aggregateKey,
-        IReadOnlyList<object> events,
-        CancellationToken cancellationToken = default)
+        long durationMs);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Effect {EffectType} took {DurationMs}ms (>1000ms) for aggregate {AggregateKey}. Consider optimizing or using background processing.")]
+    public static partial void EffectSlow(
+        this ILogger logger,
+        string effectType,
+        long durationMs,
+        string aggregateKey);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Effect {EffectType} failed for aggregate {AggregateKey}")]
+    public static partial void EffectFailed(
+        this ILogger logger,
+        string effectType,
+        string aggregateKey,
+        Exception exception);
+}
+```
+
+### Execution with Observability
+
+```csharp
+// In RootEventEffectDispatcher:
+
+public async IAsyncEnumerable<object> DispatchAsync(
+    IReadOnlyList<object> events,
+    EffectContext context,
+    [EnumeratorCancellation] CancellationToken cancellationToken)
+{
+    foreach (var eventData in events)
     {
-        // Resolve effects by aggregate type name from DI
-        // Use a registry that maps type names to effect collections
-        var effectRegistry = ServiceProvider.GetRequiredService<IEffectRegistry>();
-        var effects = effectRegistry.GetEffects(aggregateTypeName);
+        var eventTypeName = eventData.GetType().Name;
 
-        foreach (var eventData in events)
+        foreach (var effect in Effects)
         {
-            foreach (var effect in effects)
+            if (!effect.CanHandle(eventData))
             {
-                if (!effect.CanHandle(eventData))
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                try
+            var effectTypeName = effect.GetType().Name;
+            var stopwatch = Stopwatch.StartNew();
+            var success = true;
+
+            Logger.EffectStarting(effectTypeName, eventTypeName, context.AggregateKey);
+
+            try
+            {
+                await foreach (var resultEvent in effect.HandleAsync(
+                    eventData, context, cancellationToken))
                 {
-                    await effect.HandleAsync(eventData, aggregateKey, cancellationToken);
+                    Logger.EffectYieldedEvent(effectTypeName, resultEvent.GetType().Name, context.AggregateKey);
+                    yield return resultEvent;
                 }
-                catch (OperationCanceledException)
+            }
+            catch (Exception ex)
+            {
+                success = false;
+                Logger.EffectFailed(effectTypeName, context.AggregateKey, ex);
+                throw; // Propagate to command
+            }
+            finally
+            {
+                stopwatch.Stop();
+                var durationMs = stopwatch.ElapsedMilliseconds;
+                
+                Logger.EffectCompleted(effectTypeName, eventTypeName, context.AggregateKey, durationMs);
+                Metrics.RecordExecution(effectTypeName, eventTypeName, stopwatch.Elapsed, success);
+                
+                if (stopwatch.Elapsed.TotalSeconds > 1.0)
                 {
-                    // Expected; don't log as error
-                }
-                catch (Exception ex)
-                {
-                    Logger.EffectFailed(effect.GetType().Name, aggregateKey, ex);
+                    Logger.EffectSlow(effectTypeName, durationMs, context.AggregateKey);
                 }
             }
         }
@@ -228,283 +388,153 @@ public sealed class EffectDispatcherGrain : Grain, IEffectDispatcherGrain
 }
 ```
 
-### Step 2.2: Add IEffectRegistry Interface and Implementation
+---
 
-**File:** `src/EventSourcing.Aggregates.Abstractions/IEffectRegistry.cs`
+## Implementation Phases
 
-```csharp
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+### Phase 1: Abstractions
 
-/// <summary>
-///     Registry for resolving event effects by aggregate type name.
-/// </summary>
-public interface IEffectRegistry
-{
-    /// <summary>
-    ///     Gets effects registered for the specified aggregate type.
-    /// </summary>
-    IEnumerable<object> GetEffects(string aggregateTypeName);
-}
-```
+**Files:**
+- `src/EventSourcing.Aggregates.Abstractions/EffectContext.cs`
+- `src/EventSourcing.Aggregates.Abstractions/IEventEffect.cs`
+- `src/EventSourcing.Aggregates.Abstractions/EventEffectBase.cs`
+- `src/EventSourcing.Aggregates.Abstractions/SimpleEventEffectBase.cs`
+- `src/EventSourcing.Aggregates.Abstractions/IRootEventEffectDispatcher.cs`
 
-**File:** `src/EventSourcing.Aggregates/EffectRegistry.cs`
+### Phase 2: Implementation with Observability
 
-```csharp
-namespace Mississippi.EventSourcing.Aggregates;
+**Files:**
+- `src/EventSourcing.Aggregates/RootEventEffectDispatcher.cs`
+- `src/EventSourcing.Aggregates/Observability/EventEffectMetrics.cs`
+- `src/EventSourcing.Aggregates/EventEffectLoggerExtensions.cs`
+- `src/EventSourcing.Aggregates/AggregateRegistrations.cs` (extend)
 
-/// <summary>
-///     Default implementation of <see cref="IEffectRegistry"/>.
-/// </summary>
-public sealed class EffectRegistry : IEffectRegistry
-{
-    private readonly IServiceProvider serviceProvider;
-    private readonly ConcurrentDictionary<string, Type> aggregateTypeCache = new();
-
-    public EffectRegistry(IServiceProvider serviceProvider)
-    {
-        this.serviceProvider = serviceProvider;
-    }
-
-    public IEnumerable<object> GetEffects(string aggregateTypeName)
-    {
-        // Build generic type IEventEffect<TAggregate> and resolve from DI
-        // Cache type lookups for performance
-        var aggregateType = aggregateTypeCache.GetOrAdd(
-            aggregateTypeName,
-            name => AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.GetTypes())
-                .FirstOrDefault(t => t.FullName == name)
-                ?? throw new InvalidOperationException($"Aggregate type '{name}' not found"));
-
-        var effectType = typeof(IEventEffect<>).MakeGenericType(aggregateType);
-        return serviceProvider.GetServices(effectType).Cast<object>();
-    }
-}
-```
-
-### Step 2.3: Add AggregateCommandGateway (Saga Support)
-
-**File:** `src/EventSourcing.Aggregates/AggregateCommandGateway.cs`
-
-```csharp
-namespace Mississippi.EventSourcing.Aggregates;
-
-/// <summary>
-///     Gateway for sending commands to aggregates from effects.
-/// </summary>
-public sealed class AggregateCommandGateway : IAggregateCommandGateway
-{
-    private IGrainFactory GrainFactory { get; }
-
-    public AggregateCommandGateway(IGrainFactory grainFactory)
-    {
-        GrainFactory = grainFactory;
-    }
-
-    public async Task<TResult> SendCommandAsync<TAggregate, TResult>(
-        string aggregateKey,
-        ICommand<TAggregate, TResult> command,
-        CancellationToken cancellationToken = default)
-    {
-        var grain = GrainFactory.GetGrain<IGenericAggregateGrain<TAggregate>>(aggregateKey);
-        return await grain.ExecuteCommandAsync(command, cancellationToken);
-    }
-
-    public async Task SendCommandAsync<TAggregate>(
-        string aggregateKey,
-        ICommand<TAggregate, Unit> command,
-        CancellationToken cancellationToken = default)
-    {
-        var grain = GrainFactory.GetGrain<IGenericAggregateGrain<TAggregate>>(aggregateKey);
-        await grain.ExecuteCommandAsync(command, cancellationToken);
-    }
-}
-```
-
-### Step 2.4: Add Effect Registration Methods
-
-**File:** `src/EventSourcing.Aggregates/AggregateRegistrations.cs` (extend existing)
-
-Add methods:
-```csharp
-public static IServiceCollection AddEventEffect<TEvent, TAggregate, TEffect>(
-    this IServiceCollection services
-)
-    where TEffect : class, IEventEffect<TEvent, TAggregate>
-{
-    services.AddTransient<IEventEffect<TAggregate>, TEffect>();
-    services.AddTransient<IEventEffect<TEvent, TAggregate>, TEffect>();
-    return services;
-}
-
-public static IServiceCollection AddEffectInfrastructure(
-    this IServiceCollection services
-)
-{
-    services.TryAddSingleton<IEffectRegistry, EffectRegistry>();
-    services.TryAddSingleton<IAggregateCommandGateway, AggregateCommandGateway>();
-    return services;
-}
-```
-
-### Step 2.5: Modify GenericAggregateGrain
+### Phase 3: Grain Integration
 
 **File:** `src/EventSourcing.Aggregates/GenericAggregateGrain.cs`
 
 Changes:
-1. After `AppendEventsAsync()` succeeds, dispatch effects via `IEffectDispatcherGrain`
-2. Use fire-and-forget (`[OneWay]` + `_ =`) pattern (matching snapshot persistence)
+1. Inject `IRootEventEffectDispatcher<TAggregate>` (optional)
+2. After events persisted, build `EffectContext`
+3. Dispatch effects, collect yielded events
+4. Persist and reduce yielded events
+5. Loop until no more events (max 10 iterations)
 
 ```csharp
-// After events persisted and reduced
-if (events.Count > 0)
+// After initial events persisted:
+if (EffectDispatcher is not null && events.Count > 0)
 {
-    // Fire-and-forget: dispatcher grain is [StatelessWorker] with [OneWay]
-    var dispatcherGrain = GrainFactory.GetGrain<IEffectDispatcherGrain>(Guid.NewGuid().ToString());
-    _ = dispatcherGrain.DispatchAsync(
-        typeof(TAggregate).FullName!,
-        this.GetPrimaryKeyString(),
-        events,
-        CancellationToken.None  // Don't pass caller's token to fire-and-forget
+    var context = new EffectContext(
+        AggregateKey: this.GetPrimaryKeyString(),
+        BrookName: brookName,
+        AggregateTypeName: typeof(TAggregate).FullName!
     );
+    
+    var pendingEvents = events.ToList();
+    int iteration = 0;
+    const int maxIterations = 10;
+    
+    while (pendingEvents.Count > 0 && iteration < maxIterations)
+    {
+        iteration++;
+        var effectEvents = new List<object>();
+        
+        await foreach (var resultEvent in EffectDispatcher.DispatchAsync(
+            pendingEvents, context, cancellationToken))
+        {
+            effectEvents.Add(resultEvent);
+            
+            // Persist immediately for real-time projection updates
+            await BrookWriter.AppendEventsAsync(brookName, [resultEvent], cancellationToken);
+            State = RootReducer.Reduce([resultEvent], State);
+        }
+        
+        pendingEvents = effectEvents;
+    }
+    
+    if (iteration >= maxIterations)
+    {
+        Logger.EffectIterationLimitReached(this.GetPrimaryKeyString(), maxIterations);
+    }
 }
 ```
 
-### Step 2.6: Add Logger Extensions
-
-**File:** `src/EventSourcing.Aggregates/EffectDispatcherLoggerExtensions.cs`
-
-Add logging methods for:
-- `DispatchingEffects(aggregateType, aggregateKey, eventCount)`
-- `EffectMatched(effectType, eventType)`  
-- `EffectCompleted(effectType, durationMs)`
-- `EffectFailed(effectType, aggregateKey, exception)`
-
-## Phase 3: Source Generator Updates
-
-### Step 3.1: Update AggregateSiloRegistrationGenerator
+### Phase 4: Source Generator Updates
 
 **File:** `src/Inlet.Silo.Generators/AggregateSiloRegistrationGenerator.cs`
 
-Changes:
-1. Add `FindEffectsForAggregate()` method (similar to handlers/reducers)
-   - Look in `{AggregateNamespace}.Effects` namespace
-   - Find types extending `EventEffectBase<,>` with matching aggregate type
-2. Add `EffectInfo` record to track discovered effects
-3. Update `AggregateRegistrationInfo` to include effects list
-4. Update `GenerateRegistration()` to emit effect registrations:
-   ```csharp
-   // Register effects for side operations
-   foreach (EffectInfo effect in aggregate.Effects)
-   {
-       sb.AppendLine($"services.AddEventEffect<{effect.EventTypeName}, {aggregate.Model.TypeName}, {effect.TypeName}>();");
-   }
-   ```
+- Add `FindEffectsForAggregate()` matching handlers/reducers pattern
+- Discover effects in `{Namespace}.Effects`
+- Emit `services.AddEventEffect<TEvent, TAggregate, TEffect>()`
+- Emit `services.AddEventEffectDispatcher<TAggregate>()`
 
-### Step 3.2: Add EffectInfo Record
+### Phase 5: Sample Implementation
 
-```csharp
-private sealed record EffectInfo(
-    string FullTypeName,
-    string TypeName,
-    string EventFullTypeName,
-    string EventTypeName
-);
+**Files:**
+- `samples/Spring/Spring.Domain/Aggregates/BankAccount/Effects/AccountOpenedEffect.cs`
+- Optional: Streaming effect example
+
+### Phase 6: Testing
+
+- Unit tests for `EventEffectBase`, `SimpleEventEffectBase`
+- Unit tests for `RootEventEffectDispatcher`
+- Generator tests for effect discovery
+- Integration tests for grain effect execution
+- Observability tests (metrics recorded, slow warning logged)
+
+### Phase 7: Documentation
+
+- Effects guide (what, when, how)
+- Performance guidance (sub-second, warning at 1s)
+- Streaming effects for LLM/progressive scenarios
+- Comparison with client-side effects
+
+---
+
+## Flow Diagram (Final)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Grain as AggregateGrain
+    participant Handler
+    participant Brook
+    participant Reducer
+    participant Projections
+    participant Effect
+    participant External as External API
+    participant Metrics
+
+    Client->>Grain: ExecuteCommand(cmd)
+    Grain->>Handler: Handle(cmd, state)
+    Handler-->>Grain: events[]
+    Grain->>Brook: AppendEvents(events)
+    Brook-->>Projections: events (real-time)
+    Grain->>Reducer: Reduce(events)
+    
+    Note over Grain,Effect: Effects run (grain blocked)
+    
+    loop For each event
+        Grain->>Effect: CanHandle(event)?
+        alt Effect handles event
+            Grain->>Metrics: effect.starting
+            Effect->>External: FetchData()
+            External-->>Effect: data
+            Effect-->>Grain: yield DataFetchedEvent
+            Grain->>Brook: AppendEvent (immediate)
+            Brook-->>Projections: event (real-time!)
+            Grain->>Reducer: Reduce
+            Grain->>Metrics: effect.completed (duration)
+            alt Duration > 1s
+                Grain->>Metrics: effect.slow (warning)
+            end
+        end
+    end
+    
+    Grain-->>Client: result
 ```
 
-## Phase 4: Sample Implementation
-
-### Step 4.1: Add Effects Folder to BankAccount Aggregate
-
-**Folder:** `samples/Spring/Spring.Domain/Aggregates/BankAccount/Effects/`
-
-### Step 4.2: Add Sample Effect
-
-**File:** `samples/Spring/Spring.Domain/Aggregates/BankAccount/Effects/AccountOpenedEffect.cs`
-
-```csharp
-namespace Spring.Domain.Aggregates.BankAccount.Effects;
-
-/// <summary>
-///     Effect that runs when an account is opened.
-/// </summary>
-internal sealed class AccountOpenedEffect : EventEffectBase<AccountOpened, BankAccountAggregate>
-{
-    private ILogger<AccountOpenedEffect> Logger { get; }
-
-    public AccountOpenedEffect(ILogger<AccountOpenedEffect> logger)
-    {
-        Logger = logger;
-    }
-
-    protected override Task HandleAsync(
-        AccountOpened eventData,
-        string aggregateKey,
-        CancellationToken cancellationToken
-    )
-    {
-        Logger.LogInformation(
-            "Account opened for {HolderName} with initial deposit {InitialDeposit}. Key: {AggregateKey}",
-            eventData.HolderName,
-            eventData.InitialDeposit,
-            aggregateKey);
-        return Task.CompletedTask;
-    }
-}
-```
-
-## Phase 5: Testing
-
-### Step 5.1: Unit Tests for RootEventEffectDispatcher
-
-**File:** `tests/EventSourcing.Aggregates.L0Tests/RootEventEffectDispatcherTests.cs`
-
-Test cases:
-- Single effect handles single event
-- Multiple effects handle same event
-- Effect exception doesn't stop other effects
-- Effect that doesn't match event is skipped
-- Empty events list completes immediately
-- Cancellation token is respected
-
-### Step 5.2: Unit Tests for EventEffectBase
-
-**File:** `tests/EventSourcing.Aggregates.Abstractions.L0Tests/EventEffectBaseTests.cs`
-
-Test cases:
-- CanHandle returns true for matching event type
-- CanHandle returns false for non-matching type
-- HandleAsync routes to typed method
-- HandleAsync returns completed task for non-matching type
-
-### Step 5.3: Generator Tests
-
-**File:** `tests/Inlet.Silo.Generators.L0Tests/AggregateSiloRegistrationGeneratorTests.cs`
-
-Add test cases:
-- Generator discovers effects in Effects sub-namespace
-- Generator emits AddEventEffect calls
-- Generator handles aggregates without effects
-
-### Step 5.4: Integration Tests
-
-**File:** `tests/EventSourcing.Aggregates.L2Tests/EffectIntegrationTests.cs`
-
-Test cases:
-- Effect is triggered after command execution
-- Effect receives correct event data and aggregate key
-- Multiple effects for same event all run
-- Effect failure doesn't fail command
-
-## Phase 6: Documentation
-
-### Step 6.1: Update README
-
-Add section on event effects to aggregate documentation.
-
-### Step 6.2: XML Documentation
-
-Ensure all public APIs have complete XML documentation.
+---
 
 ## Validation Checklist
 
@@ -514,50 +544,33 @@ Ensure all public APIs have complete XML documentation.
 - [ ] Build completes with zero warnings
 - [ ] Source generator produces valid code
 - [ ] Sample project compiles and runs
-- [ ] Effect is triggered in sample when account opened
+- [ ] Effect is triggered when account opened
+- [ ] Effect-yielded events are persisted immediately
+- [ ] Projections update in real-time during effect streaming
+- [ ] Metrics recorded for all effect executions
+- [ ] Warning logged when effect > 1 second
+- [ ] Error logged when effect fails
+- [ ] Recursion limit prevents infinite loops
 
-## Rollout Plan
-
-1. Implement abstractions (backwards compatible)
-2. Implement dispatcher (backwards compatible, opt-in)
-3. Update grain (backwards compatible, dispatcher is optional)
-4. Update generator (backwards compatible, effects are optional)
-5. Add sample (demonstrates feature)
-6. Document
+---
 
 ## Risks and Mitigations
 
 | Risk | Mitigation |
 |------|------------|
-| Effect slows down command response | Use fire-and-forget by default |
-| Effect failure surfaces as command failure | Catch exceptions in dispatcher |
+| Effect blocks grain too long | Warning at 1s, document performance guidance |
+| Infinite effect loop | MaxIterations limit (10) |
+| Effect failure breaks command | Expected - errors propagate, logged with full context |
+| Debugging streaming effects | Real-time projection updates + metrics + logs |
 | Generator breaks existing projects | Effects are opt-in; no effects = no change |
-| Circular dependency in DI | Effects are transient, resolved at dispatch time |
 
-## Resolved Design Decisions
+---
 
-1. **Fire-and-forget vs awaited effects**
-   - **RESOLVED:** Fire-and-forget via `[StatelessWorker]` grain with `[OneWay]`
-   - Matches existing pattern in `ISnapshotPersisterGrain`
-   - Preserves aggregate throughput
+## Summary of Key Decisions
 
-2. **Effect execution context**
-   - **RESOLVED:** Effects run in `EffectDispatcherGrain` (stateless worker)
-   - Aggregate grain returns immediately after dispatching
-   - Effects can await external calls without blocking aggregate
-
-3. **Cross-aggregate communication (Saga support)**
-   - **RESOLVED:** Effects inject `IAggregateCommandGateway`
-   - Enables saga patterns where effects orchestrate multi-aggregate workflows
-   - Gateway wraps `IGrainFactory` to send commands to other aggregates
-
-4. **Effect ordering**
-   - Current: No guaranteed order (parallel-safe implementation)
-   - Future: Could add priority attribute if needed
-
-5. **Effect retry/resilience**
-   - Current: No retry; effects handle their own resilience via DI (Polly, etc.)
-   - Future: Could add optional retry wrapper
-
-6. **Client-side naming change (ActionEffect)**
-   - Defer to separate PR to avoid scope creep
+1. **No state parameter** - Aligned with client-side. Effects read brook if needed.
+2. **EffectContext with brook info** - Enables state rehydration edge case.
+3. **Blocking execution** - Grain model, transactional event chains.
+4. **Immediate event persistence** - Real-time projection updates during streaming.
+5. **Comprehensive observability** - Metrics + structured logs + slow warnings.
+6. **Concurrency differs from client** - Justified by execution context (WASM vs Orleans).
