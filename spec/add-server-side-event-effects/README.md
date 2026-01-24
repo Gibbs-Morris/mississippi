@@ -1,76 +1,84 @@
 # Add Server-Side Event Effects
 
-**Status:** Plan Updated (Awaiting Gateway Decision)  
-**Task Size:** Large  
-**Approval Checkpoint:** Yes (new public API/contract, cross-component change, saga pattern foundation)
+**Status:** Ready for Approval (v3 - In-Grain Design)  
+**Task Size:** Medium (simplified from Large)  
+**Approval Checkpoint:** Yes (new public API/contract)
 
 ## Summary
 
-Add support for server-side effects in aggregate grains, mirroring the existing client-side Redux effect pattern. Effects allow executing asynchronous side operations (API calls, messaging, notifications) after events are persisted.
+Add support for server-side effects in aggregate grains. Effects run **inside the grain context** after events are persisted, can **access aggregate state**, and can **yield additional events** via `IAsyncEnumerable<object>` for streaming scenarios.
 
-**Key Design Decisions:**
-1. Effects run via `[StatelessWorker]` grain with `[OneWay]` for throughput isolation
-2. Source generator discovers effects in `Effects/` namespace (no runtime reflection)
-3. Fire-and-forget execution (same pattern as snapshot persistence and client Store)
-4. `EffectContext` provides rich metadata (aggregateKey, position, correlationId)
-5. Full observability (metrics, structured logs, traces)
+## Design Pivot (v3)
 
-## Plan Updated (v2)
+Major simplification from v2 fire-and-forget approach:
 
-Implementation plan updated based on persona review feedback:
+| Aspect | v2 (Fire-and-forget) | v3 (In-grain) |
+|--------|---------------------|---------------|
+| Execution context | Separate StatelessWorker | **Inside aggregate grain** |
+| Blocking | Non-blocking | **Blocks until complete** |
+| State access | No | **Yes** |
+| Return type | `Task` (void) | **`IAsyncEnumerable<object>` (events)** |
+| Error handling | Swallowed | **Propagates to command** |
+| Use case | High-throughput background | **Data enrichment, LLM streaming** |
+| Complexity | High | **Low** |
 
-| Change | v1 → v2 |
-|--------|---------|
-| Effect resolution | ~~IEffectRegistry (reflection)~~ → **Source generator + keyed services** |
-| Effect context | ~~aggregateKey string~~ → **EffectContext record** |
-| Observability | ~~Minimal~~ → **Full (metrics, logs, traces)** |
-| Idempotency | ~~Not addressed~~ → **Guidance + IdempotentEffectBase** |
-| Graceful shutdown | ~~Not addressed~~ → **OnDeactivateAsync cancellation** |
-| Documentation | ~~Basic~~ → **Comprehensive + anti-patterns** |
+## Key Design Decisions
 
-**Updated Plan:** [implementation-plan-v2.md](./implementation-plan-v2.md)
+1. **Effects run inside the grain** - Simple mental model, access to state
+2. **Effects block commands** - Next command waits until effects complete
+3. **Effects can yield events** - `IAsyncEnumerable<object>` for streaming
+4. **Keep effects fast** - Sub-100ms guidance, not for long-running work
+5. **Source generator discovers effects** - Same pattern as handlers/reducers
 
-## Decision Needed
+## Use Cases
 
-**IAggregateCommandGateway scope:**
-- **Option A:** Include in V1 (unified mental model, enables saga orchestration)
-- **Option B:** Defer to saga PR (YAGNI, reduces scope)
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 1. Data Enrichment                                          │
+│    Command → Event → Effect fetches external data → Event   │
+├─────────────────────────────────────────────────────────────┤
+│ 2. LLM Streaming                                            │
+│    Command → Event → Effect streams tokens → Events[]       │
+│    (UX projections update in real-time)                     │
+├─────────────────────────────────────────────────────────────┤
+│ 3. Validation with External System                          │
+│    Command → Event → Effect validates → ValidationEvent     │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Key Links
 
-- [implementation-plan-v2.md](./implementation-plan-v2.md) - **Updated plan with feedback**
-- [implementation-plan.md](./implementation-plan.md) - Original plan (superseded)
-- [rfc.md](./rfc.md) - Design document with throughput and saga design
-- [learned.md](./learned.md) - Verified repository facts
-- [verification.md](./verification.md) - Claim verification
+- [implementation-plan-v3.md](./implementation-plan-v3.md) - **Current plan (in-grain approach)**
+- [implementation-plan-v2.md](./implementation-plan-v2.md) - Superseded (fire-and-forget)
+- [implementation-plan.md](./implementation-plan.md) - Original (superseded)
+- [rfc.md](./rfc.md) - Original design document
 - [progress.md](./progress.md) - Work log
-- [reviews/](./reviews/) - Persona review documents
-
-## Resolved Questions
-
-1. **Event Effects (not Command Effects):** Effects trigger after events are persisted for transactional safety
-2. **Fire-and-forget via EffectDispatcherGrain:** Uses `[StatelessWorker]` + `[OneWay]` to avoid blocking aggregate
-3. **Source generator registration:** Matches existing handler/reducer pattern (no runtime reflection)
-4. **Unified Mental Model:** Client (Action→Effect) and Server (Event→Effect) follow same pattern
-5. **At-most-once semantics:** Documented; IdempotentEffectBase for critical effects
+- [reviews/](./reviews/) - Persona review documents (informed v2, led to v3 simplification)
 
 ## Scope
 
 ### In Scope (This PR)
-- `EffectContext` record with rich metadata
-- `IEventEffect<TAggregate>` and `EventEffectBase<TEvent, TAggregate>` interfaces
-- `IdempotentEffectBase<TEvent, TAggregate>` optional helper
-- `IEffectDispatcherGrain` with `[StatelessWorker]` + `[OneWay]`
-- `EffectDispatcherMetrics` and `EffectDispatcherDiagnostics` observability
+- `IEventEffect<TAggregate>` interface with `IAsyncEnumerable<object>` return
+- `EventEffectBase<TEvent, TAggregate>` base class
+- `SimpleEventEffectBase<TEvent, TAggregate>` for effects that don't yield events
+- `IRootEventEffectDispatcher<TAggregate>` for grain integration
 - Source generator updates to discover `Effects/` sub-namespace
+- GenericAggregateGrain modification to run effects after events
 - Sample effect in Spring.Domain.Aggregates.BankAccount
-- Comprehensive documentation (guides, anti-patterns, testing)
-
-### Pending Decision
-- `IAggregateCommandGateway` for cross-aggregate communication
+- Documentation
 
 ### Out of Scope (Future PRs)
-- Full saga state machine framework
+- `IAggregateCommandGateway` for saga patterns (can add later if needed)
+- Fire-and-forget/background effects (different use case)
 - Effect retry/resilience (users use Polly via DI)
-- Client-side renaming (`IEffect` → `IActionEffect`)
-- Effect priority/ordering attributes
+
+## Removed from v2
+
+These were needed for fire-and-forget but not for in-grain:
+- ~~EffectDispatcherGrain (StatelessWorker)~~
+- ~~OneWay attribute / fire-and-forget~~
+- ~~EffectContext record (state is available directly)~~
+- ~~IdempotentEffectBase (effects are transactional with command)~~
+- ~~Observability infrastructure (simple logging sufficient)~~
+- ~~Graceful shutdown handling~~
+- ~~At-most-once semantics documentation~~

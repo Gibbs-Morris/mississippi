@@ -1,5 +1,46 @@
 # Progress Log
 
+## 2026-01-24 (Session 3) - Design Pivot to In-Grain Effects
+
+### User Request
+
+User pivoted to a simpler approach after overnight consideration:
+- Effects should run **inside the grain** (not separate StatelessWorker)
+- Effects should **block the grain** (synchronous, not fire-and-forget)
+- Effects should **access aggregate state** (they're in grain context)
+- Effects should **yield events** via `IAsyncEnumerable<object>` (streaming support)
+- Use case: Low-throughput aggregates needing data fetch/enrichment
+- LLM streaming support: Effects can yield multiple events for real-time UX updates
+
+### Key Design Changes (v2 → v3)
+
+| Aspect | v2 | v3 |
+|--------|----|----|
+| Execution | Separate StatelessWorker | **In aggregate grain** |
+| Blocking | Fire-and-forget | **Blocks until complete** |
+| State access | No | **Yes** |
+| Return type | `Task` (void) | **`IAsyncEnumerable<object>`** |
+| Error handling | Swallowed | **Propagates to command** |
+
+### Removed from v2 (Not Needed for In-Grain)
+
+- ~~EffectDispatcherGrain (StatelessWorker)~~
+- ~~OneWay attribute / fire-and-forget~~
+- ~~EffectContext record (state available directly)~~
+- ~~IdempotentEffectBase (effects transactional with command)~~
+- ~~Observability infrastructure (simple logging sufficient)~~
+- ~~Graceful shutdown handling~~
+- ~~IAggregateCommandGateway (defer to saga PR)~~
+
+### Branch Updated
+
+- Rebased on origin/main to get IEffect → IActionEffect rename (PR #231)
+- Created `implementation-plan-v3.md` with simplified in-grain design
+- Updated README to reflect v3 approach
+- Task size reduced from Large to Medium
+
+---
+
 ## 2026-01-24 (Session 2 continued) - Plan Updated Based on Reviews
 
 ### Feedback Incorporated (Non-Conflicting)
