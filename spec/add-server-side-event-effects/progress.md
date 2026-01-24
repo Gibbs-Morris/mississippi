@@ -1,5 +1,37 @@
 # Progress Log
 
+## 2026-01-24 (Session 2 continued) - Plan Updated Based on Reviews
+
+### Feedback Incorporated (Non-Conflicting)
+
+All non-conflicting feedback from persona reviews has been incorporated:
+
+| Feedback | Source | Resolution |
+|----------|--------|------------|
+| Replace IEffectRegistry with source generator | Architect + User | ✅ Source gen discovers effects, registers via keyed services |
+| Add EffectContext for richer metadata | Developer | ✅ Record with aggregateKey, position, correlationId, etc. |
+| Add observability | DevOps | ✅ EffectDispatcherMetrics + EffectDispatcherDiagnostics |
+| Document at-most-once semantics | DevOps | ✅ In XML docs and guides |
+| Add idempotency guidance | DevOps | ✅ IdempotentEffectBase + documentation |
+| Add graceful shutdown | DevOps | ✅ OnDeactivateAsync cancellation |
+| Add testing examples | Developer | ✅ Testing guide in docs |
+| Add anti-patterns documentation | Dev Manager | ✅ Separate anti-patterns guide |
+
+### Conflict Escalated to User
+
+**IAggregateCommandGateway scope:**
+- Architect: Defer to saga PR (YAGNI)
+- Original design: Include for unified mental model
+- Awaiting user decision
+
+### Files Created/Updated
+
+- `implementation-plan-v2.md` - New plan incorporating feedback
+- `README.md` - Updated status, linked new plan
+- `progress.md` - This update
+
+---
+
 ## 2026-01-24 (Session 2 continued) - Persona Reviews
 
 ### User Request
