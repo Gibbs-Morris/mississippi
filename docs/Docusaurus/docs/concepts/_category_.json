@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir",
-  "position": 5,
+  "label": "Concepts",
+  "position": 3,
   "link": {
     "type": "doc",
-    "id": "reservoir/index"
+    "id": "concepts/index"
   },
   "collapsible": true,
   "collapsed": false

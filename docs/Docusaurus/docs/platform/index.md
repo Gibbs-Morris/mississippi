@@ -1,37 +1,51 @@
 ---
 sidebar_position: 1
-title: Framework Overview
-description: High-level map of Mississippi building blocks, from event sourcing to client UX.
+title: Components
+description: Reference documentation for all Mississippi components
 ---
 
-Mississippi is composed of modular building blocks that move domain changes into
-live UX state for Blazor WebAssembly and ASP.NET hosts.
+Mississippi is composed of modular components that move domain changes into
+live UX state. This section provides detailed reference for each component.
 
-## Logical Order (Server → Client)
+## Component Index
 
-1. [Aggregates](./aggregates.md) — Command handling and event production
-2. [Brooks](./brooks.md) — Append-only event streams
-3. [UX Projections](./ux-projections.md) — Composable read models for UX state
-4. [Snapshots](./snapshots.md) — Accelerated projection rebuilds
-5. [Aqueduct](./aqueduct.md) — Orleans-backed SignalR backplane
-6. [Inlet](./inlet.md) — WASM-to-server bridge for projection subscriptions
-7. [Reservoir](./reservoir.md) — Redux-style client state container
-8. [Refraction](./refraction.md) — Planned component library
+Components are listed in data-flow order (server to client):
+
+| Component | Purpose | Tier |
+| --- | --- | --- |
+| [Aggregates](./aggregates.md) | Command handling and event production | Silo |
+| [Brooks](./brooks.md) | Append-only event streams | Silo |
+| [UX Projections](./ux-projections.md) | Composable read models for UX state | Silo |
+| [Snapshots](./snapshots.md) | Accelerated projection rebuilds | Silo |
+| [Aqueduct](./aqueduct.md) | Orleans-backed SignalR backplane | Silo + Server |
+| [Inlet](./inlet.md) | Real-time projection subscriptions | All tiers |
+| [Reservoir](./reservoir.md) | Redux-style client state container | Client |
+| [Refraction](./refraction.md) | Planned component library | Client |
+
+## Extensibility
+
+Components that support custom implementations:
+
+| Component | Interface | Default | Documentation |
+| --- | --- | --- | --- |
+| Event storage | `IBrookStorage` | Cosmos DB | [Custom Event Storage](./custom-event-storage.md) |
+| Snapshots | `ISnapshotStorage` | Azure Blob | [Custom Snapshot Storage](./custom-snapshot-storage.md) |
 
 ## SDK Packages
 
-Mississippi provides three SDK meta-packages that bundle libraries by deployment
-target. See the [SDK Reference](./sdk.md) for details:
+Mississippi provides SDK meta-packages by deployment target:
 
-| Package | Use Case |
-| --- | --- |
-| `Sdk.Client` | Blazor WebAssembly clients |
-| `Sdk.Server` | ASP.NET API hosts |
-| `Sdk.Silo` | Orleans silo hosts |
+| Package | Use Case | Components Included |
+| --- | --- | --- |
+| `Sdk.Client` | Blazor WebAssembly | Reservoir, Inlet Client |
+| `Sdk.Server` | ASP.NET API | Inlet Hub, Aqueduct Server |
+| `Sdk.Silo` | Orleans host | Aggregates, Brooks, Projections |
+
+See [SDK Reference](./sdk.md) for package contents and versions.
 
 ## Source Generators
 
-Mississippi includes source generators that reduce boilerplate:
+Reduce boilerplate with source generators:
 
 | Attribute | Purpose |
 | --- | --- |
@@ -39,42 +53,8 @@ Mississippi includes source generators that reduce boilerplate:
 | `[GenerateCommand]` | DTOs, mappers, HTTP endpoints for commands |
 | `[GenerateProjectionEndpoints]` | Read-only endpoints and client subscriptions |
 
-## Architecture Diagram
+## Related Topics
 
-```mermaid
-flowchart TB
-    subgraph Client["Blazor WASM"]
-        RES[Reservoir Store]
-        INL[Inlet Client]
-    end
-
-    subgraph Server["ASP.NET API"]
-        CTRL[Controllers]
-        HUB[InletHub]
-    end
-
-    subgraph Silo["Orleans Silo"]
-        AGG[Aggregate Grains]
-        PROJ[Projection Grains]
-        AQ[Aqueduct Grains]
-    end
-
-    subgraph Storage["Azure"]
-        COSMOS[(Cosmos DB)]
-        BLOB[(Blob Storage)]
-    end
-
-    RES --> INL
-    INL -->|SignalR| HUB
-    CTRL -->|Orleans| AGG
-    HUB -->|Orleans| PROJ
-    AGG --> COSMOS
-    AGG --> BLOB
-    PROJ --> COSMOS
-    AQ -->|Streams| HUB
-```
-
-## Next Steps
-
-Use these pages as a map, then dive into the detailed sections like
-[Reservoir](../reservoir/index.md) for client state management.
+- [Architecture](../concepts/architecture.md) — Deployment stack diagram
+- [Getting Started](../getting-started/index.md) — Installation and setup
+- [Reservoir](../reservoir/index.md) — Client state management detail

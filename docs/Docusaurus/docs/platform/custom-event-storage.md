@@ -1,4 +1,8 @@
-# Custom Event Storage Providers
+---
+sidebar_position: 10
+title: Custom Event Storage
+description: How to implement custom storage providers for Brooks event streams
+---
 
 Mississippi's Brooks event streaming layer is designed with a clean storage
 abstraction. While the framework ships with a Cosmos DB implementation, you can

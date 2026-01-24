@@ -1,6 +1,6 @@
 {
-  "label": "Framework Overview",
-  "position": 3,
+  "label": "Components",
+  "position": 4,
   "link": {
     "type": "doc",
     "id": "platform/index"

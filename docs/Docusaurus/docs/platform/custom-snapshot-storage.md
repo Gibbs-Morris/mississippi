@@ -1,4 +1,8 @@
-# Custom Snapshot Storage Providers
+---
+sidebar_position: 11
+title: Custom Snapshot Storage
+description: How to implement custom storage providers for projection snapshots
+---
 
 Mississippi's snapshot system uses a pluggable storage abstraction. While the framework
 includes a Cosmos DB implementation, you can build custom providers for SQL databases,

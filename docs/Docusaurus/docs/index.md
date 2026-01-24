@@ -195,14 +195,14 @@ Beyond the six core concepts, Mississippi includes:
 
 **Understand the architecture:**
 
-1. [Architecture](./architecture.md) — Deployment stack showing where components live
-2. [Why Mississippi?](./why-mississippi.md) — Enterprise benefits and comparisons
+1. [Architecture](./concepts/architecture.md) — Deployment stack showing where components live
+2. [Why Mississippi?](./concepts/why-mississippi.md) — Enterprise benefits and comparisons
 
 **If you're new to Mississippi:**
 
-1. Read [Framework Overview](./platform/index.md) for a component-by-component tour
-2. Explore the [Reservoir Getting Started](./reservoir/getting-started.md) tutorial
-3. Check the [SDK Reference](./platform/sdk.md) for package installation
+1. Read the [Getting Started](./getting-started/index.md) guide for installation
+2. Explore [Components](./platform/index.md) for a component-by-component tour
+3. Try the [Reservoir Tutorial](./reservoir/getting-started.md) to build a client app
 
 **If you're building a specific feature:**
 

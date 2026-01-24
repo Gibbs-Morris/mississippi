@@ -165,8 +165,8 @@ services.AddSingleton<IBrookStorage, SqlServerBrookStorage>();
 This pluggability means you can start with Azure defaults and migrate to other
 providers as requirements change—without rewriting business logic.
 
-## Next Steps
+## Related Topics
 
 - [Why Mississippi?](./why-mississippi.md) — Benefits for enterprise teams
-- [Framework Overview](./platform/index.md) — Component-by-component tour
-- [Start Here](./intro.md) — Conceptual introduction
+- [Components](../platform/index.md) — Component-by-component tour
+- [Start Here](../index.md) — Framework overview

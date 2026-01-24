@@ -1,4 +1,8 @@
-# Snapshots
+---
+sidebar_position: 4
+title: Snapshots
+description: Point-in-time state captures that accelerate projection rebuilds
+---
 
 Snapshots provide point-in-time state captures that accelerate projection
 rebuilds. Instead of replaying entire event streams, the system loads the

@@ -225,8 +225,8 @@ Mississippi may not be the best fit when:
 | **Consistency** | Varies | Varies | Enforced |
 | **Code ownership** | Full | Full | Full |
 
-## Next Steps
+## Related Topics
 
 - [Architecture](./architecture.md) — Deployment stack and data flow
-- [Start Here](./intro.md) — Conceptual introduction to components
-- [Framework Overview](./platform/index.md) — Component-by-component tour
+- [Start Here](../index.md) — Framework overview
+- [Components](../platform/index.md) — Component-by-component tour
