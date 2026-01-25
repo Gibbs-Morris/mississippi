@@ -173,26 +173,56 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
     )
     {
         // Walk up the inheritance chain looking for EventEffectBase<TEvent, TAggregate>
+        // or SimpleEventEffectBase<TEvent, TAggregate>
         Type? current = effectType.BaseType;
         while (current is not null)
         {
-            if (current.IsGenericType)
+            Type? eventType = TryExtractEventTypeFromBase(current);
+            if (eventType is not null)
             {
-                Type genericDef = current.GetGenericTypeDefinition();
-                if ((genericDef.Name == "EventEffectBase`2") &&
-                    (genericDef.Namespace == "Mississippi.EventSourcing.Aggregates.Abstractions"))
-                {
-                    Type[] typeArgs = current.GetGenericArguments();
-
-                    // typeArgs[0] = TEvent, typeArgs[1] = TAggregate
-                    if ((typeArgs.Length == 2) && (typeArgs[1] == AggregateType))
-                    {
-                        return typeArgs[0];
-                    }
-                }
+                return eventType;
             }
 
             current = current.BaseType;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Determines if the generic type definition is EventEffectBase or SimpleEventEffectBase.
+    /// </summary>
+    private static bool IsEventEffectBaseType(
+        Type genericDef
+    )
+    {
+        const string expectedNamespace = "Mississippi.EventSourcing.Aggregates.Abstractions";
+        return (genericDef.Namespace == expectedNamespace) &&
+               genericDef.Name is "EventEffectBase`2" or "SimpleEventEffectBase`2";
+    }
+
+    /// <summary>
+    ///     Attempts to extract the TEvent type from a base type if it matches EventEffectBase or SimpleEventEffectBase.
+    /// </summary>
+    private static Type? TryExtractEventTypeFromBase(
+        Type baseType
+    )
+    {
+        if (!baseType.IsGenericType)
+        {
+            return null;
+        }
+
+        Type genericDef = baseType.GetGenericTypeDefinition();
+        if (!IsEventEffectBaseType(genericDef))
+        {
+            return null;
+        }
+
+        Type[] typeArgs = baseType.GetGenericArguments();
+        if ((typeArgs.Length == 2) && (typeArgs[1] == AggregateType))
+        {
+            return typeArgs[0];
         }
 
         return null;

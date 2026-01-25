@@ -117,15 +117,23 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
         // Generate DTOs for nested custom types (e.g., collection element types)
-        foreach (PropertyModel prop in projection.Model.Properties)
+        // Use GroupBy to avoid duplicate generation for the same DTO type name
+        List<PropertyModel> nestedTypeProperties = projection.Model.Properties
+            .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
+                           prop.ElementDtoTypeName is not null &&
+                           !generatedNestedTypes.Contains(prop.ElementDtoTypeName!))
+            .GroupBy(prop => prop.ElementDtoTypeName)
+            .Select(g => g.First())
+            .ToList();
+
+        foreach (PropertyModel prop in nestedTypeProperties)
         {
-            if (prop.ElementTypeSymbol is INamedTypeSymbol elementType &&
-                prop.ElementDtoTypeName is not null &&
-                !generatedNestedTypes.Contains(prop.ElementDtoTypeName))
-            {
-                generatedNestedTypes.Add(prop.ElementDtoTypeName);
-                GenerateNestedTypeDto(context, elementType, prop.ElementDtoTypeName, clientNamespace);
-            }
+            generatedNestedTypes.Add(prop.ElementDtoTypeName!);
+            GenerateNestedTypeDto(
+                context,
+                (INamedTypeSymbol)prop.ElementTypeSymbol!,
+                prop.ElementDtoTypeName!,
+                clientNamespace);
         }
     }
 
@@ -237,15 +245,15 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
         // Check for enum properties that need DTO generation
-        IEnumerable<ITypeSymbol> propTypes = properties.Select(p => p.Type);
-        foreach (ITypeSymbol propType in propTypes)
+        IEnumerable<INamedTypeSymbol> enumTypes = properties
+            .Select(p => p.Type)
+            .Select(UnwrapNullable)
+            .OfType<INamedTypeSymbol>()
+            .Where(t => t.TypeKind == TypeKind.Enum);
+        foreach (INamedTypeSymbol enumType in enumTypes)
         {
-            ITypeSymbol unwrappedType = UnwrapNullable(propType);
-            if (unwrappedType is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
-            {
-                string enumDtoName = enumType.Name + "Dto";
-                GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace);
-            }
+            string enumDtoName = enumType.Name + "Dto";
+            GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace);
         }
     }
 

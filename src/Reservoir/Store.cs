@@ -293,6 +293,11 @@ public class Store : IStore
 
             try
             {
+                // Client-side action effects are intentionally non-cancellable once started.
+                // We pass CancellationToken.None to HandleAsync to indicate that the effect
+                // should not depend on external cancellation and must handle its own lifetime.
+                // The currentState is passed for pattern alignment with the IActionEffect<TState>
+                // interface but effects should extract all needed data from the action itself.
                 object? result = handleMethod.Invoke(rootEffect, [action, currentState, CancellationToken.None]);
                 if (result is not IAsyncEnumerable<IAction> asyncEnumerable)
                 {

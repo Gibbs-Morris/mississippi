@@ -50,4 +50,18 @@ internal static partial class CurrencyConversionLoggerExtensions
     public static partial void LogExchangeRateFetchFailed(
         this ILogger logger
     );
+
+    /// <summary>
+    ///     Logs when exchange rate fetch fails due to an HTTP error.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="exception">The HTTP exception that occurred.</param>
+    [LoggerMessage(
+        4,
+        LogLevel.Warning,
+        "HTTP error while fetching exchange rate from Frankfurter API. USD deposit will not be converted.")]
+    public static partial void LogExchangeRateFetchHttpError(
+        this ILogger logger,
+        Exception exception
+    );
 }

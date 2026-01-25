@@ -51,6 +51,12 @@ internal sealed class GenericAggregateGrain<TAggregate>
       IGrainBase
     where TAggregate : class
 {
+    /// <summary>
+    ///     Maximum number of effect iterations before the effect loop is terminated.
+    ///     This prevents infinite loops when effects continuously yield new events.
+    /// </summary>
+    private const int MaxEffectIterations = 10;
+
     private BrookKey brookKey;
 
     /// <summary>
@@ -215,10 +221,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
             return;
         }
 
-        const int maxIterations = 10;
         List<object> pendingEvents = new(initialEvents);
         int iteration = 0;
-        while ((pendingEvents.Count > 0) && (iteration < maxIterations))
+        while ((pendingEvents.Count > 0) && (iteration < MaxEffectIterations))
         {
             iteration++;
             List<object> yieldedEvents = [];
@@ -244,9 +249,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
             pendingEvents = yieldedEvents;
         }
 
-        if (iteration >= maxIterations)
+        if (iteration >= MaxEffectIterations)
         {
-            Logger.EffectIterationLimitReached(aggregateKey, maxIterations);
+            Logger.EffectIterationLimitReached(aggregateKey, MaxEffectIterations);
             EventEffectMetrics.RecordIterationLimitReached(typeof(TAggregate).Name, aggregateKey);
         }
     }

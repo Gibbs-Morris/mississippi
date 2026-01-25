@@ -134,4 +134,25 @@ internal static partial class EventEffectLoggerExtensions
         string aggregateType,
         string eventType
     );
+
+    /// <summary>
+    ///     Logs when an event effect fails during enumeration.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="effectType">The effect type name.</param>
+    /// <param name="eventType">The event type name.</param>
+    /// <param name="aggregateType">The aggregate type name.</param>
+    /// <param name="exception">The exception that occurred.</param>
+    [LoggerMessage(
+        107,
+        LogLevel.Error,
+        "Event effect {EffectType} failed while processing event {EventType} for aggregate {AggregateType}. " +
+        "Continuing with remaining effects.")]
+    public static partial void EventEffectFailed(
+        this ILogger logger,
+        string effectType,
+        string eventType,
+        string aggregateType,
+        Exception exception
+    );
 }

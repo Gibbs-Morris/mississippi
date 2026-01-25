@@ -115,39 +115,44 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         context.AddSource($"{projection.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
 
         // Generate DTOs for nested custom types (e.g., collection element types)
-        foreach (PropertyModel prop in projection.Model.Properties)
+        // Use GroupBy to avoid duplicate generation for the same DTO type name
+        List<PropertyModel> nestedTypeProperties = projection.Model.Properties
+            .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
+                           prop.ElementDtoTypeName is not null &&
+                           !generatedNestedTypes.Contains(prop.ElementDtoTypeName!))
+            .GroupBy(prop => prop.ElementDtoTypeName)
+            .Select(g => g.First())
+            .ToList();
+
+        foreach (PropertyModel prop in nestedTypeProperties)
         {
-            if (prop.ElementTypeSymbol is INamedTypeSymbol elementType &&
-                prop.ElementDtoTypeName is not null &&
-                !generatedNestedTypes.Contains(prop.ElementDtoTypeName))
+            INamedTypeSymbol elementType = (INamedTypeSymbol)prop.ElementTypeSymbol!;
+            generatedNestedTypes.Add(prop.ElementDtoTypeName!);
+            string nestedDtoSource = GenerateNestedTypeDto(
+                elementType,
+                prop.ElementDtoTypeName!,
+                projection.OutputNamespace);
+            context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
+
+            // Skip mappers for enums - they can be cast directly
+            if (elementType.TypeKind != TypeKind.Enum)
             {
-                generatedNestedTypes.Add(prop.ElementDtoTypeName);
-                string nestedDtoSource = GenerateNestedTypeDto(
+                // Generate mapper for nested type
+                string nestedMapperSource = GenerateNestedTypeMapper(
                     elementType,
-                    prop.ElementDtoTypeName,
+                    prop.ElementDtoTypeName!,
+                    prop.ElementSourceTypeName!,
                     projection.OutputNamespace);
-                context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
+                context.AddSource(
+                    $"{prop.ElementDtoTypeName}Mapper.g.cs",
+                    SourceText.From(nestedMapperSource, Encoding.UTF8));
 
-                // Skip mappers for enums - they can be cast directly
-                if (elementType.TypeKind != TypeKind.Enum)
-                {
-                    // Generate mapper for nested type
-                    string nestedMapperSource = GenerateNestedTypeMapper(
-                        elementType,
-                        prop.ElementDtoTypeName,
-                        prop.ElementSourceTypeName!,
-                        projection.OutputNamespace);
-                    context.AddSource(
-                        $"{prop.ElementDtoTypeName}Mapper.g.cs",
-                        SourceText.From(nestedMapperSource, Encoding.UTF8));
-
-                    // Generate enum DTOs for enum properties within the nested type
-                    GenerateEnumDtosForNestedType(
-                        context,
-                        elementType,
-                        projection.OutputNamespace,
-                        generatedNestedTypes);
-                }
+                // Generate enum DTOs for enum properties within the nested type
+                GenerateEnumDtosForNestedType(
+                    context,
+                    elementType,
+                    projection.OutputNamespace,
+                    generatedNestedTypes);
             }
         }
 
@@ -258,21 +263,20 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         HashSet<string> generatedNestedTypes
     )
     {
-        IEnumerable<ITypeSymbol> propTypes = sourceType.GetMembers()
+        IEnumerable<INamedTypeSymbol> enumTypes = sourceType.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(p => (p.DeclaredAccessibility == Accessibility.Public) && !p.IsStatic && p.GetMethod is not null)
             .Select(p => p.Type)
-            .Select(UnwrapNullable);
-        foreach (ITypeSymbol unwrappedType in propTypes)
+            .Select(UnwrapNullable)
+            .OfType<INamedTypeSymbol>()
+            .Where(t => t.TypeKind == TypeKind.Enum);
+        foreach (INamedTypeSymbol enumType in enumTypes)
         {
-            if (unwrappedType is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
+            string enumDtoName = enumType.Name + "Dto";
+            if (generatedNestedTypes.Add(enumDtoName))
             {
-                string enumDtoName = enumType.Name + "Dto";
-                if (generatedNestedTypes.Add(enumDtoName))
-                {
-                    string enumDtoSource = GenerateNestedEnumDto(enumType, enumDtoName, outputNamespace);
-                    context.AddSource($"{enumDtoName}.g.cs", SourceText.From(enumDtoSource, Encoding.UTF8));
-                }
+                string enumDtoSource = GenerateNestedEnumDto(enumType, enumDtoName, outputNamespace);
+                context.AddSource($"{enumDtoName}.g.cs", SourceText.From(enumDtoSource, Encoding.UTF8));
             }
         }
     }
@@ -447,21 +451,21 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.OpenBrace();
 
         // Register nested type mappers first (required for enumerable mappers to resolve)
-        HashSet<string> registeredNestedMappers = new();
-        foreach (PropertyModel prop in projection.Model.Properties)
+        // Use GroupBy to avoid duplicate registration for the same source type
+        List<PropertyModel> nestedMapperProperties = projection.Model.Properties
+            .Where(prop => prop.RequiresMapper &&
+                           prop.ElementTypeSymbol is INamedTypeSymbol { TypeKind: not TypeKind.Enum } &&
+                           prop.ElementSourceTypeName is not null &&
+                           prop.ElementDtoTypeName is not null)
+            .GroupBy(prop => prop.ElementSourceTypeName)
+            .Select(g => g.First())
+            .ToList();
+
+        foreach (PropertyModel prop in nestedMapperProperties)
         {
-            if (prop.RequiresMapper &&
-                prop.ElementTypeSymbol is INamedTypeSymbol elementType &&
-                (elementType.TypeKind != TypeKind.Enum) &&
-                prop.ElementSourceTypeName is not null &&
-                prop.ElementDtoTypeName is not null &&
-                !registeredNestedMappers.Contains(prop.ElementSourceTypeName))
-            {
-                registeredNestedMappers.Add(prop.ElementSourceTypeName);
-                string nestedMapperTypeName = $"{prop.ElementDtoTypeName}Mapper";
-                sb.AppendLine(
-                    $"services.AddMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}, {nestedMapperTypeName}>();");
-            }
+            string nestedMapperTypeName = $"{prop.ElementDtoTypeName}Mapper";
+            sb.AppendLine(
+                $"services.AddMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}, {nestedMapperTypeName}>();");
         }
 
         // Register IEnumerableMapper if any properties need it

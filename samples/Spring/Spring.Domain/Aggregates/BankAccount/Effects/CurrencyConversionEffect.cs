@@ -85,11 +85,21 @@ internal sealed class CurrencyConversionEffect : EventEffectBase<DollarsDeposite
     {
         Logger.LogDollarsDeposited(eventData.AmountUsd);
 
-        // Fetch exchange rate from Frankfurter API
-        using HttpClient httpClient = HttpClientFactory.CreateClient();
-        FrankfurterResponse? response = await httpClient.GetFromJsonAsync<FrankfurterResponse>(
-            FrankfurterApiUri,
-            cancellationToken);
+        FrankfurterResponse? response;
+        try
+        {
+            // Fetch exchange rate from Frankfurter API
+            using HttpClient httpClient = HttpClientFactory.CreateClient();
+            response = await httpClient.GetFromJsonAsync<FrankfurterResponse>(
+                FrankfurterApiUri,
+                cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogExchangeRateFetchHttpError(ex);
+            yield break;
+        }
+
         if (response?.Rates?.Gbp is null)
         {
             Logger.LogExchangeRateFetchFailed();
