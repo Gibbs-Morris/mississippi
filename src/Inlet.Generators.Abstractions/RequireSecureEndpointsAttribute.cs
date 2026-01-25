@@ -44,26 +44,27 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///     </para>
 /// </remarks>
 /// <example>
+///     <para>
+///         In AssemblyInfo.cs or a GlobalUsings.cs file:
+///     </para>
 ///     <code>
-/// // In AssemblyInfo.cs or a GlobalUsings.cs file:
 /// [assembly: RequireSecureEndpoints]
-/// 
-/// // This will cause a compile-time error if any command lacks authorization:
+/// </code>
+///     <para>
+///         This will cause a compile-time error (MG010) if any command lacks authorization:
+///     </para>
+///     <code>
 /// [GenerateAggregateEndpoints]
 /// public record CreateOrderAggregate { ... }
-/// 
 /// [GenerateCommand(GenerateServerDto = true)]
-/// public record CreateOrderCommand  // MG010: Missing authorization
-/// {
-///     public required string OrderId { get; init; }
-/// }
-/// 
-/// // Fixed version:
+/// public record CreateOrderCommand { public required string OrderId { get; init; } }
+/// </code>
+///     <para>
+///         Fixed version with authorization:
+///     </para>
+///     <code>
 /// [GenerateCommand(GenerateServerDto = true, AuthorizePolicy = "OrderManager")]
-/// public record CreateOrderCommand
-/// {
-///     public required string OrderId { get; init; }
-/// }
+/// public record CreateOrderCommand { public required string OrderId { get; init; } }
 /// </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Assembly)]
