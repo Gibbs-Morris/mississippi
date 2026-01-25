@@ -35,9 +35,9 @@ public sealed partial class IndexPage
     private static partial Regex AccountHeaderPattern();
 
     /// <summary>
-    ///     Regex pattern to match the "Deposit" button text exactly (not quick deposit buttons).
+    ///     Regex pattern to match the "Deposit £" button text exactly (not quick deposit buttons).
     /// </summary>
-    [GeneratedRegex("^Deposit$")]
+    [GeneratedRegex("^Deposit £$")]
     private static partial Regex DepositButtonPattern();
 
     /// <summary>
