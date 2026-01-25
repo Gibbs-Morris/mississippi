@@ -256,11 +256,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .OfType<IPropertySymbol>()
             .Where(p => (p.DeclaredAccessibility == Accessibility.Public) && !p.IsStatic && p.GetMethod is not null)
             .Select(p => p.Type)
-            .Select(propType =>
-                propType is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType
-                    ? nullableType.TypeArguments[0]
-                    : propType);
-
+            .Select(UnwrapNullable);
         foreach (ITypeSymbol unwrappedType in propTypes)
         {
             if (unwrappedType is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
@@ -751,6 +747,19 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         string outputNamespace = DeriveOutputNamespace(model.Namespace);
         return new(model, outputNamespace);
     }
+
+    /// <summary>
+    ///     Unwraps nullable value types to get the underlying type.
+    /// </summary>
+    /// <param name="typeSymbol">The type symbol to unwrap.</param>
+    /// <returns>The underlying type if nullable; otherwise, the original type.</returns>
+    private static ITypeSymbol UnwrapNullable(
+        ITypeSymbol typeSymbol
+    ) =>
+        typeSymbol is INamedTypeSymbol { IsValueType: true } namedType &&
+        (namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            ? namedType.TypeArguments[0]
+            : typeSymbol;
 
     /// <summary>
     ///     Initializes the generator pipeline.

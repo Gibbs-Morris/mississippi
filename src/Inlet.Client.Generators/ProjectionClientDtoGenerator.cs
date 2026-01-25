@@ -240,14 +240,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         IEnumerable<ITypeSymbol> propTypes = properties.Select(p => p.Type);
         foreach (ITypeSymbol propType in propTypes)
         {
-            ITypeSymbol unwrappedType = propType;
-
-            // Unwrap Nullable<T> to get the underlying type
-            if (unwrappedType is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType)
-            {
-                unwrappedType = nullableType.TypeArguments[0];
-            }
-
+            ITypeSymbol unwrappedType = UnwrapNullable(propType);
             if (unwrappedType is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
             {
                 string enumDtoName = enumType.Name + "Dto";
@@ -344,6 +337,19 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         ProjectionModel model = new(typeSymbol, projectionPath!);
         return new(typeSymbol.ContainingNamespace.ToDisplayString(), typeSymbol.Name, projectionPath!, model);
     }
+
+    /// <summary>
+    ///     Unwraps nullable value types to get the underlying type.
+    /// </summary>
+    /// <param name="typeSymbol">The type symbol to unwrap.</param>
+    /// <returns>The underlying type if nullable; otherwise, the original type.</returns>
+    private static ITypeSymbol UnwrapNullable(
+        ITypeSymbol typeSymbol
+    ) =>
+        typeSymbol is INamedTypeSymbol { IsValueType: true } namedType &&
+        (namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            ? namedType.TypeArguments[0]
+            : typeSymbol;
 
     /// <summary>
     ///     Initializes the generator pipeline.
