@@ -446,6 +446,32 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
+
+        // Register nested type mappers first (required for enumerable mappers to resolve)
+        HashSet<string> registeredNestedMappers = new();
+        foreach (PropertyModel prop in projection.Model.Properties)
+        {
+            if (prop.RequiresMapper &&
+                prop.ElementTypeSymbol is INamedTypeSymbol elementType &&
+                elementType.TypeKind != TypeKind.Enum &&
+                prop.ElementSourceTypeName is not null &&
+                prop.ElementDtoTypeName is not null &&
+                !registeredNestedMappers.Contains(prop.ElementSourceTypeName))
+            {
+                registeredNestedMappers.Add(prop.ElementSourceTypeName);
+                string nestedMapperTypeName = $"{prop.ElementDtoTypeName}Mapper";
+                sb.AppendLine(
+                    $"services.AddMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}, {nestedMapperTypeName}>();");
+            }
+        }
+
+        // Register IEnumerableMapper if any properties need it
+        if (projection.Model.HasEnumerableMappedProperties)
+        {
+            sb.AppendLine("services.AddIEnumerableMapper();");
+        }
+
+        // Register the main projection mapper
         sb.AppendLine(
             $"services.AddMapper<{projection.Model.TypeName}, {projection.Model.DtoTypeName}, {GetMapperTypeName(projection)}>();");
         sb.AppendLine("return services;");
