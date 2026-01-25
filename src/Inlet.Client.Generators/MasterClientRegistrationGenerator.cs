@@ -42,18 +42,16 @@ public sealed class MasterClientRegistrationGenerator : IIncrementalGenerator
         string targetRootNamespace
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        // Check for [GenerateCommand]
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers()
+            .Where(t => t.GetAttributes()
+                .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, commandAttrSymbol))))
         {
-            // Check for [GenerateCommand]
-            if (typeSymbol.GetAttributes()
-                .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, commandAttrSymbol)))
+            // Extract aggregate name from namespace
+            string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(typeSymbol.ContainingNamespace.ToDisplayString());
+            if (aggregateName is not null)
             {
-                // Extract aggregate name from namespace
-                string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(typeSymbol.ContainingNamespace.ToDisplayString());
-                if (aggregateName is not null)
-                {
-                    aggregateNames.Add(aggregateName);
-                }
+                aggregateNames.Add(aggregateName);
             }
         }
 
