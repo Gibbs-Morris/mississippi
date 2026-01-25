@@ -86,6 +86,26 @@ public sealed class RootEventEffectTests
     private sealed record UnhandledEvent;
 
     /// <summary>
+    ///     Effect that throws an exception.
+    /// </summary>
+    private sealed class ThrowingEffect : EventEffectBase<TestEvent, TestAggregate>
+    {
+        /// <inheritdoc />
+        public override async IAsyncEnumerable<object> HandleAsync(
+            TestEvent eventData,
+            TestAggregate currentState,
+            [EnumeratorCancellation] CancellationToken cancellationToken
+        )
+        {
+            await Task.Yield();
+            throw new InvalidOperationException("Test exception");
+#pragma warning disable CS0162 // Unreachable code detected
+            yield break;
+#pragma warning restore CS0162
+        }
+    }
+
+    /// <summary>
     ///     Effect that yields events.
     /// </summary>
     private sealed class YieldingEffect : EventEffectBase<TestEvent, TestAggregate>
@@ -278,5 +298,30 @@ public sealed class RootEventEffectTests
 
         // Assert
         Assert.Equal(0, sut.EffectCount);
+    }
+
+    /// <summary>
+    ///     DispatchAsync continues to other effects when one throws an exception.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    [AllureFeature("Error Handling")]
+    public async Task DispatchAsyncContinuesToOtherEffectsWhenOneThrows()
+    {
+        // Arrange
+        TrackingSimpleEffect trackingEffect = new();
+        RootEventEffect<TestAggregate> sut = new([new ThrowingEffect(), trackingEffect]);
+        TestEvent eventData = new("test");
+        TestAggregate state = new(1);
+
+        // Act
+        List<object> results = [];
+        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        {
+            results.Add(result);
+        }
+
+        // Assert - throwing effect should not prevent subsequent effects from running
+        Assert.True(trackingEffect.WasInvoked);
     }
 }

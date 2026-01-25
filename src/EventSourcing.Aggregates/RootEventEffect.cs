@@ -2,14 +2,17 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Aggregates.Diagnostics;
 
 
 namespace Mississippi.EventSourcing.Aggregates;
@@ -97,13 +100,15 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
     /// <summary>
     ///     Dispatches an event to a collection of effects.
     /// </summary>
-    private static async IAsyncEnumerable<object> DispatchToEffectsAsync(
+    private async IAsyncEnumerable<object> DispatchToEffectsAsync(
         ImmutableArray<IEventEffect<TAggregate>> effects,
         object eventData,
         TAggregate currentState,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
+        string eventTypeName = eventData.GetType().Name;
+        string aggregateTypeName = AggregateType.Name;
         foreach (IEventEffect<TAggregate> effect in effects)
         {
             if (!effect.CanHandle(eventData))
@@ -111,9 +116,51 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
                 continue;
             }
 
-            await foreach (object yieldedEvent in effect.HandleAsync(eventData, currentState, cancellationToken))
+            await foreach (object yieldedEvent in EnumerateEffectSafelyAsync(
+                               effect,
+                               eventData,
+                               currentState,
+                               eventTypeName,
+                               aggregateTypeName,
+                               cancellationToken))
             {
                 yield return yieldedEvent;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Safely enumerates an effect's results, catching exceptions per-effect.
+    /// </summary>
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Effects are responsible for their own error handling; grain must remain stable")]
+    private async IAsyncEnumerable<object> EnumerateEffectSafelyAsync(
+        IEventEffect<TAggregate> effect,
+        object eventData,
+        TAggregate currentState,
+        string eventTypeName,
+        string aggregateTypeName,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        string effectTypeName = effect.GetType().Name;
+        IAsyncEnumerator<object>? enumerator = null;
+        try
+        {
+            enumerator = effect.HandleAsync(eventData, currentState, cancellationToken)
+                .GetAsyncEnumerator(cancellationToken);
+            while (await TryMoveNextAsync(enumerator, effectTypeName, eventTypeName, aggregateTypeName))
+            {
+                yield return enumerator.Current;
+            }
+        }
+        finally
+        {
+            if (enumerator is not null)
+            {
+                await enumerator.DisposeAsync();
             }
         }
     }
@@ -149,6 +196,38 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Attempts to move the enumerator to the next element, swallowing exceptions.
+    /// </summary>
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Effects are responsible for their own error handling; grain must remain stable")]
+    private async Task<bool> TryMoveNextAsync(
+        IAsyncEnumerator<object> enumerator,
+        string effectTypeName,
+        string eventTypeName,
+        string aggregateTypeName
+    )
+    {
+        try
+        {
+            return await enumerator.MoveNextAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when effect is cancelled
+            return false;
+        }
+        catch (Exception ex)
+        {
+            // Effect threw; log, record metric, and stop enumerating this effect
+            Logger.EventEffectFailed(effectTypeName, eventTypeName, aggregateTypeName, ex);
+            EventEffectMetrics.RecordEffectError(aggregateTypeName, effectTypeName, eventTypeName);
+            return false;
+        }
     }
 
     /// <inheritdoc />
