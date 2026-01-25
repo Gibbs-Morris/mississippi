@@ -15,4 +15,15 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     </ItemGroup>
+    <!-- Expose the Inlet.Generators.Core assembly alongside this generator when consumed as an analyzer -->
+    <Target Name="GetAnalyzerDependencies" DependsOnTargets="ResolveProjectReferences">
+        <ItemGroup>
+            <_AnalyzerDependency Include="@(ReferenceCopyLocalPaths)" Condition="'%(Filename)' == 'Mississippi.Inlet.Generators.Core'" />
+        </ItemGroup>
+    </Target>
+    <Target Name="AddAnalyzerDependenciesToPackage" AfterTargets="GetAnalyzerDependencies">
+        <ItemGroup>
+            <None Include="@(_AnalyzerDependency)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        </ItemGroup>
+    </Target>
 </Project>
