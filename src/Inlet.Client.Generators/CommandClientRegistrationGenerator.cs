@@ -134,11 +134,11 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
             sb.AppendLine();
         }
 
-        // Action Effects
+        // Action Effects (state-scoped)
         sb.AppendLine("// Action Effects");
         foreach (string commandName in aggregate.CommandNames.OrderBy(n => n))
         {
-            sb.AppendLine($"services.AddActionEffect<{commandName}ActionEffect>();");
+            sb.AppendLine($"services.AddActionEffect<{stateTypeName}, {commandName}ActionEffect>();");
         }
 
         sb.AppendLine();
