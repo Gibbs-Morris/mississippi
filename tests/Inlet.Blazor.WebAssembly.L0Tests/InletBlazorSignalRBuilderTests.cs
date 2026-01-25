@@ -9,6 +9,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.State;
 using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Reservoir.Abstractions;
@@ -164,9 +165,10 @@ public sealed class InletBlazorSignalRBuilderTests
             builder,
             null);
 
-        // Assert - Check that IActionEffect is registered for InletSignalRActionEffect
+        // Assert - Check that IActionEffect<InletConnectionState> is registered for InletSignalRActionEffect
         ServiceDescriptor? effectDescriptor = services.FirstOrDefault(sd =>
-            (sd.ServiceType == typeof(IActionEffect)) && (sd.ImplementationType == typeof(InletSignalRActionEffect)));
+            (sd.ServiceType == typeof(IActionEffect<InletConnectionState>)) &&
+            (sd.ImplementationType == typeof(InletSignalRActionEffect)));
         Assert.NotNull(effectDescriptor);
     }
 

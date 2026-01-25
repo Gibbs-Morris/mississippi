@@ -401,7 +401,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
 
         // Act - enumerate to trigger execution
         List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        await foreach (IAction resultAction in effect!.HandleAsync(action, new(), CancellationToken.None))
         {
             results.Add(resultAction);
         }
@@ -430,7 +430,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
 
         // Act - enumerate to trigger execution
         List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        await foreach (IAction resultAction in effect!.HandleAsync(action, new(), CancellationToken.None))
         {
             results.Add(resultAction);
         }
@@ -450,7 +450,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
         {
-            await foreach (IAction action in effect!.HandleAsync(null!, CancellationToken.None))
+            await foreach (IAction action in effect!.HandleAsync(null!, new(), CancellationToken.None))
             {
                 // Should not execute
             }
@@ -473,7 +473,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
 
         // Act
         List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        await foreach (IAction resultAction in effect!.HandleAsync(action, new(), CancellationToken.None))
         {
             results.Add(resultAction);
         }
@@ -500,7 +500,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
 
         // Act
         List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        await foreach (IAction resultAction in effect!.HandleAsync(action, new(), CancellationToken.None))
         {
             results.Add(resultAction);
         }
@@ -530,7 +530,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
 
         // Act
         List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        await foreach (IAction resultAction in effect!.HandleAsync(action, new(), CancellationToken.None))
         {
             results.Add(resultAction);
         }
@@ -561,7 +561,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
 
         // Act
         List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        await foreach (IAction resultAction in effect!.HandleAsync(action, new(), CancellationToken.None))
         {
             results.Add(resultAction);
         }
@@ -588,7 +588,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
 
         // Act
         List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        await foreach (IAction resultAction in effect!.HandleAsync(action, new(), CancellationToken.None))
         {
             results.Add(resultAction);
         }
@@ -619,7 +619,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
 
         // Act
         List<IAction> results = [];
-        await foreach (IAction resultAction in effect!.HandleAsync(action, CancellationToken.None))
+        await foreach (IAction resultAction in effect!.HandleAsync(action, new(), CancellationToken.None))
         {
             results.Add(resultAction);
         }
