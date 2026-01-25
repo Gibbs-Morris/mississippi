@@ -36,6 +36,7 @@ builder.Services.AddBankAccountAggregate();
 
 // Register Spring domain projections
 builder.Services.AddBankAccountBalanceProjection();
+builder.Services.AddBankAccountLedgerProjection();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
