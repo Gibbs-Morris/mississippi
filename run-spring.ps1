@@ -23,7 +23,8 @@ if (-not (Test-Path $appHostProject)) {
 }
 
 Write-Host "Building Spring AppHost..." -ForegroundColor Cyan
-dotnet build $appHostProject -c Debug
+# Use --no-incremental to ensure source generators load correctly after clean/partial builds
+dotnet build $appHostProject -c Debug --no-incremental
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Build failed with exit code $LASTEXITCODE"
@@ -31,7 +32,6 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "`nStarting Spring Aspire AppHost (Debug mode)..." -ForegroundColor Green
-Write-Host "Press Ctrl+C to stop`n" -ForegroundColor Yellow
 
 $env:ASPNETCORE_ENVIRONMENT = 'Development'
 $env:DOTNET_ENVIRONMENT = 'Development'
