@@ -30,8 +30,8 @@ test.describe('Docusaurus Site', () => {
     // Wait for navigation and check for docs-specific content
     await page.waitForURL(/\/docs\//);
     
-    // Check that welcome text appears (it's in the intro.md file)
-    await expect(page.getByText('Welcome to the Mississippi documentation')).toBeVisible();
+    // Check that main content appears (from the new index.md "Start Here" page)
+    await expect(page.getByText('event sourcing framework')).toBeVisible();
   });
 
   test('GitHub link is present in navbar', async ({ page }) => {
