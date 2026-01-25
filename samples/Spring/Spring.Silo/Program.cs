@@ -28,6 +28,9 @@ using Spring.Silo.Registrations;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+// Register HttpClient factory for effects that call external APIs
+builder.Services.AddHttpClient();
+
 // Register Spring domain aggregates
 builder.Services.AddBankAccountAggregate();
 
