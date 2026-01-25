@@ -19,8 +19,6 @@ namespace Mississippi.Reservoir;
 /// </summary>
 public class Store : IStore
 {
-    private readonly ConcurrentDictionary<string, IActionEffect> actionEffects = new();
-
     private readonly ConcurrentDictionary<string, object> featureStates = new();
 
     private readonly List<Action> listeners = [];
@@ -28,6 +26,8 @@ public class Store : IStore
     private readonly object listenersLock = new();
 
     private readonly List<IMiddleware> middlewares = [];
+
+    private readonly ConcurrentDictionary<string, object> rootActionEffects = new();
 
     private readonly ConcurrentDictionary<string, object> rootReducers = new();
 
@@ -44,16 +44,17 @@ public class Store : IStore
     ///     Initializes a new instance of the <see cref="Store" /> class with DI-resolved components.
     /// </summary>
     /// <param name="featureRegistrations">The feature state registrations to initialize.</param>
-    /// <param name="effectsCollection">The action effects to register for handling async operations.</param>
     /// <param name="middlewaresCollection">The middlewares to register in the dispatch pipeline.</param>
+    /// <remarks>
+    ///     All effects are feature-scoped via <see cref="IActionEffect{TState}" /> and are
+    ///     resolved through feature state registrations. There are no global effects.
+    /// </remarks>
     public Store(
         IEnumerable<IFeatureStateRegistration> featureRegistrations,
-        IEnumerable<IActionEffect> effectsCollection,
         IEnumerable<IMiddleware> middlewaresCollection
     )
     {
         ArgumentNullException.ThrowIfNull(featureRegistrations);
-        ArgumentNullException.ThrowIfNull(effectsCollection);
         ArgumentNullException.ThrowIfNull(middlewaresCollection);
 
         // Initialize feature states from registrations
@@ -64,12 +65,11 @@ public class Store : IStore
             {
                 rootReducers[registration.FeatureKey] = registration.RootReducer;
             }
-        }
 
-        // Register action effects
-        foreach (IActionEffect actionEffect in effectsCollection)
-        {
-            RegisterActionEffect(actionEffect);
+            if (registration.RootActionEffect is not null)
+            {
+                rootActionEffects[registration.FeatureKey] = registration.RootActionEffect;
+            }
         }
 
         // Register middleware
@@ -116,21 +116,6 @@ public class Store : IStore
         throw new InvalidOperationException(
             $"No feature state registered for '{featureKey}'. " +
             $"Call AddFeatureState<{typeof(TState).Name}>() during service registration.");
-    }
-
-    /// <summary>
-    ///     Registers an action effect for handling async operations.
-    /// </summary>
-    /// <param name="actionEffect">The action effect instance.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="actionEffect" /> is null.</exception>
-    public void RegisterActionEffect(
-        IActionEffect actionEffect
-    )
-    {
-        ArgumentNullException.ThrowIfNull(actionEffect);
-        ObjectDisposedException.ThrowIf(disposed, this);
-        string key = actionEffect.GetType().FullName ?? actionEffect.GetType().Name;
-        actionEffects[key] = actionEffect;
     }
 
     /// <summary>
@@ -183,18 +168,9 @@ public class Store : IStore
                 listeners.Clear();
             }
 
-            // Dispose any action effects that implement IDisposable
-            foreach (IActionEffect actionEffect in actionEffects.Values)
-            {
-                if (actionEffect is IDisposable disposable)
-                {
-                    disposable.Dispose();
-                }
-            }
-
             featureStates.Clear();
             rootReducers.Clear();
-            actionEffects.Clear();
+            rootActionEffects.Clear();
             middlewares.Clear();
         }
     }
@@ -297,16 +273,33 @@ public class Store : IStore
         IAction action
     )
     {
-        foreach (IActionEffect actionEffect in actionEffects.Values)
+        // Dispatch to each feature's root action effect
+        foreach (KeyValuePair<string, object> kvp in rootActionEffects)
         {
-            if (!actionEffect.CanHandle(action))
+            string featureKey = kvp.Key;
+            object rootEffect = kvp.Value;
+            if (!featureStates.TryGetValue(featureKey, out object? currentState))
+            {
+                continue;
+            }
+
+            // Use reflection to call HandleAsync on the generic root action effect
+            Type rootEffectType = rootEffect.GetType();
+            MethodInfo? handleMethod = rootEffectType.GetMethod("HandleAsync");
+            if (handleMethod == null)
             {
                 continue;
             }
 
             try
             {
-                await foreach (IAction resultAction in actionEffect.HandleAsync(action, CancellationToken.None))
+                object? result = handleMethod.Invoke(rootEffect, [action, currentState, CancellationToken.None]);
+                if (result is not IAsyncEnumerable<IAction> asyncEnumerable)
+                {
+                    continue;
+                }
+
+                await foreach (IAction resultAction in asyncEnumerable)
                 {
                     Dispatch(resultAction);
                 }
