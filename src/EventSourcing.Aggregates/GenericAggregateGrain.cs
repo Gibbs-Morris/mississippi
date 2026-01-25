@@ -222,7 +222,6 @@ internal sealed class GenericAggregateGrain<TAggregate>
         {
             iteration++;
             List<object> yieldedEvents = [];
-
             foreach (object eventData in pendingEvents)
             {
                 await foreach (object resultEvent in RootEventEffect.DispatchAsync(
@@ -340,7 +339,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
             lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
 
             // Dispatch effects if any are registered
-            if (RootEventEffect is not null && RootEventEffect.EffectCount > 0)
+            if (RootEventEffect is not null && (RootEventEffect.EffectCount > 0))
             {
                 // Get updated state after events were applied for effect handlers
                 SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);

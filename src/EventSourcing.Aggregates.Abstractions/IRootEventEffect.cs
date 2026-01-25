@@ -21,6 +21,11 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 public interface IRootEventEffect<TAggregate>
 {
     /// <summary>
+    ///     Gets the count of registered effects.
+    /// </summary>
+    int EffectCount { get; }
+
+    /// <summary>
     ///     Dispatches an event to all matching effects and collects yielded events.
     /// </summary>
     /// <param name="eventData">The event to dispatch.</param>
@@ -35,9 +40,4 @@ public interface IRootEventEffect<TAggregate>
         TAggregate currentState,
         CancellationToken cancellationToken
     );
-
-    /// <summary>
-    ///     Gets the count of registered effects.
-    /// </summary>
-    int EffectCount { get; }
 }

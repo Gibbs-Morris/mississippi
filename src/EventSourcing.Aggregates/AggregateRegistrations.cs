@@ -131,22 +131,6 @@ public static class AggregateRegistrations
     }
 
     /// <summary>
-    ///     Adds a root event effect dispatcher for the specified aggregate type.
-    /// </summary>
-    /// <typeparam name="TAggregate">The aggregate state type.</typeparam>
-    /// <param name="services">The service collection to add the root event effect to.</param>
-    /// <returns>The updated service collection.</returns>
-    public static IServiceCollection AddRootEventEffect<TAggregate>(
-        this IServiceCollection services
-    )
-        where TAggregate : class
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        services.TryAddTransient<IRootEventEffect<TAggregate>, RootEventEffect<TAggregate>>();
-        return services;
-    }
-
-    /// <summary>
     ///     Registers an event type so it can be resolved during aggregate hydration.
     /// </summary>
     /// <typeparam name="TEvent">
@@ -180,6 +164,22 @@ public static class AggregateRegistrations
     )
     {
         services.TryAddTransient<IRootCommandHandler<TSnapshot>, RootCommandHandler<TSnapshot>>();
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds a root event effect dispatcher for the specified aggregate type.
+    /// </summary>
+    /// <typeparam name="TAggregate">The aggregate state type.</typeparam>
+    /// <param name="services">The service collection to add the root event effect to.</param>
+    /// <returns>The updated service collection.</returns>
+    public static IServiceCollection AddRootEventEffect<TAggregate>(
+        this IServiceCollection services
+    )
+        where TAggregate : class
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddTransient<IRootEventEffect<TAggregate>, RootEventEffect<TAggregate>>();
         return services;
     }
 

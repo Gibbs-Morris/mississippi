@@ -33,9 +33,9 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
 {
     private static readonly Type AggregateType = typeof(TAggregate);
 
-    private readonly ImmutableArray<IEventEffect<TAggregate>> fallbackEffects;
-
     private readonly FrozenDictionary<Type, ImmutableArray<IEventEffect<TAggregate>>> effectIndex;
+
+    private readonly ImmutableArray<IEventEffect<TAggregate>> fallbackEffects;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RootEventEffect{TAggregate}" /> class.
@@ -70,7 +70,6 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         Dictionary<Type, ImmutableArray<IEventEffect<TAggregate>>.Builder> indexBuilder = new();
         ImmutableArray<IEventEffect<TAggregate>>.Builder fallbackBuilder =
             ImmutableArray.CreateBuilder<IEventEffect<TAggregate>>();
-
         foreach (IEventEffect<TAggregate> effect in effectsArray)
         {
             Type? eventType = ExtractEventType(effect.GetType());
@@ -93,6 +92,30 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         FrozenDictionary<Type, ImmutableArray<IEventEffect<TAggregate>>> frozenIndex =
             indexBuilder.ToFrozenDictionary(kvp => kvp.Key, kvp => kvp.Value.ToImmutable());
         return (frozenIndex, fallbackBuilder.ToImmutable());
+    }
+
+    /// <summary>
+    ///     Dispatches an event to a collection of effects.
+    /// </summary>
+    private static async IAsyncEnumerable<object> DispatchToEffectsAsync(
+        ImmutableArray<IEventEffect<TAggregate>> effects,
+        object eventData,
+        TAggregate currentState,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        foreach (IEventEffect<TAggregate> effect in effects)
+        {
+            if (!effect.CanHandle(eventData))
+            {
+                continue;
+            }
+
+            await foreach (object yieldedEvent in effect.HandleAsync(eventData, currentState, cancellationToken))
+            {
+                yield return yieldedEvent;
+            }
+        }
     }
 
     /// <summary>
@@ -148,7 +171,6 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         Type eventRuntimeType = eventData.GetType();
         string eventTypeName = eventRuntimeType.Name;
         string aggregateTypeName = AggregateType.Name;
-
         Logger.RootEventEffectDispatching(aggregateTypeName, eventTypeName);
 
         // Fast path: look up effects registered for this exact event type
@@ -172,30 +194,6 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
                            cancellationToken))
         {
             yield return yieldedEvent;
-        }
-    }
-
-    /// <summary>
-    ///     Dispatches an event to a collection of effects.
-    /// </summary>
-    private static async IAsyncEnumerable<object> DispatchToEffectsAsync(
-        ImmutableArray<IEventEffect<TAggregate>> effects,
-        object eventData,
-        TAggregate currentState,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    )
-    {
-        foreach (IEventEffect<TAggregate> effect in effects)
-        {
-            if (!effect.CanHandle(eventData))
-            {
-                continue;
-            }
-
-            await foreach (object yieldedEvent in effect.HandleAsync(eventData, currentState, cancellationToken))
-            {
-                yield return yieldedEvent;
-            }
         }
     }
 }
