@@ -110,14 +110,20 @@ receives updates. It manages SignalR connections, handles reconnection, and
 delivers state changes to your Blazor components.
 
 ```csharp
-// In a Blazor component
-@inject IInletClient Inlet
+// Inherit from InletComponent for projection access
+@inherits InletComponent
 
 @code {
-    protected override async Task OnInitializedAsync()
+    [Parameter]
+    public string OrderId { get; set; } = string.Empty;
+
+    protected override void OnInitialized()
     {
-        await Inlet.Subscribe<OrderSummary>("order-123", OnOrderUpdated);
+        base.OnInitialized();
+        SubscribeToProjection<OrderSummary>(OrderId);
     }
+
+    private OrderSummary? Order => GetProjection<OrderSummary>(OrderId);
 }
 ```
 
