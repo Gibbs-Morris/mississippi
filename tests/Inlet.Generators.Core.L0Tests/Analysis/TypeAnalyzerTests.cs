@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 using Allure.Xunit.Attributes;
@@ -84,6 +85,30 @@ public class TypeAnalyzerTests
         namespaceSymbol.ToDisplayString().Returns(namespaceName);
         typeSymbol.ContainingNamespace.Returns(namespaceSymbol);
         return typeSymbol;
+    }
+
+    /// <summary>
+    ///     GetBooleanProperty should return default value when attribute is null.
+    /// </summary>
+    [Fact]
+    public void GetBooleanPropertyReturnsDefaultWhenAttributeIsNull()
+    {
+        bool result = TypeAnalyzer.GetBooleanProperty(null!, "SomeProperty");
+        Assert.True(result);
+        result = TypeAnalyzer.GetBooleanProperty(null!, "SomeProperty", false);
+        Assert.False(result);
+    }
+
+    /// <summary>
+    ///     GetBooleanProperty should return default value when property is not found.
+    /// </summary>
+    [Fact]
+    public void GetBooleanPropertyReturnsDefaultWhenPropertyNotFound()
+    {
+        AttributeData attribute = Substitute.For<AttributeData>();
+        attribute.NamedArguments.Returns(ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
+        bool result = TypeAnalyzer.GetBooleanProperty(attribute, "MissingProperty");
+        Assert.True(result);
     }
 
     /// <summary>
@@ -293,6 +318,50 @@ public class TypeAnalyzerTests
         typeSymbol.ContainingNamespace.Returns(namespaceSymbol);
         string result = TypeAnalyzer.GetFullNamespace(typeSymbol);
         Assert.Equal("MyApp.Domain.Models", result);
+    }
+
+    /// <summary>
+    ///     GetNullableBooleanProperty should return null when attribute is null.
+    /// </summary>
+    [Fact]
+    public void GetNullableBooleanPropertyReturnsNullWhenAttributeIsNull()
+    {
+        bool? result = TypeAnalyzer.GetNullableBooleanProperty(null, "SomeProperty");
+        Assert.Null(result);
+    }
+
+    /// <summary>
+    ///     GetNullableBooleanProperty should return null when property is not found.
+    /// </summary>
+    [Fact]
+    public void GetNullableBooleanPropertyReturnsNullWhenPropertyNotFound()
+    {
+        AttributeData attribute = Substitute.For<AttributeData>();
+        attribute.NamedArguments.Returns(ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
+        bool? result = TypeAnalyzer.GetNullableBooleanProperty(attribute, "MissingProperty");
+        Assert.Null(result);
+    }
+
+    /// <summary>
+    ///     GetStringProperty should return null when attribute is null.
+    /// </summary>
+    [Fact]
+    public void GetStringPropertyReturnsNullWhenAttributeIsNull()
+    {
+        string? result = TypeAnalyzer.GetStringProperty(null, "SomeProperty");
+        Assert.Null(result);
+    }
+
+    /// <summary>
+    ///     GetStringProperty should return null when property is not found.
+    /// </summary>
+    [Fact]
+    public void GetStringPropertyReturnsNullWhenPropertyNotFound()
+    {
+        AttributeData attribute = Substitute.For<AttributeData>();
+        attribute.NamedArguments.Returns(ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
+        string? result = TypeAnalyzer.GetStringProperty(attribute, "MissingProperty");
+        Assert.Null(result);
     }
 
     /// <summary>

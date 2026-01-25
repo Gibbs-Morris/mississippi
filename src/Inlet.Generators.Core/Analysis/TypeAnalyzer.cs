@@ -143,6 +143,50 @@ public static class TypeAnalyzer
     }
 
     /// <summary>
+    ///     Gets a nullable boolean property value from an attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute data.</param>
+    /// <param name="propertyName">The name of the property to read.</param>
+    /// <returns>The property value, or null if not set.</returns>
+    public static bool? GetNullableBooleanProperty(
+        AttributeData? attribute,
+        string propertyName
+    )
+    {
+        if (attribute is null)
+        {
+            return null;
+        }
+
+        KeyValuePair<string, TypedConstant> kvp = attribute.NamedArguments.FirstOrDefault(x => x.Key == propertyName);
+        if (kvp.Key is null || kvp.Value.IsNull)
+        {
+            return null;
+        }
+
+        return kvp.Value.Value as bool?;
+    }
+
+    /// <summary>
+    ///     Gets a string property value from an attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute data.</param>
+    /// <param name="propertyName">The name of the property to read.</param>
+    /// <returns>The property value, or null if not set.</returns>
+    public static string? GetStringProperty(
+        AttributeData? attribute,
+        string propertyName
+    )
+    {
+        if (attribute is null)
+        {
+            return null;
+        }
+
+        return attribute.NamedArguments.FirstOrDefault(kvp => kvp.Key == propertyName).Value.Value?.ToString();
+    }
+
+    /// <summary>
     ///     Determines whether a type is a collection type.
     /// </summary>
     /// <param name="typeSymbol">The type symbol to analyze.</param>
