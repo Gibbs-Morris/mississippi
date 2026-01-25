@@ -177,9 +177,23 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
     }
 
     /// <summary>
+    ///     Determines if the generic type definition is ActionEffectBase or SimpleActionEffectBase.
+    /// </summary>
+    private static bool IsActionEffectBaseType(
+        Type genericDef
+    )
+    {
+        const string expectedNamespace = "Mississippi.Reservoir.Abstractions";
+        return (genericDef.Namespace == expectedNamespace) &&
+               genericDef.Name is "ActionEffectBase`2" or "SimpleActionEffectBase`2";
+    }
+
+    /// <summary>
     ///     Attempts to extract the TAction type from a base type if it matches ActionEffectBase or SimpleActionEffectBase.
     /// </summary>
-    private static Type? TryExtractActionTypeFromBase(Type baseType)
+    private static Type? TryExtractActionTypeFromBase(
+        Type baseType
+    )
     {
         if (!baseType.IsGenericType)
         {
@@ -199,16 +213,6 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
         }
 
         return null;
-    }
-
-    /// <summary>
-    ///     Determines if the generic type definition is ActionEffectBase or SimpleActionEffectBase.
-    /// </summary>
-    private static bool IsActionEffectBaseType(Type genericDef)
-    {
-        const string expectedNamespace = "Mississippi.Reservoir.Abstractions";
-        return (genericDef.Namespace == expectedNamespace) &&
-               genericDef.Name is "ActionEffectBase`2" or "SimpleActionEffectBase`2";
     }
 
     /// <summary>

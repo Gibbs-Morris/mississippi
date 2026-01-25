@@ -243,7 +243,10 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             ITypeSymbol unwrappedType = propType;
 
             // Unwrap Nullable<T> to get the underlying type
-            if (unwrappedType is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType)
+            if (unwrappedType is INamedTypeSymbol
+                {
+                    OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
+                } nullableType)
             {
                 unwrappedType = nullableType.TypeArguments[0];
             }

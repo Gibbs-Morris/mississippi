@@ -169,50 +169,6 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Attempts to create a HandlerInfo if the type extends CommandHandlerBase for the given aggregate.
-    /// </summary>
-    private static HandlerInfo? TryCreateHandlerInfo(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol aggregateSymbol
-    )
-    {
-        INamedTypeSymbol? baseType = typeSymbol.BaseType;
-        if (baseType is null || !baseType.IsGenericType)
-        {
-            return null;
-        }
-
-        // Check if it extends CommandHandlerBase<,>
-        if (!IsCommandHandlerBaseType(baseType))
-        {
-            return null;
-        }
-
-        // Verify the second type argument is our aggregate
-        if ((baseType.TypeArguments.Length != 2) ||
-            !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
-        {
-            return null;
-        }
-
-        // Extract command type
-        ITypeSymbol commandType = baseType.TypeArguments[0];
-        return new(typeSymbol.ToDisplayString(), typeSymbol.Name, commandType.ToDisplayString(), commandType.Name);
-    }
-
-    /// <summary>
-    ///     Determines if a type extends CommandHandlerBase.
-    /// </summary>
-    private static bool IsCommandHandlerBaseType(INamedTypeSymbol baseType)
-    {
-        INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
-        return (constructedFrom is not null) &&
-               (constructedFrom.MetadataName == "CommandHandlerBase`2") &&
-               (constructedFrom.ContainingNamespace.ToDisplayString() ==
-                "Mississippi.EventSourcing.Aggregates.Abstractions");
-    }
-
-    /// <summary>
     ///     Finds reducers for an aggregate in the Reducers sub-namespace.
     /// </summary>
     private static List<ReducerInfo> FindReducersForAggregate(
@@ -246,50 +202,6 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         return reducers;
-    }
-
-    /// <summary>
-    ///     Attempts to create a ReducerInfo if the type extends EventReducerBase for the given aggregate.
-    /// </summary>
-    private static ReducerInfo? TryCreateReducerInfo(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol aggregateSymbol
-    )
-    {
-        INamedTypeSymbol? baseType = typeSymbol.BaseType;
-        if (baseType is null || !baseType.IsGenericType)
-        {
-            return null;
-        }
-
-        // Check if it extends EventReducerBase<,>
-        if (!IsEventReducerBaseType(baseType))
-        {
-            return null;
-        }
-
-        // Verify the second type argument is our aggregate
-        if ((baseType.TypeArguments.Length != 2) ||
-            !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
-        {
-            return null;
-        }
-
-        // Extract event type
-        ITypeSymbol eventType = baseType.TypeArguments[0];
-        return new(typeSymbol.ToDisplayString(), typeSymbol.Name, eventType.ToDisplayString(), eventType.Name);
-    }
-
-    /// <summary>
-    ///     Determines if a type extends EventReducerBase.
-    /// </summary>
-    private static bool IsEventReducerBaseType(INamedTypeSymbol baseType)
-    {
-        INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
-        return (constructedFrom is not null) &&
-               (constructedFrom.MetadataName == "EventReducerBase`2") &&
-               (constructedFrom.ContainingNamespace.ToDisplayString() ==
-                "Mississippi.EventSourcing.Reducers.Abstractions");
     }
 
     /// <summary>
@@ -467,6 +379,20 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Determines if a type extends CommandHandlerBase.
+    /// </summary>
+    private static bool IsCommandHandlerBaseType(
+        INamedTypeSymbol baseType
+    )
+    {
+        INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
+        return constructedFrom is not null &&
+               (constructedFrom.MetadataName == "CommandHandlerBase`2") &&
+               (constructedFrom.ContainingNamespace.ToDisplayString() ==
+                "Mississippi.EventSourcing.Aggregates.Abstractions");
+    }
+
+    /// <summary>
     ///     Determines if the given base type is an event effect base class.
     /// </summary>
     private static bool IsEventEffectBaseType(
@@ -495,6 +421,20 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Determines if a type extends EventReducerBase.
+    /// </summary>
+    private static bool IsEventReducerBaseType(
+        INamedTypeSymbol baseType
+    )
+    {
+        INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
+        return constructedFrom is not null &&
+               (constructedFrom.MetadataName == "EventReducerBase`2") &&
+               (constructedFrom.ContainingNamespace.ToDisplayString() ==
+                "Mississippi.EventSourcing.Reducers.Abstractions");
+    }
+
+    /// <summary>
     ///     Attempts to create an EffectInfo from a type symbol if it's a valid event effect.
     /// </summary>
     private static EffectInfo? TryCreateEffectInfo(
@@ -504,6 +444,70 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     {
         INamedTypeSymbol? baseType = typeSymbol.BaseType;
         if (baseType is null || !IsEventEffectBaseType(baseType))
+        {
+            return null;
+        }
+
+        // Verify the second type argument is our aggregate
+        if ((baseType.TypeArguments.Length != 2) ||
+            !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
+        {
+            return null;
+        }
+
+        // Extract event type
+        ITypeSymbol eventType = baseType.TypeArguments[0];
+        return new(typeSymbol.ToDisplayString(), typeSymbol.Name, eventType.ToDisplayString(), eventType.Name);
+    }
+
+    /// <summary>
+    ///     Attempts to create a HandlerInfo if the type extends CommandHandlerBase for the given aggregate.
+    /// </summary>
+    private static HandlerInfo? TryCreateHandlerInfo(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol aggregateSymbol
+    )
+    {
+        INamedTypeSymbol? baseType = typeSymbol.BaseType;
+        if (baseType is null || !baseType.IsGenericType)
+        {
+            return null;
+        }
+
+        // Check if it extends CommandHandlerBase<,>
+        if (!IsCommandHandlerBaseType(baseType))
+        {
+            return null;
+        }
+
+        // Verify the second type argument is our aggregate
+        if ((baseType.TypeArguments.Length != 2) ||
+            !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
+        {
+            return null;
+        }
+
+        // Extract command type
+        ITypeSymbol commandType = baseType.TypeArguments[0];
+        return new(typeSymbol.ToDisplayString(), typeSymbol.Name, commandType.ToDisplayString(), commandType.Name);
+    }
+
+    /// <summary>
+    ///     Attempts to create a ReducerInfo if the type extends EventReducerBase for the given aggregate.
+    /// </summary>
+    private static ReducerInfo? TryCreateReducerInfo(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol aggregateSymbol
+    )
+    {
+        INamedTypeSymbol? baseType = typeSymbol.BaseType;
+        if (baseType is null || !baseType.IsGenericType)
+        {
+            return null;
+        }
+
+        // Check if it extends EventReducerBase<,>
+        if (!IsEventReducerBaseType(baseType))
         {
             return null;
         }
