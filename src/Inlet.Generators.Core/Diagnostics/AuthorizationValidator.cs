@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 using Microsoft.CodeAnalysis;
@@ -49,12 +50,14 @@ public static class AuthorizationValidator
                                          .FirstOrDefault(kvp => kvp.Key == "TreatAnonymousAsError")
                                          .Value.Value as bool? ??
                                      true;
-        IReadOnlyList<string> exemptTypes = securityAttr.NamedArguments
-                                                .FirstOrDefault(kvp => kvp.Key == "ExemptTypes")
-                                                .Value.Values.Select(v => v.Value?.ToString() ?? string.Empty)
-                                                .Where(s => !string.IsNullOrEmpty(s))
-                                                .ToList() ??
-                                            new List<string>();
+        ImmutableArray<TypedConstant> exemptTypesArg = securityAttr.NamedArguments
+            .FirstOrDefault(kvp => kvp.Key == "ExemptTypes")
+            .Value.Values;
+        IReadOnlyList<string> exemptTypes = exemptTypesArg.IsDefault
+            ? []
+            : exemptTypesArg.Select(v => v.Value?.ToString() ?? string.Empty)
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToList();
         return new(treatAnonymousAsError, exemptTypes);
     }
 
