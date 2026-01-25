@@ -112,6 +112,24 @@ public static class AggregateRegistrations
     }
 
     /// <summary>
+    ///     Registers an event effect for processing events on a specific aggregate type.
+    /// </summary>
+    /// <typeparam name="TEffect">The effect implementation type.</typeparam>
+    /// <typeparam name="TAggregate">The aggregate state type this effect handles.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddEventEffect<TEffect, TAggregate>(
+        this IServiceCollection services
+    )
+        where TEffect : class, IEventEffect<TAggregate>
+        where TAggregate : class
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddTransient<IEventEffect<TAggregate>, TEffect>();
+        return services;
+    }
+
+    /// <summary>
     ///     Registers an event type so it can be resolved during aggregate hydration.
     /// </summary>
     /// <typeparam name="TEvent">

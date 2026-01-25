@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -71,6 +72,10 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="rootReducer">The root event reducer for obtaining the reducers hash.</param>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="effects">
+    ///     Optional collection of event effects for running side effects after events are persisted.
+    ///     When empty or null, no effects are executed.
+    /// </param>
     public GenericAggregateGrain(
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
@@ -78,7 +83,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
         IRootCommandHandler<TAggregate> rootCommandHandler,
         ISnapshotGrainFactory snapshotGrainFactory,
         IRootReducer<TAggregate> rootReducer,
-        ILogger<GenericAggregateGrain<TAggregate>> logger
+        ILogger<GenericAggregateGrain<TAggregate>> logger,
+        IEnumerable<IEventEffect<TAggregate>>? effects = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
@@ -88,6 +94,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         SnapshotGrainFactory = snapshotGrainFactory ?? throw new ArgumentNullException(nameof(snapshotGrainFactory));
         RootReducer = rootReducer ?? throw new ArgumentNullException(nameof(rootReducer));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Effects = effects?.ToList() ?? [];
     }
 
     /// <summary>
@@ -103,6 +110,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
     private IBrookEventConverter BrookEventConverter { get; }
 
     private IBrookGrainFactory BrookGrainFactory { get; }
+
+    private List<IEventEffect<TAggregate>> Effects { get; }
 
     private ILogger<GenericAggregateGrain<TAggregate>> Logger { get; }
 
@@ -181,6 +190,70 @@ internal sealed class GenericAggregateGrain<TAggregate>
             RootReducer.GetReducerHash());
         Logger.Activated(brookKey);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Dispatches events to registered effects and persists any yielded events.
+    /// </summary>
+    /// <param name="initialEvents">The initial events to dispatch.</param>
+    /// <param name="currentState">The current aggregate state after events were applied.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    ///     Effects can yield additional events. These are persisted immediately for real-time
+    ///     projection updates. The method loops until no more events are yielded or the
+    ///     iteration limit (10) is reached to prevent infinite loops.
+    /// </remarks>
+    private async Task DispatchEffectsAsync(
+        IReadOnlyList<object> initialEvents,
+        TAggregate currentState,
+        string aggregateKey,
+        CancellationToken cancellationToken
+    )
+    {
+        const int maxIterations = 10;
+        List<object> pendingEvents = new(initialEvents);
+        int iteration = 0;
+        while ((pendingEvents.Count > 0) && (iteration < maxIterations))
+        {
+            iteration++;
+            List<object> yieldedEvents = [];
+
+            foreach (object eventData in pendingEvents)
+            {
+                foreach (IEventEffect<TAggregate> effect in Effects)
+                {
+                    if (!effect.CanHandle(eventData))
+                    {
+                        continue;
+                    }
+
+                    await foreach (object resultEvent in effect.HandleAsync(
+                                       eventData,
+                                       currentState,
+                                       cancellationToken))
+                    {
+                        yieldedEvents.Add(resultEvent);
+
+                        // Persist immediately for real-time projection updates
+                        ImmutableArray<BrookEvent> brookEvent =
+                            BrookEventConverter.ToStorageEvents(brookKey, [resultEvent]);
+                        BrookPosition expectedPos = lastKnownPosition!.Value;
+                        await BrookGrainFactory.GetBrookWriterGrain(brookKey)
+                            .AppendEventsAsync(brookEvent, expectedPos, cancellationToken);
+                        lastKnownPosition = new BrookPosition(expectedPos.Value + 1);
+                    }
+                }
+            }
+
+            pendingEvents = yieldedEvents;
+        }
+
+        if (iteration >= maxIterations)
+        {
+            Logger.EffectIterationLimitReached(aggregateKey, maxIterations);
+            EventEffectMetrics.RecordIterationLimitReached(typeof(TAggregate).Name, aggregateKey);
+        }
     }
 
     private async Task<OperationResult> ExecuteInternalAsync(
@@ -269,6 +342,17 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
             // Update local position to avoid race conditions with cursor grain stream updates
             lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
+
+            // Dispatch effects if any are registered
+            if (Effects.Count > 0)
+            {
+                // Get updated state after events were applied for effect handlers
+                SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);
+                TAggregate? updatedState = await SnapshotGrainFactory
+                    .GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
+                    .GetStateAsync(cancellationToken);
+                await DispatchEffectsAsync(events, updatedState!, aggregateKey, cancellationToken);
+            }
         }
 
         sw.Stop();
