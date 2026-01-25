@@ -57,6 +57,31 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
     public bool HasEffects { get; }
 
     /// <summary>
+    ///     Adds an effect to the appropriate index or fallback collection.
+    /// </summary>
+    private static void AddEffectToIndex(
+        IActionEffect<TState> effect,
+        Dictionary<Type, ImmutableArray<IActionEffect<TState>>.Builder> indexBuilder,
+        ImmutableArray<IActionEffect<TState>>.Builder fallbackBuilder
+    )
+    {
+        Type? actionType = ExtractActionType(effect.GetType());
+        if (actionType is null)
+        {
+            fallbackBuilder.Add(effect);
+            return;
+        }
+
+        if (!indexBuilder.TryGetValue(actionType, out ImmutableArray<IActionEffect<TState>>.Builder? list))
+        {
+            list = ImmutableArray.CreateBuilder<IActionEffect<TState>>();
+            indexBuilder[actionType] = list;
+        }
+
+        list.Add(effect);
+    }
+
+    /// <summary>
     ///     Builds an index mapping action types to their effects, preserving registration order.
     /// </summary>
     private static (FrozenDictionary<Type, ImmutableArray<IActionEffect<TState>>> Index,
@@ -67,23 +92,10 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
         Dictionary<Type, ImmutableArray<IActionEffect<TState>>.Builder> indexBuilder = new();
         ImmutableArray<IActionEffect<TState>>.Builder fallbackBuilder =
             ImmutableArray.CreateBuilder<IActionEffect<TState>>();
+
         foreach (IActionEffect<TState> effect in effectsArray)
         {
-            Type? actionType = ExtractActionType(effect.GetType());
-            if (actionType is not null)
-            {
-                if (!indexBuilder.TryGetValue(actionType, out ImmutableArray<IActionEffect<TState>>.Builder? list))
-                {
-                    list = ImmutableArray.CreateBuilder<IActionEffect<TState>>();
-                    indexBuilder[actionType] = list;
-                }
-
-                list.Add(effect);
-            }
-            else
-            {
-                fallbackBuilder.Add(effect);
-            }
+            AddEffectToIndex(effect, indexBuilder, fallbackBuilder);
         }
 
         FrozenDictionary<Type, ImmutableArray<IActionEffect<TState>>> frozenIndex =
