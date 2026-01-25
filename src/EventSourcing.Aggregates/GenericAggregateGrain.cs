@@ -232,11 +232,11 @@ internal sealed class GenericAggregateGrain<TAggregate>
                     yieldedEvents.Add(resultEvent);
 
                     // Persist immediately for real-time projection updates
-                    ImmutableArray<BrookEvent> brookEvent =
+                    ImmutableArray<BrookEvent> brookEvents =
                         BrookEventConverter.ToStorageEvents(brookKey, [resultEvent]);
                     BrookPosition expectedPos = lastKnownPosition!.Value;
                     await BrookGrainFactory.GetBrookWriterGrain(brookKey)
-                        .AppendEventsAsync(brookEvent, expectedPos, cancellationToken);
+                        .AppendEventsAsync(brookEvents, expectedPos, cancellationToken);
                     lastKnownPosition = new BrookPosition(expectedPos.Value + 1);
                 }
             }
@@ -339,7 +339,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
             lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
 
             // Dispatch effects if any are registered
-            if (RootEventEffect is not null && (RootEventEffect.EffectCount > 0))
+            if (RootEventEffect?.EffectCount > 0)
             {
                 // Get updated state after events were applied for effect handlers
                 SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);

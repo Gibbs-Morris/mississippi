@@ -127,7 +127,6 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
     {
         // Note: currentState is intentionally unused per the key principle:
         // "Action effects extract all needed data from the action itself."
-        _ = currentState;
         if (action is not TAction typedAction)
         {
             yield break;

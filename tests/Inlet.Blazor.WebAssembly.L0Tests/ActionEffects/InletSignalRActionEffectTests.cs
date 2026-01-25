@@ -452,7 +452,7 @@ public sealed class InletSignalRActionEffectTests : IAsyncDisposable
         {
             await foreach (IAction action in effect!.HandleAsync(null!, new(), CancellationToken.None))
             {
-                // Should not execute
+                _ = action; // Suppress unused variable warning
             }
         });
     }
