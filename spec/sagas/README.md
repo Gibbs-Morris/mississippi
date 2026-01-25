@@ -593,9 +593,162 @@ services.AddSaga<OrderFulfillmentSagaState>();
 
 ---
 
+## Server-Side Effect Integration
+
+> **Based on**: `topic/server-effect` PR implementation
+
+### Effect Pattern Summary
+
+The `IEventEffect<TAggregate>` interface provides post-persistence hooks:
+
+```csharp
+public interface IEventEffect<TAggregate>
+{
+    bool CanHandle(object eventData);
+    
+    IAsyncEnumerable<object> HandleAsync(
+        object eventData,
+        TAggregate currentState,
+        CancellationToken cancellationToken);
+}
+```
+
+**Key behaviors** (from `GenericAggregateGrain`):
+- Effects run **synchronously** after events are persisted
+- Yielded events are persisted immediately to the same aggregate's brook
+- Loop continues until no events yielded (max 10 iterations)
+- Effects are resolved from DI with full constructor injection
+
+### Two Effect Patterns
+
+| Pattern | Base Class | Use Case | Yields Events? |
+|---------|------------|----------|----------------|
+| Event-enriching | `EventEffectBase<TEvent, TAggregate>` | Add computed events to same aggregate | Yes |
+| Side-effect action | `SimpleEventEffectBase<TEvent, TAggregate>` | HTTP calls, notifications, cross-aggregate dispatch | No |
+
+### Cross-Aggregate Dispatch (Option B Pattern)
+
+Effects that call **other aggregates** use `SimpleEventEffectBase` and inject `IAggregateGrainFactory`:
+
+```csharp
+public sealed class HotelReservationHttpEffect 
+    : SimpleEventEffectBase<HotelReservationRequestedEvent, HotelReservationState>
+{
+    private HttpClient Http { get; }
+    private IAggregateGrainFactory GrainFactory { get; }
+    
+    public HotelReservationHttpEffect(
+        IHttpClientFactory httpFactory,
+        IAggregateGrainFactory grainFactory)
+    {
+        Http = httpFactory.CreateClient("HotelApi");
+        GrainFactory = grainFactory;
+    }
+    
+    protected override async Task HandleSimpleAsync(
+        HotelReservationRequestedEvent @event,
+        HotelReservationState state,
+        CancellationToken ct)
+    {
+        // Read saga context from aggregate state (passed via command properties)
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/hotels/reserve");
+        if (state.CorrelationId is not null)
+            request.Headers.Add("X-Correlation-Id", state.CorrelationId);
+        if (state.SagaId is not null)
+            request.Headers.Add("X-Saga-Id", state.SagaId);
+        
+        var response = await Http.SendAsync(request, ct);
+        
+        // Dispatch result command back to this aggregate
+        var resultCommand = response.IsSuccessStatusCode
+            ? new HotelReservationConfirmedCommand(state.ReservationId, ...)
+            : new HotelReservationFailedCommand(state.ReservationId, ...);
+        
+        await GrainFactory
+            .GetGenericAggregate<HotelReservationState>(state.ReservationId)
+            .ExecuteAsync(resultCommand, ct);
+    }
+}
+```
+
+### Context Propagation
+
+Effects do **not** receive a context object—only `(TEvent, TAggregate, CancellationToken)`.
+
+**Pattern**: Pass context through command properties → store in aggregate state → read from state in effects.
+
+```csharp
+// 1. Saga step builds command with context
+protected override object BuildCommand(HolidayBookingSagaState state)
+    => new ReserveHotelCommand(
+        GetTargetEntityId(state),
+        state.HotelRequest.HotelId,
+        SagaId: state.BookingId,         // Pass saga context
+        CorrelationId: state.CorrelationId);
+
+// 2. Command handler stores context in aggregate state
+return OperationResult.Ok<IReadOnlyList<object>>([
+    new HotelReservationRequestedEvent(
+        command.SagaId,
+        command.CorrelationId,
+        ...)
+]);
+
+// 3. Reducer updates state with context
+=> state with { SagaId = @event.SagaId, CorrelationId = @event.CorrelationId };
+
+// 4. Effect reads context from state (shown above)
+```
+
+### Effect Limitations
+
+| Limitation | Reason | Workaround |
+|------------|--------|------------|
+| No reminder access | Effects run inside grain method, not `IRemindable` | Saga grain handles reminders, dispatches commands |
+| No brook position | Not passed to effect signature | Store sequence in event if needed for idempotency |
+| Synchronous execution | Blocks grain during effect | Keep effects fast; use async operations wisely |
+| 10 iteration limit | Prevents infinite loops | Design event chains to terminate |
+
+### Saga Steps vs Effects
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Saga Step                                   │
+│    (Dispatches command, handles verification/compensation)         │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ ExecuteAsync(command)
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Target Aggregate Grain                           │
+│                                                                     │
+│  1. CommandHandler.Handle(cmd) → Events                             │
+│  2. Persist events to brook                                         │
+│  3. RootEventEffect.DispatchAsync(events)                          │
+│       │                                                             │
+│       ▼                                                             │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │                     Server Effect                             │  │
+│  │  - SimpleEventEffectBase: HTTP call, no yield                 │  │
+│  │  - EventEffectBase: Yield additional events (same aggregate)  │  │
+│  │  - May dispatch commands to OTHER aggregates                  │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  4. Loop if events yielded (max 10)                                 │
+│  5. Return OperationResult to caller                                │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Saga Step                                   │
+│    (VerifyAsync polls aggregate state or projection)               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Dependencies
 
-1. **Server-side aggregate effects** — Prerequisite ticket; sagas build on this
+1. **Server-side aggregate effects** (`topic/server-effect` PR) — Prerequisite; provides `IEventEffect<T>`, `SimpleEventEffectBase`, registration
 2. **Source generators** — For step discovery and validation
 3. **Orleans reminders** — First use in Mississippi codebase
 
@@ -603,7 +756,10 @@ services.AddSaga<OrderFulfillmentSagaState>();
 
 ## References
 
-- [GenericAggregateGrain.cs](../../src/EventSourcing.Aggregates/GenericAggregateGrain.cs)
-- [IActionEffect.cs](../../src/Reservoir.Abstractions/IActionEffect.cs)
-- [CommandActionEffectBase.cs](../../src/Inlet.Blazor.WebAssembly.Abstractions/ActionEffects/CommandActionEffectBase.cs)
-- [UxProjectionGrain.cs](../../src/EventSourcing.UxProjections/UxProjectionGrain.cs)
+- [GenericAggregateGrain.cs](../../src/EventSourcing.Aggregates/GenericAggregateGrain.cs) — Effect dispatch loop
+- [IEventEffect.cs](../../src/EventSourcing.Aggregates.Abstractions/IEventEffect.cs) — Effect interface
+- [EventEffectBase.cs](../../src/EventSourcing.Aggregates.Abstractions/EventEffectBase.cs) — Event-yielding base
+- [SimpleEventEffectBase.cs](../../src/EventSourcing.Aggregates.Abstractions/SimpleEventEffectBase.cs) — Side-effect base
+- [AggregateRegistrations.cs](../../src/EventSourcing.Aggregates/AggregateRegistrations.cs) — `AddEventEffect<T>()` registration
+- [IActionEffect.cs](../../src/Reservoir.Abstractions/IActionEffect.cs) — Client-side effect (comparison)
+- [UxProjectionGrain.cs](../../src/EventSourcing.UxProjections/UxProjectionGrain.cs) — Projection pattern

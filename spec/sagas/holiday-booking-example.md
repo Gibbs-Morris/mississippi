@@ -428,8 +428,9 @@ public sealed class ReserveHotelHandler
 }
 
 // SERVER-SIDE EFFECT — calls HTTP after event is persisted
+// Uses SimpleEventEffectBase since it dispatches commands, not yields events
 public sealed class HotelReservationHttpEffect 
-    : IAggregateEffect<HotelReservationState>
+    : SimpleEventEffectBase<HotelReservationRequestedEvent, HotelReservationState>
 {
     private HttpClient Http { get; }
     private IAggregateGrainFactory GrainFactory { get; }
@@ -442,36 +443,30 @@ public sealed class HotelReservationHttpEffect
         GrainFactory = grainFactory;
     }
     
-    public bool CanHandle(object @event) 
-        => @event is HotelReservationRequestedEvent;
-    
-    public async Task HandleAsync(
-        object @event,
+    protected override async Task HandleSimpleAsync(
+        HotelReservationRequestedEvent @event,
         HotelReservationState state,
-        IAggregateEffectContext context,
         CancellationToken ct)
     {
-        var requested = (HotelReservationRequestedEvent)@event;
-        
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/hotels/reserve")
             {
                 Content = JsonContent.Create(new
                 {
-                    hotelId = requested.HotelId,
-                    checkIn = requested.CheckIn,
-                    checkOut = requested.CheckOut,
-                    guests = requested.Guests,
-                    externalBookingRef = requested.ReservationId
+                    hotelId = @event.HotelId,
+                    checkIn = @event.CheckIn,
+                    checkOut = @event.CheckOut,
+                    guests = @event.Guests,
+                    externalBookingRef = @event.ReservationId
                 })
             };
             
-            // Add tracing headers from saga context
-            if (requested.CorrelationId is not null)
-                request.Headers.Add("X-Correlation-Id", requested.CorrelationId);
-            if (requested.SagaId is not null)
-                request.Headers.Add("X-Saga-Id", requested.SagaId);
+            // Add tracing headers from aggregate state (passed via command properties)
+            if (state.CorrelationId is not null)
+                request.Headers.Add("X-Correlation-Id", state.CorrelationId);
+            if (state.SagaId is not null)
+                request.Headers.Add("X-Saga-Id", state.SagaId);
             
             var response = await Http.SendAsync(request, ct);
             
@@ -819,7 +814,35 @@ public interface IAggregateEffectContext
 **Both patterns should be supported** — Mississippi should provide:
 1. `HttpServiceStep<TSaga>` for Option A (direct HTTP)
 2. `AggregateCommandStep<TSaga, TTarget>` for Option B (aggregate orchestration)
-3. `IAggregateEffect<TState>` for server-side aggregate effects
+3. `SimpleEventEffectBase<TEvent, TAggregate>` for server-side effects that call HTTP (no event yield)
+4. `EventEffectBase<TEvent, TAggregate>` for effects that enrich aggregates with additional events
+
+---
+
+## Updated Based on Server Effect PR
+
+The `topic/server-effect` PR implements the actual effect pattern:
+
+### Key Insights from PR Review
+
+1. **Effects yield events, not commands** — `IAsyncEnumerable<object>` returns events to persist
+2. **Two base classes**:
+   - `EventEffectBase<TEvent, TAggregate>` — Yields events (enrichment pattern)
+   - `SimpleEventEffectBase<TEvent, TAggregate>` — No yield (HTTP/cross-aggregate pattern)
+3. **Effects can inject services** — Registered as transient via DI
+4. **No context object** — Effects receive `(TEvent, TAggregate, CancellationToken)` only
+5. **Context via state** — Pass saga context through command properties, store in aggregate state
+
+### Corrected Option B Pattern
+
+The example above uses `SimpleEventEffectBase` because:
+- Effect calls HTTP (side effect)
+- Effect dispatches commands back to aggregate (side effect)
+- Effect does NOT yield events to persist
+
+This aligns with the actual PR implementation where:
+- `EventEffectBase` → for yielding additional events to same aggregate
+- `SimpleEventEffectBase` → for side effects without yielding
 
 ---
 
