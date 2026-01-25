@@ -30,9 +30,9 @@ test.describe('Docusaurus Site', () => {
     // Wait for navigation and check for docs-specific content
     await page.waitForURL(/\/docs\//);
     
-    // Check that docs page has loaded with article content
-    // The "Start Here" page contains the conceptual building blocks section
-    await expect(page.getByText('Conceptual Building Blocks')).toBeVisible();
+    // Check that the Getting Started page has loaded
+    // This page contains SDK installation instructions
+    await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
   });
 
   test('GitHub link is present in navbar', async ({ page }) => {
