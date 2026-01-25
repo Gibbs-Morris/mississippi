@@ -453,7 +453,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         {
             if (prop.RequiresMapper &&
                 prop.ElementTypeSymbol is INamedTypeSymbol elementType &&
-                elementType.TypeKind != TypeKind.Enum &&
+                (elementType.TypeKind != TypeKind.Enum) &&
                 prop.ElementSourceTypeName is not null &&
                 prop.ElementDtoTypeName is not null &&
                 !registeredNestedMappers.Contains(prop.ElementSourceTypeName))
