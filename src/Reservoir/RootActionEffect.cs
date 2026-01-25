@@ -164,29 +164,51 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
         Type? current = effectType.BaseType;
         while (current is not null)
         {
-            if (current.IsGenericType)
+            Type? actionType = TryExtractActionTypeFromBase(current);
+            if (actionType is not null)
             {
-                Type genericDef = current.GetGenericTypeDefinition();
-                bool isActionEffectBase = (genericDef.Name == "ActionEffectBase`2") &&
-                                          (genericDef.Namespace == "Mississippi.Reservoir.Abstractions");
-                bool isSimpleActionEffectBase = (genericDef.Name == "SimpleActionEffectBase`2") &&
-                                                (genericDef.Namespace == "Mississippi.Reservoir.Abstractions");
-                if (isActionEffectBase || isSimpleActionEffectBase)
-                {
-                    Type[] typeArgs = current.GetGenericArguments();
-
-                    // typeArgs[0] = TAction, typeArgs[1] = TState
-                    if ((typeArgs.Length == 2) && (typeArgs[1] == StateType))
-                    {
-                        return typeArgs[0];
-                    }
-                }
+                return actionType;
             }
 
             current = current.BaseType;
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Attempts to extract the TAction type from a base type if it matches ActionEffectBase or SimpleActionEffectBase.
+    /// </summary>
+    private static Type? TryExtractActionTypeFromBase(Type baseType)
+    {
+        if (!baseType.IsGenericType)
+        {
+            return null;
+        }
+
+        Type genericDef = baseType.GetGenericTypeDefinition();
+        if (!IsActionEffectBaseType(genericDef))
+        {
+            return null;
+        }
+
+        Type[] typeArgs = baseType.GetGenericArguments();
+        if ((typeArgs.Length == 2) && (typeArgs[1] == StateType))
+        {
+            return typeArgs[0];
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Determines if the generic type definition is ActionEffectBase or SimpleActionEffectBase.
+    /// </summary>
+    private static bool IsActionEffectBaseType(Type genericDef)
+    {
+        const string expectedNamespace = "Mississippi.Reservoir.Abstractions";
+        return (genericDef.Namespace == expectedNamespace) &&
+               genericDef.Name is "ActionEffectBase`2" or "SimpleActionEffectBase`2";
     }
 
     /// <summary>
