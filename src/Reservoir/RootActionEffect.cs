@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -93,10 +94,6 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
     /// <summary>
     ///     Dispatches an action to a collection of effects.
     /// </summary>
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Effects are responsible for their own error handling; store must remain stable")]
     private static async IAsyncEnumerable<IAction> DispatchToEffectsAsync(
         ImmutableArray<IActionEffect<TState>> effects,
         IAction action,
@@ -111,46 +108,46 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
                 continue;
             }
 
-            IAsyncEnumerator<IAction>? enumerator = null;
-            try
+            await foreach (IAction yieldedAction in EnumerateEffectSafelyAsync(
+                               effect,
+                               action,
+                               currentState,
+                               cancellationToken))
             {
-                enumerator = effect.HandleAsync(action, currentState, cancellationToken)
-                    .GetAsyncEnumerator(cancellationToken);
-                while (true)
-                {
-                    IAction? yieldedAction = null;
-                    try
-                    {
-                        if (!await enumerator.MoveNextAsync())
-                        {
-                            break;
-                        }
-
-                        yieldedAction = enumerator.Current;
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Expected when effect is cancelled; don't propagate
-                        break;
-                    }
-                    catch (Exception)
-                    {
-                        // Effect threw; break out of this effect's enumeration but continue with other effects
-                        break;
-                    }
-
-                    if (yieldedAction is not null)
-                    {
-                        yield return yieldedAction;
-                    }
-                }
+                yield return yieldedAction;
             }
-            finally
+        }
+    }
+
+    /// <summary>
+    ///     Safely enumerates an effect's results, catching exceptions per-effect.
+    /// </summary>
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Effects are responsible for their own error handling; store must remain stable")]
+    private static async IAsyncEnumerable<IAction> EnumerateEffectSafelyAsync(
+        IActionEffect<TState> effect,
+        IAction action,
+        TState currentState,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        IAsyncEnumerator<IAction>? enumerator = null;
+        try
+        {
+            enumerator = effect.HandleAsync(action, currentState, cancellationToken)
+                .GetAsyncEnumerator(cancellationToken);
+            while (await TryMoveNextAsync(enumerator))
             {
-                if (enumerator is not null)
-                {
-                    await enumerator.DisposeAsync();
-                }
+                yield return enumerator.Current;
+            }
+        }
+        finally
+        {
+            if (enumerator is not null)
+            {
+                await enumerator.DisposeAsync();
             }
         }
     }
@@ -190,6 +187,33 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Attempts to move the enumerator to the next element, swallowing exceptions.
+    /// </summary>
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Effects are responsible for their own error handling; store must remain stable")]
+    private static async Task<bool> TryMoveNextAsync(
+        IAsyncEnumerator<IAction> enumerator
+    )
+    {
+        try
+        {
+            return await enumerator.MoveNextAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when effect is cancelled
+            return false;
+        }
+        catch (Exception)
+        {
+            // Effect threw; stop enumerating this effect
+            return false;
+        }
     }
 
     /// <inheritdoc />

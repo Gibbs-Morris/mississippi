@@ -122,41 +122,11 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         // Find all types that extend EventEffectBase<TEvent, TAggregate> or SimpleEventEffectBase<TEvent, TAggregate>
         foreach (INamedTypeSymbol typeSymbol in effectsNs.GetTypeMembers())
         {
-            INamedTypeSymbol? baseType = typeSymbol.BaseType;
-            if (baseType is null || !baseType.IsGenericType)
+            EffectInfo? effectInfo = TryCreateEffectInfo(typeSymbol, aggregateSymbol);
+            if (effectInfo is not null)
             {
-                continue;
+                effects.Add(effectInfo);
             }
-
-            // Check if it extends EventEffectBase<,> or SimpleEventEffectBase<,>
-            INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
-            if (constructedFrom is null)
-            {
-                continue;
-            }
-
-            bool isEventEffectBase = (constructedFrom.MetadataName == "EventEffectBase`2") &&
-                                     (constructedFrom.ContainingNamespace.ToDisplayString() ==
-                                      "Mississippi.EventSourcing.Aggregates.Abstractions");
-            bool isSimpleEventEffectBase = (constructedFrom.MetadataName == "SimpleEventEffectBase`2") &&
-                                           (constructedFrom.ContainingNamespace.ToDisplayString() ==
-                                            "Mississippi.EventSourcing.Aggregates.Abstractions");
-            if (!isEventEffectBase && !isSimpleEventEffectBase)
-            {
-                continue;
-            }
-
-            // Verify the second type argument is our aggregate
-            if ((baseType.TypeArguments.Length != 2) ||
-                !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
-            {
-                continue;
-            }
-
-            // Extract event type
-            ITypeSymbol eventType = baseType.TypeArguments[0];
-            effects.Add(
-                new(typeSymbol.ToDisplayString(), typeSymbol.Name, eventType.ToDisplayString(), eventType.Name));
         }
 
         return effects;
@@ -450,6 +420,60 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
                 yield return assemblySymbol;
             }
         }
+    }
+
+    /// <summary>
+    ///     Determines if the given base type is an event effect base class.
+    /// </summary>
+    private static bool IsEventEffectBaseType(
+        INamedTypeSymbol baseType
+    )
+    {
+        if (!baseType.IsGenericType)
+        {
+            return false;
+        }
+
+        INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
+        if (constructedFrom is null)
+        {
+            return false;
+        }
+
+        string ns = constructedFrom.ContainingNamespace.ToDisplayString();
+        if (ns != "Mississippi.EventSourcing.Aggregates.Abstractions")
+        {
+            return false;
+        }
+
+        return (constructedFrom.MetadataName == "EventEffectBase`2") ||
+               (constructedFrom.MetadataName == "SimpleEventEffectBase`2");
+    }
+
+    /// <summary>
+    ///     Attempts to create an EffectInfo from a type symbol if it's a valid event effect.
+    /// </summary>
+    private static EffectInfo? TryCreateEffectInfo(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol aggregateSymbol
+    )
+    {
+        INamedTypeSymbol? baseType = typeSymbol.BaseType;
+        if (baseType is null || !IsEventEffectBaseType(baseType))
+        {
+            return null;
+        }
+
+        // Verify the second type argument is our aggregate
+        if ((baseType.TypeArguments.Length != 2) ||
+            !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
+        {
+            return null;
+        }
+
+        // Extract event type
+        ITypeSymbol eventType = baseType.TypeArguments[0];
+        return new(typeSymbol.ToDisplayString(), typeSymbol.Name, eventType.ToDisplayString(), eventType.Name);
     }
 
     /// <summary>
