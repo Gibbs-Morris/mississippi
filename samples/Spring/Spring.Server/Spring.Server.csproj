@@ -27,7 +27,7 @@
     <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj" />
     <ProjectReference Include="..\Spring.Client\Spring.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Sdk.Server\Sdk.Server.csproj" />
-    <ProjectReference Include="..\..\..\src\Inlet.Server.Generators\Inlet.Server.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\..\src\Inlet.Server.Generators\Inlet.Server.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

@@ -5,11 +5,12 @@
         <ImplicitUsings>false</ImplicitUsings>
         <IsRoslynComponent>true</IsRoslynComponent>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <Description>Source generators for Mississippi Orleans silo applications. Generates aggregate and projection service registrations from domain definitions.</Description>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
-        <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" PrivateAssets="all" />
+        <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" PrivateAssets="all" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
