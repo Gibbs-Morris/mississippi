@@ -72,8 +72,8 @@ commands.
 // Program.cs in Blazor WASM app
 builder.Services.AddReservoir();
 builder.Services.AddInlet();
-builder.Services.AddInletBlazor()
-    .WithSignalRConnection(new Uri("https://api.example.com/inlet"));
+builder.Services.AddInletBlazorSignalR(
+    new Uri("https://api.example.com/inlet"));
 ```
 
 ### Client Generated Code

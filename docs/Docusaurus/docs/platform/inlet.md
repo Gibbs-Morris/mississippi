@@ -119,8 +119,8 @@ Register Inlet in your Blazor WASM app:
 
 ```csharp
 builder.Services.AddInlet();
-builder.Services.AddInletBlazor()
-    .WithSignalRConnection(new Uri("https://api.example.com/inlet"));
+builder.Services.AddInletBlazorSignalR(
+    new Uri("https://api.example.com/inlet"));
 ```
 
 ### 3. Mark Projections

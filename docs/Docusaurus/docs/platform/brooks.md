@@ -167,7 +167,7 @@ try
         events,
         expectedCursorPosition: currentPosition);
 }
-catch (ConcurrencyConflictException)
+catch (OptimisticConcurrencyException)
 {
     // Another writer appended first - reload and retry
 }

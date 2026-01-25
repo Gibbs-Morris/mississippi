@@ -82,25 +82,32 @@ MyApp/
 
 ```csharp
 // Program.cs in Silo project
-builder.Host.UseOrleans(silo =>
+// Add event sourcing infrastructure
+builder.Services.AddJsonSerialization();
+builder.Services.AddEventSourcingByService();
+builder.Services.AddSnapshotCaching();
+
+// Configure Cosmos storage for Brooks (event streams)
+builder.Services.AddCosmosBrookStorageProvider(options =>
 {
-    silo.UseLocalhostClustering();
+    options.CosmosClientServiceKey = "cosmos";
+    options.DatabaseId = "my-db";
+    options.ContainerId = "events";
+});
 
-    // Add Mississippi components
-    silo.AddMississippi(options =>
-    {
-        options.UseCosmosBrooks(cosmos =>
-        {
-            cosmos.ConnectionString = "...";
-            cosmos.DatabaseName = "events";
-        });
+// Configure Cosmos storage for Snapshots
+builder.Services.AddCosmosSnapshotStorageProvider(options =>
+{
+    options.CosmosClientServiceKey = "cosmos";
+    options.DatabaseId = "my-db";
+    options.ContainerId = "snapshots";
+});
 
-        options.UseAzureBlobSnapshots(blob =>
-        {
-            blob.ConnectionString = "...";
-            blob.ContainerName = "snapshots";
-        });
-    });
+// Configure Orleans silo
+builder.UseOrleans(siloBuilder =>
+{
+    siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
+    siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
 });
 ```
 
@@ -108,24 +115,32 @@ builder.Host.UseOrleans(silo =>
 
 ```csharp
 // Program.cs in Server project
-builder.Services.AddMississippiServer();
+builder.Services.AddJsonSerialization();
+builder.Services.AddAggregateSupport();
+builder.Services.AddUxProjections();
+
+builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddAqueduct<InletHub>(options =>
+{
+    options.StreamProviderName = "StreamProvider";
+});
+builder.Services.AddInletOrleansWithSignalR();
 
 var app = builder.Build();
 
-app.MapMississippiEndpoints();
-app.MapHub<InletHub>("/inlet");
+app.MapControllers();
+app.MapInletHub();
 ```
 
 ### Client Configuration
 
 ```csharp
 // Program.cs in Client project
-builder.Services.AddReservoir();
-builder.Services.AddInletClient(options =>
-{
-    options.HubUrl = "https://api.example.com/inlet";
-});
+builder.Services.AddInlet();
+builder.Services.AddInletBlazorSignalR(signalR => signalR
+    .WithHubPath("/hubs/inlet")
+    .ScanProjectionDtos(typeof(MyProjectionDto).Assembly));
 ```
 
 ## Next Steps

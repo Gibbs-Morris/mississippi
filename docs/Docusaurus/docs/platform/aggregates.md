@@ -464,9 +464,9 @@ siloBuilder.ConfigureServices(services =>
     services.AddCommandHandler<WithdrawFundsHandler, BankAccountAggregate>();
 
     // Register event reducers
-    services.AddEventReducer<AccountOpenedReducer, BankAccountAggregate>();
-    services.AddEventReducer<FundsDepositedReducer, BankAccountAggregate>();
-    services.AddEventReducer<FundsWithdrawnReducer, BankAccountAggregate>();
+    services.AddReducer<AccountOpened, BankAccountAggregate, AccountOpenedReducer>();
+    services.AddReducer<FundsDeposited, BankAccountAggregate, FundsDepositedReducer>();
+    services.AddReducer<FundsWithdrawn, BankAccountAggregate, FundsWithdrawnReducer>();
 });
 ```
 

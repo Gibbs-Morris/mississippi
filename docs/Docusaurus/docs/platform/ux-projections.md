@@ -258,7 +258,7 @@ public class MyService
         string accountId,
         CancellationToken cancellationToken)
     {
-        var grain = ProjectionFactory.GetGrain<BankAccountBalanceProjection>(accountId);
+        var grain = ProjectionFactory.GetUxProjectionGrain<BankAccountBalanceProjection>(accountId);
         return await grain.GetAsync(cancellationToken);
     }
 
@@ -267,7 +267,7 @@ public class MyService
         BrookPosition version,
         CancellationToken cancellationToken)
     {
-        var grain = ProjectionFactory.GetGrain<BankAccountBalanceProjection>(accountId);
+        var grain = ProjectionFactory.GetUxProjectionGrain<BankAccountBalanceProjection>(accountId);
         return await grain.GetAtVersionAsync(version, cancellationToken);
     }
 }
@@ -338,9 +338,9 @@ siloBuilder.ConfigureServices(services =>
     services.AddUxProjections();
 
     // Register event reducers for projections
-    services.AddEventReducer<AccountOpenedBalanceReducer, BankAccountBalanceProjection>();
-    services.AddEventReducer<FundsDepositedBalanceReducer, BankAccountBalanceProjection>();
-    services.AddEventReducer<FundsWithdrawnBalanceReducer, BankAccountBalanceProjection>();
+    services.AddReducer<AccountOpened, BankAccountBalanceProjection, AccountOpenedBalanceReducer>();
+    services.AddReducer<FundsDeposited, BankAccountBalanceProjection, FundsDepositedBalanceReducer>();
+    services.AddReducer<FundsWithdrawn, BankAccountBalanceProjection, FundsWithdrawnBalanceReducer>();
 });
 ```
 

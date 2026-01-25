@@ -149,12 +149,12 @@ public sealed class PlaceOrderHandler
     {
         // Validate against current state
         if (state?.Status == OrderStatus.Placed)
-            return OperationResult.Failure<IReadOnlyList<object>>(
+            return OperationResult.Fail<IReadOnlyList<object>>(
                 "ORDER_ALREADY_PLACED",
                 "Order has already been placed");
 
         // Return events (not mutations)
-        return OperationResult.Success<IReadOnlyList<object>>(
+        return OperationResult.Ok<IReadOnlyList<object>>(
             [new OrderPlacedEvent(command.OrderId, command.Lines)]);
     }
 }
@@ -181,7 +181,7 @@ public sealed class PlaceOrderHandler
         // Don't do this - side effects belong in event handlers
         EmailService.SendConfirmation(command.CustomerId);
 
-        return OperationResult.Success<IReadOnlyList<object>>(
+        return OperationResult.Ok<IReadOnlyList<object>>(
             [new OrderPlacedEvent(...)]);
     }
 }
@@ -194,11 +194,11 @@ public sealed class PlaceOrderHandler
     {
         // Pure validation only
         if (!command.Lines.Any())
-            return OperationResult.Failure<IReadOnlyList<object>>(
+            return OperationResult.Fail<IReadOnlyList<object>>(
                 "NO_LINES", "Order must have at least one line");
 
         // Event triggers notification via separate handler
-        return OperationResult.Success<IReadOnlyList<object>>(
+        return OperationResult.Ok<IReadOnlyList<object>>(
             [new OrderPlacedEvent(...)]);
     }
 }
@@ -390,10 +390,10 @@ The modulus strategy keeps one snapshot per N events:
 
 ```csharp
 // Every 100 events - good for high-volume aggregates
-services.Configure<SnapshotRetentionOptions>(o => o.RetentionModulus = 100);
+services.Configure<SnapshotRetentionOptions>(o => o.DefaultRetainModulus = 100);
 
 // Every 10 events - good for low-volume, frequently-read aggregates
-services.Configure<SnapshotRetentionOptions>(o => o.RetentionModulus = 10);
+services.Configure<SnapshotRetentionOptions>(o => o.DefaultRetainModulus = 10);
 ```
 
 Consider:
