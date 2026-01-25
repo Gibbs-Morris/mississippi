@@ -256,12 +256,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .OfType<IPropertySymbol>()
             .Where(p => (p.DeclaredAccessibility == Accessibility.Public) && !p.IsStatic && p.GetMethod is not null)
             .Select(p => p.Type)
-            .Select(propType => propType is INamedTypeSymbol
-            {
-                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
-            } nullableType
-                ? nullableType.TypeArguments[0]
-                : propType);
+            .Select(propType =>
+                propType is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType
+                    ? nullableType.TypeArguments[0]
+                    : propType);
+
         foreach (ITypeSymbol unwrappedType in propTypes)
         {
             if (unwrappedType is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
