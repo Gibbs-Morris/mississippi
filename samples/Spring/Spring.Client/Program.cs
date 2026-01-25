@@ -8,7 +8,6 @@ using Mississippi.Inlet;
 using Mississippi.Inlet.Blazor.WebAssembly;
 
 using Spring.Client;
-using Spring.Client.Features.BankAccountAggregate;
 using Spring.Client.Features.BankAccountBalance.Dtos;
 using Spring.Client.Features.EntitySelection;
 
@@ -25,9 +24,8 @@ builder.Services.AddScoped(_ => new HttpClient
 });
 #pragma warning restore IDISP014
 
-// Register features (one line per feature - scales cleanly)
-// Write side: aggregate commands
-builder.Services.AddBankAccountAggregateFeature();
+// Register all Spring features using single master registration
+builder.Services.AddSpring();
 
 // Navigation/UI: entity selection
 builder.Services.AddEntitySelectionFeature();
