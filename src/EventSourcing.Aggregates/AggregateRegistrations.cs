@@ -126,6 +126,23 @@ public static class AggregateRegistrations
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddTransient<IEventEffect<TAggregate>, TEffect>();
+        services.AddRootEventEffect<TAggregate>();
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds a root event effect dispatcher for the specified aggregate type.
+    /// </summary>
+    /// <typeparam name="TAggregate">The aggregate state type.</typeparam>
+    /// <param name="services">The service collection to add the root event effect to.</param>
+    /// <returns>The updated service collection.</returns>
+    public static IServiceCollection AddRootEventEffect<TAggregate>(
+        this IServiceCollection services
+    )
+        where TAggregate : class
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddTransient<IRootEventEffect<TAggregate>, RootEventEffect<TAggregate>>();
         return services;
     }
 
