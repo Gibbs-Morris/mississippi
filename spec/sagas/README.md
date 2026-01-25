@@ -16,72 +16,83 @@ Sagas are event-sourced aggregates with additional orchestration capabilities fo
 
 ---
 
+## DX Principles
+
+Sagas follow the same patterns as the rest of Mississippi:
+
+| Pattern | Existing | Saga Equivalent |
+|---------|----------|-----------------|
+| One core method | `CommandHandlerBase.HandleCore()` | `SagaStepBase.ExecuteAsync()` |
+| Dependency injection | Constructor injection | Constructor injection |
+| Type discovery | Source generator + attributes | Source generator + `[SagaStep]` |
+| Registration | `AddCommandHandler<T>()` | `AddSaga<T>()` |
+| Separation of concerns | Handlers, reducers, effects | Steps, compensations, effects |
+
+**No grab-bag contexts** — inject what you need via constructor, like everywhere else.
+
+**One method per class** — steps have `ExecuteAsync`, compensations have `CompensateAsync`.
+
+**Infrastructure handles lifecycle** — steps don't emit started/completed events.
+
+---
+
 ## Design Decisions
 
 ### 1. Step Execution Model
 
-**Decision**: Synchronous with optional verification
+**Decision**: One method per step, matching `CommandHandlerBase` pattern
 
-Steps wait for the aggregate command to return, then optionally run a **verification function** before marking complete.
+Steps have a single `ExecuteAsync` method. Verification is declarative via attributes.
 
 **Rationale**: 
-- Commands succeeding doesn't always mean the operation is complete (e.g., long-running external services)
-- Developers need a hook to check projections, poll external state, or implement custom completion logic
-- Verification enables patterns like "wait for projection to reflect expected state"
+- Matches existing patterns (`CommandHandlerBase` has one `HandleCore`, `EventReducerBase` has one `ReduceCore`)
+- Simpler DX — developers implement one method
+- Verification is infrastructure concern, not business logic
 
 **API Shape**:
 ```csharp
-public abstract class SagaStepBase<TSaga>
+/// <summary>
+///     Base class for saga steps. Mirrors CommandHandlerBase pattern.
+/// </summary>
+public abstract class SagaStepBase<TSaga> where TSaga : class
 {
     /// <summary>
-    ///     Execute the step action (e.g., dispatch command).
+    ///     Execute the step action. Return business events if saga state needs updating.
     /// </summary>
-    public abstract Task<StepExecutionResult> ExecuteAsync(...);
-    
-    /// <summary>
-    ///     Verify the step completed successfully. Called after ExecuteAsync succeeds.
-    ///     Return true when verified, false to retry verification.
-    /// </summary>
-    public virtual Task<StepVerificationResult> VerifyAsync(
+    public abstract Task<StepResult> ExecuteAsync(
         TSaga state,
-        ISagaContext context,
-        CancellationToken cancellationToken)
-    {
-        // Default: no verification needed
-        return Task.FromResult(StepVerificationResult.Verified());
-    }
+        CancellationToken cancellationToken);
 }
 
-public sealed record StepVerificationResult
+public sealed record StepResult
 {
-    public bool IsVerified { get; init; }
-    public bool ShouldRetry { get; init; }
-    public TimeSpan? RetryDelay { get; init; }
+    public bool Success { get; init; }
+    public string? ErrorCode { get; init; }
+    public string? ErrorMessage { get; init; }
+    public IReadOnlyList<object> Events { get; init; } = [];
     
-    public static StepVerificationResult Verified() => new() { IsVerified = true };
-    public static StepVerificationResult NotYet(TimeSpan? delay = null) 
-        => new() { IsVerified = false, ShouldRetry = true, RetryDelay = delay };
-    public static StepVerificationResult Failed(string reason) 
-        => new() { IsVerified = false, ShouldRetry = false };
+    public static StepResult Succeeded() => new() { Success = true };
+    public static StepResult Succeeded(params object[] events) 
+        => new() { Success = true, Events = events };
+    public static StepResult Failed(string errorCode, string? message = null) 
+        => new() { Success = false, ErrorCode = errorCode, ErrorMessage = message };
 }
 ```
 
-**Example**: Verify projection updated
+**Verification via attributes** (infrastructure handles polling):
 ```csharp
-public override async Task<StepVerificationResult> VerifyAsync(
-    OrderSagaState state,
-    ISagaContext context,
-    CancellationToken ct)
-{
-    // Check if payment projection shows reserved status
-    var projection = await ProjectionReader.GetAsync<PaymentProjection>(state.PaymentId, ct);
-    
-    if (projection?.Status == PaymentStatus.Reserved)
-        return StepVerificationResult.Verified();
-    
-    // Not ready yet, retry in 2 seconds
-    return StepVerificationResult.NotYet(TimeSpan.FromSeconds(2));
-}
+[SagaStep(Order = 1)]
+[AwaitCondition<PaymentProjection>(
+    p => p.Status == PaymentStatus.Reserved,
+    RetryDelay = "00:00:02",
+    Timeout = "00:05:00")]
+public sealed class ReservePaymentStep : SagaStepBase<OrderSagaState> { ... }
+
+// Or simpler — just await aggregate state
+[SagaStep(Order = 1)]
+[AwaitAggregateState<HotelReservationState>(
+    s => s.Status == ReservationStatus.Confirmed)]
+public sealed class ReserveHotelStep : SagaStepBase<HolidayBookingSagaState> { ... }
 ```
 
 ---
@@ -139,39 +150,41 @@ public enum CompensationStrategy
 
 ### 4. Child Saga Completion Pattern
 
-**Decision**: Use the same mechanism as aggregate verification (polling via reminders)
+**Decision**: Use declarative verification attributes (same as aggregate verification)
 
 **Rationale**:
 - Sagas and aggregates are the same core object
-- The verification step (Decision #1) already supports polling
-- Polling is essential on day one; other patterns (callbacks, streams) can be added later
+- Verification is infrastructure concern, not step business logic
 - Consistent mechanism reduces cognitive load
 
 **Implementation**:
 ```csharp
-public sealed class InvokeChildSagaStep : SagaStepBase<ParentSagaState>
+[SagaStep(Order = 2)]
+[AwaitAggregateState<ChildSagaState>(s => s.Phase == SagaPhase.Completed)]
+public sealed class InvokeChildSagaStep(
+    IAggregateGrainFactory aggregateFactory
+) : SagaStepBase<ParentSagaState>
 {
-    public override async Task<StepExecutionResult> ExecuteAsync(...)
+    public override async Task<StepResult> ExecuteAsync(
+        ParentSagaState state,
+        CancellationToken ct)
     {
         // Start child saga
-        await ChildSagaGrain.ExecuteAsync(new StartChildCommand(correlationId));
-        return StepExecutionResult.Succeeded();
-    }
-    
-    public override async Task<StepVerificationResult> VerifyAsync(...)
-    {
-        // Poll child saga state
-        var childState = await ChildSagaGrain.GetStateAsync();
+        var result = await aggregateFactory
+            .GetGenericAggregate<ChildSagaState>(state.ChildSagaId)
+            .ExecuteAsync(new StartChildCommand(state.CorrelationId), ct);
         
-        return childState.Phase switch
-        {
-            SagaPhase.Completed => StepVerificationResult.Verified(),
-            SagaPhase.Failed => StepVerificationResult.Failed(childState.FailureReason),
-            _ => StepVerificationResult.NotYet(TimeSpan.FromSeconds(5))
-        };
+        return result.Success 
+            ? StepResult.Succeeded() 
+            : StepResult.Failed(result.ErrorCode!, result.ErrorMessage);
     }
 }
 ```
+
+Infrastructure handles:
+- Polling child saga state via reminder
+- Checking `Phase == Completed` condition
+- Proceeding to next step or triggering compensation on failure
 
 **Future**: Consider adding event-stream subscription or callback patterns as optimizations.
 
@@ -226,28 +239,45 @@ public sealed class LongRunningStep : SagaStepBase<OrderFulfillmentSagaState> { 
 
 ### 7. Step Definition API
 
-**Decision**: Attribute-based with source generator validation
+**Decision**: Attribute-based with source generator validation, constructor injection for dependencies
 
 **Rationale**:
 - Consistent with existing Mississippi patterns (commands, reducers, projections)
+- Constructor injection matches `CommandHandlerBase` — no grab-bag context
 - Source generator can detect conflicts (duplicate order, missing steps) at compile time
-- Explicit ordering via `Order` property
 
 **API Shape**:
 ```csharp
 [SagaStep(Order = 1)]
-public sealed class ReservePaymentStep : SagaStepBase<OrderSagaState> { ... }
+public sealed class ReservePaymentStep(
+    IAggregateGrainFactory aggregateFactory  // DI, not context
+) : SagaStepBase<OrderSagaState>
+{
+    public override async Task<StepResult> ExecuteAsync(
+        OrderSagaState state,
+        CancellationToken ct)
+    {
+        var result = await aggregateFactory
+            .GetGenericAggregate<PaymentAggregate>(state.PaymentId)
+            .ExecuteAsync(new ReservePaymentCommand(state.OrderId, state.Amount), ct);
+        
+        return result.Success
+            ? StepResult.Succeeded()
+            : StepResult.Failed(result.ErrorCode!, result.ErrorMessage);
+    }
+}
 
 [SagaStep(Order = 2)]
-public sealed class ReserveInventoryStep : SagaStepBase<OrderSagaState> { ... }
+[AwaitProjection<InventoryProjection>(p => p.Reserved)]
+public sealed class ReserveInventoryStep(...) : SagaStepBase<OrderSagaState> { ... }
 
-[SagaStep(Order = 3)]
-public sealed class CreateShipmentStep : SagaStepBase<OrderSagaState> { ... }
+[SagaStep(Order = 3, Timeout = "00:10:00")]  // Override timeout
+public sealed class CreateShipmentStep(...) : SagaStepBase<OrderSagaState> { ... }
 ```
 
 **Source Generator Responsibilities**:
 - Validate no duplicate `Order` values for same saga
-- Validate step classes implement required methods
+- Validate step classes have parameterless or DI-injectable constructor
 - Generate step registry for runtime discovery
 - Emit compile error on conflicts
 
@@ -413,77 +443,90 @@ public enum StepOutcome
 }
 ```
 
-### Base Step Classes
+### Base Step Class
 
 ```csharp
 /// <summary>
-///     Base class for all saga steps.
+///     Base class for saga steps. One method, like CommandHandlerBase.
 /// </summary>
 public abstract class SagaStepBase<TSaga> where TSaga : class
 {
-    public abstract string StepName { get; }
-    
-    public abstract bool ShouldExecute(TSaga state);
-    
-    public abstract Task<StepExecutionResult> ExecuteAsync(
+    /// <summary>
+    ///     Execute the step. Return business events if saga state needs updating.
+    ///     Lifecycle events (started/completed/failed) are emitted by infrastructure.
+    /// </summary>
+    public abstract Task<StepResult> ExecuteAsync(
         TSaga state,
-        ISagaContext context,
-        CancellationToken cancellationToken);
-    
-    public virtual Task<StepVerificationResult> VerifyAsync(
-        TSaga state,
-        ISagaContext context,
-        CancellationToken cancellationToken)
-        => Task.FromResult(StepVerificationResult.Verified());
-    
-    public abstract Task<StepExecutionResult> CompensateAsync(
-        TSaga state,
-        ISagaContext context,
         CancellationToken cancellationToken);
 }
 
-/// <summary>
-///     Base step for calling another aggregate.
-/// </summary>
-public abstract class AggregateCommandStep<TSaga, TTarget> : SagaStepBase<TSaga>
-    where TSaga : class
-    where TTarget : class
+public sealed record StepResult
 {
-    protected IAggregateGrainFactory AggregateFactory { get; }
+    public bool Success { get; init; }
+    public string? ErrorCode { get; init; }
+    public string? ErrorMessage { get; init; }
+    public IReadOnlyList<object> Events { get; init; } = [];
     
-    protected abstract string GetTargetEntityId(TSaga state);
-    protected abstract object BuildCommand(TSaga state);
-    protected abstract IEnumerable<object> BuildSuccessEvents(TSaga state);
-    
-    // ... implementation
+    public static StepResult Succeeded() => new() { Success = true };
+    public static StepResult Succeeded(params object[] businessEvents) 
+        => new() { Success = true, Events = businessEvents };
+    public static StepResult Failed(string errorCode, string? message = null) 
+        => new() { Success = false, ErrorCode = errorCode, ErrorMessage = message };
+}
+```
+
+### Compensation — Separate Class (like handlers)
+
+```csharp
+/// <summary>
+///     Compensation for a saga step. Registered separately, like command handlers.
+/// </summary>
+[SagaCompensation(ForStep = typeof(ReservePaymentStep))]
+public sealed class ReservePaymentCompensation(
+    IAggregateGrainFactory aggregateFactory
+) : SagaCompensationBase<OrderSagaState>
+{
+    public override async Task<CompensationResult> CompensateAsync(
+        OrderSagaState state,
+        CancellationToken ct)
+    {
+        if (!state.PaymentReserved)
+            return CompensationResult.Skipped();  // Nothing to undo
+        
+        var result = await aggregateFactory
+            .GetGenericAggregate<PaymentAggregate>(state.PaymentId)
+            .ExecuteAsync(new ReleasePaymentCommand(state.PaymentId), ct);
+        
+        return result.Success
+            ? CompensationResult.Succeeded()
+            : CompensationResult.Failed(result.ErrorCode!);
+    }
+}
+```
+
+### Verification — Declarative Attributes
+
+```csharp
+/// <summary>
+///     Wait for projection to match condition before proceeding.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class AwaitConditionAttribute<TProjection> : Attribute
+{
+    public Expression<Func<TProjection, bool>> Condition { get; }
+    public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(2);
+    public TimeSpan Timeout { get; init; } = TimeSpan.FromMinutes(5);
 }
 
 /// <summary>
-///     Base step for calling a child saga.
+///     Wait for aggregate state to match condition before proceeding.
 /// </summary>
-public abstract class ChildSagaStep<TSaga, TChildSaga> : SagaStepBase<TSaga>
-    where TSaga : class
-    where TChildSaga : class
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class AwaitAggregateStateAttribute<TAggregate> : Attribute
 {
-    protected abstract string GetChildSagaId(TSaga state);
-    protected abstract object BuildStartCommand(TSaga state);
-    
-    // VerifyAsync polls child saga state by default
-    // ... implementation
-}
-
-/// <summary>
-///     Base step for calling external HTTP services.
-/// </summary>
-public abstract class HttpServiceStep<TSaga> : SagaStepBase<TSaga>
-    where TSaga : class
-{
-    protected HttpClient Http { get; }
-    
-    protected abstract HttpRequestMessage BuildRequest(TSaga state);
-    protected abstract IEnumerable<object> BuildSuccessEvents(TSaga state, HttpResponseMessage response);
-    
-    // ... implementation
+    public Expression<Func<TAggregate, bool>> Condition { get; }
+    public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(2);
+    public TimeSpan Timeout { get; init; } = TimeSpan.FromMinutes(5);
 }
 ```
 
@@ -508,76 +551,113 @@ public sealed record OrderFulfillmentSagaState
     public bool InventoryReserved { get; init; }
 }
 
-// Step definitions with attributes
+// Step: one method, constructor injection
 [SagaStep(Order = 1)]
-public sealed class ReservePaymentStep 
-    : AggregateCommandStep<OrderFulfillmentSagaState, PaymentAggregate>
+[AwaitProjection<PaymentProjection>(p => p.Status == PaymentStatus.Reserved)]
+public sealed class ReservePaymentStep(
+    IAggregateGrainFactory aggregateFactory
+) : SagaStepBase<OrderFulfillmentSagaState>
 {
-    public override string StepName => "reserve-payment";
-    
-    public override bool ShouldExecute(OrderFulfillmentSagaState state)
-        => !state.PaymentReserved;
-    
-    protected override string GetTargetEntityId(OrderFulfillmentSagaState state)
-        => state.PaymentId;
-    
-    protected override object BuildCommand(OrderFulfillmentSagaState state)
-        => new ReservePaymentCommand(state.OrderId, state.Amount);
-    
-    protected override IEnumerable<object> BuildSuccessEvents(OrderFulfillmentSagaState state)
-    {
-        yield return new PaymentReservedEvent(state.PaymentId);
-    }
-    
-    public override async Task<StepVerificationResult> VerifyAsync(
+    public override async Task<StepResult> ExecuteAsync(
         OrderFulfillmentSagaState state,
-        ISagaContext context,
         CancellationToken ct)
     {
-        // Verify payment projection shows reserved
-        var projection = await context.GetProjectionAsync<PaymentProjection>(state.PaymentId, ct);
+        var result = await aggregateFactory
+            .GetGenericAggregate<PaymentAggregate>(state.PaymentId)
+            .ExecuteAsync(new ReservePaymentCommand(state.OrderId, state.Amount), ct);
         
-        return projection?.Status == PaymentStatus.Reserved
-            ? StepVerificationResult.Verified()
-            : StepVerificationResult.NotYet(TimeSpan.FromSeconds(2));
+        if (!result.Success)
+            return StepResult.Failed(result.ErrorCode!, result.ErrorMessage);
+        
+        // Business event if saga needs to capture data
+        return StepResult.Succeeded(new PaymentReservationInitiatedEvent(state.PaymentId));
     }
-    
-    public override async Task<StepExecutionResult> CompensateAsync(
+}
+
+// Compensation: separate class, same pattern
+[SagaCompensation(ForStep = typeof(ReservePaymentStep))]
+public sealed class ReservePaymentCompensation(
+    IAggregateGrainFactory aggregateFactory
+) : SagaCompensationBase<OrderFulfillmentSagaState>
+{
+    public override async Task<CompensationResult> CompensateAsync(
         OrderFulfillmentSagaState state,
-        ISagaContext context,
         CancellationToken ct)
     {
         if (!state.PaymentReserved)
-            return StepExecutionResult.Succeeded();
+            return CompensationResult.Skipped();
         
-        await context.DispatchAsync<PaymentAggregate>(
-            state.PaymentId,
-            new ReleasePaymentCommand(state.PaymentId),
-            ct);
+        await aggregateFactory
+            .GetGenericAggregate<PaymentAggregate>(state.PaymentId)
+            .ExecuteAsync(new ReleasePaymentCommand(state.PaymentId), ct);
         
-        return StepExecutionResult.Succeeded(new PaymentReleasedEvent(state.PaymentId));
+        return CompensationResult.Succeeded();
     }
 }
 
 [SagaStep(Order = 2)]
-public sealed class ReserveInventoryStep 
-    : AggregateCommandStep<OrderFulfillmentSagaState, InventoryAggregate>
-{
-    // ... similar pattern
-}
+[AwaitProjection<InventoryProjection>(p => p.Reserved)]
+public sealed class ReserveInventoryStep(...) : SagaStepBase<OrderFulfillmentSagaState> { ... }
 
-[SagaStep(Order = 3, Timeout = "00:10:00")]  // Override timeout for this step
-public sealed class CreateShipmentStep 
-    : HttpServiceStep<OrderFulfillmentSagaState>
-{
-    // ... calls external shipping API
-}
+[SagaCompensation(ForStep = typeof(ReserveInventoryStep))]
+public sealed class ReserveInventoryCompensation(...) : SagaCompensationBase<OrderFulfillmentSagaState> { ... }
 
-// Registration in Program.cs / Startup
+[SagaStep(Order = 3, Timeout = "00:10:00")]
+public sealed class CreateShipmentStep(...) : SagaStepBase<OrderFulfillmentSagaState> { ... }
+
+// Registration in Program.cs
 services.AddSaga<OrderFulfillmentSagaState>();
-// Source generator discovers steps via [SagaStep] attributes
+// Source generator discovers steps and compensations via attributes
 // Auto-registers SagaStatusProjection
 ```
+
+---
+
+## Event Emission Responsibility
+
+### Lifecycle Events — Infrastructure (Automatic)
+
+```csharp
+// Saga orchestrator emits these automatically:
+SagaStartedEvent          // Before first step
+SagaStepStartedEvent      // Before each step.ExecuteAsync()
+SagaStepCompletedEvent    // After step success + verification
+SagaStepFailedEvent       // After step failure
+SagaCompensatingEvent     // Before compensation starts
+SagaStepCompensatedEvent  // After each compensation
+SagaCompletedEvent        // All steps done
+SagaFailedEvent           // Unrecoverable failure
+```
+
+### Business Events — Step Returns (When Needed)
+
+```csharp
+// Step returns business events ONLY when saga state needs data:
+public override async Task<StepResult> ExecuteAsync(...)
+{
+    var response = await aggregateFactory
+        .GetGenericAggregate<HotelReservationState>(state.ReservationId)
+        .ExecuteAsync(new ReserveHotelCommand(...), ct);
+    
+    // Saga needs the confirmation ID? Return event with data
+    return StepResult.Succeeded(
+        new HotelConfirmationCapturedEvent(response.ConfirmationId));
+}
+
+// Saga doesn't need data from this step? Just return success
+public override async Task<StepResult> ExecuteAsync(...)
+{
+    await notificationService.SendAsync(email, ct);
+    return StepResult.Succeeded();  // No events
+}
+```
+
+### Separation Summary
+
+| Event Type | Emitted By | Example |
+|------------|------------|---------|
+| Lifecycle | Infrastructure | `SagaStepStartedEvent`, `SagaStepCompletedEvent` |
+| Business data | Step (optional) | `HotelConfirmationCapturedEvent` |
 
 ---
 
