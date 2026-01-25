@@ -619,20 +619,35 @@ public interface IEventEffect<TAggregate>
 - Loop continues until no events yielded (max 10 iterations)
 - Effects are resolved from DI with full constructor injection
 
-### Two Effect Patterns
+### Single Effect Pattern
 
-| Pattern | Base Class | Use Case | Yields Events? |
-|---------|------------|----------|----------------|
-| Event-enriching | `EventEffectBase<TEvent, TAggregate>` | Add computed events to same aggregate | Yes |
-| Side-effect action | `SimpleEventEffectBase<TEvent, TAggregate>` | HTTP calls, notifications, cross-aggregate dispatch | No |
+Always use `EventEffectBase<TEvent, TAggregate>`. Yield events when you have them, `yield break;` when you don't.
+
+```csharp
+// Effect that yields events
+public override async IAsyncEnumerable<object> HandleAsync(...)
+{
+    var response = await Http.SendAsync(request, ct);
+    yield return new HotelReservationConfirmedEvent(response.ConfirmationId);
+}
+
+// Fire-and-forget effect (no events to yield)
+public override async IAsyncEnumerable<object> HandleAsync(...)
+{
+    await NotificationService.SendAsync(email, ct);
+    yield break;
+}
+```
+
+**Why one pattern?** Simpler DX—developers learn one base class, not two.
 
 ### Cross-Aggregate Dispatch (Option B Pattern)
 
-Effects that call **other aggregates** use `SimpleEventEffectBase` and inject `IAggregateGrainFactory`:
+Effects that call **other aggregates** use `EventEffectBase` and inject `IAggregateGrainFactory`:
 
 ```csharp
 public sealed class HotelReservationHttpEffect 
-    : SimpleEventEffectBase<HotelReservationRequestedEvent, HotelReservationState>
+    : EventEffectBase<HotelReservationRequestedEvent, HotelReservationState>
 {
     private HttpClient Http { get; }
     private IAggregateGrainFactory GrainFactory { get; }
@@ -645,10 +660,10 @@ public sealed class HotelReservationHttpEffect
         GrainFactory = grainFactory;
     }
     
-    protected override async Task HandleSimpleAsync(
+    public override async IAsyncEnumerable<object> HandleAsync(
         HotelReservationRequestedEvent @event,
         HotelReservationState state,
-        CancellationToken ct)
+        [EnumeratorCancellation] CancellationToken ct)
     {
         // Read saga context from aggregate state (passed via command properties)
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/hotels/reserve");
@@ -667,6 +682,8 @@ public sealed class HotelReservationHttpEffect
         await GrainFactory
             .GetGenericAggregate<HotelReservationState>(state.ReservationId)
             .ExecuteAsync(resultCommand, ct);
+        
+        yield break; // No events to yield, command dispatch handles state update
     }
 }
 ```

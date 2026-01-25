@@ -428,9 +428,8 @@ public sealed class ReserveHotelHandler
 }
 
 // SERVER-SIDE EFFECT — calls HTTP after event is persisted
-// Uses SimpleEventEffectBase since it dispatches commands, not yields events
 public sealed class HotelReservationHttpEffect 
-    : SimpleEventEffectBase<HotelReservationRequestedEvent, HotelReservationState>
+    : EventEffectBase<HotelReservationRequestedEvent, HotelReservationState>
 {
     private HttpClient Http { get; }
     private IAggregateGrainFactory GrainFactory { get; }
@@ -443,10 +442,10 @@ public sealed class HotelReservationHttpEffect
         GrainFactory = grainFactory;
     }
     
-    protected override async Task HandleSimpleAsync(
+    public override async IAsyncEnumerable<object> HandleAsync(
         HotelReservationRequestedEvent @event,
         HotelReservationState state,
-        CancellationToken ct)
+        [EnumeratorCancellation] CancellationToken ct)
     {
         try
         {
@@ -501,6 +500,8 @@ public sealed class HotelReservationHttpEffect
                     "HTTP_ERROR",
                     ex.Message), ct);
         }
+        
+        yield break; // Command dispatch handles state update, no events to yield here
     }
 }
 ```
@@ -814,8 +815,7 @@ public interface IAggregateEffectContext
 **Both patterns should be supported** — Mississippi should provide:
 1. `HttpServiceStep<TSaga>` for Option A (direct HTTP)
 2. `AggregateCommandStep<TSaga, TTarget>` for Option B (aggregate orchestration)
-3. `SimpleEventEffectBase<TEvent, TAggregate>` for server-side effects that call HTTP (no event yield)
-4. `EventEffectBase<TEvent, TAggregate>` for effects that enrich aggregates with additional events
+3. `EventEffectBase<TEvent, TAggregate>` for all server-side effects (yield events or `yield break;`)
 
 ---
 
@@ -835,14 +835,11 @@ The `topic/server-effect` PR implements the actual effect pattern:
 
 ### Corrected Option B Pattern
 
-The example above uses `SimpleEventEffectBase` because:
-- Effect calls HTTP (side effect)
-- Effect dispatches commands back to aggregate (side effect)
-- Effect does NOT yield events to persist
+All effects use `EventEffectBase`:
+- Yield events when you have results to persist
+- Use `yield break;` for fire-and-forget side effects
 
-This aligns with the actual PR implementation where:
-- `EventEffectBase` → for yielding additional events to same aggregate
-- `SimpleEventEffectBase` → for side effects without yielding
+**One pattern, simpler DX** — developers learn one base class.
 
 ---
 
