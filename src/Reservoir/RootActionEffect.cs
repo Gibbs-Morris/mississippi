@@ -92,7 +92,6 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
         Dictionary<Type, ImmutableArray<IActionEffect<TState>>.Builder> indexBuilder = new();
         ImmutableArray<IActionEffect<TState>>.Builder fallbackBuilder =
             ImmutableArray.CreateBuilder<IActionEffect<TState>>();
-
         foreach (IActionEffect<TState> effect in effectsArray)
         {
             AddEffectToIndex(effect, indexBuilder, fallbackBuilder);
