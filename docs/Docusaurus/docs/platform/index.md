@@ -20,7 +20,7 @@ Components are listed in data-flow order (server to client):
 | [Aqueduct](./aqueduct.md) | Orleans-backed SignalR backplane | Silo + Server |
 | [Inlet](./inlet.md) | Real-time projection subscriptions | All tiers |
 | [Reservoir](./reservoir/) | Redux-style client state container | Client |
-| [Refraction](./refraction.md) | Planned component library | Client |
+| [Refraction](./refraction.md) | Holographic HUD component library | Client |
 
 ## Extensibility
 

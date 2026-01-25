@@ -1,32 +1,84 @@
 ---
 sidebar_position: 8
 title: Refraction
-description: Planned component library for Mississippi applications
+description: Holographic HUD component library for Mississippi Blazor applications
 ---
 
-Refraction is the planned component library designed to work with Mississippi's
-framework and UX state model.
+Refraction is a disciplined, neo-blue, holographic instrument HUD component
+library for Blazor. It makes work feel fast, precise, and spatial: a single
+focused task lives in a primary glass pane while secondary context briefly
+orbits and disappears.
 
-## Purpose
+## Vision
 
-Refraction will provide:
+UI that "materializes" and "dematerializes" from an emitter rather than
+navigating pages. It favors linework, glow, and negative space over heavy
+blocks, uses motion to explain intent (open/confirm/error/loading), stays
+input-agnostic and accessible (reticle focus, keyboard-first paths,
+reduced-motion), remains legible through transparency on noisy backgrounds,
+and treats OLED longevity as a first-class constraint.
 
-- **UI components** aligned to Reservoir and Inlet patterns
-- **Common state flows** encapsulated as reusable components
-- **Integration patterns** for Mississippi projections
+The overall emotion is **calm, technical immersion**: minimal chrome, maximal
+clarity, and a sense of information being summoned exactly when needed, then
+fading back into the void.
 
-## Status
+## Architecture: State Down, Events Up
 
-Refraction is in planning. This page will be updated when implementation begins.
+Refraction components are **pure presentation**. They follow a strict
+unidirectional data flow:
 
-## Planned Features
+- **Pages/Scenes** own state and dispatch actions to Reservoir
+- **Organisms** (Pane, SchematicViewer, SmokeConfirm) compose molecules
+- **Molecules** (TelemetryStrip, CommandOrbit) compose atoms
+- **Atoms** (Emitter, Reticle, InputField, ProgressArc) are primitive elements
 
-| Feature | Description |
+Every Refraction component:
+
+1. Receives all data via `[Parameter]` — components never fetch their own data
+2. Reports all interactions via `EventCallback` — components never mutate state
+3. Has zero knowledge of state management — no Reservoir, no services, no DI
+4. Is fully controlled — parent determines what happens on every interaction
+
+## Component Categories
+
+| Category | Purpose | Examples |
+|----------|---------|----------|
+| **Atoms** | Primitive UI elements | Emitter, Reticle, InputField, ProgressArc |
+| **Molecules** | Composed atoms | TelemetryStrip, CommandOrbit |
+| **Organisms** | Complex compositions | Pane, SchematicViewer, SmokeConfirm |
+
+## Packages
+
+| Package | Description |
 | --- | --- |
-| Projection-aware components | Auto-subscribe to projection updates |
-| Loading states | Built-in loading/error handling for async data |
-| Optimistic updates | UI patterns for command dispatch with rollback |
-| Form integration | Reservoir-backed form state management |
+| **Refraction.Abstractions** | Contracts for theming, focus management, motion preferences |
+| **Refraction** | Component library implementation |
+| **Refraction.Pages** | Pre-built scenes with Reservoir integration |
+
+## Usage
+
+```razor
+@* State flows down via parameters *@
+<InputField
+    Id="task-title"
+    Label="Task Title"
+    Value="@currentTitle"
+    State="@(hasError ? RefractionStates.Error : RefractionStates.Idle)"
+    ValueChanged="HandleTitleChanged" />
+
+@code {
+    private string currentTitle = "";
+    private bool hasError = false;
+
+    // Events flow up - parent decides what happens
+    private void HandleTitleChanged(string newValue)
+    {
+        // Dispatch to Reservoir, validate, etc.
+        currentTitle = newValue;
+        hasError = string.IsNullOrWhiteSpace(newValue);
+    }
+}
+```
 
 ## Related Documentation
 

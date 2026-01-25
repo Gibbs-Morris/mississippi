@@ -419,7 +419,7 @@ Get up and running in 5 minutes.
 
 ## Prerequisites
 
-- .NET 8.0 or later
+- .NET 10.0 or later
 - [Other requirements]
 
 ## Installation

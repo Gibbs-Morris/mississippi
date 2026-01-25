@@ -12,7 +12,7 @@ real-time updates.
 
 ### Prerequisites
 
-- .NET 8.0 SDK or later
+- .NET 10.0 SDK or later
 - Visual Studio 2022, VS Code, or JetBrains Rider
 - Azure Cosmos DB account (or emulator for local development)
 - Azure Storage account (or Azurite for local development)

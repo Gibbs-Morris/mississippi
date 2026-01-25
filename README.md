@@ -4,21 +4,40 @@
 
 ## Overview
 
-Mississippi is a sophisticated .NET framework designed to streamline distributed application development. It provides a robust foundation for building scalable, maintainable .NET applications with built-in support for mapping, distributed computing, cloud storage integration, and workflow management.
+Mississippi is an **event sourcing framework** for .NET that moves domain changes from Orleans grains into live Blazor WebAssembly UX state—in real time.
+
+If you're building a CQRS/ES application where users need to see changes the moment they happen (collaborative editing, dashboards, notifications), Mississippi provides the full vertical stack from command handling to browser state updates.
+
+📖 **[Full Documentation](docs/Docusaurus/docs/index.md)** | 🏗️ **[Architecture](docs/Docusaurus/docs/concepts/architecture.md)** | 🚀 **[Getting Started](docs/Docusaurus/docs/getting-started/index.md)**
+
+## Core Concepts
+
+| Concept | Description |
+| --- | --- |
+| **Aggregates** | Command handling grains that validate business rules and emit events |
+| **Brooks** | Append-only event streams stored in Azure Cosmos DB |
+| **UX Projections** | Read models that subscribe to events and build query-optimized views |
+| **Snapshots** | Point-in-time state captures for fast projection rebuilds |
+| **Aqueduct** | Orleans-backed SignalR backplane for multi-server delivery |
+| **Inlet** | Client bridge managing subscriptions and real-time updates |
+| **Reservoir** | Redux-style state container for Blazor WebAssembly |
+| **Refraction** | Holographic HUD component library for Blazor |
 
 ## Technology Stack
 
-- **.NET 10.0** - Latest .NET runtime with C# 14.0
-- **Microsoft Orleans** - Framework for building distributed applications
-- **Azure Cosmos DB** - Cloud-native NoSQL database integration
+- **.NET 10.0** — Latest .NET runtime with C# 14.0
+- **Microsoft Orleans** — Framework for building distributed applications
+- **Azure Cosmos DB** — Cloud-native NoSQL database for event and snapshot storage
+- **SignalR** — Real-time client-server communication
+- **Blazor WebAssembly** — Client-side web UI framework
 
 ## Development Tooling
 
-- **xUnit** - Unit testing framework
-- **Stryker** - Mutation testing for validating test quality
-- **SonarAnalyzer** - Static code analysis with SonarCloud gates
-- **StyleCop** - Code style enforcement
-- **GitVersion** - Semantic versioning
+- **xUnit** — Unit testing framework
+- **Stryker** — Mutation testing for validating test quality
+- **SonarAnalyzer** — Static code analysis with SonarCloud gates
+- **StyleCop** — Code style enforcement
+- **GitVersion** — Semantic versioning
 
 ## Getting Started
 
@@ -26,15 +45,25 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 - .NET 10.0 SDK or later
 - PowerShell 7.0 or later (for build scripts)
-- JetBrains Rider or other compatible IDE
+- Azure Cosmos DB account (or emulator for local development)
+- Azure Storage account (or Azurite for local development)
 
-### Installation
+### SDK Packages
 
-The Mississippi Framework will be available as a set of NuGet packages. Package names to be confirmed.
+Install the appropriate SDK package for your project type:
+
+```bash
+# Blazor WebAssembly client
+dotnet add package Mississippi.Sdk.Client
+
+# ASP.NET API server
+dotnet add package Mississippi.Sdk.Server
+
+# Orleans silo host
+dotnet add package Mississippi.Sdk.Silo
+```
 
 ### Building from Source
-
-To build the project from source:
 
 ```powershell
 # Clone the repository
@@ -47,21 +76,35 @@ pwsh ./go.ps1
 
 Common script entry points:
 
-- `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 [-Configuration Debug|Release]` – build the Mississippi solution.
-- `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run unit/integration tests with coverage for Mississippi projects.
-- `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` – execute Stryker.NET mutation testing.
-- `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` – apply the repository’s ReSharper cleanup and analyzer inspections.
+- `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` — Build the Mississippi solution
+- `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` — Run unit/integration tests with coverage
+- `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` — Execute Stryker.NET mutation testing
+- `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` — Apply ReSharper cleanup and analyzer inspections
 
 ## Samples
 
 The repository includes sample applications demonstrating the framework:
 
-- **CrescentApiApp** - An ASP.NET Core API application showing web service integration
-- **CrescentConsoleApp** - A console application demonstrating non-web usage
+| Sample | Description |
+| --- | --- |
+| **[Spring](samples/Spring/)** | Full-stack reference implementation with aggregate, projections, and real-time Blazor client |
+| **[Crescent](samples/Crescent/)** | Integration test harness with Aspire AppHost |
+
+### Spring Sample Structure
+
+```text
+samples/Spring/
+├── Spring.AppHost/     # Aspire orchestration
+├── Spring.Client/      # Blazor WebAssembly app with Reservoir
+├── Spring.Domain/      # Domain types, commands, events
+├── Spring.Server/      # ASP.NET API with SignalR hub
+├── Spring.Silo/        # Orleans silo host
+└── Spring.L2Tests/     # Integration tests
+```
 
 ## Testing
 
-The framework includes comprehensive testing:
+The framework includes comprehensive testing with coverage and mutation analysis:
 
 ```powershell
 # Run unit tests with code coverage
@@ -69,25 +112,32 @@ pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 
 # Run mutation testing (Stryker)
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
+
+# Fast loop on a single test project
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Aqueduct.L0Tests -SkipMutation
 ```
 
-Test results and coverage reports are generated in the `.scratchpad/coverage-test-results` directory, and mutation runs write reports under `.scratchpad/mutation-test-results`.
+Test results and coverage reports are generated in `.scratchpad/coverage-test-results/`, and mutation runs write reports under `.scratchpad/mutation-test-results/`.
 
-For a fast loop on a single test project, use the helper script:
+## CI / Local Pipeline Options
+
+The repository provides a top-level helper `go.ps1` for the full pipeline:
 
 ```powershell
-# Tests + coverage only (fast)
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
+# Run full pipeline locally including cleanup (default)
+pwsh ./go.ps1 -Configuration Release
 
-# Tests + coverage + Stryker mutation score
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
+# Skip cleanup step (useful for CI or when you don't want formatting changes)
+pwsh ./go.ps1 -Configuration Release -SkipCleanup
 ```
 
-Notes:
+## Documentation
 
-- `-TestProject` can be the project name (convention: one test project per assembly) or a path to the `.csproj`.
-- If the source project can’t be inferred from `<ProjectReference>`, set `-SourceProject` to the target `.csproj`.
-- The script prints a concise summary (RESULT, COVERAGE, MUTATION_SCORE) that tools like Cursor or Copilot can parse easily.
+- **[Start Here](docs/Docusaurus/docs/index.md)** — Framework overview and conceptual building blocks
+- **[Concepts](docs/Docusaurus/docs/concepts/index.md)** — Architecture and design patterns
+- **[Getting Started](docs/Docusaurus/docs/getting-started/index.md)** — Installation and first project
+- **[Components](docs/Docusaurus/docs/platform/index.md)** — Component-by-component reference
+- **[Contributing](docs/Docusaurus/docs/contributing/index.md)** — Contribution guidelines
 
 ## License
 
@@ -99,29 +149,7 @@ Contributions to the Mississippi Framework are welcome. Please follow standard G
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
+3. Make your changes following the [contribution guidelines](docs/Docusaurus/docs/contributing/index.md)
 4. Submit a pull request
 
-### Build automation
-
-The PowerShell entry points (`build-*.ps1`, `unit-test-*.ps1`, `clean-up-*.ps1`, `mutation-test-mississippi-solution.ps1`, `orchestrate-solutions.ps1`, etc.) are wrappers over a shared module at `eng/src/agent-scripts/RepositoryAutomation.psm1`. The module exposes reusable advanced functions so the same steps can run from CI jobs, local shells, and Pester tests without duplicating logic. See `eng/src/agent-scripts/README.md` for the catalogue of functions and authoring guidance.
-
-## CI / Local pipeline options
-
-The repository provides a top-level helper `go.ps1` which forwards to `orchestrate-solutions.ps1`. A new option `-SkipCleanup` is available to run the full build, tests and mutation testing pipeline while skipping the repository cleanup steps (ReSharper/StyleCop automated cleanup). This is useful for CI runs or local checks when you want to avoid formatting/cleanup changes but still validate build and test quality.
-
-Usage examples:
-
-```powershell
-# Run full pipeline locally including cleanup (default)
-pwsh ./go.ps1 -Configuration Release
-
-# Run full pipeline but skip cleanup (useful for CI or when you don't want the cleanup step to run)
-pwsh ./go.ps1 -Configuration Release -SkipCleanup
-```
-
-Notes:
-
-- `-SkipCleanup` is a switch forwarded from `go.ps1` to `orchestrate-solutions.ps1` and then to `Invoke-SolutionsPipeline` in the shared module.
-
-- CI workflows can call `./go.ps1 -SkipCleanup` to run build, tests and mutation testing without running the cleanup step.
+The PowerShell entry points are wrappers over a shared module at `eng/src/agent-scripts/RepositoryAutomation.psm1`. See [eng/src/agent-scripts/README.md](eng/src/agent-scripts/README.md) for the catalogue of functions and authoring guidance.

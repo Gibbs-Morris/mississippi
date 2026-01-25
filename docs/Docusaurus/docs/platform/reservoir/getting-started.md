@@ -8,7 +8,7 @@ This guide walks you through building a complete Blazor application with Reservo
 
 ## Prerequisites
 
-- .NET 8.0 SDK or later
+- .NET 10.0 SDK or later
 - A code editor (Visual Studio, VS Code, or Rider)
 - Basic familiarity with Blazor
 

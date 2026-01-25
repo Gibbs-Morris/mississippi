@@ -188,7 +188,7 @@ Beyond the six core concepts, Mississippi includes:
 | --- | --- |
 | **Snapshots** | Periodic projection state saves for faster rebuilds |
 | **Reducers** | Shared event-folding logic used by both projections and aggregates |
-| **Refraction** | Planned component library for common UI patterns |
+| **Refraction** | Holographic HUD component library for Blazor UI |
 | **SDK Packages** | Meta-packages that bundle dependencies by deployment target |
 
 ## Where to Go Next

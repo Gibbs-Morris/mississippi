@@ -4,7 +4,7 @@
 
 ## Prerequisites
 
-- Install the .NET SDK referenced in `global.json` (currently `9.0.301`).
+- Install the .NET SDK referenced in `global.json` (currently `10.0.102`).
 - Use PowerShell 7+; every script starts with `#!/usr/bin/env pwsh`.
 - Run `dotnet tool restore` from the repo root to provision the required local tools.
 
