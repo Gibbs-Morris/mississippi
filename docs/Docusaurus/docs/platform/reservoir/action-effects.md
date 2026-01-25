@@ -1,14 +1,20 @@
 ---
 sidebar_position: 5
-title: Effects
+title: Action Effects
 description: Handle asynchronous operations like API calls, timers, and navigation
 ---
 
+<<<<<<<< HEAD:docs/Docusaurus/docs/platform/reservoir/effects.md
 Effects handle asynchronous operations triggered by actions. While reducers must be pure and synchronous, effects can perform API calls, interact with browser APIs, set timers, and emit new actions over time. Effects are where side effects belong in a Reservoir application.
+========
+# Action Effects
 
-## When to Use Effects
+Action effects handle asynchronous operations triggered by actions. While reducers must be pure and synchronous, action effects can perform API calls, interact with browser APIs, set timers, and emit new actions over time. Action effects are where side effects belong in a Reservoir application.
+>>>>>>>> origin/main:docs/Docusaurus/docs/platform/reservoir/action-effects.md
 
-Use effects when you need to:
+## When to Use Action Effects
+
+Use action effects when you need to:
 
 - Make HTTP requests to APIs
 - Access browser storage (localStorage, IndexedDB)
@@ -17,13 +23,13 @@ Use effects when you need to:
 - Navigate or interact with browser APIs
 - Coordinate complex multi-step workflows
 
-## The IEffect Interface
+## The IActionEffect Interface
 
 ```csharp
 /// <summary>
 /// Handles asynchronous side effects triggered by actions.
 /// </summary>
-public interface IEffect
+public interface IActionEffect
 {
     /// <summary>
     /// Determines whether this effect can handle the given action.
@@ -44,11 +50,11 @@ public interface IEffect
 }
 ```
 
-Effects use `IAsyncEnumerable<IAction>` to support streaming multiple actions over time—perfect for progress updates, polling, or multi-step workflows.
+Action effects use `IAsyncEnumerable<IAction>` to support streaming multiple actions over time—perfect for progress updates, polling, or multi-step workflows.
 
-## Implementing Effects
+## Implementing Action Effects
 
-### Basic Effect Pattern
+### Basic Action Effect Pattern
 
 ```csharp
 using System.Collections.Generic;
@@ -59,9 +65,9 @@ using System.Threading;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
-public sealed class LoadProductsEffect : IEffect
+public sealed class LoadProductsActionEffect : IActionEffect
 {
-    public LoadProductsEffect(HttpClient httpClient)
+    public LoadProductsActionEffect(HttpClient httpClient)
         => Http = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
 
     private HttpClient Http { get; }
@@ -106,20 +112,20 @@ public sealed class LoadProductsEffect : IEffect
 }
 ```
 
-### Effect Lifecycle
+### Action Effect Lifecycle
 
 1. **Action dispatched** — User or system dispatches an action
-2. **CanHandle check** — Store calls `CanHandle()` on each registered effect
-3. **HandleAsync execution** — For matching effects, `HandleAsync()` runs asynchronously
+2. **CanHandle check** — Store calls `CanHandle()` on each registered action effect
+3. **HandleAsync execution** — For matching action effects, `HandleAsync()` runs asynchronously
 4. **Actions yielded** — Each yielded action is dispatched back to the store
-5. **Concurrent execution** — Effects run concurrently; they don't block the UI
+5. **Concurrent execution** — Action effects run concurrently; they don't block the UI
 
 ```mermaid
 sequenceDiagram
     participant UI as Component
     participant Store as Store
     participant Reducers as Reducers
-    participant Effect as LoadProductsEffect
+    participant Effect as LoadProductsActionEffect
     participant API as HTTP API
 
     UI->>Store: Dispatch(LoadProductsAction)
@@ -136,21 +142,21 @@ sequenceDiagram
 
 ## Dependency Injection
 
-Effects support constructor injection for services:
+Action effects support constructor injection for services:
 
 ```csharp
-public sealed class AuthenticationEffect : IEffect
+public sealed class AuthenticationActionEffect : IActionEffect
 {
-    public AuthenticationEffect(
+    public AuthenticationActionEffect(
         IAuthService authService,
-        ILogger<AuthenticationEffect> logger)
+        ILogger<AuthenticationActionEffect> logger)
     {
         AuthService = authService;
         Logger = logger;
     }
 
     private IAuthService AuthService { get; }
-    private ILogger<AuthenticationEffect> Logger { get; }
+    private ILogger<AuthenticationActionEffect> Logger { get; }
 
     public bool CanHandle(IAction action) 
         => action is LoginAction or LogoutAction;
@@ -208,12 +214,12 @@ public sealed class AuthenticationEffect : IEffect
 
 ## Streaming Multiple Actions
 
-Effects excel at streaming actions over time:
+Action effects excel at streaming actions over time:
 
 ### Progress Updates
 
 ```csharp
-public sealed class FileUploadEffect : IEffect
+public sealed class FileUploadActionEffect : IActionEffect
 {
     public bool CanHandle(IAction action) => action is UploadFileAction;
 
@@ -242,11 +248,11 @@ public sealed class FileUploadEffect : IEffect
 ### Polling
 
 ```csharp
-public sealed class NotificationPollingEffect : IEffect
+public sealed class NotificationPollingActionEffect : IActionEffect
 {
     private readonly INotificationService notificationService;
 
-    public NotificationPollingEffect(INotificationService notificationService)
+    public NotificationPollingActionEffect(INotificationService notificationService)
         => this.notificationService = notificationService;
 
     public bool CanHandle(IAction action) => action is StartPollingAction;
@@ -272,7 +278,7 @@ public sealed class NotificationPollingEffect : IEffect
 
 ## Error Handling
 
-Effects are responsible for their own error handling. The store catches and swallows exceptions to prevent effect failures from breaking dispatch:
+Action effects are responsible for their own error handling. The store catches and swallows exceptions to prevent action effect failures from breaking dispatch:
 
 ```csharp
 public async IAsyncEnumerable<IAction> HandleAsync(
@@ -315,42 +321,42 @@ public async IAsyncEnumerable<IAction> HandleAsync(
 
 ## Registration
 
-Register effects with dependency injection:
+Register action effects with dependency injection:
 
 ```csharp
 // Program.cs
-builder.Services.AddEffect<LoadProductsEffect>();
-builder.Services.AddEffect<AuthenticationEffect>();
-builder.Services.AddEffect<FileUploadEffect>();
+builder.Services.AddActionEffect<LoadProductsActionEffect>();
+builder.Services.AddActionEffect<AuthenticationActionEffect>();
+builder.Services.AddActionEffect<FileUploadActionEffect>();
 
-// Effects are resolved when the Store is created
+// Action effects are resolved when the Store is created
 builder.Services.AddReservoir(store => store.RegisterState<AppState>());
 ```
 
-Effects are registered with **scoped lifetime**:
+Action effects are registered with **scoped lifetime**:
 
 - In Blazor WebAssembly, scoped behaves as singleton
-- In Blazor Server, each circuit gets its own effect instances
+- In Blazor Server, each circuit gets its own action effect instances
 
 ## Rules and Limitations
 
 ### Rules
 
-1. **Effects must be stateless between actions.** Don't store state that persists across action handling. Use the store for persistent state.
+1. **Action effects must be stateless between actions.** Don't store state that persists across action handling. Use the store for persistent state.
 
-2. **Effects must handle their own errors.** The store swallows exceptions; emit error actions for the UI to display.
+2. **Action effects must handle their own errors.** The store swallows exceptions; emit error actions for the UI to display.
 
-3. **Effects should respect cancellation.** Check `cancellationToken.IsCancellationRequested` and handle `OperationCanceledException`.
+3. **Action effects should respect cancellation.** Check `cancellationToken.IsCancellationRequested` and handle `OperationCanceledException`.
 
-4. **Effects must not access the store directly.** Use yielded actions to trigger state changes.
+4. **Action effects must not access the store directly.** Use yielded actions to trigger state changes.
 
 ### Limitations
 
-1. **No guaranteed execution order.** Effects run concurrently; don't depend on ordering between effects.
+1. **No guaranteed execution order.** Action effects run concurrently; don't depend on ordering between action effects.
 
 2. **No transaction support.** Multiple yielded actions are dispatched independently.
 
-3. **Effects are fire-and-forget.** The `Dispatch()` call returns before effects complete.
+3. **Action effects are fire-and-forget.** The `Dispatch()` call returns before action effects complete.
 
 ## Best Practices
 
@@ -360,24 +366,24 @@ Effects are registered with **scoped lifetime**:
 - ✅ Emit success/failure actions after async work completes
 - ✅ Handle all expected exception types explicitly
 - ✅ Use `[EnumeratorCancellation]` attribute on the cancellation token parameter
-- ✅ Implement `IDisposable` if the effect holds resources
-- ✅ Keep effects focused on a single concern
+- ✅ Implement `IDisposable` if the action effect holds resources
+- ✅ Keep action effects focused on a single concern
 - ✅ Use constructor injection for dependencies
 
 ### Don't
 
-- ❌ Store mutable state in effect fields
+- ❌ Store mutable state in action effect fields
 - ❌ Directly modify component state or UI
 - ❌ Catch and swallow exceptions silently (emit error actions instead)
 - ❌ Perform synchronous blocking calls
 - ❌ Access `HttpContext` or other request-scoped services (use scoped services appropriately)
 
-## Testing Effects
+## Testing Action Effects
 
-Test effects by invoking `HandleAsync` and collecting yielded actions:
+Test action effects by invoking `HandleAsync` and collecting yielded actions:
 
 ```csharp
-public sealed class LoadProductsEffectTests
+public sealed class LoadProductsActionEffectTests
 {
     [Fact]
     public async Task HandleAsync_EmitsLoadingThenLoadedActions()
@@ -392,7 +398,7 @@ public sealed class LoadProductsEffectTests
             BaseAddress = new Uri("https://api.example.com") 
         };
         
-        var sut = new LoadProductsEffect(httpClient);
+        var sut = new LoadProductsActionEffect(httpClient);
         var action = new LoadProductsAction();
         var actions = new List<IAction>();
 
@@ -424,7 +430,7 @@ public sealed class LoadProductsEffectTests
             BaseAddress = new Uri("https://api.example.com") 
         };
         
-        var sut = new LoadProductsEffect(httpClient);
+        var sut = new LoadProductsActionEffect(httpClient);
         var action = new LoadProductsAction();
         var actions = new List<IAction>();
 
@@ -444,7 +450,7 @@ public sealed class LoadProductsEffectTests
     public void CanHandle_WithLoadProductsAction_ReturnsTrue()
     {
         // Arrange
-        var sut = new LoadProductsEffect(new HttpClient());
+        var sut = new LoadProductsActionEffect(new HttpClient());
 
         // Act & Assert
         Assert.True(sut.CanHandle(new LoadProductsAction()));
@@ -453,12 +459,12 @@ public sealed class LoadProductsEffectTests
 }
 ```
 
-## Disposable Effects
+## Disposable Action Effects
 
-Effects that hold resources should implement `IDisposable`:
+Action effects that hold resources should implement `IDisposable`:
 
 ```csharp
-public sealed class WebSocketEffect : IEffect, IDisposable
+public sealed class WebSocketActionEffect : IActionEffect, IDisposable
 {
     private readonly ClientWebSocket webSocket = new();
     private bool disposed;
@@ -483,10 +489,10 @@ public sealed class WebSocketEffect : IEffect, IDisposable
 }
 ```
 
-The store will dispose effects that implement `IDisposable` when the store is disposed.
+The store will dispose action effects that implement `IDisposable` when the store is disposed.
 
 ## Next Steps
 
-- Learn how the [Store](./store.md) coordinates effects with reducers
-- Review [Actions](./actions.md) for defining effect triggers
-- See [Reducers](./reducers.md) for handling actions yielded by effects
+- Learn how the [Store](./store.md) coordinates action effects with reducers
+- Review [Actions](./actions.md) for defining action effect triggers
+- See [Reducers](./reducers.md) for handling actions yielded by action effects

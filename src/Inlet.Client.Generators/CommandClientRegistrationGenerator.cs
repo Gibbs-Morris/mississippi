@@ -77,7 +77,7 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine($"using {aggregate.ActionsNamespace};");
         sb.AppendLine($"using {aggregate.DtosNamespace};");
-        sb.AppendLine($"using {aggregate.EffectsNamespace};");
+        sb.AppendLine($"using {aggregate.ActionEffectsNamespace};");
         sb.AppendLine($"using {aggregate.MappersNamespace};");
         sb.AppendLine($"using {aggregate.ReducersNamespace};");
         sb.AppendLine($"using {aggregate.StateNamespace};");
@@ -134,11 +134,11 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
             sb.AppendLine();
         }
 
-        // Effects section
-        sb.AppendLine("// Effects");
+        // Action Effects
+        sb.AppendLine("// Action Effects");
         foreach (string commandName in aggregate.CommandNames.OrderBy(n => n))
         {
-            sb.AppendLine($"services.AddEffect<{commandName}Effect>();");
+            sb.AppendLine($"services.AddActionEffect<{commandName}ActionEffect>();");
         }
 
         sb.AppendLine();
@@ -175,8 +175,8 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
                     NamingConventions.GetClientReducersNamespace(firstCommand.Namespace, targetRootNamespace);
                 string actionsNamespace =
                     NamingConventions.GetClientActionsNamespace(firstCommand.Namespace, targetRootNamespace);
-                string effectsNamespace =
-                    NamingConventions.GetClientEffectsNamespace(firstCommand.Namespace, targetRootNamespace);
+                string actionEffectsNamespace =
+                    NamingConventions.GetClientActionEffectsNamespace(firstCommand.Namespace, targetRootNamespace);
                 string dtosNamespace = NamingConventions.GetClientCommandDtoNamespace(
                     firstCommand.Namespace,
                     targetRootNamespace);
@@ -188,7 +188,7 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
                     stateNamespace,
                     reducersNamespace,
                     actionsNamespace,
-                    effectsNamespace,
+                    actionEffectsNamespace,
                     dtosNamespace,
                     mappersNamespace);
                 foreach (CommandModel cmd in g.Select(x => x.Command))
@@ -319,7 +319,7 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
             string stateNamespace,
             string reducersNamespace,
             string actionsNamespace,
-            string effectsNamespace,
+            string actionEffectsNamespace,
             string dtosNamespace,
             string mappersNamespace
         )
@@ -329,11 +329,13 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
             StateNamespace = stateNamespace;
             ReducersNamespace = reducersNamespace;
             ActionsNamespace = actionsNamespace;
-            EffectsNamespace = effectsNamespace;
+            ActionEffectsNamespace = actionEffectsNamespace;
             DtosNamespace = dtosNamespace;
             MappersNamespace = mappersNamespace;
             CommandNames = new();
         }
+
+        public string ActionEffectsNamespace { get; }
 
         public string ActionsNamespace { get; }
 
@@ -342,8 +344,6 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
         public List<string> CommandNames { get; }
 
         public string DtosNamespace { get; }
-
-        public string EffectsNamespace { get; }
 
         public string FeatureNamespace { get; }
 

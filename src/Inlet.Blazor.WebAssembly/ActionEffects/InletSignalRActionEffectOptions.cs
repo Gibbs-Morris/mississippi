@@ -1,9 +1,9 @@
-namespace Mississippi.Inlet.Blazor.WebAssembly.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 
 /// <summary>
-///     Options for configuring the <see cref="InletSignalREffect" />.
+///     Options for configuring the <see cref="InletSignalRActionEffect" />.
 /// </summary>
-public sealed class InletSignalREffectOptions
+public sealed class InletSignalRActionEffectOptions
 {
     /// <summary>
     ///     Gets or sets the path to the Inlet SignalR hub.

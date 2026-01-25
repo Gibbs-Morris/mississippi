@@ -33,6 +33,7 @@ public sealed class UxProjectionMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object measurementsSync = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -56,12 +57,21 @@ public sealed class UxProjectionMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            lock (measurementsSync)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            }
         });
         listener.Start();
         UxProjectionMetrics.RecordCursorRead("TestProjection");
+        List<MetricMeasurement> snapshot;
+        lock (measurementsSync)
+        {
+            snapshot = new(measurements);
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "projection.cursor.reads") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("projection.type", out object? projType) &&
@@ -77,6 +87,7 @@ public sealed class UxProjectionMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object measurementsSync = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -100,12 +111,21 @@ public sealed class UxProjectionMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            lock (measurementsSync)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            }
         });
         listener.Start();
         UxProjectionMetrics.RecordNotificationSent("TestProjection");
+        List<MetricMeasurement> snapshot;
+        lock (measurementsSync)
+        {
+            snapshot = new(measurements);
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "projection.notification.sent") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("projection.type", out object? projType) &&
@@ -122,6 +142,8 @@ public sealed class UxProjectionMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
         List<MetricMeasurement> doubleMeasurements = [];
+        object longMeasurementsSync = new();
+        object doubleMeasurementsSync = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -145,7 +167,10 @@ public sealed class UxProjectionMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            longMeasurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            lock (longMeasurementsSync)
+            {
+                longMeasurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            }
         });
         listener.SetMeasurementEventCallback<double>((
             instrument,
@@ -160,12 +185,27 @@ public sealed class UxProjectionMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            doubleMeasurements.Add(new(instrument.Name, 0, measurement, tagMap));
+            lock (doubleMeasurementsSync)
+            {
+                doubleMeasurements.Add(new(instrument.Name, 0, measurement, tagMap));
+            }
         });
         listener.Start();
         UxProjectionMetrics.RecordQuery("TestProjection", "latest", 50.5, true);
+        List<MetricMeasurement> longSnapshot;
+        List<MetricMeasurement> doubleSnapshot;
+        lock (longMeasurementsSync)
+        {
+            longSnapshot = new(longMeasurements);
+        }
+
+        lock (doubleMeasurementsSync)
+        {
+            doubleSnapshot = new(doubleMeasurements);
+        }
+
         Assert.Contains(
-            longMeasurements,
+            longSnapshot,
             measurement => (measurement.InstrumentName == "projection.query.count") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("projection.type", out object? projType) &&
@@ -173,7 +213,7 @@ public sealed class UxProjectionMetricsTests
                            measurement.Tags.TryGetValue("query.type", out object? queryType) &&
                            (queryType as string == "latest"));
         Assert.Contains(
-            doubleMeasurements,
+            doubleSnapshot,
             measurement => (measurement.InstrumentName == "projection.query.duration") &&
                            (Math.Abs(measurement.DoubleValue - 50.5) < 0.01));
     }
@@ -255,6 +295,7 @@ public sealed class UxProjectionMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object measurementsSync = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -278,12 +319,21 @@ public sealed class UxProjectionMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            lock (measurementsSync)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            }
         });
         listener.Start();
         UxProjectionMetrics.RecordSubscription(action);
+        List<MetricMeasurement> snapshot;
+        lock (measurementsSync)
+        {
+            snapshot = new(measurements);
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "projection.subscription.count") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("action", out object? actionTag) &&
@@ -299,6 +349,7 @@ public sealed class UxProjectionMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object measurementsSync = new();
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -322,12 +373,21 @@ public sealed class UxProjectionMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            lock (measurementsSync)
+            {
+                measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            }
         });
         listener.Start();
         UxProjectionMetrics.RecordVersionCacheHit("TestProjection");
+        List<MetricMeasurement> snapshot;
+        lock (measurementsSync)
+        {
+            snapshot = new(measurements);
+        }
+
         Assert.Contains(
-            measurements,
+            snapshot,
             measurement => (measurement.InstrumentName == "projection.version.cache.hits") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("projection.type", out object? projType) &&

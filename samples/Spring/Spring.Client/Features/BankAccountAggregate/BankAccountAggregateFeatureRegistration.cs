@@ -7,7 +7,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Dtos;
-using Spring.Client.Features.BankAccountAggregate.Effects;
+using Spring.Client.Features.BankAccountAggregate.ActionEffects;
 using Spring.Client.Features.BankAccountAggregate.Mappers;
 using Spring.Client.Features.BankAccountAggregate.Reducers;
 using Spring.Client.Features.BankAccountAggregate.State;
@@ -72,10 +72,10 @@ internal static class BankAccountAggregateFeatureRegistration
         services.AddReducer<WithdrawFundsFailedAction, BankAccountAggregateState>(
             BankAccountAggregateReducers.WithdrawFundsFailed);
 
-        // Effects
-        services.AddEffect<OpenAccountEffect>();
-        services.AddEffect<DepositFundsEffect>();
-        services.AddEffect<WithdrawFundsEffect>();
+        // Action Effects
+        services.AddActionEffect<OpenAccountActionEffect>();
+        services.AddActionEffect<DepositFundsActionEffect>();
+        services.AddActionEffect<WithdrawFundsActionEffect>();
         return services;
     }
 }

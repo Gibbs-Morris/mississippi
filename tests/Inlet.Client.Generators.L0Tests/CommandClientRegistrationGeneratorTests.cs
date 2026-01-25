@@ -179,10 +179,10 @@ public class CommandClientRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generated registration should register effects.
+    ///     Generated registration should register action effects.
     /// </summary>
     [Fact]
-    public void GeneratedRegistrationRegistersEffects()
+    public void GeneratedRegistrationRegistersActionEffects()
     {
         const string commandSource = """
                                      using Mississippi.Inlet.Generators.Abstractions;
@@ -199,7 +199,7 @@ public class CommandClientRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, commandSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("AddEffect<", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddActionEffect<", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -302,7 +302,7 @@ public class CommandClientRegistrationGeneratorTests
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
 
         // Should register both commands
-        Assert.Contains("PlaceOrderEffect", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("CancelOrderEffect", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("PlaceOrderActionEffect", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("CancelOrderActionEffect", generatedCode, StringComparison.Ordinal);
     }
 }

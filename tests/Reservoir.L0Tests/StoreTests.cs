@@ -38,10 +38,10 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Disposable effect for testing disposal.
+    ///     Disposable action effect for testing disposal.
     /// </summary>
-    private sealed class DisposableEffect
-        : IEffect,
+    private sealed class DisposableActionEffect
+        : IActionEffect,
           IDisposable
     {
         public bool IsDisposed { get; private set; }
@@ -98,9 +98,9 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Effect that returns additional actions.
+    ///     Action effect that returns additional actions.
     /// </summary>
-    private sealed class ReturningEffect : IEffect
+    private sealed class ReturningActionEffect : IActionEffect
     {
         public bool CanHandle(
             IAction action
@@ -119,18 +119,18 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Secondary action for testing effect returns.
+    ///     Secondary action for testing action effect returns.
     /// </summary>
     private sealed record SecondaryAction : IAction;
 
     /// <summary>
-    ///     Test effect for unit tests.
+    ///     Test action effect for unit tests.
     /// </summary>
-    private sealed class TestEffect : IEffect
+    private sealed class TestActionEffect : IActionEffect
     {
         private readonly Action onHandle;
 
-        public TestEffect(
+        public TestActionEffect(
             Action onHandle
         ) =>
             this.onHandle = onHandle;
@@ -205,9 +205,9 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Effect that throws an exception.
+    ///     Action effect that throws an exception.
     /// </summary>
-    private sealed class ThrowingEffect : IEffect
+    private sealed class ThrowingActionEffect : IActionEffect
     {
         public bool CanHandle(
             IAction action
@@ -228,19 +228,61 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Store constructor with effects collection should register effects.
+    ///     Action effect that returns actions should dispatch them.
+    /// </summary>
+    /// <returns>A task representing the async test operation.</returns>
+    [Fact]
+    [AllureFeature("Action Effects")]
+    public async Task ActionEffectReturnsActionsDispatchesThem()
+    {
+        // Arrange
+        int dispatchCount = 0;
+        sut.RegisterMiddleware(new TestMiddleware(() => dispatchCount++));
+        sut.RegisterActionEffect(new ReturningActionEffect());
+
+        // Act
+        sut.Dispatch(new IncrementAction());
+
+        // Assert
+        await Task.Delay(100);
+        Assert.True(dispatchCount >= 2); // Initial + returned action
+    }
+
+    /// <summary>
+    ///     Action effect that throws should not break dispatch.
+    /// </summary>
+    /// <returns>A task representing the async test operation.</returns>
+    [Fact]
+    [AllureFeature("Action Effects")]
+    public async Task ActionEffectThatThrowsDoesNotBreakDispatch()
+    {
+        // Arrange
+        bool secondEffectRan = false;
+        sut.RegisterActionEffect(new ThrowingActionEffect());
+        sut.RegisterActionEffect(new TestActionEffect(() => secondEffectRan = true));
+
+        // Act
+        sut.Dispatch(new IncrementAction());
+
+        // Assert
+        await Task.Delay(100);
+        Assert.True(secondEffectRan);
+    }
+
+    /// <summary>
+    ///     Store constructor with action effects collection should register action effects.
     /// </summary>
     /// <returns>A task representing the async test operation.</returns>
     [Fact]
     [AllureFeature("DI Integration")]
-    public async Task ConstructorWithEffectsCollectionRegistersEffects()
+    public async Task ConstructorWithActionEffectsCollectionRegistersActionEffects()
     {
         // Arrange
         bool effectHandled = false;
-        TestEffect effect = new(() => effectHandled = true);
+        TestActionEffect actionEffect = new(() => effectHandled = true);
 
         // Act
-        using Store diStore = new([], [effect], []);
+        using Store diStore = new([], [actionEffect], []);
         diStore.Dispatch(new IncrementAction());
 
         // Assert
@@ -268,7 +310,7 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Store constructor with null effects should throw ArgumentNullException.
+    ///     Store constructor with null action effects should throw ArgumentNullException.
     /// </summary>
     [Fact]
     [AllureFeature("Validation")]
@@ -280,7 +322,7 @@ public sealed class StoreTests : IDisposable
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    public void ConstructorWithNullEffectsThrowsArgumentNullException()
+    public void ConstructorWithNullActionEffectsThrowsArgumentNullException()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new Store([], null!, []));
@@ -383,7 +425,7 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Dispose should dispose effects that implement IDisposable.
+    ///     Dispose should dispose action effects that implement IDisposable.
     /// </summary>
     [Fact]
     [AllureFeature("Disposal")]
@@ -399,60 +441,18 @@ public sealed class StoreTests : IDisposable
         "Reliability",
         "CA2000:Dispose objects before losing scope",
         Justification = "Testing disposal behavior - object is disposed in test")]
-    public void DisposeDisposesEffects()
+    public void DisposeDisposesActionEffects()
     {
         // Arrange
-        DisposableEffect effect = new();
+        DisposableActionEffect actionEffect = new();
         using Store testStore = new();
-        testStore.RegisterEffect(effect);
+        testStore.RegisterActionEffect(actionEffect);
 
         // Act
         testStore.Dispose();
 
         // Assert
-        Assert.True(effect.IsDisposed);
-    }
-
-    /// <summary>
-    ///     Effect that returns actions should dispatch them.
-    /// </summary>
-    /// <returns>A task representing the async test operation.</returns>
-    [Fact]
-    [AllureFeature("Effects")]
-    public async Task EffectReturnsActionsDispatchesThem()
-    {
-        // Arrange
-        int dispatchCount = 0;
-        sut.RegisterMiddleware(new TestMiddleware(() => dispatchCount++));
-        sut.RegisterEffect(new ReturningEffect());
-
-        // Act
-        sut.Dispatch(new IncrementAction());
-
-        // Assert
-        await Task.Delay(100);
-        Assert.True(dispatchCount >= 2); // Initial + returned action
-    }
-
-    /// <summary>
-    ///     Effect that throws should not break dispatch.
-    /// </summary>
-    /// <returns>A task representing the async test operation.</returns>
-    [Fact]
-    [AllureFeature("Effects")]
-    public async Task EffectThatThrowsDoesNotBreakDispatch()
-    {
-        // Arrange
-        bool secondEffectRan = false;
-        sut.RegisterEffect(new ThrowingEffect());
-        sut.RegisterEffect(new TestEffect(() => secondEffectRan = true));
-
-        // Act
-        sut.Dispatch(new IncrementAction());
-
-        // Assert
-        await Task.Delay(100);
-        Assert.True(secondEffectRan);
+        Assert.True(actionEffect.IsDisposed);
     }
 
     /// <summary>
@@ -559,19 +559,19 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     RegisterEffect should add effect to store.
+    ///     RegisterActionEffect should add action effect to store.
     /// </summary>
     /// <returns>A task representing the async test operation.</returns>
     [Fact]
-    [AllureFeature("Effects")]
-    public async Task RegisterEffectAddsToStore()
+    [AllureFeature("Action Effects")]
+    public async Task RegisterActionEffectAddsToStore()
     {
         // Arrange
         bool effectHandled = false;
-        TestEffect effect = new(() => effectHandled = true);
+        TestActionEffect actionEffect = new(() => effectHandled = true);
 
         // Act
-        sut.RegisterEffect(effect);
+        sut.RegisterActionEffect(actionEffect);
         sut.Dispatch(new IncrementAction());
 
         // Assert - wait for async effect with timeout
@@ -580,7 +580,7 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     RegisterEffect after dispose should throw ObjectDisposedException.
+    ///     RegisterActionEffect after dispose should throw ObjectDisposedException.
     /// </summary>
     [Fact]
     [AllureFeature("Disposal")]
@@ -596,25 +596,26 @@ public sealed class StoreTests : IDisposable
         "IDisposableAnalyzers.Correctness",
         "IDISP017:Prefer using",
         Justification = "Testing ObjectDisposedException behavior requires using disposed instance")]
-    public void RegisterEffectAfterDisposeThrowsObjectDisposedException()
+    public void RegisterActionEffectAfterDisposeThrowsObjectDisposedException()
     {
         // Arrange
         Store disposedStore = new();
         disposedStore.Dispose();
 
         // Act & Assert
-        Assert.Throws<ObjectDisposedException>(() => disposedStore.RegisterEffect(new TestEffect(() => { })));
+        Assert.Throws<ObjectDisposedException>(() =>
+            disposedStore.RegisterActionEffect(new TestActionEffect(() => { })));
     }
 
     /// <summary>
-    ///     RegisterEffect should throw ArgumentNullException when effect is null.
+    ///     RegisterActionEffect should throw ArgumentNullException when effect is null.
     /// </summary>
     [Fact]
     [AllureFeature("Validation")]
-    public void RegisterEffectWithNullThrowsArgumentNullException()
+    public void RegisterActionEffectWithNullThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => sut.RegisterEffect(null!));
+        Assert.Throws<ArgumentNullException>(() => sut.RegisterActionEffect(null!));
     }
 
     /// <summary>

@@ -7,7 +7,7 @@ using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Abstractions.Actions;
-using Mississippi.Inlet.Blazor.WebAssembly.Effects;
+using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -15,21 +15,21 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Moq;
 
 
-namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.Effects;
+namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.ActionEffects;
 
 /// <summary>
-///     Tests for <see cref="InletSignalREffect" />.
+///     Tests for <see cref="InletSignalRActionEffect" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet.Blazor.WebAssembly")]
-[AllureSuite("Effects")]
-[AllureSubSuite("InletSignalREffect")]
-public sealed class InletSignalREffectTests : IAsyncDisposable
+[AllureSuite("Action Effects")]
+[AllureSubSuite("InletSignalRActionEffect")]
+public sealed class InletSignalRActionEffectTests : IAsyncDisposable
 {
     private const string TestEntityId = "test-entity-123";
 
     private const string TestProjectionPath = "test-projections";
 
-    private readonly InletSignalREffect? effect;
+    private readonly InletSignalRActionEffect? effect;
 
     private readonly Mock<IProjectionFetcher> fetcherMock = new();
 
@@ -42,9 +42,9 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     private readonly Mock<IInletStore> storeMock = new();
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="InletSignalREffectTests" /> class.
+    ///     Initializes a new instance of the <see cref="InletSignalRActionEffectTests" /> class.
     /// </summary>
-    public InletSignalREffectTests()
+    public InletSignalRActionEffectTests()
     {
         // Register test projection in registry
         registry.Register(TestProjectionPath, typeof(TestProjection));
@@ -261,7 +261,11 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
                 InletHubConstants.ProjectionUpdatedMethod,
                 It.IsAny<Func<string, string, long, Task>>()))
             .Returns(Mock.Of<IDisposable>());
-        InletSignalREffect localEffect = new(lazyStore, localHubProviderMock.Object, fetcherMock.Object, registry);
+        InletSignalRActionEffect localEffect = new(
+            lazyStore,
+            localHubProviderMock.Object,
+            fetcherMock.Object,
+            registry);
 
         // Act & Assert
         localHubProviderMock.Verify(
@@ -285,7 +289,11 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         localHubProviderMock
             .Setup(h => h.RegisterHandler(It.IsAny<string>(), It.IsAny<Func<string, string, long, Task>>()))
             .Returns(Mock.Of<IDisposable>());
-        InletSignalREffect localEffect = new(lazyStore, localHubProviderMock.Object, fetcherMock.Object, registry);
+        InletSignalRActionEffect localEffect = new(
+            lazyStore,
+            localHubProviderMock.Object,
+            fetcherMock.Object,
+            registry);
 
         // Act & Assert
         localHubProviderMock.Verify(h => h.OnReconnected(It.IsAny<Func<string?, Task>>()), Times.Once);
@@ -300,7 +308,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     public void ConstructorThrowsWhenHubConnectionProviderIsNull()
     {
         // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
+        Assert.Throws<ArgumentNullException>(() => new InletSignalRActionEffect(
             lazyStore,
             null!,
             fetcherMock.Object,
@@ -315,7 +323,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     public void ConstructorThrowsWhenLazyStoreIsNull()
     {
         // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
+        Assert.Throws<ArgumentNullException>(() => new InletSignalRActionEffect(
             null!,
             hubProviderMock.Object,
             fetcherMock.Object,
@@ -330,7 +338,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     public void ConstructorThrowsWhenProjectionDtoRegistryIsNull()
     {
         // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
+        Assert.Throws<ArgumentNullException>(() => new InletSignalRActionEffect(
             lazyStore,
             hubProviderMock.Object,
             fetcherMock.Object,
@@ -345,7 +353,7 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
     public void ConstructorThrowsWhenProjectionFetcherIsNull()
     {
         // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new InletSignalREffect(
+        Assert.Throws<ArgumentNullException>(() => new InletSignalRActionEffect(
             lazyStore,
             hubProviderMock.Object,
             null!,
@@ -366,7 +374,11 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
         localHubProviderMock
             .Setup(h => h.RegisterHandler(It.IsAny<string>(), It.IsAny<Func<string, string, long, Task>>()))
             .Returns(callbackDisposableMock.Object);
-        InletSignalREffect localEffect = new(lazyStore, localHubProviderMock.Object, fetcherMock.Object, registry);
+        InletSignalRActionEffect localEffect = new(
+            lazyStore,
+            localHubProviderMock.Object,
+            fetcherMock.Object,
+            registry);
 
         // Act
         await localEffect.DisposeAsync();
@@ -642,7 +654,11 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
                 cb
             ) => capturedCallback = cb)
             .Returns(Mock.Of<IDisposable>());
-        InletSignalREffect localEffect = new(lazyStore, localHubProviderMock.Object, fetcherMock.Object, registry);
+        InletSignalRActionEffect localEffect = new(
+            lazyStore,
+            localHubProviderMock.Object,
+            fetcherMock.Object,
+            registry);
 
         // Act - invoke with registered path but not subscribed
         Assert.NotNull(capturedCallback);
@@ -676,7 +692,11 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
                 cb
             ) => capturedCallback = cb)
             .Returns(Mock.Of<IDisposable>());
-        InletSignalREffect localEffect = new(lazyStore, localHubProviderMock.Object, fetcherMock.Object, registry);
+        InletSignalRActionEffect localEffect = new(
+            lazyStore,
+            localHubProviderMock.Object,
+            fetcherMock.Object,
+            registry);
 
         // Act - invoke with unregistered path
         Assert.NotNull(capturedCallback);
@@ -706,7 +726,11 @@ public sealed class InletSignalREffectTests : IAsyncDisposable
             .Returns(Mock.Of<IDisposable>());
         localHubProviderMock.Setup(h => h.OnReconnected(It.IsAny<Func<string?, Task>>()))
             .Callback<Func<string?, Task>>(cb => capturedCallback = cb);
-        InletSignalREffect localEffect = new(lazyStore, localHubProviderMock.Object, fetcherMock.Object, registry);
+        InletSignalRActionEffect localEffect = new(
+            lazyStore,
+            localHubProviderMock.Object,
+            fetcherMock.Object,
+            registry);
 
         // Act - invoke reconnection with no subscriptions
         Assert.NotNull(capturedCallback);

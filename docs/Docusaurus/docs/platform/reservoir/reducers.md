@@ -365,6 +365,6 @@ public void AddItem_AddsNewItemToCart()
 
 ## Next Steps
 
-- Learn how [Effects](./effects.md) handle asynchronous operations
+- Learn how [Action Effects](./action-effects.md) handle asynchronous operations
 - See how the [Store](./store.md) coordinates reducers and state
 - Review [Actions](./actions.md) for defining what triggers reducers

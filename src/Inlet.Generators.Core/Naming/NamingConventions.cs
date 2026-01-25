@@ -78,6 +78,30 @@ public static class NamingConventions
     }
 
     /// <summary>
+    ///     Converts a domain command namespace to a client ActionEffects namespace.
+    /// </summary>
+    /// <param name="domainNamespace">
+    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
+    /// </param>
+    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountAggregate.ActionEffects").</returns>
+    public static string GetClientActionEffectsNamespace(
+        string domainNamespace
+    ) =>
+        GetClientFeatureNamespace(domainNamespace, "ActionEffects");
+
+    /// <summary>
+    ///     Converts a source namespace to a client ActionEffects namespace using the target project's root namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace containing the command.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <returns>The client ActionEffects namespace.</returns>
+    public static string GetClientActionEffectsNamespace(
+        string sourceNamespace,
+        string targetRootNamespace
+    ) =>
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "ActionEffects");
+
+    /// <summary>
     ///     Converts a domain command namespace to a client Actions namespace.
     /// </summary>
     /// <param name="domainNamespace">
@@ -173,30 +197,6 @@ public static class NamingConventions
         string targetRootNamespace
     ) =>
         GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "Dtos");
-
-    /// <summary>
-    ///     Converts a domain command namespace to a client Effects namespace.
-    /// </summary>
-    /// <param name="domainNamespace">
-    ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
-    /// </param>
-    /// <returns>The client namespace (e.g., "Contoso.Client.Features.BankAccountAggregate.Effects").</returns>
-    public static string GetClientEffectsNamespace(
-        string domainNamespace
-    ) =>
-        GetClientFeatureNamespace(domainNamespace, "Effects");
-
-    /// <summary>
-    ///     Converts a source namespace to a client Effects namespace using the target project's root namespace.
-    /// </summary>
-    /// <param name="sourceNamespace">The source namespace containing the command.</param>
-    /// <param name="targetRootNamespace">The target project's root namespace.</param>
-    /// <returns>The client Effects namespace.</returns>
-    public static string GetClientEffectsNamespace(
-        string sourceNamespace,
-        string targetRootNamespace
-    ) =>
-        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "Effects");
 
     /// <summary>
     ///     Converts a domain command namespace to the client feature root namespace (without sub-namespace).

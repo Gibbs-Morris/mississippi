@@ -35,10 +35,10 @@ ReservoirDemo/
 ├── Program.cs           # DI registration
 ├── Features/
 │   └── Cart/
-│       ├── CartState.cs      # Feature state
-│       ├── CartActions.cs    # Actions
-│       ├── CartReducers.cs   # Reducers
-│       └── CartEffects.cs    # Effects
+│       ├── CartState.cs           # Feature state
+│       ├── CartActions.cs         # Actions
+│       ├── CartReducers.cs        # Reducers
+│       └── CartActionEffects.cs   # Action effects
 └── Pages/
     └── Cart.razor            # UI component
 ```
@@ -262,11 +262,11 @@ internal static class CartReducers
 
 :::
 
-## Step 4: Implement Effects
+## Step 4: Implement Action Effects
 
-Effects handle asynchronous operations like API calls. They can yield multiple actions over time.
+Action effects handle asynchronous operations like API calls. They can yield multiple actions over time.
 
-Create `Features/Cart/CartEffects.cs`:
+Create `Features/Cart/CartActionEffects.cs`:
 
 ```csharp
 using System.Runtime.CompilerServices;
@@ -278,7 +278,7 @@ namespace ReservoirDemo.Features.Cart;
 /// <summary>
 /// Handles asynchronous operations for the shopping cart.
 /// </summary>
-public sealed class CheckoutEffect : IEffect
+public sealed class CheckoutActionEffect : IActionEffect
 {
     /// <summary>
     /// Probability of simulated checkout failure (for demo purposes).
@@ -325,13 +325,13 @@ public sealed class CheckoutEffect : IEffect
 }
 ```
 
-The effect lifecycle flows like this:
+The action effect lifecycle flows like this:
 
 ```mermaid
 sequenceDiagram
     participant UI as Component
     participant Store as Store
-    participant Effect as CheckoutEffect
+    participant Effect as CheckoutActionEffect
     participant API as API
 
     UI->>Store: Dispatch(CheckoutAction)
@@ -374,8 +374,8 @@ builder.Services.AddReducer<CheckoutStartedAction, CartState>(CartReducers.Check
 builder.Services.AddReducer<CheckoutCompletedAction, CartState>(CartReducers.CheckoutCompleted);
 builder.Services.AddReducer<CheckoutFailedAction, CartState>(CartReducers.CheckoutFailed);
 
-// Register effects
-builder.Services.AddEffect<CheckoutEffect>();
+// Register action effects
+builder.Services.AddActionEffect<CheckoutActionEffect>();
 
 // Register the store (after all reducers and effects)
 builder.Services.AddReservoir();
@@ -386,7 +386,7 @@ await builder.Build().RunAsync();
 :::note Registration Order
 
 1. Register **reducers** first — each `AddReducer` call automatically registers the feature state
-2. Register **effects** — handlers for async operations
+2. Register **action effects** — handlers for async operations
 3. Register **middleware** (optional) — for logging, analytics, etc.
 4. Call **`AddReservoir()`** last — creates the store with all registered components
 
@@ -526,7 +526,7 @@ flowchart LR
 
     subgraph Store["Store"]
         Reducers["CartReducers"]
-        Effects["CheckoutEffect"]
+        ActionEffects["CheckoutActionEffect"]
         State["CartState"]
     end
 
@@ -534,8 +534,8 @@ flowchart LR
     Cart -->|"Dispatch"| Checkout
     AddItem --> Reducers
     Checkout --> Reducers
-    Checkout --> Effects
-    Effects -->|"yield"| CheckoutCompleted
+    Checkout --> ActionEffects
+    ActionEffects -->|"yield"| CheckoutCompleted
     CheckoutCompleted --> Reducers
     Reducers --> State
     State -->|"GetState"| Cart
@@ -559,7 +559,7 @@ Now that you have a working Reservoir application:
 
 - Learn more about [Actions](./actions.md) and best practices
 - Explore [Reducers](./reducers.md) in depth
-- Understand [Effects](./effects.md) for async operations
+- Understand [Action Effects](./action-effects.md) for async operations
 - Dive into the [Store](./store.md) API
 
 ## Troubleshooting
@@ -570,11 +570,11 @@ Now that you have a working Reservoir application:
 - Verify reducers are registered before calling `AddReservoir()`
 - Check that your reducer returns a **new** state instance (use `with` expressions)
 
-### Effect not running?
+### Action effect not running?
 
 - Verify `CanHandle()` returns `true` for your action type
-- Ensure the effect is registered with `AddEffect<T>()`
-- Check for exceptions being swallowed — effects should emit error actions
+- Ensure the action effect is registered with `AddActionEffect<T>()`
+- Check for exceptions being swallowed — action effects should emit error actions
 
 ### Feature state not found?
 

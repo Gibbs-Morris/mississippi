@@ -14,7 +14,7 @@ Reservoir follows the Redux pattern with four core concepts:
 |---------|-------------|
 | **Actions** | Immutable messages that describe what happened or what the user intends |
 | **Reducers** | Pure functions that transform state in response to actions |
-| **Effects** | Handlers for asynchronous operations like API calls |
+| **Action Effects** | Handlers for asynchronous operations like API calls |
 | **Store** | The central container that holds application state and coordinates the data flow |
 
 ## Data Flow
@@ -45,9 +45,9 @@ flowchart TB
             S3["State"]
         end
         
-        subgraph Effects["Effects"]
-            E1["Effect"]
-            E2["Effect"]
+        subgraph ActionEffects["Action Effects"]
+            E1["ActionEffect"]
+            E2["ActionEffect"]
         end
     end
 
@@ -55,22 +55,22 @@ flowchart TB
     M3 --> RootReducer
     RootReducer --> FeatureStates
     FeatureStates --> GetState
-    RootReducer --> Effects
-    Effects -->|"Dispatch new actions"| Dispatch
+    RootReducer --> ActionEffects
+    ActionEffects -->|"Dispatch new actions"| Dispatch
 
     style Component fill:#e1f5fe
     style Store fill:#f3e5f5
     style Middleware fill:#fff3e0
     style RootReducer fill:#e8f5e9
     style FeatureStates fill:#fce4ec
-    style Effects fill:#fff8e1
+    style ActionEffects fill:#fff8e1
 ```
 
 1. **Components dispatch actions** to signal user intent or events.
 2. **Middleware** intercepts actions for cross-cutting concerns (logging, analytics).
 3. **Reducers** synchronously transform the current state into a new state.
 4. **State updates** are stored and subscribers are notified.
-5. **Effects** handle asynchronous operations and may dispatch additional actions.
+5. **Action effects** handle asynchronous operations and may dispatch additional actions.
 6. **Components re-render** when the state they depend on changes.
 
 ## Quick Start
@@ -180,5 +180,5 @@ Explore each concept in depth:
 - [Getting Started](./getting-started.md) - Complete walkthrough with a working example
 - [Actions](./actions.md) - Define what happens in your application
 - [Reducers](./reducers.md) - Specify how state changes in response to actions
-- [Effects](./effects.md) - Handle asynchronous operations
+- [Action Effects](./action-effects.md) - Handle asynchronous operations
 - [Store](./store.md) - Manage and access your application state
