@@ -19,8 +19,8 @@ namespace Mississippi.Inlet.Server.Generators;
 /// <remarks>
 ///     <para>
 ///         This generator produces a single entry point for all server-side registrations by scanning
-///         for generated registration classes (e.g., BankAccountAggregateMapperRegistrations)
-///         and creating a master extension method that calls them all.
+///         for types marked with [GenerateCommand] and [GenerateProjectionEndpoints] attributes,
+///         then generating a master extension method that calls their respective mapper registration methods.
 ///     </para>
 ///     <para>
 ///         Example: For a project with root namespace "Spring.Server", generates "AddSpring()" in "Spring.Server".
@@ -29,53 +29,53 @@ namespace Mississippi.Inlet.Server.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class MasterServerRegistrationGenerator : IIncrementalGenerator
 {
+    private const string GenerateCommandAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
+
+    private const string GenerateProjectionEndpointsAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
+
     /// <summary>
-    ///     Recursively finds registration methods in a namespace.
+    ///     Recursively finds commands and projections in a namespace.
     /// </summary>
-    private static void FindRegistrationMethodsInNamespace(
+    private static void FindMarkedTypesInNamespace(
         INamespaceSymbol namespaceSymbol,
-        List<RegistrationMethodInfo> registrationMethods
+        INamedTypeSymbol commandAttrSymbol,
+        INamedTypeSymbol projectionAttrSymbol,
+        HashSet<string> aggregateNames,
+        HashSet<string> projectionNames,
+        string targetRootNamespace
     )
     {
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            // Look for static classes ending in "Registrations"
-            if (!typeSymbol.IsStatic || !typeSymbol.Name.EndsWith("Registrations", StringComparison.Ordinal))
+            // Check for [GenerateCommand]
+            if (typeSymbol.GetAttributes()
+                .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, commandAttrSymbol)))
             {
-                continue;
+                // Extract aggregate name from namespace
+                string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(typeSymbol.ContainingNamespace.ToDisplayString());
+                if (aggregateName is not null)
+                {
+                    aggregateNames.Add(aggregateName);
+                }
             }
 
-            // Find all public static extension methods that extend IServiceCollection
-            foreach (IMethodSymbol method in typeSymbol.GetMembers().OfType<IMethodSymbol>())
+            // Check for [GenerateProjectionEndpoints]
+            if (typeSymbol.GetAttributes()
+                .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, projectionAttrSymbol)))
             {
-                if (!method.IsStatic || !method.IsExtensionMethod || method.DeclaredAccessibility != Accessibility.Public)
-                {
-                    continue;
-                }
-
-                // Check if it extends IServiceCollection
-                if (method.Parameters.Length < 1)
-                {
-                    continue;
-                }
-
-                IParameterSymbol firstParam = method.Parameters[0];
-                if (firstParam.Type.ToDisplayString() != "Microsoft.Extensions.DependencyInjection.IServiceCollection")
-                {
-                    continue;
-                }
-
-                // Found a registration method
-                registrationMethods.Add(
-                    new RegistrationMethodInfo(
-                        typeSymbol.ContainingNamespace.ToDisplayString(),
-                        method.Name));
+                // Extract projection name (remove "Projection" suffix if present)
+                string projectionName = typeSymbol.Name.EndsWith("Projection", StringComparison.Ordinal)
+                    ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Projection".Length)
+                    : typeSymbol.Name;
+                projectionNames.Add(projectionName);
             }
         }
 
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindRegistrationMethodsInNamespace(childNs, registrationMethods);
+            FindMarkedTypesInNamespace(childNs, commandAttrSymbol, projectionAttrSymbol, aggregateNames, projectionNames, targetRootNamespace);
         }
     }
 
@@ -84,7 +84,8 @@ public sealed class MasterServerRegistrationGenerator : IIncrementalGenerator
     /// </summary>
     private static string GenerateMasterRegistration(
         string targetRootNamespace,
-        List<RegistrationMethodInfo> registrationMethods
+        HashSet<string> aggregateNames,
+        HashSet<string> projectionNames
     )
     {
         // Extract the product name from the root namespace
@@ -93,21 +94,22 @@ public sealed class MasterServerRegistrationGenerator : IIncrementalGenerator
 
         string outputNamespace = productName + ".Server";
         string methodName = "Add" + productName;
+        string aggregateMappersNamespace = productName + ".Server.Controllers.Aggregates.Mappers";
+        string projectionMappersNamespace = productName + ".Server.Controllers.Projections.Mappers";
 
         SourceBuilder sb = new();
         sb.AppendAutoGeneratedHeader();
         sb.AppendUsing("Microsoft.Extensions.DependencyInjection");
 
-        // Add usings for all namespaces containing registration methods
-        HashSet<string> namespaces = new();
-        foreach (RegistrationMethodInfo method in registrationMethods)
+        // Add using for the mappers namespaces where generated methods live
+        if (aggregateNames.Count > 0)
         {
-            namespaces.Add(method.Namespace);
+            sb.AppendUsing(aggregateMappersNamespace);
         }
 
-        foreach (string ns in namespaces.OrderBy(n => n))
+        if (projectionNames.Count > 0)
         {
-            sb.AppendUsing(ns);
+            sb.AppendUsing(projectionMappersNamespace);
         }
 
         sb.AppendFileScopedNamespace(outputNamespace);
@@ -126,10 +128,16 @@ public sealed class MasterServerRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine(")");
         sb.OpenBrace();
 
-        // Call all registration methods
-        foreach (RegistrationMethodInfo method in registrationMethods.OrderBy(m => m.MethodName))
+        // Call all aggregate mapper registration methods
+        foreach (string aggregateName in aggregateNames.OrderBy(n => n))
         {
-            sb.AppendLine($"services.{method.MethodName}();");
+            sb.AppendLine($"services.Add{aggregateName}AggregateMappers();");
+        }
+
+        // Call all projection mapper registration methods
+        foreach (string projectionName in projectionNames.OrderBy(n => n))
+        {
+            sb.AppendLine($"services.Add{projectionName}ProjectionMappers();");
         }
 
         sb.AppendLine();
@@ -140,18 +148,57 @@ public sealed class MasterServerRegistrationGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Gets all registration methods from the compilation.
+    ///     Gets all marked types from the compilation.
     /// </summary>
-    private static List<RegistrationMethodInfo> GetRegistrationMethodsFromCompilation(
+    private static (HashSet<string> AggregateNames, HashSet<string> ProjectionNames) GetMarkedTypesFromCompilation(
+        Compilation compilation,
+        string targetRootNamespace
+    )
+    {
+        HashSet<string> aggregateNames = new();
+        HashSet<string> projectionNames = new();
+
+        INamedTypeSymbol? commandAttrSymbol = compilation.GetTypeByMetadataName(GenerateCommandAttributeFullName);
+        INamedTypeSymbol? projectionAttrSymbol = compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+
+        if (commandAttrSymbol is null && projectionAttrSymbol is null)
+        {
+            return (aggregateNames, projectionNames);
+        }
+
+        // Scan all referenced assemblies
+        foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
+        {
+            FindMarkedTypesInNamespace(
+                referencedAssembly.GlobalNamespace,
+                commandAttrSymbol!,
+                projectionAttrSymbol!,
+                aggregateNames,
+                projectionNames,
+                targetRootNamespace);
+        }
+
+        return (aggregateNames, projectionNames);
+    }
+
+    /// <summary>
+    ///     Gets all referenced assemblies from the compilation.
+    /// </summary>
+    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
         Compilation compilation
     )
     {
-        List<RegistrationMethodInfo> registrationMethods = new();
+        // Include the current assembly
+        yield return compilation.Assembly;
 
-        // Scan only the current assembly (not references)
-        FindRegistrationMethodsInNamespace(compilation.Assembly.GlobalNamespace, registrationMethods);
-
-        return registrationMethods;
+        // Include all referenced assemblies
+        foreach (MetadataReference reference in compilation.References)
+        {
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
+            {
+                yield return assemblySymbol;
+            }
+        }
     }
 
     /// <summary>
@@ -166,9 +213,9 @@ public sealed class MasterServerRegistrationGenerator : IIncrementalGenerator
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
-        // Use the compilation provider to scan for registration methods
-        IncrementalValueProvider<(string TargetRootNamespace, List<RegistrationMethodInfo> RegistrationMethods)>
-            registrationsProvider = compilationAndOptions.Select((
+        // Use the compilation provider to scan for marked types
+        IncrementalValueProvider<(string TargetRootNamespace, HashSet<string> AggregateNames, HashSet<string> ProjectionNames)>
+            markedTypesProvider = compilationAndOptions.Select((
                 source,
                 _
             ) =>
@@ -184,48 +231,31 @@ public sealed class MasterServerRegistrationGenerator : IIncrementalGenerator
                     assemblyName,
                     source.Compilation);
 
-                List<RegistrationMethodInfo> registrationMethods = GetRegistrationMethodsFromCompilation(
-                    source.Compilation);
+                (HashSet<string> aggregateNames, HashSet<string> projectionNames) = GetMarkedTypesFromCompilation(
+                    source.Compilation,
+                    targetRootNamespace);
 
-                return (targetRootNamespace, registrationMethods);
+                return (targetRootNamespace, aggregateNames, projectionNames);
             });
 
         // Register source output
         context.RegisterSourceOutput(
-            registrationsProvider,
+            markedTypesProvider,
             static (
                 spc,
                 data
             ) =>
             {
-                if (data.RegistrationMethods.Count == 0)
+                if (data.AggregateNames.Count == 0 && data.ProjectionNames.Count == 0)
                 {
                     return;
                 }
 
                 string registrationSource = GenerateMasterRegistration(
                     data.TargetRootNamespace,
-                    data.RegistrationMethods);
+                    data.AggregateNames,
+                    data.ProjectionNames);
                 spc.AddSource("ServiceRegistration.g.cs", SourceText.From(registrationSource, Encoding.UTF8));
             });
-    }
-
-    /// <summary>
-    ///     Information about a registration method.
-    /// </summary>
-    private sealed class RegistrationMethodInfo
-    {
-        public RegistrationMethodInfo(
-            string @namespace,
-            string methodName
-        )
-        {
-            Namespace = @namespace;
-            MethodName = methodName;
-        }
-
-        public string MethodName { get; }
-
-        public string Namespace { get; }
     }
 }
