@@ -255,17 +255,13 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         IEnumerable<ITypeSymbol> propTypes = sourceType.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(p => (p.DeclaredAccessibility == Accessibility.Public) && !p.IsStatic && p.GetMethod is not null)
-            .Select(p => p.Type);
-        foreach (ITypeSymbol propType in propTypes)
+            .Select(p => p.Type)
+            .Select(propType =>
+                propType is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType
+                    ? nullableType.TypeArguments[0]
+                    : propType);
+        foreach (ITypeSymbol unwrappedType in propTypes)
         {
-            ITypeSymbol unwrappedType = propType;
-
-            // Unwrap Nullable<T> to get the underlying type
-            if (unwrappedType is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType)
-            {
-                unwrappedType = nullableType.TypeArguments[0];
-            }
-
             if (unwrappedType is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
             {
                 string enumDtoName = enumType.Name + "Dto";

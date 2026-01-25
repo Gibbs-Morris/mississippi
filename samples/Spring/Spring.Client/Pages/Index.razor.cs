@@ -99,7 +99,7 @@ public sealed partial class Index
     /// <summary>
     ///     Gets a value indicating whether the account is open (from projection).
     /// </summary>
-    private bool IsAccountOpen => BalanceProjection?.IsOpen == true;
+    private bool IsAccountOpen => BalanceProjection?.IsOpen is true;
 
     /// <summary>
     ///     Gets a value indicating whether the SignalR connection is not established.
