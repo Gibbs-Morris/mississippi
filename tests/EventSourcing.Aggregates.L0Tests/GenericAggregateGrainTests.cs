@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,14 +40,16 @@ public class GenericAggregateGrainTests
         Mock<IRootCommandHandler<AggregateGrainTestAggregate>>? rootCommandHandlerMock = null,
         Mock<IBrookGrainFactory>? brookGrainFactoryMock = null,
         Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null,
-        Mock<IBrookEventConverter>? brookEventConverterMock = null
+        Mock<IBrookEventConverter>? brookEventConverterMock = null,
+        IRootEventEffect<AggregateGrainTestAggregate>? rootEventEffect = null
     )
     {
         GenericAggregateGrain<AggregateGrainTestAggregate> grain = CreateGrain(
             brookGrainFactoryMock: brookGrainFactoryMock,
             brookEventConverterMock: brookEventConverterMock,
             rootCommandHandlerMock: rootCommandHandlerMock,
-            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock,
+            rootEventEffect: rootEventEffect);
         await grain.OnActivateAsync(CancellationToken.None);
         return grain;
     }
@@ -66,6 +69,7 @@ public class GenericAggregateGrainTests
         Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null,
         Mock<IRootReducer<AggregateGrainTestAggregate>>? rootReducerMock = null,
         Mock<ILogger<GenericAggregateGrain<AggregateGrainTestAggregate>>>? loggerMock = null,
+        IRootEventEffect<AggregateGrainTestAggregate>? rootEventEffect = null,
         bool throwOnNullContext = false
     )
     {
@@ -92,7 +96,8 @@ public class GenericAggregateGrainTests
             rootCommandHandlerMock.Object,
             snapshotGrainFactoryMock.Object,
             rootReducerMock.Object,
-            loggerMock.Object);
+            loggerMock.Object,
+            rootEventEffect);
     }
 
     /// <summary>
@@ -242,6 +247,158 @@ public class GenericAggregateGrainTests
     }
 
     /// <summary>
+    ///     ExecuteAsync should dispatch effects when root event effect is configured.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncDispatchesEffectsWhenConfigured()
+    {
+        // Arrange
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> snapshotCacheMock = new();
+        Mock<IRootEventEffect<AggregateGrainTestAggregate>> effectMock = new();
+        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        snapshotCacheMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AggregateGrainTestAggregate(1, "updated"));
+        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheMock.Object);
+        AggregateGrainTestEvent testEvent = new("test-data");
+        handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { testEvent }));
+        ImmutableArray<BrookEvent> brookEvents = ImmutableArray.Create(
+            new BrookEvent { Id = "event-1", EventType = "TestEvent" });
+        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(brookEvents);
+
+        // Setup effect mock to return no yielded events (just verify it's called)
+        effectMock.Setup(e => e.EffectCount).Returns(1);
+        effectMock.Setup(e => e.DispatchAsync(
+                It.IsAny<object>(),
+                It.IsAny<AggregateGrainTestAggregate>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(AsyncEnumerable.Empty<object>());
+
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
+            handlerMock,
+            brookFactoryMock,
+            snapshotGrainFactoryMock: snapshotFactoryMock,
+            brookEventConverterMock: converterMock,
+            rootEventEffect: effectMock.Object);
+        AggregateGrainTestCommand command = new("test");
+
+        // Act
+        OperationResult result = await grain.ExecuteAsync(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.Success);
+        effectMock.Verify(
+            e => e.DispatchAsync(testEvent, It.IsAny<AggregateGrainTestAggregate>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     ExecuteAsync should persist events yielded by effects.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncPersistsEventsYieldedByEffects()
+    {
+        // Arrange
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> snapshotCacheMock = new();
+        Mock<IRootEventEffect<AggregateGrainTestAggregate>> effectMock = new();
+        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(0));
+        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        snapshotCacheMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AggregateGrainTestAggregate(1, "updated"));
+        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheMock.Object);
+        AggregateGrainTestEvent testEvent = new("original");
+        AggregateGrainTestEvent yieldedEvent = new("yielded-by-effect");
+        handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { testEvent }));
+        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns((BrookKey _, IReadOnlyList<object> events) =>
+                ImmutableArray.Create(new BrookEvent { Id = "event-" + events[0].GetHashCode(), EventType = "TestEvent" }));
+        effectMock.Setup(e => e.EffectCount).Returns(1);
+        effectMock.Setup(e => e.DispatchAsync(testEvent, It.IsAny<AggregateGrainTestAggregate>(), It.IsAny<CancellationToken>()))
+            .Returns(ToAsyncEnumerable<object>(yieldedEvent));
+        effectMock.Setup(e => e.DispatchAsync(yieldedEvent, It.IsAny<AggregateGrainTestAggregate>(), It.IsAny<CancellationToken>()))
+            .Returns(AsyncEnumerable.Empty<object>());
+
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
+            handlerMock,
+            brookFactoryMock,
+            snapshotGrainFactoryMock: snapshotFactoryMock,
+            brookEventConverterMock: converterMock,
+            rootEventEffect: effectMock.Object);
+
+        // Act
+        OperationResult result = await grain.ExecuteAsync(new AggregateGrainTestCommand("test"), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.Success);
+
+        // Original event write + yielded event write = 2 writes
+        writerMock.Verify(
+            w => w.AppendEventsAsync(It.IsAny<ImmutableArray<BrookEvent>>(), It.IsAny<BrookPosition?>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+    }
+
+    /// <summary>
+    ///     ExecuteAsync should not call effects when no root event effect is configured.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncSkipsEffectsWhenNotConfigured()
+    {
+        // Arrange
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        AggregateGrainTestEvent testEvent = new("test-data");
+        handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { testEvent }));
+        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(ImmutableArray.Create(new BrookEvent { Id = "event-1", EventType = "TestEvent" }));
+
+        // No rootEventEffect passed - should be null
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
+            handlerMock,
+            brookFactoryMock,
+            brookEventConverterMock: converterMock);
+
+        // Act
+        OperationResult result = await grain.ExecuteAsync(new AggregateGrainTestCommand("test"), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.Success);
+
+        // Only the original event write
+        writerMock.Verify(
+            w => w.AppendEventsAsync(It.IsAny<ImmutableArray<BrookEvent>>(), null, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
     ///     OnActivateAsync should set up brook key from entity ID.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -267,4 +424,18 @@ public class GenericAggregateGrainTests
         Assert.Equal("TEST.AGGREGATES.BROOK", capturedKey.Value.BrookName);
         Assert.Equal(TestEntityId, capturedKey.Value.EntityId);
     }
+
+#pragma warning disable CS1998 // Async method lacks 'await' operators - needed for IAsyncEnumerable signature
+#pragma warning disable VSTHRD200 // Use "Async" suffix for async methods - IAsyncEnumerable helper naming
+    private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
+        params T[] items
+    )
+    {
+        foreach (T item in items)
+        {
+            yield return item;
+        }
+    }
+#pragma warning restore VSTHRD200
+#pragma warning restore CS1998
 }
