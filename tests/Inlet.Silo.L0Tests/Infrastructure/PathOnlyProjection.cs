@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Mississippi.Inlet.Projection.Abstractions;
 
 
-namespace Mississippi.Inlet.Orleans.L0Tests.Infrastructure;
+namespace Mississippi.Inlet.Silo.L0Tests.Infrastructure;
 
 /// <summary>
 ///     A test projection with only ProjectionPathAttribute.

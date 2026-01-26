@@ -15,14 +15,14 @@ using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Orleans.Diagnostics;
+using Mississippi.Inlet.Silo.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Streams;
 
 
-namespace Mississippi.Inlet.Orleans.Grains;
+namespace Mississippi.Inlet.Silo.Grains;
 
 /// <summary>
 ///     Orleans grain implementation managing projection subscriptions for a single SignalR connection.

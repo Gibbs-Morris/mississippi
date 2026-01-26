@@ -6,15 +6,15 @@ using System.Linq;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Orleans.Diagnostics;
+using Mississippi.Inlet.Silo.Diagnostics;
 
 
-namespace Mississippi.Inlet.Orleans.L0Tests;
+namespace Mississippi.Inlet.Silo.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="InletMetrics" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Orleans")]
+[AllureParentSuite("Mississippi.Inlet.Silo")]
 [AllureSuite("Diagnostics")]
 [AllureSubSuite("InletMetrics")]
 public sealed class InletMetricsTests : IDisposable

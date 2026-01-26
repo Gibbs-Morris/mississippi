@@ -8,12 +8,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Inlet.Abstractions;
 
 
-namespace Mississippi.Inlet.Orleans.L0Tests;
+namespace Mississippi.Inlet.Silo.L0Tests;
 
 /// <summary>
 ///     Tests for ProjectionBrookRegistry via <see cref="IProjectionBrookRegistry" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Orleans")]
+[AllureParentSuite("Mississippi.Inlet.Silo")]
 [AllureSuite("Registry")]
 [AllureSubSuite("ProjectionBrookRegistry")]
 public sealed class ProjectionBrookRegistryTests : IDisposable

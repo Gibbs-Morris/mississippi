@@ -7,32 +7,32 @@ using Allure.Xunit.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Orleans.L0Tests.Infrastructure;
+using Mississippi.Inlet.Silo.L0Tests.Infrastructure;
 
 
-namespace Mississippi.Inlet.Orleans.L0Tests;
+namespace Mississippi.Inlet.Silo.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="InletOrleansRegistrations" />.
+///     Tests for <see cref="InletSiloRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Orleans")]
+[AllureParentSuite("Mississippi.Inlet.Silo")]
 [AllureSuite("Extensions")]
-[AllureSubSuite("InletOrleansRegistrations")]
-public sealed class InletOrleansRegistrationsTests
+[AllureSubSuite("InletSiloRegistrations")]
+public sealed class InletSiloRegistrationsTests
 {
     /// <summary>
-    ///     AddInletOrleans can be called multiple times.
+    ///     AddInletSilo can be called multiple times.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddInletOrleansCanBeCalledMultipleTimes()
+    public void AddInletSiloCanBeCalledMultipleTimes()
     {
         // Arrange
         ServiceCollection services = [];
 
         // Act
-        services.AddInletOrleans();
-        IServiceCollection result = services.AddInletOrleans();
+        services.AddInletSilo();
+        IServiceCollection result = services.AddInletSilo();
 
         // Assert
         Assert.Same(services, result);
@@ -41,15 +41,15 @@ public sealed class InletOrleansRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletOrleans should register as singleton.
+    ///     AddInletSilo should register as singleton.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddInletOrleansRegistersAsSingleton()
+    public void AddInletSiloRegistersAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddInletOrleans();
+        services.AddInletSilo();
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -61,15 +61,15 @@ public sealed class InletOrleansRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletOrleans should register IProjectionBrookRegistry.
+    ///     AddInletSilo should register IProjectionBrookRegistry.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddInletOrleansRegistersIProjectionBrookRegistry()
+    public void AddInletSiloRegistersIProjectionBrookRegistry()
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddInletOrleans();
+        services.AddInletSilo();
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -80,34 +80,34 @@ public sealed class InletOrleansRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletOrleans should return the same services collection for chaining.
+    ///     AddInletSilo should return the same services collection for chaining.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddInletOrleansReturnsSameCollection()
+    public void AddInletSiloReturnsSameCollection()
     {
         // Arrange
         ServiceCollection services = [];
 
         // Act
-        IServiceCollection result = services.AddInletOrleans();
+        IServiceCollection result = services.AddInletSilo();
 
         // Assert
         Assert.Same(services, result);
     }
 
     /// <summary>
-    ///     AddInletOrleans should throw when services is null.
+    ///     AddInletSilo should throw when services is null.
     /// </summary>
     [Fact]
     [AllureFeature("Argument Validation")]
-    public void AddInletOrleansThrowsWhenServicesNull()
+    public void AddInletSiloThrowsWhenServicesNull()
     {
         // Arrange
         IServiceCollection services = null!;
 
         // Act & Assert
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => services.AddInletOrleans());
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => services.AddInletSilo());
         Assert.Equal("services", exception.ParamName);
     }
 
@@ -141,7 +141,7 @@ public sealed class InletOrleansRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddInletOrleans();
+        services.AddInletSilo();
         Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
 
         // Act

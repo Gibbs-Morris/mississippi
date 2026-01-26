@@ -1,4 +1,4 @@
-namespace Mississippi.Inlet.Orleans.L0Tests.Infrastructure;
+namespace Mississippi.Inlet.Silo.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Test projection type names used in tests.

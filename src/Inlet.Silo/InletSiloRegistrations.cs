@@ -9,18 +9,18 @@ using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Projection.Abstractions;
 
 
-namespace Mississippi.Inlet.Orleans;
+namespace Mississippi.Inlet.Silo;
 
 /// <summary>
-///     Extension methods for registering Inlet Orleans services.
+///     Extension methods for registering Inlet Silo services.
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         Use these extensions on Orleans silo hosts. For ASP.NET Core hosts
-///         that serve SignalR hubs, use the extensions from <c>Inlet.Orleans.SignalR</c>.
+///         that serve SignalR hubs, use the extensions from <c>Inlet.Server</c>.
 ///     </para>
 /// </remarks>
-public static class InletOrleansRegistrations
+public static class InletSiloRegistrations
 {
     /// <summary>
     ///     Adds Inlet Orleans services to the service collection.
@@ -34,7 +34,7 @@ public static class InletOrleansRegistrations
     ///         with projection-to-brook mappings from attributed types.
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddInletOrleans(
+    public static IServiceCollection AddInletSilo(
         this IServiceCollection services
     )
     {
@@ -60,7 +60,7 @@ public static class InletOrleansRegistrations
     ///         otherwise defaults to the path from <see cref="ProjectionPathAttribute" />.
     ///     </para>
     ///     <para>
-    ///         Call this after <see cref="AddInletOrleans" /> to populate the registry.
+    ///         Call this after <see cref="AddInletSilo" /> to populate the registry.
     ///     </para>
     /// </remarks>
     public static IServiceCollection ScanProjectionAssemblies(

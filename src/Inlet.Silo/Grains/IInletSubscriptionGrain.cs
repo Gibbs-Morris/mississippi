@@ -7,7 +7,7 @@ using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.Inlet.Orleans.Grains;
+namespace Mississippi.Inlet.Silo.Grains;
 
 /// <summary>
 ///     Grain managing all projection subscriptions for a single SignalR connection.

@@ -1,4 +1,4 @@
-namespace Mississippi.Inlet.Orleans.L0Tests.Infrastructure;
+namespace Mississippi.Inlet.Silo.L0Tests.Infrastructure;
 
 /// <summary>
 ///     xUnit collection definition to share a single TestCluster across tests.

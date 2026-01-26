@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Mississippi.Inlet.Abstractions;
 
 
-namespace Mississippi.Inlet.Orleans;
+namespace Mississippi.Inlet.Silo;
 
 /// <summary>
 ///     Thread-safe implementation of <see cref="IProjectionBrookRegistry" />.

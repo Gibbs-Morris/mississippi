@@ -12,7 +12,7 @@ using Orleans.Hosting;
 using Orleans.TestingHost;
 
 
-namespace Mississippi.Inlet.Orleans.L0Tests.Infrastructure;
+namespace Mississippi.Inlet.Silo.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Silo configuration for the Inlet Orleans test cluster.
@@ -35,8 +35,8 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.UseAqueduct();
         siloBuilder.ConfigureServices(services =>
         {
-            // Register InletOrleans services (IProjectionBrookRegistry)
-            services.AddInletOrleans();
+            // Register InletSilo services (IProjectionBrookRegistry)
+            services.AddInletSilo();
 
             // Add EventSourcing services for IStreamIdFactory
             services.AddEventSourcingByService();

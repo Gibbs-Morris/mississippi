@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 
-namespace Mississippi.Inlet.Orleans.Diagnostics;
+namespace Mississippi.Inlet.Silo.Diagnostics;
 
 /// <summary>
 ///     OpenTelemetry metrics for Inlet real-time notifications.

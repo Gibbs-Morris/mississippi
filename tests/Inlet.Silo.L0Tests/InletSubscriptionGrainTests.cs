@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Orleans.Grains;
-using Mississippi.Inlet.Orleans.L0Tests.Infrastructure;
+using Mississippi.Inlet.Silo.Grains;
+using Mississippi.Inlet.Silo.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
 
 
-namespace Mississippi.Inlet.Orleans.L0Tests;
+namespace Mississippi.Inlet.Silo.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="IInletSubscriptionGrain" /> operations.

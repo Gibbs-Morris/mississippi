@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Description>Orleans grains for Inlet projection subscription management. Provides InletSubscriptionGrain for per-connection subscription tracking with brook stream deduplication. Safe for silo deployment - no SignalR dependencies.</Description>
+        <Description>Orleans silo components for Inlet projection subscription management. Provides InletSubscriptionGrain for per-connection subscription tracking with brook stream deduplication. Deploy to Orleans silo hosts only - no ASP.NET or Blazor dependencies.</Description>
     </PropertyGroup>
 
     <ItemGroup>
