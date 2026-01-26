@@ -40,6 +40,9 @@
     <Project Path="src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
     <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
   </Folder>
+  <Folder Name="/Framework/EventSourcing/Sagas/">
+    <Project Path="src\EventSourcing.Sagas.Abstractions\EventSourcing.Sagas.Abstractions.csproj" />
+  </Folder>
   <Folder Name="/Framework/Refraction/">
     <Project Path="src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
     <Project Path="src\Refraction\Refraction.csproj" />
@@ -116,6 +119,9 @@
     <Project Path="tests\EventSourcing.UxProjections.Abstractions.L0Tests\EventSourcing.UxProjections.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
+  </Folder>
+  <Folder Name="/Tests/EventSourcing/Sagas/">
+    <Project Path="tests\EventSourcing.Sagas.Abstractions.L0Tests\EventSourcing.Sagas.Abstractions.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Refraction/">
     <Project Path="tests\Refraction.Abstractions.L0Tests\Refraction.Abstractions.L0Tests.csproj" />
