@@ -98,8 +98,8 @@ builder.Services.AddKeyedSingleton(
         _
     ) => sp.GetRequiredService<CosmosClient>());
 
-// Add Inlet Orleans services for projection subscription management
-builder.Services.AddInletOrleans();
+// Add Inlet Silo services for projection subscription management
+builder.Services.AddInletSilo();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add event sourcing infrastructure
