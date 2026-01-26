@@ -127,6 +127,21 @@ public sealed class GenerateProjectionEndpointsAttribute : Attribute
     public bool GenerateClientSubscription { get; set; } = true;
 
     /// <summary>
+    ///     Gets or sets a value indicating whether to generate the client-side DTO for this projection.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Defaults to <see langword="true" />. When set to <see langword="false" />,
+    ///         the client-side <c>{Projection}Dto</c> record will not be generated.
+    ///     </para>
+    ///     <para>
+    ///         Use this when you have a custom client DTO or share DTOs between
+    ///         client and server via a shared project.
+    ///     </para>
+    /// </remarks>
+    public bool GenerateClientDto { get; set; } = true;
+
+    /// <summary>
     ///     Gets or sets a value indicating whether to generate the server-side controller for this projection.
     /// </summary>
     /// <remarks>

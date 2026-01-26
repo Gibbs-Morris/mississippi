@@ -329,6 +329,12 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             return null;
         }
 
+        // Check if client DTO generation is opted out
+        if (!TypeAnalyzer.GetBooleanProperty(generateAttr, "GenerateClientDto"))
+        {
+            return null;
+        }
+
         // Check for [ProjectionPath] attribute and get path
         AttributeData? projectionPathAttr = typeSymbol.GetAttributes()
             .FirstOrDefault(attr =>
