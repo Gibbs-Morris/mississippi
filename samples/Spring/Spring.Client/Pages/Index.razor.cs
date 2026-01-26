@@ -143,13 +143,13 @@ public sealed partial class Index
 
     private void CloseConnectionModal() => isConnectionModalOpen = false;
 
-    private void Deposit() => Dispatch(new DepositFundsAction(SelectedEntityId!, depositAmount));
+    private void Deposit() => Dispatch(new DepositCashAction(SelectedEntityId!, depositAmount));
 
-    private void DepositBurst20() => DispatchBurst(() => new DepositFundsAction(SelectedEntityId!, 5m), 20);
+    private void DepositBurst20() => DispatchBurst(() => new DepositCashAction(SelectedEntityId!, 5m), 20);
 
-    private void DepositBurst200() => DispatchBurst(() => new DepositFundsAction(SelectedEntityId!, 10m), 200);
+    private void DepositBurst200() => DispatchBurst(() => new DepositCashAction(SelectedEntityId!, 10m), 200);
 
-    private void DepositSingle100() => Dispatch(new DepositFundsAction(SelectedEntityId!, 100m));
+    private void DepositSingle100() => Dispatch(new DepositCashAction(SelectedEntityId!, 100m));
 
     /// <summary>
     ///     Detects when projection values change and triggers update animations.
@@ -250,11 +250,11 @@ public sealed partial class Index
 
     private void ToggleConnectionModal() => isConnectionModalOpen = !isConnectionModalOpen;
 
-    private void Withdraw() => Dispatch(new WithdrawFundsAction(SelectedEntityId!, withdrawAmount));
+    private void Withdraw() => Dispatch(new WithdrawCashAction(SelectedEntityId!, withdrawAmount));
 
-    private void WithdrawBurst20() => DispatchBurst(() => new WithdrawFundsAction(SelectedEntityId!, 5m), 20);
+    private void WithdrawBurst20() => DispatchBurst(() => new WithdrawCashAction(SelectedEntityId!, 5m), 20);
 
-    private void WithdrawBurst200() => DispatchBurst(() => new WithdrawFundsAction(SelectedEntityId!, 10m), 200);
+    private void WithdrawBurst200() => DispatchBurst(() => new WithdrawCashAction(SelectedEntityId!, 10m), 200);
 
-    private void WithdrawSingle100() => Dispatch(new WithdrawFundsAction(SelectedEntityId!, 100m));
+    private void WithdrawSingle100() => Dispatch(new WithdrawCashAction(SelectedEntityId!, 100m));
 }
