@@ -119,14 +119,21 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
         action is TAction;
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     <para>
+    ///         The <paramref name="currentState" /> parameter is provided for interface consistency but
+    ///         should not be read in command effects. Per the "action effects extract all needed data
+    ///         from the action itself" principle, effects must remain pure observers of actions.
+    ///     </para>
+    /// </remarks>
     public async IAsyncEnumerable<IAction> HandleAsync(
         IAction action,
         TState currentState,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
-        // Note: currentState is intentionally unused per the key principle:
-        // "Action effects extract all needed data from the action itself."
+        // Discard currentState - effects extract all needed data from the action itself.
+        _ = currentState;
         if (action is not TAction typedAction)
         {
             yield break;

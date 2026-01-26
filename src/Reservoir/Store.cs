@@ -29,6 +29,12 @@ public class Store : IStore
 
     private readonly ConcurrentDictionary<string, object> rootActionEffects = new();
 
+    /// <summary>
+    ///     Cache of MethodInfo for HandleAsync methods, keyed by root effect type.
+    ///     Avoids repeated reflection lookups on every dispatch.
+    /// </summary>
+    private readonly ConcurrentDictionary<Type, MethodInfo?> handleAsyncMethodCache = new();
+
     private readonly ConcurrentDictionary<string, object> rootReducers = new();
 
     private bool disposed;
@@ -171,6 +177,7 @@ public class Store : IStore
             featureStates.Clear();
             rootReducers.Clear();
             rootActionEffects.Clear();
+            handleAsyncMethodCache.Clear();
             middlewares.Clear();
         }
     }
@@ -283,9 +290,12 @@ public class Store : IStore
                 continue;
             }
 
-            // Use reflection to call HandleAsync on the generic root action effect
+            // Use cached reflection to call HandleAsync on the generic root action effect.
+            // The MethodInfo is cached per root effect type to avoid repeated reflection lookups.
             Type rootEffectType = rootEffect.GetType();
-            MethodInfo? handleMethod = rootEffectType.GetMethod("HandleAsync");
+            MethodInfo? handleMethod = handleAsyncMethodCache.GetOrAdd(
+                rootEffectType,
+                static type => type.GetMethod("HandleAsync"));
             if (handleMethod == null)
             {
                 continue;

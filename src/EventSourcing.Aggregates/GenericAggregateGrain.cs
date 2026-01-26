@@ -53,8 +53,19 @@ internal sealed class GenericAggregateGrain<TAggregate>
 {
     /// <summary>
     ///     Maximum number of effect iterations before the effect loop is terminated.
-    ///     This prevents infinite loops when effects continuously yield new events.
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         This prevents infinite loops when effects continuously yield new events that
+    ///         trigger other effects in a cycle. A value of 10 is typically sufficient for
+    ///         legitimate effect chains while catching design issues early.
+    ///     </para>
+    ///     <para>
+    ///         If you find this limit is too restrictive for your use case, consider
+    ///         restructuring your effect chain to avoid deep nesting, or discuss with
+    ///         the team about making this value configurable per-aggregate.
+    ///     </para>
+    /// </remarks>
     private const int MaxEffectIterations = 10;
 
     private BrookKey brookKey;
@@ -205,9 +216,16 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="aggregateKey">The aggregate key.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <remarks>
-    ///     Effects can yield additional events. These are persisted immediately for real-time
-    ///     projection updates. The method loops until no more events are yielded or the
-    ///     iteration limit (10) is reached to prevent infinite loops.
+    ///     <para>
+    ///         Effects can yield additional events. These are persisted immediately for real-time
+    ///         projection updates. The method loops until no more events are yielded or the
+    ///         iteration limit (<see cref="MaxEffectIterations"/>) is reached to prevent infinite loops.
+    ///     </para>
+    ///     <para>
+    ///         When the limit is reached, remaining pending events are not processed, and a warning
+    ///         is logged with metrics recorded. This may indicate a design issue with effects
+    ///         continuously producing events in a cycle.
+    ///     </para>
     /// </remarks>
     private async Task DispatchEffectsAsync(
         IReadOnlyList<object> initialEvents,

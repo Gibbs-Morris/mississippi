@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
@@ -89,6 +90,8 @@ internal sealed class CurrencyConversionEffect : EventEffectBase<DollarsDeposite
         try
         {
             // Fetch exchange rate from Frankfurter API
+            // TODO: Production code should configure timeout via HttpClient.Timeout
+            // and implement retry/circuit-breaker patterns (e.g., Polly).
             using HttpClient httpClient = HttpClientFactory.CreateClient();
             response = await httpClient.GetFromJsonAsync<FrankfurterResponse>(
                 FrankfurterApiUri,
@@ -97,6 +100,12 @@ internal sealed class CurrencyConversionEffect : EventEffectBase<DollarsDeposite
         catch (HttpRequestException ex)
         {
             Logger.LogExchangeRateFetchHttpError(ex);
+            yield break;
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Timeout occurred (TaskCanceledException not from our token)
+            Logger.LogExchangeRateFetchFailed();
             yield break;
         }
 

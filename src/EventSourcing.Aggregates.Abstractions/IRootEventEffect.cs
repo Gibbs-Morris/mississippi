@@ -26,6 +26,15 @@ public interface IRootEventEffect<TAggregate>
     int EffectCount { get; }
 
     /// <summary>
+    ///     Gets a value indicating whether any effects are registered for this aggregate.
+    /// </summary>
+    /// <remarks>
+    ///     This property is provided for parity with <c>IRootActionEffect{TState}</c>
+    ///     on the client side.
+    /// </remarks>
+    bool HasEffects { get; }
+
+    /// <summary>
     ///     Dispatches an event to all matching effects and collects yielded events.
     /// </summary>
     /// <param name="eventData">The event to dispatch.</param>

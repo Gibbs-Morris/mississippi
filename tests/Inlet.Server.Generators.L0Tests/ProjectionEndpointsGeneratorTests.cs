@@ -693,9 +693,9 @@ public class ProjectionEndpointsGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        foreach (SyntaxTree tree in runResult.GeneratedTrees)
+        IEnumerable<string> generatedCodes = runResult.GeneratedTrees.Select(tree => tree.GetText().ToString());
+        foreach (string generatedCode in generatedCodes)
         {
-            string generatedCode = tree.GetText().ToString();
             Assert.Contains("#nullable enable", generatedCode, StringComparison.Ordinal);
         }
     }

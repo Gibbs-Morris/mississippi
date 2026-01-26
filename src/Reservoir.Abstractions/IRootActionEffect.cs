@@ -24,6 +24,15 @@ public interface IRootActionEffect<TState>
     where TState : class, IFeatureState
 {
     /// <summary>
+    ///     Gets the count of registered effects.
+    /// </summary>
+    /// <remarks>
+    ///     This property is provided for parity with <c>IRootEventEffect{TAggregate}</c>
+    ///     on the server side.
+    /// </remarks>
+    int EffectCount { get; }
+
+    /// <summary>
     ///     Gets a value indicating whether any effects are registered for this feature state.
     /// </summary>
     bool HasEffects { get; }

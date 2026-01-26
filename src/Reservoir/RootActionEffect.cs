@@ -50,8 +50,12 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
         ArgumentNullException.ThrowIfNull(effects);
         IActionEffect<TState>[] effectsArray = effects.ToArray();
         (effectIndex, fallbackEffects) = BuildEffectIndex(effectsArray);
+        EffectCount = effectsArray.Length;
         HasEffects = effectsArray.Length > 0;
     }
+
+    /// <inheritdoc />
+    public int EffectCount { get; }
 
     /// <inheritdoc />
     public bool HasEffects { get; }
@@ -190,6 +194,10 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
     /// <summary>
     ///     Determines if the generic type definition is ActionEffectBase or SimpleActionEffectBase.
     /// </summary>
+    /// <remarks>
+    ///     Uses namespace and name checks because this is runtime reflection (not Roslyn analysis).
+    ///     The approach is stable as long as the base class names don't change.
+    /// </remarks>
     private static bool IsActionEffectBaseType(
         Type genericDef
     )
@@ -227,12 +235,21 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
     }
 
     /// <summary>
-    ///     Attempts to move the enumerator to the next element, swallowing exceptions.
+    ///     Determines if an exception is critical and should not be swallowed.
     /// </summary>
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Effects are responsible for their own error handling; store must remain stable")]
+    /// <remarks>
+    ///     Critical exceptions indicate catastrophic failures that should propagate
+    ///     rather than being silently swallowed. These include memory exhaustion,
+    ///     stack overflow, and thread abort conditions.
+    /// </remarks>
+    private static bool IsCriticalException(
+        Exception ex
+    ) =>
+        ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
+
+    /// <summary>
+    ///     Attempts to move the enumerator to the next element, swallowing non-critical exceptions.
+    /// </summary>
     private static async Task<bool> TryMoveNextAsync(
         IAsyncEnumerator<IAction> enumerator
     )
@@ -246,9 +263,10 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
             // Expected when effect is cancelled
             return false;
         }
-        catch (Exception)
+        catch (Exception ex) when (!IsCriticalException(ex))
         {
-            // Effect threw; stop enumerating this effect
+            // Effect threw non-critical exception; stop enumerating this effect.
+            // Critical exceptions (OOM, StackOverflow, etc.) will propagate.
             return false;
         }
     }

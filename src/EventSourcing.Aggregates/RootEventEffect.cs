@@ -55,10 +55,14 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         Logger = logger ?? NullLogger<RootEventEffect<TAggregate>>.Instance;
         (effectIndex, fallbackEffects) = BuildEffectIndex(effectsArray);
         EffectCount = effectsArray.Length;
+        HasEffects = effectsArray.Length > 0;
     }
 
     /// <inheritdoc />
     public int EffectCount { get; }
+
+    /// <inheritdoc />
+    public bool HasEffects { get; }
 
     private ILogger<RootEventEffect<TAggregate>> Logger { get; }
 
@@ -275,12 +279,21 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
     }
 
     /// <summary>
-    ///     Attempts to move the enumerator to the next element, swallowing exceptions.
+    ///     Determines if an exception is critical and should not be swallowed.
     /// </summary>
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Effects are responsible for their own error handling; grain must remain stable")]
+    /// <remarks>
+    ///     Critical exceptions indicate catastrophic failures that should propagate
+    ///     rather than being silently swallowed. These include memory exhaustion,
+    ///     stack overflow, and thread abort conditions.
+    /// </remarks>
+    private static bool IsCriticalException(
+        Exception ex
+    ) =>
+        ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
+
+    /// <summary>
+    ///     Attempts to move the enumerator to the next element, swallowing non-critical exceptions.
+    /// </summary>
     private async Task<bool> TryMoveNextAsync(
         IAsyncEnumerator<object> enumerator,
         string effectTypeName,
@@ -297,9 +310,10 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
             // Expected when effect is cancelled
             return false;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!IsCriticalException(ex))
         {
-            // Effect threw; log, record metric, and stop enumerating this effect
+            // Effect threw non-critical exception; log, record metric, and stop enumerating.
+            // Critical exceptions (OOM, StackOverflow, etc.) will propagate.
             Logger.EventEffectFailed(effectTypeName, eventTypeName, aggregateTypeName, ex);
             EventEffectMetrics.RecordEffectError(aggregateTypeName, effectTypeName, eventTypeName);
             return false;

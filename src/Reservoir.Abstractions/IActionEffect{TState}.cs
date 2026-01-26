@@ -59,12 +59,21 @@ public interface IActionEffect<in TState>
     ///     Handles the action asynchronously and yields resulting actions.
     /// </summary>
     /// <param name="action">The action to handle.</param>
-    /// <param name="currentState">The current feature state after reducers have run.</param>
+    /// <param name="currentState">
+    ///     The current feature state after reducers have run. Provided for interface consistency
+    ///     and future extensibility, but implementations should prefer extracting data from the action.
+    /// </param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>An async enumerable of actions to dispatch.</returns>
     /// <remarks>
-    ///     The state is provided for reference but effects should NOT read from it to determine behavior.
-    ///     All needed data should come from the action itself.
+    ///     <para>
+    ///         The state parameter is included for pattern alignment with server-side event effects
+    ///         and to support scenarios where effects legitimately need aggregate context.
+    ///     </para>
+    ///     <para>
+    ///         However, for most use cases, effects should extract all needed data from the action
+    ///         itself to remain pure and testable.
+    ///     </para>
     /// </remarks>
     IAsyncEnumerable<IAction> HandleAsync(
         IAction action,
