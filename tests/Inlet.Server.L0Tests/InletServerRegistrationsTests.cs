@@ -8,18 +8,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 
-namespace Mississippi.Inlet.Orleans.SignalR.L0Tests;
+namespace Mississippi.Inlet.Server.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="InletOrleansSignalRRegistrations" />.
+///     Tests for <see cref="InletServerRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Orleans.SignalR")]
+[AllureParentSuite("Mississippi.Inlet.Server")]
 [AllureSuite("Extensions")]
-[AllureSubSuite("InletOrleansSignalRRegistrations")]
-public sealed class InletOrleansSignalRRegistrationsTests
+[AllureSubSuite("InletServerRegistrations")]
+public sealed class InletServerRegistrationsTests
 {
     /// <summary>
-    ///     AddInletOrleansWithSignalR should accept null configuration action.
+    ///     AddInletServer should accept null configuration action.
     /// </summary>
     [Fact]
     [AllureFeature("Configuration")]
@@ -27,20 +27,20 @@ public sealed class InletOrleansSignalRRegistrationsTests
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies null action.")]
-    public void AddInletOrleansWithSignalRAcceptsNullConfigurationAction()
+    public void AddInletServerAcceptsNullConfigurationAction()
     {
         // Arrange
         ServiceCollection services = new();
 
         // Act
-        IServiceCollection result = services.AddInletOrleansWithSignalR();
+        IServiceCollection result = services.AddInletServer();
 
         // Assert
         Assert.Same(services, result);
     }
 
     /// <summary>
-    ///     AddInletOrleansWithSignalR should apply configuration options.
+    ///     AddInletServer should apply configuration options.
     /// </summary>
     [Fact]
     [AllureFeature("Configuration")]
@@ -48,23 +48,23 @@ public sealed class InletOrleansSignalRRegistrationsTests
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies configuration.")]
-    public void AddInletOrleansWithSignalRAppliesConfigurationOptions()
+    public void AddInletServerAppliesConfigurationOptions()
     {
         // Arrange
         ServiceCollection services = new();
         string customNamespace = "Custom.Namespace";
 
         // Act
-        services.AddInletOrleansWithSignalR(options => options.AllClientsStreamNamespace = customNamespace);
+        services.AddInletServer(options => options.AllClientsStreamNamespace = customNamespace);
         using ServiceProvider provider = services.BuildServiceProvider();
-        IOptions<InletOrleansOptions> options = provider.GetRequiredService<IOptions<InletOrleansOptions>>();
+        IOptions<InletServerOptions> options = provider.GetRequiredService<IOptions<InletServerOptions>>();
 
         // Assert
         Assert.Equal(customNamespace, options.Value.AllClientsStreamNamespace);
     }
 
     /// <summary>
-    ///     AddInletOrleansWithSignalR should register HubLifetimeManager via TryAddSingleton.
+    ///     AddInletServer should register HubLifetimeManager via TryAddSingleton.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
@@ -72,13 +72,13 @@ public sealed class InletOrleansSignalRRegistrationsTests
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies registration.")]
-    public void AddInletOrleansWithSignalRRegistersHubLifetimeManager()
+    public void AddInletServerRegistersHubLifetimeManager()
     {
         // Arrange
         ServiceCollection services = new();
 
         // Act
-        services.AddInletOrleansWithSignalR();
+        services.AddInletServer();
 
         // Assert - TryAddSingleton only adds if not present; check any HubLifetimeManager-related type
         // The type is registered as open generic so we verify via service resolution in integration
@@ -89,7 +89,7 @@ public sealed class InletOrleansSignalRRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletOrleansWithSignalR should register SignalR services.
+    ///     AddInletServer should register SignalR services.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
@@ -97,20 +97,20 @@ public sealed class InletOrleansSignalRRegistrationsTests
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies registration.")]
-    public void AddInletOrleansWithSignalRRegistersSignalRServices()
+    public void AddInletServerRegistersSignalRServices()
     {
         // Arrange
         ServiceCollection services = new();
 
         // Act
-        services.AddInletOrleansWithSignalR();
+        services.AddInletServer();
 
         // Assert
         Assert.Contains(services, d => d.ServiceType == typeof(IHubContext<>));
     }
 
     /// <summary>
-    ///     AddInletOrleansWithSignalR should return the same service collection for chaining.
+    ///     AddInletServer should return the same service collection for chaining.
     /// </summary>
     [Fact]
     [AllureFeature("Method Behavior")]
@@ -118,13 +118,13 @@ public sealed class InletOrleansSignalRRegistrationsTests
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies chaining.")]
-    public void AddInletOrleansWithSignalRReturnsSameServiceCollection()
+    public void AddInletServerReturnsSameServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
 
         // Act - chain multiple extensions
-        IServiceCollection result = services.AddInletOrleansWithSignalR().AddSingleton(_ => "test-value");
+        IServiceCollection result = services.AddInletServer().AddSingleton(_ => "test-value");
 
         // Assert
         Assert.Same(services, result);
@@ -132,7 +132,7 @@ public sealed class InletOrleansSignalRRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletOrleansWithSignalR should throw ArgumentNullException when services is null.
+    ///     AddInletServer should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
     [AllureFeature("Argument Validation")]
@@ -140,13 +140,13 @@ public sealed class InletOrleansSignalRRegistrationsTests
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Null argument test.")]
-    public void AddInletOrleansWithSignalRThrowsWhenServicesIsNull()
+    public void AddInletServerThrowsWhenServicesIsNull()
     {
         // Arrange
         IServiceCollection? services = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddInletOrleansWithSignalR());
+        Assert.Throws<ArgumentNullException>(() => services!.AddInletServer());
     }
 
     /// <summary>

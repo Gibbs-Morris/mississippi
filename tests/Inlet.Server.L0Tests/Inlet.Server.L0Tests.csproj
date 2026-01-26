@@ -10,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Server\Inlet.Server.csproj" />
         <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
     </ItemGroup>
 

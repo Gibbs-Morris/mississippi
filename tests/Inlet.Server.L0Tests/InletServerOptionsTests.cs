@@ -3,15 +3,15 @@ using Allure.Xunit.Attributes;
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.Inlet.Orleans.SignalR.L0Tests;
+namespace Mississippi.Inlet.Server.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="InletOrleansOptions" />.
+///     Tests for <see cref="InletServerOptions" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Orleans.SignalR")]
+[AllureParentSuite("Mississippi.Inlet.Server")]
 [AllureSuite("Configuration")]
-[AllureSubSuite("InletOrleansOptions")]
-public sealed class InletOrleansOptionsTests
+[AllureSubSuite("InletServerOptions")]
+public sealed class InletServerOptionsTests
 {
     /// <summary>
     ///     AllClientsStreamNamespace should have correct default value.
@@ -21,7 +21,7 @@ public sealed class InletOrleansOptionsTests
     public void AllClientsStreamNamespaceHasCorrectDefault()
     {
         // Arrange
-        InletOrleansOptions options = new();
+        InletServerOptions options = new();
 
         // Assert
         Assert.Equal(MississippiDefaults.StreamNamespaces.AllClients, options.AllClientsStreamNamespace);
@@ -35,7 +35,7 @@ public sealed class InletOrleansOptionsTests
     public void AllClientsStreamNamespaceIsSettable()
     {
         // Arrange
-        InletOrleansOptions options = new();
+        InletServerOptions options = new();
 
         // Act
         options.AllClientsStreamNamespace = "Custom.Namespace";
@@ -52,7 +52,7 @@ public sealed class InletOrleansOptionsTests
     public void HeartbeatIntervalMinutesHasCorrectDefault()
     {
         // Arrange
-        InletOrleansOptions options = new();
+        InletServerOptions options = new();
 
         // Assert
         Assert.Equal(1, options.HeartbeatIntervalMinutes);
@@ -66,7 +66,7 @@ public sealed class InletOrleansOptionsTests
     public void HeartbeatIntervalMinutesIsSettable()
     {
         // Arrange
-        InletOrleansOptions options = new();
+        InletServerOptions options = new();
 
         // Act
         options.HeartbeatIntervalMinutes = 5;
@@ -83,7 +83,7 @@ public sealed class InletOrleansOptionsTests
     public void ServerStreamNamespaceHasCorrectDefault()
     {
         // Arrange
-        InletOrleansOptions options = new();
+        InletServerOptions options = new();
 
         // Assert
         Assert.Equal(MississippiDefaults.StreamNamespaces.Server, options.ServerStreamNamespace);
@@ -97,7 +97,7 @@ public sealed class InletOrleansOptionsTests
     public void ServerStreamNamespaceIsSettable()
     {
         // Arrange
-        InletOrleansOptions options = new();
+        InletServerOptions options = new();
 
         // Act
         options.ServerStreamNamespace = "Custom.Server";
@@ -114,7 +114,7 @@ public sealed class InletOrleansOptionsTests
     public void StreamProviderNameHasCorrectDefault()
     {
         // Arrange
-        InletOrleansOptions options = new();
+        InletServerOptions options = new();
 
         // Assert
         Assert.Equal(MississippiDefaults.StreamProviderName, options.StreamProviderName);
@@ -128,7 +128,7 @@ public sealed class InletOrleansOptionsTests
     public void StreamProviderNameIsSettable()
     {
         // Arrange
-        InletOrleansOptions options = new();
+        InletServerOptions options = new();
 
         // Act
         options.StreamProviderName = "CustomStreams";

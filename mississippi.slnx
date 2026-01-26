@@ -57,7 +57,7 @@
     <Project Path="src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
     <Project Path="src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
     <Project Path="src\Inlet.Silo\Inlet.Silo.csproj" />
-    <Project Path="src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
+    <Project Path="src\Inlet.Server\Inlet.Server.csproj" />
   </Folder>
   <Folder Name="/Framework/SDK/">
     <Project Path="src\Sdk.Client\Sdk.Client.csproj" />
@@ -133,7 +133,7 @@
     <Project Path="tests\Inlet.Blazor.Server.L0Tests\Inlet.Blazor.Server.L0Tests.csproj" />
     <Project Path="tests\Inlet.L0Tests\Inlet.L0Tests.csproj" />
     <Project Path="tests\Inlet.Silo.L0Tests\Inlet.Silo.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Orleans.SignalR.L0Tests\Inlet.Orleans.SignalR.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Server.L0Tests\Inlet.Server.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/SDK/">
     <Project Path="tests\Sdk.Client.L0Tests\Sdk.Client.L0Tests.csproj" />

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Description>SignalR integration for Inlet Orleans. Provides InletHub and ASP.NET Core DI extensions for hosting projection update notifications via SignalR. Deploy to ASP.NET web servers hosting SignalR hubs.</Description>
+        <Description>ASP.NET Core server components for Inlet. Provides InletHub for SignalR-based projection update notifications. Deploy to ASP.NET web servers hosting SignalR hubs - requires Orleans client connection to silo.</Description>
     </PropertyGroup>
 
     <ItemGroup>

@@ -10,19 +10,22 @@ using Mississippi.Aqueduct;
 using Mississippi.Aqueduct.Abstractions;
 
 
-namespace Mississippi.Inlet.Orleans.SignalR;
+using Mississippi.Inlet.Silo;
+
+
+namespace Mississippi.Inlet.Server;
 
 /// <summary>
-///     Extension methods for registering Inlet Orleans SignalR services.
+///     Extension methods for registering Inlet Server services.
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         Use these extensions on ASP.NET Core hosts that serve SignalR hubs.
-///         For silo hosts, use <see cref="InletOrleansRegistrations" />
-///         from the <c>Inlet.Orleans</c> package directly.
+///         For silo hosts, use <see cref="InletSiloRegistrations" />
+///         from the <c>Inlet.Silo</c> package directly.
 ///     </para>
 /// </remarks>
-public static class InletOrleansSignalRRegistrations
+public static class InletServerRegistrations
 {
     /// <summary>
     ///     Adds Inlet Orleans services with SignalR and the Orleans backplane.
@@ -37,13 +40,13 @@ public static class InletOrleansSignalRRegistrations
     ///         cross-server message routing.
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddInletOrleansWithSignalR(
+    public static IServiceCollection AddInletServer(
         this IServiceCollection services,
-        Action<InletOrleansOptions>? configureOptions = null
+        Action<InletServerOptions>? configureOptions = null
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        services.AddInletOrleans();
+        services.AddInletSilo();
         services.AddSignalR();
         services.Configure(configureOptions ?? (_ => { }));
 

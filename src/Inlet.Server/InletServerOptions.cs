@@ -1,12 +1,12 @@
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.Inlet.Orleans.SignalR;
+namespace Mississippi.Inlet.Server;
 
 /// <summary>
-///     Configuration options for Inlet Orleans SignalR integration.
+///     Configuration options for Inlet Server.
 /// </summary>
-public sealed class InletOrleansOptions
+public sealed class InletServerOptions
 {
     /// <summary>
     ///     Gets or sets the Orleans stream namespace for hub-wide broadcasts.

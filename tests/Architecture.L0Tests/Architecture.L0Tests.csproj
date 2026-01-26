@@ -32,7 +32,7 @@
         <ProjectReference Include="..\..\src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Silo\Inlet.Silo.csproj" />
-        <ProjectReference Include="..\..\src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Server\Inlet.Server.csproj" />
         <ProjectReference Include="..\..\src\Reservoir\Reservoir.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
