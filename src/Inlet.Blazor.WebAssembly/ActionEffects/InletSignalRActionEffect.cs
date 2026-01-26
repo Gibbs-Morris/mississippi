@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Abstractions.Actions;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.State;
 using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -27,9 +28,13 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 ///         the updated data and dispatches a <see cref="ProjectionUpdatedAction{T}" />
 ///         to update the store.
 ///     </para>
+///     <para>
+///         This effect is scoped to <see cref="InletConnectionState" /> to provide a modular
+///         compartment for SignalR connection management within the store.
+///     </para>
 /// </remarks>
 internal sealed class InletSignalRActionEffect
-    : IActionEffect,
+    : IActionEffect<InletConnectionState>,
       IAsyncDisposable
 {
     private readonly ConcurrentDictionary<(Type ProjectionType, string EntityId), string> activeSubscriptions = new();
@@ -128,6 +133,7 @@ internal sealed class InletSignalRActionEffect
     /// <inheritdoc />
     public IAsyncEnumerable<IAction> HandleAsync(
         IAction action,
+        InletConnectionState currentState,
         CancellationToken cancellationToken
     )
     {

@@ -7,6 +7,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.State;
 using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features.BankAccountLedger.Dtos;
 using Spring.Client.Features.EntitySelection;
 
 
@@ -94,6 +95,11 @@ public sealed partial class Index
     }
 
     /// <summary>
+    ///     Gets a value indicating whether the account is open (from projection).
+    /// </summary>
+    private bool IsAccountOpen => BalanceProjection?.IsOpen is true;
+
+    /// <summary>
     ///     Gets a value indicating whether the SignalR connection is not established.
     /// </summary>
     private bool IsDisconnected => ConnectionState.Status != SignalRConnectionStatus.Connected;
@@ -105,6 +111,12 @@ public sealed partial class Index
         AggregateState.IsExecuting ||
         (!string.IsNullOrEmpty(SelectedEntityId) &&
          IsProjectionLoading<BankAccountBalanceProjectionDto>(SelectedEntityId));
+
+    /// <summary>
+    ///     Gets the ledger projection data from the InletStore.
+    /// </summary>
+    private BankAccountLedgerProjectionDto? LedgerProjection =>
+        string.IsNullOrEmpty(SelectedEntityId) ? null : GetProjection<BankAccountLedgerProjectionDto>(SelectedEntityId);
 
     /// <summary>
     ///     Gets the currently selected entity ID from entity selection state.
@@ -124,6 +136,7 @@ public sealed partial class Index
         if (disposing && !string.IsNullOrEmpty(subscribedEntityId))
         {
             UnsubscribeFromProjection<BankAccountBalanceProjectionDto>(subscribedEntityId);
+            UnsubscribeFromProjection<BankAccountLedgerProjectionDto>(subscribedEntityId);
         }
 
         base.Dispose(disposing);
@@ -231,11 +244,13 @@ public sealed partial class Index
             if (!string.IsNullOrEmpty(subscribedEntityId))
             {
                 UnsubscribeFromProjection<BankAccountBalanceProjectionDto>(subscribedEntityId);
+                UnsubscribeFromProjection<BankAccountLedgerProjectionDto>(subscribedEntityId);
             }
 
             if (!string.IsNullOrEmpty(currentEntityId))
             {
                 SubscribeToProjection<BankAccountBalanceProjectionDto>(currentEntityId);
+                SubscribeToProjection<BankAccountLedgerProjectionDto>(currentEntityId);
             }
 
             subscribedEntityId = currentEntityId;

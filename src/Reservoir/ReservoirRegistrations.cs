@@ -17,22 +17,25 @@ namespace Mississippi.Reservoir;
 public static class ReservoirRegistrations
 {
     /// <summary>
-    ///     Adds an effect implementation to the service collection.
+    ///     Adds a state-scoped action effect implementation to the service collection.
     /// </summary>
+    /// <typeparam name="TState">The feature state type this effect operates on.</typeparam>
     /// <typeparam name="TEffect">The effect implementation type.</typeparam>
     /// <param name="services">The service collection to add the effect to.</param>
     /// <returns>The updated service collection.</returns>
     /// <remarks>
-    ///     Effects are registered with scoped lifetime to match the Store's lifetime,
-    ///     following the Fluxor pattern. In Blazor WASM, scoped behaves as singleton.
-    ///     In Blazor Server, each circuit gets its own effect instances.
+    ///     State-scoped effects are registered with transient lifetime and composited
+    ///     into a <see cref="IRootActionEffect{TState}" /> for each feature state.
     /// </remarks>
-    public static IServiceCollection AddActionEffect<TEffect>(
+    public static IServiceCollection AddActionEffect<TState, TEffect>(
         this IServiceCollection services
     )
-        where TEffect : class, IActionEffect
+        where TState : class, IFeatureState, new()
+        where TEffect : class, IActionEffect<TState>
     {
-        services.AddScoped<IActionEffect, TEffect>();
+        services.AddTransient<IActionEffect<TState>, TEffect>();
+        services.AddRootActionEffect<TState>();
+        services.AddFeatureState<TState>();
         return services;
     }
 
@@ -55,8 +58,9 @@ public static class ReservoirRegistrations
         // Use TryAddEnumerable with concrete implementation type to prevent duplicate registrations
         // The implementation type (FeatureStateRegistration<TState>) is used for deduplication
         services.TryAddEnumerable(
-            ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp =>
-                new(sp.GetService<IRootReducer<TState>>())));
+            ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp => new(
+                sp.GetService<IRootReducer<TState>>(),
+                sp.GetService<IRootActionEffect<TState>>())));
         return services;
     }
 
@@ -124,10 +128,14 @@ public static class ReservoirRegistrations
     }
 
     /// <summary>
-    ///     Adds the Store to the service collection with DI-resolved feature states, effects, and middleware.
+    ///     Adds the Store to the service collection with DI-resolved feature states and middleware.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The updated service collection.</returns>
+    /// <remarks>
+    ///     All effects are feature-scoped via <see cref="IActionEffect{TState}" /> and are
+    ///     resolved through feature state registrations. There are no global effects.
+    /// </remarks>
     public static IServiceCollection AddReservoir(
         this IServiceCollection services
     )
@@ -135,8 +143,27 @@ public static class ReservoirRegistrations
         ArgumentNullException.ThrowIfNull(services);
         services.TryAddScoped<IStore>(sp => new Store(
             sp.GetServices<IFeatureStateRegistration>(),
-            sp.GetServices<IActionEffect>(),
             sp.GetServices<IMiddleware>()));
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds a root action effect for the specified state type.
+    /// </summary>
+    /// <typeparam name="TState">The feature state type.</typeparam>
+    /// <param name="services">The service collection to add the root action effect to.</param>
+    /// <returns>The updated service collection.</returns>
+    /// <remarks>
+    ///     This method is called automatically by
+    ///     <see cref="AddActionEffect{TState, TEffect}" />.
+    ///     Call it directly only when manually compositing effects.
+    /// </remarks>
+    public static IServiceCollection AddRootActionEffect<TState>(
+        this IServiceCollection services
+    )
+        where TState : class, IFeatureState, new()
+    {
+        services.TryAddTransient<IRootActionEffect<TState>, RootActionEffect<TState>>();
         return services;
     }
 
