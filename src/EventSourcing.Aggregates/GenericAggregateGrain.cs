@@ -126,6 +126,19 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
     private ISnapshotGrainFactory SnapshotGrainFactory { get; }
 
+    /// <summary>
+    ///     Determines if an exception is critical and should not be swallowed.
+    /// </summary>
+    /// <remarks>
+    ///     Critical exceptions indicate catastrophic failures that should propagate
+    ///     rather than being silently swallowed. These include memory exhaustion,
+    ///     stack overflow, and thread abort conditions.
+    /// </remarks>
+    private static bool IsCriticalException(
+        Exception ex
+    ) =>
+        ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
+
     /// <inheritdoc />
     public Task<OperationResult> ExecuteAsync(
         object command,
@@ -252,6 +265,16 @@ internal sealed class GenericAggregateGrain<TAggregate>
                     await BrookGrainFactory.GetBrookWriterGrain(brookKey)
                         .AppendEventsAsync(brookEvents, expectedPos, cancellationToken);
                     lastKnownPosition = new BrookPosition(expectedPos.Value + 1);
+
+                    // Update state after each yielded event so subsequent effects see the correct state
+                    SnapshotKey updatedSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);
+                    TAggregate? updatedState = await SnapshotGrainFactory
+                        .GetSnapshotCacheGrain<TAggregate>(updatedSnapshotKey)
+                        .GetStateAsync(cancellationToken);
+                    if (updatedState is not null)
+                    {
+                        currentState = updatedState;
+                    }
                 }
             }
 
@@ -360,7 +383,17 @@ internal sealed class GenericAggregateGrain<TAggregate>
                 TAggregate? updatedState = await SnapshotGrainFactory
                     .GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
                     .GetStateAsync(cancellationToken);
-                await DispatchEffectsAsync(events, updatedState!, aggregateKey, cancellationToken);
+                try
+                {
+                    await DispatchEffectsAsync(events, updatedState!, aggregateKey, cancellationToken);
+                }
+                catch (Exception ex) when (!IsCriticalException(ex))
+                {
+                    // Effect dispatch failures should not fail the command since events are already persisted.
+                    // Log the error and continue - the command succeeded from the caller's perspective.
+                    // Critical exceptions (OOM, StackOverflow, etc.) will propagate.
+                    Logger.EffectDispatchFailed(commandTypeName, aggregateKey, ex);
+                }
             }
         }
 

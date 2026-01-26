@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.Logging;
 
 
@@ -63,6 +65,25 @@ internal static partial class AggregateGrainLoggerExtensions
         this ILogger logger,
         string commandType,
         string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when effect dispatch fails after command events are persisted.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="commandType">The type of command that was executed.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="exception">The exception that occurred during effect dispatch.</param>
+    [LoggerMessage(
+        10,
+        LogLevel.Error,
+        "Effect dispatch failed for command {CommandType} on aggregate {AggregateKey}. " +
+        "Command events were persisted successfully but effect processing encountered an error.")]
+    public static partial void EffectDispatchFailed(
+        this ILogger logger,
+        string commandType,
+        string aggregateKey,
+        Exception exception
     );
 
     /// <summary>
