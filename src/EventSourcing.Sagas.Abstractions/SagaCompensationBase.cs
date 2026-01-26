@@ -35,12 +35,14 @@ public abstract class SagaCompensationBase<TSaga>
     /// <summary>
     ///     Compensates (undoes) the work performed by the associated step.
     /// </summary>
+    /// <param name="context">The saga execution context.</param>
     /// <param name="state">The current saga state.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>
     ///     A <see cref="CompensationResult" /> indicating success, skip, or failure.
     /// </returns>
     public abstract Task<CompensationResult> CompensateAsync(
+        ISagaContext context,
         TSaga state,
         CancellationToken cancellationToken
     );

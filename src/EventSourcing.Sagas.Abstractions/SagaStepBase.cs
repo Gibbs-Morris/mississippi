@@ -32,6 +32,7 @@ public abstract class SagaStepBase<TSaga>
     /// <summary>
     ///     Executes the step action against the current saga state.
     /// </summary>
+    /// <param name="context">The saga execution context.</param>
     /// <param name="state">The current saga state.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>
@@ -39,6 +40,7 @@ public abstract class SagaStepBase<TSaga>
     ///     optionally containing business events to persist.
     /// </returns>
     public abstract Task<StepResult> ExecuteAsync(
+        ISagaContext context,
         TSaga state,
         CancellationToken cancellationToken
     );
