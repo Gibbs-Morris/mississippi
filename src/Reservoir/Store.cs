@@ -21,6 +21,12 @@ public class Store : IStore
 {
     private readonly ConcurrentDictionary<string, object> featureStates = new();
 
+    /// <summary>
+    ///     Cache of MethodInfo for HandleAsync methods, keyed by root effect type.
+    ///     Avoids repeated reflection lookups on every dispatch.
+    /// </summary>
+    private readonly ConcurrentDictionary<Type, MethodInfo?> handleAsyncMethodCache = new();
+
     private readonly List<Action> listeners = [];
 
     private readonly object listenersLock = new();
@@ -28,12 +34,6 @@ public class Store : IStore
     private readonly List<IMiddleware> middlewares = [];
 
     private readonly ConcurrentDictionary<string, object> rootActionEffects = new();
-
-    /// <summary>
-    ///     Cache of MethodInfo for HandleAsync methods, keyed by root effect type.
-    ///     Avoids repeated reflection lookups on every dispatch.
-    /// </summary>
-    private readonly ConcurrentDictionary<Type, MethodInfo?> handleAsyncMethodCache = new();
 
     private readonly ConcurrentDictionary<string, object> rootReducers = new();
 

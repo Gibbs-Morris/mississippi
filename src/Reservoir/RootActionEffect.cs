@@ -208,6 +208,19 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
     }
 
     /// <summary>
+    ///     Determines if an exception is critical and should not be swallowed.
+    /// </summary>
+    /// <remarks>
+    ///     Critical exceptions indicate catastrophic failures that should propagate
+    ///     rather than being silently swallowed. These include memory exhaustion,
+    ///     stack overflow, and thread abort conditions.
+    /// </remarks>
+    private static bool IsCriticalException(
+        Exception ex
+    ) =>
+        ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
+
+    /// <summary>
     ///     Attempts to extract the TAction type from a base type if it matches ActionEffectBase or SimpleActionEffectBase.
     /// </summary>
     private static Type? TryExtractActionTypeFromBase(
@@ -233,19 +246,6 @@ internal sealed class RootActionEffect<TState> : IRootActionEffect<TState>
 
         return null;
     }
-
-    /// <summary>
-    ///     Determines if an exception is critical and should not be swallowed.
-    /// </summary>
-    /// <remarks>
-    ///     Critical exceptions indicate catastrophic failures that should propagate
-    ///     rather than being silently swallowed. These include memory exhaustion,
-    ///     stack overflow, and thread abort conditions.
-    /// </remarks>
-    private static bool IsCriticalException(
-        Exception ex
-    ) =>
-        ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
 
     /// <summary>
     ///     Attempts to move the enumerator to the next element, swallowing non-critical exceptions.

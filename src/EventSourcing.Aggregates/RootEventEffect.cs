@@ -126,6 +126,19 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
     }
 
     /// <summary>
+    ///     Determines if an exception is critical and should not be swallowed.
+    /// </summary>
+    /// <remarks>
+    ///     Critical exceptions indicate catastrophic failures that should propagate
+    ///     rather than being silently swallowed. These include memory exhaustion,
+    ///     stack overflow, and thread abort conditions.
+    /// </remarks>
+    private static bool IsCriticalException(
+        Exception ex
+    ) =>
+        ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
+
+    /// <summary>
     ///     Determines if the generic type definition is EventEffectBase or SimpleEventEffectBase.
     /// </summary>
     private static bool IsEventEffectBaseType(
@@ -277,19 +290,6 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
             }
         }
     }
-
-    /// <summary>
-    ///     Determines if an exception is critical and should not be swallowed.
-    /// </summary>
-    /// <remarks>
-    ///     Critical exceptions indicate catastrophic failures that should propagate
-    ///     rather than being silently swallowed. These include memory exhaustion,
-    ///     stack overflow, and thread abort conditions.
-    /// </remarks>
-    private static bool IsCriticalException(
-        Exception ex
-    ) =>
-        ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
 
     /// <summary>
     ///     Attempts to move the enumerator to the next element, swallowing non-critical exceptions.

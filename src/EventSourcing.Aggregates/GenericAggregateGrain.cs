@@ -219,7 +219,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ///     <para>
     ///         Effects can yield additional events. These are persisted immediately for real-time
     ///         projection updates. The method loops until no more events are yielded or the
-    ///         iteration limit (<see cref="MaxEffectIterations"/>) is reached to prevent infinite loops.
+    ///         iteration limit (<see cref="MaxEffectIterations" />) is reached to prevent infinite loops.
     ///     </para>
     ///     <para>
     ///         When the limit is reached, remaining pending events are not processed, and a warning
