@@ -390,6 +390,9 @@
       "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Inlet.Server.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Reservoir": {
         "type": "Project",
         "dependencies": {
