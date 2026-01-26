@@ -6,7 +6,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.SignalRConnection;

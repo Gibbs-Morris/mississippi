@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR.Client;
 
-using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Abstractions.Actions;
+using Mississippi.Inlet.Client.Abstractions;
+using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.SignalRConnection;
+using Mississippi.Inlet.Server.Abstractions;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 

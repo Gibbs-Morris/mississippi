@@ -1,6 +1,6 @@
 using System;
 
-using Mississippi.Inlet.Abstractions.Actions;
+using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
