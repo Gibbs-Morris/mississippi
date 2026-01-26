@@ -7,7 +7,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Inlet;
+namespace Mississippi.Inlet.Client;
 
 /// <summary>
 ///     Composite implementation of <see cref="IInletStore" /> that delegates to

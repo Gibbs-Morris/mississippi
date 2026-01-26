@@ -8,7 +8,7 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Inlet.L0Tests;
+namespace Mississippi.Inlet.Client.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="ProjectionNotifier" />.

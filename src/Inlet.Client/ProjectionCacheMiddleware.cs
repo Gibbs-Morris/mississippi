@@ -7,7 +7,7 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Inlet;
+namespace Mississippi.Inlet.Client;
 
 /// <summary>
 ///     Middleware that intercepts projection actions and updates the projection cache.

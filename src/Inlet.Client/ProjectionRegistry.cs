@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using Mississippi.Inlet.Abstractions;
 
 
-namespace Mississippi.Inlet;
+namespace Mississippi.Inlet.Client;
 
 /// <summary>
 ///     Default implementation of <see cref="Abstractions.IProjectionRegistry" />.

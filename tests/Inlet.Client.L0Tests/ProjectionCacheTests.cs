@@ -5,7 +5,7 @@ using Allure.Xunit.Attributes;
 using Mississippi.Inlet.Abstractions.State;
 
 
-namespace Mississippi.Inlet.L0Tests;
+namespace Mississippi.Inlet.Client.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="ProjectionCache" />.

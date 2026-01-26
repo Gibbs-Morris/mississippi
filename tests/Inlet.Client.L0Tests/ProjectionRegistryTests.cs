@@ -3,7 +3,7 @@ using System;
 using Allure.Xunit.Attributes;
 
 
-namespace Mississippi.Inlet.L0Tests;
+namespace Mississippi.Inlet.Client.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="ProjectionRegistry" />.

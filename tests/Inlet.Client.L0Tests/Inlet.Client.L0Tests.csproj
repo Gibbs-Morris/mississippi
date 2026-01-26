@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Inlet\Inlet.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Client\Inlet.Client.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,7 +1,7 @@
 using Mississippi.Inlet.Abstractions;
 
 
-namespace Mississippi.Inlet;
+namespace Mississippi.Inlet.Client;
 
 /// <summary>
 ///     Interface for projection path registration during startup.

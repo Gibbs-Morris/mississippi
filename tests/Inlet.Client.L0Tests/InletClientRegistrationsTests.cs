@@ -10,15 +10,15 @@ using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 
 
-namespace Mississippi.Inlet.L0Tests;
+namespace Mississippi.Inlet.Client.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="InletRegistrations" />.
+///     Tests for <see cref="InletClientRegistrations" />.
 /// </summary>
 [AllureParentSuite("Mississippi.Inlet")]
 [AllureSuite("Configuration")]
-[AllureSubSuite("InletRegistrations")]
-public sealed class InletRegistrationsTests
+[AllureSubSuite("InletClientRegistrations")]
+public sealed class InletClientRegistrationsTests
 {
     /// <summary>
     ///     Test projection record for unit tests.

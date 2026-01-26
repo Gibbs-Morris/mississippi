@@ -3,7 +3,7 @@ using System;
 using Mississippi.Inlet.Abstractions.State;
 
 
-namespace Mississippi.Inlet.State;
+namespace Mississippi.Inlet.Client.State;
 
 /// <summary>
 ///     Represents the state of a server-synced projection.

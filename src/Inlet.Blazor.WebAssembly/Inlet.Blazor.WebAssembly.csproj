@@ -6,7 +6,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Inlet\Inlet.csproj" />
+        <ProjectReference Include="..\Inlet.Client\Inlet.Client.csproj" />
         <ProjectReference Include="..\Inlet.Blazor.WebAssembly.Abstractions\Inlet.Blazor.WebAssembly.Abstractions.csproj" />
         <ProjectReference Include="..\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
         <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />

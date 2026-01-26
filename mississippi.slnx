@@ -53,7 +53,7 @@
   <Folder Name="/Framework/Inlet/">
     <Project Path="src\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
     <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
-    <Project Path="src\Inlet\Inlet.csproj" />
+    <Project Path="src\Inlet.Client\Inlet.Client.csproj" />
     <Project Path="src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
     <Project Path="src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
     <Project Path="src\Inlet.Silo\Inlet.Silo.csproj" />
@@ -131,7 +131,7 @@
     <Project Path="tests\Inlet.Abstractions.L0Tests\Inlet.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Inlet.Blazor.WebAssembly.L0Tests\Inlet.Blazor.WebAssembly.L0Tests.csproj" />
     <Project Path="tests\Inlet.Blazor.Server.L0Tests\Inlet.Blazor.Server.L0Tests.csproj" />
-    <Project Path="tests\Inlet.L0Tests\Inlet.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Client.L0Tests\Inlet.Client.L0Tests.csproj" />
     <Project Path="tests\Inlet.Silo.L0Tests\Inlet.Silo.L0Tests.csproj" />
     <Project Path="tests\Inlet.Server.L0Tests\Inlet.Server.L0Tests.csproj" />
   </Folder>

@@ -9,12 +9,12 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Inlet;
+namespace Mississippi.Inlet.Client;
 
 /// <summary>
 ///     Extension methods for registering Inlet services.
 /// </summary>
-public static class InletRegistrations
+public static class InletClientRegistrations
 {
     /// <summary>
     ///     Adds Inlet services to the service collection.
@@ -39,7 +39,7 @@ public static class InletRegistrations
     ///         Blazor Server: scoped = per-circuit (each user gets own store).
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddInlet(
+    public static IServiceCollection AddInletClient(
         this IServiceCollection services
     )
     {

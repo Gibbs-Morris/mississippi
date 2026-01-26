@@ -1,7 +1,7 @@
 using Mississippi.Inlet.Abstractions;
 
 
-namespace Mississippi.Inlet;
+namespace Mississippi.Inlet.Client;
 
 /// <summary>
 ///     Implementation of <see cref="IConfigureProjectionRegistry" /> for registering projection paths.

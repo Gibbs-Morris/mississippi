@@ -6,7 +6,7 @@ using Mississippi.Inlet.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Inlet.L0Tests;
+namespace Mississippi.Inlet.Client.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="ProjectionCacheMiddleware" />.

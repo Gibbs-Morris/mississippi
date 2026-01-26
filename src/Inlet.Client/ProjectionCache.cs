@@ -6,7 +6,7 @@ using Mississippi.Inlet.Abstractions.State;
 using Mississippi.Inlet.State;
 
 
-namespace Mississippi.Inlet;
+namespace Mississippi.Inlet.Client;
 
 /// <summary>
 ///     Thread-safe cache for server-synced projection states.

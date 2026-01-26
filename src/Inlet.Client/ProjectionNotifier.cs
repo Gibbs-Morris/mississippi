@@ -5,7 +5,7 @@ using Mississippi.Inlet.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions;
 
 
-namespace Mississippi.Inlet;
+namespace Mississippi.Inlet.Client;
 
 /// <summary>
 ///     Notifier that dispatches projection update actions to the store.

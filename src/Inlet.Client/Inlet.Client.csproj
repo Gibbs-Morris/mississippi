@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <PropertyGroup>
+        <Description>Client-side Inlet components for projection state management. Provides projection caching, registry, and state management for client applications. No SignalR or Blazor dependencies - use Inlet.Blazor.WebAssembly for full WASM integration.</Description>
+    </PropertyGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
         <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
