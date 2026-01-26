@@ -1,7 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
@@ -31,8 +30,12 @@ namespace Spring.Domain.Aggregates.BankAccount.Effects;
 ///         is persisted, ensuring the deposit completes immediately while flagging happens
 ///         in the background.
 ///     </para>
+///     <para>
+///         This effect uses <see cref="SimpleEventEffectBase{TEvent,TAggregate}" /> because it
+///         performs side operations (command dispatch, logging) without yielding additional events.
+///     </para>
 /// </remarks>
-internal sealed class HighValueTransactionEffect : EventEffectBase<FundsDeposited, BankAccountAggregate>
+internal sealed class HighValueTransactionEffect : SimpleEventEffectBase<FundsDeposited, BankAccountAggregate>
 {
     /// <summary>
     ///     The AML threshold amount in GBP. Deposits exceeding this amount are flagged.
@@ -68,24 +71,16 @@ internal sealed class HighValueTransactionEffect : EventEffectBase<FundsDeposite
     private ILogger<HighValueTransactionEffect> Logger { get; }
 
     /// <inheritdoc />
-    public override IAsyncEnumerable<object> HandleAsync(
+    protected override async Task HandleSimpleAsync(
         FundsDeposited eventData,
         BankAccountAggregate currentState,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return HandleCoreAsync(eventData, cancellationToken);
-    }
-
-    private async IAsyncEnumerable<object> HandleCoreAsync(
-        FundsDeposited eventData,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    )
-    {
         if (eventData.Amount <= AmlThreshold)
         {
-            yield break;
+            return;
         }
 
         // Extract the account ID from the grain's primary key
