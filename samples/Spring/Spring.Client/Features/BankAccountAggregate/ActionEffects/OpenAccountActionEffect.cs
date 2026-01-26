@@ -8,6 +8,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Dtos;
+using Spring.Client.Features.BankAccountAggregate.State;
 
 
 namespace Spring.Client.Features.BankAccountAggregate.ActionEffects;
@@ -17,7 +18,8 @@ namespace Spring.Client.Features.BankAccountAggregate.ActionEffects;
 /// </summary>
 [PendingSourceGenerator]
 internal sealed class OpenAccountActionEffect
-    : CommandActionEffectBase<OpenAccountAction, OpenAccountRequestDto, OpenAccountExecutingAction, OpenAccountSucceededAction, OpenAccountFailedAction>
+    : CommandActionEffectBase<OpenAccountAction, OpenAccountRequestDto, BankAccountAggregateState,
+        OpenAccountExecutingAction, OpenAccountSucceededAction, OpenAccountFailedAction>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="OpenAccountActionEffect" /> class.

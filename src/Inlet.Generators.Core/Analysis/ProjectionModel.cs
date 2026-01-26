@@ -88,6 +88,12 @@ public sealed class ProjectionModel
     public bool HasEnumerableMappedProperties => Properties.Any(p => p.RequiresEnumerableMapper);
 
     /// <summary>
+    ///     Gets a value indicating whether any property requires an ImmutableArray enumerable mapper.
+    /// </summary>
+    public bool HasImmutableArrayMappedProperties =>
+        Properties.Any(p => p.RequiresEnumerableMapper && p.IsImmutableArray);
+
+    /// <summary>
     ///     Gets a value indicating whether any property requires a mapper.
     /// </summary>
     public bool HasMappedProperties => Properties.Any(p => p.RequiresMapper);

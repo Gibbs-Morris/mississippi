@@ -64,13 +64,20 @@ public sealed class EventSourcingRegistrationsTests
     /// <summary>
     ///     Verifies that the HostApplicationBuilder extension accepts custom stream provider configuration.
     /// </summary>
+    /// <remarks>
+    ///     This test verifies options registration without calling <c>Build()</c> on the host builder,
+    ///     because building the full host would require complete Orleans membership table configuration.
+    ///     The test validates the options are properly registered in the service collection.
+    /// </remarks>
     [Fact]
     public void HostApplicationBuilderAddEventSourcingAcceptsCustomStreamProviderName()
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
         builder.AddEventSourcing(options => options.OrleansStreamProviderName = "CustomStreams");
-        using IHost host = builder.Build();
-        BrookProviderOptions options = host.Services.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
+
+        // Build a minimal service provider for just the options without triggering full Orleans validation
+        using ServiceProvider provider = builder.Services.BuildServiceProvider();
+        BrookProviderOptions options = provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
         Assert.Equal("CustomStreams", options.OrleansStreamProviderName);
     }
 

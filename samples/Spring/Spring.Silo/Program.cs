@@ -28,11 +28,17 @@ using Spring.Silo.Registrations;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+// Register HttpClient factory for effects that call external APIs
+builder.Services.AddHttpClient();
+
 // Register Spring domain aggregates
 builder.Services.AddBankAccountAggregate();
+builder.Services.AddTransactionInvestigationQueueAggregate();
 
 // Register Spring domain projections
 builder.Services.AddBankAccountBalanceProjection();
+builder.Services.AddBankAccountLedgerProjection();
+builder.Services.AddFlaggedTransactionsProjection();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()

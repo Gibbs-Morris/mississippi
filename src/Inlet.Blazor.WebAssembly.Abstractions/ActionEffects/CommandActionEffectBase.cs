@@ -11,6 +11,7 @@ using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions;
 using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Commands;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Reservoir.Abstractions.State;
 
 
 namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.ActionEffects;
@@ -23,6 +24,7 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.ActionEffects;
 ///     <see cref="ICommandAction" />.
 /// </typeparam>
 /// <typeparam name="TRequestDto">The DTO type to POST to the API.</typeparam>
+/// <typeparam name="TState">The feature state type this effect is registered for.</typeparam>
 /// <typeparam name="TExecutingAction">The executing lifecycle action type.</typeparam>
 /// <typeparam name="TSucceededAction">The succeeded lifecycle action type.</typeparam>
 /// <typeparam name="TFailedAction">The failed lifecycle action type.</typeparam>
@@ -35,6 +37,7 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.ActionEffects;
 ///     <para>
 ///         <b>Key principle:</b> Action effects extract all needed data from the action itself.
 ///         They do NOT read from state. This keeps action effects decoupled from state evolution.
+///         The state parameter is provided for pattern alignment but is intentionally ignored.
 ///     </para>
 ///     <para>
 ///         <b>Lifecycle actions:</b> Use static abstract factory methods for creation,
@@ -46,17 +49,19 @@ namespace Mississippi.Inlet.Blazor.WebAssembly.Abstractions.ActionEffects;
 ///         <c>{AggregateRoutePrefix}/{EntityId}/{Route}</c>.
 ///     </para>
 /// </remarks>
-public abstract class
-    CommandActionEffectBase<TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction> : IActionEffect
+public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExecutingAction, TSucceededAction,
+    TFailedAction> : IActionEffect<TState>
     where TAction : ICommandAction
     where TRequestDto : class
+    where TState : class, IFeatureState
     where TExecutingAction : ICommandExecutingAction<TExecutingAction>
     where TSucceededAction : ICommandSucceededAction<TSucceededAction>
     where TFailedAction : ICommandFailedAction<TFailedAction>
 {
     /// <summary>
     ///     Initializes a new instance of the
-    ///     <see cref="CommandActionEffectBase{TAction, TRequestDto, TExecutingAction, TSucceededAction, TFailedAction}" />
+    ///     <see
+    ///         cref="CommandActionEffectBase{TAction, TRequestDto, TState, TExecutingAction, TSucceededAction, TFailedAction}" />
     ///     class.
     /// </summary>
     /// <param name="httpClient">The HTTP client for API calls.</param>
@@ -114,11 +119,21 @@ public abstract class
         action is TAction;
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     <para>
+    ///         The <paramref name="currentState" /> parameter is provided for interface consistency but
+    ///         should not be read in command effects. Per the "action effects extract all needed data
+    ///         from the action itself" principle, effects must remain pure observers of actions.
+    ///     </para>
+    /// </remarks>
     public async IAsyncEnumerable<IAction> HandleAsync(
         IAction action,
+        TState currentState,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
+        // Discard currentState - effects extract all needed data from the action itself.
+        _ = currentState;
         if (action is not TAction typedAction)
         {
             yield break;
