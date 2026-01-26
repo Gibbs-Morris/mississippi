@@ -65,4 +65,18 @@ internal static partial class CurrencyConversionLoggerExtensions
         this ILogger logger,
         Exception exception
     );
+
+    /// <summary>
+    ///     Logs when exchange rate response validation fails.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="reason">The reason for validation failure.</param>
+    [LoggerMessage(
+        5,
+        LogLevel.Warning,
+        "Exchange rate response validation failed: {Reason}. USD deposit will not be converted.")]
+    public static partial void LogExchangeRateResponseInvalid(
+        this ILogger logger,
+        string reason
+    );
 }

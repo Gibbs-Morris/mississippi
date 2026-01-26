@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
@@ -36,37 +37,52 @@ namespace Spring.Domain.Aggregates.BankAccount.Effects;
 ///         The yielded event is persisted immediately, allowing projections to
 ///         update in real-time with the converted balance.
 ///     </para>
+///     <para>
+///         <strong>Production Considerations:</strong>
+///     </para>
+///     <list type="bullet">
+///         <item>
+///             <description>
+///                 Configure the API URI via <see cref="CurrencyConversionOptions" /> for environment-specific endpoints.
+///             </description>
+///         </item>
+///         <item>
+///             <description>
+///                 Consider adding retry/circuit-breaker patterns using Polly or
+///                 Microsoft.Extensions.Http.Resilience for transient fault handling.
+///             </description>
+///         </item>
+///         <item>
+///             <description>
+///                 Monitor conversion failures and consider compensating events for failed conversions.
+///             </description>
+///         </item>
+///     </list>
 /// </remarks>
 internal sealed class CurrencyConversionEffect : EventEffectBase<DollarsDeposited, BankAccountAggregate>
 {
     /// <summary>
-    ///     The Frankfurter API endpoint for USD to GBP exchange rates.
-    /// </summary>
-    /// <remarks>
-    ///     This is intentionally hardcoded for demonstration purposes.
-    ///     Production code should use configuration options.
-    /// </remarks>
-#pragma warning disable S1075 // URIs should not be hardcoded - Demo code; production would use configuration
-    private static readonly Uri FrankfurterApiUri = new("https://api.frankfurter.dev/v1/latest?base=USD&symbols=GBP");
-#pragma warning restore S1075
-
-    /// <summary>
     ///     Initializes a new instance of the <see cref="CurrencyConversionEffect" /> class.
     /// </summary>
     /// <param name="httpClientFactory">Factory for creating HTTP clients.</param>
+    /// <param name="options">Configuration options for currency conversion.</param>
     /// <param name="logger">Logger for effect diagnostics.</param>
     public CurrencyConversionEffect(
         IHttpClientFactory httpClientFactory,
+        IOptions<CurrencyConversionOptions> options,
         ILogger<CurrencyConversionEffect> logger
     )
     {
         HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private IHttpClientFactory HttpClientFactory { get; }
 
     private ILogger<CurrencyConversionEffect> Logger { get; }
+
+    private CurrencyConversionOptions Options { get; }
 
     /// <inheritdoc />
     public override IAsyncEnumerable<object> HandleAsync(
@@ -86,15 +102,20 @@ internal sealed class CurrencyConversionEffect : EventEffectBase<DollarsDeposite
     {
         Logger.LogDollarsDeposited(eventData.AmountUsd);
 
+        // Build the API URI from configuration
+        Uri apiUri = new(
+            Options.FrankfurterApiBaseUri,
+            $"latest?base={Options.SourceCurrency}&symbols={Options.TargetCurrency}");
+
         FrankfurterResponse? response;
         try
         {
-            // Fetch exchange rate from Frankfurter API
-            // TODO: Production code should configure timeout via HttpClient.Timeout
-            // and implement retry/circuit-breaker patterns (e.g., Polly).
+            // Fetch exchange rate from Frankfurter API.
+            // For production, consider adding resilience via Microsoft.Extensions.Http.Resilience
+            // or Polly for retry/circuit-breaker patterns.
             using HttpClient httpClient = HttpClientFactory.CreateClient();
             response = await httpClient.GetFromJsonAsync<FrankfurterResponse>(
-                FrankfurterApiUri,
+                apiUri,
                 cancellationToken);
         }
         catch (HttpRequestException ex)
@@ -109,9 +130,28 @@ internal sealed class CurrencyConversionEffect : EventEffectBase<DollarsDeposite
             yield break;
         }
 
-        if (response?.Rates?.Gbp is null)
+        // Validate response structure
+        if (response is null)
         {
-            Logger.LogExchangeRateFetchFailed();
+            Logger.LogExchangeRateResponseInvalid("Response was null");
+            yield break;
+        }
+
+        if (response.Rates is null)
+        {
+            Logger.LogExchangeRateResponseInvalid("Rates object was null");
+            yield break;
+        }
+
+        if (response.Rates.Gbp <= 0)
+        {
+            Logger.LogExchangeRateResponseInvalid($"GBP rate was invalid: {response.Rates.Gbp}");
+            yield break;
+        }
+
+        if (string.IsNullOrWhiteSpace(response.Date))
+        {
+            Logger.LogExchangeRateResponseInvalid("Rate date was missing");
             yield break;
         }
 
