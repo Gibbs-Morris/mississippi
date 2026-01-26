@@ -72,7 +72,9 @@
     <Project Path="src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <Project Path="src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" />
   </Folder>
-  <Folder Name="/src/" />
+  <Folder Name="/src/">
+    <Project Path="src/EventSourcing.Sagas/EventSourcing.Sagas.csproj" />
+  </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Inlet.Generators.Core.L0Tests/Inlet.Generators.Core.L0Tests.csproj" />
     <Project Path="tests/Inlet.Silo.Generators.L0Tests/Inlet.Silo.Generators.L0Tests.csproj" />
