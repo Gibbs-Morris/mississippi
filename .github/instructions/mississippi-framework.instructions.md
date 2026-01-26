@@ -30,6 +30,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 | Domain | Aggregates with `[GenerateAggregateEndpoints]` | Silo registration, Server controller, Client feature/state/reducers, feature registration (`Add{Aggregate}Feature()`) |
 | Domain | Commands with `[GenerateCommand]` | DTOs, mappers, HTTP endpoints, client actions, action effects, command state |
 | Domain | Projections with `[GenerateProjectionEndpoints]` | Server controller, Client subscription, DTOs |
+| Domain | Event effects extending `EventEffectBase` or `SimpleEventEffectBase` | Silo registration (`AddEventEffect<TEffect, TAggregate>()`) |
 
 ### Solution Structure
 
@@ -122,6 +123,18 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - Action effects **SHOULD** dispatch follow-up actions or call client-side services rather than performing complex inline logic. Why: Keeps action effects lightweight and predictable.
 - Action effects run on the client; they **MUST NOT** be confused with server-side event effects (which respond to domain events within grains). Why: Clarifies the distinction between client and server effect patterns.
 
+### Event Effects (Server-Side Side Effects)
+
+- Event effects **MAY** be used to trigger server-side behavior in response to persisted domain events (e.g., cross-aggregate commands, external notifications, audit logging). Why: Enables reactive server-side workflows without coupling aggregates.
+- Event effects run synchronously within the grain context after events are persisted; they block the grain until complete. Why: Ensures effects finish before the next command is processed.
+- Event effects **MUST** inherit from `EventEffectBase<TEvent, TAggregate>` (if yielding additional events) or `SimpleEventEffectBase<TEvent, TAggregate>` (if performing side operations only). Why: Provides strongly-typed event handling with proper async enumerable support.
+- Event effects **SHOULD** be placed in an `Effects` sub-namespace under the aggregate (e.g., `Aggregates/BankAccount/Effects/`). Why: Source generators discover effects by namespace convention.
+- Event effects can yield additional events via `IAsyncEnumerable<object>`, which are persisted immediately; this enables streaming scenarios (e.g., LLM token streaming, progressive data fetch). Why: Allows effects to produce follow-up events that update projections in real-time.
+- Event effects **SHOULD** complete quickly (sub-second typical); a warning is logged if an effect takes longer than 1 second. Why: Long-running effects block grain throughput.
+- For long-running background work triggered by events, event effects **SHOULD** dispatch commands to other grains or use Orleans reminders/timers rather than performing inline processing. Why: Avoids blocking the originating grain.
+- Event effects **MUST** be stateless and registered as transient services; the framework auto-registers them via `AddEventEffect<TEffect, TAggregate>()`. Why: Ensures effects are instantiated per invocation with correct DI scope.
+- Event effects can inject Orleans services (e.g., `IAggregateGrainFactory`, `IGrainContext`) to dispatch commands to other aggregates. Why: Enables cross-aggregate workflows like the Spring sample's `HighValueTransactionEffect`.
+
 ### Storage Providers
 
 - Cosmos DB **SHOULD** be used as the default storage provider for brooks (events) and snapshots; it lends itself well to event sourcing's append-only writes and Aspire integration. Why: Provides scalable, globally distributed storage with excellent developer experience.
@@ -171,6 +184,7 @@ Contributors write domain logic (aggregates, commands, events, projections) **in
     │       ├── {Aggregate}Aggregate.cs   # Aggregate state record
     │       ├── Commands/                  # Command records
     │       ├── Events/                    # Event records
+    │       ├── Effects/                   # EventEffectBase implementations
     │       ├── Handlers/                  # CommandHandlerBase implementations
     │       └── Reducers/                  # EventReducerBase implementations
     └── Projections/
