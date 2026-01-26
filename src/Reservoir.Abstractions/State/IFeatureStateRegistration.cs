@@ -28,6 +28,14 @@ public interface IFeatureStateRegistration
     object InitialState { get; }
 
     /// <summary>
+    ///     Gets the root action effect for this feature state, or null if no effects are registered.
+    /// </summary>
+    /// <remarks>
+    ///     When present, this is an <see cref="IRootActionEffect{TState}" /> instance boxed as object.
+    /// </remarks>
+    object? RootActionEffect { get; }
+
+    /// <summary>
     ///     Gets the root reducer for this feature state, or null if no reducers are registered.
     /// </summary>
     /// <remarks>

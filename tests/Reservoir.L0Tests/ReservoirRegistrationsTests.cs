@@ -31,18 +31,19 @@ public sealed class ReservoirRegistrationsTests
     /// <summary>
     ///     Test action effect implementation.
     /// </summary>
-    private sealed class TestActionEffect : IActionEffect
+    private sealed class TestActionEffect : IActionEffect<TestFeatureState>
     {
         /// <inheritdoc />
         public bool CanHandle(
             IAction action
         ) =>
-            false;
+            action is TestAction;
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators
         /// <inheritdoc />
         public async IAsyncEnumerable<IAction> HandleAsync(
             IAction action,
+            TestFeatureState currentState,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -95,19 +96,19 @@ public sealed class ReservoirRegistrationsTests
     }
 
     /// <summary>
-    ///     AddActionEffect should register action effect in DI.
+    ///     AddActionEffect should register feature-scoped action effect in DI.
     /// </summary>
     [Fact]
     [AllureFeature("Service Registration")]
-    public void AddActionEffectRegistersActionEffectInDI()
+    public void AddActionEffectRegistersFeatureScopedEffectInDI()
     {
         // Arrange
         ServiceCollection services = [];
 
         // Act
-        services.AddActionEffect<TestActionEffect>();
+        services.AddActionEffect<TestFeatureState, TestActionEffect>();
         using ServiceProvider provider = services.BuildServiceProvider();
-        IEnumerable<IActionEffect> effects = provider.GetServices<IActionEffect>();
+        IEnumerable<IActionEffect<TestFeatureState>> effects = provider.GetServices<IActionEffect<TestFeatureState>>();
 
         // Assert
         Assert.Single(effects);
