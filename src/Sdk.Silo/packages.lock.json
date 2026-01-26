@@ -678,18 +678,18 @@
           "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.0, )",
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
-        }
-      },
       "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
       "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
+      },
+      "Mississippi.Inlet.Server.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[10.0.2, )"
+        }
       },
       "Mississippi.Inlet.Silo": {
         "type": "Project",
@@ -698,12 +698,17 @@
           "Microsoft.Orleans.Streaming": "[10.0.0, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Silo.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Reservoir.Abstractions": {
-        "type": "Project"
+      "Mississippi.Inlet.Silo.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+        }
       },
       "Azure.Storage.Blobs": {
         "type": "CentralTransitive",
