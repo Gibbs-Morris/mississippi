@@ -45,6 +45,7 @@ public sealed class ProjectionModel
             throw new ArgumentNullException(nameof(projectionPath));
         }
 
+        Symbol = typeSymbol;
         TypeName = typeSymbol.Name;
         FullTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         Namespace = TypeAnalyzer.GetFullNamespace(typeSymbol);
@@ -122,6 +123,11 @@ public sealed class ProjectionModel
     ///     Gets the properties of the projection.
     /// </summary>
     public ImmutableArray<PropertyModel> Properties { get; }
+
+    /// <summary>
+    ///     Gets the type symbol representing the projection.
+    /// </summary>
+    public INamedTypeSymbol Symbol { get; }
 
     /// <summary>
     ///     Gets the type name (without namespace).

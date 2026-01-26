@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
+using Mississippi.Inlet.Generators.Core.Diagnostics;
 using Mississippi.Inlet.Generators.Core.Emit;
 using Mississippi.Inlet.Generators.Core.Naming;
 
@@ -75,7 +76,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
     /// </summary>
     private static List<CommandModel> FindCommandsForAggregate(
         INamespaceSymbol aggregateNamespace,
-        INamedTypeSymbol commandAttrSymbol
+        INamedTypeSymbol commandAttrSymbol,
+        AuthorizationInfo aggregateDefaultAuth
     )
     {
         List<CommandModel> commands = [];
@@ -110,10 +112,97 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
                                     .FirstOrDefault(kvp => kvp.Key == "HttpMethod")
                                     .Value.Value?.ToString() ??
                                 "POST";
-            commands.Add(new(typeSymbol, route!, httpMethod));
+
+            // Extract authorization properties
+            AuthorizationInfo auth = ExtractCommandAuthorization(attr, aggregateDefaultAuth);
+            commands.Add(new(typeSymbol, route!, httpMethod, auth));
         }
 
         return commands;
+    }
+
+    /// <summary>
+    ///     Extracts authorization configuration from a command attribute,
+    ///     falling back to aggregate defaults where not specified.
+    /// </summary>
+    private static AuthorizationInfo ExtractCommandAuthorization(
+        AttributeData commandAttr,
+        AuthorizationInfo aggregateDefaultAuth
+    )
+    {
+        bool allowAnonymous = TypeAnalyzer.GetBooleanProperty(commandAttr, "AllowAnonymous", false);
+
+        // If AllowAnonymous is set, that takes precedence
+        if (allowAnonymous)
+        {
+            return new AuthorizationInfo(true, false, null, null);
+        }
+
+        // Get command-level authorization (overrides aggregate defaults)
+        string? authorizeRoles = TypeAnalyzer.GetStringProperty(commandAttr, "AuthorizeRoles");
+        string? authorizePolicy = TypeAnalyzer.GetStringProperty(commandAttr, "AuthorizePolicy");
+        bool? requiresAuth = TypeAnalyzer.GetNullableBooleanProperty(commandAttr, "RequiresAuthentication");
+
+        // Fall back to aggregate defaults if not set at command level
+        if (string.IsNullOrEmpty(authorizeRoles))
+        {
+            authorizeRoles = aggregateDefaultAuth.AuthorizeRoles;
+        }
+
+        if (string.IsNullOrEmpty(authorizePolicy))
+        {
+            authorizePolicy = aggregateDefaultAuth.AuthorizePolicy;
+        }
+
+        requiresAuth ??= aggregateDefaultAuth.RequiresAuthentication;
+
+        return new AuthorizationInfo(false, requiresAuth == true, authorizeRoles, authorizePolicy);
+    }
+
+    /// <summary>
+    ///     Extracts default authorization configuration from an aggregate attribute.
+    /// </summary>
+    private static AuthorizationInfo ExtractAggregateDefaultAuthorization(
+        AttributeData aggregateAttr
+    )
+    {
+        string? defaultRoles = TypeAnalyzer.GetStringProperty(aggregateAttr, "DefaultAuthorizeRoles");
+        string? defaultPolicy = TypeAnalyzer.GetStringProperty(aggregateAttr, "DefaultAuthorizePolicy");
+        bool defaultRequiresAuth = TypeAnalyzer.GetBooleanProperty(aggregateAttr, "DefaultRequiresAuthentication", false);
+
+        return new AuthorizationInfo(false, defaultRequiresAuth, defaultRoles, defaultPolicy);
+    }
+
+    /// <summary>
+    ///     Emits authorization attribute(s) based on the authorization configuration.
+    /// </summary>
+    private static void EmitAuthorizationAttribute(
+        SourceBuilder sb,
+        AuthorizationInfo auth
+    )
+    {
+        if (auth.AllowAnonymous)
+        {
+            sb.AppendLine("[AllowAnonymous]");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(auth.AuthorizePolicy))
+        {
+            sb.AppendLine($"[Authorize(Policy = \"{auth.AuthorizePolicy}\")]");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(auth.AuthorizeRoles))
+        {
+            sb.AppendLine($"[Authorize(Roles = \"{auth.AuthorizeRoles}\")]");
+            return;
+        }
+
+        if (auth.RequiresAuthentication)
+        {
+            sb.AppendLine("[Authorize]");
+        }
     }
 
     /// <summary>
@@ -139,6 +228,10 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
         sb.AppendLine("/// <returns>The operation result.</returns>");
         sb.AppendLine($"[{httpAttribute}(\"{command.Route}\")]");
+
+        // Emit authorization attributes
+        EmitAuthorizationAttribute(sb, command.Authorization);
+
         sb.AppendLine($"public Task<ActionResult<OperationResult>> {methodName}(");
         sb.IncreaseIndent();
         sb.AppendLine("[FromRoute] string entityId,");
@@ -210,6 +303,14 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         sb.AppendUsing("System");
         sb.AppendUsing("System.Threading");
         sb.AppendUsing("System.Threading.Tasks");
+
+        // Add authorization using if any command has authorization
+        bool hasAnyAuth = aggregate.Commands.Any(c => c.Authorization.HasAuthorization);
+        if (hasAnyAuth)
+        {
+            sb.AppendUsing("Microsoft.AspNetCore.Authorization");
+        }
+
         sb.AppendUsing("Microsoft.AspNetCore.Mvc");
         sb.AppendUsing("Microsoft.Extensions.Logging");
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
@@ -381,13 +482,16 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
             attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "FeatureKey").Value.Value?.ToString() ??
             NamingConventions.ToCamelCase(baseName);
 
+        // Extract aggregate-level default authorization
+        AuthorizationInfo aggregateDefaultAuth = ExtractAggregateDefaultAuthorization(attr);
+
         // Build aggregate model
         AggregateModel model = new(typeSymbol, routePrefix!, featureKey);
 
         // Find commands in the Commands sub-namespace
         INamespaceSymbol? containingNs = typeSymbol.ContainingNamespace;
         List<CommandModel> commands = containingNs is not null
-            ? FindCommandsForAggregate(containingNs, commandAttrSymbol)
+            ? FindCommandsForAggregate(containingNs, commandAttrSymbol, aggregateDefaultAuth)
             : [];
 
         // Only generate controller if there are commands
@@ -414,41 +518,106 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
-        // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
-        });
+        // Use the compilation provider to scan referenced assemblies and extract security settings
+        IncrementalValueProvider<(List<AggregateInfo> Aggregates, SecurityEnforcementSettings? SecuritySettings)>
+            aggregatesWithSecurityProvider = compilationAndOptions.Select((
+                source,
+                _
+            ) =>
+            {
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                List<AggregateInfo> aggregates = GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
+                SecurityEnforcementSettings? securitySettings =
+                    AuthorizationValidator.GetSecurityEnforcementSettings(source.Compilation);
+                return (aggregates, securitySettings);
+            });
 
         // Register source output
         context.RegisterSourceOutput(
-            aggregatesProvider,
+            aggregatesWithSecurityProvider,
             static (
                 spc,
-                aggregates
+                data
             ) =>
             {
-                foreach (AggregateInfo aggregate in aggregates)
+                foreach (AggregateInfo aggregate in data.Aggregates)
                 {
+                    // Validate authorization and report diagnostics
+                    ValidateAndReportDiagnostics(spc, aggregate, data.SecuritySettings);
+
+                    // Generate the controller
                     string controllerSource = GenerateController(aggregate);
                     spc.AddSource(
                         $"{aggregate.Model.ControllerTypeName}.g.cs",
                         SourceText.From(controllerSource, Encoding.UTF8));
                 }
             });
+    }
+
+    /// <summary>
+    ///     Validates command authorization and reports diagnostics.
+    /// </summary>
+    private static void ValidateAndReportDiagnostics(
+        SourceProductionContext context,
+        AggregateInfo aggregate,
+        SecurityEnforcementSettings? securitySettings
+    )
+    {
+        if (securitySettings is null)
+        {
+            return;
+        }
+
+        foreach (CommandModel command in aggregate.Commands)
+        {
+            // Skip if this type is exempt
+            if (securitySettings.IsTypeExempt(command.FullTypeName))
+            {
+                continue;
+            }
+
+            AuthorizationInfo auth = command.Authorization;
+            bool hasAuthorization = auth.HasAuthorization;
+
+            if (auth.AllowAnonymous)
+            {
+                if (securitySettings.TreatAnonymousAsError)
+                {
+                    context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            GeneratorDiagnostics.UnsecuredCommandEndpoint,
+                            command.Symbol.Locations.FirstOrDefault(),
+                            command.TypeName,
+                            aggregate.Model.TypeName));
+                }
+                else
+                {
+                    context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            GeneratorDiagnostics.AnonymousEndpointAllowed,
+                            command.Symbol.Locations.FirstOrDefault(),
+                            command.TypeName));
+                }
+            }
+            else if (!hasAuthorization)
+            {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        GeneratorDiagnostics.UnsecuredCommandEndpoint,
+                        command.Symbol.Locations.FirstOrDefault(),
+                        command.TypeName,
+                        aggregate.Model.TypeName));
+            }
+        }
     }
 
     /// <summary>
