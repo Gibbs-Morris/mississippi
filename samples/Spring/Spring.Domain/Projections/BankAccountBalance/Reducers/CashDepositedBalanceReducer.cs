@@ -8,15 +8,15 @@ using Spring.Domain.Aggregates.BankAccount.Events;
 namespace Spring.Domain.Projections.BankAccountBalance.Reducers;
 
 /// <summary>
-///     Reduces the <see cref="FundsDeposited" /> event to update
+///     Reduces the <see cref="CashDeposited" /> event to update
 ///     the balance in <see cref="BankAccountBalanceProjection" />.
 /// </summary>
-internal sealed class FundsDepositedBalanceReducer : EventReducerBase<FundsDeposited, BankAccountBalanceProjection>
+internal sealed class CashDepositedBalanceReducer : EventReducerBase<CashDeposited, BankAccountBalanceProjection>
 {
     /// <inheritdoc />
     protected override BankAccountBalanceProjection ReduceCore(
         BankAccountBalanceProjection state,
-        FundsDeposited eventData
+        CashDeposited eventData
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);

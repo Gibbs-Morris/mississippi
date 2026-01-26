@@ -6,12 +6,12 @@ using Orleans;
 namespace Spring.Domain.Aggregates.BankAccount.Commands;
 
 /// <summary>
-///     Command to withdraw funds from a bank account.
+///     Command to withdraw cash from a bank account to an external destination.
 /// </summary>
-[GenerateCommand(Route = "withdraw")]
+[GenerateCommand(Route = "withdraw-cash")]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Commands.WithdrawFunds")]
-public sealed record WithdrawFunds
+[Alias("Spring.Domain.BankAccount.Commands.WithdrawCash")]
+public sealed record WithdrawCash
 {
     /// <summary>
     ///     Gets the amount to withdraw.

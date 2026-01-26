@@ -9,22 +9,22 @@ using Spring.Domain.Aggregates.BankAccount.Events;
 namespace Spring.Domain.Aggregates.BankAccount.Handlers;
 
 /// <summary>
-///     Command handler for withdrawing funds from a bank account.
+///     Command handler for withdrawing cash from a bank account.
 /// </summary>
-internal sealed class WithdrawFundsHandler : CommandHandlerBase<WithdrawFunds, BankAccountAggregate>
+internal sealed class WithdrawCashHandler : CommandHandlerBase<WithdrawCash, BankAccountAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
-        WithdrawFunds command,
+        WithdrawCash command,
         BankAccountAggregate? state
     )
     {
-        // Account must be open to withdraw funds
+        // Account must be open to withdraw cash
         if (state?.IsOpen != true)
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidState,
-                "Account must be open before withdrawing funds.");
+                "Account must be open before withdrawing cash.");
         }
 
         // Validate withdrawal amount is positive
@@ -46,7 +46,7 @@ internal sealed class WithdrawFundsHandler : CommandHandlerBase<WithdrawFunds, B
         return OperationResult.Ok<IReadOnlyList<object>>(
             new object[]
             {
-                new FundsWithdrawn
+                new CashWithdrawn
                 {
                     Amount = command.Amount,
                 },

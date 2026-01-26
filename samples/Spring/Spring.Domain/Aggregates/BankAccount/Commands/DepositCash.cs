@@ -6,12 +6,12 @@ using Orleans;
 namespace Spring.Domain.Aggregates.BankAccount.Commands;
 
 /// <summary>
-///     Command to deposit funds into a bank account.
+///     Command to deposit cash into a bank account from an external source.
 /// </summary>
-[GenerateCommand(Route = "deposit")]
+[GenerateCommand(Route = "deposit-cash")]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Commands.DepositFunds")]
-public sealed record DepositFunds
+[Alias("Spring.Domain.BankAccount.Commands.DepositCash")]
+public sealed record DepositCash
 {
     /// <summary>
     ///     Gets the amount to deposit.
