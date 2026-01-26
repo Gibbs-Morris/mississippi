@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
+using Mississippi.Inlet.Client;
 using Mississippi.Reservoir;
 
 

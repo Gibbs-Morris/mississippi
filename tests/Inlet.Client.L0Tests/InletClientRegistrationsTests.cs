@@ -37,7 +37,7 @@ public sealed class InletClientRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        services.AddInlet();
+        services.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IInletStore store = provider.GetRequiredService<IInletStore>();
 
@@ -56,7 +56,7 @@ public sealed class InletClientRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        services.AddInlet();
+        services.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionCache cache1 = provider.GetRequiredService<IProjectionCache>();
         IProjectionCache cache2 = provider.GetRequiredService<IProjectionCache>();
@@ -77,7 +77,7 @@ public sealed class InletClientRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        services.AddInlet();
+        services.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionUpdateNotifier notifier = provider.GetRequiredService<IProjectionUpdateNotifier>();
 
@@ -96,7 +96,7 @@ public sealed class InletClientRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        services.AddInlet();
+        services.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IStore store1 = provider.GetRequiredService<IStore>();
         IStore store2 = provider.GetRequiredService<IStore>();
@@ -116,7 +116,7 @@ public sealed class InletClientRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        services.AddInlet();
+        services.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IStore store = provider.GetRequiredService<IStore>();
 
@@ -135,7 +135,7 @@ public sealed class InletClientRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        services.AddInlet();
+        services.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionRegistry registry = provider.GetRequiredService<IProjectionRegistry>();
 
@@ -155,7 +155,7 @@ public sealed class InletClientRegistrationsTests
         IServiceCollection? services = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddInlet());
+        Assert.Throws<ArgumentNullException>(() => services!.AddInletClient());
     }
 
     /// <summary>
@@ -169,7 +169,7 @@ public sealed class InletClientRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        services.AddInlet();
+        services.AddInletClient();
         services.AddProjectionPath<TestProjection>("cascade/test");
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IConfigureProjectionRegistry> configs = provider.GetServices<IConfigureProjectionRegistry>();
@@ -215,7 +215,7 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddInlet();
+        services.AddInletClient();
         services.AddProjectionPath<TestProjection>("cascade/test");
         using ServiceProvider provider = services.BuildServiceProvider();
 

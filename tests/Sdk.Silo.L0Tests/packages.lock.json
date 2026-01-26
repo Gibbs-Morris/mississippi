@@ -843,7 +843,10 @@
       "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Inlet.Orleans": {
+      "Mississippi.Inlet.Projection.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Inlet.Silo": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.0, )",
@@ -853,9 +856,6 @@
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
         }
-      },
-      "Mississippi.Inlet.Projection.Abstractions": {
-        "type": "Project"
       },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
@@ -874,7 +874,7 @@
           "Mississippi.EventSourcing.Snapshots.Cosmos": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections": "[1.0.0, )",
           "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Orleans": "[1.0.0, )"
+          "Mississippi.Inlet.Silo": "[1.0.0, )"
         }
       },
       "Azure.Storage.Blobs": {

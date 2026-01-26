@@ -236,7 +236,10 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Orleans": {
+      "Mississippi.Inlet.Projection.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Inlet.Silo": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.0, )",
@@ -246,9 +249,6 @@
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
         }
-      },
-      "Mississippi.Inlet.Projection.Abstractions": {
-        "type": "Project"
       },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"

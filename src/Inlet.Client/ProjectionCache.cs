@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Abstractions.State;
-using Mississippi.Inlet.State;
+using Mississippi.Inlet.Client.State;
 
 
 namespace Mississippi.Inlet.Client;
