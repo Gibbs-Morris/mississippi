@@ -27,8 +27,11 @@ public sealed class EventEffectMetricsTests : IDisposable
     /// </summary>
     public EventEffectMetricsTests()
     {
-        listener = new MeterListener();
-        listener.InstrumentPublished = (instrument, meterListener) =>
+        listener = new();
+        listener.InstrumentPublished = (
+            instrument,
+            meterListener
+        ) =>
         {
             if (instrument.Meter.Name == EventEffectMetrics.MeterName)
             {
@@ -42,6 +45,17 @@ public sealed class EventEffectMetricsTests : IDisposable
 
     /// <inheritdoc />
     public void Dispose() => listener.Dispose();
+
+    private void OnMeasurement<T>(
+        Instrument instrument,
+        T measurement,
+        ReadOnlySpan<KeyValuePair<string, object?>> tags,
+        object? state
+    )
+        where T : struct
+    {
+        measurements.Add((instrument.Name, measurement, tags.ToArray()));
+    }
 
     /// <summary>
     ///     RecordEffectError records error metric with correct tags.
@@ -72,7 +86,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     public void RecordEffectExecutionRecordsCountAndDuration()
     {
         // Act
-        EventEffectMetrics.RecordEffectExecution("TestAggregate", "TestEffect", "TestEvent", 42.5, success: true);
+        EventEffectMetrics.RecordEffectExecution("TestAggregate", "TestEffect", "TestEvent", 42.5, true);
         listener.RecordObservableInstruments();
 
         // Assert - count metric
@@ -97,7 +111,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     public void RecordEffectExecutionRecordsFailureResult()
     {
         // Act
-        EventEffectMetrics.RecordEffectExecution("TestAggregate", "TestEffect", "TestEvent", 10.0, success: false);
+        EventEffectMetrics.RecordEffectExecution("TestAggregate", "TestEffect", "TestEvent", 10.0, false);
         listener.RecordObservableInstruments();
 
         // Assert
@@ -164,16 +178,5 @@ public sealed class EventEffectMetricsTests : IDisposable
         Assert.NotEqual(default, measurement);
         Assert.Equal(1L, measurement.Value);
         Assert.Contains(measurement.Tags, t => (t.Key == "effect.type") && (t.Value?.ToString() == "SlowEffect"));
-    }
-
-    private void OnMeasurement<T>(
-        Instrument instrument,
-        T measurement,
-        ReadOnlySpan<KeyValuePair<string, object?>> tags,
-        object? state
-    )
-        where T : struct
-    {
-        measurements.Add((instrument.Name, measurement, tags.ToArray()));
     }
 }

@@ -98,6 +98,115 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
     }
 
     /// <summary>
+    ///     Extracts the TEvent type argument from an effect implementing EventEffectBase{TEvent, TAggregate}.
+    /// </summary>
+    private static Type? ExtractEventType(
+        Type effectType
+    )
+    {
+        // Walk up the inheritance chain looking for EventEffectBase<TEvent, TAggregate>
+        // or SimpleEventEffectBase<TEvent, TAggregate>
+        Type? current = effectType.BaseType;
+        while (current is not null)
+        {
+            Type? eventType = TryExtractEventTypeFromBase(current);
+            if (eventType is not null)
+            {
+                return eventType;
+            }
+
+            current = current.BaseType;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Determines if the generic type definition is EventEffectBase or SimpleEventEffectBase.
+    /// </summary>
+    private static bool IsEventEffectBaseType(
+        Type genericDef
+    )
+    {
+        const string expectedNamespace = "Mississippi.EventSourcing.Aggregates.Abstractions";
+        return (genericDef.Namespace == expectedNamespace) &&
+               genericDef.Name is "EventEffectBase`2" or "SimpleEventEffectBase`2";
+    }
+
+    /// <summary>
+    ///     Attempts to extract the TEvent type from a base type if it matches EventEffectBase or SimpleEventEffectBase.
+    /// </summary>
+    private static Type? TryExtractEventTypeFromBase(
+        Type baseType
+    )
+    {
+        if (!baseType.IsGenericType)
+        {
+            return null;
+        }
+
+        Type genericDef = baseType.GetGenericTypeDefinition();
+        if (!IsEventEffectBaseType(genericDef))
+        {
+            return null;
+        }
+
+        Type[] typeArgs = baseType.GetGenericArguments();
+        if ((typeArgs.Length == 2) && (typeArgs[1] == AggregateType))
+        {
+            return typeArgs[0];
+        }
+
+        return null;
+    }
+
+    /// <inheritdoc />
+    public IAsyncEnumerable<object> DispatchAsync(
+        object eventData,
+        TAggregate currentState,
+        CancellationToken cancellationToken
+    )
+    {
+        ArgumentNullException.ThrowIfNull(eventData);
+        return DispatchCoreAsync(eventData, currentState, cancellationToken);
+    }
+
+    private async IAsyncEnumerable<object> DispatchCoreAsync(
+        object eventData,
+        TAggregate currentState,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        Type eventRuntimeType = eventData.GetType();
+        string eventTypeName = eventRuntimeType.Name;
+        string aggregateTypeName = AggregateType.Name;
+        Logger.RootEventEffectDispatching(aggregateTypeName, eventTypeName);
+
+        // Fast path: look up effects registered for this exact event type
+        if (effectIndex.TryGetValue(eventRuntimeType, out ImmutableArray<IEventEffect<TAggregate>> indexed))
+        {
+            await foreach (object yieldedEvent in DispatchToEffectsAsync(
+                               indexed,
+                               eventData,
+                               currentState,
+                               cancellationToken))
+            {
+                yield return yieldedEvent;
+            }
+        }
+
+        // Slow path: iterate fallback effects whose event type could not be determined at construction
+        await foreach (object yieldedEvent in DispatchToEffectsAsync(
+                           fallbackEffects,
+                           eventData,
+                           currentState,
+                           cancellationToken))
+        {
+            yield return yieldedEvent;
+        }
+    }
+
+    /// <summary>
     ///     Dispatches an event to a collection of effects.
     /// </summary>
     private async IAsyncEnumerable<object> DispatchToEffectsAsync(
@@ -166,69 +275,6 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
     }
 
     /// <summary>
-    ///     Extracts the TEvent type argument from an effect implementing EventEffectBase{TEvent, TAggregate}.
-    /// </summary>
-    private static Type? ExtractEventType(
-        Type effectType
-    )
-    {
-        // Walk up the inheritance chain looking for EventEffectBase<TEvent, TAggregate>
-        // or SimpleEventEffectBase<TEvent, TAggregate>
-        Type? current = effectType.BaseType;
-        while (current is not null)
-        {
-            Type? eventType = TryExtractEventTypeFromBase(current);
-            if (eventType is not null)
-            {
-                return eventType;
-            }
-
-            current = current.BaseType;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    ///     Determines if the generic type definition is EventEffectBase or SimpleEventEffectBase.
-    /// </summary>
-    private static bool IsEventEffectBaseType(
-        Type genericDef
-    )
-    {
-        const string expectedNamespace = "Mississippi.EventSourcing.Aggregates.Abstractions";
-        return (genericDef.Namespace == expectedNamespace) &&
-               genericDef.Name is "EventEffectBase`2" or "SimpleEventEffectBase`2";
-    }
-
-    /// <summary>
-    ///     Attempts to extract the TEvent type from a base type if it matches EventEffectBase or SimpleEventEffectBase.
-    /// </summary>
-    private static Type? TryExtractEventTypeFromBase(
-        Type baseType
-    )
-    {
-        if (!baseType.IsGenericType)
-        {
-            return null;
-        }
-
-        Type genericDef = baseType.GetGenericTypeDefinition();
-        if (!IsEventEffectBaseType(genericDef))
-        {
-            return null;
-        }
-
-        Type[] typeArgs = baseType.GetGenericArguments();
-        if ((typeArgs.Length == 2) && (typeArgs[1] == AggregateType))
-        {
-            return typeArgs[0];
-        }
-
-        return null;
-    }
-
-    /// <summary>
     ///     Attempts to move the enumerator to the next element, swallowing exceptions.
     /// </summary>
     [SuppressMessage(
@@ -257,52 +303,6 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
             Logger.EventEffectFailed(effectTypeName, eventTypeName, aggregateTypeName, ex);
             EventEffectMetrics.RecordEffectError(aggregateTypeName, effectTypeName, eventTypeName);
             return false;
-        }
-    }
-
-    /// <inheritdoc />
-    public IAsyncEnumerable<object> DispatchAsync(
-        object eventData,
-        TAggregate currentState,
-        CancellationToken cancellationToken
-    )
-    {
-        ArgumentNullException.ThrowIfNull(eventData);
-        return DispatchCoreAsync(eventData, currentState, cancellationToken);
-    }
-
-    private async IAsyncEnumerable<object> DispatchCoreAsync(
-        object eventData,
-        TAggregate currentState,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    )
-    {
-        Type eventRuntimeType = eventData.GetType();
-        string eventTypeName = eventRuntimeType.Name;
-        string aggregateTypeName = AggregateType.Name;
-        Logger.RootEventEffectDispatching(aggregateTypeName, eventTypeName);
-
-        // Fast path: look up effects registered for this exact event type
-        if (effectIndex.TryGetValue(eventRuntimeType, out ImmutableArray<IEventEffect<TAggregate>> indexed))
-        {
-            await foreach (object yieldedEvent in DispatchToEffectsAsync(
-                               indexed,
-                               eventData,
-                               currentState,
-                               cancellationToken))
-            {
-                yield return yieldedEvent;
-            }
-        }
-
-        // Slow path: iterate fallback effects whose event type could not be determined at construction
-        await foreach (object yieldedEvent in DispatchToEffectsAsync(
-                           fallbackEffects,
-                           eventData,
-                           currentState,
-                           cancellationToken))
-        {
-            yield return yieldedEvent;
         }
     }
 }

@@ -125,7 +125,6 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             .GroupBy(prop => prop.ElementDtoTypeName)
             .Select(g => g.First())
             .ToList();
-
         foreach (PropertyModel prop in nestedTypeProperties)
         {
             generatedNestedTypes.Add(prop.ElementDtoTypeName!);
@@ -245,8 +244,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
         // Check for enum properties that need DTO generation
-        IEnumerable<INamedTypeSymbol> enumTypes = properties
-            .Select(p => p.Type)
+        IEnumerable<INamedTypeSymbol> enumTypes = properties.Select(p => p.Type)
             .Select(UnwrapNullable)
             .OfType<INamedTypeSymbol>()
             .Where(t => t.TypeKind == TypeKind.Enum);

@@ -120,22 +120,6 @@ internal static partial class EventEffectLoggerExtensions
     );
 
     /// <summary>
-    ///     Logs when the root event effect dispatcher is dispatching an event.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="aggregateType">The aggregate type name.</param>
-    /// <param name="eventType">The event type name.</param>
-    [LoggerMessage(
-        106,
-        LogLevel.Debug,
-        "RootEventEffect dispatching event {EventType} for aggregate type {AggregateType}")]
-    public static partial void RootEventEffectDispatching(
-        this ILogger logger,
-        string aggregateType,
-        string eventType
-    );
-
-    /// <summary>
     ///     Logs when an event effect fails during enumeration.
     /// </summary>
     /// <param name="logger">The logger.</param>
@@ -154,5 +138,21 @@ internal static partial class EventEffectLoggerExtensions
         string eventType,
         string aggregateType,
         Exception exception
+    );
+
+    /// <summary>
+    ///     Logs when the root event effect dispatcher is dispatching an event.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateType">The aggregate type name.</param>
+    /// <param name="eventType">The event type name.</param>
+    [LoggerMessage(
+        106,
+        LogLevel.Debug,
+        "RootEventEffect dispatching event {EventType} for aggregate type {AggregateType}")]
+    public static partial void RootEventEffectDispatching(
+        this ILogger logger,
+        string aggregateType,
+        string eventType
     );
 }

@@ -123,7 +123,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .GroupBy(prop => prop.ElementDtoTypeName)
             .Select(g => g.First())
             .ToList();
-
         foreach (PropertyModel prop in nestedTypeProperties)
         {
             INamedTypeSymbol elementType = (INamedTypeSymbol)prop.ElementTypeSymbol!;
@@ -148,11 +147,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                     SourceText.From(nestedMapperSource, Encoding.UTF8));
 
                 // Generate enum DTOs for enum properties within the nested type
-                GenerateEnumDtosForNestedType(
-                    context,
-                    elementType,
-                    projection.OutputNamespace,
-                    generatedNestedTypes);
+                GenerateEnumDtosForNestedType(context, elementType, projection.OutputNamespace, generatedNestedTypes);
             }
         }
 
@@ -460,7 +455,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .GroupBy(prop => prop.ElementSourceTypeName)
             .Select(g => g.First())
             .ToList();
-
         foreach (PropertyModel prop in nestedMapperProperties)
         {
             string nestedMapperTypeName = $"{prop.ElementDtoTypeName}Mapper";
