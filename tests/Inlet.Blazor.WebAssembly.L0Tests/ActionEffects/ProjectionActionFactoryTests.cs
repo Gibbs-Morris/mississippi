@@ -2,8 +2,8 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Abstractions.Actions;
-using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
+using Mississippi.Inlet.Client.Abstractions.Actions;
+using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 

@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Client.Abstractions;
+using Mississippi.Inlet.Silo.Abstractions;
 using Mississippi.Inlet.Silo.Grains;
 using Mississippi.Inlet.Silo.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;

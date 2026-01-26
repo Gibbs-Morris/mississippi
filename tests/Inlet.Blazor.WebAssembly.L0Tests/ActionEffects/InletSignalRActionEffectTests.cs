@@ -5,11 +5,12 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Abstractions.Actions;
-using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
-using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
+using Mississippi.Inlet.Client.Abstractions;
+using Mississippi.Inlet.Client.Abstractions.Actions;
+using Mississippi.Inlet.Client.ActionEffects;
+using Mississippi.Inlet.Client.SignalRConnection;
 using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Inlet.Server.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 using Moq;

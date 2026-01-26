@@ -5,7 +5,8 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Client.Abstractions;
+using Mississippi.Inlet.Silo.Abstractions;
 
 
 namespace Mississippi.Inlet.Silo.L0Tests;

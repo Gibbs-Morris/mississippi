@@ -1,6 +1,6 @@
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
+using Mississippi.Inlet.Client.ActionEffects;
 
 
 namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.ActionEffects;

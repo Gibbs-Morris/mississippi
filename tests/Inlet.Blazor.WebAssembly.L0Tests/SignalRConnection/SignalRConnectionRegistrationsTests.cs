@@ -4,7 +4,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
+using Mississippi.Inlet.Client.SignalRConnection;
 using Mississippi.Reservoir.Abstractions;
 
 

@@ -2,7 +2,7 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
+using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Projection.Abstractions;
 
 

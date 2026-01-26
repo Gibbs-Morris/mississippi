@@ -1,6 +1,6 @@
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
+using Mississippi.Inlet.Client.SignalRConnection;
 
 
 namespace Mississippi.Inlet.Blazor.WebAssembly.L0Tests.SignalRConnection;

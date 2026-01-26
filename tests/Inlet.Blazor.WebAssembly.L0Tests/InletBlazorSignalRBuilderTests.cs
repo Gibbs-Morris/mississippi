@@ -9,8 +9,8 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.State;
-using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
+using Mississippi.Inlet.Client.Abstractions.State;
+using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Projection.Abstractions;
 using Mississippi.Reservoir.Abstractions;
 

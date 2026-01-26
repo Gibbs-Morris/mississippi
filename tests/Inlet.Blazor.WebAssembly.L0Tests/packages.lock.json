@@ -163,6 +163,11 @@
         "resolved": "10.0.0",
         "contentHash": "RFYJR7APio/BiqdQunRq6DB+nDB6nc2qhHr77mlvZ0q0BT8PubMXN7XicmfzCbrDE/dzhBnUKBRXLTcqUiZDGg=="
       },
+      "Microsoft.JSInterop.WebAssembly": {
+        "type": "Transitive",
+        "resolved": "10.0.2",
+        "contentHash": "XeNFL2ozbjbPe32be7OVC3peMbS+vM1hu6Cp0RZfF1HepDRTmohQ+p3LF7BVhEKETxCh1/dd5sUwYuB7I/iApw=="
+      },
       "Microsoft.Orleans.Analyzers": {
         "type": "Transitive",
         "resolved": "10.0.0",
@@ -363,28 +368,23 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Blazor.WebAssembly": {
+      "Mississippi.Inlet.Client": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.2, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.2, )",
-          "Mississippi.Inlet.Blazor.WebAssembly.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Client": "[1.0.0, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Client.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir": "[1.0.0, )",
           "Mississippi.Reservoir.Blazor": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Blazor.WebAssembly.Abstractions": {
+      "Mississippi.Inlet.Client.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Inlet.Client": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Projection.Abstractions": {
@@ -403,6 +403,15 @@
         "type": "Project",
         "dependencies": {
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Microsoft.AspNetCore.Components.WebAssembly": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "xJ0Qi75jnR75IhZhEwIdH04WH03wbJEAbilFND4SKYH0xgG/4oNAarb4Duvb0/5ko6/qcn4rCmzRuNJ1hF4dRw==",
+        "dependencies": {
+          "Microsoft.JSInterop.WebAssembly": "10.0.2"
         }
       },
       "Microsoft.AspNetCore.SignalR.Client": {

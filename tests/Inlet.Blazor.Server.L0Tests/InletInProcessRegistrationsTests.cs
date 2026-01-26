@@ -4,7 +4,7 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Client.Abstractions;
 
 
 namespace Mississippi.Inlet.Blazor.Server.L0Tests;

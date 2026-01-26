@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Abstractions.State;
+using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
