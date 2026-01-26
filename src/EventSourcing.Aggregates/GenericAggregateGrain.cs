@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -66,6 +67,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ///     Initializes a new instance of the <see cref="GenericAggregateGrain{TAggregate}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
+    /// <param name="grainFactory">The Orleans grain factory for resolving grains.</param>
     /// <param name="brookGrainFactory">Factory for resolving brook grains.</param>
     /// <param name="brookEventConverter">Converter for domain events to/from brook events.</param>
     /// <param name="rootCommandHandler">The root command handler for processing commands.</param>
@@ -73,12 +75,16 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="rootReducer">The root event reducer for obtaining the reducers hash.</param>
     /// <param name="effectOptions">Options controlling aggregate effect processing.</param>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="fireAndForgetEffectRegistrations">
+    ///     Registrations for fire-and-forget effects that run in separate worker grains.
+    /// </param>
     /// <param name="rootEventEffect">
     ///     Optional root event effect dispatcher for running side effects after events are persisted.
     ///     When null, no effects are executed.
     /// </param>
     public GenericAggregateGrain(
         IGrainContext grainContext,
+        IGrainFactory grainFactory,
         IBrookGrainFactory brookGrainFactory,
         IBrookEventConverter brookEventConverter,
         IRootCommandHandler<TAggregate> rootCommandHandler,
@@ -86,10 +92,12 @@ internal sealed class GenericAggregateGrain<TAggregate>
         IRootReducer<TAggregate> rootReducer,
         IOptions<AggregateEffectOptions> effectOptions,
         ILogger<GenericAggregateGrain<TAggregate>> logger,
+        IEnumerable<IFireAndForgetEffectRegistration<TAggregate>> fireAndForgetEffectRegistrations,
         IRootEventEffect<TAggregate>? rootEventEffect = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
+        GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
         BrookGrainFactory = brookGrainFactory ?? throw new ArgumentNullException(nameof(brookGrainFactory));
         BrookEventConverter = brookEventConverter ?? throw new ArgumentNullException(nameof(brookEventConverter));
         RootCommandHandler = rootCommandHandler ?? throw new ArgumentNullException(nameof(rootCommandHandler));
@@ -97,6 +105,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         RootReducer = rootReducer ?? throw new ArgumentNullException(nameof(rootReducer));
         EffectOptions = effectOptions?.Value ?? throw new ArgumentNullException(nameof(effectOptions));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        FireAndForgetEffectRegistrations = fireAndForgetEffectRegistrations?.ToArray() ?? [];
         RootEventEffect = rootEventEffect;
     }
 
@@ -115,6 +124,10 @@ internal sealed class GenericAggregateGrain<TAggregate>
     private IBrookGrainFactory BrookGrainFactory { get; }
 
     private AggregateEffectOptions EffectOptions { get; }
+
+    private IFireAndForgetEffectRegistration<TAggregate>[] FireAndForgetEffectRegistrations { get; }
+
+    private IGrainFactory GrainFactory { get; }
 
     private ILogger<GenericAggregateGrain<TAggregate>> Logger { get; }
 
@@ -288,6 +301,49 @@ internal sealed class GenericAggregateGrain<TAggregate>
         }
     }
 
+    /// <summary>
+    ///     Dispatches fire-and-forget effects for the given events.
+    /// </summary>
+    /// <param name="events">The events to dispatch effects for.</param>
+    /// <param name="currentState">The current aggregate state after events were applied.</param>
+    /// <param name="startingPosition">The brook position of the first event in the list.</param>
+    /// <remarks>
+    ///     <para>
+    ///         Fire-and-forget effects run in separate <c>[StatelessWorker]</c> grains using
+    ///         <c>[OneWay]</c> semantics. This method dispatches them without waiting for completion.
+    ///     </para>
+    ///     <para>
+    ///         Unlike synchronous effects, fire-and-forget effects cannot yield additional events.
+    ///         They are designed for side effects like sending notifications, updating external systems,
+    ///         or triggering asynchronous workflows.
+    ///     </para>
+    /// </remarks>
+    private void DispatchFireAndForgetEffects(
+        IReadOnlyList<object> events,
+        TAggregate currentState,
+        long startingPosition
+    )
+    {
+        if (FireAndForgetEffectRegistrations.Length == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < events.Count; i++)
+        {
+            object eventData = events[i];
+            long eventPosition = startingPosition + i;
+            Type eventType = eventData.GetType();
+            foreach (IFireAndForgetEffectRegistration<TAggregate> registration in FireAndForgetEffectRegistrations)
+            {
+                if (registration.EventType == eventType)
+                {
+                    registration.Dispatch(GrainFactory, eventData, currentState, brookKey, eventPosition);
+                }
+            }
+        }
+    }
+
     private async Task<OperationResult> ExecuteInternalAsync(
         object command,
         BrookPosition? expectedVersion,
@@ -394,6 +450,20 @@ internal sealed class GenericAggregateGrain<TAggregate>
                     // Critical exceptions (OOM, StackOverflow, etc.) will propagate.
                     Logger.EffectDispatchFailed(commandTypeName, aggregateKey, ex);
                 }
+            }
+
+            // Dispatch fire-and-forget effects in separate worker grains (non-blocking)
+            if (FireAndForgetEffectRegistrations.Length > 0)
+            {
+                // Get updated state after events were applied for effect handlers
+                SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);
+                TAggregate? updatedState = await SnapshotGrainFactory
+                    .GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
+                    .GetStateAsync(cancellationToken);
+
+                // Calculate starting position: currentPosition was before appending, so first event is at currentPosition + 1
+                long startingPosition = currentPosition.Value + 1;
+                DispatchFireAndForgetEffects(events, updatedState!, startingPosition);
             }
         }
 

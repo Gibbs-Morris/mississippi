@@ -20,6 +20,7 @@ using Mississippi.EventSourcing.Snapshots.Abstractions;
 
 using Moq;
 
+using Orleans;
 using Orleans.Runtime;
 
 
@@ -66,6 +67,7 @@ public class GenericAggregateGrainTests
 
     private static GenericAggregateGrain<AggregateGrainTestAggregate> CreateGrain(
         Mock<IGrainContext>? grainContextMock = null,
+        Mock<IGrainFactory>? grainFactoryMock = null,
         Mock<IBrookGrainFactory>? brookGrainFactoryMock = null,
         Mock<IBrookEventConverter>? brookEventConverterMock = null,
         Mock<IRootCommandHandler<AggregateGrainTestAggregate>>? rootCommandHandlerMock = null,
@@ -73,6 +75,8 @@ public class GenericAggregateGrainTests
         Mock<IRootReducer<AggregateGrainTestAggregate>>? rootReducerMock = null,
         IOptions<AggregateEffectOptions>? effectOptions = null,
         Mock<ILogger<GenericAggregateGrain<AggregateGrainTestAggregate>>>? loggerMock = null,
+        IEnumerable<IFireAndForgetEffectRegistration<AggregateGrainTestAggregate>>? fireAndForgetEffectRegistrations =
+            null,
         IRootEventEffect<AggregateGrainTestAggregate>? rootEventEffect = null,
         bool throwOnNullContext = false
     )
@@ -86,6 +90,7 @@ public class GenericAggregateGrainTests
             grainContextMock ??= CreateDefaultGrainContext();
         }
 
+        grainFactoryMock ??= new();
         brookGrainFactoryMock ??= new();
         brookEventConverterMock ??= new();
         rootCommandHandlerMock ??= new();
@@ -94,8 +99,10 @@ public class GenericAggregateGrainTests
         rootReducerMock.Setup(r => r.GetReducerHash()).Returns(TestReducerHash);
         effectOptions ??= Options.Create(new AggregateEffectOptions());
         loggerMock ??= new();
+        fireAndForgetEffectRegistrations ??= [];
         return new(
             throwOnNullContext ? null! : grainContextMock!.Object,
+            grainFactoryMock.Object,
             brookGrainFactoryMock.Object,
             brookEventConverterMock.Object,
             rootCommandHandlerMock.Object,
@@ -103,6 +110,7 @@ public class GenericAggregateGrainTests
             rootReducerMock.Object,
             effectOptions,
             loggerMock.Object,
+            fireAndForgetEffectRegistrations,
             rootEventEffect);
     }
 
@@ -127,6 +135,7 @@ public class GenericAggregateGrainTests
     public void ConstructorThrowsWhenBrookGrainFactoryIsNull()
     {
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<IGrainFactory> grainFactoryMock = new();
         Mock<IBrookEventConverter> converterMock = new();
         Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
         Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
@@ -135,13 +144,15 @@ public class GenericAggregateGrainTests
         Mock<ILogger<GenericAggregateGrain<AggregateGrainTestAggregate>>> loggerMock = new();
         Assert.Throws<ArgumentNullException>(() => new GenericAggregateGrain<AggregateGrainTestAggregate>(
             grainContextMock.Object,
+            grainFactoryMock.Object,
             null!,
             converterMock.Object,
             handlerMock.Object,
             snapshotFactoryMock.Object,
             rootReducerMock.Object,
             effectOptions,
-            loggerMock.Object));
+            loggerMock.Object,
+            []));
     }
 
     /// <summary>
