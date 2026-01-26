@@ -89,7 +89,6 @@ internal sealed class FireAndForgetEffectWorkerGrain<TEvent, TAggregate>
         string aggregateTypeName = typeof(TAggregate).Name;
         string eventTypeName = typeof(TEvent).Name;
         Logger.ExecutingFireAndForgetEffect(effectTypeName, eventTypeName, envelope.BrookKey);
-        FireAndForgetEffectMetrics.RecordDispatch(aggregateTypeName, eventTypeName, effectTypeName);
         Stopwatch sw = Stopwatch.StartNew();
         try
         {
@@ -130,7 +129,12 @@ internal sealed class FireAndForgetEffectWorkerGrain<TEvent, TAggregate>
                 return;
             }
 
-            await effect.HandleAsync(envelope.EventData, envelope.AggregateState, cancellationToken);
+            await effect.HandleAsync(
+                envelope.EventData,
+                envelope.AggregateState,
+                envelope.BrookKey,
+                envelope.EventPosition,
+                cancellationToken);
             sw.Stop();
             FireAndForgetEffectMetrics.RecordSuccess(
                 aggregateTypeName,

@@ -227,6 +227,8 @@ public class GenericAggregateGrainTests
         effectMock.Setup(e => e.DispatchAsync(
                 It.IsAny<object>(),
                 It.IsAny<AggregateGrainTestAggregate>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerable.Empty<object>());
         GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
@@ -243,7 +245,12 @@ public class GenericAggregateGrainTests
         // Assert
         Assert.True(result.Success);
         effectMock.Verify(
-            e => e.DispatchAsync(testEvent, It.IsAny<AggregateGrainTestAggregate>(), It.IsAny<CancellationToken>()),
+            e => e.DispatchAsync(
+                testEvent,
+                It.IsAny<AggregateGrainTestAggregate>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -324,11 +331,15 @@ public class GenericAggregateGrainTests
         effectMock.Setup(e => e.DispatchAsync(
                 testEvent,
                 It.IsAny<AggregateGrainTestAggregate>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .Returns(ToAsyncEnumerable<object>(yieldedEvent));
         effectMock.Setup(e => e.DispatchAsync(
                 yieldedEvent,
                 It.IsAny<AggregateGrainTestAggregate>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerable.Empty<object>());
         GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
@@ -404,6 +415,8 @@ public class GenericAggregateGrainTests
         effectMock.Setup(e => e.DispatchAsync(
                 It.IsAny<object>(),
                 It.IsAny<AggregateGrainTestAggregate>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .Returns(() =>
             {

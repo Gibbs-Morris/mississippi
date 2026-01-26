@@ -46,6 +46,8 @@ public sealed class SimpleEventEffectBaseTests
         protected override Task HandleSimpleAsync(
             TestEvent eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             CancellationToken cancellationToken
         )
         {
@@ -106,7 +108,7 @@ public sealed class SimpleEventEffectBaseTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.HandleAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.HandleAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -130,7 +132,9 @@ public sealed class SimpleEventEffectBaseTests
 
         // Act & Assert
         // Note: The exception is thrown synchronously on method call, not during async enumeration
-        IAsyncEnumerable<object> CallHandleAsync() => sut.HandleAsync(null!, state, CancellationToken.None);
+        IAsyncEnumerable<object> CallHandleAsync() =>
+            sut.HandleAsync(null!, state, "test-brook", 1L, CancellationToken.None);
+
         Assert.Throws<ArgumentNullException>(CallHandleAsync);
     }
 }

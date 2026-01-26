@@ -60,11 +60,15 @@ public interface IFireAndForgetEventEffect<in TEvent, in TAggregate>
     /// </summary>
     /// <param name="eventData">The event that was persisted.</param>
     /// <param name="aggregateState">A snapshot of the aggregate state after the event was applied.</param>
+    /// <param name="brookKey">The brook key identifying the aggregate instance.</param>
+    /// <param name="eventPosition">The position of the event in the brook.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task HandleAsync(
         TEvent eventData,
         TAggregate aggregateState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     );
 }

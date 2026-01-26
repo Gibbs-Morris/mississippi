@@ -7,8 +7,6 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
-using Orleans.Runtime;
-
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
@@ -48,22 +46,17 @@ internal sealed class HighValueTransactionEffect : EventEffectBase<FundsDeposite
     ///     Initializes a new instance of the <see cref="HighValueTransactionEffect" /> class.
     /// </summary>
     /// <param name="aggregateGrainFactory">Factory for resolving aggregate grains.</param>
-    /// <param name="grainContext">The Orleans grain context providing access to the current grain identity.</param>
     /// <param name="logger">The logger instance.</param>
     public HighValueTransactionEffect(
         IAggregateGrainFactory aggregateGrainFactory,
-        IGrainContext grainContext,
         ILogger<HighValueTransactionEffect> logger
     )
     {
         AggregateGrainFactory = aggregateGrainFactory;
-        GrainContext = grainContext;
         Logger = logger;
     }
 
     private IAggregateGrainFactory AggregateGrainFactory { get; }
-
-    private IGrainContext GrainContext { get; }
 
     private ILogger<HighValueTransactionEffect> Logger { get; }
 
@@ -71,15 +64,18 @@ internal sealed class HighValueTransactionEffect : EventEffectBase<FundsDeposite
     public override IAsyncEnumerable<object> HandleAsync(
         FundsDeposited eventData,
         BankAccountAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return HandleCoreAsync(eventData, cancellationToken);
+        return HandleCoreAsync(eventData, brookKey, cancellationToken);
     }
 
     private async IAsyncEnumerable<object> HandleCoreAsync(
         FundsDeposited eventData,
+        string accountId,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
@@ -88,8 +84,6 @@ internal sealed class HighValueTransactionEffect : EventEffectBase<FundsDeposite
             yield break;
         }
 
-        // Extract the account ID from the grain's primary key
-        string accountId = GrainContext.GrainId.Key.ToString() ?? string.Empty;
         Logger.LogHighValueTransactionDetected(accountId, eventData.Amount, AmlThreshold);
         FlagTransaction command = new()
         {

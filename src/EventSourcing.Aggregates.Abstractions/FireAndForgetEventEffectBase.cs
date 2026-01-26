@@ -55,10 +55,17 @@ public abstract class FireAndForgetEventEffectBase<TEvent, TAggregate> : IFireAn
     where TEvent : class
     where TAggregate : class
 {
+    /// <summary>
+    ///     Gets a reusable completed task for effects that finish synchronously.
+    /// </summary>
+    protected static Task CompletedTask => Task.CompletedTask;
+
     /// <inheritdoc />
     public abstract Task HandleAsync(
         TEvent eventData,
         TAggregate aggregateState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     );
 }

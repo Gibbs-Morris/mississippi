@@ -58,6 +58,8 @@ public interface IEventEffect<TAggregate>
     /// </summary>
     /// <param name="eventData">The event that was persisted.</param>
     /// <param name="currentState">The current aggregate state after the event was applied.</param>
+    /// <param name="brookKey">The brook key identifying the aggregate instance.</param>
+    /// <param name="eventPosition">The position of the event in the brook.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
     ///     An async enumerable of additional events to persist.
@@ -66,6 +68,8 @@ public interface IEventEffect<TAggregate>
     IAsyncEnumerable<object> HandleAsync(
         object eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     );
 }

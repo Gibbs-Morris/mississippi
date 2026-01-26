@@ -72,6 +72,8 @@ public class AggregateRegistrationsTests
         public override IAsyncEnumerable<object> HandleAsync(
             TestEvent eventData,
             TestState currentState,
+            string brookKey,
+            long eventPosition,
             CancellationToken cancellationToken
         ) =>
             AsyncEnumerable.Empty<object>();

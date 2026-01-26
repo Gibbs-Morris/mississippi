@@ -267,6 +267,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
                 await foreach (object resultEvent in RootEventEffect.DispatchAsync(
                                    eventData,
                                    currentState,
+                                   brookKey,
+                                   lastKnownPosition?.Value ?? 0,
                                    cancellationToken))
                 {
                     yieldedEvents.Add(resultEvent);
@@ -339,6 +341,10 @@ internal sealed class GenericAggregateGrain<TAggregate>
                 if (registration.EventType == eventType)
                 {
                     registration.Dispatch(GrainFactory, eventData, currentState, brookKey, eventPosition);
+                    FireAndForgetEffectMetrics.RecordDispatch(
+                        typeof(TAggregate).Name,
+                        eventType.Name,
+                        registration.EffectTypeName);
                 }
             }
         }

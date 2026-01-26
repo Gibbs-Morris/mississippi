@@ -18,6 +18,15 @@ Aggregates are the command-processing core of Mississippi event sourcing. They v
 
 Aggregates sit upstream of brooks. They translate commands into events that are appended to event streams and later reduced into projections.
 
+## Event effects
+
+Aggregates can trigger side effects after events are persisted. Mississippi supports two effect styles:
+
+- **Synchronous effects** run inside the aggregate grain and can yield additional events.
+- **Fire-and-forget effects** run in separate stateless worker grains with `[OneWay]` semantics and do not block command execution.
+
+Fire-and-forget effects are strongly typed and registered with `AddFireAndForgetEventEffect<TEffect, TEvent, TAggregate>()`. The silo registration generator automatically discovers effect classes that inherit from `FireAndForgetEventEffectBase<TEvent, TAggregate>` and emits the registration call for you.
+
 ## Source code reference
 
 - [IGenericAggregateGrain](../../../../src/EventSourcing.Aggregates.Abstractions/IGenericAggregateGrain.cs)
