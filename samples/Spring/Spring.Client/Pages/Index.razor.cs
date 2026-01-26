@@ -34,8 +34,6 @@ public sealed partial class Index
 
     private decimal depositAmount;
 
-    private decimal depositDollarsAmount;
-
     private bool holderJustChanged;
 
     private string holderName = string.Empty;
@@ -163,8 +161,6 @@ public sealed partial class Index
     private void DepositBurst20() => DispatchBurst(() => new DepositFundsAction(SelectedEntityId!, 5m), 20);
 
     private void DepositBurst200() => DispatchBurst(() => new DepositFundsAction(SelectedEntityId!, 10m), 200);
-
-    private void DepositDollars() => Dispatch(new DepositDollarsAction(SelectedEntityId!, depositDollarsAmount));
 
     private void DepositSingle100() => Dispatch(new DepositFundsAction(SelectedEntityId!, 100m));
 

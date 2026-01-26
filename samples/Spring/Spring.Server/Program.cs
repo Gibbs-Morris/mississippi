@@ -88,9 +88,13 @@ builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).A
 // Add aggregate DTO to command mappers
 builder.Services.AddBankAccountAggregateMappers();
 
+// Note: TransactionInvestigationQueue aggregate has no public commands (only server-side effect dispatch)
+// so no mappers are generated or needed.
+
 // Add projection mappers
 builder.Services.AddBankAccountBalanceProjectionMappers();
 builder.Services.AddBankAccountLedgerProjectionMappers();
+builder.Services.AddFlaggedTransactionsProjectionMappers();
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files

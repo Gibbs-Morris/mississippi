@@ -1,0 +1,47 @@
+@page "/investigations"
+@using Spring.Client.Features.FlaggedTransactions.Dtos
+@inherits InletComponent
+
+<main>
+    <header>
+        <h1>Transaction Investigations</h1>
+        <p>High-value transactions flagged for AML review</p>
+    </header>
+
+    <section>
+        <h2>Flagged Transactions</h2>
+        <p>
+            Transactions exceeding £10,000 are automatically flagged for manual investigation.
+            The list below shows the most recent 30 flagged transactions.
+        </p>
+
+        @if (FlaggedProjection?.Entries.Length > 0)
+        {
+            <table>
+                <thead>
+                <tr>
+                    <th>Account</th>
+                    <th>Amount (£)</th>
+                    <th>Deposited</th>
+                    <th>Flagged</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (FlaggedTransactionDto entry in FlaggedProjection.Entries)
+                {
+                    <tr>
+                        <td>@entry.AccountId</td>
+                        <td>@entry.Amount.ToString("N2")</td>
+                        <td>@entry.OriginalTimestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@entry.FlaggedTimestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No transactions have been flagged yet.</p>
+        }
+    </section>
+</main>

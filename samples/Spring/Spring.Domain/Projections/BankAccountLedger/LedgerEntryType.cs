@@ -11,14 +11,9 @@ namespace Spring.Domain.Projections.BankAccountLedger;
 public enum LedgerEntryType
 {
     /// <summary>
-    ///     A deposit in GBP.
+    ///     A deposit.
     /// </summary>
-    DepositGbp,
-
-    /// <summary>
-    ///     A deposit originally in USD, converted to GBP.
-    /// </summary>
-    DepositUsd,
+    Deposit,
 
     /// <summary>
     ///     A withdrawal.

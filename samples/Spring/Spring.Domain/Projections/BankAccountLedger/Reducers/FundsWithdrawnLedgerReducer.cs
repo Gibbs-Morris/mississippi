@@ -26,7 +26,7 @@ internal sealed class FundsWithdrawnLedgerReducer : EventReducerBase<FundsWithdr
         LedgerEntry entry = new()
         {
             EntryType = LedgerEntryType.Withdrawal,
-            AmountGbp = eventData.Amount,
+            Amount = eventData.Amount,
             Sequence = newSequence,
         };
         ImmutableArray<LedgerEntry> entries = state.Entries.Prepend(entry)

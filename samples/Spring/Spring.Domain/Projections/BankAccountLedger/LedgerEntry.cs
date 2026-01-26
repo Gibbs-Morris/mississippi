@@ -14,13 +14,7 @@ public sealed record LedgerEntry
     ///     Gets the amount in GBP.
     /// </summary>
     [Id(1)]
-    public decimal AmountGbp { get; init; }
-
-    /// <summary>
-    ///     Gets the original amount in USD (only populated for USD deposits).
-    /// </summary>
-    [Id(2)]
-    public decimal? AmountUsd { get; init; }
+    public decimal Amount { get; init; }
 
     /// <summary>
     ///     Gets the type of ledger entry.
@@ -29,14 +23,8 @@ public sealed record LedgerEntry
     public LedgerEntryType EntryType { get; init; }
 
     /// <summary>
-    ///     Gets the exchange rate used (only populated for USD deposits).
-    /// </summary>
-    [Id(3)]
-    public decimal? ExchangeRate { get; init; }
-
-    /// <summary>
     ///     Gets the sequence number for ordering entries.
     /// </summary>
-    [Id(4)]
+    [Id(2)]
     public long Sequence { get; init; }
 }

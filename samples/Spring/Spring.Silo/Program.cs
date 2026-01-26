@@ -22,7 +22,6 @@ using OpenTelemetry.Trace;
 using Orleans.Hosting;
 using Orleans.Runtime;
 
-using Spring.Domain.Aggregates.BankAccount.Effects;
 using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Silo.Registrations;
 
@@ -32,16 +31,14 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 // Register HttpClient factory for effects that call external APIs
 builder.Services.AddHttpClient();
 
-// Configure currency conversion options (can be overridden via appsettings.json)
-builder.Services.Configure<CurrencyConversionOptions>(
-    builder.Configuration.GetSection(CurrencyConversionOptions.SectionName));
-
 // Register Spring domain aggregates
 builder.Services.AddBankAccountAggregate();
+builder.Services.AddTransactionInvestigationQueueAggregate();
 
 // Register Spring domain projections
 builder.Services.AddBankAccountBalanceProjection();
 builder.Services.AddBankAccountLedgerProjection();
+builder.Services.AddFlaggedTransactionsProjection();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
