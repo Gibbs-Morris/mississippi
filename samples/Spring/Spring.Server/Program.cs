@@ -21,8 +21,7 @@ using Orleans.Hosting;
 using Scalar.AspNetCore;
 
 using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Server.Controllers.Aggregates.Mappers;
-using Spring.Server.Controllers.Projections.Mappers;
+using Spring.Server;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -85,11 +84,8 @@ builder.Services.AddAqueduct<InletHub>(options =>
 builder.Services.AddInletOrleansWithSignalR();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
-// Add aggregate DTO to command mappers
-builder.Services.AddBankAccountAggregateMappers();
-
-// Add projection mappers
-builder.Services.AddBankAccountBalanceProjectionMappers();
+// Add aggregate and projection mappers using single master registration
+builder.Services.AddSpring();
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files

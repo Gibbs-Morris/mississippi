@@ -23,16 +23,13 @@ using Orleans.Hosting;
 using Orleans.Runtime;
 
 using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Silo.Registrations;
+using Spring.Silo;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Register Spring domain aggregates
-builder.Services.AddBankAccountAggregate();
-
-// Register Spring domain projections
-builder.Services.AddBankAccountBalanceProjection();
+// Register Spring domain aggregates and projections using single master registration
+builder.Services.AddSpringDomain();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
