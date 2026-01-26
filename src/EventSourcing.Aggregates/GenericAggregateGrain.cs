@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Diagnostics;
@@ -51,23 +52,6 @@ internal sealed class GenericAggregateGrain<TAggregate>
       IGrainBase
     where TAggregate : class
 {
-    /// <summary>
-    ///     Maximum number of effect iterations before the effect loop is terminated.
-    /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This prevents infinite loops when effects continuously yield new events that
-    ///         trigger other effects in a cycle. A value of 10 is typically sufficient for
-    ///         legitimate effect chains while catching design issues early.
-    ///     </para>
-    ///     <para>
-    ///         If you find this limit is too restrictive for your use case, consider
-    ///         restructuring your effect chain to avoid deep nesting, or discuss with
-    ///         the team about making this value configurable per-aggregate.
-    ///     </para>
-    /// </remarks>
-    private const int MaxEffectIterations = 10;
-
     private BrookKey brookKey;
 
     /// <summary>
@@ -87,6 +71,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="rootCommandHandler">The root command handler for processing commands.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="rootReducer">The root event reducer for obtaining the reducers hash.</param>
+    /// <param name="effectOptions">Options controlling aggregate effect processing.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="rootEventEffect">
     ///     Optional root event effect dispatcher for running side effects after events are persisted.
@@ -99,6 +84,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         IRootCommandHandler<TAggregate> rootCommandHandler,
         ISnapshotGrainFactory snapshotGrainFactory,
         IRootReducer<TAggregate> rootReducer,
+        IOptions<AggregateEffectOptions> effectOptions,
         ILogger<GenericAggregateGrain<TAggregate>> logger,
         IRootEventEffect<TAggregate>? rootEventEffect = null
     )
@@ -109,6 +95,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         RootCommandHandler = rootCommandHandler ?? throw new ArgumentNullException(nameof(rootCommandHandler));
         SnapshotGrainFactory = snapshotGrainFactory ?? throw new ArgumentNullException(nameof(snapshotGrainFactory));
         RootReducer = rootReducer ?? throw new ArgumentNullException(nameof(rootReducer));
+        EffectOptions = effectOptions?.Value ?? throw new ArgumentNullException(nameof(effectOptions));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         RootEventEffect = rootEventEffect;
     }
@@ -126,6 +113,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
     private IBrookEventConverter BrookEventConverter { get; }
 
     private IBrookGrainFactory BrookGrainFactory { get; }
+
+    private AggregateEffectOptions EffectOptions { get; }
 
     private ILogger<GenericAggregateGrain<TAggregate>> Logger { get; }
 
@@ -219,7 +208,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ///     <para>
     ///         Effects can yield additional events. These are persisted immediately for real-time
     ///         projection updates. The method loops until no more events are yielded or the
-    ///         iteration limit (<see cref="MaxEffectIterations" />) is reached to prevent infinite loops.
+    ///         iteration limit (<see cref="AggregateEffectOptions.MaxEffectIterations" />) is reached
+    ///         to prevent infinite loops.
     ///     </para>
     ///     <para>
     ///         When the limit is reached, remaining pending events are not processed, and a warning
@@ -239,9 +229,10 @@ internal sealed class GenericAggregateGrain<TAggregate>
             return;
         }
 
+        int maxIterations = EffectOptions.MaxEffectIterations;
         List<object> pendingEvents = new(initialEvents);
         int iteration = 0;
-        while ((pendingEvents.Count > 0) && (iteration < MaxEffectIterations))
+        while ((pendingEvents.Count > 0) && (iteration < maxIterations))
         {
             iteration++;
             List<object> yieldedEvents = [];
@@ -267,9 +258,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
             pendingEvents = yieldedEvents;
         }
 
-        if (iteration >= MaxEffectIterations)
+        if (iteration >= maxIterations)
         {
-            Logger.EffectIterationLimitReached(aggregateKey, MaxEffectIterations);
+            Logger.EffectIterationLimitReached(aggregateKey, maxIterations);
             EventEffectMetrics.RecordIterationLimitReached(typeof(TAggregate).Name, aggregateKey);
         }
     }
