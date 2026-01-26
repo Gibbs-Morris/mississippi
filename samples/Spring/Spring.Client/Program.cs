@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet;
 using Mississippi.Inlet.Blazor.WebAssembly;
+using Mississippi.Inlet.Client;
 
 using Spring.Client;
 using Spring.Client.Features.BankAccountAggregate;

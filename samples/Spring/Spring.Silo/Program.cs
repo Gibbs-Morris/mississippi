@@ -13,7 +13,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
-using Mississippi.Inlet.Orleans;
+using Mississippi.Inlet.Silo;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
