@@ -132,7 +132,7 @@ public sealed class GenerateProjectionEndpointsAttribute : Attribute
     /// <remarks>
     ///     <para>
     ///         Defaults to <see langword="true" />. When set to <see langword="false" />,
-    ///         the <c>{Projection}Controller</c> and associated DTOs/mappers will not be generated.
+    ///         the <c>{Projection}Controller</c> will not be generated.
     ///     </para>
     ///     <para>
     ///         Use this when you have a custom controller implementation or want
@@ -140,6 +140,36 @@ public sealed class GenerateProjectionEndpointsAttribute : Attribute
     ///     </para>
     /// </remarks>
     public bool GenerateController { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether to generate the server-side DTO for this projection.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Defaults to <see langword="true" />. When set to <see langword="false" />,
+    ///         the <c>{Projection}Dto</c> record will not be generated.
+    ///     </para>
+    ///     <para>
+    ///         Use this when you have a custom DTO or the projection record itself
+    ///         is suitable for direct serialization without a separate DTO layer.
+    ///     </para>
+    /// </remarks>
+    public bool GenerateServerDto { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether to generate the server-side DTO mapper for this projection.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Defaults to <see langword="true" />. When set to <see langword="false" />,
+    ///         the <c>{Projection}Mapper</c> class will not be generated.
+    ///     </para>
+    ///     <para>
+    ///         Use this when you have custom mapping logic or when using
+    ///         <see cref="GenerateServerDto" /> = <see langword="false" />.
+    ///     </para>
+    /// </remarks>
+    public bool GenerateServerMapper { get; set; } = true;
 
     /// <summary>
     ///     Gets or sets a value indicating whether to generate silo registration code for this projection.

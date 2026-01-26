@@ -158,56 +158,68 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         HashSet<string> generatedNestedTypes
     )
     {
-        // Generate DTO
-        string dtoSource = GenerateDto(projection);
-        context.AddSource($"{projection.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
-
-        // Generate DTOs for nested custom types (e.g., collection element types)
-        // Use GroupBy to avoid duplicate generation for the same DTO type name
-        List<PropertyModel> nestedTypeProperties = projection.Model.Properties
-            .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
-                           prop.ElementDtoTypeName is not null &&
-                           !generatedNestedTypes.Contains(prop.ElementDtoTypeName!))
-            .GroupBy(prop => prop.ElementDtoTypeName)
-            .Select(g => g.First())
-            .ToList();
-        foreach (PropertyModel prop in nestedTypeProperties)
+        // Generate DTO if not opted out
+        if (projection.GenerateServerDto)
         {
-            INamedTypeSymbol elementType = (INamedTypeSymbol)prop.ElementTypeSymbol!;
-            generatedNestedTypes.Add(prop.ElementDtoTypeName!);
-            string nestedDtoSource = GenerateNestedTypeDto(
-                elementType,
-                prop.ElementDtoTypeName!,
-                projection.OutputNamespace);
-            context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
+            string dtoSource = GenerateDto(projection);
+            context.AddSource($"{projection.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
 
-            // Skip mappers for enums - they can be cast directly
-            if (elementType.TypeKind != TypeKind.Enum)
+            // Generate DTOs for nested custom types (e.g., collection element types)
+            // Use GroupBy to avoid duplicate generation for the same DTO type name
+            List<PropertyModel> nestedTypeProperties = projection.Model.Properties
+                .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
+                               prop.ElementDtoTypeName is not null &&
+                               !generatedNestedTypes.Contains(prop.ElementDtoTypeName!))
+                .GroupBy(prop => prop.ElementDtoTypeName)
+                .Select(g => g.First())
+                .ToList();
+            foreach (PropertyModel prop in nestedTypeProperties)
             {
-                // Generate mapper for nested type
-                string nestedMapperSource = GenerateNestedTypeMapper(
+                INamedTypeSymbol elementType = (INamedTypeSymbol)prop.ElementTypeSymbol!;
+                generatedNestedTypes.Add(prop.ElementDtoTypeName!);
+                string nestedDtoSource = GenerateNestedTypeDto(
                     elementType,
                     prop.ElementDtoTypeName!,
-                    prop.ElementSourceTypeName!,
                     projection.OutputNamespace);
-                context.AddSource(
-                    $"{prop.ElementDtoTypeName}Mapper.g.cs",
-                    SourceText.From(nestedMapperSource, Encoding.UTF8));
+                context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
+
+                // Generate enum DTOs for enum properties within the nested type
+                // (Skip generating mappers for enums here; they can be cast directly)
+                if (elementType.TypeKind == TypeKind.Enum)
+                {
+                    continue;
+                }
+
+                // Generate mapper for nested type if not opted out
+                if (projection.GenerateServerMapper)
+                {
+                    string nestedMapperSource = GenerateNestedTypeMapper(
+                        elementType,
+                        prop.ElementDtoTypeName!,
+                        prop.ElementSourceTypeName!,
+                        projection.OutputNamespace);
+                    context.AddSource(
+                        $"{prop.ElementDtoTypeName}Mapper.g.cs",
+                        SourceText.From(nestedMapperSource, Encoding.UTF8));
+                }
 
                 // Generate enum DTOs for enum properties within the nested type
                 GenerateEnumDtosForNestedType(context, elementType, projection.OutputNamespace, generatedNestedTypes);
             }
         }
 
-        // Generate Mapper
-        string mapperSource = GenerateMapper(projection);
-        context.AddSource($"{GetMapperTypeName(projection)}.g.cs", SourceText.From(mapperSource, Encoding.UTF8));
+        // Generate Mapper if not opted out
+        if (projection.GenerateServerMapper)
+        {
+            string mapperSource = GenerateMapper(projection);
+            context.AddSource($"{GetMapperTypeName(projection)}.g.cs", SourceText.From(mapperSource, Encoding.UTF8));
 
-        // Generate Mapper Registrations
-        string registrationsSource = GenerateMapperRegistrations(projection);
-        context.AddSource(
-            $"{GetRegistrationsTypeName(projection)}.g.cs",
-            SourceText.From(registrationsSource, Encoding.UTF8));
+            // Generate Mapper Registrations
+            string registrationsSource = GenerateMapperRegistrations(projection);
+            context.AddSource(
+                $"{GetRegistrationsTypeName(projection)}.g.cs",
+                SourceText.From(registrationsSource, Encoding.UTF8));
+        }
 
         // Generate Controller
         string controllerSource = GenerateController(projection);
@@ -810,9 +822,13 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Extract authorization configuration from the attribute
         AuthorizationInfo authorization = ExtractProjectionAuthorization(generateAttr);
 
+        // Extract opt-out flags for DTO and Mapper generation
+        bool generateServerDto = TypeAnalyzer.GetBooleanProperty(generateAttr, "GenerateServerDto");
+        bool generateServerMapper = TypeAnalyzer.GetBooleanProperty(generateAttr, "GenerateServerMapper");
+
         // Determine output namespace (replace Domain with Server, add Controllers.Projections)
         string outputNamespace = DeriveOutputNamespace(model.Namespace);
-        return new(model, outputNamespace, authorization);
+        return new(model, outputNamespace, authorization, generateServerDto, generateServerMapper);
     }
 
     /// <summary>
@@ -932,21 +948,37 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         /// <param name="model">The projection model.</param>
         /// <param name="outputNamespace">The output namespace for generated code.</param>
         /// <param name="authorization">The authorization configuration for the projection endpoints.</param>
+        /// <param name="generateServerDto">Whether to generate the server DTO.</param>
+        /// <param name="generateServerMapper">Whether to generate the server mapper.</param>
         public ProjectionInfo(
             ProjectionModel model,
             string outputNamespace,
-            AuthorizationInfo authorization
+            AuthorizationInfo authorization,
+            bool generateServerDto = true,
+            bool generateServerMapper = true
         )
         {
             Model = model;
             OutputNamespace = outputNamespace;
             Authorization = authorization;
+            GenerateServerDto = generateServerDto;
+            GenerateServerMapper = generateServerMapper;
         }
 
         /// <summary>
         ///     Gets the authorization configuration for the projection endpoints.
         /// </summary>
         public AuthorizationInfo Authorization { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether to generate the server-side DTO.
+        /// </summary>
+        public bool GenerateServerDto { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether to generate the server-side mapper.
+        /// </summary>
+        public bool GenerateServerMapper { get; }
 
         /// <summary>
         ///     Gets the projection model.
