@@ -3,7 +3,7 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.State;

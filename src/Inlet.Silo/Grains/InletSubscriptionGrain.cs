@@ -14,7 +14,8 @@ using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Silo.Abstractions;
+using Mississippi.Inlet.Server.Abstractions;
 using Mississippi.Inlet.Silo.Diagnostics;
 
 using Orleans;

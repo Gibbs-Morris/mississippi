@@ -1,4 +1,4 @@
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Client.Abstractions;
 
 
 namespace Mississippi.Inlet.Client;

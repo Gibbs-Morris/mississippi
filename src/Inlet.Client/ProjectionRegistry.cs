@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Client.Abstractions;
 
 
 namespace Mississippi.Inlet.Client;

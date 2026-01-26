@@ -239,6 +239,9 @@
       "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Inlet.Server.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Inlet.Silo": {
         "type": "Project",
         "dependencies": {
@@ -247,6 +250,15 @@
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Silo.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Silo.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
           "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
         }
       },

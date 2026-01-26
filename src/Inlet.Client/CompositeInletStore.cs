@@ -1,7 +1,7 @@
 using System;
 
-using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Abstractions.State;
+using Mississippi.Inlet.Client.Abstractions;
+using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;

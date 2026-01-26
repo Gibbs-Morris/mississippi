@@ -2,7 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Silo.Abstractions;
 
 
 namespace Mississippi.Inlet.Silo;

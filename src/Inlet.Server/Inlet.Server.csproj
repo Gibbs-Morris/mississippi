@@ -12,6 +12,7 @@
         <ProjectReference Include="..\Aqueduct\Aqueduct.csproj" />
         <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
         <ProjectReference Include="..\Inlet.Silo\Inlet.Silo.csproj" />
+        <ProjectReference Include="..\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

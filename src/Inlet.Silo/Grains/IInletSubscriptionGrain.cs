@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Silo.Abstractions;
 
 using Orleans;
 using Orleans.Concurrency;

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 
-using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Abstractions.State;
+using Mississippi.Inlet.Client.Abstractions;
+using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.State;
 
 

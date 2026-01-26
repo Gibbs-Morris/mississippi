@@ -7,9 +7,14 @@
     <ItemGroup>
         <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
         <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
+        <ProjectReference Include="..\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
+        <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
+        <ProjectReference Include="..\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>
