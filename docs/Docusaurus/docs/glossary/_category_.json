@@ -1,0 +1,10 @@
+{
+  "label": "Glossary",
+  "position": 17,
+  "link": {
+    "type": "doc",
+    "id": "glossary/glossary"
+  },
+  "collapsible": true,
+  "collapsed": false
+}
