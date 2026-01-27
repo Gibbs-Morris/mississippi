@@ -33,24 +33,24 @@ public sealed class InletBlazorRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletBlazorSignalR accepts null configure action.
+    ///     AddInletBlazorSignalR accepts null configure action and returns the service collection for chaining.
     /// </summary>
     [Fact]
     [AllureFeature("SignalR")]
-    public void AddInletBlazorSignalRAcceptsNullConfigure()
+    public void AddInletBlazorSignalRAcceptsNullConfigureAndReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
 
-        // Act (should not throw)
+        // Act (should not throw with null/missing configure action)
         IServiceCollection result = services.AddInletBlazorSignalR();
 
-        // Assert
+        // Assert - returns the same collection for chaining
         Assert.Same(services, result);
     }
 
     /// <summary>
-    ///     AddInletBlazorSignalR invokes configure action.
+    ///     AddInletBlazorSignalR invokes configure action when provided.
     /// </summary>
     [Fact]
     [AllureFeature("SignalR")]
@@ -61,26 +61,10 @@ public sealed class InletBlazorRegistrationsTests
         bool configureWasCalled = false;
 
         // Act
-        services.AddInletBlazorSignalR(builder => { configureWasCalled = true; });
+        IServiceCollection result = services.AddInletBlazorSignalR(builder => { configureWasCalled = true; });
 
-        // Assert
+        // Assert - action was invoked and returns same collection
         Assert.True(configureWasCalled);
-    }
-
-    /// <summary>
-    ///     AddInletBlazorSignalR returns the service collection for chaining.
-    /// </summary>
-    [Fact]
-    [AllureFeature("SignalR")]
-    public void AddInletBlazorSignalRReturnsServiceCollection()
-    {
-        // Arrange
-        ServiceCollection services = new();
-
-        // Act
-        IServiceCollection result = services.AddInletBlazorSignalR();
-
-        // Assert
         Assert.Same(services, result);
     }
 

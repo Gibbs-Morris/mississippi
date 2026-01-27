@@ -291,7 +291,7 @@ public sealed class ProjectionDtoRegistryTests
         ProjectionDtoRegistry registry = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => registry.TryGetDtoType(null!, out var _));
+        Assert.Throws<ArgumentNullException>(() => registry.TryGetDtoType(null!, out Type? _));
     }
 
     /// <summary>
@@ -342,6 +342,6 @@ public sealed class ProjectionDtoRegistryTests
         ProjectionDtoRegistry registry = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => registry.TryGetPath(null!, out var _));
+        Assert.Throws<ArgumentNullException>(() => registry.TryGetPath(null!, out string? _));
     }
 }
