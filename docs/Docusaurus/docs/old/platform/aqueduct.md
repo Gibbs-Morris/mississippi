@@ -20,5 +20,5 @@ Aqueduct powers SignalR delivery for server-side hubs such as Inlet. It bridges 
 
 ## Source code reference
 
-- [AqueductHubLifetimeManager](../../../../src/Aqueduct/AqueductHubLifetimeManager.cs)
-- [ISignalRClientGrain](../../../../src/Aqueduct.Abstractions/Grains/ISignalRClientGrain.cs)
+- [AqueductHubLifetimeManager](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct/AqueductHubLifetimeManager.cs)
+- [ISignalRClientGrain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Abstractions/Grains/ISignalRClientGrain.cs)

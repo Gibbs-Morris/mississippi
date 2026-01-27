@@ -22,9 +22,9 @@ Mississippi is composed of modular building blocks that move domain changes into
 
 Mississippi includes source generators that reduce boilerplate for aggregates, commands, and projections:
 
-- [GenerateAggregateEndpointsAttribute](../../../../src/Inlet.Generators.Abstractions/GenerateAggregateEndpointsAttribute.cs) — generates silo registration, server controller, and client state for an aggregate.
-- [GenerateCommandAttribute](../../../../src/Inlet.Generators.Abstractions/GenerateCommandAttribute.cs) — generates DTOs, mappers, and HTTP endpoints for a command.
-- [GenerateProjectionEndpointsAttribute](../../../../src/Inlet.Generators.Abstractions/GenerateProjectionEndpointsAttribute.cs) — generates read-only endpoints and optional client subscriptions for a projection.
+- [GenerateAggregateEndpointsAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateAggregateEndpointsAttribute.cs) — generates silo registration, server controller, and client state for an aggregate.
+- [GenerateCommandAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateCommandAttribute.cs) — generates DTOs, mappers, and HTTP endpoints for a command.
+- [GenerateProjectionEndpointsAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateProjectionEndpointsAttribute.cs) — generates read-only endpoints and optional client subscriptions for a projection.
 
 ## Next steps
 

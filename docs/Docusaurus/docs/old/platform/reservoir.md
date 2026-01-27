@@ -20,5 +20,5 @@ Reservoir powers client-side state and is used by Inlet to manage projection sta
 
 ## Source code reference
 
-- [IStore](../../../../src/Reservoir.Abstractions/IStore.cs)
-- [StoreComponent](../../../../src/Reservoir.Blazor/StoreComponent.cs)
+- [IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs)
+- [StoreComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs)

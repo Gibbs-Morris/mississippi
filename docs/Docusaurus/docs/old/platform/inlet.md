@@ -24,9 +24,9 @@ Inlet sits between UX projections and the Blazor client. On the server, each Sig
 
 ## Source code reference
 
-- [InletHub](../../../../src/Inlet.Orleans.SignalR/InletHub.cs) — SignalR hub exposing subscribe/unsubscribe to clients.
-- [IInletSubscriptionGrain](../../../../src/Inlet.Orleans/Grains/IInletSubscriptionGrain.cs) — Orleans grain managing subscriptions per connection.
-- [InletSubscriptionGrain](../../../../src/Inlet.Orleans/Grains/InletSubscriptionGrain.cs) — implementation with brook stream deduplication and fan-out.
-- [IProjectionBrookRegistry](../../../../src/Inlet.Abstractions/IProjectionBrookRegistry.cs) — abstraction for path-to-brook mapping.
-- [ProjectionBrookRegistry](../../../../src/Inlet.Orleans/ProjectionBrookRegistry.cs) — runtime registry populated at startup from `[ProjectionPath]` attributes.
-- [InletComponent](../../../../src/Inlet.Blazor.WebAssembly/InletComponent.cs) — Blazor base component for projection-aware UX.
+- [InletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Orleans.SignalR/InletHub.cs) — SignalR hub exposing subscribe/unsubscribe to clients.
+- [IInletSubscriptionGrain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Orleans/Grains/IInletSubscriptionGrain.cs) — Orleans grain managing subscriptions per connection.
+- [InletSubscriptionGrain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Orleans/Grains/InletSubscriptionGrain.cs) — implementation with brook stream deduplication and fan-out.
+- [IProjectionBrookRegistry](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Abstractions/IProjectionBrookRegistry.cs) — abstraction for path-to-brook mapping.
+- [ProjectionBrookRegistry](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Orleans/ProjectionBrookRegistry.cs) — runtime registry populated at startup from `[ProjectionPath]` attributes.
+- [InletComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Blazor.WebAssembly/InletComponent.cs) — Blazor base component for projection-aware UX.

@@ -20,7 +20,7 @@ Aggregates sit upstream of brooks. They translate commands into events that are 
 
 ## Source code reference
 
-- [IGenericAggregateGrain](../../../../src/EventSourcing.Aggregates.Abstractions/IGenericAggregateGrain.cs)
-- [IRootCommandHandler](../../../../src/EventSourcing.Aggregates.Abstractions/IRootCommandHandler.cs)
-- [GenerateAggregateEndpointsAttribute](../../../../src/Inlet.Generators.Abstractions/GenerateAggregateEndpointsAttribute.cs) — marks an aggregate for endpoint code generation
-- [GenerateCommandAttribute](../../../../src/Inlet.Generators.Abstractions/GenerateCommandAttribute.cs) — marks a command for endpoint code generation
+- [IGenericAggregateGrain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/IGenericAggregateGrain.cs)
+- [IRootCommandHandler](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/IRootCommandHandler.cs)
+- [GenerateAggregateEndpointsAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateAggregateEndpointsAttribute.cs) — marks an aggregate for endpoint code generation
+- [GenerateCommandAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateCommandAttribute.cs) — marks a command for endpoint code generation

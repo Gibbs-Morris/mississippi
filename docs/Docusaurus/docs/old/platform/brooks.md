@@ -20,5 +20,5 @@ Brooks sit between aggregates and projections. Aggregates write events to brooks
 
 ## Source code reference
 
-- [IBrookWriterGrain](../../../../src/EventSourcing.Brooks.Abstractions/Writer/IBrookWriterGrain.cs)
-- [IBrookReaderGrain](../../../../src/EventSourcing.Brooks.Abstractions/Reader/IBrookReaderGrain.cs)
+- [IBrookWriterGrain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Writer/IBrookWriterGrain.cs)
+- [IBrookReaderGrain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Reader/IBrookReaderGrain.cs)
