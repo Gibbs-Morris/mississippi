@@ -126,7 +126,7 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/docs/next/intro',
+              to: '/docs/next/getting-started',
             },
           ],
         },
