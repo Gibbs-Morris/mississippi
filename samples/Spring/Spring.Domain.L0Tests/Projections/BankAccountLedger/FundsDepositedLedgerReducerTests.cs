@@ -1,16 +1,11 @@
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 
 using Allure.Xunit.Attributes;
 
-using FluentAssertions;
-
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Projections.BankAccountLedger;
 using Spring.Domain.Projections.BankAccountLedger.Reducers;
-
-using Xunit;
 
 
 namespace Spring.Domain.L0Tests.Projections.BankAccountLedger;
@@ -38,7 +33,10 @@ public sealed class FundsDepositedLedgerReducerTests
             Entries = [],
             CurrentSequence = 0,
         };
-        FundsDeposited evt = new() { Amount = 500m };
+        FundsDeposited evt = new()
+        {
+            Amount = 500m,
+        };
 
         // Act
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
@@ -48,53 +46,6 @@ public sealed class FundsDepositedLedgerReducerTests
         result.Entries[0].EntryType.Should().Be(LedgerEntryType.Deposit);
         result.Entries[0].Amount.Should().Be(500m);
         result.Entries[0].Sequence.Should().Be(1);
-    }
-
-    /// <summary>
-    ///     Reducing FundsDeposited increments the current sequence.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Sequencing")]
-    public void ReduceIncrementsCurrentSequence()
-    {
-        // Arrange
-        BankAccountLedgerProjection initial = new()
-        {
-            Entries = [],
-            CurrentSequence = 5,
-        };
-        FundsDeposited evt = new() { Amount = 100m };
-
-        // Act
-        BankAccountLedgerProjection result = reducer.Apply(initial, evt);
-
-        // Assert
-        result.CurrentSequence.Should().Be(6);
-        result.Entries[0].Sequence.Should().Be(6);
-    }
-
-    /// <summary>
-    ///     New entries are prepended (most recent first).
-    /// </summary>
-    [Fact]
-    [AllureFeature("Ordering")]
-    public void ReducePrependsNewEntry()
-    {
-        // Arrange
-        BankAccountLedgerProjection initial = new()
-        {
-            Entries = [new LedgerEntry { EntryType = LedgerEntryType.Deposit, Amount = 100m, Sequence = 1 }],
-            CurrentSequence = 1,
-        };
-        FundsDeposited evt = new() { Amount = 200m };
-
-        // Act
-        BankAccountLedgerProjection result = reducer.Apply(initial, evt);
-
-        // Assert
-        result.Entries.Should().HaveCount(2);
-        result.Entries[0].Amount.Should().Be(200m, "newest entry should be first");
-        result.Entries[1].Amount.Should().Be(100m, "older entry should be second");
     }
 
     /// <summary>
@@ -119,7 +70,10 @@ public sealed class FundsDepositedLedgerReducerTests
             Entries = existingEntries,
             CurrentSequence = 20,
         };
-        FundsDeposited evt = new() { Amount = 999m };
+        FundsDeposited evt = new()
+        {
+            Amount = 999m,
+        };
 
         // Act
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
@@ -131,20 +85,64 @@ public sealed class FundsDepositedLedgerReducerTests
     }
 
     /// <summary>
-    ///     Reducing with null event throws ArgumentNullException.
+    ///     Reducing FundsDeposited increments the current sequence.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void ReduceWithNullEventThrowsArgumentNullException()
+    [AllureFeature("Sequencing")]
+    public void ReduceIncrementsCurrentSequence()
     {
         // Arrange
-        BankAccountLedgerProjection initial = new() { Entries = [], CurrentSequence = 0 };
+        BankAccountLedgerProjection initial = new()
+        {
+            Entries = [],
+            CurrentSequence = 5,
+        };
+        FundsDeposited evt = new()
+        {
+            Amount = 100m,
+        };
 
         // Act
-        Action act = () => reducer.Apply(initial, null!);
+        BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        result.CurrentSequence.Should().Be(6);
+        result.Entries[0].Sequence.Should().Be(6);
+    }
+
+    /// <summary>
+    ///     New entries are prepended (most recent first).
+    /// </summary>
+    [Fact]
+    [AllureFeature("Ordering")]
+    public void ReducePrependsNewEntry()
+    {
+        // Arrange
+        BankAccountLedgerProjection initial = new()
+        {
+            Entries =
+            [
+                new()
+                {
+                    EntryType = LedgerEntryType.Deposit,
+                    Amount = 100m,
+                    Sequence = 1,
+                },
+            ],
+            CurrentSequence = 1,
+        };
+        FundsDeposited evt = new()
+        {
+            Amount = 200m,
+        };
+
+        // Act
+        BankAccountLedgerProjection result = reducer.Apply(initial, evt);
+
+        // Assert
+        result.Entries.Should().HaveCount(2);
+        result.Entries[0].Amount.Should().Be(200m, "newest entry should be first");
+        result.Entries[1].Amount.Should().Be(100m, "older entry should be second");
     }
 
     /// <summary>
@@ -160,13 +158,37 @@ public sealed class FundsDepositedLedgerReducerTests
             Entries = [],
             CurrentSequence = 0,
         };
-        FundsDeposited evt = new() { Amount = 100m };
+        FundsDeposited evt = new()
+        {
+            Amount = 100m,
+        };
 
         // Act
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
         result.Should().NotBeSameAs(initial);
+    }
+
+    /// <summary>
+    ///     Reducing with null event throws ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    public void ReduceWithNullEventThrowsArgumentNullException()
+    {
+        // Arrange
+        BankAccountLedgerProjection initial = new()
+        {
+            Entries = [],
+            CurrentSequence = 0,
+        };
+
+        // Act
+        Action act = () => reducer.Apply(initial, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
     }
 
     /// <summary>
@@ -182,7 +204,10 @@ public sealed class FundsDepositedLedgerReducerTests
             Entries = [],
             CurrentSequence = 0,
         };
-        FundsDeposited evt = new() { Amount = 0m };
+        FundsDeposited evt = new()
+        {
+            Amount = 0m,
+        };
 
         // Act
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);

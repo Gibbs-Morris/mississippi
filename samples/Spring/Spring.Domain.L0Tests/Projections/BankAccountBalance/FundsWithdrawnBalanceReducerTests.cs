@@ -30,7 +30,10 @@ public sealed class FundsWithdrawnBalanceReducerTests
             Balance = 500.00m,
             IsOpen = true,
         };
-        FundsWithdrawn evt = new() { Amount = 150.00m };
+        FundsWithdrawn evt = new()
+        {
+            Amount = 150.00m,
+        };
 
         // Act
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
@@ -52,7 +55,10 @@ public sealed class FundsWithdrawnBalanceReducerTests
             Balance = 200.00m,
             IsOpen = true,
         };
-        FundsWithdrawn evt = new() { Amount = 50.00m };
+        FundsWithdrawn evt = new()
+        {
+            Amount = 50.00m,
+        };
 
         // Act
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
@@ -60,28 +66,6 @@ public sealed class FundsWithdrawnBalanceReducerTests
         // Assert
         result.HolderName.Should().Be("Jane Doe");
         result.IsOpen.Should().BeTrue();
-    }
-
-    /// <summary>
-    ///     Verifies that withdrawing zero does not change balance.
-    /// </summary>
-    [Fact]
-    public void ReduceWithZeroWithdrawalKeepsBalanceUnchanged()
-    {
-        // Arrange
-        BankAccountBalanceProjection initial = new()
-        {
-            HolderName = "Test",
-            Balance = 100.00m,
-            IsOpen = true,
-        };
-        FundsWithdrawn evt = new() { Amount = 0m };
-
-        // Act
-        BankAccountBalanceProjection result = reducer.Apply(initial, evt);
-
-        // Assert
-        result.Balance.Should().Be(100.00m);
     }
 
     /// <summary>
@@ -99,9 +83,24 @@ public sealed class FundsWithdrawnBalanceReducerTests
         };
 
         // Act
-        state = reducer.Apply(state, new FundsWithdrawn { Amount = 100.00m });
-        state = reducer.Apply(state, new FundsWithdrawn { Amount = 200.00m });
-        state = reducer.Apply(state, new FundsWithdrawn { Amount = 50.00m });
+        state = reducer.Apply(
+            state,
+            new()
+            {
+                Amount = 100.00m,
+            });
+        state = reducer.Apply(
+            state,
+            new()
+            {
+                Amount = 200.00m,
+            });
+        state = reducer.Apply(
+            state,
+            new()
+            {
+                Amount = 50.00m,
+            });
 
         // Assert
         state.Balance.Should().Be(650.00m);
@@ -142,12 +141,40 @@ public sealed class FundsWithdrawnBalanceReducerTests
             Balance = 50.00m,
             IsOpen = true,
         };
-        FundsWithdrawn evt = new() { Amount = 100.00m };
+        FundsWithdrawn evt = new()
+        {
+            Amount = 100.00m,
+        };
 
         // Act
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert - Reducer simply applies the math; aggregate enforces business rules
         result.Balance.Should().Be(-50.00m);
+    }
+
+    /// <summary>
+    ///     Verifies that withdrawing zero does not change balance.
+    /// </summary>
+    [Fact]
+    public void ReduceWithZeroWithdrawalKeepsBalanceUnchanged()
+    {
+        // Arrange
+        BankAccountBalanceProjection initial = new()
+        {
+            HolderName = "Test",
+            Balance = 100.00m,
+            IsOpen = true,
+        };
+        FundsWithdrawn evt = new()
+        {
+            Amount = 0m,
+        };
+
+        // Act
+        BankAccountBalanceProjection result = reducer.Apply(initial, evt);
+
+        // Assert
+        result.Balance.Should().Be(100.00m);
     }
 }

@@ -41,13 +41,40 @@ public sealed class AccountOpenedBalanceReducerTests
     }
 
     /// <summary>
+    ///     Verifies that reducer produces an equivalent projection using fluent syntax.
+    /// </summary>
+    [Fact]
+    public void ReduceWithAccountOpenedProducesExpectedProjection()
+    {
+        // Arrange
+        BankAccountBalanceProjection initial = new();
+        AccountOpened evt = new()
+        {
+            HolderName = "Test User",
+            InitialDeposit = 1000.00m,
+        };
+        BankAccountBalanceProjection expected = new()
+        {
+            HolderName = "Test User",
+            Balance = 1000.00m,
+            IsOpen = true,
+        };
+
+        // Act & Assert
+        reducer.ShouldProduce(initial, evt, expected);
+    }
+
+    /// <summary>
     ///     Verifies that reducer sets IsOpen to true.
     /// </summary>
     [Fact]
     public void ReduceWithAccountOpenedSetsIsOpenToTrue()
     {
         // Arrange
-        BankAccountBalanceProjection initial = new() { IsOpen = false };
+        BankAccountBalanceProjection initial = new()
+        {
+            IsOpen = false,
+        };
         AccountOpened evt = new()
         {
             HolderName = "Jane Doe",
@@ -59,6 +86,22 @@ public sealed class AccountOpenedBalanceReducerTests
 
         // Assert
         result.IsOpen.Should().BeTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that reducer throws when event is null.
+    /// </summary>
+    [Fact]
+    public void ReduceWithNullEventThrowsArgumentNullException()
+    {
+        // Arrange
+        BankAccountBalanceProjection initial = new();
+
+        // Act & Assert
+        reducer.ShouldThrow<ArgumentNullException, AccountOpened, BankAccountBalanceProjection>(
+            initial,
+            null!,
+            "eventData");
     }
 
     /// <summary>
@@ -81,45 +124,5 @@ public sealed class AccountOpenedBalanceReducerTests
         // Assert
         result.Balance.Should().Be(0m);
         result.HolderName.Should().Be("Zero Balance");
-    }
-
-    /// <summary>
-    ///     Verifies that reducer throws when event is null.
-    /// </summary>
-    [Fact]
-    public void ReduceWithNullEventThrowsArgumentNullException()
-    {
-        // Arrange
-        BankAccountBalanceProjection initial = new();
-
-        // Act & Assert
-        reducer.ShouldThrow<ArgumentNullException, AccountOpened, BankAccountBalanceProjection>(
-            initial,
-            null!,
-            "eventData");
-    }
-
-    /// <summary>
-    ///     Verifies that reducer produces an equivalent projection using fluent syntax.
-    /// </summary>
-    [Fact]
-    public void ReduceWithAccountOpenedProducesExpectedProjection()
-    {
-        // Arrange
-        BankAccountBalanceProjection initial = new();
-        AccountOpened evt = new()
-        {
-            HolderName = "Test User",
-            InitialDeposit = 1000.00m,
-        };
-        BankAccountBalanceProjection expected = new()
-        {
-            HolderName = "Test User",
-            Balance = 1000.00m,
-            IsOpen = true,
-        };
-
-        // Act & Assert
-        reducer.ShouldProduce(initial, evt, expected);
     }
 }

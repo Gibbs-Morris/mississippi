@@ -30,7 +30,10 @@ public sealed class FundsDepositedBalanceReducerTests
             Balance = 500.00m,
             IsOpen = true,
         };
-        FundsDeposited evt = new() { Amount = 250.00m };
+        FundsDeposited evt = new()
+        {
+            Amount = 250.00m,
+        };
 
         // Act
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
@@ -52,7 +55,10 @@ public sealed class FundsDepositedBalanceReducerTests
             Balance = 100.00m,
             IsOpen = true,
         };
-        FundsDeposited evt = new() { Amount = 50.00m };
+        FundsDeposited evt = new()
+        {
+            Amount = 50.00m,
+        };
 
         // Act
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
@@ -63,25 +69,27 @@ public sealed class FundsDepositedBalanceReducerTests
     }
 
     /// <summary>
-    ///     Verifies that depositing zero does not change balance.
+    ///     Verifies that reducer handles large deposit amounts.
     /// </summary>
     [Fact]
-    public void ReduceWithZeroDepositKeepsBalanceUnchanged()
+    public void ReduceWithLargeDepositHandlesCorrectly()
     {
         // Arrange
         BankAccountBalanceProjection initial = new()
         {
-            HolderName = "Test",
-            Balance = 100.00m,
+            Balance = 1_000_000.00m,
             IsOpen = true,
         };
-        FundsDeposited evt = new() { Amount = 0m };
+        FundsDeposited evt = new()
+        {
+            Amount = 999_999_999.99m,
+        };
 
         // Act
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Balance.Should().Be(100.00m);
+        result.Balance.Should().Be(1_000_999_999.99m);
     }
 
     /// <summary>
@@ -99,9 +107,24 @@ public sealed class FundsDepositedBalanceReducerTests
         };
 
         // Act
-        state = reducer.Apply(state, new FundsDeposited { Amount = 100.00m });
-        state = reducer.Apply(state, new FundsDeposited { Amount = 200.00m });
-        state = reducer.Apply(state, new FundsDeposited { Amount = 50.00m });
+        state = reducer.Apply(
+            state,
+            new()
+            {
+                Amount = 100.00m,
+            });
+        state = reducer.Apply(
+            state,
+            new()
+            {
+                Amount = 200.00m,
+            });
+        state = reducer.Apply(
+            state,
+            new()
+            {
+                Amount = 50.00m,
+            });
 
         // Assert
         state.Balance.Should().Be(350.00m);
@@ -129,23 +152,27 @@ public sealed class FundsDepositedBalanceReducerTests
     }
 
     /// <summary>
-    ///     Verifies that reducer handles large deposit amounts.
+    ///     Verifies that depositing zero does not change balance.
     /// </summary>
     [Fact]
-    public void ReduceWithLargeDepositHandlesCorrectly()
+    public void ReduceWithZeroDepositKeepsBalanceUnchanged()
     {
         // Arrange
         BankAccountBalanceProjection initial = new()
         {
-            Balance = 1_000_000.00m,
+            HolderName = "Test",
+            Balance = 100.00m,
             IsOpen = true,
         };
-        FundsDeposited evt = new() { Amount = 999_999_999.99m };
+        FundsDeposited evt = new()
+        {
+            Amount = 0m,
+        };
 
         // Act
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Balance.Should().Be(1_000_999_999.99m);
+        result.Balance.Should().Be(100.00m);
     }
 }

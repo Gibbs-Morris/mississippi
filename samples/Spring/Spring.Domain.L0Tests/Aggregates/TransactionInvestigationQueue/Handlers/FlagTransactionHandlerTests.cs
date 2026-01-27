@@ -1,6 +1,6 @@
-using Allure.Xunit.Attributes;
+using System.Collections.Generic;
 
-using FluentAssertions;
+using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
@@ -8,8 +8,6 @@ using Spring.Domain.Aggregates.TransactionInvestigationQueue;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
-
-using Xunit;
 
 
 namespace Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Handlers;
@@ -27,30 +25,28 @@ public sealed class FlagTransactionHandlerTests
     private readonly FlagTransactionHandler handler = new();
 
     /// <summary>
-    ///     Flagging a valid transaction should emit TransactionFlagged event.
+    ///     Flagging preserves the original transaction timestamp.
     /// </summary>
     [Fact]
     [AllureFeature("Transaction Flagging")]
-    public void FlagValidTransactionEmitsTransactionFlagged()
+    public void FlagPreservesOriginalTransactionTimestamp()
     {
         // Arrange
+        DateTimeOffset originalTime = new(2025, 6, 15, 14, 30, 0, TimeSpan.Zero);
         FlagTransaction command = new()
         {
             AccountId = "acc-123",
-            Amount = 15_000m,
-            Timestamp = TestTimestamp,
+            Amount = 20_000m,
+            Timestamp = originalTime,
         };
 
         // Act
-        var events = handler.ShouldSucceed(null, command);
+        IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
 
         // Assert
-        events.Should().ContainSingle();
         TransactionFlagged flagged = events[0].Should().BeOfType<TransactionFlagged>().Subject;
-        flagged.AccountId.Should().Be("acc-123");
-        flagged.Amount.Should().Be(15_000m);
-        flagged.OriginalTimestamp.Should().Be(TestTimestamp);
-        flagged.FlaggedTimestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
+        flagged.OriginalTimestamp.Should().Be(originalTime);
+        flagged.FlaggedTimestamp.Should().NotBe(originalTime);
     }
 
     /// <summary>
@@ -73,13 +69,40 @@ public sealed class FlagTransactionHandlerTests
         };
 
         // Act
-        var events = handler.ShouldSucceed(existingState, command);
+        IReadOnlyList<object> events = handler.ShouldSucceed(existingState, command);
 
         // Assert
         events.Should().ContainSingle();
         TransactionFlagged flagged = events[0].Should().BeOfType<TransactionFlagged>().Subject;
         flagged.AccountId.Should().Be("acc-456");
         flagged.Amount.Should().Be(25_000m);
+    }
+
+    /// <summary>
+    ///     Flagging a valid transaction should emit TransactionFlagged event.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Transaction Flagging")]
+    public void FlagValidTransactionEmitsTransactionFlagged()
+    {
+        // Arrange
+        FlagTransaction command = new()
+        {
+            AccountId = "acc-123",
+            Amount = 15_000m,
+            Timestamp = TestTimestamp,
+        };
+
+        // Act
+        IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
+
+        // Assert
+        events.Should().ContainSingle();
+        TransactionFlagged flagged = events[0].Should().BeOfType<TransactionFlagged>().Subject;
+        flagged.AccountId.Should().Be("acc-123");
+        flagged.Amount.Should().Be(15_000m);
+        flagged.OriginalTimestamp.Should().Be(TestTimestamp);
+        flagged.FlaggedTimestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
@@ -98,57 +121,7 @@ public sealed class FlagTransactionHandlerTests
         };
 
         // Act & Assert
-        handler.ShouldFailWithMessage(
-            null,
-            command,
-            AggregateErrorCodes.InvalidCommand,
-            "Account ID is required");
-    }
-
-    /// <summary>
-    ///     Flagging with whitespace-only account ID should fail with InvalidCommand.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    public void FlagWithWhitespaceAccountIdFailsWithInvalidCommand()
-    {
-        // Arrange
-        FlagTransaction command = new()
-        {
-            AccountId = "   ",
-            Amount = 15_000m,
-            Timestamp = TestTimestamp,
-        };
-
-        // Act & Assert
-        handler.ShouldFailWithMessage(
-            null,
-            command,
-            AggregateErrorCodes.InvalidCommand,
-            "Account ID is required");
-    }
-
-    /// <summary>
-    ///     Flagging with zero amount should fail with InvalidCommand.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    public void FlagWithZeroAmountFailsWithInvalidCommand()
-    {
-        // Arrange
-        FlagTransaction command = new()
-        {
-            AccountId = "acc-123",
-            Amount = 0m,
-            Timestamp = TestTimestamp,
-        };
-
-        // Act & Assert
-        handler.ShouldFailWithMessage(
-            null,
-            command,
-            AggregateErrorCodes.InvalidCommand,
-            "Amount must be positive");
+        handler.ShouldFailWithMessage(null, command, AggregateErrorCodes.InvalidCommand, "Account ID is required");
     }
 
     /// <summary>
@@ -167,11 +140,7 @@ public sealed class FlagTransactionHandlerTests
         };
 
         // Act & Assert
-        handler.ShouldFailWithMessage(
-            null,
-            command,
-            AggregateErrorCodes.InvalidCommand,
-            "Amount must be positive");
+        handler.ShouldFailWithMessage(null, command, AggregateErrorCodes.InvalidCommand, "Amount must be positive");
     }
 
     /// <summary>
@@ -190,7 +159,7 @@ public sealed class FlagTransactionHandlerTests
         };
 
         // Act
-        var events = handler.ShouldSucceed(null, command);
+        IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
 
         // Assert
         events.Should().ContainSingle();
@@ -199,27 +168,40 @@ public sealed class FlagTransactionHandlerTests
     }
 
     /// <summary>
-    ///     Flagging preserves the original transaction timestamp.
+    ///     Flagging with whitespace-only account ID should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Transaction Flagging")]
-    public void FlagPreservesOriginalTransactionTimestamp()
+    [AllureFeature("Validation")]
+    public void FlagWithWhitespaceAccountIdFailsWithInvalidCommand()
     {
         // Arrange
-        DateTimeOffset originalTime = new(2025, 6, 15, 14, 30, 0, TimeSpan.Zero);
+        FlagTransaction command = new()
+        {
+            AccountId = "   ",
+            Amount = 15_000m,
+            Timestamp = TestTimestamp,
+        };
+
+        // Act & Assert
+        handler.ShouldFailWithMessage(null, command, AggregateErrorCodes.InvalidCommand, "Account ID is required");
+    }
+
+    /// <summary>
+    ///     Flagging with zero amount should fail with InvalidCommand.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    public void FlagWithZeroAmountFailsWithInvalidCommand()
+    {
+        // Arrange
         FlagTransaction command = new()
         {
             AccountId = "acc-123",
-            Amount = 20_000m,
-            Timestamp = originalTime,
+            Amount = 0m,
+            Timestamp = TestTimestamp,
         };
 
-        // Act
-        var events = handler.ShouldSucceed(null, command);
-
-        // Assert
-        TransactionFlagged flagged = events[0].Should().BeOfType<TransactionFlagged>().Subject;
-        flagged.OriginalTimestamp.Should().Be(originalTime);
-        flagged.FlaggedTimestamp.Should().NotBe(originalTime);
+        // Act & Assert
+        handler.ShouldFailWithMessage(null, command, AggregateErrorCodes.InvalidCommand, "Amount must be positive");
     }
 }

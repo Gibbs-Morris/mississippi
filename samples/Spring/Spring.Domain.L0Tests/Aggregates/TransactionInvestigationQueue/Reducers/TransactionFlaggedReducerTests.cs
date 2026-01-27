@@ -1,14 +1,8 @@
-using System;
-
 using Allure.Xunit.Attributes;
-
-using FluentAssertions;
 
 using Spring.Domain.Aggregates.TransactionInvestigationQueue;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Reducers;
-
-using Xunit;
 
 
 namespace Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Reducers;
@@ -24,30 +18,6 @@ public sealed class TransactionFlaggedReducerTests
     private static readonly DateTimeOffset TestTimestamp = new(2025, 1, 15, 10, 30, 0, TimeSpan.Zero);
 
     private readonly TransactionFlaggedReducer reducer = new();
-
-    /// <summary>
-    ///     Reducing TransactionFlagged on null state creates new aggregate with count 1.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State Reduction")]
-    public void ReduceOnNullStateCreatesNewAggregateWithCountOne()
-    {
-        // Arrange
-        TransactionFlagged evt = new()
-        {
-            AccountId = "acc-123",
-            Amount = 15_000m,
-            OriginalTimestamp = TestTimestamp,
-            FlaggedTimestamp = DateTimeOffset.UtcNow,
-        };
-
-        // Act
-        TransactionInvestigationQueueAggregate result = reducer.Apply(null!, evt);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.TotalFlaggedCount.Should().Be(1);
-    }
 
     /// <summary>
     ///     Reducing TransactionFlagged increments the total flagged count.
@@ -112,20 +82,27 @@ public sealed class TransactionFlaggedReducerTests
     }
 
     /// <summary>
-    ///     Reducing with null event throws ArgumentNullException.
+    ///     Reducing TransactionFlagged on null state creates new aggregate with count 1.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void ReduceWithNullEventThrowsArgumentNullException()
+    [AllureFeature("State Reduction")]
+    public void ReduceOnNullStateCreatesNewAggregateWithCountOne()
     {
         // Arrange
-        TransactionInvestigationQueueAggregate initial = new() { TotalFlaggedCount = 0 };
+        TransactionFlagged evt = new()
+        {
+            AccountId = "acc-123",
+            Amount = 15_000m,
+            OriginalTimestamp = TestTimestamp,
+            FlaggedTimestamp = DateTimeOffset.UtcNow,
+        };
 
         // Act
-        Action act = () => reducer.Apply(initial, null!);
+        TransactionInvestigationQueueAggregate result = reducer.Apply(null!, evt);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        result.Should().NotBeNull();
+        result.TotalFlaggedCount.Should().Be(1);
     }
 
     /// <summary>
@@ -153,5 +130,25 @@ public sealed class TransactionFlaggedReducerTests
 
         // Assert
         result.Should().NotBeSameAs(initial);
+    }
+
+    /// <summary>
+    ///     Reducing with null event throws ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    public void ReduceWithNullEventThrowsArgumentNullException()
+    {
+        // Arrange
+        TransactionInvestigationQueueAggregate initial = new()
+        {
+            TotalFlaggedCount = 0,
+        };
+
+        // Act
+        Action act = () => reducer.Apply(initial, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
     }
 }

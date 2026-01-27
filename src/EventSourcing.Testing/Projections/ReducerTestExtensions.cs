@@ -1,7 +1,6 @@
 using System;
 
 using FluentAssertions;
-using FluentAssertions.Extensibility;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
@@ -48,15 +47,6 @@ namespace Mississippi.EventSourcing.Testing.Projections;
 public static class ReducerTestExtensions
 {
     /// <summary>
-    ///     Creates a new test harness for the specified projection type.
-    /// </summary>
-    /// <typeparam name="TProjection">The projection type to test.</typeparam>
-    /// <returns>A new <see cref="ReducerTestHarness{TProjection}" />.</returns>
-    public static ReducerTestHarness<TProjection> ForProjection<TProjection>()
-        where TProjection : new() =>
-        new();
-
-    /// <summary>
     ///     Applies an event to a reducer and returns the resulting projection.
     /// </summary>
     /// <typeparam name="TEvent">The event type.</typeparam>
@@ -76,10 +66,18 @@ public static class ReducerTestExtensions
     {
         ArgumentNullException.ThrowIfNull(reducer);
         ArgumentNullException.ThrowIfNull(eventData);
-
         TProjection state = initialState ?? new TProjection();
         return reducer.Reduce(state, eventData);
     }
+
+    /// <summary>
+    ///     Creates a new test harness for the specified projection type.
+    /// </summary>
+    /// <typeparam name="TProjection">The projection type to test.</typeparam>
+    /// <returns>A new <see cref="ReducerTestHarness{TProjection}" />.</returns>
+    public static ReducerTestHarness<TProjection> ForProjection<TProjection>()
+        where TProjection : new() =>
+        new();
 
     /// <summary>
     ///     Asserts that a reducer produces the expected projection when given an event.
@@ -104,7 +102,6 @@ public static class ReducerTestExtensions
         ArgumentNullException.ThrowIfNull(reducer);
         ArgumentNullException.ThrowIfNull(eventData);
         ArgumentNullException.ThrowIfNull(expected);
-
         TProjection result = reducer.Apply(initialState, eventData);
         result.Should().BeEquivalentTo(expected);
     }
@@ -132,11 +129,8 @@ public static class ReducerTestExtensions
         where TProjection : new()
     {
         ArgumentNullException.ThrowIfNull(reducer);
-
         TProjection state = initialState ?? new TProjection();
-
         Action act = () => reducer.Reduce(state, eventData!);
-
         if (expectedMessage is not null)
         {
             act.Should().Throw<TException>().WithMessage($"*{expectedMessage}*");

@@ -1,14 +1,8 @@
-using System;
-
 using Allure.Xunit.Attributes;
-
-using FluentAssertions;
 
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Aggregates.BankAccount.Reducers;
-
-using Xunit;
 
 
 namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Reducers;
@@ -23,14 +17,15 @@ public sealed class FundsDepositedAggregateReducerTests
 {
     private readonly FundsDepositedReducer reducer = new();
 
-    private static BankAccountAggregate OpenAccount => new()
-    {
-        IsOpen = true,
-        HolderName = "Test User",
-        Balance = 100m,
-        DepositCount = 0,
-        WithdrawalCount = 0,
-    };
+    private static BankAccountAggregate OpenAccount =>
+        new()
+        {
+            IsOpen = true,
+            HolderName = "Test User",
+            Balance = 100m,
+            DepositCount = 0,
+            WithdrawalCount = 0,
+        };
 
     /// <summary>
     ///     Reducing FundsDeposited should increase balance by amount.
@@ -40,7 +35,10 @@ public sealed class FundsDepositedAggregateReducerTests
     public void FundsDepositedIncreasesBalance()
     {
         // Arrange
-        FundsDeposited @event = new() { Amount = 50m };
+        FundsDeposited @event = new()
+        {
+            Amount = 50m,
+        };
 
         // Act
         BankAccountAggregate result = reducer.Apply(OpenAccount, @event);
@@ -57,7 +55,10 @@ public sealed class FundsDepositedAggregateReducerTests
     public void FundsDepositedIncrementsDepositCount()
     {
         // Arrange
-        FundsDeposited @event = new() { Amount = 50m };
+        FundsDeposited @event = new()
+        {
+            Amount = 50m,
+        };
 
         // Act
         BankAccountAggregate result = reducer.Apply(OpenAccount, @event);
@@ -74,7 +75,10 @@ public sealed class FundsDepositedAggregateReducerTests
     public void FundsDepositedPreservesOtherProperties()
     {
         // Arrange
-        FundsDeposited @event = new() { Amount = 50m };
+        FundsDeposited @event = new()
+        {
+            Amount = 50m,
+        };
 
         // Act
         BankAccountAggregate result = reducer.Apply(OpenAccount, @event);
@@ -83,6 +87,33 @@ public sealed class FundsDepositedAggregateReducerTests
         result.IsOpen.Should().Be(OpenAccount.IsOpen);
         result.HolderName.Should().Be(OpenAccount.HolderName);
         result.WithdrawalCount.Should().Be(OpenAccount.WithdrawalCount);
+    }
+
+    /// <summary>
+    ///     Reducer should produce expected complete state.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Balance Updates")]
+    public void FundsDepositedProducesExpectedState()
+    {
+        // Arrange
+        FundsDeposited @event = new()
+        {
+            Amount = 75m,
+        };
+
+        // Act & Assert
+        reducer.ShouldProduce(
+            OpenAccount,
+            @event,
+            new()
+            {
+                IsOpen = true,
+                HolderName = "Test User",
+                Balance = 175m,
+                DepositCount = 1,
+                WithdrawalCount = 0,
+            });
     }
 
     /// <summary>
@@ -97,29 +128,5 @@ public sealed class FundsDepositedAggregateReducerTests
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
-    }
-
-    /// <summary>
-    ///     Reducer should produce expected complete state.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Balance Updates")]
-    public void FundsDepositedProducesExpectedState()
-    {
-        // Arrange
-        FundsDeposited @event = new() { Amount = 75m };
-
-        // Act & Assert
-        reducer.ShouldProduce(
-            OpenAccount,
-            @event,
-            new BankAccountAggregate
-            {
-                IsOpen = true,
-                HolderName = "Test User",
-                Balance = 175m,
-                DepositCount = 1,
-                WithdrawalCount = 0,
-            });
     }
 }

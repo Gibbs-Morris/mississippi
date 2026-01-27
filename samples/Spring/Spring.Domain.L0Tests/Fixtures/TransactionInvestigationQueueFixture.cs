@@ -37,11 +37,14 @@ public static class TransactionInvestigationQueueFixture
     /// </summary>
     /// <param name="flaggedCount">The number of previously flagged transactions.</param>
     /// <returns>A scenario for testing additional flagging.</returns>
-    public static AggregateScenario<TransactionInvestigationQueueAggregate> WithFlaggedCount(int flaggedCount) =>
+    public static AggregateScenario<TransactionInvestigationQueueAggregate> WithFlaggedCount(
+        int flaggedCount
+    ) =>
         CreateHarness()
-            .WithInitialState(new TransactionInvestigationQueueAggregate
-            {
-                TotalFlaggedCount = flaggedCount,
-            })
+            .WithInitialState(
+                new()
+                {
+                    TotalFlaggedCount = flaggedCount,
+                })
             .CreateScenario();
 }

@@ -33,6 +33,34 @@ namespace Spring.Domain.L0Tests.Fixtures;
 public static class BankAccountFixture
 {
     /// <summary>
+    ///     Creates a scenario with an account at a specific balance for withdrawal testing.
+    /// </summary>
+    /// <param name="holderName">The account holder's name.</param>
+    /// <param name="balance">The current balance.</param>
+    /// <returns>A scenario ready for withdrawal commands.</returns>
+    public static AggregateScenario<BankAccountAggregate> AccountWithBalance(
+        string holderName,
+        decimal balance
+    ) =>
+        CreateHarness()
+            .WithInitialState(
+                new()
+                {
+                    HolderName = holderName,
+                    Balance = balance,
+                    IsOpen = true,
+                    DepositCount = 1,
+                    WithdrawalCount = 0,
+                })
+            .CreateScenario();
+
+    /// <summary>
+    ///     Creates a scenario starting from a closed (default) account state.
+    /// </summary>
+    /// <returns>A scenario for testing account opening.</returns>
+    public static AggregateScenario<BankAccountAggregate> ClosedAccount() => CreateHarness().CreateScenario();
+
+    /// <summary>
     ///     Creates a fully-wired aggregate test harness with all BankAccount handlers and reducers.
     /// </summary>
     /// <returns>A configured <see cref="AggregateTestHarness{BankAccountAggregate}" />.</returns>
@@ -64,33 +92,10 @@ public static class BankAccountFixture
     ) =>
         CreateHarness()
             .CreateScenario()
-            .Given(new AccountOpened { HolderName = holderName, InitialDeposit = initialDeposit });
-
-    /// <summary>
-    ///     Creates a scenario starting from a closed (default) account state.
-    /// </summary>
-    /// <returns>A scenario for testing account opening.</returns>
-    public static AggregateScenario<BankAccountAggregate> ClosedAccount() =>
-        CreateHarness().CreateScenario();
-
-    /// <summary>
-    ///     Creates a scenario with an account at a specific balance for withdrawal testing.
-    /// </summary>
-    /// <param name="holderName">The account holder's name.</param>
-    /// <param name="balance">The current balance.</param>
-    /// <returns>A scenario ready for withdrawal commands.</returns>
-    public static AggregateScenario<BankAccountAggregate> AccountWithBalance(
-        string holderName,
-        decimal balance
-    ) =>
-        CreateHarness()
-            .WithInitialState(new BankAccountAggregate
-            {
-                HolderName = holderName,
-                Balance = balance,
-                IsOpen = true,
-                DepositCount = 1,
-                WithdrawalCount = 0,
-            })
-            .CreateScenario();
+            .Given(
+                new AccountOpened
+                {
+                    HolderName = holderName,
+                    InitialDeposit = initialDeposit,
+                });
 }

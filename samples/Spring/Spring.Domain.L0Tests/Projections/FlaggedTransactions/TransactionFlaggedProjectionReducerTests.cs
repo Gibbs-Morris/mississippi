@@ -1,16 +1,11 @@
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 
 using Allure.Xunit.Attributes;
 
-using FluentAssertions;
-
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 using Spring.Domain.Projections.FlaggedTransactions;
 using Spring.Domain.Projections.FlaggedTransactions.Reducers;
-
-using Xunit;
 
 
 namespace Spring.Domain.L0Tests.Projections.FlaggedTransactions;
@@ -23,8 +18,9 @@ namespace Spring.Domain.L0Tests.Projections.FlaggedTransactions;
 [AllureSubSuite("FlaggedTransactions")]
 public sealed class TransactionFlaggedProjectionReducerTests
 {
-    private static readonly DateTimeOffset OriginalTimestamp = new(2025, 1, 15, 10, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset FlaggedTimestamp = new(2025, 1, 15, 10, 5, 0, TimeSpan.Zero);
+
+    private static readonly DateTimeOffset OriginalTimestamp = new(2025, 1, 15, 10, 0, 0, TimeSpan.Zero);
 
     private readonly TransactionFlaggedProjectionReducer reducer = new();
 
@@ -60,75 +56,6 @@ public sealed class TransactionFlaggedProjectionReducerTests
         entry.OriginalTimestamp.Should().Be(OriginalTimestamp);
         entry.FlaggedTimestamp.Should().Be(FlaggedTimestamp);
         entry.Sequence.Should().Be(1);
-    }
-
-    /// <summary>
-    ///     Reducing TransactionFlagged increments the current sequence.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Sequencing")]
-    public void ReduceIncrementsCurrentSequence()
-    {
-        // Arrange
-        FlaggedTransactionsProjection initial = new()
-        {
-            Entries = [],
-            CurrentSequence = 15,
-        };
-        TransactionFlagged evt = new()
-        {
-            AccountId = "acc-456",
-            Amount = 25_000m,
-            OriginalTimestamp = OriginalTimestamp,
-            FlaggedTimestamp = FlaggedTimestamp,
-        };
-
-        // Act
-        FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
-
-        // Assert
-        result.CurrentSequence.Should().Be(16);
-        result.Entries[0].Sequence.Should().Be(16);
-    }
-
-    /// <summary>
-    ///     New entries are prepended (most recent first).
-    /// </summary>
-    [Fact]
-    [AllureFeature("Ordering")]
-    public void ReducePrependsNewEntry()
-    {
-        // Arrange
-        FlaggedTransactionsProjection initial = new()
-        {
-            Entries =
-            [
-                new FlaggedTransaction
-                {
-                    AccountId = "old-acc",
-                    Amount = 12_000m,
-                    OriginalTimestamp = OriginalTimestamp,
-                    FlaggedTimestamp = FlaggedTimestamp,
-                    Sequence = 1,
-                },
-            ],
-            CurrentSequence = 1,
-        };
-        TransactionFlagged evt = new()
-        {
-            AccountId = "new-acc",
-            Amount = 20_000m,
-            OriginalTimestamp = OriginalTimestamp.AddHours(1),
-            FlaggedTimestamp = FlaggedTimestamp.AddHours(1),
-        };
-
-        // Act
-        FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
-
-        // Assert
-        result.Entries.Should().HaveCount(2);
-        result.Entries[0].AccountId.Should().Be("new-acc", "newest entry should be first");
-        result.Entries[1].AccountId.Should().Be("old-acc", "older entry should be second");
     }
 
     /// <summary>
@@ -173,39 +100,22 @@ public sealed class TransactionFlaggedProjectionReducerTests
     }
 
     /// <summary>
-    ///     Reducing with null event throws ArgumentNullException.
+    ///     Reducing TransactionFlagged increments the current sequence.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void ReduceWithNullEventThrowsArgumentNullException()
-    {
-        // Arrange
-        FlaggedTransactionsProjection initial = new() { Entries = [], CurrentSequence = 0 };
-
-        // Act
-        Action act = () => reducer.Apply(initial, null!);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    /// <summary>
-    ///     Reducing returns a new projection instance (immutability check).
-    /// </summary>
-    [Fact]
-    [AllureFeature("Immutability")]
-    public void ReduceReturnsNewInstance()
+    [AllureFeature("Sequencing")]
+    public void ReduceIncrementsCurrentSequence()
     {
         // Arrange
         FlaggedTransactionsProjection initial = new()
         {
             Entries = [],
-            CurrentSequence = 0,
+            CurrentSequence = 15,
         };
         TransactionFlagged evt = new()
         {
-            AccountId = "acc-123",
-            Amount = 15_000m,
+            AccountId = "acc-456",
+            Amount = 25_000m,
             OriginalTimestamp = OriginalTimestamp,
             FlaggedTimestamp = FlaggedTimestamp,
         };
@@ -214,7 +124,8 @@ public sealed class TransactionFlaggedProjectionReducerTests
         FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Should().NotBeSameAs(initial);
+        result.CurrentSequence.Should().Be(16);
+        result.Entries[0].Sequence.Should().Be(16);
     }
 
     /// <summary>
@@ -249,5 +160,94 @@ public sealed class TransactionFlaggedProjectionReducerTests
         entry.Amount.Should().Be(123_456.78m);
         entry.OriginalTimestamp.Should().Be(customOriginal);
         entry.FlaggedTimestamp.Should().Be(customFlagged);
+    }
+
+    /// <summary>
+    ///     New entries are prepended (most recent first).
+    /// </summary>
+    [Fact]
+    [AllureFeature("Ordering")]
+    public void ReducePrependsNewEntry()
+    {
+        // Arrange
+        FlaggedTransactionsProjection initial = new()
+        {
+            Entries =
+            [
+                new()
+                {
+                    AccountId = "old-acc",
+                    Amount = 12_000m,
+                    OriginalTimestamp = OriginalTimestamp,
+                    FlaggedTimestamp = FlaggedTimestamp,
+                    Sequence = 1,
+                },
+            ],
+            CurrentSequence = 1,
+        };
+        TransactionFlagged evt = new()
+        {
+            AccountId = "new-acc",
+            Amount = 20_000m,
+            OriginalTimestamp = OriginalTimestamp.AddHours(1),
+            FlaggedTimestamp = FlaggedTimestamp.AddHours(1),
+        };
+
+        // Act
+        FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
+
+        // Assert
+        result.Entries.Should().HaveCount(2);
+        result.Entries[0].AccountId.Should().Be("new-acc", "newest entry should be first");
+        result.Entries[1].AccountId.Should().Be("old-acc", "older entry should be second");
+    }
+
+    /// <summary>
+    ///     Reducing returns a new projection instance (immutability check).
+    /// </summary>
+    [Fact]
+    [AllureFeature("Immutability")]
+    public void ReduceReturnsNewInstance()
+    {
+        // Arrange
+        FlaggedTransactionsProjection initial = new()
+        {
+            Entries = [],
+            CurrentSequence = 0,
+        };
+        TransactionFlagged evt = new()
+        {
+            AccountId = "acc-123",
+            Amount = 15_000m,
+            OriginalTimestamp = OriginalTimestamp,
+            FlaggedTimestamp = FlaggedTimestamp,
+        };
+
+        // Act
+        FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
+
+        // Assert
+        result.Should().NotBeSameAs(initial);
+    }
+
+    /// <summary>
+    ///     Reducing with null event throws ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    public void ReduceWithNullEventThrowsArgumentNullException()
+    {
+        // Arrange
+        FlaggedTransactionsProjection initial = new()
+        {
+            Entries = [],
+            CurrentSequence = 0,
+        };
+
+        // Act
+        Action act = () => reducer.Apply(initial, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
     }
 }

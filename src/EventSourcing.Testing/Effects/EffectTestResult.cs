@@ -42,6 +42,11 @@ public class EffectTestResult
     }
 
     /// <summary>
+    ///     Gets the number of commands dispatched.
+    /// </summary>
+    public int DispatchCount => DispatchedCommands.Count;
+
+    /// <summary>
     ///     Gets the commands that were dispatched during effect execution.
     /// </summary>
     public IReadOnlyList<(Type AggregateType, string EntityId, object Command)> DispatchedCommands { get; }
@@ -50,9 +55,4 @@ public class EffectTestResult
     ///     Gets a value indicating whether any commands were dispatched.
     /// </summary>
     public bool HasDispatches => DispatchedCommands.Count > 0;
-
-    /// <summary>
-    ///     Gets the number of commands dispatched.
-    /// </summary>
-    public int DispatchCount => DispatchedCommands.Count;
 }

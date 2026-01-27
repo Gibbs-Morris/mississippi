@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -55,27 +53,26 @@ public static class HighValueTransactionEffectFixture
     )
     {
         EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate> harness =
-            EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>
-                .Create()
+            EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey(accountId)
-                .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>(
-                    "global",
-                    OperationResult.Ok());
-
-        HighValueTransactionEffect effect = harness.Build(
-            (factory, context, logger) => new HighValueTransactionEffect(factory, context, logger));
-
-        FundsDeposited eventData = new() { Amount = depositAmount };
+                .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
+        HighValueTransactionEffect effect = harness.Build((
+            factory,
+            context,
+            logger
+        ) => new(factory, context, logger));
+        FundsDeposited eventData = new()
+        {
+            Amount = depositAmount,
+        };
         BankAccountAggregate state = new()
         {
             HolderName = "Test",
             Balance = currentBalance + depositAmount,
             IsOpen = true,
         };
-
         await harness.InvokeAsync(effect, eventData, state, cancellationToken);
-
-        return new HighValueEffectResult(accountId, depositAmount, harness.DispatchedCommands);
+        return new(accountId, depositAmount, harness.DispatchedCommands);
     }
 
     /// <summary>
@@ -83,12 +80,10 @@ public static class HighValueTransactionEffectFixture
     /// </summary>
     /// <param name="accountId">The account ID for the grain context.</param>
     /// <returns>A configured effect test harness.</returns>
-    internal static EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>
-        CreateHarness(string accountId = "test-account") =>
-        EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>
-            .Create()
+    internal static EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate> CreateHarness(
+        string accountId = "test-account"
+    ) =>
+        EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
             .WithGrainKey(accountId)
-            .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>(
-                "global",
-                OperationResult.Ok());
+            .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
 }

@@ -26,13 +26,9 @@ public static class EffectTestExtensions
         where TCommand : class
     {
         ArgumentNullException.ThrowIfNull(commands);
-
-        (Type AggregateType, string EntityId, object Command) match = commands
-            .FirstOrDefault(c => c.Command is TCommand);
-
-        match.Command.Should().NotBeNull(
-            $"because a {typeof(TCommand).Name} command should have been dispatched");
-
+        (Type AggregateType, string EntityId, object Command) match =
+            commands.FirstOrDefault(c => c.Command is TCommand);
+        match.Command.Should().NotBeNull($"because a {typeof(TCommand).Name} command should have been dispatched");
         return (TCommand)match.Command;
     }
 
@@ -42,11 +38,52 @@ public static class EffectTestExtensions
     /// <typeparam name="TCommand">The expected command type.</typeparam>
     /// <param name="result">The effect test result.</param>
     /// <returns>The matching command for further assertions.</returns>
-    public static TCommand ShouldHaveDispatched<TCommand>(this EffectTestResult result)
+    public static TCommand ShouldHaveDispatched<TCommand>(
+        this EffectTestResult result
+    )
         where TCommand : class
     {
         ArgumentNullException.ThrowIfNull(result);
         return result.DispatchedCommands.ShouldHaveDispatched<TCommand>();
+    }
+
+    // ShouldHaveDispatchedTo overloads grouped together
+
+    /// <summary>
+    ///     Asserts that a command was dispatched to the specified aggregate type.
+    /// </summary>
+    /// <typeparam name="TAggregate">The expected target aggregate type.</typeparam>
+    /// <param name="commands">The list of dispatched commands.</param>
+    /// <param name="entityId">Optional expected entity ID.</param>
+    /// <returns>The matching command record for further assertions.</returns>
+    public static (Type AggregateType, string EntityId, object Command) ShouldHaveDispatchedTo<TAggregate>(
+        this IReadOnlyList<(Type AggregateType, string EntityId, object Command)> commands,
+        string? entityId = null
+    )
+        where TAggregate : class
+    {
+        ArgumentNullException.ThrowIfNull(commands);
+        (Type AggregateType, string EntityId, object Command)? match = commands.FirstOrDefault(c =>
+            (c.AggregateType == typeof(TAggregate)) && ((entityId == null) || (c.EntityId == entityId)));
+        match.Should().NotBeNull($"because a command should have been dispatched to {typeof(TAggregate).Name}");
+        return match!.Value;
+    }
+
+    /// <summary>
+    ///     Asserts that a command was dispatched to the specified aggregate type from an <see cref="EffectTestResult" />.
+    /// </summary>
+    /// <typeparam name="TAggregate">The expected target aggregate type.</typeparam>
+    /// <param name="result">The effect test result.</param>
+    /// <param name="entityId">Optional expected entity ID.</param>
+    /// <returns>The matching command record for further assertions.</returns>
+    public static (Type AggregateType, string EntityId, object Command) ShouldHaveDispatchedTo<TAggregate>(
+        this EffectTestResult result,
+        string? entityId = null
+    )
+        where TAggregate : class
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        return result.DispatchedCommands.ShouldHaveDispatchedTo<TAggregate>(entityId);
     }
 
     // ShouldHaveNoDispatches overloads grouped together
@@ -68,54 +105,12 @@ public static class EffectTestExtensions
     /// </summary>
     /// <param name="result">The effect test result.</param>
     /// <returns>The result for fluent chaining.</returns>
-    public static EffectTestResult ShouldHaveNoDispatches(this EffectTestResult result)
+    public static EffectTestResult ShouldHaveNoDispatches(
+        this EffectTestResult result
+    )
     {
         ArgumentNullException.ThrowIfNull(result);
         result.DispatchedCommands.ShouldHaveNoDispatches();
         return result;
-    }
-
-    // ShouldHaveDispatchedTo overloads grouped together
-
-    /// <summary>
-    ///     Asserts that a command was dispatched to the specified aggregate type.
-    /// </summary>
-    /// <typeparam name="TAggregate">The expected target aggregate type.</typeparam>
-    /// <param name="commands">The list of dispatched commands.</param>
-    /// <param name="entityId">Optional expected entity ID.</param>
-    /// <returns>The matching command record for further assertions.</returns>
-    public static (Type AggregateType, string EntityId, object Command) ShouldHaveDispatchedTo<TAggregate>(
-        this IReadOnlyList<(Type AggregateType, string EntityId, object Command)> commands,
-        string? entityId = null
-    )
-        where TAggregate : class
-    {
-        ArgumentNullException.ThrowIfNull(commands);
-
-        (Type AggregateType, string EntityId, object Command)? match = commands
-            .FirstOrDefault(c => c.AggregateType == typeof(TAggregate) &&
-                                 (entityId == null || c.EntityId == entityId));
-
-        match.Should().NotBeNull(
-            $"because a command should have been dispatched to {typeof(TAggregate).Name}");
-
-        return match!.Value;
-    }
-
-    /// <summary>
-    ///     Asserts that a command was dispatched to the specified aggregate type from an <see cref="EffectTestResult" />.
-    /// </summary>
-    /// <typeparam name="TAggregate">The expected target aggregate type.</typeparam>
-    /// <param name="result">The effect test result.</param>
-    /// <param name="entityId">Optional expected entity ID.</param>
-    /// <returns>The matching command record for further assertions.</returns>
-    public static (Type AggregateType, string EntityId, object Command) ShouldHaveDispatchedTo<TAggregate>(
-        this EffectTestResult result,
-        string? entityId = null
-    )
-        where TAggregate : class
-    {
-        ArgumentNullException.ThrowIfNull(result);
-        return result.DispatchedCommands.ShouldHaveDispatchedTo<TAggregate>(entityId);
     }
 }

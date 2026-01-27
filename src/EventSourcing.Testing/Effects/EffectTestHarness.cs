@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,8 +56,11 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
     where TAggregate : class
 {
     private readonly Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new(MockBehavior.Strict);
+
     private readonly List<(Type AggregateType, string EntityId, object Command)> dispatchedCommands = [];
+
     private readonly Mock<IGrainContext> grainContextMock = new();
+
     private string grainKey = "test-entity";
 
     private EffectTestHarness()
@@ -118,17 +121,13 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
         Type effectType = effect.GetType();
 
         // Try HandleSimpleAsync first (for SimpleEventEffectBase)
-        System.Reflection.MethodInfo? handleSimpleMethod = effectType.GetMethod(
+        MethodInfo? handleSimpleMethod = effectType.GetMethod(
             "HandleSimpleAsync",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            BindingFlags.Instance | BindingFlags.NonPublic,
             [typeof(TEvent), typeof(TAggregate), typeof(CancellationToken)]);
-
         if (handleSimpleMethod != null)
         {
-            Task? task = handleSimpleMethod.Invoke(
-                effect,
-                [eventData, currentState, cancellationToken]) as Task;
-
+            Task? task = handleSimpleMethod.Invoke(effect, [eventData, currentState, cancellationToken]) as Task;
             if (task != null)
             {
                 await task;
@@ -138,17 +137,13 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
         }
 
         // Try HandleAsync for EventEffectBase
-        System.Reflection.MethodInfo? handleAsyncMethod = effectType.GetMethod(
+        MethodInfo? handleAsyncMethod = effectType.GetMethod(
             "HandleAsync",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            BindingFlags.Instance | BindingFlags.NonPublic,
             [typeof(TEvent), typeof(TAggregate), typeof(CancellationToken)]);
-
         if (handleAsyncMethod != null)
         {
-            object? result = handleAsyncMethod.Invoke(
-                effect,
-                [eventData, currentState, cancellationToken]);
-
+            object? result = handleAsyncMethod.Invoke(effect, [eventData, currentState, cancellationToken]);
             if (result is IAsyncEnumerable<object> asyncEnumerable)
             {
                 List<object> yieldedObjects = [];
@@ -166,6 +161,12 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
     }
 
     /// <summary>
+    ///     Creates an <see cref="EffectTestResult" /> from the dispatched commands for fluent assertions.
+    /// </summary>
+    /// <returns>A result object for fluent assertions.</returns>
+    public EffectTestResult ToResult() => new(dispatchedCommands);
+
+    /// <summary>
     ///     Configures a mock aggregate grain to return a specific response when a command is executed.
     /// </summary>
     /// <typeparam name="TTargetAggregate">The target aggregate type.</typeparam>
@@ -179,16 +180,14 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
         where TTargetAggregate : class
     {
         Mock<IGenericAggregateGrain<TTargetAggregate>> grainMock = new();
-        grainMock
-            .Setup(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
-            .Callback<object, CancellationToken>(
-                (cmd, _) => dispatchedCommands.Add((typeof(TTargetAggregate), entityId, cmd)))
+        grainMock.Setup(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+            .Callback<object, CancellationToken>((
+                cmd,
+                _
+            ) => dispatchedCommands.Add((typeof(TTargetAggregate), entityId, cmd)))
             .ReturnsAsync(response);
-
-        aggregateGrainFactoryMock
-            .Setup(f => f.GetGenericAggregate<TTargetAggregate>(entityId))
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<TTargetAggregate>(entityId))
             .Returns(grainMock.Object);
-
         return this;
     }
 
@@ -197,17 +196,13 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
     /// </summary>
     /// <param name="key">The grain key.</param>
     /// <returns>The harness for chaining.</returns>
-    public EffectTestHarness<TEffect, TEvent, TAggregate> WithGrainKey(string key)
+    public EffectTestHarness<TEffect, TEvent, TAggregate> WithGrainKey(
+        string key
+    )
     {
         grainKey = key;
         return this;
     }
-
-    /// <summary>
-    ///     Creates an <see cref="EffectTestResult" /> from the dispatched commands for fluent assertions.
-    /// </summary>
-    /// <returns>A result object for fluent assertions.</returns>
-    public EffectTestResult ToResult() => new(dispatchedCommands);
 
     private void SetupGrainContext()
     {

@@ -43,6 +43,12 @@ public static class BankAccountBalanceFixture
             .WithReducer<FundsWithdrawnBalanceReducer>();
 
     /// <summary>
+    ///     Creates a scenario starting from an empty projection.
+    /// </summary>
+    /// <returns>A scenario for testing account opening events.</returns>
+    public static ProjectionScenario<BankAccountBalanceProjection> Empty() => CreateHarness().CreateScenario();
+
+    /// <summary>
     ///     Creates a scenario starting from a freshly opened account.
     /// </summary>
     /// <param name="holderName">The account holder's name.</param>
@@ -54,20 +60,20 @@ public static class BankAccountBalanceFixture
     ) =>
         CreateHarness()
             .CreateScenario()
-            .Given(new AccountOpened { HolderName = holderName, InitialDeposit = initialDeposit });
-
-    /// <summary>
-    ///     Creates a scenario starting from an empty projection.
-    /// </summary>
-    /// <returns>A scenario for testing account opening events.</returns>
-    public static ProjectionScenario<BankAccountBalanceProjection> Empty() =>
-        CreateHarness().CreateScenario();
+            .Given(
+                new AccountOpened
+                {
+                    HolderName = holderName,
+                    InitialDeposit = initialDeposit,
+                });
 
     /// <summary>
     ///     Quickly applies a sequence of events and returns the final projection.
     /// </summary>
     /// <param name="events">The events to apply in order.</param>
     /// <returns>The resulting projection state.</returns>
-    public static BankAccountBalanceProjection Replay(params object[] events) =>
+    public static BankAccountBalanceProjection Replay(
+        params object[] events
+    ) =>
         CreateHarness().ApplyEvents(events);
 }

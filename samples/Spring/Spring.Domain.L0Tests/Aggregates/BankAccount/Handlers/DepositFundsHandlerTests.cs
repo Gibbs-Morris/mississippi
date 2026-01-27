@@ -1,6 +1,6 @@
-using Allure.Xunit.Attributes;
+using System.Collections.Generic;
 
-using FluentAssertions;
+using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
@@ -8,8 +8,6 @@ using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Commands;
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Aggregates.BankAccount.Handlers;
-
-using Xunit;
 
 
 namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
@@ -24,14 +22,15 @@ public sealed class DepositFundsHandlerTests
 {
     private readonly DepositFundsHandler handler = new();
 
-    private static BankAccountAggregate OpenAccount => new()
-    {
-        IsOpen = true,
-        HolderName = "Test User",
-        Balance = 100m,
-        DepositCount = 0,
-        WithdrawalCount = 0,
-    };
+    private static BankAccountAggregate OpenAccount =>
+        new()
+        {
+            IsOpen = true,
+            HolderName = "Test User",
+            Balance = 100m,
+            DepositCount = 0,
+            WithdrawalCount = 0,
+        };
 
     /// <summary>
     ///     Depositing funds to an open account should emit FundsDeposited event.
@@ -41,13 +40,19 @@ public sealed class DepositFundsHandlerTests
     public void DepositFundsToOpenAccountEmitsFundsDeposited()
     {
         // Arrange
-        DepositFunds command = new() { Amount = 50m };
+        DepositFunds command = new()
+        {
+            Amount = 50m,
+        };
 
         // Act & Assert
         handler.ShouldEmit(
             OpenAccount,
             command,
-            new FundsDeposited { Amount = 50m });
+            new FundsDeposited
+            {
+                Amount = 50m,
+            });
     }
 
     /// <summary>
@@ -58,15 +63,35 @@ public sealed class DepositFundsHandlerTests
     public void DepositLargeAmountSucceeds()
     {
         // Arrange
-        DepositFunds command = new() { Amount = 1_000_000m };
+        DepositFunds command = new()
+        {
+            Amount = 1_000_000m,
+        };
 
         // Act
-        var events = handler.ShouldSucceed(OpenAccount, command);
+        IReadOnlyList<object> events = handler.ShouldSucceed(OpenAccount, command);
 
         // Assert
         events.Should().ContainSingle();
         FundsDeposited deposited = events[0].Should().BeOfType<FundsDeposited>().Subject;
         deposited.Amount.Should().Be(1_000_000m);
+    }
+
+    /// <summary>
+    ///     Depositing negative amount should fail with InvalidCommand.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Validation")]
+    public void DepositNegativeAmountFailsWithInvalidCommand()
+    {
+        // Arrange
+        DepositFunds command = new()
+        {
+            Amount = -50m,
+        };
+
+        // Act & Assert
+        handler.ShouldFail(OpenAccount, command, AggregateErrorCodes.InvalidCommand);
     }
 
     /// <summary>
@@ -77,15 +102,17 @@ public sealed class DepositFundsHandlerTests
     public void DepositToClosedAccountFailsWithInvalidState()
     {
         // Arrange
-        BankAccountAggregate closedAccount = new() { IsOpen = false };
-        DepositFunds command = new() { Amount = 50m };
+        BankAccountAggregate closedAccount = new()
+        {
+            IsOpen = false,
+        };
+        DepositFunds command = new()
+        {
+            Amount = 50m,
+        };
 
         // Act & Assert
-        handler.ShouldFailWithMessage(
-            closedAccount,
-            command,
-            AggregateErrorCodes.InvalidState,
-            "must be open");
+        handler.ShouldFailWithMessage(closedAccount, command, AggregateErrorCodes.InvalidState, "must be open");
     }
 
     /// <summary>
@@ -96,7 +123,10 @@ public sealed class DepositFundsHandlerTests
     public void DepositToNullStateFailsWithInvalidState()
     {
         // Arrange
-        DepositFunds command = new() { Amount = 50m };
+        DepositFunds command = new()
+        {
+            Amount = 50m,
+        };
 
         // Act & Assert
         handler.ShouldFail(null, command, AggregateErrorCodes.InvalidState);
@@ -110,27 +140,12 @@ public sealed class DepositFundsHandlerTests
     public void DepositZeroAmountFailsWithInvalidCommand()
     {
         // Arrange
-        DepositFunds command = new() { Amount = 0m };
+        DepositFunds command = new()
+        {
+            Amount = 0m,
+        };
 
         // Act & Assert
-        handler.ShouldFailWithMessage(
-            OpenAccount,
-            command,
-            AggregateErrorCodes.InvalidCommand,
-            "must be positive");
-    }
-
-    /// <summary>
-    ///     Depositing negative amount should fail with InvalidCommand.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    public void DepositNegativeAmountFailsWithInvalidCommand()
-    {
-        // Arrange
-        DepositFunds command = new() { Amount = -50m };
-
-        // Act & Assert
-        handler.ShouldFail(OpenAccount, command, AggregateErrorCodes.InvalidCommand);
+        handler.ShouldFailWithMessage(OpenAccount, command, AggregateErrorCodes.InvalidCommand, "must be positive");
     }
 }

@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 using Spring.Domain.Projections.FlaggedTransactions;
 using Spring.Domain.Projections.FlaggedTransactions.Reducers;
 
@@ -46,15 +44,26 @@ public static class FlaggedTransactionsFixture
     ///     Creates a scenario starting from an empty flagged transactions list.
     /// </summary>
     /// <returns>A scenario for testing flagged transaction events.</returns>
-    public static ProjectionScenario<FlaggedTransactionsProjection> Empty() =>
-        CreateHarness().CreateScenario();
+    public static ProjectionScenario<FlaggedTransactionsProjection> Empty() => CreateHarness().CreateScenario();
+
+    /// <summary>
+    ///     Quickly applies a sequence of events and returns the final projection.
+    /// </summary>
+    /// <param name="events">The events to apply in order.</param>
+    /// <returns>The resulting projection state.</returns>
+    public static FlaggedTransactionsProjection Replay(
+        params object[] events
+    ) =>
+        CreateHarness().ApplyEvents(events);
 
     /// <summary>
     ///     Creates a scenario starting from a list with existing flagged transactions.
     /// </summary>
     /// <param name="entryCount">The number of existing flagged entries.</param>
     /// <returns>A scenario for testing additional flagged transactions.</returns>
-    public static ProjectionScenario<FlaggedTransactionsProjection> WithEntries(int entryCount)
+    public static ProjectionScenario<FlaggedTransactionsProjection> WithEntries(
+        int entryCount
+    )
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
         ImmutableArray<FlaggedTransaction> entries = Enumerable.Range(1, entryCount)
@@ -62,26 +71,18 @@ public static class FlaggedTransactionsFixture
             {
                 AccountId = $"account-{i}",
                 Amount = i * 1000m,
-                OriginalTimestamp = now.AddHours(-entryCount + i - 1),
+                OriginalTimestamp = now.AddHours((-entryCount + i) - 1),
                 FlaggedTimestamp = now.AddHours(-entryCount + i),
-                Sequence = entryCount - i + 1, // Most recent first
+                Sequence = (entryCount - i) + 1, // Most recent first
             })
             .ToImmutableArray();
-
         return CreateHarness()
-            .WithInitialState(new FlaggedTransactionsProjection
-            {
-                CurrentSequence = entryCount,
-                Entries = entries,
-            })
+            .WithInitialState(
+                new()
+                {
+                    CurrentSequence = entryCount,
+                    Entries = entries,
+                })
             .CreateScenario();
     }
-
-    /// <summary>
-    ///     Quickly applies a sequence of events and returns the final projection.
-    /// </summary>
-    /// <param name="events">The events to apply in order.</param>
-    /// <returns>The resulting projection state.</returns>
-    public static FlaggedTransactionsProjection Replay(params object[] events) =>
-        CreateHarness().ApplyEvents(events);
 }

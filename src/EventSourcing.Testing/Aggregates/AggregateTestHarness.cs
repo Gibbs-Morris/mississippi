@@ -62,17 +62,14 @@ public sealed class AggregateTestHarness<TAggregate>
     where TAggregate : new()
 {
     private readonly List<ICommandHandler<TAggregate>> handlers = [];
+
     private readonly List<IEventReducer<TAggregate>> reducers = [];
-    private TAggregate initialState;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="AggregateTestHarness{TAggregate}" /> class
     ///     with a default-constructed initial state.
     /// </summary>
-    public AggregateTestHarness()
-    {
-        initialState = new TAggregate();
-    }
+    public AggregateTestHarness() => InitialState = new();
 
     /// <summary>
     ///     Gets the handlers registered with this harness.
@@ -80,14 +77,20 @@ public sealed class AggregateTestHarness<TAggregate>
     internal IReadOnlyList<ICommandHandler<TAggregate>> Handlers => handlers;
 
     /// <summary>
+    ///     Gets the initial state for scenarios.
+    /// </summary>
+    internal TAggregate InitialState { get; private set; }
+
+    /// <summary>
     ///     Gets the reducers registered with this harness.
     /// </summary>
     internal IReadOnlyList<IEventReducer<TAggregate>> Reducers => reducers;
 
     /// <summary>
-    ///     Gets the initial state for scenarios.
+    ///     Creates a new scenario builder for Given/When/Then style testing.
     /// </summary>
-    internal TAggregate InitialState => initialState;
+    /// <returns>A new <see cref="AggregateScenario{TAggregate}" /> initialized with this harness's handlers and reducers.</returns>
+    public AggregateScenario<TAggregate> CreateScenario() => new(handlers, reducers, InitialState);
 
     /// <summary>
     ///     Registers a command handler by type.
@@ -109,10 +112,27 @@ public sealed class AggregateTestHarness<TAggregate>
     /// <param name="handler">The handler instance to register.</param>
     /// <returns>This harness for fluent chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="handler" /> is null.</exception>
-    public AggregateTestHarness<TAggregate> WithHandler(ICommandHandler<TAggregate> handler)
+    public AggregateTestHarness<TAggregate> WithHandler(
+        ICommandHandler<TAggregate> handler
+    )
     {
         ArgumentNullException.ThrowIfNull(handler);
         handlers.Add(handler);
+        return this;
+    }
+
+    /// <summary>
+    ///     Sets a custom initial state for scenarios.
+    /// </summary>
+    /// <param name="state">The initial state to use.</param>
+    /// <returns>This harness for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="state" /> is null.</exception>
+    public AggregateTestHarness<TAggregate> WithInitialState(
+        TAggregate state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        InitialState = state;
         return this;
     }
 
@@ -136,30 +156,12 @@ public sealed class AggregateTestHarness<TAggregate>
     /// <param name="reducer">The reducer instance to register.</param>
     /// <returns>This harness for fluent chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="reducer" /> is null.</exception>
-    public AggregateTestHarness<TAggregate> WithReducer(IEventReducer<TAggregate> reducer)
+    public AggregateTestHarness<TAggregate> WithReducer(
+        IEventReducer<TAggregate> reducer
+    )
     {
         ArgumentNullException.ThrowIfNull(reducer);
         reducers.Add(reducer);
         return this;
     }
-
-    /// <summary>
-    ///     Sets a custom initial state for scenarios.
-    /// </summary>
-    /// <param name="state">The initial state to use.</param>
-    /// <returns>This harness for fluent chaining.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="state" /> is null.</exception>
-    public AggregateTestHarness<TAggregate> WithInitialState(TAggregate state)
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        initialState = state;
-        return this;
-    }
-
-    /// <summary>
-    ///     Creates a new scenario builder for Given/When/Then style testing.
-    /// </summary>
-    /// <returns>A new <see cref="AggregateScenario{TAggregate}" /> initialized with this harness's handlers and reducers.</returns>
-    public AggregateScenario<TAggregate> CreateScenario() =>
-        new(handlers, reducers, initialState);
 }
