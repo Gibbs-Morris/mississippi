@@ -1,0 +1,10 @@
+{
+  "label": "Scaling & Performance",
+  "position": 19,
+  "link": {
+    "type": "doc",
+    "id": "scaling-performance/scaling-performance"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

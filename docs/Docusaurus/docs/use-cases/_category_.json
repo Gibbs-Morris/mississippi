@@ -1,0 +1,10 @@
+{
+  "label": "Real-World Use Cases",
+  "position": 15,
+  "link": {
+    "type": "doc",
+    "id": "use-cases/use-cases"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

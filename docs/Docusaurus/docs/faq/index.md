@@ -2,7 +2,7 @@
 id: faq
 title: FAQ
 sidebar_label: FAQ
-sidebar_position: 16
+sidebar_position: 20
 description: Frequently asked questions about Mississippi Framework
 keywords:
   - faq

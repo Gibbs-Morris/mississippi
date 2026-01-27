@@ -2,7 +2,7 @@
 id: glossary
 title: Glossary
 sidebar_label: Glossary
-sidebar_position: 17
+sidebar_position: 21
 description: Definitions of key terms and acronyms used in Mississippi Framework
 keywords:
   - glossary
