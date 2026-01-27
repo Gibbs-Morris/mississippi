@@ -35,7 +35,7 @@ public class ProjectionClientDtoGeneratorTests
                                               }
                                           }
 
-                                          namespace Mississippi.Inlet.Projection.Abstractions
+                                          namespace Mississippi.Inlet.Abstractions
                                           {
                                               using System;
 

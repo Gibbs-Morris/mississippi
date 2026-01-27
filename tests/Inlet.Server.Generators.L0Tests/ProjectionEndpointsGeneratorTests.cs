@@ -32,7 +32,7 @@ public class ProjectionEndpointsGeneratorTests
                                               public sealed class GenerateProjectionEndpointsAttribute : Attribute { }
                                           }
 
-                                          namespace Mississippi.Inlet.Projection.Abstractions
+                                          namespace Mississippi.Inlet.Abstractions
                                           {
                                               using System;
 

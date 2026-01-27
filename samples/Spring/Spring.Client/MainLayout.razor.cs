@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Components;
 
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
+using Mississippi.Inlet.Client.Abstractions;
+using Mississippi.Inlet.Client.SignalRConnection;
 
 
 namespace Spring.Client;
