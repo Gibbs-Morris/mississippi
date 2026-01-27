@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.SignalRConnection;
 

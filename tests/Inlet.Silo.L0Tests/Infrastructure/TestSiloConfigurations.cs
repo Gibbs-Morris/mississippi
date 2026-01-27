@@ -5,7 +5,6 @@ using Mississippi.Aqueduct.Grains;
 using Mississippi.Common.Abstractions;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Silo.Abstractions;
 using Mississippi.Testing.Utilities.Storage;
 

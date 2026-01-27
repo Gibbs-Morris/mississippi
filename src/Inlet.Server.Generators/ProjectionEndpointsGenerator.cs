@@ -41,8 +41,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
     private const string MappingNamespace = "Mississippi.Common.Abstractions.Mapping";
 
-    private const string ProjectionPathAttributeFullName =
-        "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
+    private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
     private const string ProjectionSuffix = "Projection";
 

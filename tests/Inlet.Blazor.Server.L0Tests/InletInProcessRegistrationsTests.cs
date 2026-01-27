@@ -4,7 +4,6 @@ using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Server.Abstractions;
 
 

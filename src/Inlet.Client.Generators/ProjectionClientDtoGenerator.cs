@@ -32,8 +32,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
-    private const string ProjectionPathAttributeFullName =
-        "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
+    private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
     /// <summary>
     ///     Recursively finds projections in a namespace.

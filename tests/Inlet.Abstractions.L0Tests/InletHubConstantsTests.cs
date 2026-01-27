@@ -1,4 +1,5 @@
 using Allure.Xunit.Attributes;
+
 using Mississippi.Inlet.Server.Abstractions;
 
 
