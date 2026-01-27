@@ -1,9 +1,9 @@
 {
   "label": "Framework Overview",
-  "position": 3,
+  "position": 2,
   "link": {
     "type": "doc",
-    "id": "platform/index"
+    "id": "old/platform/index"
   },
   "collapsible": true,
   "collapsed": false
