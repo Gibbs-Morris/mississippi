@@ -29,9 +29,8 @@ public sealed class AggregateCommandStateReducersTests
         TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
 
         // Act
-        (var _, ImmutableList<CommandHistoryEntry> history) = AggregateCommandStateReducers.ComputeCommandExecuting(
-            state,
-            action);
+        (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
+            AggregateCommandStateReducers.ComputeCommandExecuting(state, action);
 
         // Assert
         Assert.Single(history);
@@ -50,7 +49,7 @@ public sealed class AggregateCommandStateReducersTests
         TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
 
         // Act
-        (ImmutableHashSet<string> inFlight, var _) =
+        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> _) =
             AggregateCommandStateReducers.ComputeCommandExecuting(state, action);
 
         // Assert
@@ -69,9 +68,8 @@ public sealed class AggregateCommandStateReducersTests
         TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
 
         // Act
-        (var _, ImmutableList<CommandHistoryEntry> history) = AggregateCommandStateReducers.ComputeCommandExecuting(
-            state,
-            action);
+        (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
+            AggregateCommandStateReducers.ComputeCommandExecuting(state, action);
 
         // Assert
         Assert.Equal(CommandStatus.Executing, history[0].Status);
@@ -98,10 +96,8 @@ public sealed class AggregateCommandStateReducersTests
         TestCommandExecutingAction action = new("new-cmd", "TestCommand", DateTimeOffset.UtcNow);
 
         // Act
-        (var _, ImmutableList<CommandHistoryEntry> history) = AggregateCommandStateReducers.ComputeCommandExecuting(
-            state,
-            action,
-            3);
+        (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
+            AggregateCommandStateReducers.ComputeCommandExecuting(state, action, 3);
 
         // Assert
         Assert.Equal(3, history.Count);
@@ -152,7 +148,8 @@ public sealed class AggregateCommandStateReducersTests
         TestCommandFailedAction action = new("cmd-123", DateTimeOffset.UtcNow, "ERR001", "Failed");
 
         // Act
-        (ImmutableHashSet<string> inFlight, var _) = AggregateCommandStateReducers.ComputeCommandFailed(state, action);
+        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> _) =
+            AggregateCommandStateReducers.ComputeCommandFailed(state, action);
 
         // Assert
         Assert.DoesNotContain("cmd-123", inFlight);
@@ -206,9 +203,8 @@ public sealed class AggregateCommandStateReducersTests
         TestCommandFailedAction action = new("cmd-123", DateTimeOffset.UtcNow.AddSeconds(5), "ERR001", "Failed");
 
         // Act
-        (var _, ImmutableList<CommandHistoryEntry> history) = AggregateCommandStateReducers.ComputeCommandFailed(
-            state,
-            action);
+        (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
+            AggregateCommandStateReducers.ComputeCommandFailed(state, action);
 
         // Assert
         Assert.Single(history);
@@ -230,7 +226,7 @@ public sealed class AggregateCommandStateReducersTests
         TestCommandSucceededAction action = new("cmd-123", DateTimeOffset.UtcNow);
 
         // Act
-        (ImmutableHashSet<string> inFlight, var _) =
+        (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> _) =
             AggregateCommandStateReducers.ComputeCommandSucceeded(state, action);
 
         // Assert
@@ -286,9 +282,8 @@ public sealed class AggregateCommandStateReducersTests
         TestCommandSucceededAction action = new("cmd-123", DateTimeOffset.UtcNow.AddSeconds(5));
 
         // Act
-        (var _, ImmutableList<CommandHistoryEntry> history) = AggregateCommandStateReducers.ComputeCommandSucceeded(
-            state,
-            action);
+        (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
+            AggregateCommandStateReducers.ComputeCommandSucceeded(state, action);
 
         // Assert
         Assert.Single(history);
