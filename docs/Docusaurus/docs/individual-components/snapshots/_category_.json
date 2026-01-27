@@ -1,0 +1,10 @@
+{
+  "label": "Snapshots",
+  "position": 8,
+  "link": {
+    "type": "doc",
+    "id": "individual-components/snapshots/snapshots"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

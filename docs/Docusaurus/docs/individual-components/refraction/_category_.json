@@ -1,0 +1,10 @@
+{
+  "label": "Refraction",
+  "position": 1,
+  "link": {
+    "type": "doc",
+    "id": "individual-components/refraction/refraction"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

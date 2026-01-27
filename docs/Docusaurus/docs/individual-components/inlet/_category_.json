@@ -1,0 +1,10 @@
+{
+  "label": "Inlet",
+  "position": 3,
+  "link": {
+    "type": "doc",
+    "id": "individual-components/inlet/inlet"
+  },
+  "collapsible": true,
+  "collapsed": false
+}
