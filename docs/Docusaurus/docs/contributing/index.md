@@ -2,7 +2,7 @@
 id: contributing
 title: Contributing
 sidebar_label: Contributing
-sidebar_position: 15
+sidebar_position: 23
 description: How to contribute to Mississippi Framework - coding standards, guidelines, and review process
 keywords:
   - contributing
