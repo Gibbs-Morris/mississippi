@@ -13,7 +13,7 @@
 // The generator now produces this DTO automatically. This file is commented out
 // to avoid duplicate type definitions but preserved for testing and documentation.
 // =============================================================================
-using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
 
 

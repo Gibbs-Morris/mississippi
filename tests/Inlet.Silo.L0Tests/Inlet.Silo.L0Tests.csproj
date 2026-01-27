@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Orleans.TestingHost" />
+        <PackageReference Include="NSubstitute" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Silo\Inlet.Silo.csproj" />
+        <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
+    </ItemGroup>
+
+</Project>

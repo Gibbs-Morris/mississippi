@@ -2,7 +2,7 @@ using System;
 
 using Allure.Xunit.Attributes;
 
-using Mississippi.Inlet.Abstractions.Configuration;
+using Mississippi.Inlet.Client.Abstractions.Configuration;
 
 
 namespace Mississippi.Inlet.Abstractions.L0Tests.Configuration;

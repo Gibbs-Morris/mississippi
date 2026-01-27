@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Silo.Abstractions\Inlet.Silo.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

@@ -13,7 +13,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
-using Mississippi.Inlet.Orleans;
+using Mississippi.Inlet.Silo;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -98,8 +98,8 @@ builder.Services.AddKeyedSingleton(
         _
     ) => sp.GetRequiredService<CosmosClient>());
 
-// Add Inlet Orleans services for projection subscription management
-builder.Services.AddInletOrleans();
+// Add Inlet Silo services for projection subscription management
+builder.Services.AddInletSilo();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add event sourcing infrastructure

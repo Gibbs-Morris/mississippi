@@ -312,7 +312,7 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.UxProjections.Api": {
@@ -320,20 +320,28 @@
         "dependencies": {
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.0, )",
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
-        }
+        "type": "Project"
       },
       "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Inlet.Orleans": {
+      "Mississippi.Inlet.Server": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Aqueduct": "[1.0.0, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Silo": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Server.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Inlet.Silo": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.0, )",
@@ -341,22 +349,16 @@
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Silo.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Orleans.SignalR": {
+      "Mississippi.Inlet.Silo.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Aqueduct": "[1.0.0, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Orleans": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
-      },
-      "Mississippi.Inlet.Projection.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.Reservoir.Abstractions": {
-        "type": "Project"
       },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",
