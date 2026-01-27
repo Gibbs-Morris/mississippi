@@ -38,33 +38,6 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Disposable action effect for testing disposal.
-    /// </summary>
-    private sealed class DisposableActionEffect
-        : IActionEffect,
-          IDisposable
-    {
-        public bool IsDisposed { get; private set; }
-
-        public bool CanHandle(
-            IAction action
-        ) =>
-            false;
-
-        public void Dispose() => IsDisposed = true;
-
-#pragma warning disable CS1998 // Async method lacks 'await' operators
-        public async IAsyncEnumerable<IAction> HandleAsync(
-            IAction action,
-            [EnumeratorCancellation] CancellationToken cancellationToken
-        )
-        {
-            yield break;
-        }
-#pragma warning restore CS1998
-    }
-
-    /// <summary>
     ///     Test action for unit tests.
     /// </summary>
     private sealed record IncrementAction : IAction;
@@ -100,7 +73,7 @@ public sealed class StoreTests : IDisposable
     /// <summary>
     ///     Action effect that returns additional actions.
     /// </summary>
-    private sealed class ReturningActionEffect : IActionEffect
+    private sealed class ReturningActionEffect : IActionEffect<TestFeatureState>
     {
         public bool CanHandle(
             IAction action
@@ -110,6 +83,7 @@ public sealed class StoreTests : IDisposable
 #pragma warning disable CS1998 // Async method lacks 'await' operators
         public async IAsyncEnumerable<IAction> HandleAsync(
             IAction action,
+            TestFeatureState currentState,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -126,7 +100,7 @@ public sealed class StoreTests : IDisposable
     /// <summary>
     ///     Test action effect for unit tests.
     /// </summary>
-    private sealed class TestActionEffect : IActionEffect
+    private sealed class TestActionEffect : IActionEffect<TestFeatureState>
     {
         private readonly Action onHandle;
 
@@ -143,6 +117,7 @@ public sealed class StoreTests : IDisposable
 #pragma warning disable CS1998 // Async method lacks 'await' operators
         public async IAsyncEnumerable<IAction> HandleAsync(
             IAction action,
+            TestFeatureState currentState,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -207,7 +182,7 @@ public sealed class StoreTests : IDisposable
     /// <summary>
     ///     Action effect that throws an exception.
     /// </summary>
-    private sealed class ThrowingActionEffect : IActionEffect
+    private sealed class ThrowingActionEffect : IActionEffect<TestFeatureState>
     {
         public bool CanHandle(
             IAction action
@@ -216,6 +191,7 @@ public sealed class StoreTests : IDisposable
 
         public async IAsyncEnumerable<IAction> HandleAsync(
             IAction action,
+            TestFeatureState currentState,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -236,12 +212,17 @@ public sealed class StoreTests : IDisposable
     public async Task ActionEffectReturnsActionsDispatchesThem()
     {
         // Arrange
+        ServiceCollection services = [];
+        services.AddActionEffect<TestFeatureState, ReturningActionEffect>();
+        services.AddReservoir();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
         int dispatchCount = 0;
-        sut.RegisterMiddleware(new TestMiddleware(() => dispatchCount++));
-        sut.RegisterActionEffect(new ReturningActionEffect());
+        using IDisposable subscription = store.Subscribe(() => dispatchCount++);
 
         // Act
-        sut.Dispatch(new IncrementAction());
+        store.Dispatch(new IncrementAction());
 
         // Assert
         await Task.Delay(100);
@@ -256,38 +237,24 @@ public sealed class StoreTests : IDisposable
     [AllureFeature("Action Effects")]
     public async Task ActionEffectThatThrowsDoesNotBreakDispatch()
     {
-        // Arrange
+        // Arrange - use DI to register both effects
         bool secondEffectRan = false;
-        sut.RegisterActionEffect(new ThrowingActionEffect());
-        sut.RegisterActionEffect(new TestActionEffect(() => secondEffectRan = true));
+        ServiceCollection services = [];
+        services.AddTransient<IActionEffect<TestFeatureState>, ThrowingActionEffect>();
+        services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => secondEffectRan = true));
+        services.AddRootActionEffect<TestFeatureState>();
+        services.AddFeatureState<TestFeatureState>();
+        services.AddReservoir();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
 
         // Act
-        sut.Dispatch(new IncrementAction());
+        store.Dispatch(new IncrementAction());
 
         // Assert
         await Task.Delay(100);
         Assert.True(secondEffectRan);
-    }
-
-    /// <summary>
-    ///     Store constructor with action effects collection should register action effects.
-    /// </summary>
-    /// <returns>A task representing the async test operation.</returns>
-    [Fact]
-    [AllureFeature("DI Integration")]
-    public async Task ConstructorWithActionEffectsCollectionRegistersActionEffects()
-    {
-        // Arrange
-        bool effectHandled = false;
-        TestActionEffect actionEffect = new(() => effectHandled = true);
-
-        // Act
-        using Store diStore = new([], [actionEffect], []);
-        diStore.Dispatch(new IncrementAction());
-
-        // Assert
-        await Task.Delay(100);
-        Assert.True(effectHandled);
     }
 
     /// <summary>
@@ -302,30 +269,11 @@ public sealed class StoreTests : IDisposable
         TestMiddleware middleware = new(() => middlewareInvoked = true);
 
         // Act
-        using Store diStore = new([], [], [middleware]);
+        using Store diStore = new([], [middleware]);
         diStore.Dispatch(new IncrementAction());
 
         // Assert
         Assert.True(middlewareInvoked);
-    }
-
-    /// <summary>
-    ///     Store constructor with null action effects should throw ArgumentNullException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP005:Return type should indicate that the value should be disposed",
-        Justification = "Testing ArgumentNullException - constructor throws before returning")]
-    public void ConstructorWithNullActionEffectsThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store([], null!, []));
     }
 
     /// <summary>
@@ -344,7 +292,7 @@ public sealed class StoreTests : IDisposable
     public void ConstructorWithNullFeatureRegistrationsThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store(null!, [], []));
+        Assert.Throws<ArgumentNullException>(() => new Store(null!, []));
     }
 
     /// <summary>
@@ -363,7 +311,7 @@ public sealed class StoreTests : IDisposable
     public void ConstructorWithNullMiddlewareThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store([], [], null!));
+        Assert.Throws<ArgumentNullException>(() => new Store([], null!));
     }
 
     /// <summary>
@@ -425,34 +373,30 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Dispose should dispose action effects that implement IDisposable.
+    ///     Store with feature-scoped action effects via DI should invoke effects on dispatch.
     /// </summary>
+    /// <returns>A task representing the async test operation.</returns>
     [Fact]
-    [AllureFeature("Disposal")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Testing disposal behavior requires manual disposal")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP017:Prefer using",
-        Justification = "Testing disposal behavior requires manual disposal")]
-    [SuppressMessage(
-        "Reliability",
-        "CA2000:Dispose objects before losing scope",
-        Justification = "Testing disposal behavior - object is disposed in test")]
-    public void DisposeDisposesActionEffects()
+    [AllureFeature("DI Integration")]
+    public async Task FeatureScopedActionEffectsInvokedOnDispatch()
     {
         // Arrange
-        DisposableActionEffect actionEffect = new();
-        using Store testStore = new();
-        testStore.RegisterActionEffect(actionEffect);
+        bool effectHandled = false;
+        ServiceCollection services = [];
+        services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => effectHandled = true));
+        services.AddRootActionEffect<TestFeatureState>();
+        services.AddFeatureState<TestFeatureState>();
+        services.AddReservoir();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
 
         // Act
-        testStore.Dispose();
+        store.Dispatch(new IncrementAction());
 
         // Assert
-        Assert.True(actionEffect.IsDisposed);
+        await Task.Delay(100);
+        Assert.True(effectHandled);
     }
 
     /// <summary>
@@ -556,66 +500,6 @@ public sealed class StoreTests : IDisposable
 
         // Assert
         Assert.Equal(1, state.Counter);
-    }
-
-    /// <summary>
-    ///     RegisterActionEffect should add action effect to store.
-    /// </summary>
-    /// <returns>A task representing the async test operation.</returns>
-    [Fact]
-    [AllureFeature("Action Effects")]
-    public async Task RegisterActionEffectAddsToStore()
-    {
-        // Arrange
-        bool effectHandled = false;
-        TestActionEffect actionEffect = new(() => effectHandled = true);
-
-        // Act
-        sut.RegisterActionEffect(actionEffect);
-        sut.Dispatch(new IncrementAction());
-
-        // Assert - wait for async effect with timeout
-        await Task.Delay(100);
-        Assert.True(effectHandled);
-    }
-
-    /// <summary>
-    ///     RegisterActionEffect after dispose should throw ObjectDisposedException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Disposal")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Testing ObjectDisposedException behavior requires using disposed instance")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP016:Don't use disposed instance",
-        Justification = "Testing ObjectDisposedException behavior requires using disposed instance")]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP017:Prefer using",
-        Justification = "Testing ObjectDisposedException behavior requires using disposed instance")]
-    public void RegisterActionEffectAfterDisposeThrowsObjectDisposedException()
-    {
-        // Arrange
-        Store disposedStore = new();
-        disposedStore.Dispose();
-
-        // Act & Assert
-        Assert.Throws<ObjectDisposedException>(() =>
-            disposedStore.RegisterActionEffect(new TestActionEffect(() => { })));
-    }
-
-    /// <summary>
-    ///     RegisterActionEffect should throw ArgumentNullException when effect is null.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Validation")]
-    public void RegisterActionEffectWithNullThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => sut.RegisterActionEffect(null!));
     }
 
     /// <summary>

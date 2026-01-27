@@ -55,7 +55,6 @@ public static class InletRegistrations
         // Register the Store with DI-resolved components
         services.TryAddScoped<IStore>(sp => new Store(
             sp.GetServices<IFeatureStateRegistration>(),
-            sp.GetServices<IActionEffect>(),
             sp.GetServices<IMiddleware>()));
 
         // Register the composite InletStore for backward compatibility

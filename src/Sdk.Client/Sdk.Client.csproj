@@ -12,7 +12,8 @@
         <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
         <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
         <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
-        <ProjectReference Include="..\Inlet.Client.Generators\Inlet.Client.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+        <ProjectReference Include="..\Inlet.Client.Generators\Inlet.Client.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     </ItemGroup>
 
 </Project>

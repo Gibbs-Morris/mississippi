@@ -42,6 +42,16 @@ public class AggregateSiloRegistrationGeneratorTests
                                                          where TAggregate : class
                                                      {
                                                      }
+
+                                                     public abstract class EventEffectBase<TEvent, TAggregate>
+                                                         where TAggregate : class
+                                                     {
+                                                     }
+
+                                                     public abstract class SimpleEventEffectBase<TEvent, TAggregate>
+                                                         where TAggregate : class
+                                                     {
+                                                     }
                                                  }
 
                                                  namespace Mississippi.EventSourcing.Reducers.Abstractions
@@ -458,6 +468,116 @@ public class AggregateSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Generated registrations class should be public static.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsClassIsPublicStatic()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("public static class OrderAggregateRegistrations", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated registrations should deduplicate event types when same event used by multiple reducers.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsDeduplicatesEventTypes()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+
+        // Count occurrences of AddEventType<OrderCreated> - should be exactly one
+        int count = 0;
+        int index = 0;
+        while ((index = generatedCode.IndexOf("AddEventType<OrderCreated>()", index, StringComparison.Ordinal)) != -1)
+        {
+            count++;
+            index += "AddEventType<OrderCreated>()".Length;
+        }
+
+        Assert.Equal(1, count);
+    }
+
+    /// <summary>
     ///     Generated registrations file should have correct naming convention.
     /// </summary>
     [Fact]
@@ -507,6 +627,113 @@ public class AggregateSiloRegistrationGeneratorTests
             "OrderAggregateRegistrations.g.cs",
             runResult.GeneratedTrees[0].FilePath,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated registrations should have nullable enabled.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsHasNullableEnabled()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("#nullable enable", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated registrations should include using for effects namespace when effects present.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsIncludesEffectsUsingWhenEffectsPresent()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Effects
+                                       {
+                                           public class OrderCreatedEffect : EventEffectBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("using TestApp.Domain.Aggregates.Order.Effects;", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -616,6 +843,66 @@ public class AggregateSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Generated registrations should register event effects using EventEffectBase.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsRegistersEventEffects()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Effects
+                                       {
+                                           public class OrderCreatedEffect : EventEffectBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "services.AddEventEffect<OrderCreatedEffect, OrderAggregate>();",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated registrations should register event types.
     /// </summary>
     [Fact]
@@ -663,6 +950,261 @@ public class AggregateSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("services.AddEventType<OrderCreated>();", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated registrations should register multiple event effects.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsRegistersMultipleEffects()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                           public sealed record OrderUpdated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Effects
+                                       {
+                                           public class OrderCreatedEffect : EventEffectBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                           public class OrderUpdatedEffect : EventEffectBase<TestApp.Domain.Aggregates.Order.Events.OrderUpdated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("AddEventEffect<OrderCreatedEffect, OrderAggregate>", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddEventEffect<OrderUpdatedEffect, OrderAggregate>", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated registrations should register multiple event types for multiple reducers.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsRegistersMultipleEventTypes()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                           public sealed record OrderUpdated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                           public class OrderUpdatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderUpdated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("AddEventType<OrderCreated>()", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddEventType<OrderUpdated>()", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated registrations should register multiple handlers for same aggregate.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsRegistersMultipleHandlers()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                           public sealed record UpdateOrder { }
+                                           public sealed record CancelOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                           public class UpdateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.UpdateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                           public class CancelOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CancelOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "AddCommandHandler<CreateOrder, OrderAggregate, CreateOrderHandler>",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AddCommandHandler<UpdateOrder, OrderAggregate, UpdateOrderHandler>",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AddCommandHandler<CancelOrder, OrderAggregate, CancelOrderHandler>",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated registrations should register multiple reducers for same aggregate.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsRegistersMultipleReducers()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                           public sealed record OrderUpdated { }
+                                           public sealed record OrderCancelled { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                           public class OrderUpdatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderUpdated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                           public class OrderCancelledReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCancelled, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "AddReducer<OrderCreated, OrderAggregate, OrderCreatedReducer>",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AddReducer<OrderUpdated, OrderAggregate, OrderUpdatedReducer>",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AddReducer<OrderCancelled, OrderAggregate, OrderCancelledReducer>",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -719,6 +1261,66 @@ public class AggregateSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Generated registrations should register simple event effects using SimpleEventEffectBase.
+    /// </summary>
+    [Fact]
+    public void GeneratedRegistrationsRegistersSimpleEventEffects()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Effects
+                                       {
+                                           public class OrderCreatedSimpleEffect : SimpleEventEffectBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "services.AddEventEffect<OrderCreatedSimpleEffect, OrderAggregate>();",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated registrations should return services for chaining.
     /// </summary>
     [Fact]
@@ -766,6 +1368,210 @@ public class AggregateSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("return services;", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generator should ignore effects for different aggregate.
+    /// </summary>
+    [Fact]
+    public void GeneratorIgnoresEffectsForDifferentAggregate()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Product
+                                       {
+                                           public sealed record ProductAggregate
+                                           {
+                                               public string Name { get; init; } = string.Empty;
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Effects
+                                       {
+                                           // This effect is for ProductAggregate, not OrderAggregate - should be ignored
+                                           public class ProductCreatedEffect : EventEffectBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Product.ProductAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+
+        // Should not include the effect for ProductAggregate
+        Assert.DoesNotContain("ProductCreatedEffect", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generator should ignore handlers for different aggregate.
+    /// </summary>
+    [Fact]
+    public void GeneratorIgnoresHandlersForDifferentAggregate()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Product
+                                       {
+                                           public sealed record ProductAggregate
+                                           {
+                                               public string Name { get; init; } = string.Empty;
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                           public sealed record CreateProduct { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                           // This handler is for ProductAggregate, not OrderAggregate - should be ignored
+                                           public class CreateProductHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateProduct, TestApp.Domain.Aggregates.Product.ProductAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+
+        // Should include the handler for OrderAggregate
+        Assert.Contains("CreateOrderHandler", generatedCode, StringComparison.Ordinal);
+
+        // Should not include the handler for ProductAggregate
+        Assert.DoesNotContain("CreateProductHandler", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generator should ignore reducers for different aggregate.
+    /// </summary>
+    [Fact]
+    public void GeneratorIgnoresReducersForDifferentAggregate()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
+                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate
+                                           {
+                                               public decimal Total { get; init; }
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Product
+                                       {
+                                           public sealed record ProductAggregate
+                                           {
+                                               public string Name { get; init; } = string.Empty;
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record CreateOrder { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderCreated { }
+                                           public sealed record ProductCreated { }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public class CreateOrderHandler : CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.CreateOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public class OrderCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderCreated, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                           // This reducer is for ProductAggregate, not OrderAggregate - should be ignored
+                                           public class ProductCreatedReducer : EventReducerBase<TestApp.Domain.Aggregates.Order.Events.ProductCreated, TestApp.Domain.Aggregates.Product.ProductAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, aggregateSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+
+        // Should include the reducer for OrderAggregate
+        Assert.Contains("OrderCreatedReducer", generatedCode, StringComparison.Ordinal);
+
+        // Should not include the reducer for ProductAggregate
+        Assert.DoesNotContain("ProductCreatedReducer", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

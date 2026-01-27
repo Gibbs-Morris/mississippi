@@ -45,11 +45,13 @@ public sealed class PropertyModel
         // (e.g., ImmutableList<MessageItem> is a framework collection containing custom elements)
         if (IsCollection)
         {
+            IsImmutableArray = TypeAnalyzer.IsImmutableArrayType(propertySymbol.Type);
             ITypeSymbol? elementType = TypeAnalyzer.GetCollectionElementType(propertySymbol.Type);
             if (elementType is not null && !TypeAnalyzer.IsFrameworkType(elementType))
             {
                 ElementSourceTypeName = elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
                 ElementDtoTypeName = TypeAnalyzer.GetDtoTypeName(elementType, customTypeSuffix);
+                ElementTypeSymbol = elementType;
             }
         }
     }
@@ -70,6 +72,11 @@ public sealed class PropertyModel
     public string? ElementSourceTypeName { get; }
 
     /// <summary>
+    ///     Gets the element type symbol for collections with custom element types, if applicable.
+    /// </summary>
+    public ITypeSymbol? ElementTypeSymbol { get; }
+
+    /// <summary>
     ///     Gets a value indicating whether this property has a default value.
     /// </summary>
     public bool HasDefaultValue { get; }
@@ -83,6 +90,11 @@ public sealed class PropertyModel
     ///     Gets a value indicating whether this is a framework type.
     /// </summary>
     public bool IsFrameworkType { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether this is an ImmutableArray collection type.
+    /// </summary>
+    public bool IsImmutableArray { get; }
 
     /// <summary>
     ///     Gets a value indicating whether this property is nullable.

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 using Allure.Xunit.Attributes;
 
@@ -60,6 +62,20 @@ public class AggregateRegistrationsTests
     /// </summary>
     [EventStorageName("TEST", "APP", "TESTEVENT")]
     private sealed class TestEvent;
+
+    /// <summary>
+    ///     Test event effect implementation.
+    /// </summary>
+    private sealed class TestEventEffect : EventEffectBase<TestEvent, TestState>
+    {
+        /// <inheritdoc />
+        public override IAsyncEnumerable<object> HandleAsync(
+            TestEvent eventData,
+            TestState currentState,
+            CancellationToken cancellationToken
+        ) =>
+            AsyncEnumerable.Empty<object>();
+    }
 
     /// <summary>
     ///     Test snapshot class.
@@ -182,6 +198,57 @@ public class AggregateRegistrationsTests
     }
 
     /// <summary>
+    ///     AddEventEffect should register the effect in DI.
+    /// </summary>
+    [Fact]
+    public void AddEventEffectRegistersEffectInDI()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddEventEffect<TestEventEffect, TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEnumerable<IEventEffect<TestState>> effects = provider.GetServices<IEventEffect<TestState>>();
+
+        // Assert
+        Assert.Single(effects);
+        Assert.IsType<TestEventEffect>(effects.First());
+    }
+
+    /// <summary>
+    ///     AddEventEffect should register root event effect.
+    /// </summary>
+    [Fact]
+    public void AddEventEffectRegistersRootEventEffect()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddEventEffect<TestEventEffect, TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IRootEventEffect<TestState>? rootEffect = provider.GetService<IRootEventEffect<TestState>>();
+
+        // Assert
+        Assert.NotNull(rootEffect);
+        Assert.IsType<RootEventEffect<TestState>>(rootEffect);
+    }
+
+    /// <summary>
+    ///     AddEventEffect should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddEventEffectThrowsWhenServicesIsNull()
+    {
+        // Arrange
+        IServiceCollection? services = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => services!.AddEventEffect<TestEventEffect, TestState>());
+    }
+
+    /// <summary>
     ///     AddEventType should register aggregate support.
     /// </summary>
     [Fact]
@@ -241,6 +308,37 @@ public class AggregateRegistrationsTests
         using ServiceProvider provider = services.BuildServiceProvider();
         IRootCommandHandler<TestState>? handler = provider.GetService<IRootCommandHandler<TestState>>();
         Assert.NotNull(handler);
+    }
+
+    /// <summary>
+    ///     AddRootEventEffect should register root event effect.
+    /// </summary>
+    [Fact]
+    public void AddRootEventEffectRegistersRootEventEffect()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddRootEventEffect<TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IRootEventEffect<TestState>? rootEffect = provider.GetService<IRootEventEffect<TestState>>();
+
+        // Assert
+        Assert.NotNull(rootEffect);
+    }
+
+    /// <summary>
+    ///     AddRootEventEffect should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddRootEventEffectThrowsWhenServicesIsNull()
+    {
+        // Arrange
+        IServiceCollection? services = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => services!.AddRootEventEffect<TestState>());
     }
 
     /// <summary>

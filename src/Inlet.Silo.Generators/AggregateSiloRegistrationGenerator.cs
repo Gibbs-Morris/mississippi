@@ -21,14 +21,14 @@ namespace Mississippi.Inlet.Silo.Generators;
 ///     <para>This generator produces:</para>
 ///     <list type="bullet">
 ///         <item>
-///             Add{AggregateName}() extension method that registers event types, command handlers, reducers, and
-///             snapshot converters.
+///             Add{AggregateName}() extension method that registers event types, command handlers, reducers,
+///             event effects, and snapshot converters.
 ///         </item>
 ///     </list>
 ///     <para>
 ///         The generator scans both the current compilation and referenced assemblies
 ///         to find aggregate types decorated with [GenerateAggregateEndpoints] and their
-///         associated handlers, reducers, and events in sibling namespaces.
+///         associated handlers, reducers, effects, and events in sibling namespaces.
 ///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]
@@ -37,11 +37,17 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     private const string CommandHandlerBaseFullName =
         "Mississippi.EventSourcing.Aggregates.Abstractions.CommandHandlerBase`2";
 
+    private const string EventEffectBaseFullName =
+        "Mississippi.EventSourcing.Aggregates.Abstractions.EventEffectBase`2";
+
     private const string EventReducerBaseFullName =
         "Mississippi.EventSourcing.Reducers.Abstractions.EventReducerBase`2";
 
     private const string GenerateAggregateEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
+
+    private const string SimpleEventEffectBaseFullName =
+        "Mississippi.EventSourcing.Aggregates.Abstractions.SimpleEventEffectBase`2";
 
     /// <summary>
     ///     Recursively finds aggregates in a namespace.
@@ -51,6 +57,8 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol aggregateAttrSymbol,
         INamedTypeSymbol? handlerBaseSymbol,
         INamedTypeSymbol? reducerBaseSymbol,
+        INamedTypeSymbol? effectBaseSymbol,
+        INamedTypeSymbol? simpleEffectBaseSymbol,
         List<AggregateRegistrationInfo> aggregates,
         string targetRootNamespace
     )
@@ -63,6 +71,8 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
                 aggregateAttrSymbol,
                 handlerBaseSymbol,
                 reducerBaseSymbol,
+                effectBaseSymbol,
+                simpleEffectBaseSymbol,
                 targetRootNamespace);
             if (info is not null)
             {
@@ -78,9 +88,48 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
                 aggregateAttrSymbol,
                 handlerBaseSymbol,
                 reducerBaseSymbol,
+                effectBaseSymbol,
+                simpleEffectBaseSymbol,
                 aggregates,
                 targetRootNamespace);
         }
+    }
+
+    /// <summary>
+    ///     Finds event effects for an aggregate in the Effects sub-namespace.
+    /// </summary>
+    private static List<EffectInfo> FindEffectsForAggregate(
+        INamespaceSymbol aggregateNamespace,
+        INamedTypeSymbol aggregateSymbol,
+        INamedTypeSymbol? effectBaseSymbol,
+        INamedTypeSymbol? simpleEffectBaseSymbol
+    )
+    {
+        List<EffectInfo> effects = [];
+        if (effectBaseSymbol is null && simpleEffectBaseSymbol is null)
+        {
+            return effects;
+        }
+
+        // Look for Effects sub-namespace
+        INamespaceSymbol? effectsNs = aggregateNamespace.GetNamespaceMembers()
+            .FirstOrDefault(ns => ns.Name == "Effects");
+        if (effectsNs is null)
+        {
+            return effects;
+        }
+
+        // Find all types that extend EventEffectBase<TEvent, TAggregate> or SimpleEventEffectBase<TEvent, TAggregate>
+        foreach (INamedTypeSymbol typeSymbol in effectsNs.GetTypeMembers())
+        {
+            EffectInfo? effectInfo = TryCreateEffectInfo(typeSymbol, aggregateSymbol);
+            if (effectInfo is not null)
+            {
+                effects.Add(effectInfo);
+            }
+        }
+
+        return effects;
     }
 
     /// <summary>
@@ -109,33 +158,11 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         // Find all types that extend CommandHandlerBase<TCommand, TAggregate>
         foreach (INamedTypeSymbol typeSymbol in handlersNs.GetTypeMembers())
         {
-            INamedTypeSymbol? baseType = typeSymbol.BaseType;
-            if (baseType is null || !baseType.IsGenericType)
+            HandlerInfo? handlerInfo = TryCreateHandlerInfo(typeSymbol, aggregateSymbol);
+            if (handlerInfo is not null)
             {
-                continue;
+                handlers.Add(handlerInfo);
             }
-
-            // Check if it extends CommandHandlerBase<,>
-            INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
-            if (constructedFrom is null ||
-                (constructedFrom.MetadataName != "CommandHandlerBase`2") ||
-                (constructedFrom.ContainingNamespace.ToDisplayString() !=
-                 "Mississippi.EventSourcing.Aggregates.Abstractions"))
-            {
-                continue;
-            }
-
-            // Verify the second type argument is our aggregate
-            if ((baseType.TypeArguments.Length != 2) ||
-                !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
-            {
-                continue;
-            }
-
-            // Extract command type
-            ITypeSymbol commandType = baseType.TypeArguments[0];
-            handlers.Add(
-                new(typeSymbol.ToDisplayString(), typeSymbol.Name, commandType.ToDisplayString(), commandType.Name));
         }
 
         return handlers;
@@ -167,33 +194,11 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         // Find all types that extend EventReducerBase<TEvent, TAggregate>
         foreach (INamedTypeSymbol typeSymbol in reducersNs.GetTypeMembers())
         {
-            INamedTypeSymbol? baseType = typeSymbol.BaseType;
-            if (baseType is null || !baseType.IsGenericType)
+            ReducerInfo? reducerInfo = TryCreateReducerInfo(typeSymbol, aggregateSymbol);
+            if (reducerInfo is not null)
             {
-                continue;
+                reducers.Add(reducerInfo);
             }
-
-            // Check if it extends EventReducerBase<,>
-            INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
-            if (constructedFrom is null ||
-                (constructedFrom.MetadataName != "EventReducerBase`2") ||
-                (constructedFrom.ContainingNamespace.ToDisplayString() !=
-                 "Mississippi.EventSourcing.Reducers.Abstractions"))
-            {
-                continue;
-            }
-
-            // Verify the second type argument is our aggregate
-            if ((baseType.TypeArguments.Length != 2) ||
-                !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
-            {
-                continue;
-            }
-
-            // Extract event type
-            ITypeSymbol eventType = baseType.TypeArguments[0];
-            reducers.Add(
-                new(typeSymbol.ToDisplayString(), typeSymbol.Name, eventType.ToDisplayString(), eventType.Name));
         }
 
         return reducers;
@@ -231,6 +236,14 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         // Add using for reducers namespace
         string reducersNamespace = aggregate.Model.Namespace + ".Reducers";
         sb.AppendUsing(reducersNamespace);
+
+        // Add using for effects namespace if there are effects
+        if (aggregate.Effects.Count > 0)
+        {
+            string effectsNamespace = aggregate.Model.Namespace + ".Effects";
+            sb.AppendUsing(effectsNamespace);
+        }
+
         sb.AppendFileScopedNamespace(aggregate.OutputNamespace);
         sb.AppendLine();
         string registrationsName = $"{aggregate.Model.AggregateName}AggregateRegistrations";
@@ -283,6 +296,18 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
 
         sb.AppendLine();
 
+        // Register event effects if present
+        if (aggregate.Effects.Count > 0)
+        {
+            sb.AppendLine("// Register event effects");
+            foreach (EffectInfo effect in aggregate.Effects)
+            {
+                sb.AppendLine($"services.AddEventEffect<{effect.TypeName}, {aggregate.Model.TypeName}>();");
+            }
+
+            sb.AppendLine();
+        }
+
         // Add snapshot state converter
         sb.AppendLine("// Add snapshot state converter for aggregate snapshots");
         sb.AppendLine($"services.AddSnapshotStateConverter<{aggregate.Model.TypeName}>();");
@@ -310,9 +335,11 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             return aggregates;
         }
 
-        // Get base type symbols for handler and reducer detection
+        // Get base type symbols for handler, reducer, and effect detection
         INamedTypeSymbol? handlerBaseSymbol = compilation.GetTypeByMetadataName(CommandHandlerBaseFullName);
         INamedTypeSymbol? reducerBaseSymbol = compilation.GetTypeByMetadataName(EventReducerBaseFullName);
+        INamedTypeSymbol? effectBaseSymbol = compilation.GetTypeByMetadataName(EventEffectBaseFullName);
+        INamedTypeSymbol? simpleEffectBaseSymbol = compilation.GetTypeByMetadataName(SimpleEventEffectBaseFullName);
 
         // Scan all assemblies referenced by this compilation
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
@@ -322,6 +349,8 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
                 aggregateAttrSymbol,
                 handlerBaseSymbol,
                 reducerBaseSymbol,
+                effectBaseSymbol,
+                simpleEffectBaseSymbol,
                 aggregates,
                 targetRootNamespace);
         }
@@ -350,6 +379,152 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Determines if a type extends CommandHandlerBase.
+    /// </summary>
+    private static bool IsCommandHandlerBaseType(
+        INamedTypeSymbol baseType
+    )
+    {
+        INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
+        return constructedFrom is not null &&
+               (constructedFrom.MetadataName == "CommandHandlerBase`2") &&
+               (constructedFrom.ContainingNamespace.ToDisplayString() ==
+                "Mississippi.EventSourcing.Aggregates.Abstractions");
+    }
+
+    /// <summary>
+    ///     Determines if the given base type is an event effect base class.
+    /// </summary>
+    private static bool IsEventEffectBaseType(
+        INamedTypeSymbol baseType
+    )
+    {
+        if (!baseType.IsGenericType)
+        {
+            return false;
+        }
+
+        INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
+        if (constructedFrom is null)
+        {
+            return false;
+        }
+
+        string ns = constructedFrom.ContainingNamespace.ToDisplayString();
+        if (ns != "Mississippi.EventSourcing.Aggregates.Abstractions")
+        {
+            return false;
+        }
+
+        return (constructedFrom.MetadataName == "EventEffectBase`2") ||
+               (constructedFrom.MetadataName == "SimpleEventEffectBase`2");
+    }
+
+    /// <summary>
+    ///     Determines if a type extends EventReducerBase.
+    /// </summary>
+    private static bool IsEventReducerBaseType(
+        INamedTypeSymbol baseType
+    )
+    {
+        INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
+        return constructedFrom is not null &&
+               (constructedFrom.MetadataName == "EventReducerBase`2") &&
+               (constructedFrom.ContainingNamespace.ToDisplayString() ==
+                "Mississippi.EventSourcing.Reducers.Abstractions");
+    }
+
+    /// <summary>
+    ///     Attempts to create an EffectInfo from a type symbol if it's a valid event effect.
+    /// </summary>
+    private static EffectInfo? TryCreateEffectInfo(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol aggregateSymbol
+    )
+    {
+        INamedTypeSymbol? baseType = typeSymbol.BaseType;
+        if (baseType is null || !IsEventEffectBaseType(baseType))
+        {
+            return null;
+        }
+
+        // Verify the second type argument is our aggregate
+        if ((baseType.TypeArguments.Length != 2) ||
+            !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
+        {
+            return null;
+        }
+
+        // Extract event type
+        ITypeSymbol eventType = baseType.TypeArguments[0];
+        return new(typeSymbol.ToDisplayString(), typeSymbol.Name, eventType.ToDisplayString(), eventType.Name);
+    }
+
+    /// <summary>
+    ///     Attempts to create a HandlerInfo if the type extends CommandHandlerBase for the given aggregate.
+    /// </summary>
+    private static HandlerInfo? TryCreateHandlerInfo(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol aggregateSymbol
+    )
+    {
+        INamedTypeSymbol? baseType = typeSymbol.BaseType;
+        if (baseType is null || !baseType.IsGenericType)
+        {
+            return null;
+        }
+
+        // Check if it extends CommandHandlerBase<,>
+        if (!IsCommandHandlerBaseType(baseType))
+        {
+            return null;
+        }
+
+        // Verify the second type argument is our aggregate
+        if ((baseType.TypeArguments.Length != 2) ||
+            !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
+        {
+            return null;
+        }
+
+        // Extract command type
+        ITypeSymbol commandType = baseType.TypeArguments[0];
+        return new(typeSymbol.ToDisplayString(), typeSymbol.Name, commandType.ToDisplayString(), commandType.Name);
+    }
+
+    /// <summary>
+    ///     Attempts to create a ReducerInfo if the type extends EventReducerBase for the given aggregate.
+    /// </summary>
+    private static ReducerInfo? TryCreateReducerInfo(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol aggregateSymbol
+    )
+    {
+        INamedTypeSymbol? baseType = typeSymbol.BaseType;
+        if (baseType is null || !baseType.IsGenericType)
+        {
+            return null;
+        }
+
+        // Check if it extends EventReducerBase<,>
+        if (!IsEventReducerBaseType(baseType))
+        {
+            return null;
+        }
+
+        // Verify the second type argument is our aggregate
+        if ((baseType.TypeArguments.Length != 2) ||
+            !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
+        {
+            return null;
+        }
+
+        // Extract event type
+        ITypeSymbol eventType = baseType.TypeArguments[0];
+        return new(typeSymbol.ToDisplayString(), typeSymbol.Name, eventType.ToDisplayString(), eventType.Name);
+    }
+
+    /// <summary>
     ///     Tries to get aggregate info from a type symbol.
     /// </summary>
     private static AggregateRegistrationInfo? TryGetAggregateInfo(
@@ -357,6 +532,8 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol aggregateAttrSymbol,
         INamedTypeSymbol? handlerBaseSymbol,
         INamedTypeSymbol? reducerBaseSymbol,
+        INamedTypeSymbol? effectBaseSymbol,
+        INamedTypeSymbol? simpleEffectBaseSymbol,
         string targetRootNamespace
     )
     {
@@ -390,13 +567,16 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         // Build aggregate model
         AggregateModel model = new(typeSymbol, routePrefix!, featureKey);
 
-        // Find handlers and reducers
+        // Find handlers, reducers, and effects
         INamespaceSymbol? containingNs = typeSymbol.ContainingNamespace;
         List<HandlerInfo> handlers = containingNs is not null
             ? FindHandlersForAggregate(containingNs, typeSymbol, handlerBaseSymbol)
             : [];
         List<ReducerInfo> reducers = containingNs is not null
             ? FindReducersForAggregate(containingNs, typeSymbol, reducerBaseSymbol)
+            : [];
+        List<EffectInfo> effects = containingNs is not null
+            ? FindEffectsForAggregate(containingNs, typeSymbol, effectBaseSymbol, simpleEffectBaseSymbol)
             : [];
 
         // Only generate if there are handlers or reducers
@@ -407,7 +587,7 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
 
         // Output namespace: {DomainRoot}.Silo.Registrations based on aggregate namespace
         string outputNamespace = NamingConventions.GetSiloRegistrationNamespace(model.Namespace, targetRootNamespace);
-        return new(model, handlers, reducers, outputNamespace);
+        return new(model, handlers, reducers, effects, outputNamespace);
     }
 
     /// <summary>
@@ -460,7 +640,7 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Information about an aggregate type with its handlers and reducers.
+    ///     Information about an aggregate type with its handlers, reducers, and effects.
     /// </summary>
     private sealed class AggregateRegistrationInfo
     {
@@ -468,14 +648,18 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             AggregateModel model,
             List<HandlerInfo> handlers,
             List<ReducerInfo> reducers,
+            List<EffectInfo> effects,
             string outputNamespace
         )
         {
             Model = model;
             Handlers = handlers;
             Reducers = reducers;
+            Effects = effects;
             OutputNamespace = outputNamespace;
         }
+
+        public List<EffectInfo> Effects { get; }
 
         public List<HandlerInfo> Handlers { get; }
 
@@ -484,6 +668,33 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         public string OutputNamespace { get; }
 
         public List<ReducerInfo> Reducers { get; }
+    }
+
+    /// <summary>
+    ///     Information about an event effect.
+    /// </summary>
+    private sealed class EffectInfo
+    {
+        public EffectInfo(
+            string fullTypeName,
+            string typeName,
+            string eventFullTypeName,
+            string eventTypeName
+        )
+        {
+            FullTypeName = fullTypeName;
+            TypeName = typeName;
+            EventFullTypeName = eventFullTypeName;
+            EventTypeName = eventTypeName;
+        }
+
+        public string EventFullTypeName { get; }
+
+        public string EventTypeName { get; }
+
+        public string FullTypeName { get; }
+
+        public string TypeName { get; }
     }
 
     /// <summary>

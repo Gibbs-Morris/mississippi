@@ -1,10 +1,17 @@
 @page "/"
+@using Spring.Client.Features.BankAccountLedger.Dtos
 @inherits InletComponent
 
 <main>
+    <nav>
+        <a href="/investigations">View Investigations</a>
+        <a href="/scalar/v1" target="_blank">API Docs</a>
+    </nav>
+
     <header>
         <h1>Bank Account Operations</h1>
         <p>Mississippi Event Sourcing Demo</p>
+        <p><strong>Tip:</strong> Transactions over £10,000 are automatically flagged for investigation. Try it out!</p>
         <button type="button"
                 aria-label="Connection status"
                 aria-haspopup="dialog"
@@ -37,35 +44,44 @@
         </div>
         <section>
             <h2>Open Account</h2>
-            <fieldset disabled="@IsExecutingOrLoading">
+            <fieldset disabled="@(IsExecutingOrLoading || IsAccountOpen)">
                 <legend>Open Account</legend>
-                <div>
-                    <label for="holder-name-input">Holder Name</label>
-                    <input id="holder-name-input"
-                           type="text"
-                           @bind="holderName"
-                           placeholder="Account holder name"/>
-                </div>
-                <div>
-                    <label for="initial-deposit-input">Initial Deposit</label>
-                    <input id="initial-deposit-input"
-                           type="number"
-                           @bind="initialDeposit"
-                           placeholder="0.00"
-                           step="0.01"
-                           min="0"/>
-                </div>
-                <button type="button" @onclick="OpenAccount" disabled="@IsExecutingOrLoading">
-                    Open Account
-                </button>
+                @if (IsAccountOpen)
+                {
+                    <p>
+                        <em>Account is already open.</em>
+                    </p>
+                }
+                else
+                {
+                    <div>
+                        <label for="holder-name-input">Holder Name</label>
+                        <input id="holder-name-input"
+                               type="text"
+                               @bind="holderName"
+                               placeholder="Account holder name"/>
+                    </div>
+                    <div>
+                        <label for="initial-deposit-input">Initial Deposit (£)</label>
+                        <input id="initial-deposit-input"
+                               type="number"
+                               @bind="initialDeposit"
+                               placeholder="0.00"
+                               step="0.01"
+                               min="0"/>
+                    </div>
+                    <button type="button" @onclick="OpenAccount" disabled="@IsExecutingOrLoading">
+                        Open Account
+                    </button>
+                }
             </fieldset>
         </section>
         <section>
-            <h2>Deposit</h2>
-            <fieldset disabled="@IsExecutingOrLoading">
-                <legend>Deposit Funds</legend>
+            <h2>Deposit (£)</h2>
+            <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+                <legend>Deposit Funds (GBP)</legend>
                 <div>
-                    <label for="deposit-amount-input">Amount</label>
+                    <label for="deposit-amount-input">Amount (£)</label>
                     <input id="deposit-amount-input"
                            type="number"
                            @bind="depositAmount"
@@ -73,21 +89,21 @@
                            step="0.01"
                            min="0"/>
                 </div>
-                <button type="button" @onclick="Deposit" disabled="@IsExecutingOrLoading">Deposit</button>
+                <button type="button" @onclick="Deposit" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">Deposit £</button>
                 <div>
                     <span>Quick:</span>
-                    <button type="button" @onclick="DepositSingle100" disabled="@IsExecutingOrLoading">+$100</button>
-                    <button type="button" @onclick="DepositBurst20" disabled="@IsExecutingOrLoading">20×$5</button>
-                    <button type="button" @onclick="DepositBurst200" disabled="@IsExecutingOrLoading">200×$10</button>
+                    <button type="button" @onclick="DepositSingle100" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">+£100</button>
+                    <button type="button" @onclick="DepositBurst20" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">20×£5</button>
+                    <button type="button" @onclick="DepositBurst200" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">200×£10</button>
                 </div>
             </fieldset>
         </section>
         <section>
             <h2>Withdraw</h2>
-            <fieldset disabled="@IsExecutingOrLoading">
+            <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
                 <legend>Withdraw Funds</legend>
                 <div>
-                    <label for="withdraw-amount-input">Amount</label>
+                    <label for="withdraw-amount-input">Amount (£)</label>
                     <input id="withdraw-amount-input"
                            type="number"
                            @bind="withdrawAmount"
@@ -95,12 +111,12 @@
                            step="0.01"
                            min="0"/>
                 </div>
-                <button type="button" @onclick="Withdraw" disabled="@IsExecutingOrLoading">Withdraw</button>
+                <button type="button" @onclick="Withdraw" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">Withdraw</button>
                 <div>
                     <span>Quick:</span>
-                    <button type="button" @onclick="WithdrawSingle100" disabled="@IsExecutingOrLoading">-$100</button>
-                    <button type="button" @onclick="WithdrawBurst20" disabled="@IsExecutingOrLoading">20×$5</button>
-                    <button type="button" @onclick="WithdrawBurst200" disabled="@IsExecutingOrLoading">200×$10</button>
+                    <button type="button" @onclick="WithdrawSingle100" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">-£100</button>
+                    <button type="button" @onclick="WithdrawBurst20" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">20×£5</button>
+                    <button type="button" @onclick="WithdrawBurst200" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">200×£10</button>
                 </div>
             </fieldset>
         </section>
@@ -143,6 +159,33 @@
                 <div role="status">
                     Command executed successfully.
                 </div>
+            }
+        </section>
+        <section>
+            <h2>Transaction Ledger</h2>
+            @if (LedgerProjection?.Entries.Length > 0)
+            {
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Amount (£)</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (LedgerEntryDto entry in LedgerProjection.Entries)
+                    {
+                        <tr>
+                            <td>@entry.EntryType</td>
+                            <td>@entry.Amount</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>No transactions yet.</p>
             }
         </section>
     }

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Blazor.WebAssembly.Abstractions.State;
 using Mississippi.Inlet.Blazor.WebAssembly.ActionEffects;
 using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
 using Mississippi.Inlet.Projection.Abstractions;
@@ -157,8 +158,8 @@ public sealed class InletBlazorSignalRBuilder
         // By using Lazy<IInletStore>, the effect defers resolution until first use.
         Services.TryAddScoped<Lazy<IInletStore>>(sp => new(() => sp.GetRequiredService<IInletStore>()));
 
-        // Register the SignalR effect for projection subscriptions
-        Services.AddActionEffect<InletSignalRActionEffect>();
+        // Register the Inlet connection feature state and SignalR effect
+        Services.AddActionEffect<InletConnectionState, InletSignalRActionEffect>();
 
         // Register the SignalR connection feature (state, reducers, and lifecycle effect)
         Services.AddSignalRConnectionFeature();

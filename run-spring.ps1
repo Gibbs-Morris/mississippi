@@ -15,15 +15,22 @@ param()
 
 $ErrorActionPreference = 'Stop'
 
+$solutionFile = Join-Path $PSScriptRoot 'samples.slnx'
 $appHostProject = Join-Path $PSScriptRoot 'samples/Spring/Spring.AppHost/Spring.AppHost.csproj'
+
+if (-not (Test-Path $solutionFile)) {
+    Write-Error "Solution file not found at: $solutionFile"
+    exit 1
+}
 
 if (-not (Test-Path $appHostProject)) {
     Write-Error "AppHost project not found at: $appHostProject"
     exit 1
 }
 
-Write-Host "Building Spring AppHost..." -ForegroundColor Cyan
-dotnet build $appHostProject -c Debug
+Write-Host "Building Samples solution..." -ForegroundColor Cyan
+# Build the full solution to ensure source generators and all dependencies are built in correct order
+dotnet build $solutionFile -c Debug --no-incremental
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Build failed with exit code $LASTEXITCODE"
@@ -31,7 +38,6 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "`nStarting Spring Aspire AppHost (Debug mode)..." -ForegroundColor Green
-Write-Host "Press Ctrl+C to stop`n" -ForegroundColor Yellow
 
 $env:ASPNETCORE_ENVIRONMENT = 'Development'
 $env:DOTNET_ENVIRONMENT = 'Development'

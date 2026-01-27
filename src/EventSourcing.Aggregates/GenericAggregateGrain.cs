@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Diagnostics;
@@ -70,7 +71,12 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="rootCommandHandler">The root command handler for processing commands.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="rootReducer">The root event reducer for obtaining the reducers hash.</param>
+    /// <param name="effectOptions">Options controlling aggregate effect processing.</param>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="rootEventEffect">
+    ///     Optional root event effect dispatcher for running side effects after events are persisted.
+    ///     When null, no effects are executed.
+    /// </param>
     public GenericAggregateGrain(
         IGrainContext grainContext,
         IBrookGrainFactory brookGrainFactory,
@@ -78,7 +84,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
         IRootCommandHandler<TAggregate> rootCommandHandler,
         ISnapshotGrainFactory snapshotGrainFactory,
         IRootReducer<TAggregate> rootReducer,
-        ILogger<GenericAggregateGrain<TAggregate>> logger
+        IOptions<AggregateEffectOptions> effectOptions,
+        ILogger<GenericAggregateGrain<TAggregate>> logger,
+        IRootEventEffect<TAggregate>? rootEventEffect = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
@@ -87,7 +95,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
         RootCommandHandler = rootCommandHandler ?? throw new ArgumentNullException(nameof(rootCommandHandler));
         SnapshotGrainFactory = snapshotGrainFactory ?? throw new ArgumentNullException(nameof(snapshotGrainFactory));
         RootReducer = rootReducer ?? throw new ArgumentNullException(nameof(rootReducer));
+        EffectOptions = effectOptions?.Value ?? throw new ArgumentNullException(nameof(effectOptions));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        RootEventEffect = rootEventEffect;
     }
 
     /// <summary>
@@ -104,13 +114,30 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
     private IBrookGrainFactory BrookGrainFactory { get; }
 
+    private AggregateEffectOptions EffectOptions { get; }
+
     private ILogger<GenericAggregateGrain<TAggregate>> Logger { get; }
 
     private IRootCommandHandler<TAggregate> RootCommandHandler { get; }
 
+    private IRootEventEffect<TAggregate>? RootEventEffect { get; }
+
     private IRootReducer<TAggregate> RootReducer { get; }
 
     private ISnapshotGrainFactory SnapshotGrainFactory { get; }
+
+    /// <summary>
+    ///     Determines if an exception is critical and should not be swallowed.
+    /// </summary>
+    /// <remarks>
+    ///     Critical exceptions indicate catastrophic failures that should propagate
+    ///     rather than being silently swallowed. These include memory exhaustion,
+    ///     stack overflow, and thread abort conditions.
+    /// </remarks>
+    private static bool IsCriticalException(
+        Exception ex
+    ) =>
+        ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
 
     /// <inheritdoc />
     public Task<OperationResult> ExecuteAsync(
@@ -181,6 +208,84 @@ internal sealed class GenericAggregateGrain<TAggregate>
             RootReducer.GetReducerHash());
         Logger.Activated(brookKey);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Dispatches events to the root event effect and persists any yielded events.
+    /// </summary>
+    /// <param name="initialEvents">The initial events to dispatch.</param>
+    /// <param name="currentState">The current aggregate state after events were applied.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    ///     <para>
+    ///         Effects can yield additional events. These are persisted immediately for real-time
+    ///         projection updates. The method loops until no more events are yielded or the
+    ///         iteration limit (<see cref="AggregateEffectOptions.MaxEffectIterations" />) is reached
+    ///         to prevent infinite loops.
+    ///     </para>
+    ///     <para>
+    ///         When the limit is reached, remaining pending events are not processed, and a warning
+    ///         is logged with metrics recorded. This may indicate a design issue with effects
+    ///         continuously producing events in a cycle.
+    ///     </para>
+    /// </remarks>
+    private async Task DispatchEffectsAsync(
+        IReadOnlyList<object> initialEvents,
+        TAggregate currentState,
+        string aggregateKey,
+        CancellationToken cancellationToken
+    )
+    {
+        if (RootEventEffect is null)
+        {
+            return;
+        }
+
+        int maxIterations = EffectOptions.MaxEffectIterations;
+        List<object> pendingEvents = new(initialEvents);
+        int iteration = 0;
+        while ((pendingEvents.Count > 0) && (iteration < maxIterations))
+        {
+            iteration++;
+            List<object> yieldedEvents = [];
+            foreach (object eventData in pendingEvents)
+            {
+                await foreach (object resultEvent in RootEventEffect.DispatchAsync(
+                                   eventData,
+                                   currentState,
+                                   cancellationToken))
+                {
+                    yieldedEvents.Add(resultEvent);
+
+                    // Persist immediately for real-time projection updates
+                    ImmutableArray<BrookEvent> brookEvents =
+                        BrookEventConverter.ToStorageEvents(brookKey, [resultEvent]);
+                    BrookPosition expectedPos = lastKnownPosition!.Value;
+                    await BrookGrainFactory.GetBrookWriterGrain(brookKey)
+                        .AppendEventsAsync(brookEvents, expectedPos, cancellationToken);
+                    lastKnownPosition = new BrookPosition(expectedPos.Value + 1);
+
+                    // Update state after each yielded event so subsequent effects see the correct state
+                    SnapshotKey updatedSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);
+                    TAggregate? updatedState = await SnapshotGrainFactory
+                        .GetSnapshotCacheGrain<TAggregate>(updatedSnapshotKey)
+                        .GetStateAsync(cancellationToken);
+                    if (updatedState is not null)
+                    {
+                        currentState = updatedState;
+                    }
+                }
+            }
+
+            pendingEvents = yieldedEvents;
+        }
+
+        if (iteration >= maxIterations)
+        {
+            Logger.EffectIterationLimitReached(aggregateKey, maxIterations);
+            EventEffectMetrics.RecordIterationLimitReached(typeof(TAggregate).Name, aggregateKey);
+        }
     }
 
     private async Task<OperationResult> ExecuteInternalAsync(
@@ -269,6 +374,27 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
             // Update local position to avoid race conditions with cursor grain stream updates
             lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
+
+            // Dispatch effects if any are registered
+            if (RootEventEffect?.EffectCount > 0)
+            {
+                // Get updated state after events were applied for effect handlers
+                SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);
+                TAggregate? updatedState = await SnapshotGrainFactory
+                    .GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
+                    .GetStateAsync(cancellationToken);
+                try
+                {
+                    await DispatchEffectsAsync(events, updatedState!, aggregateKey, cancellationToken);
+                }
+                catch (Exception ex) when (!IsCriticalException(ex))
+                {
+                    // Effect dispatch failures should not fail the command since events are already persisted.
+                    // Log the error and continue - the command succeeded from the caller's perspective.
+                    // Critical exceptions (OOM, StackOverflow, etc.) will propagate.
+                    Logger.EffectDispatchFailed(commandTypeName, aggregateKey, ex);
+                }
+            }
         }
 
         sw.Stop();
