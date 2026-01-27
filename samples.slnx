@@ -4,6 +4,11 @@
         <File Path="Directory.Packages.props" />
         <File Path="global.json" />
     </Folder>
+    <Folder Name="/Framework/">
+        <Project Path="src\EventSourcing.Testing\Mississippi.EventSourcing.Testing.csproj" />
+        <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
+        <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
+    </Folder>
     <Folder Name="/Samples/" />
     <Folder Name="/Samples/Crescent/">
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
@@ -15,6 +20,7 @@
         <Project Path="samples\Spring\Spring.Server\Spring.Server.csproj" />
         <Project Path="samples\Spring\Spring.Silo\Spring.Silo.csproj" />
         <Project Path="samples\Spring\Spring.AppHost\Spring.AppHost.csproj" />
+        <Project Path="samples\Spring\Spring.Domain.L0Tests\Spring.Domain.L0Tests.csproj" />
         <Project Path="samples\Spring\Spring.L2Tests\Spring.L2Tests.csproj" />
     </Folder>
 </Solution>
