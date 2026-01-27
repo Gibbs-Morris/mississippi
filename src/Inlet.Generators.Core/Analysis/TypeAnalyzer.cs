@@ -146,6 +146,16 @@ public static class TypeAnalyzer
     }
 
     /// <summary>
+    ///     Determines whether a type is an enum.
+    /// </summary>
+    /// <param name="typeSymbol">The type symbol.</param>
+    /// <returns><c>true</c> if the type is an enum; otherwise, <c>false</c>.</returns>
+    public static bool IsEnumType(
+        ITypeSymbol typeSymbol
+    ) =>
+        typeSymbol is not null && (typeSymbol.TypeKind == TypeKind.Enum);
+
+    /// <summary>
     ///     Determines whether a type is a framework type that should not be converted to a DTO.
     /// </summary>
     /// <param name="typeSymbol">The type symbol to analyze.</param>
@@ -174,6 +184,24 @@ public static class TypeAnalyzer
 
         return FrameworkNamespacePrefixes.Any(prefix =>
             containingNamespace.StartsWith(prefix, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Determines whether a type is an ImmutableArray.
+    /// </summary>
+    /// <param name="typeSymbol">The type symbol.</param>
+    /// <returns><c>true</c> if the type is an ImmutableArray; otherwise, <c>false</c>.</returns>
+    public static bool IsImmutableArrayType(
+        ITypeSymbol typeSymbol
+    )
+    {
+        if (typeSymbol is not INamedTypeSymbol namedType)
+        {
+            return false;
+        }
+
+        string typeName = namedType.OriginalDefinition.ToDisplayString();
+        return typeName == "System.Collections.Immutable.ImmutableArray<T>";
     }
 
     /// <summary>

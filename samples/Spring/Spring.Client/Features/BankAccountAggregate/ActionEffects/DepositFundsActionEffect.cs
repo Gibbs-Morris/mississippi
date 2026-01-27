@@ -8,6 +8,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Dtos;
+using Spring.Client.Features.BankAccountAggregate.State;
 
 
 namespace Spring.Client.Features.BankAccountAggregate.ActionEffects;
@@ -17,8 +18,8 @@ namespace Spring.Client.Features.BankAccountAggregate.ActionEffects;
 /// </summary>
 [PendingSourceGenerator]
 internal sealed class DepositFundsActionEffect
-    : CommandActionEffectBase<DepositFundsAction, DepositFundsRequestDto, DepositFundsExecutingAction,
-        DepositFundsSucceededAction, DepositFundsFailedAction>
+    : CommandActionEffectBase<DepositFundsAction, DepositFundsRequestDto, BankAccountAggregateState,
+        DepositFundsExecutingAction, DepositFundsSucceededAction, DepositFundsFailedAction>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="DepositFundsActionEffect" /> class.

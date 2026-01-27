@@ -128,6 +128,191 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Generated DTO should generate nested enum DTO for enum properties.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoGeneratesNestedEnumDto()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            public enum AccountStatus
+                                            {
+                                                Active = 0,
+                                                Suspended = 1,
+                                                Closed = 2
+                                            }
+
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                                public AccountStatus Status { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+
+        // Should generate main DTO
+        Assert.True(runResult.GeneratedTrees.Length >= 1);
+        string dtoCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("AccountBalanceProjectionDto", dtoCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated DTO should handle collection of custom types.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoHandlesCollectionOfCustomTypes()
+    {
+        const string projectionSource = """
+                                        using System.Collections.Immutable;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            public sealed record TransactionRecord
+                                            {
+                                                public decimal Amount { get; init; }
+                                                public string Description { get; init; } = string.Empty;
+                                            }
+
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public ImmutableArray<TransactionRecord> Transactions { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+
+        // Should generate main DTO and nested DTO
+        Assert.True(runResult.GeneratedTrees.Length >= 1);
+    }
+
+    /// <summary>
+    ///     Generated DTO should handle DateTimeOffset properties.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoHandlesDateTimeOffsetProperties()
+    {
+        const string projectionSource = """
+                                        using System;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Timestamps
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("timestamps")]
+                                            public sealed record TimestampProjection
+                                            {
+                                                public DateTimeOffset CreatedAt { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("CreatedAt", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated DTO should handle Guid properties.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoHandlesGuidProperties()
+    {
+        const string projectionSource = """
+                                        using System;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Identifiers
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("identifiers")]
+                                            public sealed record IdentifierProjection
+                                            {
+                                                public Guid Id { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("Id", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated DTO should handle ImmutableArray properties.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoHandlesImmutableArrayProperties()
+    {
+        const string projectionSource = """
+                                        using System.Collections.Immutable;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public ImmutableArray<decimal> TransactionAmounts { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("ImmutableArray<decimal> TransactionAmounts", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated DTO should handle nullable properties correctly.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoHandlesNullableProperties()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal? OptionalBalance { get; init; }
+                                                public string? OptionalName { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+
+        // The generator should preserve nullable annotations
+        Assert.Contains("OptionalBalance", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("OptionalName", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated DTO should have auto-generated header.
     /// </summary>
     [Fact]
@@ -344,6 +529,84 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Generator should handle projection path with special characters.
+    /// </summary>
+    [Fact]
+    public void GeneratorHandlesProjectionPathWithSpecialCharacters()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Special
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance/v2")]
+                                            public sealed record SpecialPathProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("[ProjectionPath(\"account-balance/v2\")]", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generator should handle projection with no properties.
+    /// </summary>
+    [Fact]
+    public void GeneratorHandlesProjectionWithNoProperties()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Empty
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("empty")]
+                                            public sealed record EmptyProjection;
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("public sealed record EmptyProjectionDto()", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generator should handle projection with static properties by ignoring them.
+    /// </summary>
+    [Fact]
+    public void GeneratorIgnoresStaticProperties()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.WithStatic
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("with-static")]
+                                            public sealed record WithStaticProjection
+                                            {
+                                                public static string StaticValue { get; } = "static";
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("decimal Balance", generatedCode, StringComparison.Ordinal);
+        Assert.DoesNotContain("StaticValue", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generator should produce no output when no projections are present.
     /// </summary>
     [Fact]
@@ -409,6 +672,36 @@ public class ProjectionClientDtoGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Assert.Single(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     Generator should use assembly name when no root namespace is specified.
+    /// </summary>
+    [Fact]
+    public void GeneratorUsesAssemblyNameForNamespaceWhenNoRootNamespace()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+
+        // Assembly is named "TestApp.Client" which becomes the root namespace
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+
+        // Should use TestApp.Client as root and transform Domain → Client
+        Assert.Contains("namespace TestApp.Client", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -1,0 +1,81 @@
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+
+
+namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+
+/// <summary>
+///     Base class for simple event effects that perform side operations without yielding events.
+/// </summary>
+/// <typeparam name="TEvent">The event type this effect handles.</typeparam>
+/// <typeparam name="TAggregate">The aggregate state type this effect is registered for.</typeparam>
+/// <remarks>
+///     <para>
+///         Use this base class when your effect performs a side operation (logging, notification,
+///         external API call) but doesn't need to yield additional events to the aggregate.
+///     </para>
+///     <para>
+///         This simplifies the implementation by requiring only a <see cref="Task" /> return type
+///         instead of <see cref="IAsyncEnumerable{T}" />.
+///     </para>
+/// </remarks>
+/// <example>
+///     <code>
+/// public sealed class SendWelcomeEmailEffect : SimpleEventEffectBase&lt;AccountOpened, AccountAggregate&gt;
+/// {
+///     private readonly IEmailService _emailService;
+///
+///     public SendWelcomeEmailEffect(IEmailService emailService)
+///     {
+///         _emailService = emailService;
+///     }
+///
+///     protected override async Task HandleSimpleAsync(
+///         AccountOpened eventData,
+///         AccountAggregate currentState,
+///         CancellationToken cancellationToken)
+///     {
+///         await _emailService.SendWelcomeEmailAsync(eventData.AccountHolder, cancellationToken);
+///     }
+/// }
+///     </code>
+/// </example>
+public abstract class SimpleEventEffectBase<TEvent, TAggregate> : EventEffectBase<TEvent, TAggregate>
+{
+    /// <inheritdoc />
+    public sealed override IAsyncEnumerable<object> HandleAsync(
+        TEvent eventData,
+        TAggregate currentState,
+        CancellationToken cancellationToken
+    )
+    {
+        ArgumentNullException.ThrowIfNull(eventData);
+        return HandleAsyncCoreAsync(eventData, currentState, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Handles the event without yielding additional events.
+    /// </summary>
+    /// <param name="eventData">The event that was persisted.</param>
+    /// <param name="currentState">The current aggregate state after the event was applied.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected abstract Task HandleSimpleAsync(
+        TEvent eventData,
+        TAggregate currentState,
+        CancellationToken cancellationToken
+    );
+
+    private async IAsyncEnumerable<object> HandleAsyncCoreAsync(
+        TEvent eventData,
+        TAggregate currentState,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        await HandleSimpleAsync(eventData, currentState, cancellationToken);
+        yield break;
+    }
+}
