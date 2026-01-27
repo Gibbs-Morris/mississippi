@@ -148,6 +148,52 @@ public sealed class GenerateAggregateEndpointsAttribute : Attribute
     public bool GenerateController { get; set; } = true;
 
     /// <summary>
+    ///     Gets or sets a value indicating whether to generate client-side registration code for this aggregate.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Defaults to <see langword="true" />. When set to <see langword="false" />,
+    ///         the <c>Sdk.Client.Generators</c> will skip generating the
+    ///         <c>Add{Aggregate}AggregateFeature()</c> extension method.
+    ///     </para>
+    ///     <para>
+    ///         Use this when you have custom client-side feature registration or when
+    ///         multiple assemblies share the same aggregate definitions and you want
+    ///         to avoid duplicate registration methods.
+    ///     </para>
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///         [GenerateAggregateEndpoints(GenerateClientRegistrations = false)]
+    ///         public sealed record SharedAggregate { }
+    ///     </code>
+    /// </example>
+    public bool GenerateClientRegistrations { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether to generate server-side registration code for this aggregate.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Defaults to <see langword="true" />. When set to <see langword="false" />,
+    ///         the <c>Sdk.Server.Generators</c> will skip generating the
+    ///         <c>Add{Aggregate}AggregateMappers()</c> extension method.
+    ///     </para>
+    ///     <para>
+    ///         Use this when you have custom server-side mapper registration or when
+    ///         multiple assemblies share the same aggregate definitions and you want
+    ///         to avoid duplicate registration methods.
+    ///     </para>
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///         [GenerateAggregateEndpoints(GenerateServerRegistrations = false)]
+    ///         public sealed record SharedAggregate { }
+    ///     </code>
+    /// </example>
+    public bool GenerateServerRegistrations { get; set; } = true;
+
+    /// <summary>
     ///     Gets or sets a value indicating whether to generate silo registration code for this aggregate.
     /// </summary>
     /// <remarks>

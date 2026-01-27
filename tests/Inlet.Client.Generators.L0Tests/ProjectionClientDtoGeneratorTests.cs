@@ -32,6 +32,7 @@ public class ProjectionClientDtoGeneratorTests
                                               public sealed class GenerateProjectionEndpointsAttribute : Attribute
                                               {
                                                   public bool GenerateClientSubscription { get; set; } = true;
+                                                  public bool GenerateClientDto { get; set; } = true;
                                               }
                                           }
 
@@ -745,5 +746,87 @@ public class ProjectionClientDtoGeneratorTests
             StringComparison.Ordinal));
         Assert.True(hasAccountBalanceDto);
         Assert.True(hasTransactionHistoryDto);
+    }
+
+    /// <summary>
+    ///     When GenerateClientDto is false, no client DTO should be generated.
+    /// </summary>
+    [Fact]
+    public void GenerateClientDtoFalseSkipsGeneration()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints(GenerateClientDto = false)]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+
+        // No DTOs should be generated when GenerateClientDto = false
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     When GenerateClientSubscription is false, no client DTO should be generated.
+    /// </summary>
+    [Fact]
+    public void GenerateClientSubscriptionFalseSkipsGeneration()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints(GenerateClientSubscription = false)]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+
+        // No DTOs should be generated when GenerateClientSubscription = false
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     When GenerateClientDto is true (default), client DTO should be generated.
+    /// </summary>
+    [Fact]
+    public void GenerateClientDtoTrueGeneratesDto()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints(GenerateClientDto = true)]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+
+        // DTO should be generated when GenerateClientDto = true
+        Assert.Single(runResult.GeneratedTrees);
+        Assert.Contains("AccountBalanceProjectionDto.g.cs", runResult.GeneratedTrees[0].FilePath, StringComparison.Ordinal);
     }
 }

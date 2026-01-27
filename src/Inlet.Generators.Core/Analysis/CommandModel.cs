@@ -19,10 +19,33 @@ public sealed class CommandModel
     /// <param name="route">The route segment from [GenerateCommand] attribute.</param>
     /// <param name="httpMethod">The HTTP method from [GenerateCommand] attribute.</param>
     /// <param name="dtoSuffix">The suffix for generated DTOs.</param>
+    /// <remarks>
+    ///     This overload creates a command model without authorization configuration.
+    ///     Use the constructor with <see cref="AuthorizationInfo" /> parameter when generating controllers.
+    /// </remarks>
     public CommandModel(
         INamedTypeSymbol typeSymbol,
         string route,
         string httpMethod,
+        string dtoSuffix = "Dto"
+    )
+        : this(typeSymbol, route, httpMethod, AuthorizationInfo.None, dtoSuffix)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="CommandModel" /> class.
+    /// </summary>
+    /// <param name="typeSymbol">The type symbol representing the command.</param>
+    /// <param name="route">The route segment from [GenerateCommand] attribute.</param>
+    /// <param name="httpMethod">The HTTP method from [GenerateCommand] attribute.</param>
+    /// <param name="authorization">The authorization configuration for this command.</param>
+    /// <param name="dtoSuffix">The suffix for generated DTOs.</param>
+    public CommandModel(
+        INamedTypeSymbol typeSymbol,
+        string route,
+        string httpMethod,
+        AuthorizationInfo authorization,
         string dtoSuffix = "Dto"
     )
     {
@@ -31,11 +54,13 @@ public sealed class CommandModel
             throw new ArgumentNullException(nameof(typeSymbol));
         }
 
+        Symbol = typeSymbol;
         TypeName = typeSymbol.Name;
         FullTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         Namespace = TypeAnalyzer.GetFullNamespace(typeSymbol);
         Route = route ?? throw new ArgumentNullException(nameof(route));
         HttpMethod = httpMethod ?? throw new ArgumentNullException(nameof(httpMethod));
+        Authorization = authorization ?? throw new ArgumentNullException(nameof(authorization));
         DtoTypeName = TypeAnalyzer.GetDtoTypeName(typeSymbol, dtoSuffix);
 
         // Determine if this is a positional record (has primary constructor parameters)
@@ -54,6 +79,11 @@ public sealed class CommandModel
             .Select(p => new PropertyModel(p, dtoSuffix))
             .ToImmutableArray();
     }
+
+    /// <summary>
+    ///     Gets the authorization configuration for this command.
+    /// </summary>
+    public AuthorizationInfo Authorization { get; }
 
     /// <summary>
     ///     Gets the DTO type name.
@@ -94,6 +124,11 @@ public sealed class CommandModel
     ///     Gets the route segment from [GenerateCommand] attribute.
     /// </summary>
     public string Route { get; }
+
+    /// <summary>
+    ///     Gets the type symbol representing the command.
+    /// </summary>
+    public INamedTypeSymbol Symbol { get; }
 
     /// <summary>
     ///     Gets the type name (without namespace).

@@ -34,6 +34,14 @@ public class CommandClientRegistrationGeneratorTests
                                                   public string? Route { get; set; }
                                                   public string HttpMethod { get; set; } = "POST";
                                               }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateAggregateEndpointsAttribute : Attribute
+                                              {
+                                                  public bool GenerateClientRegistrations { get; set; } = true;
+                                                  public bool GenerateServerRegistrations { get; set; } = true;
+                                                  public bool GenerateSiloRegistrations { get; set; } = true;
+                                              }
                                           }
                                           """;
 
@@ -304,5 +312,104 @@ public class CommandClientRegistrationGeneratorTests
         // Should register both commands
         Assert.Contains("PlaceOrderActionEffect", generatedCode, StringComparison.Ordinal);
         Assert.Contains("CancelOrderActionEffect", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     When GenerateClientRegistrations is false, no registration file should be generated.
+    /// </summary>
+    [Fact]
+    public void GenerateClientRegistrationsFalseSkipsRegistration()
+    {
+        const string commandSource = """
+                                     using Mississippi.Inlet.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order
+                                     {
+                                         [GenerateAggregateEndpoints(GenerateClientRegistrations = false)]
+                                         public sealed class OrderAggregate
+                                         {
+                                         }
+                                     }
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+
+        // Should generate zero files (opted out)
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     When GenerateClientRegistrations is true (explicit), registration should be generated.
+    /// </summary>
+    [Fact]
+    public void GenerateClientRegistrationsTrueGeneratesRegistration()
+    {
+        const string commandSource = """
+                                     using Mississippi.Inlet.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order
+                                     {
+                                         [GenerateAggregateEndpoints(GenerateClientRegistrations = true)]
+                                         public sealed class OrderAggregate
+                                         {
+                                         }
+                                     }
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+
+        // Should generate one registration file
+        Assert.Single(runResult.GeneratedTrees);
+        Assert.Contains(
+            "OrderAggregateFeatureRegistration.g.cs",
+            runResult.GeneratedTrees[0].FilePath,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     When no GenerateAggregateEndpoints attribute exists, registration should be generated (default behavior).
+    /// </summary>
+    [Fact]
+    public void MissingGenerateAggregateEndpointsAttributeGeneratesRegistration()
+    {
+        const string commandSource = """
+                                     using Mississippi.Inlet.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder
+                                         {
+                                             public string ProductId { get; init; }
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+
+        // Should generate registration even without GenerateAggregateEndpoints attribute (default)
+        Assert.Single(runResult.GeneratedTrees);
+        Assert.Contains(
+            "OrderAggregateFeatureRegistration.g.cs",
+            runResult.GeneratedTrees[0].FilePath,
+            StringComparison.Ordinal);
     }
 }

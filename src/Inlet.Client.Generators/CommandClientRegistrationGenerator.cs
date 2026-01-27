@@ -29,6 +29,9 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
 {
+    private const string GenerateAggregateEndpointsAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
+
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
 
@@ -152,10 +155,15 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
     ///     Gets aggregates from command models by grouping on aggregate name.
     /// </summary>
     private static List<AggregateInfo> GetAggregatesFromCommands(
+        Compilation compilation,
         List<CommandModel> commands,
         string targetRootNamespace
     )
     {
+        // Get the aggregate attribute symbol for checking opt-out
+        INamedTypeSymbol? aggregateAttrSymbol =
+            compilation.GetTypeByMetadataName(GenerateAggregateEndpointsAttributeFullName);
+
         return commands.Select(c => new
             {
                 Command = c,
@@ -166,6 +174,26 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
             .Select(g =>
             {
                 CommandModel firstCommand = g.First().Command;
+
+                // Check if client registration is opted out by finding the aggregate type
+                if (aggregateAttrSymbol is not null)
+                {
+                    INamedTypeSymbol? aggregateType = FindAggregateTypeFromCommand(
+                        firstCommand.Symbol,
+                        aggregateAttrSymbol);
+                    if (aggregateType is not null)
+                    {
+                        AttributeData? aggregateAttr = aggregateType.GetAttributes()
+                            .FirstOrDefault(a =>
+                                SymbolEqualityComparer.Default.Equals(a.AttributeClass, aggregateAttrSymbol));
+                        if (aggregateAttr is not null &&
+                            !TypeAnalyzer.GetBooleanProperty(aggregateAttr, "GenerateClientRegistrations"))
+                        {
+                            return null;
+                        }
+                    }
+                }
+
                 string featureNamespace = NamingConventions.GetClientFeatureRootNamespace(
                     firstCommand.Namespace,
                     targetRootNamespace);
@@ -198,7 +226,45 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
 
                 return aggregate;
             })
+            .Where(a => a is not null)
+            .Select(a => a!)
             .ToList();
+    }
+
+    /// <summary>
+    ///     Finds the aggregate type from a command by navigating the namespace hierarchy.
+    /// </summary>
+    private static INamedTypeSymbol? FindAggregateTypeFromCommand(
+        INamedTypeSymbol commandSymbol,
+        INamedTypeSymbol aggregateAttrSymbol
+    )
+    {
+        // Commands are typically in {Aggregate}.Commands namespace
+        // We need to go to the parent namespace and find types with [GenerateAggregateEndpoints]
+        INamespaceSymbol? commandsNs = commandSymbol.ContainingNamespace;
+        if (commandsNs is null || commandsNs.Name != "Commands")
+        {
+            return null;
+        }
+
+        INamespaceSymbol? aggregateNs = commandsNs.ContainingNamespace;
+        if (aggregateNs is null)
+        {
+            return null;
+        }
+
+        // Find the aggregate type in the parent namespace
+        foreach (INamedTypeSymbol typeSymbol in aggregateNs.GetTypeMembers())
+        {
+            bool hasAggregateAttr = typeSymbol.GetAttributes()
+                .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, aggregateAttrSymbol));
+            if (hasAggregateAttr)
+            {
+                return typeSymbol;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -292,7 +358,7 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
                 rootNamespace,
                 assemblyName,
                 source.Compilation);
-            return GetAggregatesFromCommands(commands, targetRootNamespace);
+            return GetAggregatesFromCommands(source.Compilation, commands, targetRootNamespace);
         });
         context.RegisterSourceOutput(
             aggregatesProvider,

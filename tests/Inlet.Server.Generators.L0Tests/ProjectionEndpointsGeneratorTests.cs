@@ -29,7 +29,12 @@ public class ProjectionEndpointsGeneratorTests
                                               using System;
 
                                               [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-                                              public sealed class GenerateProjectionEndpointsAttribute : Attribute { }
+                                              public sealed class GenerateProjectionEndpointsAttribute : Attribute
+                                              {
+                                                  public bool GenerateController { get; set; } = true;
+                                                  public bool GenerateServerDto { get; set; } = true;
+                                                  public bool GenerateServerMapper { get; set; } = true;
+                                              }
                                           }
 
                                           namespace Mississippi.Inlet.Projection.Abstractions
@@ -1154,5 +1159,100 @@ public class ProjectionEndpointsGeneratorTests
             t.FilePath.Contains("TransactionHistoryController", StringComparison.Ordinal));
         Assert.True(hasAccountBalanceController);
         Assert.True(hasTransactionHistoryController);
+    }
+
+    /// <summary>
+    ///     When GenerateController is false, no files should be generated.
+    /// </summary>
+    [Fact]
+    public void GenerateControllerFalseSkipsAllGeneration()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints(GenerateController = false)]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+
+        // No files should be generated when GenerateController = false
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     When GenerateServerDto is false, no DTO should be generated but controller and mapper registrations are generated.
+    /// </summary>
+    [Fact]
+    public void GenerateServerDtoFalseSkipsDtoGeneration()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints(GenerateServerDto = false)]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+
+        // Controller should still be generated
+        Assert.True(runResult.GeneratedTrees.Any(t =>
+            t.FilePath.Contains("AccountBalanceController", StringComparison.Ordinal)));
+
+        // DTO should not be generated (name would be "AccountBalanceDto" after stripping "Projection" suffix)
+        Assert.False(runResult.GeneratedTrees.Any(t =>
+            t.FilePath.Contains("AccountBalanceDto", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    ///     When GenerateServerMapper is false, no mapper should be generated but DTO and controller are generated.
+    /// </summary>
+    [Fact]
+    public void GenerateServerMapperFalseSkipsMapperGeneration()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Projection.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints(GenerateServerMapper = false)]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+
+        // Controller and DTO should still be generated (Dto uses stripped name "AccountBalance" + "Dto")
+        Assert.True(runResult.GeneratedTrees.Any(t =>
+            t.FilePath.Contains("AccountBalanceController", StringComparison.Ordinal)));
+        Assert.True(runResult.GeneratedTrees.Any(t =>
+            t.FilePath.Contains("AccountBalanceDto", StringComparison.Ordinal)));
+
+        // Mapper and registrations should not be generated
+        Assert.False(runResult.GeneratedTrees.Any(t =>
+            t.FilePath.Contains("AccountBalanceMapper", StringComparison.Ordinal)));
+        Assert.False(runResult.GeneratedTrees.Any(t =>
+            t.FilePath.Contains("MapperRegistrations", StringComparison.Ordinal)));
     }
 }

@@ -34,6 +34,14 @@ public class CommandServerDtoGeneratorTests
                                                   public string HttpMethod { get; set; } = "POST";
                                                   public string Route { get; set; } = "";
                                               }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateAggregateEndpointsAttribute : Attribute
+                                              {
+                                                  public bool GenerateClientRegistrations { get; set; } = true;
+                                                  public bool GenerateServerRegistrations { get; set; } = true;
+                                                  public bool GenerateSiloRegistrations { get; set; } = true;
+                                              }
                                           }
                                           """;
 
@@ -588,5 +596,105 @@ public class CommandServerDtoGeneratorTests
             "AggregateMapperRegistrations",
             StringComparison.Ordinal));
         Assert.Equal(1, registrationCount);
+    }
+
+    /// <summary>
+    ///     When GenerateServerRegistrations is false, no registration file should be generated (but DTOs/mappers still generated).
+    /// </summary>
+    [Fact]
+    public void GenerateServerRegistrationsFalseSkipsRegistration()
+    {
+        const string commandSource = """
+                                     using Mississippi.Inlet.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order
+                                     {
+                                         [GenerateAggregateEndpoints(GenerateServerRegistrations = false)]
+                                         public sealed class OrderAggregate
+                                         {
+                                         }
+                                     }
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand(Route = "create")]
+                                         public sealed record CreateOrder
+                                         {
+                                             public string CustomerName { get; init; } = string.Empty;
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+
+        // Should generate 2 files: DTO + Mapper (no registration file)
+        Assert.Equal(2, runResult.GeneratedTrees.Length);
+        Assert.Contains(runResult.GeneratedTrees, t => t.FilePath.Contains("CreateOrderDto.g.cs", StringComparison.Ordinal));
+        Assert.Contains(runResult.GeneratedTrees, t => t.FilePath.Contains("CreateOrderDtoMapper.g.cs", StringComparison.Ordinal));
+        Assert.DoesNotContain(runResult.GeneratedTrees, t => t.FilePath.Contains("MapperRegistrations", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     When GenerateServerRegistrations is true (explicit), registration should be generated along with DTOs/mappers.
+    /// </summary>
+    [Fact]
+    public void GenerateServerRegistrationsTrueGeneratesRegistration()
+    {
+        const string commandSource = """
+                                     using Mississippi.Inlet.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order
+                                     {
+                                         [GenerateAggregateEndpoints(GenerateServerRegistrations = true)]
+                                         public sealed class OrderAggregate
+                                         {
+                                         }
+                                     }
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand(Route = "create")]
+                                         public sealed record CreateOrder
+                                         {
+                                             public string CustomerName { get; init; } = string.Empty;
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+
+        // Should generate 3 files: DTO + Mapper + Registration
+        Assert.Equal(3, runResult.GeneratedTrees.Length);
+        Assert.Contains(runResult.GeneratedTrees, t => t.FilePath.Contains("CreateOrderDto.g.cs", StringComparison.Ordinal));
+        Assert.Contains(runResult.GeneratedTrees, t => t.FilePath.Contains("CreateOrderDtoMapper.g.cs", StringComparison.Ordinal));
+        Assert.Contains(runResult.GeneratedTrees, t => t.FilePath.Contains("OrderAggregateMapperRegistrations.g.cs", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     When no GenerateAggregateEndpoints attribute exists, registration should be generated (default behavior).
+    /// </summary>
+    [Fact]
+    public void MissingGenerateAggregateEndpointsAttributeGeneratesRegistration()
+    {
+        const string commandSource = """
+                                     using Mississippi.Inlet.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand(Route = "create")]
+                                         public sealed record CreateOrder
+                                         {
+                                             public string CustomerName { get; init; } = string.Empty;
+                                         }
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+
+        // Should generate all 3 files even without GenerateAggregateEndpoints attribute (default)
+        Assert.Equal(3, runResult.GeneratedTrees.Length);
+        Assert.Contains(runResult.GeneratedTrees, t => t.FilePath.Contains("CreateOrderDto.g.cs", StringComparison.Ordinal));
+        Assert.Contains(runResult.GeneratedTrees, t => t.FilePath.Contains("CreateOrderDtoMapper.g.cs", StringComparison.Ordinal));
+        Assert.Contains(runResult.GeneratedTrees, t => t.FilePath.Contains("OrderAggregateMapperRegistrations.g.cs", StringComparison.Ordinal));
     }
 }

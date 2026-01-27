@@ -32,6 +32,9 @@ namespace Mississippi.Inlet.Server.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class CommandServerDtoGenerator : IIncrementalGenerator
 {
+    private const string GenerateAggregateEndpointsAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
+
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
 
@@ -67,9 +70,23 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     /// </summary>
     private static void GenerateAggregateCode(
         SourceProductionContext context,
-        IGrouping<string, CommandInfo> aggregateGroup
+        IGrouping<string, CommandInfo> aggregateGroup,
+        Compilation compilation
     )
     {
+        // Get the first command to use for aggregate type navigation
+        CommandInfo firstCommand = aggregateGroup.First();
+
+        // Check if the aggregate has opted out of server registrations
+        bool skipRegistrations = ShouldSkipServerRegistrations(
+            firstCommand.Model.Symbol,
+            compilation);
+
+        if (skipRegistrations)
+        {
+            return;
+        }
+
         // Generate Mapper Registrations for this aggregate
         string registrationsSource = GenerateMapperRegistrations(aggregateGroup);
         string aggregateName = GetAggregateNameFromNamespace(aggregateGroup.Key);
@@ -291,7 +308,7 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     {
         List<CommandInfo> commands = new();
 
-        // Get the attribute symbol
+        // Get the attribute symbols
         INamedTypeSymbol? generateAttrSymbol = compilation.GetTypeByMetadataName(GenerateCommandAttributeFullName);
         if (generateAttrSymbol is null)
         {
@@ -380,6 +397,82 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Checks if server registrations should be skipped for this aggregate.
+    /// </summary>
+    private static bool ShouldSkipServerRegistrations(
+        INamedTypeSymbol commandSymbol,
+        Compilation compilation
+    )
+    {
+        // Get the [GenerateAggregateEndpoints] attribute symbol
+        INamedTypeSymbol? aggregateAttrSymbol = compilation.GetTypeByMetadataName(GenerateAggregateEndpointsAttributeFullName);
+        if (aggregateAttrSymbol is null)
+        {
+            return false;
+        }
+
+        // Find the aggregate type from the command's namespace
+        INamedTypeSymbol? aggregateType = FindAggregateTypeFromCommand(commandSymbol, aggregateAttrSymbol);
+        if (aggregateType is null)
+        {
+            return false;
+        }
+
+        // Check the GenerateServerRegistrations property
+        AttributeData? aggregateAttr = aggregateType.GetAttributes()
+            .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, aggregateAttrSymbol));
+        if (aggregateAttr is null)
+        {
+            return false;
+        }
+
+        bool generateRegistrations = TypeAnalyzer.GetBooleanProperty(
+            aggregateAttr,
+            "GenerateServerRegistrations",
+            defaultValue: true);
+        return !generateRegistrations;
+    }
+
+    /// <summary>
+    ///     Finds the aggregate type from a command symbol by navigating through namespaces.
+    /// </summary>
+    private static INamedTypeSymbol? FindAggregateTypeFromCommand(
+        INamedTypeSymbol commandSymbol,
+        INamedTypeSymbol aggregateAttrSymbol
+    )
+    {
+        // Commands are typically in {Aggregate}.Commands namespace
+        // We need to go to the parent namespace and find types with [GenerateAggregateEndpoints]
+        INamespaceSymbol? commandsNs = commandSymbol.ContainingNamespace;
+        if (commandsNs is null || commandsNs.Name != "Commands")
+        {
+            return null;
+        }
+
+        INamespaceSymbol? aggregateNs = commandsNs.ContainingNamespace;
+        if (aggregateNs is null)
+        {
+            return null;
+        }
+
+        // Find the aggregate type in the parent namespace
+        foreach (INamedTypeSymbol typeSymbol in aggregateNs.GetTypeMembers())
+        {
+            bool hasAggregateAttr = typeSymbol.GetAttributes()
+                .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, aggregateAttrSymbol));
+            if (hasAggregateAttr)
+            {
+                return typeSymbol;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Recursively gets all types from a namespace.
+    /// </summary>
+    /// <summary>
     ///     Initializes the generator pipeline.
     /// </summary>
     /// <param name="context">The initialization context.</param>
@@ -392,42 +485,44 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            return GetCommandsFromCompilation(source.Compilation, targetRootNamespace);
-        });
+        IncrementalValueProvider<(List<CommandInfo> Commands, Compilation Compilation)> commandsProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) =>
+            {
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                List<CommandInfo> commands = GetCommandsFromCompilation(source.Compilation, targetRootNamespace);
+                return (commands, source.Compilation);
+            });
 
         // Register source output for individual commands (DTOs and mappers)
         context.RegisterSourceOutput(
             commandsProvider,
             static (
                 spc,
-                commands
+                data
             ) =>
             {
-                foreach (CommandInfo command in commands)
+                foreach (CommandInfo command in data.Commands)
                 {
                     GenerateCode(spc, command);
                 }
 
                 // Group by aggregate namespace and generate registrations
-                IEnumerable<IGrouping<string, CommandInfo>> aggregateGroups = commands.GroupBy(c => c.Model.Namespace);
+                IEnumerable<IGrouping<string, CommandInfo>> aggregateGroups = data.Commands.GroupBy(c => c.Model.Namespace);
                 foreach (IGrouping<string, CommandInfo> aggregateGroup in aggregateGroups)
                 {
-                    GenerateAggregateCode(spc, aggregateGroup);
+                    GenerateAggregateCode(spc, aggregateGroup, data.Compilation);
                 }
             });
     }
