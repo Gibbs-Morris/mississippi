@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Storage Integration",
+  "position": 8,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "storage"
   },
   "collapsible": true,
   "collapsed": false

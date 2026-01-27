@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "UX Projections",
+  "position": 4,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "ux-projections"
   },
   "collapsible": true,
   "collapsed": false

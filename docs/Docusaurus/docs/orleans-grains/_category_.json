@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Orleans Grains",
+  "position": 5,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "orleans-grains"
   },
   "collapsible": true,
   "collapsed": false

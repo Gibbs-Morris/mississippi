@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Sample Applications",
+  "position": 14,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "samples"
   },
   "collapsible": true,
   "collapsed": false

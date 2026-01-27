@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Refraction",
+  "position": 1,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "refraction"
   },
   "collapsible": true,
   "collapsed": false

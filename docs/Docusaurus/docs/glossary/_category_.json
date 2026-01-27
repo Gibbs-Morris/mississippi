@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Glossary",
+  "position": 21,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "glossary"
   },
   "collapsible": true,
   "collapsed": false

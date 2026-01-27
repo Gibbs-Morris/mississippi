@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Domain Modeling",
+  "position": 4,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "domain-modeling"
   },
   "collapsible": true,
   "collapsed": false

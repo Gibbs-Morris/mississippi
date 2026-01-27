@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Brooks",
+  "position": 7,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "brooks"
   },
   "collapsible": true,
   "collapsed": false

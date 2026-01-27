@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
+  "label": "Aggregates",
   "position": 6,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "aggregates"
   },
   "collapsible": true,
   "collapsed": false

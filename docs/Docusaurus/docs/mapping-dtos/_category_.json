@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Mapping and DTOs",
+  "position": 7,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "mapping-dtos"
   },
   "collapsible": true,
   "collapsed": false

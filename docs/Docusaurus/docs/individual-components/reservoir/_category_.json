@@ -1,6 +1,6 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Reservoir",
+  "position": 2,
   "link": {
     "type": "doc",
     "id": "reservoir"

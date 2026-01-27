@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Testing & Quality",
+  "position": 12,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "testing"
   },
   "collapsible": true,
   "collapsed": false

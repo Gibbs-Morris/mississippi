@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Framework Overview",
+  "position": 2,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "old/platform/index"
   },
   "collapsible": true,
   "collapsed": false

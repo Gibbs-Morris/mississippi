@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Logging & Monitoring",
+  "position": 11,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "logging-monitoring"
   },
   "collapsible": true,
   "collapsed": false

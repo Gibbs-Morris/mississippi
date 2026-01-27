@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Inlet",
+  "position": 3,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "inlet"
   },
   "collapsible": true,
   "collapsed": false

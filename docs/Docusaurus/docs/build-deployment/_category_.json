@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Build & Deployment",
+  "position": 13,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "build-deployment"
   },
   "collapsible": true,
   "collapsed": false

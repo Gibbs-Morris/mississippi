@@ -1,9 +1,9 @@
 {
-  "label": "Reservoir Pattern",
-  "position": 6,
+  "label": "Typical Architectures",
+  "position": 2,
   "link": {
     "type": "doc",
-    "id": "reservoir"
+    "id": "architectures"
   },
   "collapsible": true,
   "collapsed": false
