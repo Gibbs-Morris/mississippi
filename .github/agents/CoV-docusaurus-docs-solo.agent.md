@@ -24,8 +24,9 @@ Non-negotiable scope guardrails
   - You MUST read it before drafting or editing.
 - **Source-code links**: When linking to code/config outside the Docusaurus tree, use an **absolute GitHub URL** rooted at:
   - `https://github.com/Gibbs-Morris/mississippi/`
+  - Always use `/blob/main/` for branch references (documentation is published from main branch and all changes merge to main).
   - Never use relative links that escape `docs\Docusaurus\` (they will break when the site is built).
-  - Prefer deep links with line ranges when possible (e.g., `.../blob/<branch-or-sha>/path/to/file#L10-L42`).
+  - Prefer deep links with line ranges when possible (e.g., `https://github.com/Gibbs-Morris/mississippi/blob/main/src/path/to/file.cs#L10-L42`).
 
 Hard rule: no unverified technical content
 
