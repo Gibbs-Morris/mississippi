@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Spring.Domain.L0Tests" />
     <InternalsVisibleTo Include="Spring.Server" />
     <InternalsVisibleTo Include="Spring.Silo" />
   </ItemGroup>
