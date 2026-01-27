@@ -1,0 +1,10 @@
+{
+  "label": "Sample Applications",
+  "position": 14,
+  "link": {
+    "type": "doc",
+    "id": "sample-applications/sample-applications"
+  },
+  "collapsible": true,
+  "collapsed": false
+}
