@@ -65,30 +65,10 @@ public sealed class CommandHistoryEntryTests
         string commandType = "DepositCommand";
 
         // Act
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            commandType,
-            DateTimeOffset.UtcNow);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", commandType, DateTimeOffset.UtcNow);
 
         // Assert
         Assert.Equal(commandType, entry.CommandType);
-    }
-
-    /// <summary>
-    ///     CreateExecuting sets StartedAt.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Factory Methods")]
-    public void CreateExecutingSetsStartedAt()
-    {
-        // Arrange
-        DateTimeOffset startedAt = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
-
-        // Act
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", startedAt);
-
-        // Assert
-        Assert.Equal(startedAt, entry.StartedAt);
     }
 
     /// <summary>
@@ -140,6 +120,84 @@ public sealed class CommandHistoryEntryTests
 
         // Assert
         Assert.Null(entry.ErrorMessage);
+    }
+
+    /// <summary>
+    ///     CreateExecuting sets StartedAt.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Factory Methods")]
+    public void CreateExecutingSetsStartedAt()
+    {
+        // Arrange
+        DateTimeOffset startedAt = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
+        // Act
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", startedAt);
+
+        // Assert
+        Assert.Equal(startedAt, entry.StartedAt);
+    }
+
+    /// <summary>
+    ///     ToFailed allows null ErrorCode.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Transitions")]
+    public void ToFailedAllowsNullErrorCode()
+    {
+        // Arrange
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
+            "cmd-123",
+            "TestCommand",
+            DateTimeOffset.UtcNow);
+
+        // Act
+        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, null, "Error");
+
+        // Assert
+        Assert.Null(failed.ErrorCode);
+    }
+
+    /// <summary>
+    ///     ToFailed allows null ErrorMessage.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Transitions")]
+    public void ToFailedAllowsNullErrorMessage()
+    {
+        // Arrange
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
+            "cmd-123",
+            "TestCommand",
+            DateTimeOffset.UtcNow);
+
+        // Act
+        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, "ERR", null);
+
+        // Assert
+        Assert.Null(failed.ErrorMessage);
+    }
+
+    /// <summary>
+    ///     ToFailed preserves original CommandId.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Transitions")]
+    public void ToFailedPreservesCommandId()
+    {
+        // Arrange
+        string commandId = "cmd-preserve";
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
+            commandId,
+            "TestCommand",
+            DateTimeOffset.UtcNow);
+
+        // Act
+        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, "ERR", "Error");
+
+        // Assert
+        Assert.Equal(commandId, failed.CommandId);
     }
 
     /// <summary>
@@ -227,11 +285,11 @@ public sealed class CommandHistoryEntryTests
     }
 
     /// <summary>
-    ///     ToFailed preserves original CommandId.
+    ///     ToSucceeded preserves original CommandId.
     /// </summary>
     [Fact]
     [AllureFeature("Transitions")]
-    public void ToFailedPreservesCommandId()
+    public void ToSucceededPreservesCommandId()
     {
         // Arrange
         string commandId = "cmd-preserve";
@@ -241,50 +299,46 @@ public sealed class CommandHistoryEntryTests
             DateTimeOffset.UtcNow);
 
         // Act
-        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, "ERR", "Error");
+        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
 
         // Assert
-        Assert.Equal(commandId, failed.CommandId);
+        Assert.Equal(commandId, succeeded.CommandId);
     }
 
     /// <summary>
-    ///     ToFailed allows null ErrorCode.
+    ///     ToSucceeded preserves CommandType.
     /// </summary>
     [Fact]
     [AllureFeature("Transitions")]
-    public void ToFailedAllowsNullErrorCode()
+    public void ToSucceededPreservesCommandType()
     {
         // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            DateTimeOffset.UtcNow);
+        string commandType = "DepositCommand";
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", commandType, DateTimeOffset.UtcNow);
 
         // Act
-        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, null, "Error");
+        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
 
         // Assert
-        Assert.Null(failed.ErrorCode);
+        Assert.Equal(commandType, succeeded.CommandType);
     }
 
     /// <summary>
-    ///     ToFailed allows null ErrorMessage.
+    ///     ToSucceeded preserves StartedAt.
     /// </summary>
     [Fact]
     [AllureFeature("Transitions")]
-    public void ToFailedAllowsNullErrorMessage()
+    public void ToSucceededPreservesStartedAt()
     {
         // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            DateTimeOffset.UtcNow);
+        DateTimeOffset startedAt = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", startedAt);
 
         // Act
-        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, "ERR", null);
+        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
 
         // Assert
-        Assert.Null(failed.ErrorMessage);
+        Assert.Equal(startedAt, succeeded.StartedAt);
     }
 
     /// <summary>
@@ -326,65 +380,5 @@ public sealed class CommandHistoryEntryTests
 
         // Assert
         Assert.Equal(completedAt, succeeded.CompletedAt);
-    }
-
-    /// <summary>
-    ///     ToSucceeded preserves original CommandId.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Transitions")]
-    public void ToSucceededPreservesCommandId()
-    {
-        // Arrange
-        string commandId = "cmd-preserve";
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            commandId,
-            "TestCommand",
-            DateTimeOffset.UtcNow);
-
-        // Act
-        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
-
-        // Assert
-        Assert.Equal(commandId, succeeded.CommandId);
-    }
-
-    /// <summary>
-    ///     ToSucceeded preserves CommandType.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Transitions")]
-    public void ToSucceededPreservesCommandType()
-    {
-        // Arrange
-        string commandType = "DepositCommand";
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            commandType,
-            DateTimeOffset.UtcNow);
-
-        // Act
-        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
-
-        // Assert
-        Assert.Equal(commandType, succeeded.CommandType);
-    }
-
-    /// <summary>
-    ///     ToSucceeded preserves StartedAt.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Transitions")]
-    public void ToSucceededPreservesStartedAt()
-    {
-        // Arrange
-        DateTimeOffset startedAt = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", startedAt);
-
-        // Act
-        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
-
-        // Assert
-        Assert.Equal(startedAt, succeeded.StartedAt);
     }
 }

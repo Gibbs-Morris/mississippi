@@ -16,21 +16,45 @@ namespace Mississippi.Inlet.Client.L0Tests;
 public sealed class SignalRConnectionReducersTests
 {
     /// <summary>
-    ///     OnConnected sets status to Connected.
+    ///     OnConnected clears last error.
     /// </summary>
     [Fact]
     [AllureFeature("Reducers")]
-    public void OnConnectedSetsStatusToConnected()
+    public void OnConnectedClearsLastError()
     {
         // Arrange
-        SignalRConnectionState state = new();
+        SignalRConnectionState state = new()
+        {
+            LastError = "Previous error",
+        };
         SignalRConnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnConnected(state, action);
 
         // Assert
-        Assert.Equal(SignalRConnectionStatus.Connected, result.Status);
+        Assert.Null(result.LastError);
+    }
+
+    /// <summary>
+    ///     OnConnected resets reconnect attempt count.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Reducers")]
+    public void OnConnectedResetsReconnectAttemptCount()
+    {
+        // Arrange
+        SignalRConnectionState state = new()
+        {
+            ReconnectAttemptCount = 5,
+        };
+        SignalRConnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
+
+        // Act
+        SignalRConnectionState result = SignalRConnectionReducers.OnConnected(state, action);
+
+        // Assert
+        Assert.Equal(0, result.ReconnectAttemptCount);
     }
 
     /// <summary>
@@ -72,36 +96,39 @@ public sealed class SignalRConnectionReducersTests
     }
 
     /// <summary>
-    ///     OnConnected resets reconnect attempt count.
+    ///     OnConnected sets status to Connected.
     /// </summary>
     [Fact]
     [AllureFeature("Reducers")]
-    public void OnConnectedResetsReconnectAttemptCount()
+    public void OnConnectedSetsStatusToConnected()
     {
         // Arrange
-        SignalRConnectionState state = new() { ReconnectAttemptCount = 5 };
+        SignalRConnectionState state = new();
         SignalRConnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnConnected(state, action);
 
         // Assert
-        Assert.Equal(0, result.ReconnectAttemptCount);
+        Assert.Equal(SignalRConnectionStatus.Connected, result.Status);
     }
 
     /// <summary>
-    ///     OnConnected clears last error.
+    ///     OnConnecting clears last error.
     /// </summary>
     [Fact]
     [AllureFeature("Reducers")]
-    public void OnConnectedClearsLastError()
+    public void OnConnectingClearsLastError()
     {
         // Arrange
-        SignalRConnectionState state = new() { LastError = "Previous error" };
-        SignalRConnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
+        SignalRConnectionState state = new()
+        {
+            LastError = "Previous error",
+        };
+        SignalRConnectingAction action = new();
 
         // Act
-        SignalRConnectionState result = SignalRConnectionReducers.OnConnected(state, action);
+        SignalRConnectionState result = SignalRConnectionReducers.OnConnecting(state, action);
 
         // Assert
         Assert.Null(result.LastError);
@@ -126,39 +153,24 @@ public sealed class SignalRConnectionReducersTests
     }
 
     /// <summary>
-    ///     OnConnecting clears last error.
+    ///     OnDisconnected clears connection ID.
     /// </summary>
     [Fact]
     [AllureFeature("Reducers")]
-    public void OnConnectingClearsLastError()
+    public void OnDisconnectedClearsConnectionId()
     {
         // Arrange
-        SignalRConnectionState state = new() { LastError = "Previous error" };
-        SignalRConnectingAction action = new();
-
-        // Act
-        SignalRConnectionState result = SignalRConnectionReducers.OnConnecting(state, action);
-
-        // Assert
-        Assert.Null(result.LastError);
-    }
-
-    /// <summary>
-    ///     OnDisconnected sets status to Disconnected.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Reducers")]
-    public void OnDisconnectedSetsStatusToDisconnected()
-    {
-        // Arrange
-        SignalRConnectionState state = new() { Status = SignalRConnectionStatus.Connected };
+        SignalRConnectionState state = new()
+        {
+            ConnectionId = "conn-123",
+        };
         SignalRDisconnectedAction action = new(null, DateTimeOffset.UtcNow);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnDisconnected(state, action);
 
         // Assert
-        Assert.Equal(SignalRConnectionStatus.Disconnected, result.Status);
+        Assert.Null(result.ConnectionId);
     }
 
     /// <summary>
@@ -200,21 +212,24 @@ public sealed class SignalRConnectionReducersTests
     }
 
     /// <summary>
-    ///     OnDisconnected clears connection ID.
+    ///     OnDisconnected sets status to Disconnected.
     /// </summary>
     [Fact]
     [AllureFeature("Reducers")]
-    public void OnDisconnectedClearsConnectionId()
+    public void OnDisconnectedSetsStatusToDisconnected()
     {
         // Arrange
-        SignalRConnectionState state = new() { ConnectionId = "conn-123" };
+        SignalRConnectionState state = new()
+        {
+            Status = SignalRConnectionStatus.Connected,
+        };
         SignalRDisconnectedAction action = new(null, DateTimeOffset.UtcNow);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnDisconnected(state, action);
 
         // Assert
-        Assert.Null(result.ConnectionId);
+        Assert.Equal(SignalRConnectionStatus.Disconnected, result.Status);
     }
 
     /// <summary>
@@ -237,21 +252,45 @@ public sealed class SignalRConnectionReducersTests
     }
 
     /// <summary>
-    ///     OnReconnected sets status to Connected.
+    ///     OnReconnected clears last error.
     /// </summary>
     [Fact]
     [AllureFeature("Reducers")]
-    public void OnReconnectedSetsStatusToConnected()
+    public void OnReconnectedClearsLastError()
     {
         // Arrange
-        SignalRConnectionState state = new() { Status = SignalRConnectionStatus.Reconnecting };
-        SignalRReconnectedAction action = new("conn-789", DateTimeOffset.UtcNow);
+        SignalRConnectionState state = new()
+        {
+            LastError = "Previous error",
+        };
+        SignalRReconnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnReconnected(state, action);
 
         // Assert
-        Assert.Equal(SignalRConnectionStatus.Connected, result.Status);
+        Assert.Null(result.LastError);
+    }
+
+    /// <summary>
+    ///     OnReconnected resets reconnect attempt count.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Reducers")]
+    public void OnReconnectedResetsReconnectAttemptCount()
+    {
+        // Arrange
+        SignalRConnectionState state = new()
+        {
+            ReconnectAttemptCount = 3,
+        };
+        SignalRReconnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
+
+        // Act
+        SignalRConnectionState result = SignalRConnectionReducers.OnReconnected(state, action);
+
+        // Assert
+        Assert.Equal(0, result.ReconnectAttemptCount);
     }
 
     /// <summary>
@@ -274,57 +313,43 @@ public sealed class SignalRConnectionReducersTests
     }
 
     /// <summary>
-    ///     OnReconnected resets reconnect attempt count.
+    ///     OnReconnected sets status to Connected.
     /// </summary>
     [Fact]
     [AllureFeature("Reducers")]
-    public void OnReconnectedResetsReconnectAttemptCount()
+    public void OnReconnectedSetsStatusToConnected()
     {
         // Arrange
-        SignalRConnectionState state = new() { ReconnectAttemptCount = 3 };
-        SignalRReconnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
+        SignalRConnectionState state = new()
+        {
+            Status = SignalRConnectionStatus.Reconnecting,
+        };
+        SignalRReconnectedAction action = new("conn-789", DateTimeOffset.UtcNow);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnReconnected(state, action);
 
         // Assert
-        Assert.Equal(0, result.ReconnectAttemptCount);
+        Assert.Equal(SignalRConnectionStatus.Connected, result.Status);
     }
 
     /// <summary>
-    ///     OnReconnected clears last error.
+    ///     OnReconnecting sets last error from action.
     /// </summary>
     [Fact]
     [AllureFeature("Reducers")]
-    public void OnReconnectedClearsLastError()
-    {
-        // Arrange
-        SignalRConnectionState state = new() { LastError = "Previous error" };
-        SignalRReconnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
-
-        // Act
-        SignalRConnectionState result = SignalRConnectionReducers.OnReconnected(state, action);
-
-        // Assert
-        Assert.Null(result.LastError);
-    }
-
-    /// <summary>
-    ///     OnReconnecting sets status to Reconnecting.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Reducers")]
-    public void OnReconnectingSetsStatusToReconnecting()
+    public void OnReconnectingSetsLastError()
     {
         // Arrange
         SignalRConnectionState state = new();
-        SignalRReconnectingAction action = new(null, 1);
+        string error = "Network timeout";
+        SignalRReconnectingAction action = new(error, 1);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnReconnecting(state, action);
 
         // Assert
-        Assert.Equal(SignalRConnectionStatus.Reconnecting, result.Status);
+        Assert.Equal(error, result.LastError);
     }
 
     /// <summary>
@@ -347,21 +372,20 @@ public sealed class SignalRConnectionReducersTests
     }
 
     /// <summary>
-    ///     OnReconnecting sets last error from action.
+    ///     OnReconnecting sets status to Reconnecting.
     /// </summary>
     [Fact]
     [AllureFeature("Reducers")]
-    public void OnReconnectingSetsLastError()
+    public void OnReconnectingSetsStatusToReconnecting()
     {
         // Arrange
         SignalRConnectionState state = new();
-        string error = "Network timeout";
-        SignalRReconnectingAction action = new(error, 1);
+        SignalRReconnectingAction action = new(null, 1);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnReconnecting(state, action);
 
         // Assert
-        Assert.Equal(error, result.LastError);
+        Assert.Equal(SignalRConnectionStatus.Reconnecting, result.Status);
     }
 }

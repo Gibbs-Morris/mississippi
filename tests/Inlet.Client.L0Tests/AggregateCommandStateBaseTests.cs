@@ -1,9 +1,9 @@
+using System;
 using System.Collections.Immutable;
 
 using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Client.Abstractions.Commands;
-using Mississippi.Inlet.Client.Abstractions.State;
 
 
 namespace Mississippi.Inlet.Client.L0Tests;
@@ -16,6 +16,30 @@ namespace Mississippi.Inlet.Client.L0Tests;
 [AllureSubSuite("AggregateCommandStateBase")]
 public sealed class AggregateCommandStateBaseTests
 {
+    /// <summary>
+    ///     CommandHistory can be set via init.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State")]
+    public void CommandHistoryCanBeSet()
+    {
+        // Arrange
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
+            "cmd-123",
+            "TestCommand",
+            DateTimeOffset.UtcNow);
+        ImmutableList<CommandHistoryEntry> history = ImmutableList.Create(entry);
+
+        // Act
+        ConcreteAggregateState state = new()
+        {
+            CommandHistory = history,
+        };
+
+        // Assert
+        Assert.Single(state.CommandHistory);
+    }
+
     /// <summary>
     ///     Default CommandHistory is empty.
     /// </summary>
@@ -73,6 +97,71 @@ public sealed class AggregateCommandStateBaseTests
     }
 
     /// <summary>
+    ///     Default LastCommandSucceeded is null.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State")]
+    public void DefaultLastCommandSucceededIsNull()
+    {
+        // Act
+        ConcreteAggregateState state = new();
+
+        // Assert
+        Assert.Null(state.LastCommandSucceeded);
+    }
+
+    /// <summary>
+    ///     ErrorCode can be set via init.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State")]
+    public void ErrorCodeCanBeSet()
+    {
+        // Act
+        ConcreteAggregateState state = new()
+        {
+            ErrorCode = "ERR001",
+        };
+
+        // Assert
+        Assert.Equal("ERR001", state.ErrorCode);
+    }
+
+    /// <summary>
+    ///     ErrorMessage can be set via init.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State")]
+    public void ErrorMessageCanBeSet()
+    {
+        // Act
+        ConcreteAggregateState state = new()
+        {
+            ErrorMessage = "Something went wrong",
+        };
+
+        // Assert
+        Assert.Equal("Something went wrong", state.ErrorMessage);
+    }
+
+    /// <summary>
+    ///     InFlightCommands can be set via init.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State")]
+    public void InFlightCommandsCanBeSet()
+    {
+        // Act
+        ConcreteAggregateState state = new()
+        {
+            InFlightCommands = ImmutableHashSet.Create("cmd-1", "cmd-2"),
+        };
+
+        // Assert
+        Assert.Equal(2, state.InFlightCommands.Count);
+    }
+
+    /// <summary>
     ///     IsExecuting returns false when InFlightCommands is empty.
     /// </summary>
     [Fact]
@@ -104,83 +193,20 @@ public sealed class AggregateCommandStateBaseTests
     }
 
     /// <summary>
-    ///     Default LastCommandSucceeded is null.
+    ///     LastCommandSucceeded can be set to false.
     /// </summary>
     [Fact]
     [AllureFeature("State")]
-    public void DefaultLastCommandSucceededIsNull()
-    {
-        // Act
-        ConcreteAggregateState state = new();
-
-        // Assert
-        Assert.Null(state.LastCommandSucceeded);
-    }
-
-    /// <summary>
-    ///     CommandHistory can be set via init.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State")]
-    public void CommandHistoryCanBeSet()
-    {
-        // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            System.DateTimeOffset.UtcNow);
-        ImmutableList<CommandHistoryEntry> history = ImmutableList.Create(entry);
-
-        // Act
-        ConcreteAggregateState state = new() { CommandHistory = history };
-
-        // Assert
-        Assert.Single(state.CommandHistory);
-    }
-
-    /// <summary>
-    ///     ErrorCode can be set via init.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State")]
-    public void ErrorCodeCanBeSet()
-    {
-        // Act
-        ConcreteAggregateState state = new() { ErrorCode = "ERR001" };
-
-        // Assert
-        Assert.Equal("ERR001", state.ErrorCode);
-    }
-
-    /// <summary>
-    ///     ErrorMessage can be set via init.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State")]
-    public void ErrorMessageCanBeSet()
-    {
-        // Act
-        ConcreteAggregateState state = new() { ErrorMessage = "Something went wrong" };
-
-        // Assert
-        Assert.Equal("Something went wrong", state.ErrorMessage);
-    }
-
-    /// <summary>
-    ///     InFlightCommands can be set via init.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State")]
-    public void InFlightCommandsCanBeSet()
+    public void LastCommandSucceededCanBeSetToFalse()
     {
         // Act
         ConcreteAggregateState state = new()
         {
-            InFlightCommands = ImmutableHashSet.Create("cmd-1", "cmd-2"),
+            LastCommandSucceeded = false,
         };
 
         // Assert
-        Assert.Equal(2, state.InFlightCommands.Count);
+        Assert.False(state.LastCommandSucceeded);
     }
 
     /// <summary>
@@ -191,23 +217,12 @@ public sealed class AggregateCommandStateBaseTests
     public void LastCommandSucceededCanBeSetToTrue()
     {
         // Act
-        ConcreteAggregateState state = new() { LastCommandSucceeded = true };
+        ConcreteAggregateState state = new()
+        {
+            LastCommandSucceeded = true,
+        };
 
         // Assert
         Assert.True(state.LastCommandSucceeded);
-    }
-
-    /// <summary>
-    ///     LastCommandSucceeded can be set to false.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State")]
-    public void LastCommandSucceededCanBeSetToFalse()
-    {
-        // Act
-        ConcreteAggregateState state = new() { LastCommandSucceeded = false };
-
-        // Assert
-        Assert.False(state.LastCommandSucceeded);
     }
 }

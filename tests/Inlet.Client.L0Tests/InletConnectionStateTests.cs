@@ -14,20 +14,6 @@ namespace Mississippi.Inlet.Client.L0Tests;
 public sealed class InletConnectionStateTests
 {
     /// <summary>
-    ///     FeatureKey returns expected value.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State")]
-    public void FeatureKeyReturnsExpectedValue()
-    {
-        // Act
-        string featureKey = InletConnectionState.FeatureKey;
-
-        // Assert
-        Assert.Equal("inlet-connection", featureKey);
-    }
-
-    /// <summary>
     ///     InletConnectionState can be instantiated.
     /// </summary>
     [Fact]
@@ -39,6 +25,20 @@ public sealed class InletConnectionStateTests
 
         // Assert
         Assert.NotNull(state);
+    }
+
+    /// <summary>
+    ///     FeatureKey returns expected value.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State")]
+    public void FeatureKeyReturnsExpectedValue()
+    {
+        // Act
+        string featureKey = InletConnectionState.FeatureKey;
+
+        // Assert
+        Assert.Equal("inlet-connection", featureKey);
     }
 
     /// <summary>

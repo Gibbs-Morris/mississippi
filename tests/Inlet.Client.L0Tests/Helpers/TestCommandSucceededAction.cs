@@ -8,7 +8,4 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Test implementation of ICommandSucceededAction.
 /// </summary>
-internal sealed record TestCommandSucceededAction(
-    string CommandId,
-    DateTimeOffset Timestamp
-) : ICommandSucceededAction;
+internal sealed record TestCommandSucceededAction(string CommandId, DateTimeOffset Timestamp) : ICommandSucceededAction;

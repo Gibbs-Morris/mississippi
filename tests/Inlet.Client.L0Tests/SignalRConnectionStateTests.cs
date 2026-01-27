@@ -16,6 +16,40 @@ namespace Mississippi.Inlet.Client.L0Tests;
 public sealed class SignalRConnectionStateTests
 {
     /// <summary>
+    ///     ConnectionId can be set via init.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State")]
+    public void ConnectionIdCanBeSet()
+    {
+        // Arrange
+        string connectionId = "conn-123";
+
+        // Act
+        SignalRConnectionState state = new()
+        {
+            ConnectionId = connectionId,
+        };
+
+        // Assert
+        Assert.Equal(connectionId, state.ConnectionId);
+    }
+
+    /// <summary>
+    ///     ConnectionId is null by default.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State")]
+    public void ConnectionIdIsNullByDefault()
+    {
+        // Act
+        SignalRConnectionState state = new();
+
+        // Assert
+        Assert.Null(state.ConnectionId);
+    }
+
+    /// <summary>
     ///     Default status is Disconnected.
     /// </summary>
     [Fact]
@@ -44,34 +78,23 @@ public sealed class SignalRConnectionStateTests
     }
 
     /// <summary>
-    ///     ConnectionId is null by default.
+    ///     LastConnectedAt can be set via init.
     /// </summary>
     [Fact]
     [AllureFeature("State")]
-    public void ConnectionIdIsNullByDefault()
-    {
-        // Act
-        SignalRConnectionState state = new();
-
-        // Assert
-        Assert.Null(state.ConnectionId);
-    }
-
-    /// <summary>
-    ///     ConnectionId can be set via init.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State")]
-    public void ConnectionIdCanBeSet()
+    public void LastConnectedAtCanBeSet()
     {
         // Arrange
-        string connectionId = "conn-123";
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
         // Act
-        SignalRConnectionState state = new() { ConnectionId = connectionId };
+        SignalRConnectionState state = new()
+        {
+            LastConnectedAt = timestamp,
+        };
 
         // Assert
-        Assert.Equal(connectionId, state.ConnectionId);
+        Assert.Equal(timestamp, state.LastConnectedAt);
     }
 
     /// <summary>
@@ -86,23 +109,6 @@ public sealed class SignalRConnectionStateTests
 
         // Assert
         Assert.Null(state.LastConnectedAt);
-    }
-
-    /// <summary>
-    ///     LastConnectedAt can be set via init.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State")]
-    public void LastConnectedAtCanBeSet()
-    {
-        // Arrange
-        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
-
-        // Act
-        SignalRConnectionState state = new() { LastConnectedAt = timestamp };
-
-        // Assert
-        Assert.Equal(timestamp, state.LastConnectedAt);
     }
 
     /// <summary>
@@ -148,6 +154,26 @@ public sealed class SignalRConnectionStateTests
     }
 
     /// <summary>
+    ///     ReconnectAttemptCount can be set via init.
+    /// </summary>
+    [Fact]
+    [AllureFeature("State")]
+    public void ReconnectAttemptCountCanBeSet()
+    {
+        // Arrange
+        int count = 5;
+
+        // Act
+        SignalRConnectionState state = new()
+        {
+            ReconnectAttemptCount = count,
+        };
+
+        // Assert
+        Assert.Equal(count, state.ReconnectAttemptCount);
+    }
+
+    /// <summary>
     ///     ReconnectAttemptCount is zero by default.
     /// </summary>
     [Fact]
@@ -162,23 +188,6 @@ public sealed class SignalRConnectionStateTests
     }
 
     /// <summary>
-    ///     ReconnectAttemptCount can be set via init.
-    /// </summary>
-    [Fact]
-    [AllureFeature("State")]
-    public void ReconnectAttemptCountCanBeSet()
-    {
-        // Arrange
-        int count = 5;
-
-        // Act
-        SignalRConnectionState state = new() { ReconnectAttemptCount = count };
-
-        // Assert
-        Assert.Equal(count, state.ReconnectAttemptCount);
-    }
-
-    /// <summary>
     ///     Status can be set via init.
     /// </summary>
     [Fact]
@@ -186,7 +195,10 @@ public sealed class SignalRConnectionStateTests
     public void StatusCanBeSet()
     {
         // Act
-        SignalRConnectionState state = new() { Status = SignalRConnectionStatus.Connected };
+        SignalRConnectionState state = new()
+        {
+            Status = SignalRConnectionStatus.Connected,
+        };
 
         // Assert
         Assert.Equal(SignalRConnectionStatus.Connected, state.Status);
