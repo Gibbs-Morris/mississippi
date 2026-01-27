@@ -1,0 +1,10 @@
+{
+  "label": "Typical Architectures",
+  "position": 2,
+  "link": {
+    "type": "doc",
+    "id": "comparisons/architectures/architectures"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

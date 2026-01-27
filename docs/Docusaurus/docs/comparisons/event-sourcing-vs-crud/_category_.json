@@ -1,0 +1,10 @@
+{
+  "label": "Event Sourcing vs CRUD",
+  "position": 1,
+  "link": {
+    "type": "doc",
+    "id": "comparisons/event-sourcing-vs-crud/event-sourcing-vs-crud"
+  },
+  "collapsible": true,
+  "collapsed": false
+}
