@@ -24,7 +24,7 @@ namespace Mississippi.EventSourcing.Testing.Projections;
 ///         // Quick apply and assert
 ///         var result = reducer.Apply(initialState, eventData);
 ///         result.Balance.Should().Be(expected);
-/// 
+///
 ///         // Or use ShouldProduce for expected output assertions
 ///         reducer.ShouldProduce(initialState, eventData, expectedProjection);
 ///     </code>
@@ -38,7 +38,7 @@ namespace Mississippi.EventSourcing.Testing.Projections;
 ///             .WithReducer&lt;AccountOpenedBalanceReducer&gt;()
 ///             .WithReducer&lt;FundsDepositedBalanceReducer&gt;()
 ///             .WithReducer&lt;FundsWithdrawnBalanceReducer&gt;();
-/// 
+///
 ///         // Run a scenario with Given/When/Then
 ///         harness.CreateScenario()
 ///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
