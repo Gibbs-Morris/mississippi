@@ -13,7 +13,13 @@ namespace Mississippi.EventSourcing.Aggregates;
 /// <typeparam name="TEffect">The effect implementation type.</typeparam>
 /// <typeparam name="TEvent">The event type the effect handles.</typeparam>
 /// <typeparam name="TAggregate">The aggregate state type.</typeparam>
+/// <remarks>
+///     S2436 suppressed: Three type parameters are required by design - effect, event, and aggregate
+///     types are all needed for compile-time type safety and correct DI resolution.
+/// </remarks>
+#pragma warning disable S2436 // Types should not have too many generic parameters
 internal sealed class FireAndForgetEffectRegistration<TEffect, TEvent, TAggregate>
+#pragma warning restore S2436
     : IFireAndForgetEffectRegistration<TAggregate>
     where TEffect : class, IFireAndForgetEventEffect<TEvent, TAggregate>
     where TEvent : class

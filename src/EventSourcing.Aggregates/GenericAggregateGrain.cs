@@ -336,16 +336,14 @@ internal sealed class GenericAggregateGrain<TAggregate>
             object eventData = events[i];
             long eventPosition = startingPosition + i;
             Type eventType = eventData.GetType();
-            foreach (IFireAndForgetEffectRegistration<TAggregate> registration in FireAndForgetEffectRegistrations)
+            foreach (IFireAndForgetEffectRegistration<TAggregate> registration in
+                     FireAndForgetEffectRegistrations.Where(r => r.EventType == eventType))
             {
-                if (registration.EventType == eventType)
-                {
-                    registration.Dispatch(GrainFactory, eventData, currentState, brookKey, eventPosition);
-                    FireAndForgetEffectMetrics.RecordDispatch(
-                        typeof(TAggregate).Name,
-                        eventType.Name,
-                        registration.EffectTypeName);
-                }
+                registration.Dispatch(GrainFactory, eventData, currentState, brookKey, eventPosition);
+                FireAndForgetEffectMetrics.RecordDispatch(
+                    typeof(TAggregate).Name,
+                    eventType.Name,
+                    registration.EffectTypeName);
             }
         }
     }
@@ -533,7 +531,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         CancellationToken cancellationToken
     )
     {
-        if (RootEventEffect?.EffectCount <= 0)
+        if (RootEventEffect is null || RootEventEffect.EffectCount <= 0)
         {
             return;
         }
