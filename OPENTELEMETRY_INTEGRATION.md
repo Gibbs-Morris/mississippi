@@ -97,6 +97,24 @@ The implementation follows Aspire OpenTelemetry best practices:
 4. **Framework Integration**: Includes both ASP.NET Core and framework-specific meters
 5. **Activity Propagation**: Orleans configured with `.AddActivityPropagation()` for distributed tracing
 
+## Validation
+
+The OpenTelemetry integration can be validated in multiple ways:
+
+### Local Development (Full Interactive Experience)
+```powershell
+pwsh ./run-spring.ps1
+```
+Requires Docker Desktop or Podman. Provides full Aspire Dashboard with real-time telemetry visualization.
+
+### Automated Testing
+```bash
+dotnet test samples/Spring/Spring.L2Tests --configuration Release
+```
+L2 integration tests validate the complete stack including telemetry export without requiring interactive dashboard access.
+
+**Note**: In CI environments without full DCP (Developer Control Plane) support, L2 tests may fail to start the orchestrator but the underlying OTel configuration remains valid. See `samples/Spring/CI_LIMITATIONS.md` for details.
+
 ## Troubleshooting
 
 If telemetry is not appearing in the Aspire dashboard:
@@ -105,9 +123,11 @@ If telemetry is not appearing in the Aspire dashboard:
 2. Check that environment variables are set (visible in dashboard's Environment tab)
 3. Ensure all services are referenced in the AppHost via `.WithReference()`
 4. Check service logs for OpenTelemetry initialization errors
+5. **CI/CD environments**: See [CI Limitations](samples/Spring/CI_LIMITATIONS.md) for known issues with DCP availability
 
 ## References
 
 - [.NET Aspire Telemetry](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/telemetry)
 - [OpenTelemetry .NET](https://opentelemetry.io/docs/languages/net/)
 - [Aspire Dashboard](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/dashboard)
+- [CI Limitations for Spring Sample](samples/Spring/CI_LIMITATIONS.md)
