@@ -1,5 +1,5 @@
 ---
-id: logging-and-monitoring
+id: logging-monitoring
 title: Logging and Monitoring
 sidebar_label: Logging & Monitoring
 sidebar_position: 11

@@ -1,5 +1,5 @@
 ---
-id: mapping-and-dtos
+id: mapping-dtos
 title: Mapping and DTOs
 sidebar_label: Mapping and DTOs
 sidebar_position: 7

@@ -1,5 +1,5 @@
 ---
-id: configuration-and-environment
+id: configuration
 title: Configuration and Environment
 sidebar_label: Configuration & Environment
 sidebar_position: 10

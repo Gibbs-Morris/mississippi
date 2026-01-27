@@ -1,5 +1,5 @@
 ---
-id: build-and-deployment
+id: build-deployment
 title: Build and Deployment
 sidebar_label: Build & Deployment
 sidebar_position: 13

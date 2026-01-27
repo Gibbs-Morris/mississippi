@@ -1,5 +1,5 @@
 ---
-id: workflow-and-orchestration
+id: workflow-orchestration
 title: Workflow and Orchestration
 sidebar_label: Workflow and Orchestration
 sidebar_position: 9

@@ -1,5 +1,5 @@
 ---
-id: testing-and-quality
+id: testing
 title: Testing and Quality
 sidebar_label: Testing & Quality
 sidebar_position: 12

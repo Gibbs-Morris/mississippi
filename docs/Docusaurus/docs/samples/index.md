@@ -1,5 +1,5 @@
 ---
-id: sample-applications
+id: samples
 title: Sample Applications
 sidebar_label: Sample Applications
 sidebar_position: 14

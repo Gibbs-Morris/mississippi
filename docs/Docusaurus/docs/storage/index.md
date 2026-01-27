@@ -1,5 +1,5 @@
 ---
-id: storage-integration
+id: storage
 title: Storage Integration
 sidebar_label: Storage Integration
 sidebar_position: 8

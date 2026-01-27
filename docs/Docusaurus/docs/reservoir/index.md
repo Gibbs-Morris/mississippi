@@ -1,5 +1,5 @@
 ---
-id: reservoir-pattern
+id: reservoir
 title: Reservoir Pattern
 sidebar_label: Reservoir Pattern
 sidebar_position: 6
