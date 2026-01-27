@@ -78,6 +78,8 @@ internal sealed class HighValueTransactionEffect : SimpleEventEffectBase<FundsDe
             return;
         }
 
+        // The brookKey contains the account ID (aggregate grain key)
+        string accountId = brookKey;
         Logger.LogHighValueTransactionDetected(accountId, eventData.Amount, AmlThreshold);
         FlagTransaction command = new()
         {
