@@ -174,7 +174,7 @@ None required. The investigation conclusively shows:
 
 ## Conclusion
 
-**The Spring sample's OTel/Aspire telemetry integration is working correctly.** The `dotnet run` failure is due to DCP orchestration limitations in GitHub Actions CI, which is a known environmental constraint documented in the L2 test workflow.
+**The Spring sample's OTel/Aspire telemetry integration is working correctly.** The `dotnet run` failure is due to DCP orchestration limitations in GitHub Actions CI. This is a known environmental constraint documented in the L2 test workflow.
 
 The minimal fix is documentation clarifying:
 - What works (OTel integration)
