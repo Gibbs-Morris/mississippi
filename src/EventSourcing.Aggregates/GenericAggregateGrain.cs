@@ -363,40 +363,113 @@ internal sealed class GenericAggregateGrain<TAggregate>
         Logger.CommandReceived(commandTypeName, aggregateKey);
         Stopwatch sw = Stopwatch.StartNew();
 
-        // Get the latest brook position - use local cache if available to avoid race conditions
-        BrookPosition currentPosition;
+        BrookPosition currentPosition = await GetCurrentPositionAsync();
+
+        OperationResult? concurrencyError = CheckForConcurrencyConflict(expectedVersion, currentPosition);
+        if (concurrencyError.HasValue)
+        {
+            RecordConcurrencyConflict(
+                expectedVersion!.Value,
+                currentPosition,
+                commandTypeName,
+                aggregateTypeName,
+                aggregateKey,
+                sw);
+            return concurrencyError.Value;
+        }
+
+        TAggregate? state = await FetchCurrentStateAsync(currentPosition, aggregateTypeName, cancellationToken);
+
+        OperationResult<IReadOnlyList<object>> handlerResult = RootCommandHandler.Handle(command, state);
+        if (!handlerResult.Success)
+        {
+            return RecordCommandFailure(
+                handlerResult,
+                commandTypeName,
+                aggregateTypeName,
+                aggregateKey,
+                sw);
+        }
+
+        IReadOnlyList<object> events = handlerResult.Value;
+        if (events.Count > 0)
+        {
+            await PersistEventsAndDispatchEffectsAsync(
+                events,
+                currentPosition,
+                commandTypeName,
+                aggregateKey,
+                cancellationToken);
+        }
+
+        sw.Stop();
+        AggregateMetrics.RecordCommandSuccess(
+            aggregateTypeName,
+            commandTypeName,
+            sw.Elapsed.TotalMilliseconds,
+            events.Count);
+        Logger.CommandExecuted(commandTypeName, aggregateKey);
+        return OperationResult.Ok();
+    }
+
+    private async Task<BrookPosition> GetCurrentPositionAsync()
+    {
         if (lastKnownPosition.HasValue)
         {
-            currentPosition = lastKnownPosition.Value;
-        }
-        else
-        {
-            currentPosition = await BrookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionAsync();
-            lastKnownPosition = currentPosition;
+            return lastKnownPosition.Value;
         }
 
-        // Check optimistic concurrency
-        if (expectedVersion.HasValue && (expectedVersion.Value != currentPosition))
+        BrookPosition position = await BrookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionAsync();
+        lastKnownPosition = position;
+        return position;
+    }
+
+    private static OperationResult? CheckForConcurrencyConflict(
+        BrookPosition? expectedVersion,
+        BrookPosition currentPosition
+    )
+    {
+        if (!expectedVersion.HasValue || (expectedVersion.Value == currentPosition))
         {
-            sw.Stop();
-            string message =
-                $"Expected version {expectedVersion.Value.Value} but current version is {currentPosition.Value}.";
-            Logger.CommandFailed(commandTypeName, aggregateKey, AggregateErrorCodes.ConcurrencyConflict, message);
-            AggregateMetrics.RecordConcurrencyConflict(aggregateTypeName);
-            AggregateMetrics.RecordCommandFailure(
-                aggregateTypeName,
-                commandTypeName,
-                sw.Elapsed.TotalMilliseconds,
-                AggregateErrorCodes.ConcurrencyConflict);
-            return OperationResult.Fail(AggregateErrorCodes.ConcurrencyConflict, message);
+            return null;
         }
 
-        // Get current state from snapshot grain (single source of truth)
+        string message =
+            $"Expected version {expectedVersion.Value.Value} but current version is {currentPosition.Value}.";
+        return OperationResult.Fail(AggregateErrorCodes.ConcurrencyConflict, message);
+    }
+
+    private void RecordConcurrencyConflict(
+        BrookPosition expectedVersion,
+        BrookPosition currentPosition,
+        string commandTypeName,
+        string aggregateTypeName,
+        string aggregateKey,
+        Stopwatch sw
+    )
+    {
+        sw.Stop();
+        string message = $"Expected version {expectedVersion.Value} but current version is {currentPosition.Value}.";
+        Logger.CommandFailed(commandTypeName, aggregateKey, AggregateErrorCodes.ConcurrencyConflict, message);
+        AggregateMetrics.RecordConcurrencyConflict(aggregateTypeName);
+        AggregateMetrics.RecordCommandFailure(
+            aggregateTypeName,
+            commandTypeName,
+            sw.Elapsed.TotalMilliseconds,
+            AggregateErrorCodes.ConcurrencyConflict);
+    }
+
+    private async Task<TAggregate?> FetchCurrentStateAsync(
+        BrookPosition currentPosition,
+        string aggregateTypeName,
+        CancellationToken cancellationToken
+    )
+    {
         Stopwatch stateFetchSw = Stopwatch.StartNew();
         TAggregate? state;
+
         if (currentPosition.NotSet)
         {
-            // No events yet, use initial state (null - reducers/command handlers must handle null input)
             state = default;
         }
         else
@@ -408,78 +481,95 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
         stateFetchSw.Stop();
         AggregateMetrics.RecordStateFetch(aggregateTypeName, stateFetchSw.Elapsed.TotalMilliseconds);
+        return state;
+    }
 
-        // Delegate to root command handler
-        OperationResult<IReadOnlyList<object>> handlerResult = RootCommandHandler.Handle(command, state);
-        if (!handlerResult.Success)
-        {
-            sw.Stop();
-            Logger.CommandFailed(commandTypeName, aggregateKey, handlerResult.ErrorCode, handlerResult.ErrorMessage);
-            AggregateMetrics.RecordCommandFailure(
-                aggregateTypeName,
-                commandTypeName,
-                sw.Elapsed.TotalMilliseconds,
-                handlerResult.ErrorCode ?? "unknown");
-            return handlerResult.ToResult();
-        }
-
-        // Persist events if any were produced
-        IReadOnlyList<object> events = handlerResult.Value;
-        if (events.Count > 0)
-        {
-            ImmutableArray<BrookEvent> brookEvents = BrookEventConverter.ToStorageEvents(brookKey, events);
-
-            // Pass null for first write, otherwise pass current position for optimistic concurrency
-            BrookPosition? expectedCursorPosition = currentPosition.NotSet ? null : currentPosition;
-            await BrookGrainFactory.GetBrookWriterGrain(brookKey)
-                .AppendEventsAsync(brookEvents, expectedCursorPosition, cancellationToken);
-
-            // Update local position to avoid race conditions with cursor grain stream updates
-            lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
-
-            // Dispatch effects if any are registered
-            if (RootEventEffect?.EffectCount > 0)
-            {
-                // Get updated state after events were applied for effect handlers
-                SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);
-                TAggregate? updatedState = await SnapshotGrainFactory
-                    .GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
-                    .GetStateAsync(cancellationToken);
-                try
-                {
-                    await DispatchEffectsAsync(events, updatedState!, aggregateKey, cancellationToken);
-                }
-                catch (Exception ex) when (!IsCriticalException(ex))
-                {
-                    // Effect dispatch failures should not fail the command since events are already persisted.
-                    // Log the error and continue - the command succeeded from the caller's perspective.
-                    // Critical exceptions (OOM, StackOverflow, etc.) will propagate.
-                    Logger.EffectDispatchFailed(commandTypeName, aggregateKey, ex);
-                }
-            }
-
-            // Dispatch fire-and-forget effects in separate worker grains (non-blocking)
-            if (FireAndForgetEffectRegistrations.Length > 0)
-            {
-                // Get updated state after events were applied for effect handlers
-                SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);
-                TAggregate? updatedState = await SnapshotGrainFactory
-                    .GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
-                    .GetStateAsync(cancellationToken);
-
-                // Calculate starting position: currentPosition was before appending, so first event is at currentPosition + 1
-                long startingPosition = currentPosition.Value + 1;
-                DispatchFireAndForgetEffects(events, updatedState!, startingPosition);
-            }
-        }
-
+    private OperationResult RecordCommandFailure(
+        OperationResult<IReadOnlyList<object>> handlerResult,
+        string commandTypeName,
+        string aggregateTypeName,
+        string aggregateKey,
+        Stopwatch sw
+    )
+    {
         sw.Stop();
-        AggregateMetrics.RecordCommandSuccess(
+        Logger.CommandFailed(
+            commandTypeName,
+            aggregateKey,
+            handlerResult.ErrorCode ?? "unknown",
+            handlerResult.ErrorMessage ?? "No error message provided");
+        AggregateMetrics.RecordCommandFailure(
             aggregateTypeName,
             commandTypeName,
             sw.Elapsed.TotalMilliseconds,
-            events.Count);
-        Logger.CommandExecuted(commandTypeName, aggregateKey);
-        return OperationResult.Ok();
+            handlerResult.ErrorCode ?? "unknown");
+        return handlerResult.ToResult();
+    }
+
+    private async Task PersistEventsAndDispatchEffectsAsync(
+        IReadOnlyList<object> events,
+        BrookPosition currentPosition,
+        string commandTypeName,
+        string aggregateKey,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableArray<BrookEvent> brookEvents = BrookEventConverter.ToStorageEvents(brookKey, events);
+        BrookPosition? expectedCursorPosition = currentPosition.NotSet ? null : currentPosition;
+
+        await BrookGrainFactory.GetBrookWriterGrain(brookKey)
+            .AppendEventsAsync(brookEvents, expectedCursorPosition, cancellationToken);
+
+        lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
+
+        await DispatchSynchronousEffectsAsync(events, commandTypeName, aggregateKey, cancellationToken);
+        await DispatchFireAndForgetEffectsIfRegisteredAsync(events, currentPosition, cancellationToken);
+    }
+
+    private async Task DispatchSynchronousEffectsAsync(
+        IReadOnlyList<object> events,
+        string commandTypeName,
+        string aggregateKey,
+        CancellationToken cancellationToken
+    )
+    {
+        if (RootEventEffect?.EffectCount <= 0)
+        {
+            return;
+        }
+
+        SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition!.Value.Value);
+        TAggregate? updatedState = await SnapshotGrainFactory
+            .GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
+            .GetStateAsync(cancellationToken);
+
+        try
+        {
+            await DispatchEffectsAsync(events, updatedState!, aggregateKey, cancellationToken);
+        }
+        catch (Exception ex) when (!IsCriticalException(ex))
+        {
+            Logger.EffectDispatchFailed(commandTypeName, aggregateKey, ex);
+        }
+    }
+
+    private async Task DispatchFireAndForgetEffectsIfRegisteredAsync(
+        IReadOnlyList<object> events,
+        BrookPosition currentPosition,
+        CancellationToken cancellationToken
+    )
+    {
+        if (FireAndForgetEffectRegistrations.Length == 0)
+        {
+            return;
+        }
+
+        SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition!.Value.Value);
+        TAggregate? updatedState = await SnapshotGrainFactory
+            .GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
+            .GetStateAsync(cancellationToken);
+
+        long startingPosition = currentPosition.Value + 1;
+        DispatchFireAndForgetEffects(events, updatedState!, startingPosition);
     }
 }
