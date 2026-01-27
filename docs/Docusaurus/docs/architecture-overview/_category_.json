@@ -1,0 +1,10 @@
+{
+  "label": "Architecture Overview",
+  "position": 3,
+  "link": {
+    "type": "doc",
+    "id": "architecture-overview/architecture-overview"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

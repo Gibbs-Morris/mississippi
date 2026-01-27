@@ -1,0 +1,10 @@
+{
+  "label": "Reservoir Pattern",
+  "position": 6,
+  "link": {
+    "type": "doc",
+    "id": "reservoir-pattern/reservoir-pattern"
+  },
+  "collapsible": true,
+  "collapsed": false
+}
