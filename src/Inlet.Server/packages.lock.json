@@ -230,13 +230,6 @@
         }
       },
       "Mississippi.Inlet.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.0, )",
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Inlet.Projection.Abstractions": {
         "type": "Project"
       },
       "Mississippi.Inlet.Server.Abstractions": {
@@ -250,7 +243,6 @@
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Silo.Abstractions": "[1.0.0, )"
         }
@@ -259,11 +251,8 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
-      },
-      "Mississippi.Reservoir.Abstractions": {
-        "type": "Project"
       },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",

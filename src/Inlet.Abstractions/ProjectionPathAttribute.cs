@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Inlet.Projection.Abstractions;
+namespace Mississippi.Inlet.Abstractions;
 
 /// <summary>
 ///     Marks a class as a projection that can be subscribed to via Inlet.

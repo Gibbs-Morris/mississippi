@@ -51,7 +51,7 @@
     <Project Path="src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
   </Folder>
   <Folder Name="/Framework/Inlet/">
-    <Project Path="src\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
+    <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     <Project Path="src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
     <Project Path="src\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
     <Project Path="src\Inlet.Silo.Abstractions\Inlet.Silo.Abstractions.csproj" />

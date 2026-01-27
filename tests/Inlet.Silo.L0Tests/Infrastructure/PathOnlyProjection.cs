@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Inlet.Abstractions;
 
 
 namespace Mississippi.Inlet.Silo.L0Tests.Infrastructure;

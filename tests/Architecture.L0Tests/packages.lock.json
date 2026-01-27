@@ -972,7 +972,7 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.EventSourcing.UxProjections.Api": {
@@ -980,8 +980,11 @@
         "dependencies": {
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
+      },
+      "Mississippi.Inlet.Abstractions": {
+        "type": "Project"
       },
       "Mississippi.Inlet.Client": {
         "type": "Project",
@@ -990,8 +993,8 @@
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.2, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
           "Microsoft.Extensions.Options": "[10.0.2, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Client.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir": "[1.0.0, )",
           "Mississippi.Reservoir.Blazor": "[1.0.0, )"
@@ -1003,9 +1006,6 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
-      },
-      "Mississippi.Inlet.Projection.Abstractions": {
-        "type": "Project"
       },
       "Mississippi.Inlet.Server": {
         "type": "Project",
@@ -1030,7 +1030,7 @@
           "Microsoft.Orleans.Streaming": "[10.0.0, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Silo.Abstractions": "[1.0.0, )"
         }
@@ -1039,7 +1039,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.0, )",
-          "Mississippi.Inlet.Projection.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir": {

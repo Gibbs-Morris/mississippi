@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Inlet.Abstractions;
 
 
 namespace Mississippi.Inlet.Client.ActionEffects;

@@ -12,7 +12,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
         <ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
-        <ProjectReference Include="..\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
+        <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
         <ProjectReference Include="..\Inlet.Silo.Abstractions\Inlet.Silo.Abstractions.csproj" />
         <ProjectReference Include="..\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
     </ItemGroup>
