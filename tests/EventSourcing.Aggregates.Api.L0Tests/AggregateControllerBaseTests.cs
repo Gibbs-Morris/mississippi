@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -16,9 +15,6 @@ namespace Mississippi.EventSourcing.Aggregates.Api.L0Tests;
 /// <summary>
 ///     Tests for <see cref="AggregateControllerBase{TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates API")]
-[AllureSubSuite("Controller Base")]
 public sealed class AggregateControllerBaseTests
 {
     private static ILogger<AggregateControllerBase<TestAggregate>> NullControllerLogger =>
