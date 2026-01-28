@@ -34,16 +34,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         </item>
 ///     </list>
 /// </remarks>
-/// <example>
-///     <code>
-///         [GenerateCommand(Route = "deposit")]
-///         [GenerateSerializer]
-///         public sealed record DepositFunds
-///         {
-///             [Id(0)] public decimal Amount { get; init; }
-///         }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class GenerateCommandAttribute : Attribute
 {
@@ -68,12 +58,5 @@ public sealed class GenerateCommandAttribute : Attribute
     ///         The full route is: <c>api/aggregates/{aggregate}/{entityId}/{Route}</c>.
     ///     </para>
     /// </remarks>
-    /// <example>
-    ///     <code>
-    ///         [GenerateCommand(Route = "deposit")]
-    ///         public sealed record DepositFunds { }
-    ///         // Generates: POST api/aggregates/bank-account/{entityId}/deposit
-    ///     </code>
-    /// </example>
     public string? Route { get; set; }
 }

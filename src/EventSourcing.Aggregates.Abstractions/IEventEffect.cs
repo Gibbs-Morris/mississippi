@@ -24,23 +24,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         background work, consider Orleans reminders or external workflow systems.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed class OrderPlacedNotificationEffect : IEventEffect&lt;OrderAggregate&gt;
-///         {
-///             public bool CanHandle(object eventData) => eventData is OrderPlacedEvent;
-///
-///             public async IAsyncEnumerable&lt;object&gt; HandleAsync(
-///                 object eventData,
-///                 OrderAggregate currentState,
-///                 [EnumeratorCancellation] CancellationToken cancellationToken)
-///             {
-///                 var evt = (OrderPlacedEvent)eventData;
-///                 yield return new NotificationQueuedEvent(evt.OrderId);
-///             }
-///         }
-///     </code>
-/// </example>
 /// <typeparam name="TAggregate">The aggregate state type this effect is registered for.</typeparam>
 public interface IEventEffect<TAggregate>
 {

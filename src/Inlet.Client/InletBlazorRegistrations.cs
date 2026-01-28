@@ -45,15 +45,6 @@ public static class InletBlazorRegistrations
     ///     <para>
     ///         Use the builder to configure the hub path and register projection fetchers.
     ///     </para>
-    ///     <example>
-    ///         <code>
-    /// services.AddInletBlazorSignalR(builder =>
-    /// {
-    ///     builder.WithHubPath("/hubs/inlet")
-    ///            .AddProjectionFetcher&lt;MyProjectionFetcher&gt;();
-    /// });
-    ///         </code>
-    ///     </example>
     /// </remarks>
     public static IServiceCollection AddInletBlazorSignalR(
         this IServiceCollection services,

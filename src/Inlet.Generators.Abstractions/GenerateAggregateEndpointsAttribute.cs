@@ -36,19 +36,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         </item>
 ///     </list>
 /// </remarks>
-/// <example>
-///     <code>
-///         [BrookName("CONTOSO", "BANKING", "ACCOUNT")]
-///         [SnapshotStorageName("CONTOSO", "BANKING", "ACCOUNTSTATE")]
-///         [GenerateAggregateEndpoints]
-///         [GenerateSerializer]
-///         public sealed record BankAccountAggregate
-///         {
-///             public decimal Balance { get; init; }
-///             public bool IsOpen { get; init; }
-///         }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class GenerateAggregateEndpointsAttribute : Attribute
 {
@@ -78,12 +65,5 @@ public sealed class GenerateAggregateEndpointsAttribute : Attribute
     ///         The full route pattern is: <c>api/aggregates/{RoutePrefix}/{entityId}/{command}</c>.
     ///     </para>
     /// </remarks>
-    /// <example>
-    ///     <code>
-    ///         [GenerateAggregateEndpoints(RoutePrefix = "accounts")]
-    ///         public sealed record BankAccountAggregate { }
-    ///         // Generates: api/aggregates/accounts/{entityId}/...
-    ///     </code>
-    /// </example>
     public string? RoutePrefix { get; set; }
 }
