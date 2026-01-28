@@ -34,17 +34,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         The HTTP route is derived from <c>ProjectionPathAttribute.Path</c>.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         [ProjectionPath("bank-account-balance")]
-///         [GenerateProjectionEndpoints]
-///         [BrookName("CONTOSO", "BANKING", "ACCOUNT")]
-///         public sealed record BankAccountBalanceProjection
-///         {
-///             public decimal Balance { get; init; }
-///         }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class GenerateProjectionEndpointsAttribute : Attribute
 {
