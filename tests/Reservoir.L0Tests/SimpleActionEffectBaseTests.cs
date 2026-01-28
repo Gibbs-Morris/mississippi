@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -15,9 +14,6 @@ namespace Mississippi.Reservoir.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SimpleActionEffectBase{TAction,TState}" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Reservoir")]
-[AllureSuite("Abstractions")]
-[AllureSubSuite("SimpleActionEffectBase")]
 public sealed class SimpleActionEffectBaseTests
 {
     /// <summary>
@@ -65,8 +61,7 @@ public sealed class SimpleActionEffectBaseTests
     ///     CanHandle returns false for non-matching action type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
-    public void CanHandleReturnsFalseForNonMatchingActionType()
+        public void CanHandleReturnsFalseForNonMatchingActionType()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -83,8 +78,7 @@ public sealed class SimpleActionEffectBaseTests
     ///     CanHandle returns true for matching action type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
-    public void CanHandleReturnsTrueForMatchingActionType()
+        public void CanHandleReturnsTrueForMatchingActionType()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -101,8 +95,7 @@ public sealed class SimpleActionEffectBaseTests
     ///     CanHandle throws ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void CanHandleThrowsArgumentNullExceptionWhenActionIsNull()
+        public void CanHandleThrowsArgumentNullExceptionWhenActionIsNull()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -116,8 +109,7 @@ public sealed class SimpleActionEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
-    public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoActions()
+        public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoActions()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -143,8 +135,7 @@ public sealed class SimpleActionEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
-    public async Task HandleAsyncReturnsEmptyForNonMatchingAction()
+        public async Task HandleAsyncReturnsEmptyForNonMatchingAction()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -168,8 +159,7 @@ public sealed class SimpleActionEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void HandleAsyncThrowsArgumentNullExceptionWhenActionIsNull()
+        public void HandleAsyncThrowsArgumentNullExceptionWhenActionIsNull()
     {
         // Arrange
         TestSimpleEffect sut = new();
