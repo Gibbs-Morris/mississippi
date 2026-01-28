@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Client.Abstractions.Actions;
 
@@ -10,17 +9,13 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for projection actions.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Projections")]
-[AllureSubSuite("Actions")]
 public sealed class ProjectionActionsTests
 {
     /// <summary>
     ///     ProjectionConnectionChangedAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionConnectionChangedActionConstructorSetsEntityId()
+        public void ProjectionConnectionChangedActionConstructorSetsEntityId()
     {
         // Arrange
         string entityId = "conn-entity";
@@ -36,8 +31,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor sets IsConnected to false.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionConnectionChangedActionConstructorSetsIsConnectedFalse()
+        public void ProjectionConnectionChangedActionConstructorSetsIsConnectedFalse()
     {
         // Act
         ProjectionConnectionChangedAction<TestProjection> action = new("entity-123", false);
@@ -50,8 +44,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor sets IsConnected to true.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionConnectionChangedActionConstructorSetsIsConnectedTrue()
+        public void ProjectionConnectionChangedActionConstructorSetsIsConnectedTrue()
     {
         // Act
         ProjectionConnectionChangedAction<TestProjection> action = new("entity-123", true);
@@ -64,8 +57,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionConnectionChangedActionConstructorSetsProjectionType()
+        public void ProjectionConnectionChangedActionConstructorSetsProjectionType()
     {
         // Act
         ProjectionConnectionChangedAction<TestProjection> action = new("entity-123", true);
@@ -78,8 +70,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionConnectionChangedActionConstructorThrowsOnNullEntityId()
+        public void ProjectionConnectionChangedActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionConnectionChangedAction<TestProjection>(null!, true));
@@ -89,8 +80,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionErrorActionConstructorSetsEntityId()
+        public void ProjectionErrorActionConstructorSetsEntityId()
     {
         // Arrange
         string entityId = "entity-error";
@@ -107,8 +97,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor sets Error.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionErrorActionConstructorSetsError()
+        public void ProjectionErrorActionConstructorSetsError()
     {
         // Arrange
         Exception error = new InvalidOperationException("Test error");
@@ -124,8 +113,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionErrorActionConstructorSetsProjectionType()
+        public void ProjectionErrorActionConstructorSetsProjectionType()
     {
         // Arrange
         Exception error = new InvalidOperationException("Test");
@@ -141,8 +129,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionErrorActionConstructorThrowsOnNullEntityId()
+        public void ProjectionErrorActionConstructorThrowsOnNullEntityId()
     {
         // Arrange
         Exception error = new InvalidOperationException("Test");
@@ -155,8 +142,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor throws on null error.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionErrorActionConstructorThrowsOnNullError()
+        public void ProjectionErrorActionConstructorThrowsOnNullError()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionErrorAction<TestProjection>("entity-123", null!));
@@ -166,8 +152,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor allows null Data.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionLoadedActionConstructorAllowsNullData()
+        public void ProjectionLoadedActionConstructorAllowsNullData()
     {
         // Act
         ProjectionLoadedAction<TestProjection> action = new("entity-123", null, 1);
@@ -180,8 +165,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor sets Data.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionLoadedActionConstructorSetsData()
+        public void ProjectionLoadedActionConstructorSetsData()
     {
         // Arrange
         TestProjection data = new()
@@ -200,8 +184,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionLoadedActionConstructorSetsEntityId()
+        public void ProjectionLoadedActionConstructorSetsEntityId()
     {
         // Arrange
         string entityId = "entity-456";
@@ -221,8 +204,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor sets Version.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionLoadedActionConstructorSetsVersion()
+        public void ProjectionLoadedActionConstructorSetsVersion()
     {
         // Arrange
         long version = 42;
@@ -238,8 +220,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionLoadedActionConstructorThrowsOnNullEntityId()
+        public void ProjectionLoadedActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionLoadedAction<TestProjection>(null!, null, 1));
@@ -249,8 +230,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionLoadingActionConstructorSetsEntityId()
+        public void ProjectionLoadingActionConstructorSetsEntityId()
     {
         // Arrange
         string entityId = "entity-123";
@@ -266,8 +246,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionLoadingActionConstructorSetsProjectionType()
+        public void ProjectionLoadingActionConstructorSetsProjectionType()
     {
         // Act
         ProjectionLoadingAction<TestProjection> action = new("entity-123");
@@ -280,8 +259,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionLoadingActionConstructorThrowsOnNullEntityId()
+        public void ProjectionLoadingActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionLoadingAction<TestProjection>(null!));
@@ -291,8 +269,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor sets Data.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionUpdatedActionConstructorSetsData()
+        public void ProjectionUpdatedActionConstructorSetsData()
     {
         // Arrange
         TestProjection data = new()
@@ -311,8 +288,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionUpdatedActionConstructorSetsEntityId()
+        public void ProjectionUpdatedActionConstructorSetsEntityId()
     {
         // Arrange
         string entityId = "entity-789";
@@ -328,8 +304,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor sets Version.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionUpdatedActionConstructorSetsVersion()
+        public void ProjectionUpdatedActionConstructorSetsVersion()
     {
         // Arrange
         long version = 99;
@@ -345,8 +320,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void ProjectionUpdatedActionConstructorThrowsOnNullEntityId()
+        public void ProjectionUpdatedActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionUpdatedAction<TestProjection>(null!, null, 1));
@@ -356,8 +330,7 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void RefreshProjectionActionConstructorSetsEntityId()
+        public void RefreshProjectionActionConstructorSetsEntityId()
     {
         // Arrange
         string entityId = "refresh-entity";
@@ -373,8 +346,7 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void RefreshProjectionActionConstructorSetsProjectionType()
+        public void RefreshProjectionActionConstructorSetsProjectionType()
     {
         // Act
         RefreshProjectionAction<TestProjection> action = new("entity-123");
@@ -387,8 +359,7 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void RefreshProjectionActionConstructorThrowsOnNullEntityId()
+        public void RefreshProjectionActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new RefreshProjectionAction<TestProjection>(null!));
@@ -398,8 +369,7 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void SubscribeToProjectionActionConstructorSetsEntityId()
+        public void SubscribeToProjectionActionConstructorSetsEntityId()
     {
         // Arrange
         string entityId = "sub-entity";
@@ -415,8 +385,7 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void SubscribeToProjectionActionConstructorSetsProjectionType()
+        public void SubscribeToProjectionActionConstructorSetsProjectionType()
     {
         // Act
         SubscribeToProjectionAction<TestProjection> action = new("entity-123");
@@ -429,8 +398,7 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void SubscribeToProjectionActionConstructorThrowsOnNullEntityId()
+        public void SubscribeToProjectionActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new SubscribeToProjectionAction<TestProjection>(null!));
@@ -440,8 +408,7 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void UnsubscribeFromProjectionActionConstructorSetsEntityId()
+        public void UnsubscribeFromProjectionActionConstructorSetsEntityId()
     {
         // Arrange
         string entityId = "unsub-entity";
@@ -457,8 +424,7 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void UnsubscribeFromProjectionActionConstructorSetsProjectionType()
+        public void UnsubscribeFromProjectionActionConstructorSetsProjectionType()
     {
         // Act
         UnsubscribeFromProjectionAction<TestProjection> action = new("entity-123");
@@ -471,8 +437,7 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
-    public void UnsubscribeFromProjectionActionConstructorThrowsOnNullEntityId()
+        public void UnsubscribeFromProjectionActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new UnsubscribeFromProjectionAction<TestProjection>(null!));
