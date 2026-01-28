@@ -135,33 +135,32 @@ public sealed class AggregateScenario<TAggregate>
     {
         Type handlerType = handler.GetType();
         Type commandType = command.GetType();
-        foreach (Type iface in handlerType.GetInterfaces())
+        Type? iface = handlerType.GetInterfaces()
+            .FirstOrDefault(i => i.IsGenericType &&
+                                 (i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>)) &&
+                                 (i.GetGenericArguments()[0] == commandType));
+        if (iface is not null)
         {
-            if (iface.IsGenericType &&
-                (iface.GetGenericTypeDefinition() == typeof(ICommandHandler<,>)) &&
-                (iface.GetGenericArguments()[0] == commandType))
+            MethodInfo? method = iface.GetMethod("Handle");
+            object result = method!.Invoke(handler, [command, state])!;
+
+            // Handle OperationResult<IReadOnlyList<object>> return type
+            Type resultType = result.GetType();
+            PropertyInfo? successProp = resultType.GetProperty("Success");
+            PropertyInfo? valueProp = resultType.GetProperty("Value");
+            PropertyInfo? errorCodeProp = resultType.GetProperty("ErrorCode");
+            PropertyInfo? errorMessageProp = resultType.GetProperty("ErrorMessage");
+            bool success = (bool)successProp!.GetValue(result)!;
+            if (success)
             {
-                MethodInfo? method = iface.GetMethod("Handle");
-                object result = method!.Invoke(handler, [command, state])!;
-
-                // Handle OperationResult<IReadOnlyList<object>> return type
-                Type resultType = result.GetType();
-                PropertyInfo? successProp = resultType.GetProperty("Success");
-                PropertyInfo? valueProp = resultType.GetProperty("Value");
-                PropertyInfo? errorCodeProp = resultType.GetProperty("ErrorCode");
-                PropertyInfo? errorMessageProp = resultType.GetProperty("ErrorMessage");
-                bool success = (bool)successProp!.GetValue(result)!;
-                if (success)
-                {
-                    IEnumerable<object> events = (IEnumerable<object>)valueProp!.GetValue(result)!;
-                    return (events, true, null, null);
-                }
-
-                // On failure, return empty collection with error info
-                string? errorCode = errorCodeProp?.GetValue(result)?.ToString();
-                string? errorMessage = errorMessageProp?.GetValue(result)?.ToString();
-                return (Array.Empty<object>(), false, errorCode, errorMessage);
+                IEnumerable<object> events = (IEnumerable<object>)valueProp!.GetValue(result)!;
+                return (events, true, null, null);
             }
+
+            // On failure, return empty collection with error info
+            string? errorCode = errorCodeProp?.GetValue(result)?.ToString();
+            string? errorMessage = errorMessageProp?.GetValue(result)?.ToString();
+            return (Array.Empty<object>(), false, errorCode, errorMessage);
         }
 
         throw new InvalidOperationException($"Cannot execute command {commandType.Name}.");
