@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,9 +17,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests;
 /// <summary>
 ///     Tests for <see cref="EventSourcingRegistrations" /> extension methods.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks")]
-[AllureSubSuite("Event Sourcing Registrations")]
 public sealed class EventSourcingRegistrationsTests
 {
     /// <summary>
