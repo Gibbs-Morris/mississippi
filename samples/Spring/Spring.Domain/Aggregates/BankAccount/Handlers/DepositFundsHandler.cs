@@ -9,44 +9,36 @@ using Spring.Domain.Aggregates.BankAccount.Events;
 namespace Spring.Domain.Aggregates.BankAccount.Handlers;
 
 /// <summary>
-///     Command handler for withdrawing cash from a bank account.
+///     Command handler for depositing funds into a bank account.
 /// </summary>
-internal sealed class WithdrawCashHandler : CommandHandlerBase<WithdrawCash, BankAccountAggregate>
+internal sealed class DepositFundsHandler : CommandHandlerBase<DepositFunds, BankAccountAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
-        WithdrawCash command,
+        DepositFunds command,
         BankAccountAggregate? state
     )
     {
-        // Account must be open to withdraw cash
+        // Account must be open to deposit funds
         if (state?.IsOpen != true)
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidState,
-                "Account must be open before withdrawing cash.");
+                "Account must be open before depositing funds.");
         }
 
-        // Validate withdrawal amount is positive
+        // Validate deposit amount is positive
         if (command.Amount <= 0)
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidCommand,
-                "Withdrawal amount must be positive.");
-        }
-
-        // Validate sufficient funds
-        if (state.Balance < command.Amount)
-        {
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.InvalidCommand,
-                "Insufficient funds for withdrawal.");
+                "Deposit amount must be positive.");
         }
 
         return OperationResult.Ok<IReadOnlyList<object>>(
             new object[]
             {
-                new CashWithdrawn
+                new FundsDeposited
                 {
                     Amount = command.Amount,
                 },

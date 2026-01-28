@@ -7,7 +7,6 @@ namespace Spring.Domain.Aggregates.BankAccount.Events;
 
 /// <summary>
 ///     Event raised when funds are withdrawn from a bank account.
-///     This is a general withdrawal event covering any type of outgoing funds.
 /// </summary>
 [EventStorageName("SPRING", "BANKING", "FUNDSWITHDRAWN")]
 [GenerateSerializer]

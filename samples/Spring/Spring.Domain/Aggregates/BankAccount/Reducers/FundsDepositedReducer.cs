@@ -8,21 +8,21 @@ using Spring.Domain.Aggregates.BankAccount.Events;
 namespace Spring.Domain.Aggregates.BankAccount.Reducers;
 
 /// <summary>
-///     Reducer for <see cref="CashWithdrawn" /> events.
+///     Reducer for <see cref="FundsDeposited" /> events.
 /// </summary>
-internal sealed class CashWithdrawnReducer : EventReducerBase<CashWithdrawn, BankAccountAggregate>
+internal sealed class FundsDepositedReducer : EventReducerBase<FundsDeposited, BankAccountAggregate>
 {
     /// <inheritdoc />
     protected override BankAccountAggregate ReduceCore(
         BankAccountAggregate state,
-        CashWithdrawn @event
+        FundsDeposited @event
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
         return (state ?? new()) with
         {
-            Balance = (state?.Balance ?? 0) - @event.Amount,
-            WithdrawalCount = (state?.WithdrawalCount ?? 0) + 1,
+            Balance = (state?.Balance ?? 0) + @event.Amount,
+            DepositCount = (state?.DepositCount ?? 0) + 1,
         };
     }
 }
