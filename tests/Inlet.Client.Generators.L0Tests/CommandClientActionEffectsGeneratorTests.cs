@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -15,9 +14,6 @@ namespace Mississippi.Inlet.Client.Generators.L0Tests;
 /// <summary>
 ///     Tests for <see cref="CommandClientActionEffectsGenerator" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Client Generators")]
-[AllureSubSuite("Command Client Action Effects Generator")]
 public class CommandClientActionEffectsGeneratorTests
 {
     /// <summary>
