@@ -1,0 +1,125 @@
+---
+applyTo: '**'
+---
+
+# Pull Request Description Authoring
+
+Governing thought: PR descriptions should communicate business value, explain the holistic design, and enable reviewers and future maintainers to understand both what changed and why.
+
+> Drift check: Open `.github/PULL_REQUEST_TEMPLATE.md` before writing descriptions; the template defines the expected structure.
+
+## Rules (RFC 2119)
+
+### PR Titles
+
+- PR titles **MUST** be human-readable descriptions of what the change accomplishes (not implementation details). Why: Titles appear in changelogs, release notes, and git history.
+- PR titles **MUST** be updated on each commit/push when the scope or nature of the change evolves. Why: Stale titles mislead reviewers and pollute history.
+- PR titles **MUST** end with a semver bump suffix for GitVersion (`+semver: <type>`). Why: Repository uses `commit-message-incrementing: Enabled` to derive versions from squash-merge commit messages.
+
+**Semver suffix patterns (choose one):**
+
+| Change Type | Suffix | When to Use |
+|-------------|--------|-------------|
+| Breaking change | `+semver: breaking` | Removes/renames public APIs, changes behavior in incompatible ways |
+| New feature | `+semver: feature` | Adds new capabilities without breaking existing behavior |
+| Bug fix | `+semver: fix` | Corrects defects without adding features |
+| No version bump | `+semver: skip` | Docs-only, CI config, refactors with no public API changes |
+
+**Title examples:**
+
+- `Add fire-and-forget event effects for async side effects +semver: feature`
+- `Fix null reference in aggregate grain activation +semver: fix`
+- `Remove deprecated ILegacyEventStore interface +semver: breaking`
+- `Update PR template and authoring instructions +semver: skip`
+
+### PR Descriptions
+
+- PR descriptions **MUST** be updated on each commit/push when a PR exists for the branch. Why: Keeps the description synchronized with the actual changes.
+- Authors **MUST** compare the branch against `main` to understand all changes before writing or updating the description. Why: Ensures the description reflects the complete diff.
+- Authors **MUST** include a Business Value section explaining why the change matters. Why: Reviewers and future maintainers need context beyond "what" to understand "why".
+- Authors **MUST** include a How It Works section with architectural overview. Why: Holistic understanding prevents incorrect usage and aids code review.
+- Authors **SHOULD** include Common Use Cases with concrete examples across different domains. Why: Helps users understand applicability to their problems.
+- Authors **SHOULD** include architecture diagrams (ASCII or Mermaid) for non-trivial changes. Why: Visual representations accelerate understanding.
+- Authors **MUST** list all new and modified files with brief descriptions. Why: Provides a roadmap for reviewers and documents the change scope.
+- Authors **MUST** document breaking changes with before/after code examples. Why: Enables users to migrate without guessing.
+- Authors **SHOULD** include code examples that demonstrate typical usage. Why: Copy-paste examples reduce adoption friction.
+- Descriptions **MUST NOT** contain stale information from previous iterations. Why: Outdated content misleads reviewers.
+
+## Scope and Audience
+
+All contributors creating or updating pull requests.
+
+## At-a-Glance Quick-Start
+
+- Title format: `<Human-readable summary> +semver: <feature|fix|breaking|skip>`
+- Before writing: `git diff main...HEAD --stat` to see all changes
+- Use the PR template in `.github/PULL_REQUEST_TEMPLATE.md`
+- Update title and description on every push if PR exists
+- Focus on business value first, implementation details second
+
+## Procedure
+
+### Initial PR Description
+
+1. Run `git diff main...HEAD --stat` to list all changed files
+2. Read through each changed file to understand what was done
+3. Identify the business problem being solved
+4. Write the Business Value section first
+5. Add Common Use Cases with real-world examples
+6. Document How It Works with architecture overview
+7. List all files changed with brief descriptions
+8. Add code examples for new APIs or patterns
+9. Document any breaking changes with migration guidance
+
+### Updating on Subsequent Commits
+
+1. After each commit/push, review changes since last description update
+2. Update file lists if files were added/removed/renamed
+3. Update code examples if APIs changed
+4. Verify Business Value still accurately reflects the PR scope
+5. Remove any stale information that no longer applies
+
+## Template Structure
+
+The PR template includes these sections (all should be completed for significant changes):
+
+1. **Business Value** - Why this matters (required)
+2. **Common Use Cases** - Real-world applications (recommended)
+3. **How It Works** - Architecture and design (required for non-trivial changes)
+4. **Observability** - Metrics/logging added (if applicable)
+5. **Files Changed** - Complete file manifest (required)
+6. **Quality Gates** - Checklist of requirements (required)
+7. **Migration Notes** - Breaking change guidance (if applicable)
+8. **Related Issues** - Links to issues/discussions (if applicable)
+
+## Good vs Bad Examples
+
+### Bad: Implementation-focused
+
+> "Added FireAndForgetEffectWorkerGrain.cs that implements IFireAndForgetEffectWorkerGrain interface"
+
+### Good: Value-focused
+
+> "Commands now return immediately without waiting for external API calls. Effects like sending notifications or updating analytics run asynchronously in background worker grains, reducing p99 latency by up to 500ms for commands with I/O-heavy side effects."
+
+### Bad: Missing context
+
+> "Changed HandleAsync signature to include brookKey parameter"
+
+### Good: Complete context
+
+> "**Breaking change**: The `HandleAsync` method on `EventEffectBase` now requires `brookKey` and `eventPosition` parameters. This enables effects to correlate with specific aggregate instances and event positions for debugging and idempotency. Existing effects must add these parameters (they can be ignored if not needed)."
+
+## Core Principles
+
+- Lead with business value, not implementation details
+- Write for the reviewer who has no context
+- Include enough detail that someone could implement similar functionality
+- Keep descriptions synchronized with actual code changes
+- Use tables and diagrams to convey complex relationships
+
+## References
+
+- PR template: `.github/PULL_REQUEST_TEMPLATE.md`
+- Review guidelines: `.github/instructions/pull-request-reviews.instructions.md`
+- Markdown conventions: `.github/instructions/markdown.instructions.md`

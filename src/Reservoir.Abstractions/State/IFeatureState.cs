@@ -13,16 +13,6 @@ namespace Mississippi.Reservoir.Abstractions.State;
 ///         The <see cref="FeatureKey" /> must be unique across all registered feature states.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed record SidebarState : IFeatureState
-///         {
-///             public static string FeatureKey => "sidebar";
-///             public bool IsOpen { get; init; }
-///             public string ActivePanel { get; init; } = string.Empty;
-///         }
-///     </code>
-/// </example>
 public interface IFeatureState
 {
     /// <summary>

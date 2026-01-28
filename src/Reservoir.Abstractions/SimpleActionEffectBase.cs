@@ -25,21 +25,6 @@ namespace Mississippi.Reservoir.Abstractions;
 ///         Effects should be stateless and registered as transient services.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-/// public sealed class LogDepositEffect : SimpleActionEffectBase&lt;DepositFundsAction, BankAccountState&gt;
-/// {
-///     public override Task HandleAsync(
-///         DepositFundsAction action,
-///         BankAccountState currentState,
-///         CancellationToken cancellationToken)
-///     {
-///         Console.WriteLine($"Deposit: {action.Amount} to {action.AccountId}");
-///         return Task.CompletedTask;
-///     }
-/// }
-///     </code>
-/// </example>
 public abstract class SimpleActionEffectBase<TAction, TState> : IActionEffect<TState>
     where TAction : IAction
     where TState : class, IFeatureState

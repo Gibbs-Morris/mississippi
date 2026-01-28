@@ -47,15 +47,6 @@ public interface IActionReducer<TState>
 ///         return the same new state. They must not have side effects.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed class IncrementReducer : Reducer&lt;IncrementAction, CounterState&gt;
-///         {
-///             public override CounterState Reduce(CounterState state, IncrementAction action)
-///                 => state with { Count = state.Count + 1 };
-///         }
-///     </code>
-/// </example>
 public interface IActionReducer<in TAction, TState> : IActionReducer<TState>
     where TAction : IAction
     where TState : class

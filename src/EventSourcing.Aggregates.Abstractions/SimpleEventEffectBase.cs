@@ -22,27 +22,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         instead of <see cref="IAsyncEnumerable{T}" />.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-/// public sealed class SendWelcomeEmailEffect : SimpleEventEffectBase&lt;AccountOpened, AccountAggregate&gt;
-/// {
-///     private readonly IEmailService _emailService;
-///
-///     public SendWelcomeEmailEffect(IEmailService emailService)
-///     {
-///         _emailService = emailService;
-///     }
-///
-///     protected override async Task HandleSimpleAsync(
-///         AccountOpened eventData,
-///         AccountAggregate currentState,
-///         CancellationToken cancellationToken)
-///     {
-///         await _emailService.SendWelcomeEmailAsync(eventData.AccountHolder, cancellationToken);
-///     }
-/// }
-///     </code>
-/// </example>
 public abstract class SimpleEventEffectBase<TEvent, TAggregate> : EventEffectBase<TEvent, TAggregate>
 {
     /// <inheritdoc />

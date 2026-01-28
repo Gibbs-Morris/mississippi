@@ -23,22 +23,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         They are discovered by the source generator in the <c>Effects</c> sub-namespace.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-/// public sealed class AccountOpenedEffect : EventEffectBase&lt;AccountOpened, AccountAggregate&gt;
-/// {
-///     public override async IAsyncEnumerable&lt;object&gt; HandleAsync(
-///         AccountOpened eventData,
-///         AccountAggregate currentState,
-///         [EnumeratorCancellation] CancellationToken cancellationToken)
-///     {
-///         // Fetch external data
-///         var enrichmentData = await _httpClient.GetAsync(...);
-///         yield return new AccountEnriched(enrichmentData);
-///     }
-/// }
-///     </code>
-/// </example>
 public abstract class EventEffectBase<TEvent, TAggregate> : IEventEffect<TAggregate>
 {
     /// <inheritdoc />
