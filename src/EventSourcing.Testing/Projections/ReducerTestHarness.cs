@@ -146,18 +146,12 @@ public sealed class ReducerTestHarness<TProjection>
         foreach (object evt in events)
         {
             ArgumentNullException.ThrowIfNull(evt);
-            bool handled = false;
-            foreach (IEventReducer<TProjection> reducer in reducers)
+            IEventReducer<TProjection>? matchingReducer = reducers.FirstOrDefault(r => CanHandle(r, evt));
+            if (matchingReducer is not null)
             {
-                if (CanHandle(reducer, evt))
-                {
-                    state = ApplyWithReducer(reducer, state, evt);
-                    handled = true;
-                    break;
-                }
+                state = ApplyWithReducer(matchingReducer, state, evt);
             }
-
-            if (!handled)
+            else
             {
                 throw new InvalidOperationException(
                     $"No reducer registered for event type {evt.GetType().Name}. " +
