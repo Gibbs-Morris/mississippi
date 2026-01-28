@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 
 namespace Mississippi.EventSourcing.Reducers.Abstractions.L0Tests;
@@ -9,9 +8,6 @@ namespace Mississippi.EventSourcing.Reducers.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for event reducer abstractions.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Reducers Abstractions")]
-[AllureSubSuite("Reducer Abstractions")]
 public sealed class ReducerAbstractionsTests
 {
     private sealed record MutableEvent(string Value);
