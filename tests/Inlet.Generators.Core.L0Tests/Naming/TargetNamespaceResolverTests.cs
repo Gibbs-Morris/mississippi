@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -13,9 +12,6 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Naming;
 /// <summary>
 ///     Tests for <see cref="TargetNamespaceResolver" /> namespace resolution utilities.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Generators Core")]
-[AllureSubSuite("Target Namespace Resolver")]
 public class TargetNamespaceResolverTests
 {
     private static CSharpCompilation CreateCompilation(
