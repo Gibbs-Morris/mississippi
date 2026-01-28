@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.SignalR;
 
@@ -14,9 +13,6 @@ namespace Mississippi.Aqueduct.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ConnectionRegistry" />.
 /// </summary>
-[AllureParentSuite("ASP.NET Core")]
-[AllureSuite("SignalR Orleans")]
-[AllureSubSuite("Connection Registry")]
 public sealed class ConnectionRegistryTests
 {
     /// <summary>
