@@ -30,6 +30,8 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///     public override async IAsyncEnumerable&lt;object&gt; HandleAsync(
 ///         AccountOpened eventData,
 ///         AccountAggregate currentState,
+///         string brookKey,
+///         long eventPosition,
 ///         [EnumeratorCancellation] CancellationToken cancellationToken)
 ///     {
 ///         // Fetch external data

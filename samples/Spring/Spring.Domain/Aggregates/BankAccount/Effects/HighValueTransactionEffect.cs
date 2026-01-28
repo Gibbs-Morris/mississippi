@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue;
@@ -78,8 +79,8 @@ internal sealed class HighValueTransactionEffect : SimpleEventEffectBase<FundsDe
             return;
         }
 
-        // The brookKey contains the account ID (aggregate grain key)
-        string accountId = brookKey;
+        // Extract the entity ID (account ID) from the brook key
+        string accountId = BrookKey.FromString(brookKey).EntityId;
         Logger.LogHighValueTransactionDetected(accountId, eventData.Amount, AmlThreshold);
         FlagTransaction command = new()
         {

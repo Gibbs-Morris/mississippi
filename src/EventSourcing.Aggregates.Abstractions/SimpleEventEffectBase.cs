@@ -36,6 +36,8 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///     protected override async Task HandleSimpleAsync(
 ///         AccountOpened eventData,
 ///         AccountAggregate currentState,
+///         string brookKey,
+///         long eventPosition,
 ///         CancellationToken cancellationToken)
 ///     {
 ///         await _emailService.SendWelcomeEmailAsync(eventData.AccountHolder, cancellationToken);
