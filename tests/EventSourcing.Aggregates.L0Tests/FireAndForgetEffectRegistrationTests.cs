@@ -1,8 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 using Moq;
@@ -15,9 +13,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="FireAndForgetEffectRegistration{TEffect, TEvent, TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("Fire-and-Forget Effects")]
 public sealed class FireAndForgetEffectRegistrationTests
 {
     /// <summary>
@@ -66,7 +61,6 @@ public sealed class FireAndForgetEffectRegistrationTests
     ///     Dispatch should invoke the worker grain for matching event types.
     /// </summary>
     [Fact]
-    [AllureFeature("Dispatch")]
     public void DispatchInvokesWorkerGrainForMatchingEventType()
     {
         Mock<IGrainFactory> grainFactoryMock = new();
@@ -108,7 +102,6 @@ public sealed class FireAndForgetEffectRegistrationTests
     ///     Dispatch should not invoke the worker grain when the event type does not match.
     /// </summary>
     [Fact]
-    [AllureFeature("Dispatch")]
     public void DispatchSkipsWorkerGrainForNonMatchingEventType()
     {
         Mock<IGrainFactory> grainFactoryMock = new();

@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -19,9 +17,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="FireAndForgetEffectWorkerGrain{TEvent, TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("Fire-and-Forget Effects")]
 public sealed class FireAndForgetEffectWorkerGrainTests
 {
     private static ServiceProvider BuildServiceProvider(
@@ -140,7 +135,6 @@ public sealed class FireAndForgetEffectWorkerGrainTests
     ///     Constructor should throw when grain context is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void ConstructorThrowsWhenGrainContextIsNull()
     {
         Mock<IServiceProvider> serviceProviderMock = new();
@@ -156,7 +150,6 @@ public sealed class FireAndForgetEffectWorkerGrainTests
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("Resilience")]
     public async Task ExecuteAsyncDoesNotThrowWhenEffectThrows()
     {
         using ServiceProvider provider = BuildServiceProvider(new ThrowingEffect());
@@ -178,7 +171,6 @@ public sealed class FireAndForgetEffectWorkerGrainTests
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task ExecuteAsyncInvokesEffectWhenEnvelopeIsValid()
     {
         TrackingEffect effect = new();
@@ -205,7 +197,6 @@ public sealed class FireAndForgetEffectWorkerGrainTests
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("Validation")]
     public async Task ExecuteAsyncSkipsEffectWhenEventDataIsMissing()
     {
         TrackingEffect effect = new();
