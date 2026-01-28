@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Bunit;
 
@@ -15,16 +14,13 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// <summary>
 ///     Tests for <see cref="CalloutLine" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Atoms")]
 public sealed class CalloutLineTests : BunitContext
 {
     /// <summary>
     ///     CalloutLine does not render label when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineDoesNotRenderLabelWhenEmpty()
+        public void CalloutLineDoesNotRenderLabelWhenEmpty()
     {
         // Act
         using IRenderedComponent<CalloutLine> cut = Render<CalloutLine>(p => p.Add(c => c.Label, string.Empty));
@@ -37,8 +33,7 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineHasAdditionalAttributesParameterWithCaptureUnmatchedValues()
+        public void CalloutLineHasAdditionalAttributesParameterWithCaptureUnmatchedValues()
     {
         // Arrange
         PropertyInfo? prop = typeof(CalloutLine).GetProperty("AdditionalAttributes");
@@ -54,8 +49,7 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine has Label parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineHasLabelParameter()
+        public void CalloutLineHasLabelParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(CalloutLine).GetProperty("Label");
@@ -71,8 +65,7 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineHasStateParameter()
+        public void CalloutLineHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(CalloutLine).GetProperty("State");
@@ -88,8 +81,7 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineInheritsFromComponentBase()
+        public void CalloutLineInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(CalloutLine)));
@@ -99,8 +91,7 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineRendersAdditionalAttributes()
+        public void CalloutLineRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<CalloutLine>
@@ -114,8 +105,7 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineRendersCustomState()
+        public void CalloutLineRendersCustomState()
     {
         // Act
         using IRenderedComponent<CalloutLine> cut = Render<CalloutLine>(p => p.Add(
@@ -131,8 +121,7 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine renders label when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineRendersLabelWhenProvided()
+        public void CalloutLineRendersLabelWhenProvided()
     {
         // Act
         using IRenderedComponent<CalloutLine> cut = Render<CalloutLine>(p => p.Add(c => c.Label, "Test Label"));
@@ -146,8 +135,7 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineRendersWithDefaultState()
+        public void CalloutLineRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<CalloutLine> cut = Render<CalloutLine>();
@@ -161,8 +149,7 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
-    public void CalloutLineStateDefaultsToIdle()
+        public void CalloutLineStateDefaultsToIdle()
     {
         // Arrange
         CalloutLine component = new();
