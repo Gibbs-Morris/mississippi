@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Refraction.Events;
 
@@ -11,16 +10,13 @@ namespace Mississippi.Refraction.L0Tests.Events;
 /// <summary>
 ///     Tests for <see cref="NavigationRequestedEvent" /> record.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Events")]
 public sealed class NavigationRequestedEventTests
 {
     /// <summary>
     ///     NavigationRequestedEvent can be created with parameters.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
-    public void NavigationRequestedEventCanBeCreatedWithParameters()
+        public void NavigationRequestedEventCanBeCreatedWithParameters()
     {
         // Arrange
         Dictionary<string, object> parameters = new()
@@ -41,8 +37,7 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent can be created with target only.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
-    public void NavigationRequestedEventCanBeCreatedWithTargetOnly()
+        public void NavigationRequestedEventCanBeCreatedWithTargetOnly()
     {
         // Arrange & Act
         NavigationRequestedEvent evt = new("/home");
@@ -56,8 +51,7 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent implements record equality.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
-    public void NavigationRequestedEventImplementsRecordEquality()
+        public void NavigationRequestedEventImplementsRecordEquality()
     {
         // Arrange
         NavigationRequestedEvent evt1 = new("/settings");
@@ -71,8 +65,7 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent is sealed record.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
-    public void NavigationRequestedEventIsSealedRecord()
+        public void NavigationRequestedEventIsSealedRecord()
     {
         // Arrange
         Type eventType = typeof(NavigationRequestedEvent);
@@ -86,8 +79,7 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent parameters defaults to null.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
-    public void NavigationRequestedEventParametersDefaultsToNull()
+        public void NavigationRequestedEventParametersDefaultsToNull()
     {
         // Arrange & Act
         NavigationRequestedEvent evt = new("/dashboard");
