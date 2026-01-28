@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Common.Abstractions.Mapping;
 
@@ -14,9 +13,6 @@ namespace Mississippi.Common.Abstractions.L0Tests.Mapping;
 /// <summary>
 ///     Contains unit tests for the <see cref="EnumerableMapper{TFrom,TTo}" /> class.
 /// </summary>
-[AllureParentSuite("Core Abstractions")]
-[AllureSuite("Mapping")]
-[AllureSubSuite("Enumerable Mapper")]
 public sealed class EnumerableMapperTests
 {
     /// <summary>
