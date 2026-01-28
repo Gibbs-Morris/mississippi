@@ -244,6 +244,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="initialEvents">The initial events to dispatch.</param>
     /// <param name="currentState">The current aggregate state after events were applied.</param>
     /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="startingPosition">The brook position of the first event in <paramref name="initialEvents" />.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <remarks>
     ///     <para>
@@ -257,11 +258,17 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ///         is logged with metrics recorded. This may indicate a design issue with effects
     ///         continuously producing events in a cycle.
     ///     </para>
+    ///     <para>
+    ///         Each event in <paramref name="initialEvents" /> gets its actual position in the brook
+    ///         (starting at <paramref name="startingPosition" /> and incrementing). Yielded events
+    ///         receive their newly assigned positions after being persisted.
+    ///     </para>
     /// </remarks>
     private async Task DispatchEffectsAsync(
         IReadOnlyList<object> initialEvents,
         TAggregate currentState,
         string aggregateKey,
+        long startingPosition,
         CancellationToken cancellationToken
     )
     {
@@ -271,23 +278,28 @@ internal sealed class GenericAggregateGrain<TAggregate>
         }
 
         int maxIterations = EffectOptions.MaxEffectIterations;
-        List<object> pendingEvents = new(initialEvents);
+
+        // Track events with their positions. Initial events start at startingPosition.
+        List<(object Event, long Position)> pendingEvents = [];
+        for (int i = 0; i < initialEvents.Count; i++)
+        {
+            pendingEvents.Add((initialEvents[i], startingPosition + i));
+        }
+
         int iteration = 0;
         while ((pendingEvents.Count > 0) && (iteration < maxIterations))
         {
             iteration++;
-            List<object> yieldedEvents = [];
-            foreach (object eventData in pendingEvents)
+            List<(object Event, long Position)> yieldedEvents = [];
+            foreach ((object eventData, long eventPosition) in pendingEvents)
             {
                 await foreach (object resultEvent in RootEventEffect.DispatchAsync(
                                    eventData,
                                    currentState,
                                    brookKey,
-                                   lastKnownPosition?.Value ?? 0,
+                                   eventPosition,
                                    cancellationToken))
                 {
-                    yieldedEvents.Add(resultEvent);
-
                     // Persist immediately for real-time projection updates
                     ImmutableArray<BrookEvent> brookEvents =
                         BrookEventConverter.ToStorageEvents(brookKey, [resultEvent]);
@@ -295,6 +307,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
                     await BrookGrainFactory.GetBrookWriterGrain(brookKey)
                         .AppendEventsAsync(brookEvents, expectedPos, cancellationToken);
                     lastKnownPosition = new BrookPosition(expectedPos.Value + 1);
+
+                    // Track yielded event with its position for subsequent effect dispatch
+                    yieldedEvents.Add((resultEvent, lastKnownPosition.Value.Value));
 
                     // Update state after each yielded event so subsequent effects see the correct state
                     SnapshotKey updatedSnapshotKey = new(snapshotStreamKey, lastKnownPosition.Value.Value);
@@ -391,6 +406,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
     private async Task DispatchSynchronousEffectsAsync(
         IReadOnlyList<object> events,
+        BrookPosition positionBeforePersist,
         string commandTypeName,
         string aggregateKey,
         CancellationToken cancellationToken
@@ -404,9 +420,12 @@ internal sealed class GenericAggregateGrain<TAggregate>
         SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition!.Value.Value);
         TAggregate? updatedState = await SnapshotGrainFactory.GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
             .GetStateAsync(cancellationToken);
+
+        // Events were persisted starting at positionBeforePersist + 1
+        long startingPosition = positionBeforePersist.Value + 1;
         try
         {
-            await DispatchEffectsAsync(events, updatedState!, aggregateKey, cancellationToken);
+            await DispatchEffectsAsync(events, updatedState!, aggregateKey, startingPosition, cancellationToken);
         }
         catch (Exception ex) when (!IsCriticalException(ex))
         {
@@ -517,7 +536,12 @@ internal sealed class GenericAggregateGrain<TAggregate>
         await BrookGrainFactory.GetBrookWriterGrain(brookKey)
             .AppendEventsAsync(brookEvents, expectedCursorPosition, cancellationToken);
         lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
-        await DispatchSynchronousEffectsAsync(events, commandTypeName, aggregateKey, cancellationToken);
+        await DispatchSynchronousEffectsAsync(
+            events,
+            currentPosition,
+            commandTypeName,
+            aggregateKey,
+            cancellationToken);
         await DispatchFireAndForgetEffectsIfRegisteredAsync(events, currentPosition, cancellationToken);
     }
 
