@@ -5,8 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
@@ -23,9 +21,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
 /// <summary>
 ///     Unit tests for <see cref="BrookSliceReaderGrain" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks")]
-[AllureSubSuite("Brook Slice Reader Grain Unit")]
 public sealed class BrookSliceReaderGrainUnitTests
 {
     private static readonly BrookRangeKey TestRangeKey = BrookRangeKey.FromBrookCompositeKey(new("test", "id"), 0, 10);

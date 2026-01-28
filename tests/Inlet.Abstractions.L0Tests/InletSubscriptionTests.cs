@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Silo.Abstractions;
 
 
@@ -8,16 +6,12 @@ namespace Mississippi.Inlet.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletSubscription" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Abstractions")]
-[AllureSuite("Core")]
-[AllureSubSuite("InletSubscription")]
 public sealed class InletSubscriptionTests
 {
     /// <summary>
     ///     Constructor should set all properties correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Construction")]
     public void ConstructorSetsAllProperties()
     {
         // Arrange & Act
@@ -33,7 +27,6 @@ public sealed class InletSubscriptionTests
     ///     Two subscriptions with different values should not be equal.
     /// </summary>
     [Fact]
-    [AllureFeature("Equality")]
     public void DifferentSubscriptionsAreNotEqual()
     {
         // Arrange
@@ -48,7 +41,6 @@ public sealed class InletSubscriptionTests
     ///     Two subscriptions with same values should be equal.
     /// </summary>
     [Fact]
-    [AllureFeature("Equality")]
     public void EqualSubscriptionsAreEqual()
     {
         // Arrange

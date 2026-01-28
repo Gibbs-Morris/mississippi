@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 
 
@@ -11,9 +9,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Locking;
 /// <summary>
 ///     Tests for distributed lock metrics.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Lock Metrics")]
 public sealed class LockMetricsTests
 {
     private sealed record MetricMeasurement(
@@ -28,7 +23,6 @@ public sealed class LockMetricsTests
     ///     Lock key sanitization should extract brook name from full key.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Sanitization")]
     public void LockKeySanitizationExtractsBrookName()
     {
         using MeterListener listener = new();
@@ -73,7 +67,6 @@ public sealed class LockMetricsTests
     ///     RecordAcquireFailure should emit acquire count with failure result.
     /// </summary>
     [Fact]
-    [AllureFeature("Acquire Metrics")]
     public void RecordAcquireFailureEmitsAcquireCount()
     {
         using MeterListener listener = new();
@@ -151,7 +144,6 @@ public sealed class LockMetricsTests
     ///     RecordAcquireFailure should emit acquire duration histogram.
     /// </summary>
     [Fact]
-    [AllureFeature("Acquire Metrics")]
     public void RecordAcquireFailureEmitsDuration()
     {
         using MeterListener listener = new();
@@ -196,7 +188,6 @@ public sealed class LockMetricsTests
     ///     RecordAcquireFailure should emit failure count.
     /// </summary>
     [Fact]
-    [AllureFeature("Acquire Metrics")]
     public void RecordAcquireFailureEmitsFailureCount()
     {
         using MeterListener listener = new();
@@ -241,7 +232,6 @@ public sealed class LockMetricsTests
     ///     RecordAcquireSuccess should emit acquire count with success result.
     /// </summary>
     [Fact]
-    [AllureFeature("Acquire Metrics")]
     public void RecordAcquireSuccessEmitsAcquireCount()
     {
         using MeterListener listener = new();
@@ -319,7 +309,6 @@ public sealed class LockMetricsTests
     ///     RecordAcquireSuccess should emit retry attempts histogram.
     /// </summary>
     [Fact]
-    [AllureFeature("Acquire Metrics")]
     public void RecordAcquireSuccessEmitsRetryAttempts()
     {
         using MeterListener listener = new();
@@ -364,7 +353,6 @@ public sealed class LockMetricsTests
     ///     RecordContentionWait should emit contention wait count.
     /// </summary>
     [Fact]
-    [AllureFeature("Contention Metrics")]
     public void RecordContentionWaitEmitsCount()
     {
         using MeterListener listener = new();
@@ -409,7 +397,6 @@ public sealed class LockMetricsTests
     ///     RecordHeldDuration should emit held duration histogram.
     /// </summary>
     [Fact]
-    [AllureFeature("Duration Metrics")]
     public void RecordHeldDurationEmitsDuration()
     {
         using MeterListener listener = new();

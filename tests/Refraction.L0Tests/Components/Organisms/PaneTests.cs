@@ -1,8 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -15,15 +13,12 @@ namespace Mississippi.Refraction.L0Tests.Components.Organisms;
 /// <summary>
 ///     Smoke tests for <see cref="Pane" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Organisms")]
 public sealed class PaneTests : BunitContext
 {
     /// <summary>
     ///     Pane Depth defaults to Mid.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneDepthDefaultsToMid()
     {
         // Arrange
@@ -37,7 +32,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane does not render footer when null.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneDoesNotRenderFooterWhenNull()
     {
         // Act
@@ -51,7 +45,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane does not render header when title is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneDoesNotRenderHeaderWhenTitleIsEmpty()
     {
         // Act
@@ -65,7 +58,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneHasAdditionalAttributesParameter()
     {
         // Arrange
@@ -82,7 +74,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane has ChildContent parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneHasChildContentParameter()
     {
         // Arrange
@@ -99,7 +90,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane has Depth parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneHasDepthParameter()
     {
         // Arrange
@@ -115,7 +105,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane has Footer parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneHasFooterParameter()
     {
         // Arrange
@@ -132,7 +121,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneHasStateParameter()
     {
         // Arrange
@@ -148,7 +136,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane has Title parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneHasTitleParameter()
     {
         // Arrange
@@ -164,7 +151,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane has Variant parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneHasVariantParameter()
     {
         // Arrange
@@ -180,7 +166,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneInheritsFromComponentBase()
     {
         // Assert
@@ -191,7 +176,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneRendersAdditionalAttributes()
     {
         // Act
@@ -205,7 +189,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders child content.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneRendersChildContent()
     {
         // Act
@@ -220,7 +203,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders custom depth.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneRendersCustomDepth()
     {
         // Act
@@ -235,7 +217,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders custom variant.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneRendersCustomVariant()
     {
         // Act
@@ -250,7 +231,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders default depth.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneRendersDefaultDepth()
     {
         // Act
@@ -265,7 +245,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders default variant.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneRendersDefaultVariant()
     {
         // Act
@@ -280,7 +259,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders footer when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneRendersFooterWhenProvided()
     {
         // Act
@@ -297,7 +275,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders title when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneRendersTitleWhenProvided()
     {
         // Act
@@ -312,7 +289,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneRendersWithDefaultState()
     {
         // Act
@@ -327,7 +303,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneStateDefaultsToIdle()
     {
         // Arrange
@@ -341,7 +316,6 @@ public sealed class PaneTests : BunitContext
     ///     Pane Variant defaults to Primary.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
     public void PaneVariantDefaultsToPrimary()
     {
         // Arrange

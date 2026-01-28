@@ -5,8 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -26,9 +24,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 ///     <see cref="ISnapshotContainerOperations" /> instead of the Cosmos SDK Container directly.
 ///     Following the Dependency Inversion Principle makes mocking straightforward.
 /// </remarks>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots Cosmos")]
-[AllureSubSuite("Cosmos Repository")]
 public sealed class SnapshotCosmosRepositoryTests
 {
     private static readonly SnapshotStreamKey StreamKey = new("TEST.BROOK", "type", "id", "hash");

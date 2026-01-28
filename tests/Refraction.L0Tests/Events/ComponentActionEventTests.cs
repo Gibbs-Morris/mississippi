@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Refraction.Events;
 
 
@@ -10,15 +8,12 @@ namespace Mississippi.Refraction.L0Tests.Events;
 /// <summary>
 ///     Tests for <see cref="ComponentActionEvent" /> record.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Events")]
 public sealed class ComponentActionEventTests
 {
     /// <summary>
     ///     ComponentActionEvent can be created with action id.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentActionEvent")]
     public void ComponentActionEventCanBeCreatedWithActionId()
     {
         // Arrange & Act
@@ -33,7 +28,6 @@ public sealed class ComponentActionEventTests
     ///     ComponentActionEvent can be created with payload.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentActionEvent")]
     public void ComponentActionEventCanBeCreatedWithPayload()
     {
         // Arrange
@@ -56,7 +50,6 @@ public sealed class ComponentActionEventTests
     ///     ComponentActionEvent implements record equality.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentActionEvent")]
     public void ComponentActionEventImplementsRecordEquality()
     {
         // Arrange
@@ -71,7 +64,6 @@ public sealed class ComponentActionEventTests
     ///     ComponentActionEvent is sealed record.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentActionEvent")]
     public void ComponentActionEventIsSealedRecord()
     {
         // Arrange
@@ -86,7 +78,6 @@ public sealed class ComponentActionEventTests
     ///     ComponentActionEvent payload defaults to null.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentActionEvent")]
     public void ComponentActionEventPayloadDefaultsToNull()
     {
         // Arrange & Act

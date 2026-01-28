@@ -1,16 +1,11 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookKey" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Brook Key")]
 public sealed class BrookKeyTests
 {
     /// <summary>

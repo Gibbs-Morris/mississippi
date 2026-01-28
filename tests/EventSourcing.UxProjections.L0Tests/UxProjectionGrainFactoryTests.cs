@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
@@ -17,9 +15,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionGrainFactory" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionGrainFactory")]
 public sealed class UxProjectionGrainFactoryTests
 {
     /// <summary>

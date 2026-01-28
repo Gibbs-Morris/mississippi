@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
@@ -13,9 +11,6 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ProjectionNotifier" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Core")]
-[AllureSubSuite("ProjectionNotifier")]
 public sealed class ProjectionNotifierTests : IDisposable
 {
     private readonly ProjectionCache cache = new();
@@ -56,7 +51,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     Constructor should throw when projectionCache is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ConstructorThrowsWhenProjectionCacheIsNull() =>
         Assert.Throws<ArgumentNullException>(() => new ProjectionNotifier(store, null!));
 
@@ -64,7 +58,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     Constructor should throw when store is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ConstructorThrowsWhenStoreIsNull() =>
         Assert.Throws<ArgumentNullException>(() => new ProjectionNotifier(null!, cache));
 
@@ -72,7 +65,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyConnectionChanged should dispatch action.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Dispatch")]
     public void NotifyConnectionChangedDispatchesAction()
     {
         // Arrange
@@ -96,7 +88,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyConnectionChanged should handle disconnect.
     /// </summary>
     [Fact]
-    [AllureFeature("Cache Updates")]
     public void NotifyConnectionChangedHandlesDisconnect()
     {
         // Arrange
@@ -114,7 +105,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyConnectionChanged should throw when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void NotifyConnectionChangedThrowsWhenEntityIdIsNull()
     {
         // Arrange
@@ -128,7 +118,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyConnectionChanged should update cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Cache Updates")]
     public void NotifyConnectionChangedUpdatesCache()
     {
         // Arrange
@@ -145,7 +134,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyError should dispatch action.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Dispatch")]
     public void NotifyErrorDispatchesAction()
     {
         // Arrange
@@ -169,7 +157,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyError should throw when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void NotifyErrorThrowsWhenEntityIdIsNull()
     {
         // Arrange
@@ -184,7 +171,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyError should throw when exception is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void NotifyErrorThrowsWhenExceptionIsNull()
     {
         // Arrange
@@ -198,7 +184,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyError should update cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Cache Updates")]
     public void NotifyErrorUpdatesCache()
     {
         // Arrange
@@ -218,7 +203,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyProjectionUpdated should dispatch action.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Dispatch")]
     public void NotifyProjectionUpdatedDispatchesAction()
     {
         // Arrange
@@ -243,7 +227,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyProjectionUpdated should handle null data.
     /// </summary>
     [Fact]
-    [AllureFeature("Cache Updates")]
     public void NotifyProjectionUpdatedHandlesNullData()
     {
         // Arrange
@@ -261,7 +244,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyProjectionUpdated should throw when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void NotifyProjectionUpdatedThrowsWhenEntityIdIsNull()
     {
         // Arrange
@@ -275,7 +257,6 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyProjectionUpdated should update cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Cache Updates")]
     public void NotifyProjectionUpdatedUpdatesCache()
     {
         // Arrange

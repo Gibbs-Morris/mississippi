@@ -1,16 +1,11 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.Inlet.Client.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="ProjectionRegistry" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Core")]
-[AllureSubSuite("ProjectionRegistry")]
 public sealed class ProjectionRegistryTests
 {
     /// <summary>
@@ -29,7 +24,6 @@ public sealed class ProjectionRegistryTests
     ///     GetPath should throw InvalidOperationException for unregistered type.
     /// </summary>
     [Fact]
-    [AllureFeature("Path Resolution")]
     public void GetPathThrowsForUnregisteredType()
     {
         // Arrange
@@ -43,7 +37,6 @@ public sealed class ProjectionRegistryTests
     ///     GetPath should throw ArgumentNullException for null type.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void GetPathWithNullTypeThrowsArgumentNullException()
     {
         // Arrange
@@ -57,7 +50,6 @@ public sealed class ProjectionRegistryTests
     ///     IsRegistered should return false for unregistered type.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void IsRegisteredReturnsFalseForUnregisteredType()
     {
         // Arrange
@@ -74,7 +66,6 @@ public sealed class ProjectionRegistryTests
     ///     IsRegistered should return true for registered type.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void IsRegisteredReturnsTrueForRegisteredType()
     {
         // Arrange
@@ -92,7 +83,6 @@ public sealed class ProjectionRegistryTests
     ///     IsRegistered should throw ArgumentNullException for null type.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void IsRegisteredWithNullTypeThrowsArgumentNullException()
     {
         // Arrange
@@ -106,7 +96,6 @@ public sealed class ProjectionRegistryTests
     ///     Register should allow multiple projection types.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void RegisterAllowsMultipleProjectionTypes()
     {
         // Arrange
@@ -125,7 +114,6 @@ public sealed class ProjectionRegistryTests
     ///     Register should overwrite existing path for same type.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void RegisterOverwritesExistingPath()
     {
         // Arrange
@@ -144,7 +132,6 @@ public sealed class ProjectionRegistryTests
     ///     Register should store path for projection type.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void RegisterStoresPathForProjectionType()
     {
         // Arrange
@@ -162,7 +149,6 @@ public sealed class ProjectionRegistryTests
     ///     Register should throw ArgumentNullException for null path.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void RegisterWithNullPathThrowsArgumentNullException()
     {
         // Arrange

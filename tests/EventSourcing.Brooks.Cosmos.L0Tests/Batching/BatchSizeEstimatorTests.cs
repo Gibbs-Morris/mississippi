@@ -5,8 +5,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cosmos.Batching;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
@@ -20,9 +18,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Batching;
 ///     Test class for BatchSizeEstimator functionality.
 ///     Contains unit tests to verify the behavior of batch size estimation algorithms.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Batch Size Estimator")]
 public sealed class BatchSizeEstimatorTests
 {
     private static BrookEvent Clone(

@@ -1,8 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -15,15 +13,12 @@ namespace Mississippi.Refraction.L0Tests.Components.Organisms;
 /// <summary>
 ///     Tests for <see cref="SchematicViewer" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Organisms")]
 public sealed class SchematicViewerTests : BunitContext
 {
     /// <summary>
     ///     SchematicViewer does not render caption when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerDoesNotRenderCaptionWhenEmpty()
     {
         // Act
@@ -38,7 +33,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerHasAdditionalAttributesParameter()
     {
         // Arrange
@@ -55,7 +49,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer has Caption parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerHasCaptionParameter()
     {
         // Arrange
@@ -72,7 +65,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer has ChildContent parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerHasChildContentParameter()
     {
         // Arrange
@@ -89,7 +81,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerHasStateParameter()
     {
         // Arrange
@@ -105,7 +96,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerInheritsFromComponentBase()
     {
         // Assert
@@ -116,7 +106,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerRendersAdditionalAttributes()
     {
         // Act
@@ -131,7 +120,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders caption when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerRendersCaptionWhenProvided()
     {
         // Act
@@ -148,7 +136,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders child content in viewport.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerRendersChildContentInViewport()
     {
         // Act
@@ -163,7 +150,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerRendersCustomState()
     {
         // Act
@@ -180,7 +166,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders viewport.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerRendersViewport()
     {
         // Act
@@ -194,7 +179,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerRendersWithDefaultState()
     {
         // Act
@@ -209,7 +193,6 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
     public void SchematicViewerStateDefaultsToIdle()
     {
         // Arrange

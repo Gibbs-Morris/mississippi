@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -18,9 +16,6 @@ namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotRegistrations" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots")]
-[AllureSubSuite("Registrations")]
 public sealed class SnapshotRegistrationsTests
 {
     /// <summary>
@@ -32,7 +27,6 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotCaching should register ISnapshotGrainFactory.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
     public void AddSnapshotCachingRegistersSnapshotGrainFactory()
     {
         // Arrange
@@ -54,7 +48,6 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotCaching should return the service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
     public void AddSnapshotCachingReturnsServiceCollection()
     {
         // Arrange
@@ -71,7 +64,6 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotCaching should throw when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void AddSnapshotCachingThrowsWhenServicesIsNull()
     {
         // Arrange
@@ -85,7 +77,6 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotStateConverter should register ISnapshotStateConverter.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
     public void AddSnapshotStateConverterRegistersConverter()
     {
         // Arrange
@@ -106,7 +97,6 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotStateConverter should return the service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
     public void AddSnapshotStateConverterReturnsServiceCollection()
     {
         // Arrange
@@ -123,7 +113,6 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotStateConverter should throw when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void AddSnapshotStateConverterThrowsWhenServicesIsNull()
     {
         // Arrange

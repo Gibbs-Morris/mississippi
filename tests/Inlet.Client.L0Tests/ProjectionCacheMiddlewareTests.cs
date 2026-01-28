@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
@@ -11,9 +9,6 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ProjectionCacheMiddleware" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Core")]
-[AllureSubSuite("ProjectionCacheMiddleware")]
 public sealed class ProjectionCacheMiddlewareTests
 {
     /// <summary>
@@ -30,7 +25,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Constructor should throw when projectionCache is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ConstructorThrowsWhenProjectionCacheIsNull() =>
         Assert.Throws<ArgumentNullException>(() => new ProjectionCacheMiddleware(null!));
 
@@ -38,7 +32,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should call next middleware for any action.
     /// </summary>
     [Fact]
-    [AllureFeature("Middleware Pipeline")]
     public void InvokeCallsNextMiddleware()
     {
         // Arrange
@@ -58,7 +51,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle ProjectionLoadedAction with null data.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokeHandlesLoadedActionWithNullData()
     {
         // Arrange
@@ -78,7 +70,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle ProjectionUpdatedAction with null data.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokeHandlesUpdatedActionWithNullData()
     {
         // Arrange
@@ -98,7 +89,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle ProjectionConnectionChangedAction without cache update.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokePassesThroughConnectionChangedAction()
     {
         // Arrange
@@ -119,7 +109,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle ProjectionErrorAction without cache update.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokePassesThroughErrorAction()
     {
         // Arrange
@@ -140,7 +129,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should pass through non-projection actions without modification.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokePassesThroughNonProjectionActions()
     {
         // Arrange
@@ -160,7 +148,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle RefreshProjectionAction without cache update.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokePassesThroughRefreshAction()
     {
         // Arrange
@@ -180,7 +167,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle SubscribeToProjectionAction without cache update.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokePassesThroughSubscribeAction()
     {
         // Arrange
@@ -200,7 +186,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle UnsubscribeFromProjectionAction without cache update.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokePassesThroughUnsubscribeAction()
     {
         // Arrange
@@ -220,7 +205,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should call SetLoaded on ProjectionLoadedAction.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokeSetsLoadedOnProjectionLoadedAction()
     {
         // Arrange
@@ -243,7 +227,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should call SetLoading on ProjectionLoadingAction.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokeSetsLoadingOnProjectionLoadingAction()
     {
         // Arrange
@@ -262,7 +245,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should call SetUpdated on ProjectionUpdatedAction.
     /// </summary>
     [Fact]
-    [AllureFeature("Action Handling")]
     public void InvokeSetsUpdatedOnProjectionUpdatedAction()
     {
         // Arrange
@@ -285,7 +267,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should throw when action is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void InvokeThrowsWhenActionIsNull()
     {
         // Arrange
@@ -300,7 +281,6 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should throw when nextAction is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void InvokeThrowsWhenNextActionIsNull()
     {
         // Arrange

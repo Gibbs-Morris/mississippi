@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -16,9 +14,6 @@ namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotGrainFactory" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots")]
-[AllureSubSuite("Snapshot Grain Factory")]
 public sealed class SnapshotGrainFactoryTests
 {
     private static SnapshotGrainFactory CreateFactory(
@@ -35,7 +30,6 @@ public sealed class SnapshotGrainFactoryTests
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
     [Fact]
-    [AllureFeature("Construction")]
     public void ConstructorSucceedsWithValidDependencies()
     {
         // Arrange
@@ -53,7 +47,6 @@ public sealed class SnapshotGrainFactoryTests
     ///     Constructor should throw ArgumentNullException when grainFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ConstructorThrowsArgumentNullExceptionWhenGrainFactoryIsNull()
     {
         // Arrange
@@ -69,7 +62,6 @@ public sealed class SnapshotGrainFactoryTests
     ///     Constructor should throw ArgumentNullException when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ConstructorThrowsArgumentNullExceptionWhenLoggerIsNull()
     {
         // Arrange
@@ -85,7 +77,6 @@ public sealed class SnapshotGrainFactoryTests
     ///     Verifies that GetSnapshotCacheGrain returns a grain from the underlying factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
     public void GetSnapshotCacheGrainReturnsGrainFromFactory()
     {
         // Arrange
@@ -112,7 +103,6 @@ public sealed class SnapshotGrainFactoryTests
     ///     Verifies that GetSnapshotPersisterGrain returns a grain from the underlying factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
     public void GetSnapshotPersisterGrainReturnsGrainFromFactory()
     {
         // Arrange

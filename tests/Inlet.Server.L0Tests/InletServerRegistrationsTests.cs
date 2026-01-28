@@ -1,8 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -13,16 +11,12 @@ namespace Mississippi.Inlet.Server.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletServerRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Server")]
-[AllureSuite("Extensions")]
-[AllureSubSuite("InletServerRegistrations")]
 public sealed class InletServerRegistrationsTests
 {
     /// <summary>
     ///     AddInletServer should accept null configuration action.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
@@ -43,7 +37,6 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should apply configuration options.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
@@ -67,7 +60,6 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should register HubLifetimeManager via TryAddSingleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
@@ -92,7 +84,6 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should register SignalR services.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
@@ -113,7 +104,6 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should return the same service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Method Behavior")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
@@ -135,7 +125,6 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
@@ -153,7 +142,6 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletSignalRGrainObserver should return the same service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Method Behavior")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
@@ -174,7 +162,6 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletSignalRGrainObserver should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",

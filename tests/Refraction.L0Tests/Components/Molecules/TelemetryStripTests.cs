@@ -1,7 +1,5 @@
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -14,15 +12,12 @@ namespace Mississippi.Refraction.L0Tests.Components.Molecules;
 /// <summary>
 ///     Tests for <see cref="TelemetryStrip" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Molecules")]
 public sealed class TelemetryStripTests : BunitContext
 {
     /// <summary>
     ///     TelemetryStrip has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("TelemetryStrip")]
     public void TelemetryStripHasAdditionalAttributesParameter()
     {
         // Arrange
@@ -39,7 +34,6 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip has ChildContent parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("TelemetryStrip")]
     public void TelemetryStripHasChildContentParameter()
     {
         // Arrange
@@ -56,7 +50,6 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("TelemetryStrip")]
     public void TelemetryStripHasStateParameter()
     {
         // Arrange
@@ -72,7 +65,6 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("TelemetryStrip")]
     public void TelemetryStripInheritsFromComponentBase()
     {
         // Assert
@@ -83,7 +75,6 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("TelemetryStrip")]
     public void TelemetryStripRendersAdditionalAttributes()
     {
         // Act
@@ -98,7 +89,6 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip renders child content.
     /// </summary>
     [Fact]
-    [AllureFeature("TelemetryStrip")]
     public void TelemetryStripRendersChildContent()
     {
         // Act
@@ -113,7 +103,6 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("TelemetryStrip")]
     public void TelemetryStripRendersCustomState()
     {
         // Act
@@ -130,7 +119,6 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("TelemetryStrip")]
     public void TelemetryStripRendersWithDefaultState()
     {
         // Act
@@ -145,7 +133,6 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip State defaults to Quiet.
     /// </summary>
     [Fact]
-    [AllureFeature("TelemetryStrip")]
     public void TelemetryStripStateDefaultsToQuiet()
     {
         // Arrange

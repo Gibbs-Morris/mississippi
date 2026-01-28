@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
 
@@ -8,9 +6,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotStorageModel" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots Cosmos")]
-[AllureSubSuite("Storage Model")]
 public sealed class SnapshotStorageModelTests
 {
     /// <summary>

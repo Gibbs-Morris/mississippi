@@ -3,8 +3,6 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -21,9 +19,6 @@ namespace Mississippi.Aqueduct.L0Tests;
 /// <summary>
 ///     Tests for <see cref="AqueductHubLifetimeManager{THub}" />.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Core")]
-[AllureSubSuite("AqueductHubLifetimeManager")]
 public sealed class AqueductHubLifetimeManagerTests
 {
     private static AqueductHubLifetimeManager<TestAqueductHub> CreateManager(
@@ -58,7 +53,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "AddToGroupAsync Calls Group Grain")]
-    [AllureFeature("Group Operations")]
     public async Task AddToGroupAsyncShouldCallGroupGrain()
     {
         // Arrange
@@ -79,7 +73,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "AddToGroupAsync Throws When ConnectionId Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task AddToGroupAsyncShouldThrowWhenConnectionIdIsEmpty()
     {
         // Arrange
@@ -94,7 +87,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "AddToGroupAsync Throws When GroupName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task AddToGroupAsyncShouldThrowWhenGroupNameIsEmpty()
     {
         // Arrange
@@ -108,7 +100,6 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
     [Fact(DisplayName = "Constructor Succeeds With Valid Dependencies")]
-    [AllureFeature("Construction")]
     public void ConstructorShouldSucceedWithValidDependencies()
     {
         // Arrange
@@ -139,7 +130,6 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when connectionRegistry is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ConnectionRegistry Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -170,7 +160,6 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when grainFactory is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When GrainFactory Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -201,7 +190,6 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when heartbeatManager is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When HeartbeatManager Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -232,7 +220,6 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Logger Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -262,7 +249,6 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when messageSender is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When MessageSender Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -293,7 +279,6 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when serverIdProvider is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ServerIdProvider Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -324,7 +309,6 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when streamSubscriptionManager is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When StreamSubscriptionManager Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -356,7 +340,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "OnConnectedAsync Throws When Connection Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task OnConnectedAsyncShouldThrowWhenConnectionIsNull()
     {
         // Arrange
@@ -371,7 +354,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "OnDisconnectedAsync Throws When Connection Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task OnDisconnectedAsyncShouldThrowWhenConnectionIsNull()
     {
         // Arrange
@@ -386,7 +368,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "RemoveFromGroupAsync Calls Group Grain")]
-    [AllureFeature("Group Operations")]
     public async Task RemoveFromGroupAsyncShouldCallGroupGrain()
     {
         // Arrange
@@ -407,7 +388,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "RemoveFromGroupAsync Throws When ConnectionId Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task RemoveFromGroupAsyncShouldThrowWhenConnectionIdIsEmpty()
     {
         // Arrange
@@ -422,7 +402,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "RemoveFromGroupAsync Throws When GroupName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task RemoveFromGroupAsyncShouldThrowWhenGroupNameIsEmpty()
     {
         // Arrange
@@ -437,7 +416,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionAsync Routes Via Client Grain If Not Local")]
-    [AllureFeature("Message Sending")]
     public async Task SendConnectionAsyncShouldRouteViaClientGrainIfNotLocal()
     {
         // Arrange
@@ -463,7 +441,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionAsync Sends To Local Connection If Found")]
-    [AllureFeature("Message Sending")]
     public async Task SendConnectionAsyncShouldSendToLocalConnectionIfFound()
     {
         // Arrange
@@ -488,7 +465,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionAsync Throws When ConnectionId Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task SendConnectionAsyncShouldThrowWhenConnectionIdIsEmpty()
     {
         // Arrange
@@ -503,7 +479,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionAsync Throws When MethodName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task SendConnectionAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
@@ -518,7 +493,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionsAsync Throws When ConnectionIds Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task SendConnectionsAsyncShouldThrowWhenConnectionIdsIsNull()
     {
         // Arrange
@@ -533,7 +507,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupAsync Calls Group Grain")]
-    [AllureFeature("Message Sending")]
     public async Task SendGroupAsyncShouldCallGroupGrain()
     {
         // Arrange
@@ -555,7 +528,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupAsync Throws When GroupName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task SendGroupAsyncShouldThrowWhenGroupNameIsEmpty()
     {
         // Arrange
@@ -570,7 +542,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupAsync Throws When MethodName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task SendGroupAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
@@ -585,7 +556,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupExceptAsync Throws When GroupName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task SendGroupExceptAsyncShouldThrowWhenGroupNameIsEmpty()
     {
         // Arrange
@@ -600,7 +570,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupExceptAsync Throws When MethodName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task SendGroupExceptAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
@@ -615,7 +584,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupsAsync Throws When GroupNames Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task SendGroupsAsyncShouldThrowWhenGroupNamesIsNull()
     {
         // Arrange
@@ -630,7 +598,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendUserAsync Throws When MethodName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task SendUserAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
@@ -645,7 +612,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendUserAsync Throws When UserId Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task SendUserAsyncShouldThrowWhenUserIdIsEmpty()
     {
         // Arrange
@@ -660,7 +626,6 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendUsersAsync Throws When UserIds Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task SendUsersAsyncShouldThrowWhenUserIdsIsNull()
     {
         // Arrange

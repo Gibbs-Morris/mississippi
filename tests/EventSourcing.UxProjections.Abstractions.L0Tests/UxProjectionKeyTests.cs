@@ -1,16 +1,11 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="UxProjectionKey" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections Abstractions")]
-[AllureSubSuite("UxProjectionKey")]
 public sealed class UxProjectionKeyTests
 {
     /// <summary>
