@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Refraction.Abstractions.Motion;
 
@@ -11,16 +10,13 @@ namespace Mississippi.Refraction.Abstractions.L0Tests.Motion;
 /// <summary>
 ///     Contract verification tests for <see cref="IMotionPreferences" />.
 /// </summary>
-[AllureSuite("Refraction.Abstractions")]
-[AllureSubSuite("Motion")]
 public sealed class IMotionPreferencesTests
 {
     /// <summary>
     ///     Verifies the interface defines motion preference properties.
     /// </summary>
     [Fact]
-    [AllureFeature("IMotionPreferences")]
-    public void IMotionPreferencesDefinesMotionPreferenceProperties()
+        public void IMotionPreferencesDefinesMotionPreferenceProperties()
     {
         // Arrange
         Type interfaceType = typeof(IMotionPreferences);
@@ -36,8 +32,7 @@ public sealed class IMotionPreferencesTests
     ///     Verifies DurationMultiplier is double type.
     /// </summary>
     [Fact]
-    [AllureFeature("IMotionPreferences")]
-    public void IMotionPreferencesDurationMultiplierIsDouble()
+        public void IMotionPreferencesDurationMultiplierIsDouble()
     {
         // Arrange
         Type interfaceType = typeof(IMotionPreferences);
