@@ -1,6 +1,5 @@
 using System.Globalization;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,9 +12,6 @@ namespace Mississippi.Common.Abstractions.L0Tests.Mapping;
 ///     Contains unit tests that verify the <see cref="MappingRegistrations" /> extension methods register expected
 ///     mappers.
 /// </summary>
-[AllureParentSuite("Core Abstractions")]
-[AllureSuite("Mapping")]
-[AllureSubSuite("Mapping Registrations")]
 public sealed class MappingRegistrationsTests
 {
     /// <summary>
