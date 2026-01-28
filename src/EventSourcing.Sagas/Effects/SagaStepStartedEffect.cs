@@ -100,9 +100,14 @@ internal sealed class SagaStepStartedEffect<TSaga> : EventEffectBase<SagaStepSta
     public override async IAsyncEnumerable<object> HandleAsync(
         SagaStepStartedEvent eventData,
         TSaga currentState,
+        string brookKey,
+        long eventPosition,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
+        _ = brookKey; // Saga effects don't use brook key directly
+        _ = eventPosition; // Saga effects don't use event position directly
+
         // Extract saga identity from state if available
         (Guid sagaId, string correlationId, DateTimeOffset startedAt, string? stepHash) =
             ExtractSagaIdentity(currentState);

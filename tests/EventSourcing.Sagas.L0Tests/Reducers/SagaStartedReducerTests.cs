@@ -43,29 +43,6 @@ public sealed class SagaStartedReducerTests
     }
 
     /// <summary>
-    ///     Verifies Reduce uses empty GUID when saga ID is not a valid GUID.
-    /// </summary>
-    [Fact]
-    public void ReduceShouldUseEmptyGuidForInvalidSagaId()
-    {
-        // Arrange
-        SagaStartedReducer<TestSagaState> sut = new();
-        TestSagaState state = new();
-        SagaStartedEvent eventData = new(
-            "not-a-guid",
-            "TestSaga",
-            "hash",
-            null,
-            DateTimeOffset.UtcNow);
-
-        // Act
-        TestSagaState result = sut.Reduce(state, eventData);
-
-        // Assert
-        Assert.Equal(Guid.Empty, result.SagaId);
-    }
-
-    /// <summary>
     ///     Verifies Reduce throws when event is null.
     /// </summary>
     [Fact]
@@ -87,14 +64,27 @@ public sealed class SagaStartedReducerTests
     {
         // Arrange
         SagaStartedReducer<TestSagaState> sut = new();
-        SagaStartedEvent eventData = new(
-            Guid.NewGuid().ToString(),
-            "TestSaga",
-            "hash",
-            null,
-            DateTimeOffset.UtcNow);
+        SagaStartedEvent eventData = new(Guid.NewGuid().ToString(), "TestSaga", "hash", null, DateTimeOffset.UtcNow);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.Reduce(null!, eventData));
+    }
+
+    /// <summary>
+    ///     Verifies Reduce uses empty GUID when saga ID is not a valid GUID.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldUseEmptyGuidForInvalidSagaId()
+    {
+        // Arrange
+        SagaStartedReducer<TestSagaState> sut = new();
+        TestSagaState state = new();
+        SagaStartedEvent eventData = new("not-a-guid", "TestSaga", "hash", null, DateTimeOffset.UtcNow);
+
+        // Act
+        TestSagaState result = sut.Reduce(state, eventData);
+
+        // Assert
+        Assert.Equal(Guid.Empty, result.SagaId);
     }
 }

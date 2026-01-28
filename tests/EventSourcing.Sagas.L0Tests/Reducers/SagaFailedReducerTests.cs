@@ -14,24 +14,6 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests.Reducers;
 public sealed class SagaFailedReducerTests
 {
     /// <summary>
-    ///     Verifies Reduce transitions phase to Failed.
-    /// </summary>
-    [Fact]
-    public void ReduceShouldTransitionPhaseToFailed()
-    {
-        // Arrange
-        SagaFailedReducer<TestSagaState> sut = new();
-        TestSagaState state = new() { Phase = SagaPhase.Running };
-        SagaFailedEvent eventData = new("Payment declined", DateTimeOffset.UtcNow);
-
-        // Act
-        TestSagaState result = sut.Reduce(state, eventData);
-
-        // Assert
-        Assert.Equal(SagaPhase.Failed, result.Phase);
-    }
-
-    /// <summary>
     ///     Verifies Reduce throws when event is null.
     /// </summary>
     [Fact]
@@ -57,5 +39,26 @@ public sealed class SagaFailedReducerTests
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.Reduce(null!, eventData));
+    }
+
+    /// <summary>
+    ///     Verifies Reduce transitions phase to Failed.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldTransitionPhaseToFailed()
+    {
+        // Arrange
+        SagaFailedReducer<TestSagaState> sut = new();
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Running,
+        };
+        SagaFailedEvent eventData = new("Payment declined", DateTimeOffset.UtcNow);
+
+        // Act
+        TestSagaState result = sut.Reduce(state, eventData);
+
+        // Assert
+        Assert.Equal(SagaPhase.Failed, result.Phase);
     }
 }

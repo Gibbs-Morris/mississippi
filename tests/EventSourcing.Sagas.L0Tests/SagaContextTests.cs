@@ -1,7 +1,5 @@
 using System;
 
-using Mississippi.EventSourcing.Sagas;
-
 
 namespace Mississippi.EventSourcing.Sagas.L0Tests;
 
@@ -10,6 +8,25 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests;
 /// </summary>
 public sealed class SagaContextTests
 {
+    /// <summary>
+    ///     Verifies Attempt defaults to 1 when not specified.
+    /// </summary>
+    [Fact]
+    public void SagaContextShouldDefaultAttemptToOne()
+    {
+        // Act
+        SagaContext context = new()
+        {
+            SagaId = Guid.NewGuid(),
+            CorrelationId = "c1",
+            SagaName = "S1",
+            StartedAt = DateTimeOffset.UtcNow,
+        };
+
+        // Assert
+        Assert.Equal(1, context.Attempt);
+    }
+
     /// <summary>
     ///     Verifies all SagaContext properties are accessible when set.
     /// </summary>
@@ -38,24 +55,5 @@ public sealed class SagaContextTests
         Assert.Equal(sagaName, context.SagaName);
         Assert.Equal(startedAt, context.StartedAt);
         Assert.Equal(3, context.Attempt);
-    }
-
-    /// <summary>
-    ///     Verifies Attempt defaults to 1 when not specified.
-    /// </summary>
-    [Fact]
-    public void SagaContextShouldDefaultAttemptToOne()
-    {
-        // Act
-        SagaContext context = new()
-        {
-            SagaId = Guid.NewGuid(),
-            CorrelationId = "c1",
-            SagaName = "S1",
-            StartedAt = DateTimeOffset.UtcNow,
-        };
-
-        // Assert
-        Assert.Equal(1, context.Attempt);
     }
 }

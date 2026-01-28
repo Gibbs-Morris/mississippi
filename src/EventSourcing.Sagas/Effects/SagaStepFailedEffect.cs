@@ -71,9 +71,14 @@ internal sealed class SagaStepFailedEffect<TSaga> : EventEffectBase<SagaStepFail
     public override async IAsyncEnumerable<object> HandleAsync(
         SagaStepFailedEvent eventData,
         TSaga currentState,
+        string brookKey,
+        long eventPosition,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
+        _ = brookKey; // Saga effects don't use brook key directly
+        _ = eventPosition; // Saga effects don't use event position directly
+
         // Extract saga identity from state if available
         Guid sagaId = currentState is ISagaState sagaState ? sagaState.SagaId : Guid.Empty;
 

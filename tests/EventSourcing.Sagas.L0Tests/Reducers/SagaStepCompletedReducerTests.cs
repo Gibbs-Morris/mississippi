@@ -13,25 +13,6 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests.Reducers;
 public sealed class SagaStepCompletedReducerTests
 {
     /// <summary>
-    ///     Verifies Reduce updates step progress correctly.
-    /// </summary>
-    [Fact]
-    public void ReduceShouldUpdateStepProgress()
-    {
-        // Arrange
-        SagaStepCompletedReducer<TestSagaState> sut = new();
-        TestSagaState state = new();
-        SagaStepCompletedEvent eventData = new("SendNotification", 2, DateTimeOffset.UtcNow);
-
-        // Act
-        TestSagaState result = sut.Reduce(state, eventData);
-
-        // Assert
-        Assert.Equal(2, result.LastCompletedStepIndex);
-        Assert.Equal(1, result.CurrentStepAttempt);
-    }
-
-    /// <summary>
     ///     Verifies Reduce throws when event is null.
     /// </summary>
     [Fact]
@@ -57,5 +38,24 @@ public sealed class SagaStepCompletedReducerTests
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.Reduce(null!, eventData));
+    }
+
+    /// <summary>
+    ///     Verifies Reduce updates step progress correctly.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldUpdateStepProgress()
+    {
+        // Arrange
+        SagaStepCompletedReducer<TestSagaState> sut = new();
+        TestSagaState state = new();
+        SagaStepCompletedEvent eventData = new("SendNotification", 2, DateTimeOffset.UtcNow);
+
+        // Act
+        TestSagaState result = sut.Reduce(state, eventData);
+
+        // Assert
+        Assert.Equal(2, result.LastCompletedStepIndex);
+        Assert.Equal(1, result.CurrentStepAttempt);
     }
 }

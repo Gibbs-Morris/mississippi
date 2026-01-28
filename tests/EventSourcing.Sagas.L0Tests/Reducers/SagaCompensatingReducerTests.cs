@@ -14,24 +14,6 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests.Reducers;
 public sealed class SagaCompensatingReducerTests
 {
     /// <summary>
-    ///     Verifies Reduce transitions phase to Compensating.
-    /// </summary>
-    [Fact]
-    public void ReduceShouldTransitionPhaseToCompensating()
-    {
-        // Arrange
-        SagaCompensatingReducer<TestSagaState> sut = new();
-        TestSagaState state = new() { Phase = SagaPhase.Running };
-        SagaCompensatingEvent eventData = new("ProcessPayment", DateTimeOffset.UtcNow);
-
-        // Act
-        TestSagaState result = sut.Reduce(state, eventData);
-
-        // Assert
-        Assert.Equal(SagaPhase.Compensating, result.Phase);
-    }
-
-    /// <summary>
     ///     Verifies Reduce throws when event is null.
     /// </summary>
     [Fact]
@@ -57,5 +39,26 @@ public sealed class SagaCompensatingReducerTests
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.Reduce(null!, eventData));
+    }
+
+    /// <summary>
+    ///     Verifies Reduce transitions phase to Compensating.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldTransitionPhaseToCompensating()
+    {
+        // Arrange
+        SagaCompensatingReducer<TestSagaState> sut = new();
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Running,
+        };
+        SagaCompensatingEvent eventData = new("ProcessPayment", DateTimeOffset.UtcNow);
+
+        // Act
+        TestSagaState result = sut.Reduce(state, eventData);
+
+        // Assert
+        Assert.Equal(SagaPhase.Compensating, result.Phase);
     }
 }

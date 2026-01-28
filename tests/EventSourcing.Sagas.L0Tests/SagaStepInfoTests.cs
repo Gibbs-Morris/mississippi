@@ -1,7 +1,5 @@
 using System;
 
-using Mississippi.EventSourcing.Sagas;
-
 
 namespace Mississippi.EventSourcing.Sagas.L0Tests;
 
@@ -10,26 +8,6 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests;
 /// </summary>
 public sealed class SagaStepInfoTests
 {
-    /// <summary>
-    ///     Verifies required properties are accessible when set.
-    /// </summary>
-    [Fact]
-    public void SagaStepInfoShouldExposeRequiredProperties()
-    {
-        // Act
-        SagaStepInfo info = new()
-        {
-            Name = "ProcessPayment",
-            Order = 2,
-            StepType = typeof(SagaStepInfoTests),
-        };
-
-        // Assert
-        Assert.Equal("ProcessPayment", info.Name);
-        Assert.Equal(2, info.Order);
-        Assert.Equal(typeof(SagaStepInfoTests), info.StepType);
-    }
-
     /// <summary>
     ///     Verifies optional properties are accessible when set.
     /// </summary>
@@ -52,22 +30,23 @@ public sealed class SagaStepInfoTests
     }
 
     /// <summary>
-    ///     Verifies Timeout returns null when not set.
+    ///     Verifies required properties are accessible when set.
     /// </summary>
     [Fact]
-    public void SagaStepInfoShouldReturnNullForUnsetTimeout()
+    public void SagaStepInfoShouldExposeRequiredProperties()
     {
         // Act
         SagaStepInfo info = new()
         {
-            Name = "Step1",
-            Order = 1,
-            StepType = typeof(object),
-            Timeout = null,
+            Name = "ProcessPayment",
+            Order = 2,
+            StepType = typeof(SagaStepInfoTests),
         };
 
         // Assert
-        Assert.Null(info.Timeout);
+        Assert.Equal("ProcessPayment", info.Name);
+        Assert.Equal(2, info.Order);
+        Assert.Equal(typeof(SagaStepInfoTests), info.StepType);
     }
 
     /// <summary>
@@ -87,5 +66,24 @@ public sealed class SagaStepInfoTests
 
         // Assert
         Assert.Null(info.CompensationType);
+    }
+
+    /// <summary>
+    ///     Verifies Timeout returns null when not set.
+    /// </summary>
+    [Fact]
+    public void SagaStepInfoShouldReturnNullForUnsetTimeout()
+    {
+        // Act
+        SagaStepInfo info = new()
+        {
+            Name = "Step1",
+            Order = 1,
+            StepType = typeof(object),
+            Timeout = null,
+        };
+
+        // Assert
+        Assert.Null(info.Timeout);
     }
 }

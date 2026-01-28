@@ -6,15 +6,11 @@ using Mississippi.EventSourcing.Sagas.Abstractions;
 namespace Mississippi.EventSourcing.Sagas.L0Tests.Helpers;
 
 /// <summary>
-///     Test implementation of <see cref="ISagaState" /> for unit testing reducers.
+///     Saga with RetryThenCompensate strategy and MaxRetries = 3 for testing.
 /// </summary>
-internal sealed record TestSagaState
-    : ISagaState,
-      ISagaDefinition
+[SagaOptions(CompensationStrategy = CompensationStrategy.RetryThenCompensate, MaxRetries = 3)]
+internal sealed record RetryStrategySaga : ISagaState
 {
-    /// <inheritdoc />
-    public static string SagaName => "TestSaga";
-
     /// <inheritdoc />
     public string? CorrelationId { get; init; }
 
@@ -22,10 +18,10 @@ internal sealed record TestSagaState
     public int CurrentStepAttempt { get; init; } = 1;
 
     /// <inheritdoc />
-    public int LastCompletedStepIndex { get; init; } = -1;
+    public int LastCompletedStepIndex { get; init; }
 
     /// <inheritdoc />
-    public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
+    public SagaPhase Phase { get; init; } = SagaPhase.Running;
 
     /// <inheritdoc />
     public Guid SagaId { get; init; }

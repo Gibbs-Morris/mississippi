@@ -13,32 +13,6 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests.Reducers;
 public sealed class SagaStepRetryReducerTests
 {
     /// <summary>
-    ///     Verifies Reduce updates attempt number correctly.
-    /// </summary>
-    [Fact]
-    public void ReduceShouldUpdateAttemptNumber()
-    {
-        // Arrange
-        SagaStepRetryReducer<TestSagaState> sut = new();
-        TestSagaState state = new() { LastCompletedStepIndex = 1, CurrentStepAttempt = 1 };
-        SagaStepRetryEvent eventData = new(
-            "ProcessPayment",
-            2,
-            AttemptNumber: 3,
-            MaxAttempts: 5,
-            "TIMEOUT",
-            "Connection timed out",
-            DateTimeOffset.UtcNow);
-
-        // Act
-        TestSagaState result = sut.Reduce(state, eventData);
-
-        // Assert
-        Assert.Equal(3, result.CurrentStepAttempt);
-        Assert.Equal(1, result.LastCompletedStepIndex);
-    }
-
-    /// <summary>
     ///     Verifies Reduce throws when event is null.
     /// </summary>
     [Fact]
@@ -60,16 +34,39 @@ public sealed class SagaStepRetryReducerTests
     {
         // Arrange
         SagaStepRetryReducer<TestSagaState> sut = new();
-        SagaStepRetryEvent eventData = new(
-            "Step1",
-            1,
-            AttemptNumber: 2,
-            MaxAttempts: 3,
-            "ERROR",
-            "Test error",
-            DateTimeOffset.UtcNow);
+        SagaStepRetryEvent eventData = new("Step1", 1, 2, 3, "ERROR", "Test error", DateTimeOffset.UtcNow);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.Reduce(null!, eventData));
+    }
+
+    /// <summary>
+    ///     Verifies Reduce updates attempt number correctly.
+    /// </summary>
+    [Fact]
+    public void ReduceShouldUpdateAttemptNumber()
+    {
+        // Arrange
+        SagaStepRetryReducer<TestSagaState> sut = new();
+        TestSagaState state = new()
+        {
+            LastCompletedStepIndex = 1,
+            CurrentStepAttempt = 1,
+        };
+        SagaStepRetryEvent eventData = new(
+            "ProcessPayment",
+            2,
+            3,
+            5,
+            "TIMEOUT",
+            "Connection timed out",
+            DateTimeOffset.UtcNow);
+
+        // Act
+        TestSagaState result = sut.Reduce(state, eventData);
+
+        // Assert
+        Assert.Equal(3, result.CurrentStepAttempt);
+        Assert.Equal(1, result.LastCompletedStepIndex);
     }
 }
