@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Azure;
 
@@ -23,9 +22,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Brooks;
 /// <summary>
 ///     Tests for <see cref="BrookRecoveryService" /> behavior under cursor/lock scenarios.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Brook Recovery Service")]
 public sealed class BrookRecoveryServiceTests
 {
     private sealed class TestRetryPolicy : IRetryPolicy
