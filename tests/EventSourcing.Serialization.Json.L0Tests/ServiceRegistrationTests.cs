@@ -1,4 +1,3 @@
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,17 +9,13 @@ namespace Mississippi.EventSourcing.Serialization.Json.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ServiceRegistration" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Serialization")]
-[AllureSubSuite("Service Registration")]
 public sealed class ServiceRegistrationTests
 {
     /// <summary>
     ///     AddJsonSerialization should register ISerializationProvider.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
-    public void AddJsonSerializationRegistersSerializationProvider()
+        public void AddJsonSerializationRegistersSerializationProvider()
     {
         // Arrange
         ServiceCollection services = new();
@@ -39,8 +34,7 @@ public sealed class ServiceRegistrationTests
     ///     AddJsonSerialization should return the service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
-    public void AddJsonSerializationReturnsServiceCollection()
+        public void AddJsonSerializationReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
