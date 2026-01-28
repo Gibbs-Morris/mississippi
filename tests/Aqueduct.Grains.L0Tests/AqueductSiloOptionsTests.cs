@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Common.Abstractions;
 
@@ -18,17 +17,13 @@ namespace Mississippi.Aqueduct.Grains.L0Tests;
 ///     Note: Tests for <see cref="AqueductSiloOptions.UseMemoryStreams()" /> require
 ///     real Orleans silo infrastructure and are covered in L2 integration tests.
 /// </remarks>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Options")]
-[AllureSubSuite("AqueductSiloOptions")]
 public sealed class AqueductSiloOptionsTests
 {
     /// <summary>
     ///     Constructor should throw when siloBuilder is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void ConstructorThrowsWhenSiloBuilderIsNull()
+        public void ConstructorThrowsWhenSiloBuilderIsNull()
     {
         Assert.Throws<ArgumentNullException>(() => new AqueductSiloOptions(null!));
     }
@@ -37,8 +32,7 @@ public sealed class AqueductSiloOptionsTests
     ///     Default property values should be set correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
-    public void DefaultPropertyValuesAreSetCorrectly()
+        public void DefaultPropertyValuesAreSetCorrectly()
     {
         // Arrange
         ISiloBuilder siloBuilder = Substitute.For<ISiloBuilder>();
@@ -58,8 +52,7 @@ public sealed class AqueductSiloOptionsTests
     ///     Properties should be settable.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
-    public void PropertiesAreSettable()
+        public void PropertiesAreSettable()
     {
         // Arrange
         ISiloBuilder siloBuilder = Substitute.For<ISiloBuilder>();
@@ -87,8 +80,7 @@ public sealed class AqueductSiloOptionsTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [AllureFeature("Argument Validation")]
-    public void UseMemoryStreamsWithCustomNamesThrowsWhenPubSubStoreNameInvalid(
+        public void UseMemoryStreamsWithCustomNamesThrowsWhenPubSubStoreNameInvalid(
         string? invalidStoreName
     )
     {
@@ -107,8 +99,7 @@ public sealed class AqueductSiloOptionsTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [AllureFeature("Argument Validation")]
-    public void UseMemoryStreamsWithCustomNamesThrowsWhenStreamProviderNameInvalid(
+        public void UseMemoryStreamsWithCustomNamesThrowsWhenStreamProviderNameInvalid(
         string? invalidProviderName
     )
     {
