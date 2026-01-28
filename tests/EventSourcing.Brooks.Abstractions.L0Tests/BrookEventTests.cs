@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Immutable;
 
-using Allure.Xunit.Attributes;
 
 
 namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
@@ -9,9 +8,6 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for the <see cref="BrookEvent" /> record.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Brook Event")]
 public sealed class BrookEventTests
 {
     /// <summary>
