@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,17 +11,13 @@ namespace Mississippi.Inlet.Blazor.Server.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletInProcessRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Blazor.Server")]
-[AllureSuite("Extensions")]
-[AllureSubSuite("InletInProcessRegistrations")]
 public sealed class InletInProcessRegistrationsTests
 {
     /// <summary>
     ///     AddInletInProcess can be called multiple times without error.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletInProcessCanBeCalledMultipleTimes()
+        public void AddInletInProcessCanBeCalledMultipleTimes()
     {
         // Arrange
         ServiceCollection services = [];
@@ -42,8 +37,7 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should register InProcessProjectionNotifier as singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletInProcessRegistersAsSingleton()
+        public void AddInletInProcessRegistersAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
@@ -63,8 +57,7 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should register IServerProjectionNotifier.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletInProcessRegistersIServerProjectionNotifier()
+        public void AddInletInProcessRegistersIServerProjectionNotifier()
     {
         // Arrange
         ServiceCollection services = [];
@@ -83,8 +76,7 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should return the same services collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletInProcessReturnsSameCollection()
+        public void AddInletInProcessReturnsSameCollection()
     {
         // Arrange
         ServiceCollection services = [];
@@ -100,8 +92,7 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should throw when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void AddInletInProcessThrowsWhenServicesNull()
+        public void AddInletInProcessThrowsWhenServicesNull()
     {
         // Arrange
         IServiceCollection services = null!;
