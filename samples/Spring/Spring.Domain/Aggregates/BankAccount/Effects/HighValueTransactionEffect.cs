@@ -51,18 +51,23 @@ internal sealed class HighValueTransactionEffect : SimpleEventEffectBase<FundsDe
     /// </summary>
     /// <param name="aggregateGrainFactory">Factory for resolving aggregate grains.</param>
     /// <param name="logger">The logger instance.</param>
+    /// <param name="timeProvider">The time provider for generating timestamps. Uses system time if null.</param>
     public HighValueTransactionEffect(
         IAggregateGrainFactory aggregateGrainFactory,
-        ILogger<HighValueTransactionEffect> logger
+        ILogger<HighValueTransactionEffect> logger,
+        TimeProvider? timeProvider = null
     )
     {
         AggregateGrainFactory = aggregateGrainFactory;
         Logger = logger;
+        TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
     private IAggregateGrainFactory AggregateGrainFactory { get; }
 
     private ILogger<HighValueTransactionEffect> Logger { get; }
+
+    private TimeProvider TimeProvider { get; }
 
     /// <inheritdoc />
     protected override async Task HandleSimpleAsync(
@@ -86,7 +91,7 @@ internal sealed class HighValueTransactionEffect : SimpleEventEffectBase<FundsDe
         {
             AccountId = accountId,
             Amount = eventData.Amount,
-            Timestamp = DateTimeOffset.UtcNow,
+            Timestamp = TimeProvider.GetUtcNow(),
         };
         IGenericAggregateGrain<TransactionInvestigationQueueAggregate> grain =
             AggregateGrainFactory.GetGenericAggregate<TransactionInvestigationQueueAggregate>(
