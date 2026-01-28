@@ -120,17 +120,10 @@ public sealed class AggregateScenario<TAggregate>
     {
         Type handlerType = handler.GetType();
         Type commandType = command.GetType();
-        foreach (Type iface in handlerType.GetInterfaces())
-        {
-            if (iface.IsGenericType &&
-                (iface.GetGenericTypeDefinition() == typeof(ICommandHandler<,>)) &&
-                (iface.GetGenericArguments()[0] == commandType))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return handlerType.GetInterfaces()
+            .Any(iface => iface.IsGenericType &&
+                          (iface.GetGenericTypeDefinition() == typeof(ICommandHandler<,>)) &&
+                          (iface.GetGenericArguments()[0] == commandType));
     }
 
     private static (IEnumerable<object> Events, bool Success, string? ErrorCode, string? ErrorMessage)
