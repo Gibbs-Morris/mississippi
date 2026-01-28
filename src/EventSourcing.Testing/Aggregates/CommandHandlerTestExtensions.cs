@@ -28,7 +28,6 @@ namespace Mississippi.EventSourcing.Testing.Aggregates;
 ///         <code>
 ///         // Pattern 1: Isolated handler test
 ///         handler.ShouldEmit(null, command, expectedEvent);
-///
 ///         // Pattern 2: Full scenario
 ///         CommandHandlerTestExtensions.ForAggregate&lt;BankAccountAggregate&gt;()
 ///             .WithHandler&lt;DepositFundsHandler&gt;()
