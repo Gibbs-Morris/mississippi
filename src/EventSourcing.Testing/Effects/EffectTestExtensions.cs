@@ -26,9 +26,10 @@ public static class EffectTestExtensions
         where TCommand : class
     {
         ArgumentNullException.ThrowIfNull(commands);
-        (Type AggregateType, string EntityId, object Command) match =
-            commands.FirstOrDefault(c => c.Command is TCommand);
-        match.Command.Should().NotBeNull($"because a {typeof(TCommand).Name} command should have been dispatched");
+        commands.Any(c => c.Command is TCommand)
+            .Should()
+            .BeTrue($"because a {typeof(TCommand).Name} command should have been dispatched");
+        (Type AggregateType, string EntityId, object Command) match = commands.First(c => c.Command is TCommand);
         return (TCommand)match.Command;
     }
 

@@ -125,17 +125,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Aggregates")]
     public void AggregatesShouldHaveAliasAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type aggregateType in AggregateTypes)
-        {
-            if (aggregateType.GetCustomAttribute<AliasAttribute>() is null)
-            {
-                violations.Add(aggregateType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = AggregateTypes
+            .Where(aggregateType => aggregateType.GetCustomAttribute<AliasAttribute>() is null)
+            .ToList();
 
         // Assert
         violations.Should()
@@ -151,17 +144,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Aggregates")]
     public void AggregatesShouldHaveBrookNameAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type aggregateType in AggregateTypes)
-        {
-            if (aggregateType.GetCustomAttribute<BrookNameAttribute>() is null)
-            {
-                violations.Add(aggregateType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = AggregateTypes
+            .Where(aggregateType => aggregateType.GetCustomAttribute<BrookNameAttribute>() is null)
+            .ToList();
 
         // Assert
         violations.Should()
@@ -177,17 +163,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Aggregates")]
     public void AggregatesShouldHaveGenerateSerializerAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type aggregateType in AggregateTypes)
-        {
-            if (!HasAttribute(aggregateType, "GenerateSerializerAttribute"))
-            {
-                violations.Add(aggregateType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = AggregateTypes
+            .Where(aggregateType => !HasAttribute(aggregateType, "GenerateSerializerAttribute"))
+            .ToList();
 
         // Assert
         violations.Should()
@@ -203,17 +182,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Aggregates")]
     public void AggregatesShouldHaveSnapshotStorageNameAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type aggregateType in AggregateTypes)
-        {
-            if (aggregateType.GetCustomAttribute<SnapshotStorageNameAttribute>() is null)
-            {
-                violations.Add(aggregateType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = AggregateTypes
+            .Where(aggregateType => aggregateType.GetCustomAttribute<SnapshotStorageNameAttribute>() is null)
+            .ToList();
 
         // Assert
         violations.Should()
@@ -229,17 +201,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Commands")]
     public void CommandsShouldHaveAliasAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type commandType in CommandTypes)
-        {
-            if (commandType.GetCustomAttribute<AliasAttribute>() is null)
-            {
-                violations.Add(commandType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = CommandTypes
+            .Where(commandType => commandType.GetCustomAttribute<AliasAttribute>() is null)
+            .ToList();
 
         // Assert
         violations.Should()
@@ -255,17 +220,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Commands")]
     public void CommandsShouldHaveGenerateSerializerAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type commandType in CommandTypes)
-        {
-            if (!HasAttribute(commandType, "GenerateSerializerAttribute"))
-            {
-                violations.Add(commandType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = CommandTypes
+            .Where(commandType => !HasAttribute(commandType, "GenerateSerializerAttribute"))
+            .ToList();
 
         // Assert
         violations.Should()
@@ -281,20 +239,12 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Events")]
     public void EventAliasValuesShouldFollowNamingConvention()
     {
-        // Arrange
-        List<string> violations = [];
-
-        // Act
-        foreach (Type eventType in EventTypes)
-        {
-            AliasAttribute? alias = eventType.GetCustomAttribute<AliasAttribute>();
-
-            // Allow either fully qualified or shorter form as long as type name is included
-            if (alias is not null && !alias.Alias.Contains(eventType.Name, StringComparison.Ordinal))
-            {
-                violations.Add($"{eventType.Name}: Alias '{alias.Alias}' does not contain type name");
-            }
-        }
+        // Arrange & Act
+        List<string> violations = EventTypes
+            .Select(eventType => (eventType, alias: eventType.GetCustomAttribute<AliasAttribute>()))
+            .Where(x => x.alias is not null && !x.alias.Alias.Contains(x.eventType.Name, StringComparison.Ordinal))
+            .Select(x => $"{x.eventType.Name}: Alias '{x.alias!.Alias}' does not contain type name")
+            .ToList();
 
         // Assert
         violations.Should()
@@ -310,17 +260,9 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Events")]
     public void EventsShouldHaveAliasAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type eventType in EventTypes)
-        {
-            if (eventType.GetCustomAttribute<AliasAttribute>() is null)
-            {
-                violations.Add(eventType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = EventTypes.Where(eventType => eventType.GetCustomAttribute<AliasAttribute>() is null)
+            .ToList();
 
         // Assert
         violations.Should()
@@ -336,17 +278,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Events")]
     public void EventsShouldHaveEventStorageNameAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type eventType in EventTypes)
-        {
-            if (eventType.GetCustomAttribute<EventStorageNameAttribute>() is null)
-            {
-                violations.Add(eventType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = EventTypes
+            .Where(eventType => eventType.GetCustomAttribute<EventStorageNameAttribute>() is null)
+            .ToList();
 
         // Assert
         violations.Should()
@@ -362,17 +297,9 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Events")]
     public void EventsShouldHaveGenerateSerializerAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type eventType in EventTypes)
-        {
-            if (!HasAttribute(eventType, "GenerateSerializerAttribute"))
-            {
-                violations.Add(eventType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = EventTypes.Where(eventType => !HasAttribute(eventType, "GenerateSerializerAttribute"))
+            .ToList();
 
         // Assert
         violations.Should()
@@ -388,17 +315,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Projections")]
     public void ProjectionsShouldHaveAliasAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type projectionType in ProjectionTypes)
-        {
-            if (projectionType.GetCustomAttribute<AliasAttribute>() is null)
-            {
-                violations.Add(projectionType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = ProjectionTypes
+            .Where(projectionType => projectionType.GetCustomAttribute<AliasAttribute>() is null)
+            .ToList();
 
         // Assert
         violations.Should()
@@ -414,17 +334,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Projections")]
     public void ProjectionsShouldHaveBrookNameAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type projectionType in ProjectionTypes)
-        {
-            if (projectionType.GetCustomAttribute<BrookNameAttribute>() is null)
-            {
-                violations.Add(projectionType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = ProjectionTypes
+            .Where(projectionType => projectionType.GetCustomAttribute<BrookNameAttribute>() is null)
+            .ToList();
 
         // Assert
         violations.Should()
@@ -440,17 +353,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Projections")]
     public void ProjectionsShouldHaveGenerateSerializerAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type projectionType in ProjectionTypes)
-        {
-            if (!HasAttribute(projectionType, "GenerateSerializerAttribute"))
-            {
-                violations.Add(projectionType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = ProjectionTypes
+            .Where(projectionType => !HasAttribute(projectionType, "GenerateSerializerAttribute"))
+            .ToList();
 
         // Assert
         violations.Should()
@@ -466,17 +372,10 @@ public sealed class RequiredAttributeTests
     [AllureFeature("Projections")]
     public void ProjectionsShouldHaveSnapshotStorageNameAttribute()
     {
-        // Arrange
-        List<Type> violations = [];
-
-        // Act
-        foreach (Type projectionType in ProjectionTypes)
-        {
-            if (projectionType.GetCustomAttribute<SnapshotStorageNameAttribute>() is null)
-            {
-                violations.Add(projectionType);
-            }
-        }
+        // Arrange & Act
+        List<Type> violations = ProjectionTypes.Where(projectionType =>
+                projectionType.GetCustomAttribute<SnapshotStorageNameAttribute>() is null)
+            .ToList();
 
         // Assert
         violations.Should()

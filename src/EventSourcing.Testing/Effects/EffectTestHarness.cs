@@ -117,13 +117,13 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
     {
         ArgumentNullException.ThrowIfNull(effect);
 
-        // Access the protected HandleSimpleAsync or HandleAsync method via IEventEffect interface
+        // Access the protected or public HandleSimpleAsync or HandleAsync method via IEventEffect interface
         Type effectType = effect.GetType();
 
         // Try HandleSimpleAsync first (for SimpleEventEffectBase)
         MethodInfo? handleSimpleMethod = effectType.GetMethod(
             "HandleSimpleAsync",
-            BindingFlags.Instance | BindingFlags.NonPublic,
+            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
             [typeof(TEvent), typeof(TAggregate), typeof(CancellationToken)]);
         if (handleSimpleMethod != null)
         {
@@ -139,7 +139,7 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
         // Try HandleAsync for EventEffectBase
         MethodInfo? handleAsyncMethod = effectType.GetMethod(
             "HandleAsync",
-            BindingFlags.Instance | BindingFlags.NonPublic,
+            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
             [typeof(TEvent), typeof(TAggregate), typeof(CancellationToken)]);
         if (handleAsyncMethod != null)
         {
