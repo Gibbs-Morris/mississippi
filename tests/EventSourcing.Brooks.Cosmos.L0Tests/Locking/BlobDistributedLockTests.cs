@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Azure;
 using Azure.Storage.Blobs.Models;
@@ -19,9 +18,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Locking;
 /// <summary>
 ///     Tests for <see cref="BlobDistributedLock" /> covering Locking/BlobDistributedLock plan items.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Blob Distributed Lock")]
 public sealed class BlobDistributedLockTests
 {
     private static void SetPrivateField<T>(
