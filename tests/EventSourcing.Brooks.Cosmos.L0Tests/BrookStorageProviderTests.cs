@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 
@@ -17,9 +16,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="BrookStorageProvider" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Brook Storage Provider")]
 public sealed class BrookStorageProviderTests
 {
     /// <summary>
