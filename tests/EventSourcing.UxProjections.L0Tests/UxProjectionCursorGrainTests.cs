@@ -1,8 +1,6 @@
 using System;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -15,16 +13,12 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionCursorGrain" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionCursorGrain")]
 public sealed class UxProjectionCursorGrainTests
 {
     /// <summary>
     ///     Verifies that BrookCursorMovedEvent can be created with a position.
     /// </summary>
     [Fact]
-    [AllureFeature("Event Model")]
     public void BrookCursorMovedEventCanBeCreatedWithPosition()
     {
         // Arrange & Act
@@ -39,7 +33,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookCursorMovedEvent stores position correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Event Model")]
     public void BrookCursorMovedEventStoresPositionCorrectly()
     {
         // Arrange
@@ -57,7 +50,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookCursorMovedEvent with negative position represents not set.
     /// </summary>
     [Fact]
-    [AllureFeature("Event Model")]
     public void BrookCursorMovedEventWithNegativePositionRepresentsNotSet()
     {
         // Arrange & Act
@@ -72,7 +64,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition equality works correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Position Equality")]
     public void BrookPositionEqualityWorksCorrectly()
     {
         // Arrange
@@ -89,7 +80,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition hash codes are equal for equal values.
     /// </summary>
     [Fact]
-    [AllureFeature("Position Equality")]
     public void BrookPositionHashCodesAreEqualForEqualValues()
     {
         // Arrange
@@ -104,7 +94,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition implicit conversion from int works.
     /// </summary>
     [Fact]
-    [AllureFeature("Position Conversion")]
     public void BrookPositionImplicitConversionFromIntWorks()
     {
         // Arrange & Act
@@ -118,7 +107,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition comparison handles negative values correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Position Comparison")]
     public void BrookPositionIsNewerThanHandlesNegativeValues()
     {
         // Arrange
@@ -136,7 +124,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition IsNewerThan returns correct comparison.
     /// </summary>
     [Fact]
-    [AllureFeature("Position Comparison")]
     public void BrookPositionIsNewerThanReturnsCorrectComparison()
     {
         // Arrange
@@ -153,7 +140,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition comparison handles equal values correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Position Comparison")]
     public void BrookPositionIsNewerThanReturnsFalseForEqualValues()
     {
         // Arrange
@@ -169,7 +155,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition minus one is the initial state.
     /// </summary>
     [Fact]
-    [AllureFeature("Position State")]
     public void BrookPositionMinusOneIsInitialState()
     {
         // Arrange
@@ -183,7 +168,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition NotSet returns true for default position.
     /// </summary>
     [Fact]
-    [AllureFeature("Position State")]
     public void BrookPositionNotSetReturnsTrueForDefault()
     {
         // Arrange
@@ -199,7 +183,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition with value zero is considered set.
     /// </summary>
     [Fact]
-    [AllureFeature("Position State")]
     public void BrookPositionZeroIsConsideredSet()
     {
         // Arrange
@@ -215,7 +198,6 @@ public sealed class UxProjectionCursorGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Interface Contract")]
     public async Task IUxProjectionCursorGrainDeactivateAsyncCompletes()
     {
         // Arrange
@@ -232,7 +214,6 @@ public sealed class UxProjectionCursorGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Interface Contract")]
     public async Task IUxProjectionCursorGrainGetPositionAsyncReturnsPosition()
     {
         // Arrange
@@ -251,7 +232,6 @@ public sealed class UxProjectionCursorGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Interface Contract")]
     public async Task IUxProjectionCursorGrainSetPositionAsyncCanBeMocked()
     {
         // Arrange
@@ -272,7 +252,6 @@ public sealed class UxProjectionCursorGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Interface Contract")]
     public async Task MultipleCursorGrainsTrackDifferentPositions()
     {
         // Arrange
@@ -295,7 +274,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that cursor grain factory resolves cursor grains correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Integration")]
     public void UxProjectionGrainFactoryGetCursorGrainResolves()
     {
         // Arrange
@@ -315,7 +293,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey at max length is accepted.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Validation")]
     public void UxProjectionKeyAcceptsMaxLengthEntityId()
     {
         // Arrange
@@ -332,7 +309,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey correctly parses the primary key format.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Parsing")]
     public void UxProjectionKeyFromStringParsesValidKey()
     {
         // Act
@@ -346,7 +322,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey FromString throws for null string.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Parsing")]
     public void UxProjectionKeyFromStringThrowsForNullString()
     {
         // Act & Assert
@@ -357,7 +332,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey implicit conversion to string works.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Conversion")]
     public void UxProjectionKeyImplicitConversionToStringWorks()
     {
         // Arrange
@@ -374,7 +348,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey roundtrips through ToString and FromString.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Serialization")]
     public void UxProjectionKeyRoundtripsThroughSerialization()
     {
         // Arrange
@@ -392,7 +365,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey stores entity ID correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Creation")]
     public void UxProjectionKeyStoresEntityIdCorrectly()
     {
         // Act
@@ -406,7 +378,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey throws when entity ID exceeds max length.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Validation")]
     public void UxProjectionKeyThrowsWhenEntityIdExceedsMaxLength()
     {
         // Arrange
@@ -420,7 +391,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey throws when entity ID is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Validation")]
     public void UxProjectionKeyThrowsWhenEntityIdIsNull()
     {
         // Act & Assert
@@ -431,7 +401,6 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey ToString returns the entity ID.
     /// </summary>
     [Fact]
-    [AllureFeature("Key Serialization")]
     public void UxProjectionKeyToStringReturnsEntityId()
     {
         // Arrange

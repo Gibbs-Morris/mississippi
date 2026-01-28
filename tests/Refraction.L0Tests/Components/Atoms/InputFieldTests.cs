@@ -1,8 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -15,15 +13,12 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// <summary>
 ///     Smoke tests for <see cref="InputField" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Atoms")]
 public sealed class InputFieldTests : BunitContext
 {
     /// <summary>
     ///     InputField associates label with input via Id.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldAssociatesLabelWithInputViaId()
     {
         // Act
@@ -40,7 +35,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField does not render label when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldDoesNotRenderLabelWhenEmpty()
     {
         // Act
@@ -54,7 +48,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasAdditionalAttributesParameter()
     {
         // Arrange
@@ -71,7 +64,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Id parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasIdParameter()
     {
         // Arrange
@@ -87,7 +79,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has IsDisabled parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasIsDisabledParameter()
     {
         // Arrange
@@ -103,7 +94,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has IsReadOnly parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasIsReadOnlyParameter()
     {
         // Arrange
@@ -119,7 +109,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Label parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasLabelParameter()
     {
         // Arrange
@@ -135,7 +124,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has OnBlur EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasOnBlurEventCallback()
     {
         // Arrange
@@ -152,7 +140,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has OnFocus EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasOnFocusEventCallback()
     {
         // Arrange
@@ -169,7 +156,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Placeholder parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasPlaceholderParameter()
     {
         // Arrange
@@ -185,7 +171,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasStateParameter()
     {
         // Arrange
@@ -201,7 +186,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Type parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasTypeParameter()
     {
         // Arrange
@@ -217,7 +201,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has ValueChanged EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasValueChangedEventCallback()
     {
         // Arrange
@@ -234,7 +217,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Value parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldHasValueParameter()
     {
         // Arrange
@@ -250,7 +232,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldInheritsFromComponentBase()
     {
         // Assert
@@ -261,7 +242,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField invokes OnBlur when input loses focus.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldInvokesOnBlurWhenInputLosesFocus()
     {
         // Arrange
@@ -281,7 +261,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField invokes OnFocus when input receives focus.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldInvokesOnFocusWhenInputReceivesFocus()
     {
         // Arrange
@@ -301,7 +280,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField invokes ValueChanged when input changes.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldInvokesValueChangedWhenInputChanges()
     {
         // Arrange
@@ -321,7 +299,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldRendersAdditionalAttributes()
     {
         // Act
@@ -335,7 +312,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldRendersCustomState()
     {
         // Act
@@ -352,7 +328,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders disabled state correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldRendersDisabledStateCorrectly()
     {
         // Act
@@ -366,7 +341,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders input type correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldRendersInputTypeCorrectly()
     {
         // Act
@@ -380,7 +354,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders label when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldRendersLabelWhenProvided()
     {
         // Act
@@ -397,7 +370,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders placeholder correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldRendersPlaceholderCorrectly()
     {
         // Act
@@ -411,7 +383,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders readonly state correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldRendersReadOnlyStateCorrectly()
     {
         // Act
@@ -425,7 +396,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders value correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldRendersValueCorrectly()
     {
         // Act
@@ -439,7 +409,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldRendersWithDefaultState()
     {
         // Act
@@ -454,7 +423,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldStateDefaultsToIdle()
     {
         // Arrange
@@ -468,7 +436,6 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField Type defaults to text.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
     public void InputFieldTypeDefaultsToText()
     {
         // Arrange

@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.SignalRConnection;
 
 
@@ -10,16 +8,12 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for SignalR connection actions.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("SignalR Connection")]
-[AllureSubSuite("Actions")]
 public sealed class SignalRConnectionActionTests
 {
     /// <summary>
     ///     SignalRConnectedAction allows null connection ID.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRConnectedActionAllowsNullConnectionId()
     {
         // Arrange
@@ -36,7 +30,6 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRConnectedAction constructor sets properties correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRConnectedActionConstructorSetsPropertiesCorrectly()
     {
         // Arrange
@@ -55,7 +48,6 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRConnectingAction constructor creates instance.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRConnectingActionConstructorCreatesInstance()
     {
         // Act
@@ -69,7 +61,6 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRDisconnectedAction allows null error.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRDisconnectedActionAllowsNullError()
     {
         // Arrange
@@ -86,7 +77,6 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRDisconnectedAction constructor sets properties correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRDisconnectedActionConstructorSetsPropertiesCorrectly()
     {
         // Arrange
@@ -105,7 +95,6 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRMessageReceivedAction constructor sets property correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRMessageReceivedActionConstructorSetsPropertyCorrectly()
     {
         // Arrange
@@ -122,7 +111,6 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRReconnectedAction allows null connection ID.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRReconnectedActionAllowsNullConnectionId()
     {
         // Arrange
@@ -139,7 +127,6 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRReconnectedAction constructor sets properties correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRReconnectedActionConstructorSetsPropertiesCorrectly()
     {
         // Arrange
@@ -158,7 +145,6 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRReconnectingAction allows null error.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRReconnectingActionAllowsNullError()
     {
         // Arrange
@@ -175,7 +161,6 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRReconnectingAction constructor sets properties correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SignalRReconnectingActionConstructorSetsPropertiesCorrectly()
     {
         // Arrange

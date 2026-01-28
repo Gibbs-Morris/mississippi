@@ -35,11 +35,6 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Cache GitVersion tools
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -77,18 +72,10 @@ jobs:
       - name: Run L0 Tests
         run: |
           mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L0Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results -- RunConfiguration.ReporterSwitch=allure
+          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L0Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
 
-      - name: Install Allure
-        run: |
-          npm install -g allure-commandline@2.30.0 --ignore-scripts
-
-      - name: Generate Allure Report
-        run: |
-          allure generate ${{ github.workspace }}/.scratchpad/coverage-test-results -o ${{ github.workspace }}/allure-report
-
-      - name: Upload Allure Report
+      - name: Upload Test Results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: allure-l0-test-results-${{ matrix.solution }}-${{ matrix.os }}-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
-          path: ${{ github.workspace }}/allure-report
+          name: test-results-${{ matrix.solution }}-${{ matrix.os }}-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
+          path: ${{ github.workspace }}/.scratchpad/coverage-test-results

@@ -1,21 +1,14 @@
-using Allure.Xunit.Attributes;
-
-
 namespace Mississippi.Common.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="MississippiDefaults" /> constants.
 /// </summary>
-[AllureParentSuite("Mississippi.Common.Abstractions")]
-[AllureSuite("Core")]
-[AllureSubSuite("MississippiDefaults")]
 public sealed class MississippiDefaultsTests
 {
     /// <summary>
     ///     ContainerIds.Brooks should be "brooks".
     /// </summary>
     [Fact]
-    [AllureFeature("Container IDs")]
     public void ContainerIdsBrooksHasExpectedValue()
     {
         // Assert
@@ -26,7 +19,6 @@ public sealed class MississippiDefaultsTests
     ///     ContainerIds.Locks should be "locks".
     /// </summary>
     [Fact]
-    [AllureFeature("Container IDs")]
     public void ContainerIdsLocksHasExpectedValue()
     {
         // Assert
@@ -37,7 +29,6 @@ public sealed class MississippiDefaultsTests
     ///     ContainerIds.Snapshots should be "snapshots".
     /// </summary>
     [Fact]
-    [AllureFeature("Container IDs")]
     public void ContainerIdsSnapshotsHasExpectedValue()
     {
         // Assert
@@ -48,7 +39,6 @@ public sealed class MississippiDefaultsTests
     ///     DatabaseId should be "mississippi".
     /// </summary>
     [Fact]
-    [AllureFeature("Database")]
     public void DatabaseIdHasExpectedValue()
     {
         // Assert
@@ -59,7 +49,6 @@ public sealed class MississippiDefaultsTests
     ///     ServiceKeys.BlobLocking should be "mississippi-blob-locking".
     /// </summary>
     [Fact]
-    [AllureFeature("Service Keys")]
     public void ServiceKeysBlobLockingHasExpectedValue()
     {
         // Assert
@@ -70,7 +59,6 @@ public sealed class MississippiDefaultsTests
     ///     ServiceKeys.CosmosBrooks should be "mississippi-cosmos-brooks".
     /// </summary>
     [Fact]
-    [AllureFeature("Service Keys")]
     public void ServiceKeysCosmosBrooksHasExpectedValue()
     {
         // Assert
@@ -81,7 +69,6 @@ public sealed class MississippiDefaultsTests
     ///     ServiceKeys.CosmosSnapshots should be "mississippi-cosmos-snapshots".
     /// </summary>
     [Fact]
-    [AllureFeature("Service Keys")]
     public void ServiceKeysCosmosSnapshotsHasExpectedValue()
     {
         // Assert
@@ -92,7 +79,6 @@ public sealed class MississippiDefaultsTests
     ///     StreamNamespaces.AllClients should be "mississippi-all-clients".
     /// </summary>
     [Fact]
-    [AllureFeature("Stream Namespaces")]
     public void StreamNamespacesAllClientsHasExpectedValue()
     {
         // Assert
@@ -103,7 +89,6 @@ public sealed class MississippiDefaultsTests
     ///     StreamNamespaces.Server should be "mississippi-server".
     /// </summary>
     [Fact]
-    [AllureFeature("Stream Namespaces")]
     public void StreamNamespacesServerHasExpectedValue()
     {
         // Assert
@@ -114,7 +99,6 @@ public sealed class MississippiDefaultsTests
     ///     StreamProviderName should be "mississippi-streaming".
     /// </summary>
     [Fact]
-    [AllureFeature("Streaming")]
     public void StreamProviderNameHasExpectedValue()
     {
         // Assert

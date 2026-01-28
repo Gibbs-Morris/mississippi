@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
 using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
@@ -17,9 +15,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests.Cursor;
 ///     Integration tests for <see cref="IBrookCursorGrain" /> behavior.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks")]
-[AllureSubSuite("Brook Cursor Grain Integration")]
 public sealed class BrookCursorGrainTests
 {
     private readonly TestCluster cluster = TestClusterAccess.Cluster;

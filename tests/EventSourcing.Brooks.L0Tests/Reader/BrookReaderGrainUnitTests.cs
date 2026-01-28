@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -19,9 +17,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
 /// <summary>
 ///     Unit tests for <see cref="BrookReaderGrain" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks")]
-[AllureSubSuite("Brook Reader Grain Unit")]
 public sealed class BrookReaderGrainUnitTests
 {
     /// <summary>

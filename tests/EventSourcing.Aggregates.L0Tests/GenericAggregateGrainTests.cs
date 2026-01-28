@@ -5,8 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -28,9 +26,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="GenericAggregateGrain{TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("Generic Aggregate Grain")]
 public class GenericAggregateGrainTests
 {
     private const string TestEntityId = "entity-123";

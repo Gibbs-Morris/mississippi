@@ -1,8 +1,6 @@
 using System;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
@@ -14,9 +12,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Mapping;
 ///     Test class for EventStorageToEventMapper functionality.
 ///     Contains unit tests to verify the behavior of event storage to event mapping operations.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Event Storage To Event Mapper")]
 public sealed class EventStorageToEventMapperTests
 {
     /// <summary>

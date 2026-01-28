@@ -1,8 +1,6 @@
 using System;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
@@ -13,9 +11,6 @@ namespace Mississippi.EventSourcing.Reducers.L0Tests;
 /// <summary>
 ///     Tests for event reducer registrations.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Reducers")]
-[AllureSubSuite("Reducer Registrations")]
 public sealed class ReducerRegistrationsTests
 {
     private sealed record TestEvent(string Value);

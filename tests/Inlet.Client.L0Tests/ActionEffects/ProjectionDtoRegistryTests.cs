@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.L0Tests.Helpers;
 
@@ -11,16 +9,12 @@ namespace Mississippi.Inlet.Client.L0Tests.ActionEffects;
 /// <summary>
 ///     Tests for <see cref="ProjectionDtoRegistry" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("ActionEffects")]
-[AllureSubSuite("ProjectionDtoRegistry")]
 public sealed class ProjectionDtoRegistryTests
 {
     /// <summary>
     ///     GetDtoType returns null for unknown path.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void GetDtoTypeReturnsNullForUnknownPath()
     {
         // Arrange
@@ -37,7 +31,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetDtoType returns registered type.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void GetDtoTypeReturnsRegisteredType()
     {
         // Arrange
@@ -55,7 +48,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetDtoType throws ArgumentNullException when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void GetDtoTypeThrowsWhenPathIsNull()
     {
         // Arrange
@@ -69,7 +61,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetPath returns null for unknown type.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void GetPathReturnsNullForUnknownType()
     {
         // Arrange
@@ -86,7 +77,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetPath returns registered path.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void GetPathReturnsRegisteredPath()
     {
         // Arrange
@@ -104,7 +94,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetPath throws ArgumentNullException when dtoType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void GetPathThrowsWhenDtoTypeIsNull()
     {
         // Arrange
@@ -118,7 +107,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     Register adds bidirectional mapping.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void RegisterAddsBidirectionalMapping()
     {
         // Arrange
@@ -136,7 +124,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     Register overwrites existing mapping for same path.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void RegisterOverwritesExistingMappingForSamePath()
     {
         // Arrange
@@ -154,7 +141,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     Register throws ArgumentNullException when dtoType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void RegisterThrowsWhenDtoTypeIsNull()
     {
         // Arrange
@@ -168,7 +154,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     Register throws ArgumentNullException when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void RegisterThrowsWhenPathIsNull()
     {
         // Arrange
@@ -182,7 +167,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     ScanAssemblies handles empty array.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
     public void ScanAssembliesHandlesEmptyArray()
     {
         // Arrange
@@ -199,7 +183,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     ScanAssemblies registers types with ProjectionPathAttribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
     public void ScanAssembliesRegistersDecoratedTypes()
     {
         // Arrange
@@ -216,7 +199,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     ScanAssemblies scans multiple assemblies.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
     public void ScanAssembliesScansMultipleAssemblies()
     {
         // Arrange
@@ -233,7 +215,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     ScanAssemblies throws ArgumentNullException when assemblies is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
     public void ScanAssembliesThrowsWhenAssembliesIsNull()
     {
         // Arrange
@@ -247,7 +228,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetDtoType returns false when not found.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
     public void TryGetDtoTypeReturnsFalseWhenNotFound()
     {
         // Arrange
@@ -265,7 +245,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetDtoType returns true and outputs type when found.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
     public void TryGetDtoTypeReturnsTrueWhenFound()
     {
         // Arrange
@@ -284,7 +263,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetDtoType throws ArgumentNullException when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
     public void TryGetDtoTypeThrowsWhenPathIsNull()
     {
         // Arrange
@@ -298,7 +276,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetPath returns false when not found.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
     public void TryGetPathReturnsFalseWhenNotFound()
     {
         // Arrange
@@ -316,7 +293,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetPath returns true and outputs path when found.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
     public void TryGetPathReturnsTrueWhenFound()
     {
         // Arrange
@@ -335,7 +311,6 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetPath throws ArgumentNullException when dtoType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
     public void TryGetPathThrowsWhenDtoTypeIsNull()
     {
         // Arrange

@@ -5,8 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -26,9 +24,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Brooks;
 /// <summary>
 ///     Tests for rollback behavior in <see cref="EventBrookWriter" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Event Brook Appender Rollback")]
 public sealed class EventBrookWriterRollbackTests
 {
     /// <summary>

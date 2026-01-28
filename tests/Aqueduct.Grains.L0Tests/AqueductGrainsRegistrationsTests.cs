@@ -1,8 +1,6 @@
 using System;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -19,16 +17,12 @@ namespace Mississippi.Aqueduct.Grains.L0Tests;
 /// <summary>
 ///     Tests for <see cref="AqueductGrainsRegistrations" />.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Extensions")]
-[AllureSubSuite("AqueductGrainsRegistrations")]
 public sealed class AqueductGrainsRegistrationsTests
 {
     /// <summary>
     ///     UseAqueduct should configure all options from AqueductSiloOptions.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     public void UseAqueductConfiguresAllOptions()
     {
         // Arrange
@@ -60,7 +54,6 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should register AqueductGrainFactory as singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void UseAqueductRegistersAqueductGrainFactory()
     {
         // Arrange
@@ -81,7 +74,6 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should register AqueductOptions.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void UseAqueductRegistersAqueductOptions()
     {
         // Arrange
@@ -102,7 +94,6 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should return the same silo builder for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void UseAqueductReturnsSameSiloBuilder()
     {
         // Arrange
@@ -121,7 +112,6 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should throw when configureOptions is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void UseAqueductThrowsWhenConfigureOptionsIsNull()
     {
         // Arrange
@@ -137,7 +127,6 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should throw when siloBuilder is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void UseAqueductThrowsWhenSiloBuilderIsNull()
     {
         // Arrange
@@ -152,7 +141,6 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct with default options should use MississippiDefaults.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     public void UseAqueductWithDefaultOptionsUsesMississippiDefaults()
     {
         // Arrange
@@ -177,7 +165,6 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct with no action should return the same silo builder.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void UseAqueductWithNoActionReturnsSameSiloBuilder()
     {
         // Arrange
@@ -196,7 +183,6 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct with no action should throw when siloBuilder is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void UseAqueductWithNoActionThrowsWhenSiloBuilderIsNull()
     {
         // Arrange

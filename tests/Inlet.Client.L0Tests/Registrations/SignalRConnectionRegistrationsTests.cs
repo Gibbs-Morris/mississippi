@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.SignalRConnection;
@@ -10,16 +8,12 @@ namespace Mississippi.Inlet.Client.L0Tests.Registrations;
 /// <summary>
 ///     Tests for <see cref="SignalRConnectionRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Registrations")]
-[AllureSubSuite("SignalRConnectionRegistrations")]
 public sealed class SignalRConnectionRegistrationsTests
 {
     /// <summary>
     ///     AddSignalRConnectionFeature can be called multiple times without error.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void AddSignalRConnectionFeatureCanBeCalledMultipleTimes()
     {
         // Arrange
@@ -37,7 +31,6 @@ public sealed class SignalRConnectionRegistrationsTests
     ///     AddSignalRConnectionFeature registers all reducers.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void AddSignalRConnectionFeatureRegistersAllReducers()
     {
         // Arrange
@@ -55,7 +48,6 @@ public sealed class SignalRConnectionRegistrationsTests
     ///     AddSignalRConnectionFeature returns the service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void AddSignalRConnectionFeatureReturnsServiceCollection()
     {
         // Arrange

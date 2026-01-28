@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -26,9 +24,6 @@ namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotCacheGrain{TSnapshot}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots")]
-[AllureSubSuite("Snapshot Cache Grain")]
 public sealed class SnapshotCacheGrainTests
 {
     private static Mock<IGrainContext> CreateDefaultGrainContext()
@@ -101,7 +96,6 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when brookEventConverter is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenBrookEventConverterIsNull()
     {
         // Arrange
@@ -131,7 +125,6 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when brookGrainFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenBrookGrainFactoryIsNull()
     {
         // Arrange
@@ -161,7 +154,6 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when grainContext is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
@@ -191,7 +183,6 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
@@ -221,7 +212,6 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when retentionOptions is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenRetentionOptionsIsNull()
     {
         // Arrange
@@ -251,7 +241,6 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when rootReducer is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenRootReducerIsNull()
     {
         // Arrange
@@ -281,7 +270,6 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when snapshotGrainFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
     {
         // Arrange
@@ -311,7 +299,6 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when snapshotStateConverter is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenSnapshotStateConverterIsNull()
     {
         // Arrange
@@ -341,7 +328,6 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when snapshotStorageReader is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenSnapshotStorageReaderIsNull()
     {
         // Arrange
@@ -372,7 +358,6 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("State Access")]
     public async Task GetStateAsyncReturnsCachedState()
     {
         // Arrange
@@ -414,7 +399,6 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncLoadsFromStorageWhenSnapshotExists()
     {
         // Arrange
@@ -455,7 +439,6 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncRebuildsFromStreamWhenNoSnapshotExists()
     {
         // Arrange
@@ -503,7 +486,6 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncRebuildsWhenReducerHashIsEmpty()
     {
         // Arrange
@@ -570,7 +552,6 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncRebuildsWhenReducerHashMismatch()
     {
         // Arrange
@@ -638,7 +619,6 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Persistence")]
     public async Task OnActivateAsyncRequestsPersistenceWhenRebuilt()
     {
         // Arrange

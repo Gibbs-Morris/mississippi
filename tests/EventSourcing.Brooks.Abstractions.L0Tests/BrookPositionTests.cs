@@ -1,16 +1,11 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookPosition" /> conversion helpers.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Brook Position")]
 public sealed class BrookPositionTests
 {
     /// <summary>

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -15,9 +13,6 @@ namespace Mississippi.Reservoir.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SimpleActionEffectBase{TAction,TState}" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Reservoir")]
-[AllureSuite("Abstractions")]
-[AllureSubSuite("SimpleActionEffectBase")]
 public sealed class SimpleActionEffectBaseTests
 {
     /// <summary>
@@ -65,7 +60,6 @@ public sealed class SimpleActionEffectBaseTests
     ///     CanHandle returns false for non-matching action type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
     public void CanHandleReturnsFalseForNonMatchingActionType()
     {
         // Arrange
@@ -83,7 +77,6 @@ public sealed class SimpleActionEffectBaseTests
     ///     CanHandle returns true for matching action type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
     public void CanHandleReturnsTrueForMatchingActionType()
     {
         // Arrange
@@ -101,7 +94,6 @@ public sealed class SimpleActionEffectBaseTests
     ///     CanHandle throws ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void CanHandleThrowsArgumentNullExceptionWhenActionIsNull()
     {
         // Arrange
@@ -116,7 +108,6 @@ public sealed class SimpleActionEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoActions()
     {
         // Arrange
@@ -143,7 +134,6 @@ public sealed class SimpleActionEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task HandleAsyncReturnsEmptyForNonMatchingAction()
     {
         // Arrange
@@ -168,7 +158,6 @@ public sealed class SimpleActionEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void HandleAsyncThrowsArgumentNullExceptionWhenActionIsNull()
     {
         // Arrange

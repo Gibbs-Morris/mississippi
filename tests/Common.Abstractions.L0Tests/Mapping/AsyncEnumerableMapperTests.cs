@@ -5,8 +5,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Common.Abstractions.Mapping;
 
 using Moq;
@@ -17,9 +15,6 @@ namespace Mississippi.Common.Abstractions.L0Tests.Mapping;
 /// <summary>
 ///     Provides unit tests for the <see cref="AsyncEnumerableMapper{TFrom,TTo}" /> class.
 /// </summary>
-[AllureParentSuite("Core Abstractions")]
-[AllureSuite("Mapping")]
-[AllureSubSuite("Async Enumerable Mapper")]
 public sealed class AsyncEnumerableMapperTests
 {
     /// <summary>

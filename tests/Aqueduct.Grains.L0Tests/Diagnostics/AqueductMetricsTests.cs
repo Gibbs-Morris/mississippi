@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Aqueduct.Grains.Diagnostics;
 
 
@@ -12,9 +10,6 @@ namespace Mississippi.Aqueduct.Grains.L0Tests.Diagnostics;
 /// <summary>
 ///     Tests for Aqueduct SignalR metrics.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Diagnostics")]
-[AllureSubSuite("Metrics")]
 public sealed class AqueductMetricsTests
 {
     private sealed record MetricMeasurement(
@@ -29,7 +24,6 @@ public sealed class AqueductMetricsTests
     ///     RecordClientConnect should emit metric with hub name tag.
     /// </summary>
     [Fact]
-    [AllureFeature("Client Metrics")]
     public void RecordClientConnectEmitsMetricWithHubName()
     {
         using MeterListener listener = new();
@@ -73,7 +67,6 @@ public sealed class AqueductMetricsTests
     ///     RecordClientDisconnect should emit metric with hub name tag.
     /// </summary>
     [Fact]
-    [AllureFeature("Client Metrics")]
     public void RecordClientDisconnectEmitsMetricWithHubName()
     {
         using MeterListener listener = new();
@@ -117,7 +110,6 @@ public sealed class AqueductMetricsTests
     ///     RecordClientMessageSent should emit count and duration metrics.
     /// </summary>
     [Fact]
-    [AllureFeature("Client Metrics")]
     public void RecordClientMessageSentEmitsCountAndDurationMetrics()
     {
         using MeterListener listener = new();
@@ -183,7 +175,6 @@ public sealed class AqueductMetricsTests
     ///     RecordDeadServers should emit metric only when count is positive.
     /// </summary>
     [Fact]
-    [AllureFeature("Server Metrics")]
     public void RecordDeadServersEmitsMetricOnlyWhenPositive()
     {
         using MeterListener listener = new();
@@ -224,7 +215,6 @@ public sealed class AqueductMetricsTests
     ///     RecordGroupJoin should emit metric with hub name tag.
     /// </summary>
     [Fact]
-    [AllureFeature("Group Metrics")]
     public void RecordGroupJoinEmitsMetricWithHubName()
     {
         using MeterListener listener = new();
@@ -268,7 +258,6 @@ public sealed class AqueductMetricsTests
     ///     RecordGroupLeave should emit metric with hub name tag.
     /// </summary>
     [Fact]
-    [AllureFeature("Group Metrics")]
     public void RecordGroupLeaveEmitsMetricWithHubName()
     {
         using MeterListener listener = new();
@@ -312,7 +301,6 @@ public sealed class AqueductMetricsTests
     ///     RecordGroupMessageSent should emit count and fanout metrics.
     /// </summary>
     [Fact]
-    [AllureFeature("Group Metrics")]
     public void RecordGroupMessageSentEmitsCountAndFanoutMetrics()
     {
         using MeterListener listener = new();
@@ -377,7 +365,6 @@ public sealed class AqueductMetricsTests
     ///     RecordServerHeartbeat should emit metric.
     /// </summary>
     [Fact]
-    [AllureFeature("Server Metrics")]
     public void RecordServerHeartbeatEmitsMetric()
     {
         using MeterListener listener = new();
@@ -412,7 +399,6 @@ public sealed class AqueductMetricsTests
     ///     RecordServerRegister should emit metric.
     /// </summary>
     [Fact]
-    [AllureFeature("Server Metrics")]
     public void RecordServerRegisterEmitsMetric()
     {
         using MeterListener listener = new();

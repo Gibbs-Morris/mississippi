@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Refraction.Events;
 
 
@@ -10,15 +8,12 @@ namespace Mississippi.Refraction.L0Tests.Events;
 /// <summary>
 ///     Tests for <see cref="PaneClosedEvent" /> record.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Events")]
 public sealed class PaneClosedEventTests
 {
     /// <summary>
     ///     PaneClosedEvent can be created with reason.
     /// </summary>
     [Fact]
-    [AllureFeature("PaneClosedEvent")]
     public void PaneClosedEventCanBeCreatedWithReason()
     {
         // Arrange & Act
@@ -32,7 +27,6 @@ public sealed class PaneClosedEventTests
     ///     PaneClosedEvent implements record equality.
     /// </summary>
     [Fact]
-    [AllureFeature("PaneClosedEvent")]
     public void PaneClosedEventImplementsRecordEquality()
     {
         // Arrange
@@ -47,7 +41,6 @@ public sealed class PaneClosedEventTests
     ///     PaneClosedEvent is sealed record.
     /// </summary>
     [Fact]
-    [AllureFeature("PaneClosedEvent")]
     public void PaneClosedEventIsSealedRecord()
     {
         // Arrange
@@ -62,7 +55,6 @@ public sealed class PaneClosedEventTests
     ///     PaneClosedEvent Reason property is accessible.
     /// </summary>
     [Fact]
-    [AllureFeature("PaneClosedEvent")]
     public void PaneClosedEventReasonPropertyIsAccessible()
     {
         // Arrange

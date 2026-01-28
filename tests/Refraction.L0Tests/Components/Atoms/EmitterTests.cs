@@ -1,7 +1,5 @@
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -15,15 +13,12 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// <summary>
 ///     Smoke tests for <see cref="Emitter" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Atoms")]
 public sealed class EmitterTests : BunitContext
 {
     /// <summary>
     ///     Emitter has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterHasAdditionalAttributesParameter()
     {
         // Arrange
@@ -40,7 +35,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has OnActivate EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterHasOnActivateEventCallback()
     {
         // Arrange
@@ -57,7 +51,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has OnFocus EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterHasOnFocusEventCallback()
     {
         // Arrange
@@ -74,7 +67,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterHasStateParameter()
     {
         // Arrange
@@ -90,7 +82,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterInheritsFromComponentBase()
     {
         // Assert
@@ -101,7 +92,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter invokes OnActivate when clicked.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterInvokesOnActivateWhenClicked()
     {
         // Arrange
@@ -127,7 +117,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter invokes OnFocus when focused.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterInvokesOnFocusWhenFocused()
     {
         // Arrange
@@ -153,7 +142,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterRendersAdditionalAttributes()
     {
         // Act
@@ -167,7 +155,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterRendersCustomState()
     {
         // Act
@@ -182,7 +169,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders seed indicator.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterRendersSeedIndicator()
     {
         // Act
@@ -196,7 +182,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders with button role for accessibility.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterRendersWithButtonRoleForAccessibility()
     {
         // Act
@@ -211,7 +196,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterRendersWithDefaultState()
     {
         // Act
@@ -226,7 +210,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders with tabindex for keyboard accessibility.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterRendersWithTabindexForKeyboardAccessibility()
     {
         // Act
@@ -241,7 +224,6 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
     public void EmitterStateDefaultsToIdle()
     {
         // Arrange

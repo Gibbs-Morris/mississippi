@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.Abstractions.Commands;
 
 
@@ -10,16 +8,12 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for CommandHistoryEntry.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Commands")]
-[AllureSubSuite("CommandHistoryEntry")]
 public sealed class CommandHistoryEntryTests
 {
     /// <summary>
     ///     CreateExecuting creates entry with Executing status.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void CreateExecutingCreatesEntryWithExecutingStatus()
     {
         // Arrange
@@ -38,7 +32,6 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets CommandId.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void CreateExecutingSetsCommandId()
     {
         // Arrange
@@ -58,7 +51,6 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets CommandType.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void CreateExecutingSetsCommandType()
     {
         // Arrange
@@ -75,7 +67,6 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets CompletedAt to null.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void CreateExecutingSetsCompletedAtToNull()
     {
         // Act
@@ -92,7 +83,6 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets ErrorCode to null.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void CreateExecutingSetsErrorCodeToNull()
     {
         // Act
@@ -109,7 +99,6 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets ErrorMessage to null.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void CreateExecutingSetsErrorMessageToNull()
     {
         // Act
@@ -126,7 +115,6 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets StartedAt.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void CreateExecutingSetsStartedAt()
     {
         // Arrange
@@ -143,7 +131,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed allows null ErrorCode.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToFailedAllowsNullErrorCode()
     {
         // Arrange
@@ -163,7 +150,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed allows null ErrorMessage.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToFailedAllowsNullErrorMessage()
     {
         // Arrange
@@ -183,7 +169,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed preserves original CommandId.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToFailedPreservesCommandId()
     {
         // Arrange
@@ -204,7 +189,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed returns entry with Failed status.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToFailedReturnsEntryWithFailedStatus()
     {
         // Arrange
@@ -225,7 +209,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed sets CompletedAt.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToFailedSetsCompletedAt()
     {
         // Arrange
@@ -246,7 +229,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed sets ErrorCode.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToFailedSetsErrorCode()
     {
         // Arrange
@@ -267,7 +249,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed sets ErrorMessage.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToFailedSetsErrorMessage()
     {
         // Arrange
@@ -288,7 +269,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded preserves original CommandId.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToSucceededPreservesCommandId()
     {
         // Arrange
@@ -309,7 +289,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded preserves CommandType.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToSucceededPreservesCommandType()
     {
         // Arrange
@@ -327,7 +306,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded preserves StartedAt.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToSucceededPreservesStartedAt()
     {
         // Arrange
@@ -345,7 +323,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded returns entry with Succeeded status.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToSucceededReturnsEntryWithSucceededStatus()
     {
         // Arrange
@@ -365,7 +342,6 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded sets CompletedAt.
     /// </summary>
     [Fact]
-    [AllureFeature("Transitions")]
     public void ToSucceededSetsCompletedAt()
     {
         // Arrange

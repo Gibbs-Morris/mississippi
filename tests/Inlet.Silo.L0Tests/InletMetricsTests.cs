@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Silo.Diagnostics;
 
 
@@ -14,9 +12,6 @@ namespace Mississippi.Inlet.Silo.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletMetrics" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Silo")]
-[AllureSuite("Diagnostics")]
-[AllureSubSuite("InletMetrics")]
 public sealed class InletMetricsTests : IDisposable
 {
     private readonly ConcurrentBag<(string Name, long Value, KeyValuePair<string, object?>[] Tags)>
@@ -80,7 +75,6 @@ public sealed class InletMetricsTests : IDisposable
     ///     InletMetrics MeterName should be correct.
     /// </summary>
     [Fact]
-    [AllureFeature("Meter Configuration")]
     public void MeterNameIsCorrect()
     {
         Assert.Equal("Mississippi.Inlet", InletMetrics.MeterName);
@@ -90,7 +84,6 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordCursorEventReceived should record a counter measurement.
     /// </summary>
     [Fact]
-    [AllureFeature("Cursor Metrics")]
     public void RecordCursorEventReceivedRecordsCounter()
     {
         // Arrange
@@ -111,7 +104,6 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordNotificationError should record a counter measurement with tags.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification Metrics")]
     public void RecordNotificationErrorRecordsCounterWithTags()
     {
         // Arrange
@@ -134,7 +126,6 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordNotificationSent should record counter and histogram measurements.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification Metrics")]
     public void RecordNotificationSentRecordsCounterAndHistogram()
     {
         // Arrange
@@ -166,7 +157,6 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordSubscription should record a counter measurement with action tag.
     /// </summary>
     [Fact]
-    [AllureFeature("Subscription Metrics")]
     public void RecordSubscriptionRecordsCounterWithActionTag()
     {
         // Arrange
@@ -189,7 +179,6 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordSubscription with unsubscribe action should record correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Subscription Metrics")]
     public void RecordSubscriptionWithUnsubscribeRecordsCorrectly()
     {
         // Arrange

@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
@@ -19,9 +17,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionGrain{TProjection}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionGrain")]
 public sealed class UxProjectionGrainTests
 {
     private const string ValidPrimaryKey = "entity-123";
@@ -52,7 +47,6 @@ public sealed class UxProjectionGrainTests
     ///     Verifies that constructor throws when grainContext is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
@@ -70,7 +64,6 @@ public sealed class UxProjectionGrainTests
     ///     Verifies that constructor throws when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
@@ -88,7 +81,6 @@ public sealed class UxProjectionGrainTests
     ///     Verifies that constructor throws when uxProjectionGrainFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenUxProjectionGrainFactoryIsNull()
     {
         // Arrange
@@ -107,7 +99,6 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Delegation")]
     public async Task GetAsyncDelegatesToVersionedCacheGrain()
     {
         // Arrange
@@ -140,7 +131,6 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Version Changes")]
     public async Task GetAsyncFetchesNewVersionWhenPositionAdvances()
     {
         // Arrange
@@ -181,7 +171,6 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Key Construction")]
     public async Task GetAsyncPassesCorrectVersionedKeyToFactory()
     {
         // Arrange
@@ -216,7 +205,6 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("No Events")]
     public async Task GetAsyncReturnsNullWhenCursorPositionIsNotSet()
     {
         // Arrange
@@ -244,7 +232,6 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Versioned Access")]
     public async Task GetAtVersionAsyncReturnsNullWhenVersionIsNotSet()
     {
         // Arrange
@@ -269,7 +256,6 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Versioned Access")]
     public async Task GetAtVersionAsyncUsesVersionedCacheGrain()
     {
         // Arrange
@@ -302,7 +288,6 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Latest Version")]
     public async Task GetLatestVersionAsyncReturnsPositionFromCursor()
     {
         // Arrange
@@ -327,7 +312,6 @@ public sealed class UxProjectionGrainTests
     ///     Verifies that GrainContext property returns the injected context.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Properties")]
     public void GrainContextReturnsInjectedContext()
     {
         // Arrange
@@ -343,7 +327,6 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncCompletesSuccessfullyWithAnyEntityIdFormat()
     {
         // Arrange - any string is now a valid entity ID
@@ -361,7 +344,6 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncCompletesSuccessfullyWithValidPrimaryKey()
     {
         // Arrange

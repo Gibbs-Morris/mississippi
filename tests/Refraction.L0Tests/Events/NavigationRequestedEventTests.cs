@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Refraction.Events;
 
 
@@ -11,15 +9,12 @@ namespace Mississippi.Refraction.L0Tests.Events;
 /// <summary>
 ///     Tests for <see cref="NavigationRequestedEvent" /> record.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Events")]
 public sealed class NavigationRequestedEventTests
 {
     /// <summary>
     ///     NavigationRequestedEvent can be created with parameters.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
     public void NavigationRequestedEventCanBeCreatedWithParameters()
     {
         // Arrange
@@ -41,7 +36,6 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent can be created with target only.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
     public void NavigationRequestedEventCanBeCreatedWithTargetOnly()
     {
         // Arrange & Act
@@ -56,7 +50,6 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent implements record equality.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
     public void NavigationRequestedEventImplementsRecordEquality()
     {
         // Arrange
@@ -71,7 +64,6 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent is sealed record.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
     public void NavigationRequestedEventIsSealedRecord()
     {
         // Arrange
@@ -86,7 +78,6 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent parameters defaults to null.
     /// </summary>
     [Fact]
-    [AllureFeature("NavigationRequestedEvent")]
     public void NavigationRequestedEventParametersDefaultsToNull()
     {
         // Arrange & Act

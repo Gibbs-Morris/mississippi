@@ -4,8 +4,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -18,9 +16,6 @@ namespace Mississippi.EventSourcing.Serialization.L0Tests;
 /// <summary>
 ///     Tests covering <see cref="SerializationStorageProviderExtensions" /> registrations.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Serialization")]
-[AllureSubSuite("Serialization Storage Provider Helpers")]
 public sealed class SerializationStorageProviderExtensionsTests
 {
     private sealed class TestOptions

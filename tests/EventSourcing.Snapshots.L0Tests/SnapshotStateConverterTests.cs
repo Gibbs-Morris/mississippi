@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Serialization.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 
@@ -13,9 +11,6 @@ namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotStateConverter{TSnapshot}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots")]
-[AllureSubSuite("Snapshot State Converter")]
 public sealed class SnapshotStateConverterTests
 {
     /// <summary>
@@ -33,7 +28,6 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that FromEnvelope deserializes the state from the envelope.
     /// </summary>
     [Fact]
-    [AllureFeature("Deserialization")]
     public void FromEnvelopeDeserializesState()
     {
         // Arrange
@@ -65,7 +59,6 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that FromEnvelope throws when the envelope is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void FromEnvelopeThrowsWhenEnvelopeIsNull()
     {
         // Arrange
@@ -80,7 +73,6 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that ToEnvelope serializes the state with the provided event reducer hash.
     /// </summary>
     [Fact]
-    [AllureFeature("Serialization")]
     public void ToEnvelopeSerializesStateWithReducerHash()
     {
         // Arrange
@@ -109,7 +101,6 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that ToEnvelope throws when the event reducer hash is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ToEnvelopeThrowsWhenReducerHashIsNull()
     {
         // Arrange
@@ -128,7 +119,6 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that ToEnvelope throws when the state is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ToEnvelopeThrowsWhenStateIsNull()
     {
         // Arrange
