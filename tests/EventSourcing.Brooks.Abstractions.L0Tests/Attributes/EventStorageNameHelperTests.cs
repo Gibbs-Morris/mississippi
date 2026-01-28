@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
@@ -10,9 +9,6 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests.Attributes;
 /// <summary>
 ///     Tests for <see cref="EventStorageNameHelper" /> functionality.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Event Storage Name Helper")]
 public class EventStorageNameHelperTests
 {
     /// <summary>
