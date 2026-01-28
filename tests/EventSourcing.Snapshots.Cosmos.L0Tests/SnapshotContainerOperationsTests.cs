@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -25,9 +24,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 ///     verify correct SDK interaction patterns including retry, exception handling,
 ///     and document operations.
 /// </remarks>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots Cosmos")]
-[AllureSubSuite("Container Operations")]
 public sealed class SnapshotContainerOperationsTests
 {
     private const string TestDocumentId = "test-doc-id";
