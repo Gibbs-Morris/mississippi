@@ -36,7 +36,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         // The .Because() and .WithoutRequiringPositiveResults() methods were removed
         // Need to find the correct way to complete field rules
         // See https://github.com/TNG/ArchUnitNET/releases
-        
+
         // Check for underscore-prefixed private fields
         // This enforces the get-only property pattern for DI and naming conventions
         // Exclude: OrleansCodeGen, LoggerMessage-generated __*Callback fields

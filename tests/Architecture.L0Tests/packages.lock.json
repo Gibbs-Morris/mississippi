@@ -82,11 +82,11 @@
       },
       "TngTech.ArchUnitNET.xUnit": {
         "type": "Direct",
-        "requested": "[0.13.2, )",
-        "resolved": "0.13.2",
-        "contentHash": "VW6SgrNqZ4pamYdVMBC1jOFkpfrFvKd5QQQm1w7dHjuldUjn6zmPDtFXsvHSz/QkfWa+A+roHKenG3cIcQ3H9A==",
+        "requested": "[0.12.3, )",
+        "resolved": "0.12.3",
+        "contentHash": "cfS1Dtk1TnibfLhSQJrvRkBt4z3sVmox525kI2Zck2Gnu020VtyCul3TVEJXlGurXZEQ1d9uBLZm44ZvenlYXw==",
         "dependencies": {
-          "TngTech.ArchUnitNET": "0.13.2",
+          "TngTech.ArchUnitNET": "0.12.3",
           "xunit.assert": "2.4.1"
         }
       },
@@ -161,8 +161,8 @@
       },
       "JetBrains.Annotations": {
         "type": "Transitive",
-        "resolved": "2025.2.2",
-        "contentHash": "0X56ZRizuHdrnPpgXjWV7f2tQO1FlQg5O1967OGKnI/4ZRNOK642J8L7brM1nYvrxTTU5TP1yRyXLRLaXLPQ8A=="
+        "resolved": "2025.2.0",
+        "contentHash": "2BvMkOSW+50EbQFhWFIPWTqmcDLiyyjwkMN7lN386bhP2vN/7ts5t59qu11HtenmHFxqDzaD8J1fFoh+QTOzVA=="
       },
       "Lib.Harmony": {
         "type": "Transitive",
@@ -731,11 +731,6 @@
           "System.Windows.Extensions": "6.0.0"
         }
       },
-      "System.ValueTuple": {
-        "type": "Transitive",
-        "resolved": "4.6.1",
-        "contentHash": "+RJT4qaekpZ7DDLhf+LTjq+E48jieKiY9ulJ+BoxKmZblIJfIJT8Ufcaa/clQqnYvWs8jugfGSMu8ylS0caG0w=="
-      },
       "System.Windows.Extensions": {
         "type": "Transitive",
         "resolved": "6.0.0",
@@ -746,14 +741,13 @@
       },
       "TngTech.ArchUnitNET": {
         "type": "Transitive",
-        "resolved": "0.13.2",
-        "contentHash": "7pcBQZ1a+ZoWaeCXRbSKAyZCfoULr7Sjj8voxQYam2J45l2HyKunNgpxgEPn5PZ8MDneh5cmKBH5qF5bEENQbw==",
+        "resolved": "0.12.3",
+        "contentHash": "VTfOknr71lvi5U9nyxAQCBcNpP7pwg3qPTYDRGAbs5bSzI9y0I7OUE1Zu89q7kPxuvx2apIpxIYM388B4lo8tg==",
         "dependencies": {
           "CycleDetection": "2.0.0",
-          "JetBrains.Annotations": "2025.2.2",
+          "JetBrains.Annotations": "2025.2.0",
           "Mono.Cecil": "0.11.6",
-          "Newtonsoft.Json": "13.0.4",
-          "System.ValueTuple": "4.6.1"
+          "Newtonsoft.Json": "13.0.3"
         }
       },
       "xunit.abstractions": {

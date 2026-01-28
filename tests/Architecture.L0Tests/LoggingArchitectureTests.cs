@@ -86,7 +86,7 @@ public sealed class LoggingArchitectureTests : ArchitectureTestBase
         // TODO: Fix FieldMembers API for ArchUnitNET v0.13.2
         // The .Because() and .WithoutRequiringPositiveResults() methods were removed
         // Need to find the correct way to complete field rules
-        
+
         // Check for underscore-prefixed private fields that might be loggers
         // Pattern: _logger, _log, etc.
         /*
