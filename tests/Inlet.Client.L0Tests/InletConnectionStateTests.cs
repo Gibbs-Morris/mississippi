@@ -1,4 +1,3 @@
-using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Client.Abstractions.State;
 
@@ -8,17 +7,13 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for InletConnectionState.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Connection")]
-[AllureSubSuite("State")]
 public sealed class InletConnectionStateTests
 {
     /// <summary>
     ///     InletConnectionState can be instantiated.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
-    public void CanBeInstantiated()
+        public void CanBeInstantiated()
     {
         // Act
         InletConnectionState state = new();
@@ -31,8 +26,7 @@ public sealed class InletConnectionStateTests
     ///     FeatureKey returns expected value.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
-    public void FeatureKeyReturnsExpectedValue()
+        public void FeatureKeyReturnsExpectedValue()
     {
         // Act
         string featureKey = InletConnectionState.FeatureKey;
@@ -45,8 +39,7 @@ public sealed class InletConnectionStateTests
     ///     InletConnectionState is a record type with value equality.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
-    public void HasValueEquality()
+        public void HasValueEquality()
     {
         // Arrange
         InletConnectionState state1 = new();
