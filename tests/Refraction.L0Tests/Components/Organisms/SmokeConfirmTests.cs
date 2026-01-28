@@ -1,8 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -15,15 +13,12 @@ namespace Mississippi.Refraction.L0Tests.Components.Organisms;
 /// <summary>
 ///     Tests for <see cref="SmokeConfirm" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Organisms")]
 public sealed class SmokeConfirmTests : BunitContext
 {
     /// <summary>
     ///     SmokeConfirm does not render consequence element when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmDoesNotRenderConsequenceWhenEmpty()
     {
         // Act
@@ -37,7 +32,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm does not render title element when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmDoesNotRenderTitleWhenEmpty()
     {
         // Act
@@ -51,7 +45,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmHasAdditionalAttributesParameter()
     {
         // Arrange
@@ -68,7 +61,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has CancelText parameter with default Cancel.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmHasCancelTextParameterWithDefaultCancel()
     {
         // Arrange
@@ -86,7 +78,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has ConfirmText parameter with default Confirm.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmHasConfirmTextParameterWithDefaultConfirm()
     {
         // Arrange
@@ -104,7 +95,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has Consequence parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmHasConsequenceParameter()
     {
         // Arrange
@@ -121,7 +111,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has OnCancel EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmHasOnCancelEventCallback()
     {
         // Arrange
@@ -136,7 +125,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has OnConfirm EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmHasOnConfirmEventCallback()
     {
         // Arrange
@@ -151,7 +139,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmHasStateParameter()
     {
         // Arrange
@@ -167,7 +154,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has Title parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmHasTitleParameter()
     {
         // Arrange
@@ -183,7 +169,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmInheritsFromComponentBase()
     {
         // Assert
@@ -194,7 +179,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm invokes OnCancel when cancel button is clicked.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmInvokesOnCancelWhenCancelButtonClicked()
     {
         // Arrange
@@ -214,7 +198,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm invokes OnConfirm when confirm button is clicked.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmInvokesOnConfirmWhenConfirmButtonClicked()
     {
         // Arrange
@@ -234,7 +217,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders action buttons.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersActionButtons()
     {
         // Act
@@ -249,7 +231,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersAdditionalAttributes()
     {
         // Act
@@ -265,7 +246,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders aria-labelledby attribute when title is provided.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersAriaLabelledByWhenTitleProvided()
     {
         // Act
@@ -281,7 +261,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders consequence when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersConsequenceWhenProvided()
     {
         // Act
@@ -298,7 +277,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders custom cancel text.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersCustomCancelText()
     {
         // Act
@@ -313,7 +291,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders custom confirm text.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersCustomConfirmText()
     {
         // Act
@@ -328,7 +305,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersCustomState()
     {
         // Act
@@ -345,7 +321,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders title when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersTitleWhenProvided()
     {
         // Act
@@ -360,7 +335,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersWithDefaultState()
     {
         // Act
@@ -375,7 +349,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders with dialog role for accessibility.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmRendersWithDialogRoleForAccessibility()
     {
         // Act
@@ -390,7 +363,6 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm State defaults to Latent.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
     public void SmokeConfirmStateDefaultsToLatent()
     {
         // Arrange

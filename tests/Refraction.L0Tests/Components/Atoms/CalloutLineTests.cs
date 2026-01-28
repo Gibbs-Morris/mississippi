@@ -1,8 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -15,15 +13,12 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// <summary>
 ///     Tests for <see cref="CalloutLine" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Atoms")]
 public sealed class CalloutLineTests : BunitContext
 {
     /// <summary>
     ///     CalloutLine does not render label when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineDoesNotRenderLabelWhenEmpty()
     {
         // Act
@@ -37,7 +32,6 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineHasAdditionalAttributesParameterWithCaptureUnmatchedValues()
     {
         // Arrange
@@ -54,7 +48,6 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine has Label parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineHasLabelParameter()
     {
         // Arrange
@@ -71,7 +64,6 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineHasStateParameter()
     {
         // Arrange
@@ -88,7 +80,6 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineInheritsFromComponentBase()
     {
         // Assert
@@ -99,7 +90,6 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineRendersAdditionalAttributes()
     {
         // Act
@@ -114,7 +104,6 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineRendersCustomState()
     {
         // Act
@@ -131,7 +120,6 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine renders label when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineRendersLabelWhenProvided()
     {
         // Act
@@ -146,7 +134,6 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineRendersWithDefaultState()
     {
         // Act
@@ -161,7 +148,6 @@ public sealed class CalloutLineTests : BunitContext
     ///     CalloutLine State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("CalloutLine")]
     public void CalloutLineStateDefaultsToIdle()
     {
         // Arrange

@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.Abstractions.Actions;
 
 
@@ -10,16 +8,12 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for projection actions.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Projections")]
-[AllureSubSuite("Actions")]
 public sealed class ProjectionActionsTests
 {
     /// <summary>
     ///     ProjectionConnectionChangedAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionConnectionChangedActionConstructorSetsEntityId()
     {
         // Arrange
@@ -36,7 +30,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor sets IsConnected to false.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionConnectionChangedActionConstructorSetsIsConnectedFalse()
     {
         // Act
@@ -50,7 +43,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor sets IsConnected to true.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionConnectionChangedActionConstructorSetsIsConnectedTrue()
     {
         // Act
@@ -64,7 +56,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionConnectionChangedActionConstructorSetsProjectionType()
     {
         // Act
@@ -78,7 +69,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionConnectionChangedActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
@@ -89,7 +79,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionErrorActionConstructorSetsEntityId()
     {
         // Arrange
@@ -107,7 +96,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor sets Error.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionErrorActionConstructorSetsError()
     {
         // Arrange
@@ -124,7 +112,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionErrorActionConstructorSetsProjectionType()
     {
         // Arrange
@@ -141,7 +128,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionErrorActionConstructorThrowsOnNullEntityId()
     {
         // Arrange
@@ -155,7 +141,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor throws on null error.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionErrorActionConstructorThrowsOnNullError()
     {
         // Act & Assert
@@ -166,7 +151,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor allows null Data.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionLoadedActionConstructorAllowsNullData()
     {
         // Act
@@ -180,7 +164,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor sets Data.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionLoadedActionConstructorSetsData()
     {
         // Arrange
@@ -200,7 +183,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionLoadedActionConstructorSetsEntityId()
     {
         // Arrange
@@ -221,7 +203,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor sets Version.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionLoadedActionConstructorSetsVersion()
     {
         // Arrange
@@ -238,7 +219,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionLoadedActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
@@ -249,7 +229,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionLoadingActionConstructorSetsEntityId()
     {
         // Arrange
@@ -266,7 +245,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionLoadingActionConstructorSetsProjectionType()
     {
         // Act
@@ -280,7 +258,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionLoadingActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
@@ -291,7 +268,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor sets Data.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionUpdatedActionConstructorSetsData()
     {
         // Arrange
@@ -311,7 +287,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionUpdatedActionConstructorSetsEntityId()
     {
         // Arrange
@@ -328,7 +303,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor sets Version.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionUpdatedActionConstructorSetsVersion()
     {
         // Arrange
@@ -345,7 +319,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void ProjectionUpdatedActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
@@ -356,7 +329,6 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void RefreshProjectionActionConstructorSetsEntityId()
     {
         // Arrange
@@ -373,7 +345,6 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void RefreshProjectionActionConstructorSetsProjectionType()
     {
         // Act
@@ -387,7 +358,6 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void RefreshProjectionActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
@@ -398,7 +368,6 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SubscribeToProjectionActionConstructorSetsEntityId()
     {
         // Arrange
@@ -415,7 +384,6 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SubscribeToProjectionActionConstructorSetsProjectionType()
     {
         // Act
@@ -429,7 +397,6 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void SubscribeToProjectionActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert
@@ -440,7 +407,6 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor sets EntityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void UnsubscribeFromProjectionActionConstructorSetsEntityId()
     {
         // Arrange
@@ -457,7 +423,6 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor sets ProjectionType.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void UnsubscribeFromProjectionActionConstructorSetsProjectionType()
     {
         // Act
@@ -471,7 +436,6 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor throws on null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Actions")]
     public void UnsubscribeFromProjectionActionConstructorThrowsOnNullEntityId()
     {
         // Act & Assert

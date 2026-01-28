@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.EventSourcing.UxProjections.L0Tests.Infrastructure;
@@ -16,9 +14,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 ///     Integration tests for <see cref="IUxProjectionCursorGrain" /> behavior using a real Orleans cluster.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionCursorGrain Integration")]
 public sealed class UxProjectionCursorGrainIntegrationTests
 {
     private readonly TestCluster cluster = TestClusterAccess.Cluster;
@@ -28,7 +23,6 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Grain Activation")]
     public async Task CursorGrainActivatesWithValidKeyFormat()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
@@ -48,7 +42,6 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Grain Activation")]
     public async Task CursorGrainReturnsInitialMinusOnePosition()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
@@ -69,7 +62,6 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Grain Lifecycle")]
     public async Task DeactivateAsyncCompletesWithoutError()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
@@ -90,7 +82,6 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Grain Identity")]
     public async Task GrainReferenceObtainedMultipleTimesIsSameGrain()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
@@ -112,7 +103,6 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Multi-Grain")]
     public async Task MultipleCursorGrainsReturnIndependentInitialPositions()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
@@ -137,7 +127,6 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Position Consistency")]
     public async Task SameGrainReferenceReturnsConsistentPosition()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)

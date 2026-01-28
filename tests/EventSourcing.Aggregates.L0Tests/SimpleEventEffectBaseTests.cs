@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
@@ -13,9 +11,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SimpleEventEffectBase{TEvent,TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("SimpleEventEffectBase")]
 public sealed class SimpleEventEffectBaseTests
 {
     /// <summary>
@@ -61,7 +56,6 @@ public sealed class SimpleEventEffectBaseTests
     ///     CanHandle returns false for non-matching event type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
     public void CanHandleReturnsFalseForNonMatchingEventType()
     {
         // Arrange
@@ -79,7 +73,6 @@ public sealed class SimpleEventEffectBaseTests
     ///     CanHandle returns true for matching event type (inherited from EventEffectBase).
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
     public void CanHandleReturnsTrueForMatchingEventType()
     {
         // Arrange
@@ -98,7 +91,6 @@ public sealed class SimpleEventEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoEvents()
     {
         // Arrange
@@ -123,7 +115,6 @@ public sealed class SimpleEventEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when event is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void HandleAsyncThrowsArgumentNullExceptionWhenEventIsNull()
     {
         // Arrange

@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
@@ -11,9 +9,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotWriteModel" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots Cosmos")]
-[AllureSubSuite("Write Model")]
 public sealed class SnapshotWriteModelTests
 {
     private static readonly SnapshotStreamKey StreamKey = new("TEST.BROOK", "type", "id", "hash");

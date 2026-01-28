@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
@@ -19,9 +17,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionVersionedCacheGrain{TProjection}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionVersionedCacheGrain")]
 public sealed class UxProjectionVersionedCacheGrainTests
 {
     private const string ValidPrimaryKey = "TEST.MODULE.STREAM|entity-123|42";
@@ -64,7 +59,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should initialize properties correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorInitializesPropertiesCorrectly()
     {
         // Arrange
@@ -81,7 +75,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when grainContext is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
@@ -101,7 +94,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
@@ -121,7 +113,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when rootReducer is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenRootReducerIsNull()
     {
         // Arrange
@@ -141,7 +132,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when snapshotGrainFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
     {
         // Arrange
@@ -162,7 +152,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("State Access")]
     public async Task GetAsyncReturnsProjectionLoadedOnActivation()
     {
         // Arrange
@@ -191,7 +180,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("State Access")]
     public async Task GetAsyncReturnsProjectionValueFromActivation()
     {
         // Arrange
@@ -219,7 +207,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Caching")]
     public async Task GetAsyncReturnsSameProjectionOnSubsequentCalls()
     {
         // Arrange
@@ -248,7 +235,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Key Construction")]
     public async Task OnActivateAsyncExtractsBrookNameFromKey()
     {
         // Arrange
@@ -276,7 +262,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncParsesVersionedKeyCorrectly()
     {
         // Arrange
@@ -301,7 +286,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncPassesCancellationTokenToSnapshotGrain()
     {
         // Arrange
@@ -336,7 +320,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncThrowsWhenPrimaryKeyIsInvalid()
     {
         // Arrange
@@ -351,7 +334,6 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Key Construction")]
     public async Task OnActivateAsyncUsesCorrectSnapshotKeyFormat()
     {
         // Arrange

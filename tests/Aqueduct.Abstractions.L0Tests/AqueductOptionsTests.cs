@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Mississippi.Common.Abstractions;
 
 
@@ -8,9 +6,6 @@ namespace Mississippi.Aqueduct.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="AqueductOptions" /> configuration.
 /// </summary>
-[AllureParentSuite("ASP.NET Core")]
-[AllureSuite("SignalR Orleans")]
-[AllureSubSuite("Configuration")]
 public sealed class AqueductOptionsTests
 {
     /// <summary>

@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions;
@@ -15,9 +13,6 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletClientRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Configuration")]
-[AllureSubSuite("InletClientRegistrations")]
 public sealed class InletClientRegistrationsTests
 {
     /// <summary>
@@ -30,7 +25,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IInletStore as CompositeInletStore.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletRegistersIInletStoreAsCompositeInletStore()
     {
         // Arrange
@@ -49,7 +43,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IProjectionCache as ProjectionCache singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletRegistersIProjectionCacheAsSingleton()
     {
         // Arrange
@@ -70,7 +63,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IProjectionUpdateNotifier as ProjectionNotifier.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletRegistersIProjectionUpdateNotifierAsProjectionNotifier()
     {
         // Arrange
@@ -89,7 +81,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IStore as singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletRegistersIStoreAsSingleton()
     {
         // Arrange
@@ -109,7 +100,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IStore as Store.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletRegistersIStoreAsStore()
     {
         // Arrange
@@ -128,7 +118,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IProjectionRegistry.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletRegistersProjectionRegistry()
     {
         // Arrange
@@ -148,7 +137,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void AddInletWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
@@ -162,7 +150,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath should register path in IConfigureProjectionRegistry.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddProjectionPathRegistersConfiguration()
     {
         // Arrange
@@ -182,7 +169,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath should throw ArgumentNullException when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void AddProjectionPathWithNullPathThrowsArgumentNullException()
     {
         // Arrange
@@ -196,7 +182,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void AddProjectionPathWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
@@ -210,7 +195,6 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath configuration should register path in registry.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void ProjectionPathConfigurationRegistersPathInRegistry()
     {
         // Arrange

@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Mississippi.Common.Abstractions;
 
 
@@ -8,9 +6,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="BrookStorageOptions" /> defaults and mutability.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Brook Storage Options")]
 public sealed class BrookStorageOptionsTests
 {
     /// <summary>

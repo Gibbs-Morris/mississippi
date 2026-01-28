@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Azure.Storage.Blobs;
 
 using Microsoft.Azure.Cosmos;
@@ -27,9 +25,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
 /// <summary>
 ///     Unit tests for BrookStorageProviderRegistrations extension methods.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Storage Provider Registrations")]
 public sealed class BrookStorageProviderRegistrationsTests
 {
     /// <summary>

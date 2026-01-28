@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
 
@@ -10,9 +8,6 @@ namespace Mississippi.EventSourcing.Reducers.L0Tests;
 /// <summary>
 ///     Tests for <see cref="RootReducer{TProjection}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Reducers")]
-[AllureSubSuite("Root Reducer")]
 public sealed class RootReducerTests
 {
     /// <summary>

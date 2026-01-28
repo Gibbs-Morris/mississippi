@@ -4,8 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
@@ -14,9 +12,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="RootEventEffect{TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("RootEventEffect")]
 public sealed class RootEventEffectTests
 {
     /// <summary>
@@ -134,7 +129,6 @@ public sealed class RootEventEffectTests
     ///     Constructor should throw ArgumentNullException when effects is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ConstructorWithNullEffectsThrowsArgumentNullException()
     {
         // Act & Assert
@@ -146,7 +140,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Error Handling")]
     public async Task DispatchAsyncContinuesToOtherEffectsWhenOneThrows()
     {
         // Arrange
@@ -171,7 +164,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task DispatchAsyncDispatchesToFallbackEffects()
     {
         // Arrange
@@ -196,7 +188,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task DispatchAsyncDispatchesToMatchingEffectAndYieldsEvents()
     {
         // Arrange
@@ -221,7 +212,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task DispatchAsyncInvokesMultipleEffectsForSameEventType()
     {
         // Arrange
@@ -247,7 +237,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task DispatchAsyncReturnsEmptyWhenNoEffectsMatch()
     {
         // Arrange
@@ -270,7 +259,6 @@ public sealed class RootEventEffectTests
     ///     DispatchAsync throws ArgumentNullException when eventData is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void DispatchAsyncThrowsArgumentNullExceptionWhenEventDataIsNull()
     {
         // Arrange
@@ -291,7 +279,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Logging")]
     public async Task DispatchAsyncWithLoggerDoesNotThrow()
     {
         // Arrange
@@ -314,7 +301,6 @@ public sealed class RootEventEffectTests
     ///     EffectCount returns correct count when effects are registered.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void EffectCountReturnsCorrectCountWhenEffectsRegistered()
     {
         // Arrange
@@ -328,7 +314,6 @@ public sealed class RootEventEffectTests
     ///     EffectCount returns zero when no effects are registered.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void EffectCountReturnsZeroWhenNoEffectsRegistered()
     {
         // Arrange

@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions;
@@ -14,16 +12,12 @@ namespace Mississippi.Inlet.Client.L0Tests.Registrations;
 /// <summary>
 ///     Tests for <see cref="InletBlazorSignalRBuilder" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Registrations")]
-[AllureSubSuite("InletBlazorSignalRBuilder")]
 public sealed class InletBlazorSignalRBuilderTests
 {
     /// <summary>
     ///     AddProjectionFetcher returns builder for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("ProjectionFetcher")]
     public void AddProjectionFetcherReturnsBuilderForChaining()
     {
         // Arrange
@@ -41,7 +35,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build registers IHubConnectionProvider as scoped.
     /// </summary>
     [Fact]
-    [AllureFeature("Build")]
     public void BuildRegistersHubConnectionProviderAsScoped()
     {
         // Arrange
@@ -61,7 +54,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build registers Lazy IInletStore as scoped.
     /// </summary>
     [Fact]
-    [AllureFeature("Build")]
     public void BuildRegistersLazyInletStoreAsScoped()
     {
         // Arrange
@@ -81,7 +73,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build registers options as singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Build")]
     public void BuildRegistersOptionsAsSingleton()
     {
         // Arrange
@@ -103,7 +94,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build registers IProjectionDtoRegistry as singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Build")]
     public void BuildRegistersProjectionDtoRegistryAsSingleton()
     {
         // Arrange
@@ -123,7 +113,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build with custom fetcher registers it as scoped.
     /// </summary>
     [Fact]
-    [AllureFeature("Build")]
     public void BuildWithCustomFetcherRegistersItAsScoped()
     {
         // Arrange
@@ -146,7 +135,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build with ScanProjectionDtos registers AutoProjectionFetcher.
     /// </summary>
     [Fact]
-    [AllureFeature("Build")]
     public void BuildWithScanProjectionDtosRegistersAutoProjectionFetcher()
     {
         // Arrange
@@ -167,7 +155,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Constructor accepts non-null services.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorAcceptsNonNullServices()
     {
         // Arrange
@@ -184,7 +171,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Constructor throws ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenServicesIsNull()
     {
         // Act & Assert
@@ -195,7 +181,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     ScanProjectionDtos returns builder for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
     public void ScanProjectionDtosReturnsBuilderForChaining()
     {
         // Arrange
@@ -213,7 +198,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     ScanProjectionDtos throws ArgumentNullException when assemblies is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
     public void ScanProjectionDtosThrowsWhenAssembliesIsNull()
     {
         // Arrange
@@ -228,7 +212,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithHubPath returns builder for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     public void WithHubPathReturnsBuilderForChaining()
     {
         // Arrange
@@ -246,7 +229,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithHubPath throws ArgumentException when hubPath is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     public void WithHubPathThrowsWhenHubPathIsNull()
     {
         // Arrange
@@ -261,7 +243,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithHubPath throws ArgumentException when hubPath is whitespace.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     public void WithHubPathThrowsWhenHubPathIsWhitespace()
     {
         // Arrange
@@ -276,7 +257,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithRoutePrefix returns builder for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     public void WithRoutePrefixReturnsBuilderForChaining()
     {
         // Arrange
@@ -294,7 +274,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithRoutePrefix throws ArgumentException when prefix is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     public void WithRoutePrefixThrowsWhenPrefixIsNull()
     {
         // Arrange
@@ -309,7 +288,6 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithRoutePrefix throws ArgumentException when prefix is whitespace.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
     public void WithRoutePrefixThrowsWhenPrefixIsWhitespace()
     {
         // Arrange

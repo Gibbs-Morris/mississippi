@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
@@ -17,16 +15,12 @@ namespace Mississippi.Aqueduct.L0Tests;
 /// <summary>
 ///     Tests for <see cref="AqueductGrainFactory" />.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Core")]
-[AllureSubSuite("AqueductGrainFactory")]
 public sealed class AqueductGrainFactoryTests
 {
     /// <summary>
     ///     Constructor should throw when grainFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void ConstructorThrowsWhenGrainFactoryIsNull()
     {
         // Arrange
@@ -40,7 +34,6 @@ public sealed class AqueductGrainFactoryTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
@@ -54,7 +47,6 @@ public sealed class AqueductGrainFactoryTests
     ///     GetClientGrain with key should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
     public void GetClientGrainWithKeyReturnsGrain()
     {
         // Arrange
@@ -77,7 +69,6 @@ public sealed class AqueductGrainFactoryTests
     ///     GetClientGrain with strings should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
     public void GetClientGrainWithStringsReturnsGrain()
     {
         // Arrange
@@ -99,7 +90,6 @@ public sealed class AqueductGrainFactoryTests
     ///     GetGroupGrain with key should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
     public void GetGroupGrainWithKeyReturnsGrain()
     {
         // Arrange
@@ -122,7 +112,6 @@ public sealed class AqueductGrainFactoryTests
     ///     GetGroupGrain with strings should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
     public void GetGroupGrainWithStringsReturnsGrain()
     {
         // Arrange
@@ -144,7 +133,6 @@ public sealed class AqueductGrainFactoryTests
     ///     GetServerDirectoryGrain with default should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
     public void GetServerDirectoryGrainDefaultReturnsGrain()
     {
         // Arrange
@@ -165,7 +153,6 @@ public sealed class AqueductGrainFactoryTests
     ///     GetServerDirectoryGrain with key should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
     public void GetServerDirectoryGrainWithKeyReturnsGrain()
     {
         // Arrange

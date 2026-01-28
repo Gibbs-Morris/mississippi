@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 
 
@@ -10,9 +8,6 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionCursorKey" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections Abstractions")]
-[AllureSubSuite("UxProjectionCursorKey")]
 public sealed class UxProjectionCursorKeyTests
 {
     /// <summary>

@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Snapshots.Cosmos.Diagnostics;
 
 
@@ -12,9 +10,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests.Diagnostics;
 /// <summary>
 ///     Tests for snapshot storage metrics.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots Cosmos")]
-[AllureSubSuite("Metrics")]
 public sealed class SnapshotStorageMetricsTests
 {
     private sealed record MetricMeasurement(
@@ -28,7 +23,6 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordDelete should emit metric with snapshot type.
     /// </summary>
     [Fact]
-    [AllureFeature("Delete Metrics")]
     public void RecordDeleteEmitsMetric()
     {
         using MeterListener listener = new();
@@ -73,7 +67,6 @@ public sealed class SnapshotStorageMetricsTests
     /// </summary>
     /// <param name="prunedCount">The pruned count to test.</param>
     [Theory]
-    [AllureFeature("Prune Metrics")]
     [InlineData(0)]
     [InlineData(-1)]
     public void RecordPruneDoesNotEmitWhenCountIsZeroOrNegative(
@@ -116,7 +109,6 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordPrune should emit metric with pruned count.
     /// </summary>
     [Fact]
-    [AllureFeature("Prune Metrics")]
     public void RecordPruneEmitsMetricWithCount()
     {
         using MeterListener listener = new();
@@ -160,7 +152,6 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordRead should emit count and duration metrics when found.
     /// </summary>
     [Fact]
-    [AllureFeature("Read Metrics")]
     public void RecordReadEmitsMetricsWhenFound()
     {
         using MeterListener listener = new();
@@ -226,7 +217,6 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordRead should emit not_found result when not found.
     /// </summary>
     [Fact]
-    [AllureFeature("Read Metrics")]
     public void RecordReadEmitsNotFoundResult()
     {
         using MeterListener listener = new();
@@ -278,7 +268,6 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordWrite should not emit size metric when size is zero.
     /// </summary>
     [Fact]
-    [AllureFeature("Write Metrics")]
     public void RecordWriteDoesNotEmitSizeWhenZero()
     {
         using MeterListener listener = new();
@@ -326,7 +315,6 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordWrite should emit failure result on failure.
     /// </summary>
     [Fact]
-    [AllureFeature("Write Metrics")]
     public void RecordWriteEmitsFailureResult()
     {
         using MeterListener listener = new();
@@ -378,7 +366,6 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordWrite should emit count, duration, and size metrics on success.
     /// </summary>
     [Fact]
-    [AllureFeature("Write Metrics")]
     public void RecordWriteEmitsMetricsWithSize()
     {
         using MeterListener listener = new();

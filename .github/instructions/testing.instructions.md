@@ -90,5 +90,4 @@ Filter uses `FullyQualifiedName` matching on project naming convention (e.g., `*
 ## References
 
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
-- Allure naming: `.github/instructions/allure-test-naming.instructions.md`
 - Build rules: `.github/instructions/build-rules.instructions.md`

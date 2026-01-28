@@ -1,8 +1,6 @@
 using System;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Silo.Abstractions;
@@ -13,9 +11,6 @@ namespace Mississippi.Inlet.Silo.L0Tests;
 /// <summary>
 ///     Tests for ProjectionBrookRegistry via <see cref="IProjectionBrookRegistry" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Silo")]
-[AllureSuite("Registry")]
-[AllureSubSuite("ProjectionBrookRegistry")]
 public sealed class ProjectionBrookRegistryTests : IDisposable
 {
     private readonly IProjectionBrookRegistry registry;
@@ -43,7 +38,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetAllPaths should return empty for new registry.
     /// </summary>
     [Fact]
-    [AllureFeature("Enumeration")]
     public void GetAllPathsReturnsEmptyForNewRegistry()
     {
         // Act
@@ -57,7 +51,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetAllPaths should return registered projections.
     /// </summary>
     [Fact]
-    [AllureFeature("Enumeration")]
     public void GetAllPathsReturnsRegisteredProjections()
     {
         // Arrange
@@ -77,7 +70,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetBrookName should return null for unknown projection.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void GetBrookNameReturnsNullForUnknownProjection()
     {
         // Act
@@ -91,7 +83,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetBrookName should return registered brook name.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void GetBrookNameReturnsRegisteredBrookName()
     {
         // Arrange
@@ -108,7 +99,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetBrookName should throw when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void GetBrookNameThrowsWhenPathNull()
     {
         // Act & Assert
@@ -120,7 +110,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     Register should overwrite existing mapping.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void RegisterOverwritesExistingMapping()
     {
         // Arrange
@@ -138,7 +127,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     Register should store the mapping.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
     public void RegisterStoresMapping()
     {
         // Act
@@ -153,7 +141,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     Register should throw when brookName is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void RegisterThrowsWhenBrookNameNull()
     {
         // Act & Assert
@@ -166,7 +153,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     Register should throw when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void RegisterThrowsWhenPathNull()
     {
         // Act & Assert
@@ -178,7 +164,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     TryGetBrookName should return false for unknown projection.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void TryGetBrookNameReturnsFalseForUnknownProjection()
     {
         // Act
@@ -193,7 +178,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     TryGetBrookName should return true and brook name for registered projection.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
     public void TryGetBrookNameReturnsTrueForRegisteredProjection()
     {
         // Arrange
@@ -211,7 +195,6 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     TryGetBrookName should throw when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void TryGetBrookNameThrowsWhenPathNull()
     {
         // Act & Assert

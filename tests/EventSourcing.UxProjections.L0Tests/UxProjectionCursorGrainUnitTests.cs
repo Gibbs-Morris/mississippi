@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -21,9 +19,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 /// <summary>
 ///     Unit tests for <see cref="UxProjectionCursorGrain" /> covering the grain implementation directly.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionCursorGrain Unit")]
 public sealed class UxProjectionCursorGrainUnitTests
 {
     private const string InvalidPrimaryKey = "invalid-key-without-pipe";
@@ -68,7 +63,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures the constructor throws ArgumentNullException when grainContext is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor Validation")]
     public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
@@ -90,7 +84,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures the constructor throws ArgumentNullException when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor Validation")]
     public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
@@ -112,7 +105,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures the constructor throws ArgumentNullException when streamIdFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor Validation")]
     public void ConstructorThrowsWhenStreamIdFactoryIsNull()
     {
         // Arrange
@@ -134,7 +126,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures the constructor throws ArgumentNullException when streamProviderOptions is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor Validation")]
     public void ConstructorThrowsWhenStreamProviderOptionsIsNull()
     {
         // Arrange
@@ -157,7 +148,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Lifecycle")]
     public async Task DeactivateAsyncCompletesWithoutError()
     {
         // Arrange
@@ -175,7 +165,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Position Tracking")]
     public async Task GetPositionAsyncReturnsInitialMinusOnePosition()
     {
         // Arrange
@@ -193,7 +182,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures GrainContext property returns the injected context.
     /// </summary>
     [Fact]
-    [AllureFeature("Properties")]
     public void GrainContextReturnsInjectedContext()
     {
         // Arrange
@@ -213,7 +201,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncLogsErrorWhenPrimaryKeyInvalid()
     {
         // Arrange
@@ -263,7 +250,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncThrowsWhenPrimaryKeyInvalid()
     {
         // Arrange
@@ -291,7 +277,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Stream Lifecycle")]
     public async Task OnCompletedAsyncCompletesWithoutError()
     {
         // Arrange
@@ -319,7 +304,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Stream Lifecycle")]
     public async Task OnErrorAsyncCompletesWithoutThrowing()
     {
         // Arrange
@@ -338,7 +322,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Stream Lifecycle")]
     public async Task OnErrorAsyncLogsError()
     {
         // Arrange
@@ -367,7 +350,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Event Handling")]
     public async Task OnNextAsyncHandlesLargePositionValues()
     {
         // Arrange
@@ -387,7 +369,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Event Handling")]
     public async Task OnNextAsyncIgnoresEqualPosition()
     {
         // Arrange
@@ -407,7 +388,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Event Handling")]
     public async Task OnNextAsyncIgnoresOlderPosition()
     {
         // Arrange
@@ -427,7 +407,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Event Handling")]
     public async Task OnNextAsyncThrowsWhenItemIsNull()
     {
         // Arrange
@@ -442,7 +421,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Event Handling")]
     public async Task OnNextAsyncUpdatesFromMinusOneToZero()
     {
         // Arrange
@@ -462,7 +440,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Event Handling")]
     public async Task OnNextAsyncUpdatesPositionMultipleTimes()
     {
         // Arrange
@@ -487,7 +464,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Event Handling")]
     public async Task OnNextAsyncUpdatesPositionWhenNewer()
     {
         // Arrange
@@ -507,7 +483,6 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    [AllureFeature("Event Handling")]
     public async Task PositionIsTrackedCorrectlyAfterSequentialEvents()
     {
         // Arrange

@@ -2,8 +2,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -23,9 +21,6 @@ namespace Mississippi.Aqueduct.L0Tests;
 /// <summary>
 ///     Tests for <see cref="StreamSubscriptionManager" />.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Core")]
-[AllureSubSuite("StreamSubscriptionManager")]
 public sealed class StreamSubscriptionManagerTests
 {
     private static IServerIdProvider CreateServerIdProvider(
@@ -41,7 +36,6 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
     [Fact(DisplayName = "Constructor Succeeds With Valid Dependencies")]
-    [AllureFeature("Construction")]
     public void ConstructorShouldSucceedWithValidDependencies()
     {
         // Arrange
@@ -63,7 +57,6 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should throw when clusterClient is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ClusterClient Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -86,7 +79,6 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Logger Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -109,7 +101,6 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should throw when options is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Options Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -132,7 +123,6 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should throw when serverIdProvider is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ServerIdProvider Is Null")]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -156,7 +146,6 @@ public sealed class StreamSubscriptionManagerTests
     ///     Dispose should be idempotent.
     /// </summary>
     [Fact(DisplayName = "Dispose Is Idempotent")]
-    [AllureFeature("Disposal")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP016:Don't use disposed instance",
@@ -188,7 +177,6 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Throws When HubName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task EnsureInitializedAsyncShouldThrowWhenHubNameIsEmpty()
     {
         // Arrange
@@ -207,7 +195,6 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Throws When HubName Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task EnsureInitializedAsyncShouldThrowWhenHubNameIsNull()
     {
         // Arrange
@@ -226,7 +213,6 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Throws When OnAllMessage Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task EnsureInitializedAsyncShouldThrowWhenOnAllMessageIsNull()
     {
         // Arrange
@@ -245,7 +231,6 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Throws When OnServerMessage Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task EnsureInitializedAsyncShouldThrowWhenOnServerMessageIsNull()
     {
         // Arrange
@@ -264,7 +249,6 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Uses Provider ServerId")]
-    [AllureFeature("Initialization")]
     public async Task EnsureInitializedAsyncShouldUseProviderServerId()
     {
         // Arrange
@@ -310,7 +294,6 @@ public sealed class StreamSubscriptionManagerTests
     ///     IsInitialized should be false before initialization.
     /// </summary>
     [Fact(DisplayName = "IsInitialized Is False Before Initialization")]
-    [AllureFeature("State")]
     public void IsInitializedShouldBeFalseBeforeInitialization()
     {
         // Arrange
@@ -330,7 +313,6 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "PublishToAllAsync Throws When Message Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task PublishToAllAsyncShouldThrowWhenMessageIsNull()
     {
         // Arrange
@@ -348,7 +330,6 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "PublishToAllAsync Throws When Stream Not Initialized")]
-    [AllureFeature("State")]
     public async Task PublishToAllAsyncShouldThrowWhenStreamNotInitialized()
     {
         // Arrange
@@ -372,7 +353,6 @@ public sealed class StreamSubscriptionManagerTests
     ///     ServerId should be unique across instances.
     /// </summary>
     [Fact(DisplayName = "ServerId Is Unique Across Instances")]
-    [AllureFeature("Construction")]
     public void ServerIdShouldBeUniqueAcrossInstances()
     {
         // Arrange
