@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,9 +14,6 @@ namespace Mississippi.Aqueduct.L0Tests;
 /// <summary>
 ///     Tests for <see cref="AqueductRegistrations" />.
 /// </summary>
-[AllureParentSuite("ASP.NET Core")]
-[AllureSuite("SignalR Orleans")]
-[AllureSubSuite("Aqueduct Registrations")]
 public sealed class AqueductRegistrationsTests
 {
     private sealed class TestHub : Hub;
