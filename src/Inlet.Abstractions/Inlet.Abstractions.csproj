@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Orleans.Sdk" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
-    </ItemGroup>
+    <!-- 
+        Minimal, dependency-free project containing the shared ProjectionPathAttribute.
+        This project is intentionally kept light so it can be referenced from:
+        - WASM client projects (Blazor WebAssembly)
+        - Server projects (Orleans, ASP.NET)
+        - Shared contracts projects
+    -->
 
 </Project>

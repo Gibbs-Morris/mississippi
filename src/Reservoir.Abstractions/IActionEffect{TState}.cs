@@ -27,22 +27,6 @@ namespace Mississippi.Reservoir.Abstractions;
 ///         <see cref="SimpleActionEffectBase{TAction,TState}" /> instead.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed class SaveDataEffect : ActionEffectBase&lt;SaveDataAction, AppState&gt;
-///         {
-///             public override async IAsyncEnumerable&lt;IAction&gt; HandleAsync(
-///                 SaveDataAction action,
-///                 AppState currentState,
-///                 [EnumeratorCancellation] CancellationToken cancellationToken)
-///             {
-///                 yield return new SavingAction();
-///                 await SaveToStorageAsync(action.Data, cancellationToken);
-///                 yield return new SavedAction();
-///             }
-///         }
-///     </code>
-/// </example>
 public interface IActionEffect<in TState>
     where TState : class, IFeatureState
 {

@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
@@ -17,16 +15,12 @@ namespace Mississippi.Aqueduct.L0Tests;
 /// <summary>
 ///     Tests for <see cref="LocalMessageSender" />.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Core")]
-[AllureSubSuite("LocalMessageSender")]
 public sealed class LocalMessageSenderTests
 {
     /// <summary>
     ///     Constructor should succeed with valid logger.
     /// </summary>
     [Fact(DisplayName = "Constructor Succeeds With Valid Logger")]
-    [AllureFeature("Construction")]
     public void ConstructorShouldSucceedWithValidLogger()
     {
         // Arrange
@@ -43,7 +37,6 @@ public sealed class LocalMessageSenderTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Logger Is Null")]
-    [AllureFeature("Argument Validation")]
     public void ConstructorShouldThrowWhenLoggerIsNull()
     {
         // Act & Assert
@@ -55,7 +48,6 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Succeeds With Empty Args")]
-    [AllureFeature("Message Sending")]
     public async Task SendAsyncShouldSucceedWithEmptyArgs()
     {
         // Arrange
@@ -76,7 +68,6 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Succeeds With Valid Arguments")]
-    [AllureFeature("Message Sending")]
     public async Task SendAsyncShouldSucceedWithValidArguments()
     {
         // Arrange
@@ -98,7 +89,6 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Throws When Connection Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task SendAsyncShouldThrowWhenConnectionIsNull()
     {
         // Arrange
@@ -115,7 +105,6 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Throws When MethodName Is Empty")]
-    [AllureFeature("Argument Validation")]
     public async Task SendAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
@@ -133,7 +122,6 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Throws When MethodName Is Null")]
-    [AllureFeature("Argument Validation")]
     public async Task SendAsyncShouldThrowWhenMethodNameIsNull()
     {
         // Arrange
@@ -151,7 +139,6 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Works With Array Args")]
-    [AllureFeature("Message Sending")]
     public async Task SendAsyncShouldWorkWithArrayArgs()
     {
         // Arrange

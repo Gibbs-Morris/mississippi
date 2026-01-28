@@ -54,13 +54,13 @@
     <Project Path="src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
   </Folder>
   <Folder Name="/Framework/Inlet/">
-    <Project Path="src\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
     <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
-    <Project Path="src\Inlet\Inlet.csproj" />
-    <Project Path="src\Inlet.Blazor.WebAssembly\Inlet.Blazor.WebAssembly.csproj" />
-    <Project Path="src\Inlet.Blazor.Server\Inlet.Blazor.Server.csproj" />
-    <Project Path="src\Inlet.Orleans\Inlet.Orleans.csproj" />
-    <Project Path="src\Inlet.Orleans.SignalR\Inlet.Orleans.SignalR.csproj" />
+    <Project Path="src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
+    <Project Path="src\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
+    <Project Path="src\Inlet.Silo.Abstractions\Inlet.Silo.Abstractions.csproj" />
+    <Project Path="src\Inlet.Client\Inlet.Client.csproj" />
+    <Project Path="src\Inlet.Server\Inlet.Server.csproj" />
+    <Project Path="src\Inlet.Silo\Inlet.Silo.csproj" />
   </Folder>
   <Folder Name="/Framework/SDK/">
     <Project Path="src\Sdk.Client\Sdk.Client.csproj" />
@@ -137,11 +137,10 @@
   </Folder>
   <Folder Name="/Tests/Inlet/">
     <Project Path="tests\Inlet.Abstractions.L0Tests\Inlet.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Blazor.WebAssembly.L0Tests\Inlet.Blazor.WebAssembly.L0Tests.csproj" />
     <Project Path="tests\Inlet.Blazor.Server.L0Tests\Inlet.Blazor.Server.L0Tests.csproj" />
-    <Project Path="tests\Inlet.L0Tests\Inlet.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Orleans.L0Tests\Inlet.Orleans.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Orleans.SignalR.L0Tests\Inlet.Orleans.SignalR.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Client.L0Tests\Inlet.Client.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Silo.L0Tests\Inlet.Silo.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Server.L0Tests\Inlet.Server.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/SDK/">
     <Project Path="tests\Sdk.Client.L0Tests\Sdk.Client.L0Tests.csproj" />

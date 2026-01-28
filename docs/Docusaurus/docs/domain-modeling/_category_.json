@@ -1,0 +1,10 @@
+{
+  "label": "Domain Modeling",
+  "position": 4,
+  "link": {
+    "type": "doc",
+    "id": "domain-modeling"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

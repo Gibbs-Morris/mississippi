@@ -13,17 +13,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         should not be exposed via APIs.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed record CreateOrder
-///         {
-///             public string ProductId { get; init; }
-///
-///             [GeneratorIgnore]
-///             public DateTimeOffset InternalTimestamp { get; init; }
-///         }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class GeneratorIgnoreAttribute : Attribute
 {

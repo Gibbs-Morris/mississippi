@@ -1,23 +1,17 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="OptimisticConcurrencyException" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Optimistic Concurrency Exception")]
 public sealed class OptimisticConcurrencyExceptionTests
 {
     /// <summary>
     ///     Default constructor should create exception with null message.
     /// </summary>
     [Fact]
-    [AllureFeature("Construction")]
     public void DefaultConstructorCreatesExceptionWithNullMessage()
     {
         // Arrange & Act
@@ -31,7 +25,6 @@ public sealed class OptimisticConcurrencyExceptionTests
     ///     Exception should derive from Exception base class.
     /// </summary>
     [Fact]
-    [AllureFeature("Inheritance")]
     public void ExceptionDerivesFromExceptionBaseClass()
     {
         // Arrange & Act
@@ -45,7 +38,6 @@ public sealed class OptimisticConcurrencyExceptionTests
     ///     Message and inner exception constructor should set both properties.
     /// </summary>
     [Fact]
-    [AllureFeature("Construction")]
     public void MessageAndInnerExceptionConstructorSetsBothProperties()
     {
         // Arrange
@@ -64,7 +56,6 @@ public sealed class OptimisticConcurrencyExceptionTests
     ///     Message constructor should set the message.
     /// </summary>
     [Fact]
-    [AllureFeature("Construction")]
     public void MessageConstructorSetsMessage()
     {
         // Arrange

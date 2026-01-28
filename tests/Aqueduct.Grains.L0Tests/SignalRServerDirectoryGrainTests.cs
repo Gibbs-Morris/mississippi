@@ -2,8 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Grains.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
@@ -14,9 +12,6 @@ namespace Mississippi.Aqueduct.Grains.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ISignalRServerDirectoryGrain" /> operations.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Grains")]
-[AllureSubSuite("SignalRServerDirectoryGrain")]
 [Collection(ClusterTestSuite.Name)]
 public sealed class SignalRServerDirectoryGrainTests
 {

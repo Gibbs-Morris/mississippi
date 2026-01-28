@@ -1,16 +1,11 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.Snapshots.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotStreamKey" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots Abstractions")]
-[AllureSubSuite("Snapshot Stream Key")]
 public sealed class SnapshotStreamKeyTests
 {
     /// <summary>

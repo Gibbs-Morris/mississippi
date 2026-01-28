@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Refraction.Events;
 
 
@@ -10,15 +8,12 @@ namespace Mississippi.Refraction.L0Tests.Events;
 /// <summary>
 ///     Tests for <see cref="PaneFocusedEvent" /> record.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Events")]
 public sealed class PaneFocusedEventTests
 {
     /// <summary>
     ///     PaneFocusedEvent can be created with pane id.
     /// </summary>
     [Fact]
-    [AllureFeature("PaneFocusedEvent")]
     public void PaneFocusedEventCanBeCreatedWithPaneId()
     {
         // Arrange & Act
@@ -32,7 +27,6 @@ public sealed class PaneFocusedEventTests
     ///     PaneFocusedEvent implements record equality.
     /// </summary>
     [Fact]
-    [AllureFeature("PaneFocusedEvent")]
     public void PaneFocusedEventImplementsRecordEquality()
     {
         // Arrange
@@ -47,7 +41,6 @@ public sealed class PaneFocusedEventTests
     ///     PaneFocusedEvent is sealed record.
     /// </summary>
     [Fact]
-    [AllureFeature("PaneFocusedEvent")]
     public void PaneFocusedEventIsSealedRecord()
     {
         // Arrange
@@ -62,7 +55,6 @@ public sealed class PaneFocusedEventTests
     ///     PaneFocusedEvent PaneId property is accessible.
     /// </summary>
     [Fact]
-    [AllureFeature("PaneFocusedEvent")]
     public void PaneFocusedEventPaneIdPropertyIsAccessible()
     {
         // Arrange

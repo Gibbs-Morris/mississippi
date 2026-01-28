@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Azure;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
@@ -18,9 +16,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Locking;
 /// <summary>
 ///     Tests for <see cref="BlobLeaseClientAdapter" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Blob Lease Client Adapter")]
 public sealed class BlobLeaseClientAdapterTests
 {
     /// <summary>

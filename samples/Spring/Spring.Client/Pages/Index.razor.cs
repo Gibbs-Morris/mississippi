@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-using Mississippi.Inlet.Blazor.WebAssembly.SignalRConnection;
+using Mississippi.Inlet.Client.SignalRConnection;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;

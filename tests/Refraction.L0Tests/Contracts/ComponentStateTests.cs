@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Refraction.Contracts;
 
 
@@ -10,15 +8,12 @@ namespace Mississippi.Refraction.L0Tests.Contracts;
 /// <summary>
 ///     Tests for <see cref="ComponentState" /> record struct.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Contracts")]
 public sealed class ComponentStateTests
 {
     /// <summary>
     ///     ComponentState Active converts to correct string.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateActiveConvertsToCorrectString()
     {
         // Arrange
@@ -35,7 +30,6 @@ public sealed class ComponentStateTests
     ///     ComponentState Busy converts to correct string.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateBusyConvertsToCorrectString()
     {
         // Arrange
@@ -52,7 +46,6 @@ public sealed class ComponentStateTests
     ///     ComponentState Custom creates custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateCustomCreatesCustomState()
     {
         // Arrange & Act
@@ -67,7 +60,6 @@ public sealed class ComponentStateTests
     ///     ComponentState Disabled converts to correct string.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateDisabledConvertsToCorrectString()
     {
         // Arrange
@@ -84,7 +76,6 @@ public sealed class ComponentStateTests
     ///     ComponentState Error converts to correct string.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateErrorConvertsToCorrectString()
     {
         // Arrange
@@ -101,7 +92,6 @@ public sealed class ComponentStateTests
     ///     ComponentState Expanded converts to correct string.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateExpandedConvertsToCorrectString()
     {
         // Arrange
@@ -118,7 +108,6 @@ public sealed class ComponentStateTests
     ///     ComponentState Focused converts to correct string.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateFocusedConvertsToCorrectString()
     {
         // Arrange
@@ -135,7 +124,6 @@ public sealed class ComponentStateTests
     ///     ComponentState Idle converts to correct string.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateIdleConvertsToCorrectString()
     {
         // Arrange
@@ -152,7 +140,6 @@ public sealed class ComponentStateTests
     ///     ComponentState implements implicit string conversion.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateImplementsImplicitStringConversion()
     {
         // Arrange
@@ -170,7 +157,6 @@ public sealed class ComponentStateTests
     ///     ComponentState is readonly record struct.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateIsReadonlyRecordStruct()
     {
         // Arrange
@@ -184,7 +170,6 @@ public sealed class ComponentStateTests
     ///     ComponentState Latent converts to correct string.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateLatentConvertsToCorrectString()
     {
         // Arrange
@@ -201,7 +186,6 @@ public sealed class ComponentStateTests
     ///     ComponentState Locked converts to correct string.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateLockedConvertsToCorrectString()
     {
         // Arrange
@@ -218,7 +202,6 @@ public sealed class ComponentStateTests
     ///     ComponentState ToString returns correct value.
     /// </summary>
     [Fact]
-    [AllureFeature("ComponentState")]
     public void ComponentStateToStringReturnsCorrectValue()
     {
         // Arrange

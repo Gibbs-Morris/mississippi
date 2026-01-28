@@ -19,23 +19,6 @@ namespace Mississippi.Reservoir.Abstractions;
 ///         is effectively blocked from reaching subsequent middleware and reducers.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed class LoggingMiddleware : IMiddleware
-///         {
-///             private readonly ILogger _logger;
-///
-///             public LoggingMiddleware(ILogger logger) => _logger = logger;
-///
-///             public void Invoke(IAction action, Action&lt;IAction&gt; nextAction)
-///             {
-///                 _logger.LogDebug("Dispatching: {ActionType}", action.GetType().Name);
-///                 nextAction(action);
-///                 _logger.LogDebug("Dispatched: {ActionType}", action.GetType().Name);
-///             }
-///         }
-///     </code>
-/// </example>
 public interface IMiddleware
 {
     /// <summary>

@@ -1,8 +1,6 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
-using Mississippi.Inlet.Abstractions.Actions;
+using Mississippi.Inlet.Client.Abstractions.Actions;
 
 
 namespace Mississippi.Inlet.Abstractions.L0Tests.Actions;
@@ -10,9 +8,6 @@ namespace Mississippi.Inlet.Abstractions.L0Tests.Actions;
 /// <summary>
 ///     Tests for projection action classes.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Abstractions")]
-[AllureSuite("Actions")]
-[AllureSubSuite("ProjectionActions")]
 public sealed class ProjectionActionsTests
 {
     /// <summary>
@@ -25,7 +20,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor should set properties.
     /// </summary>
     [Fact]
-    [AllureFeature("ProjectionConnectionChangedAction")]
     public void ProjectionConnectionChangedActionConstructorSetsProperties()
     {
         // Act
@@ -41,7 +35,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ProjectionConnectionChangedActionWithNullEntityIdThrows()
     {
         // Act & Assert
@@ -52,7 +45,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor should set properties.
     /// </summary>
     [Fact]
-    [AllureFeature("ProjectionErrorAction")]
     public void ProjectionErrorActionConstructorSetsProperties()
     {
         // Arrange
@@ -71,7 +63,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ProjectionErrorActionWithNullEntityIdThrows()
     {
         // Act & Assert
@@ -83,7 +74,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor should throw for null error.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ProjectionErrorActionWithNullErrorThrows()
     {
         // Act & Assert
@@ -94,7 +84,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction can have null data.
     /// </summary>
     [Fact]
-    [AllureFeature("ProjectionLoadedAction")]
     public void ProjectionLoadedActionAllowsNullData()
     {
         // Act
@@ -108,7 +97,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor should set properties.
     /// </summary>
     [Fact]
-    [AllureFeature("ProjectionLoadedAction")]
     public void ProjectionLoadedActionConstructorSetsProperties()
     {
         // Arrange
@@ -127,7 +115,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ProjectionLoadedActionWithNullEntityIdThrows()
     {
         // Act & Assert
@@ -138,7 +125,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor should set properties.
     /// </summary>
     [Fact]
-    [AllureFeature("ProjectionLoadingAction")]
     public void ProjectionLoadingActionConstructorSetsProperties()
     {
         // Act
@@ -153,7 +139,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ProjectionLoadingActionWithNullEntityIdThrows()
     {
         // Act & Assert
@@ -164,7 +149,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor should set properties.
     /// </summary>
     [Fact]
-    [AllureFeature("ProjectionUpdatedAction")]
     public void ProjectionUpdatedActionConstructorSetsProperties()
     {
         // Arrange
@@ -183,7 +167,6 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ProjectionUpdatedActionWithNullEntityIdThrows()
     {
         // Act & Assert
@@ -194,7 +177,6 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor should set properties.
     /// </summary>
     [Fact]
-    [AllureFeature("RefreshProjectionAction")]
     public void RefreshProjectionActionConstructorSetsProperties()
     {
         // Act
@@ -209,7 +191,6 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void RefreshProjectionActionWithNullEntityIdThrows()
     {
         // Act & Assert
@@ -220,7 +201,6 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor should set properties.
     /// </summary>
     [Fact]
-    [AllureFeature("SubscribeToProjectionAction")]
     public void SubscribeToProjectionActionConstructorSetsProperties()
     {
         // Act
@@ -235,7 +215,6 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void SubscribeToProjectionActionWithNullEntityIdThrows()
     {
         // Act & Assert
@@ -246,7 +225,6 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor should set properties.
     /// </summary>
     [Fact]
-    [AllureFeature("UnsubscribeFromProjectionAction")]
     public void UnsubscribeFromProjectionActionConstructorSetsProperties()
     {
         // Act
@@ -261,7 +239,6 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void UnsubscribeFromProjectionActionWithNullEntityIdThrows()
     {
         // Act & Assert

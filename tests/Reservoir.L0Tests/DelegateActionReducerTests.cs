@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
@@ -11,9 +9,6 @@ namespace Mississippi.Reservoir.L0Tests;
 /// <summary>
 ///     Tests for <see cref="DelegateActionReducer{TAction,TState}" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Reservoir")]
-[AllureSuite("Core")]
-[AllureSubSuite("Delegate Action Reducer")]
 public sealed class DelegateActionReducerTests
 {
     /// <summary>
@@ -44,7 +39,6 @@ public sealed class DelegateActionReducerTests
     ///     Constructor should throw ArgumentNullException when reduce delegate is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ConstructorWithNullDelegateThrowsArgumentNullException()
     {
         // Act & Assert
@@ -55,7 +49,6 @@ public sealed class DelegateActionReducerTests
     ///     DelegateActionReducer should invoke delegate when action matches.
     /// </summary>
     [Fact]
-    [AllureFeature("Reduction")]
     public void ReduceInvokesDelegateWhenActionMatches()
     {
         // Arrange
@@ -82,7 +75,6 @@ public sealed class DelegateActionReducerTests
     ///     TryReduce should return false and return original state for non-matching action type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Matching")]
     public void TryReduceReturnsFalseAndReturnsOriginalStateForNonMatchingActionType()
     {
         // Arrange
@@ -110,7 +102,6 @@ public sealed class DelegateActionReducerTests
     ///     TryReduce should return true and produce new state for matching action type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Matching")]
     public void TryReduceReturnsTrueAndProducesNewStateForMatchingActionType()
     {
         // Arrange

@@ -1,8 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Abstractions;
@@ -15,9 +13,6 @@ namespace Mississippi.Reservoir.Blazor.L0Tests;
 /// <summary>
 ///     Tests for <see cref="StoreComponent" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Reservoir.Blazor")]
-[AllureSuite("Components")]
-[AllureSubSuite("StoreComponent")]
 public sealed class StoreComponentTests : IDisposable
 {
     private readonly Store store;
@@ -132,7 +127,6 @@ public sealed class StoreComponentTests : IDisposable
     ///     Dispatch should delegate to the store.
     /// </summary>
     [Fact]
-    [AllureFeature("Dispatch")]
     public void DispatchDelegatesToStore()
     {
         // Arrange
@@ -152,7 +146,6 @@ public sealed class StoreComponentTests : IDisposable
     ///     Dispose should be callable multiple times without error.
     /// </summary>
     [Fact]
-    [AllureFeature("Disposal")]
     [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
@@ -182,7 +175,6 @@ public sealed class StoreComponentTests : IDisposable
     ///     GetState should delegate to the store.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
@@ -211,7 +203,6 @@ public sealed class StoreComponentTests : IDisposable
     ///     OnInitialized can be called multiple times (re-disposing subscription).
     /// </summary>
     [Fact]
-    [AllureFeature("Initialization")]
     [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
@@ -234,7 +225,6 @@ public sealed class StoreComponentTests : IDisposable
     ///     OnInitialized should subscribe to store changes.
     /// </summary>
     [Fact]
-    [AllureFeature("Initialization")]
     [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",

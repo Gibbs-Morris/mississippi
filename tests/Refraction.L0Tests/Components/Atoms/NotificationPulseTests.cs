@@ -1,8 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -16,15 +14,12 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// <summary>
 ///     Tests for <see cref="NotificationPulse" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Atoms")]
 public sealed class NotificationPulseTests : BunitContext
 {
     /// <summary>
     ///     NotificationPulse has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseHasAdditionalAttributesParameter()
     {
         // Arrange
@@ -41,7 +36,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse has ChildContent parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseHasChildContentParameter()
     {
         // Arrange
@@ -58,7 +52,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse has OnDismiss EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseHasOnDismissEventCallback()
     {
         // Arrange
@@ -73,7 +66,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse has OnExpand EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseHasOnExpandEventCallback()
     {
         // Arrange
@@ -89,7 +81,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseHasStateParameter()
     {
         // Arrange
@@ -105,7 +96,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseInheritsFromComponentBase()
     {
         // Assert
@@ -116,7 +106,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse invokes OnExpand when clicked.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseInvokesOnExpandWhenClicked()
     {
         // Arrange
@@ -142,7 +131,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseRendersAdditionalAttributes()
     {
         // Act
@@ -157,7 +145,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders child content.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseRendersChildContent()
     {
         // Act
@@ -173,7 +160,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseRendersCustomState()
     {
         // Act
@@ -190,7 +176,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders dot indicator.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseRendersDotIndicator()
     {
         // Act
@@ -204,7 +189,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseRendersWithDefaultState()
     {
         // Act
@@ -219,7 +203,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders with status role for accessibility.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseRendersWithStatusRoleForAccessibility()
     {
         // Act
@@ -234,7 +217,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders with tabindex for keyboard accessibility.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseRendersWithTabindexForKeyboardAccessibility()
     {
         // Act
@@ -249,7 +231,6 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse State defaults to New.
     /// </summary>
     [Fact]
-    [AllureFeature("NotificationPulse")]
     public void NotificationPulseStateDefaultsToNew()
     {
         // Arrange

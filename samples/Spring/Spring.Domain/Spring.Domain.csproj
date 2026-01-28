@@ -18,7 +18,7 @@
     <ProjectReference Include="..\..\..\src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Sagas.Abstractions\EventSourcing.Sagas.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\Inlet.Projection.Abstractions\Inlet.Projection.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
   </ItemGroup>
 

@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
 
@@ -11,9 +9,6 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests.Subscript
 /// <summary>
 ///     Tests for UX projection subscription types.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections Abstractions")]
-[AllureSubSuite("Subscription Types")]
 public sealed class UxProjectionSubscriptionTypesTests
 {
     /// <summary>

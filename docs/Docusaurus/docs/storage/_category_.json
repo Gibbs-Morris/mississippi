@@ -1,0 +1,10 @@
+{
+  "label": "Storage Integration",
+  "position": 8,
+  "link": {
+    "type": "doc",
+    "id": "storage"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

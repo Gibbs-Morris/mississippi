@@ -1,10 +1,8 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Server.Abstractions;
 
 
 namespace Mississippi.Inlet.Blazor.Server.L0Tests;
@@ -12,16 +10,12 @@ namespace Mississippi.Inlet.Blazor.Server.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletInProcessRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Blazor.Server")]
-[AllureSuite("Extensions")]
-[AllureSubSuite("InletInProcessRegistrations")]
 public sealed class InletInProcessRegistrationsTests
 {
     /// <summary>
     ///     AddInletInProcess can be called multiple times without error.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletInProcessCanBeCalledMultipleTimes()
     {
         // Arrange
@@ -42,7 +36,6 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should register InProcessProjectionNotifier as singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletInProcessRegistersAsSingleton()
     {
         // Arrange
@@ -63,7 +56,6 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should register IServerProjectionNotifier.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletInProcessRegistersIServerProjectionNotifier()
     {
         // Arrange
@@ -83,7 +75,6 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should return the same services collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddInletInProcessReturnsSameCollection()
     {
         // Arrange
@@ -100,7 +91,6 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should throw when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void AddInletInProcessThrowsWhenServicesNull()
     {
         // Arrange

@@ -12,16 +12,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         serialization. Use this attribute to specify a custom name.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed record UpdateProfile
-///         {
-///             [GeneratorPropertyName("display_name")]
-///             public required string DisplayName { get; init; }
-///         }
-///         // Generates: [JsonPropertyName("display_name")]
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class GeneratorPropertyNameAttribute : Attribute
 {

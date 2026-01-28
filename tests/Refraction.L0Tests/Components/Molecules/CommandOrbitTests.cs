@@ -1,7 +1,5 @@
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -14,15 +12,12 @@ namespace Mississippi.Refraction.L0Tests.Components.Molecules;
 /// <summary>
 ///     Smoke tests for <see cref="CommandOrbit" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Molecules")]
 public sealed class CommandOrbitTests : BunitContext
 {
     /// <summary>
     ///     CommandOrbit has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitHasAdditionalAttributesParameter()
     {
         // Arrange
@@ -39,7 +34,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit has ChildContent parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitHasChildContentParameter()
     {
         // Arrange
@@ -56,7 +50,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit has OnActionSelected EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitHasOnActionSelectedEventCallback()
     {
         // Arrange
@@ -73,7 +66,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit has OnDismiss EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitHasOnDismissEventCallback()
     {
         // Arrange
@@ -89,7 +81,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitHasStateParameter()
     {
         // Arrange
@@ -105,7 +96,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitInheritsFromComponentBase()
     {
         // Assert
@@ -116,7 +106,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitRendersAdditionalAttributes()
     {
         // Act
@@ -131,7 +120,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit renders child content.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitRendersChildContent()
     {
         // Act
@@ -146,7 +134,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitRendersCustomState()
     {
         // Act
@@ -163,7 +150,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitRendersWithDefaultState()
     {
         // Act
@@ -178,7 +164,6 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit State defaults to Latent.
     /// </summary>
     [Fact]
-    [AllureFeature("CommandOrbit")]
     public void CommandOrbitStateDefaultsToLatent()
     {
         // Arrange

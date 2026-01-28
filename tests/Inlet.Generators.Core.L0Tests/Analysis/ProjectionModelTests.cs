@@ -2,8 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.CodeAnalysis;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -16,9 +14,6 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Analysis;
 /// <summary>
 ///     Tests for <see cref="Core.Analysis.ProjectionModel" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Generators Core")]
-[AllureSubSuite("Projection Model")]
 public class ProjectionModelTests
 {
     /// <summary>

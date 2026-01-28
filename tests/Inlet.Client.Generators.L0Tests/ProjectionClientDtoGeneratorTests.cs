@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -15,9 +13,6 @@ namespace Mississippi.Inlet.Client.Generators.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ProjectionClientDtoGenerator" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Client Generators")]
-[AllureSubSuite("Projection Client DTO Generator")]
 public class ProjectionClientDtoGeneratorTests
 {
     /// <summary>
@@ -35,7 +30,7 @@ public class ProjectionClientDtoGeneratorTests
                                               }
                                           }
 
-                                          namespace Mississippi.Inlet.Projection.Abstractions
+                                          namespace Mississippi.Inlet.Abstractions
                                           {
                                               using System;
 
@@ -107,7 +102,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -135,7 +130,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -173,7 +168,7 @@ public class ProjectionClientDtoGeneratorTests
         const string projectionSource = """
                                         using System.Collections.Immutable;
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -207,7 +202,7 @@ public class ProjectionClientDtoGeneratorTests
         const string projectionSource = """
                                         using System;
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.Timestamps
                                         {
@@ -235,7 +230,7 @@ public class ProjectionClientDtoGeneratorTests
         const string projectionSource = """
                                         using System;
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.Identifiers
                                         {
@@ -263,7 +258,7 @@ public class ProjectionClientDtoGeneratorTests
         const string projectionSource = """
                                         using System.Collections.Immutable;
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -289,7 +284,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -320,7 +315,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -346,7 +341,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -372,7 +367,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -398,7 +393,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -424,7 +419,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -452,7 +447,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -479,7 +474,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -494,7 +489,7 @@ public class ProjectionClientDtoGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("using Mississippi.Inlet.Projection.Abstractions;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.Inlet.Abstractions;", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -505,7 +500,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -536,7 +531,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.Special
                                         {
@@ -562,7 +557,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.Empty
                                         {
@@ -586,7 +581,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.WithStatic
                                         {
@@ -657,7 +652,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -682,7 +677,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -712,7 +707,7 @@ public class ProjectionClientDtoGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {

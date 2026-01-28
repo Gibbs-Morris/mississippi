@@ -4,8 +4,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Abstractions;
@@ -18,9 +16,6 @@ namespace Mississippi.Reservoir.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ReservoirRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Reservoir")]
-[AllureSuite("Configuration")]
-[AllureSubSuite("ReservoirRegistrations")]
 public sealed class ReservoirRegistrationsTests
 {
     /// <summary>
@@ -99,7 +94,6 @@ public sealed class ReservoirRegistrationsTests
     ///     AddActionEffect should register feature-scoped action effect in DI.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddActionEffectRegistersFeatureScopedEffectInDI()
     {
         // Arrange
@@ -118,7 +112,6 @@ public sealed class ReservoirRegistrationsTests
     ///     AddMiddleware should register middleware in DI.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddMiddlewareRegistersMiddlewareInDI()
     {
         // Arrange
@@ -137,7 +130,6 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReducer with delegate should register reducer in DI.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddReducerWithDelegateRegistersReducerInDI()
     {
         // Arrange
@@ -162,7 +154,6 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReducer with null delegate should throw ArgumentNullException.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void AddReducerWithNullDelegateThrowsArgumentNullException()
     {
         // Arrange
@@ -176,7 +167,6 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReducer with type should register reducer in DI.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddReducerWithTypeRegistersReducerInDI()
     {
         // Arrange
@@ -198,7 +188,6 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReservoir should not replace existing IStore registration.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddReservoirDoesNotReplaceExistingRegistration()
     {
         // Arrange
@@ -218,7 +207,6 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReservoir should register IStore as scoped.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddReservoirRegistersIStoreAsScoped()
     {
         // Arrange
@@ -239,7 +227,6 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReservoir should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void AddReservoirWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
@@ -253,7 +240,6 @@ public sealed class ReservoirRegistrationsTests
     ///     AddRootReducer should register root reducer in DI.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
     public void AddRootReducerRegistersRootReducerInDI()
     {
         // Arrange
