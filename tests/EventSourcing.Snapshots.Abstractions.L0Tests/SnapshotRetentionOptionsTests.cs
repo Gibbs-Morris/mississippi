@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
@@ -10,9 +9,6 @@ namespace Mississippi.EventSourcing.Snapshots.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotRetentionOptions" /> to verify base snapshot version calculation.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots Abstractions")]
-[AllureSubSuite("Snapshot Retention Options")]
 public sealed class SnapshotRetentionOptionsTests
 {
     /// <summary>
