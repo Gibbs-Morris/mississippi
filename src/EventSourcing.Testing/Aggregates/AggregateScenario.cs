@@ -107,17 +107,10 @@ public sealed class AggregateScenario<TAggregate>
     {
         Type reducerType = reducer.GetType();
         Type eventType = evt.GetType();
-        foreach (Type iface in reducerType.GetInterfaces())
-        {
-            if (iface.IsGenericType &&
-                (iface.GetGenericTypeDefinition() == typeof(IEventReducer<,>)) &&
-                (iface.GetGenericArguments()[0] == eventType))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return reducerType.GetInterfaces()
+            .Any(iface => iface.IsGenericType &&
+                          (iface.GetGenericTypeDefinition() == typeof(IEventReducer<,>)) &&
+                          (iface.GetGenericArguments()[0] == eventType));
     }
 
     private static bool CanHandleCommand(
