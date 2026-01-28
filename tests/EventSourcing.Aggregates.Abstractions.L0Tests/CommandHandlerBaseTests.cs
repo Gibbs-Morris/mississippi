@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
 
 
 namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
@@ -9,9 +8,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="CommandHandlerBase{TCommand, TSnapshot}" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates Abstractions")]
-[AllureSubSuite("Command Handler Base")]
 public sealed class CommandHandlerBaseTests
 {
     /// <summary>
@@ -49,8 +45,7 @@ public sealed class CommandHandlerBaseTests
     ///     Handle should call HandleCore with command and state.
     /// </summary>
     [Fact]
-    [AllureFeature("Command Handling")]
-    public void HandleCallsHandleCore()
+        public void HandleCallsHandleCore()
     {
         // Arrange
         TestHandler handler = new();
@@ -70,8 +65,7 @@ public sealed class CommandHandlerBaseTests
     ///     Handle should throw ArgumentNullException when command is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void HandleThrowsWhenCommandIsNull()
+        public void HandleThrowsWhenCommandIsNull()
     {
         // Arrange
         TestHandler handler = new();
@@ -84,8 +78,7 @@ public sealed class CommandHandlerBaseTests
     ///     Handle should work with null state.
     /// </summary>
     [Fact]
-    [AllureFeature("Command Handling")]
-    public void HandleWorksWithNullState()
+        public void HandleWorksWithNullState()
     {
         // Arrange
         TestHandler handler = new();
@@ -104,8 +97,7 @@ public sealed class CommandHandlerBaseTests
     ///     TryHandle should return false for non-matching command type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Dispatch")]
-    public void TryHandleReturnsFalseForNonMatchingType()
+        public void TryHandleReturnsFalseForNonMatchingType()
     {
         // Arrange
         TestHandler handler = new();
@@ -122,8 +114,7 @@ public sealed class CommandHandlerBaseTests
     ///     TryHandle should return true and handle matching command type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Dispatch")]
-    public void TryHandleReturnsTrueForMatchingType()
+        public void TryHandleReturnsTrueForMatchingType()
     {
         // Arrange
         TestHandler handler = new();
@@ -142,8 +133,7 @@ public sealed class CommandHandlerBaseTests
     ///     TryHandle should throw ArgumentNullException when command is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void TryHandleThrowsWhenCommandIsNull()
+        public void TryHandleThrowsWhenCommandIsNull()
     {
         // Arrange
         TestHandler handler = new();
