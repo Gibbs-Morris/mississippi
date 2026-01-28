@@ -25,32 +25,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         lives and should be easily unit-testable.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed class OrderShippedNotificationEffect
-///             : FireAndForgetEventEffectBase&lt;OrderShipped, OrderAggregate&gt;
-///         {
-///             private INotificationService NotificationService { get; }
-///
-///             public OrderShippedNotificationEffect(INotificationService notificationService)
-///             {
-///                 NotificationService = notificationService;
-///             }
-///
-///             public override async Task HandleAsync(
-///                 OrderShipped eventData,
-///                 OrderAggregate aggregateState,
-///                 string brookKey,
-///                 long eventPosition,
-///                 CancellationToken cancellationToken)
-///             {
-///                 await NotificationService.SendShippingNotificationAsync(
-///                     eventData.OrderId,
-///                     cancellationToken);
-///             }
-///         }
-///     </code>
-/// </example>
 /// <typeparam name="TEvent">The event type this effect handles.</typeparam>
 /// <typeparam name="TAggregate">The aggregate state type this effect is registered for.</typeparam>
 public interface IFireAndForgetEventEffect<in TEvent, in TAggregate>

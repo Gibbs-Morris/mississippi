@@ -26,33 +26,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         aggregate command API.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed class SendShippingNotificationEffect
-///             : FireAndForgetEventEffectBase&lt;OrderShipped, OrderAggregate&gt;
-///         {
-///             private IEmailService EmailService { get; }
-///
-///             public SendShippingNotificationEffect(IEmailService emailService)
-///             {
-///                 EmailService = emailService;
-///             }
-///
-///             public override async Task HandleAsync(
-///                 OrderShipped eventData,
-///                 OrderAggregate currentState,
-///                 string brookKey,
-///                 long eventPosition,
-///                 CancellationToken cancellationToken)
-///             {
-///                 await EmailService.SendShippingNotificationAsync(
-///                     currentState.CustomerEmail,
-///                     eventData.TrackingNumber,
-///                     cancellationToken);
-///             }
-///         }
-///     </code>
-/// </example>
 public abstract class FireAndForgetEventEffectBase<TEvent, TAggregate> : IFireAndForgetEventEffect<TEvent, TAggregate>
     where TEvent : class
     where TAggregate : class

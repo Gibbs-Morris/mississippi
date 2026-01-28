@@ -24,20 +24,6 @@ namespace Mississippi.EventSourcing.Testing.Aggregates;
 ///         <strong>Full Scenario Testing:</strong>
 ///         Use <see cref="ForAggregate{TAggregate}" /> to create a harness with multiple handlers/reducers.
 ///     </para>
-///     <example>
-///         <code>
-///         // Pattern 1: Isolated handler test
-///         handler.ShouldEmit(null, command, expectedEvent);
-///         // Pattern 2: Full scenario
-///         CommandHandlerTestExtensions.ForAggregate&lt;BankAccountAggregate&gt;()
-///             .WithHandler&lt;DepositFundsHandler&gt;()
-///             .WithReducer&lt;FundsDepositedReducer&gt;()
-///             .CreateScenario()
-///             .Given(accountOpenedEvent)
-///             .When(depositCommand)
-///             .ThenEmits&lt;FundsDeposited&gt;();
-///         </code>
-///     </example>
 /// </remarks>
 public static class CommandHandlerTestExtensions
 {
