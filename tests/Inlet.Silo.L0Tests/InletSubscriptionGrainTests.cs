@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Silo.Abstractions;
 using Mississippi.Inlet.Silo.Grains;
@@ -15,9 +14,6 @@ namespace Mississippi.Inlet.Silo.L0Tests;
 /// <summary>
 ///     Tests for <see cref="IInletSubscriptionGrain" /> operations.
 /// </summary>
-[AllureParentSuite("Inlet")]
-[AllureSuite("Orleans")]
-[AllureSubSuite("InletSubscriptionGrain")]
 [Collection(ClusterTestSuite.Name)]
 public sealed class InletSubscriptionGrainTests
 {
