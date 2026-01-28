@@ -19,17 +19,6 @@ namespace Mississippi.Reservoir.Blazor;
 ///         The component automatically re-renders when any state changes.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         @inherits StoreComponent
-///
-///         @code {
-///             private SidebarState Sidebar => GetState&lt;SidebarState&gt;();
-///
-///             private void ToggleSidebar() => Dispatch(new ToggleSidebarAction());
-///         }
-///     </code>
-/// </example>
 public abstract class StoreComponent
     : ComponentBase,
       IDisposable

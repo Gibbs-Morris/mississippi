@@ -54,12 +54,6 @@ public sealed class SnapshotRetentionOptions
     ///     Keys should be the <see cref="SnapshotStorageNameAttribute.StorageName" /> value
     ///     (e.g., "MYAPP.DOMAIN.COUNTERSTATE.V1") for refactoring safety.
     /// </remarks>
-    /// <example>
-    ///     <code>
-    /// options.StateTypeOverrides["MYAPP.DOMAIN.COMPLEXSTATE.V1"] = 50;
-    /// options.StateTypeOverrides["MYAPP.DOMAIN.SIMPLESTATE.V1"] = 200;
-    /// </code>
-    /// </example>
     public Dictionary<string, int> StateTypeOverrides { get; } = new(StringComparer.Ordinal);
 
     /// <summary>
