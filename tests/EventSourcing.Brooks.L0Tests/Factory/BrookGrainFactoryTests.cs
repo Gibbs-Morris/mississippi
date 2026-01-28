@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
@@ -21,9 +20,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests.Factory;
 /// <summary>
 ///     Tests for <see cref="BrookGrainFactory" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks")]
-[AllureSubSuite("Brook Grain Factory")]
 public sealed class BrookGrainFactoryTests
 {
     /// <summary>
