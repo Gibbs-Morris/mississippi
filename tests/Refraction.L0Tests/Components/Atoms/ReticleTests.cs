@@ -1,6 +1,5 @@
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Bunit;
 
@@ -14,16 +13,13 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// <summary>
 ///     Tests for <see cref="Reticle" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Atoms")]
 public sealed class ReticleTests : BunitContext
 {
     /// <summary>
     ///     Reticle has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleHasAdditionalAttributesParameter()
+        public void ReticleHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Reticle).GetProperty("AdditionalAttributes");
@@ -39,8 +35,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle has Mode parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleHasModeParameter()
+        public void ReticleHasModeParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Reticle).GetProperty("Mode");
@@ -56,8 +51,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleHasStateParameter()
+        public void ReticleHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Reticle).GetProperty("State");
@@ -72,8 +66,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleInheritsFromComponentBase()
+        public void ReticleInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(Reticle)));
@@ -83,8 +76,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle Mode defaults to Focus.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleModeDefaultsToFocus()
+        public void ReticleModeDefaultsToFocus()
     {
         // Arrange
         Reticle component = new();
@@ -97,8 +89,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleRendersAdditionalAttributes()
+        public void ReticleRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>(p => p.AddUnmatched("data-testid", "reticle-1"));
@@ -111,8 +102,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders custom mode.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleRendersCustomMode()
+        public void ReticleRendersCustomMode()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>(p => p.Add(
@@ -128,8 +118,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders default mode.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleRendersDefaultMode()
+        public void ReticleRendersDefaultMode()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>();
@@ -143,8 +132,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders ring indicator.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleRendersRingIndicator()
+        public void ReticleRendersRingIndicator()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>();
@@ -157,8 +145,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleRendersWithDefaultState()
+        public void ReticleRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>();
@@ -172,8 +159,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("Reticle")]
-    public void ReticleStateDefaultsToIdle()
+        public void ReticleStateDefaultsToIdle()
     {
         // Arrange
         Reticle component = new();
