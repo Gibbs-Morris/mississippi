@@ -306,11 +306,10 @@ public sealed class AggregateScenario<TAggregate>
         emittedEvents.Should().NotBeEmpty("Command should emit at least one event on success");
 
         // Check that no failure events were emitted
-        foreach (object evt in emittedEvents)
-        {
-            Type evtType = evt.GetType();
-            evtType.Name.Should().NotContain("Failed", "Expected success events, but got a failure event");
-        }
+        emittedEvents.Select(evt => evt.GetType().Name)
+            .Should()
+            .NotContain(name => name.Contains("Failed", StringComparison.Ordinal),
+                        "Expected success events, but got a failure event");
 
         return this;
     }
