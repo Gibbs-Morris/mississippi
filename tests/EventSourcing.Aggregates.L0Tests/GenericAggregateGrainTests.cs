@@ -255,6 +255,72 @@ public class GenericAggregateGrainTests
     }
 
     /// <summary>
+    ///     ExecuteAsync should dispatch fire-and-forget effects when registrations exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncDispatchesFireAndForgetEffectsWhenRegistered()
+    {
+        // Arrange
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
+        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> snapshotCacheMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<IFireAndForgetEffectRegistration<AggregateGrainTestAggregate>> registrationMock = new();
+        Mock<IGrainFactory> grainFactoryMock = new();
+        AggregateGrainTestEvent testEvent = new("dispatched");
+        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(5));
+        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        snapshotCacheMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AggregateGrainTestAggregate(10, "test"));
+        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheMock.Object);
+        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(ImmutableArray.Create(new BrookEvent()));
+        handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { testEvent }));
+        registrationMock.Setup(r => r.EventType).Returns(typeof(AggregateGrainTestEvent));
+        registrationMock.Setup(r => r.EffectTypeName).Returns("TestEffect");
+        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
+        Mock<IRootReducer<AggregateGrainTestAggregate>> rootReducerMock = new();
+        rootReducerMock.Setup(r => r.GetReducerHash()).Returns(TestReducerHash);
+        Mock<ILogger<GenericAggregateGrain<AggregateGrainTestAggregate>>> loggerMock = new();
+        IFireAndForgetEffectRegistration<AggregateGrainTestAggregate>[] registrations = [registrationMock.Object];
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = new(
+            grainContextMock.Object,
+            grainFactoryMock.Object,
+            brookFactoryMock.Object,
+            converterMock.Object,
+            handlerMock.Object,
+            snapshotFactoryMock.Object,
+            rootReducerMock.Object,
+            Options.Create(new AggregateEffectOptions()),
+            loggerMock.Object,
+            registrations);
+        await grain.OnActivateAsync(CancellationToken.None);
+
+        // Act
+        OperationResult result = await grain.ExecuteAsync(
+            new AggregateGrainTestCommand("test"),
+            CancellationToken.None);
+
+        // Assert
+        Assert.True(result.Success);
+        registrationMock.Verify(
+            r => r.Dispatch(
+                grainFactoryMock.Object,
+                testEvent,
+                It.IsAny<AggregateGrainTestAggregate>(),
+                It.IsAny<string>(),
+                It.IsAny<long>()),
+            Times.Once);
+    }
+
+    /// <summary>
     ///     ExecuteAsync should persist events when handler returns events.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -517,6 +583,47 @@ public class GenericAggregateGrainTests
     }
 
     /// <summary>
+    ///     ExecuteAsync should skip fire-and-forget dispatch when no registrations exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncSkipsFireAndForgetDispatchWhenNoRegistrations()
+    {
+        // Arrange
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
+        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> snapshotCacheMock = new();
+        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(0));
+        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(ImmutableArray.Create(new BrookEvent()));
+        snapshotCacheMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AggregateGrainTestAggregate(0, "init"));
+        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheMock.Object);
+        handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>()));
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
+            handlerMock,
+            brookFactoryMock,
+            snapshotFactoryMock,
+            converterMock);
+
+        // Act
+        OperationResult result = await grain.ExecuteAsync(
+            new AggregateGrainTestCommand("test"),
+            CancellationToken.None);
+
+        // Assert - should complete without errors and without calling any registration (no registrations exist)
+        Assert.True(result.Success);
+    }
+
+    /// <summary>
     ///     ExecuteAsync should throw when command is null.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -574,109 +681,5 @@ public class GenericAggregateGrainTests
         Assert.NotNull(capturedKey);
         Assert.Equal("TEST.AGGREGATES.BROOK", capturedKey.Value.BrookName);
         Assert.Equal(TestEntityId, capturedKey.Value.EntityId);
-    }
-
-    /// <summary>
-    ///     ExecuteAsync should dispatch fire-and-forget effects when registrations exist.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ExecuteAsyncDispatchesFireAndForgetEffectsWhenRegistered()
-    {
-        // Arrange
-        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
-        Mock<IBrookGrainFactory> brookFactoryMock = new();
-        Mock<IBrookCursorGrain> cursorMock = new();
-        Mock<IBrookWriterGrain> writerMock = new();
-        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
-        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> snapshotCacheMock = new();
-        Mock<IBrookEventConverter> converterMock = new();
-        Mock<IFireAndForgetEffectRegistration<AggregateGrainTestAggregate>> registrationMock = new();
-        Mock<IGrainFactory> grainFactoryMock = new();
-        AggregateGrainTestEvent testEvent = new("dispatched");
-        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(5));
-        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
-        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
-        snapshotCacheMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AggregateGrainTestAggregate(10, "test"));
-        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
-            .Returns(snapshotCacheMock.Object);
-        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Returns(ImmutableArray.Create(new BrookEvent()));
-        handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
-            .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { testEvent }));
-        registrationMock.Setup(r => r.EventType).Returns(typeof(AggregateGrainTestEvent));
-        registrationMock.Setup(r => r.EffectTypeName).Returns("TestEffect");
-        Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
-        Mock<IRootReducer<AggregateGrainTestAggregate>> rootReducerMock = new();
-        rootReducerMock.Setup(r => r.GetReducerHash()).Returns(TestReducerHash);
-        Mock<ILogger<GenericAggregateGrain<AggregateGrainTestAggregate>>> loggerMock = new();
-        IFireAndForgetEffectRegistration<AggregateGrainTestAggregate>[] registrations = [registrationMock.Object];
-        GenericAggregateGrain<AggregateGrainTestAggregate> grain = new(
-            grainContextMock.Object,
-            grainFactoryMock.Object,
-            brookFactoryMock.Object,
-            converterMock.Object,
-            handlerMock.Object,
-            snapshotFactoryMock.Object,
-            rootReducerMock.Object,
-            Options.Create(new AggregateEffectOptions()),
-            loggerMock.Object,
-            registrations,
-            null);
-        await grain.OnActivateAsync(CancellationToken.None);
-
-        // Act
-        OperationResult result = await grain.ExecuteAsync(new AggregateGrainTestCommand("test"), CancellationToken.None);
-
-        // Assert
-        Assert.True(result.Success);
-        registrationMock.Verify(
-            r => r.Dispatch(
-                grainFactoryMock.Object,
-                testEvent,
-                It.IsAny<AggregateGrainTestAggregate>(),
-                It.IsAny<string>(),
-                It.IsAny<long>()),
-            Times.Once);
-    }
-
-    /// <summary>
-    ///     ExecuteAsync should skip fire-and-forget dispatch when no registrations exist.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ExecuteAsyncSkipsFireAndForgetDispatchWhenNoRegistrations()
-    {
-        // Arrange
-        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
-        Mock<IBrookGrainFactory> brookFactoryMock = new();
-        Mock<IBrookCursorGrain> cursorMock = new();
-        Mock<IBrookWriterGrain> writerMock = new();
-        Mock<IBrookEventConverter> converterMock = new();
-        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
-        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> snapshotCacheMock = new();
-        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(0));
-        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
-        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
-        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Returns(ImmutableArray.Create(new BrookEvent()));
-        snapshotCacheMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AggregateGrainTestAggregate(0, "init"));
-        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
-            .Returns(snapshotCacheMock.Object);
-        handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
-            .Returns(OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>()));
-        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
-            handlerMock,
-            brookFactoryMock,
-            snapshotGrainFactoryMock: snapshotFactoryMock,
-            brookEventConverterMock: converterMock);
-
-        // Act
-        OperationResult result = await grain.ExecuteAsync(new AggregateGrainTestCommand("test"), CancellationToken.None);
-
-        // Assert - should complete without errors and without calling any registration (no registrations exist)
-        Assert.True(result.Success);
     }
 }

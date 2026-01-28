@@ -356,10 +356,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
             {
                 try
                 {
-                    Logger.FireAndForgetEffectDispatched(
-                        registration.EffectTypeName,
-                        eventType.Name,
-                        brookKey);
+                    Logger.FireAndForgetEffectDispatched(registration.EffectTypeName, eventType.Name, brookKey);
                     registration.Dispatch(GrainFactory, eventData, currentState, brookKey, eventPosition);
                     FireAndForgetEffectMetrics.RecordDispatch(
                         typeof(TAggregate).Name,
@@ -368,11 +365,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
                 }
                 catch (Exception ex) when (!IsCriticalException(ex))
                 {
-                    Logger.FireAndForgetEffectFailed(
-                        registration.EffectTypeName,
-                        eventType.Name,
-                        brookKey,
-                        ex);
+                    Logger.FireAndForgetEffectFailed(registration.EffectTypeName, eventType.Name, brookKey, ex);
                 }
             }
         }

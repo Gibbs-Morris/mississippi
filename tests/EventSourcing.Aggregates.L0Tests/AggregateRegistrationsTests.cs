@@ -268,6 +268,54 @@ public class AggregateRegistrationsTests
     }
 
     /// <summary>
+    ///     AddEventType should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void AddEventTypeRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.AddEventType<TestEvent>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     AddEventType should register the event with the registry.
+    /// </summary>
+    [Fact]
+    public void AddEventTypeRegistersEventWithRegistry()
+    {
+        ServiceCollection services = new();
+        services.AddEventType<TestEvent>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
+        string eventName = EventStorageNameHelper.GetStorageName<TestEvent>();
+        Assert.Equal(typeof(TestEvent), registry.ResolveType(eventName));
+    }
+
+    /// <summary>
+    ///     AddEventType should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void AddEventTypeReturnsServiceCollection()
+    {
+        ServiceCollection services = new();
+        IServiceCollection result = services.AddEventType<TestEvent>();
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     AddEventType should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddEventTypeThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() => services!.AddEventType<TestEvent>());
+    }
+
+    /// <summary>
     ///     AddFireAndForgetEventEffect should register the effect in DI.
     /// </summary>
     [Fact]
@@ -338,54 +386,6 @@ public class AggregateRegistrationsTests
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
             services!.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>());
-    }
-
-    /// <summary>
-    ///     AddEventType should register aggregate support.
-    /// </summary>
-    [Fact]
-    public void AddEventTypeRegistersAggregateSupport()
-    {
-        ServiceCollection services = new();
-        services.AddEventType<TestEvent>();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
-        Assert.NotNull(registry);
-    }
-
-    /// <summary>
-    ///     AddEventType should register the event with the registry.
-    /// </summary>
-    [Fact]
-    public void AddEventTypeRegistersEventWithRegistry()
-    {
-        ServiceCollection services = new();
-        services.AddEventType<TestEvent>();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
-        string eventName = EventStorageNameHelper.GetStorageName<TestEvent>();
-        Assert.Equal(typeof(TestEvent), registry.ResolveType(eventName));
-    }
-
-    /// <summary>
-    ///     AddEventType should return the service collection for chaining.
-    /// </summary>
-    [Fact]
-    public void AddEventTypeReturnsServiceCollection()
-    {
-        ServiceCollection services = new();
-        IServiceCollection result = services.AddEventType<TestEvent>();
-        Assert.Same(services, result);
-    }
-
-    /// <summary>
-    ///     AddEventType should throw when services is null.
-    /// </summary>
-    [Fact]
-    public void AddEventTypeThrowsWhenServicesIsNull()
-    {
-        IServiceCollection? services = null;
-        Assert.Throws<ArgumentNullException>(() => services!.AddEventType<TestEvent>());
     }
 
     /// <summary>
