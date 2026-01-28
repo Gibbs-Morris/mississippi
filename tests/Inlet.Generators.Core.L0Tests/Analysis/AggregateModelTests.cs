@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.CodeAnalysis;
 
@@ -14,9 +13,6 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Analysis;
 /// <summary>
 ///     Tests for <see cref="Core.Analysis.AggregateModel" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Generators Core")]
-[AllureSubSuite("Aggregate Model")]
 public class AggregateModelTests
 {
     /// <summary>
