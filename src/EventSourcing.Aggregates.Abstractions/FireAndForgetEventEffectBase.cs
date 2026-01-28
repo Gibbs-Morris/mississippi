@@ -41,6 +41,8 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///             public override async Task HandleAsync(
 ///                 OrderShipped eventData,
 ///                 OrderAggregate currentState,
+///                 string brookKey,
+///                 long eventPosition,
 ///                 CancellationToken cancellationToken)
 ///             {
 ///                 await EmailService.SendShippingNotificationAsync(
