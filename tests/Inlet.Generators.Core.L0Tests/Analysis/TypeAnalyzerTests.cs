@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Immutable;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.CodeAnalysis;
 
@@ -15,9 +14,6 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Analysis;
 /// <summary>
 ///     Tests for <see cref="TypeAnalyzer" /> type analysis utilities.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Generators Core")]
-[AllureSubSuite("Type Analyzer")]
 public class TypeAnalyzerTests
 {
     /// <summary>
