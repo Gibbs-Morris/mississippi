@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
@@ -13,9 +12,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SimpleEventEffectBase{TEvent,TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("SimpleEventEffectBase")]
 public sealed class SimpleEventEffectBaseTests
 {
     /// <summary>
@@ -59,8 +55,7 @@ public sealed class SimpleEventEffectBaseTests
     ///     CanHandle returns false for non-matching event type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
-    public void CanHandleReturnsFalseForNonMatchingEventType()
+        public void CanHandleReturnsFalseForNonMatchingEventType()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -77,8 +72,7 @@ public sealed class SimpleEventEffectBaseTests
     ///     CanHandle returns true for matching event type (inherited from EventEffectBase).
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
-    public void CanHandleReturnsTrueForMatchingEventType()
+        public void CanHandleReturnsTrueForMatchingEventType()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -96,8 +90,7 @@ public sealed class SimpleEventEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
-    public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoEvents()
+        public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoEvents()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -121,8 +114,7 @@ public sealed class SimpleEventEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when event is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void HandleAsyncThrowsArgumentNullExceptionWhenEventIsNull()
+        public void HandleAsyncThrowsArgumentNullExceptionWhenEventIsNull()
     {
         // Arrange
         TestSimpleEffect sut = new();
