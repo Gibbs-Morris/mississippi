@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,9 +17,6 @@ namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotRegistrations" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots")]
-[AllureSubSuite("Registrations")]
 public sealed class SnapshotRegistrationsTests
 {
     /// <summary>
@@ -32,8 +28,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotCaching should register ISnapshotGrainFactory.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
-    public void AddSnapshotCachingRegistersSnapshotGrainFactory()
+        public void AddSnapshotCachingRegistersSnapshotGrainFactory()
     {
         // Arrange
         ServiceCollection services = new();
@@ -54,8 +49,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotCaching should return the service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
-    public void AddSnapshotCachingReturnsServiceCollection()
+        public void AddSnapshotCachingReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
@@ -71,8 +65,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotCaching should throw when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void AddSnapshotCachingThrowsWhenServicesIsNull()
+        public void AddSnapshotCachingThrowsWhenServicesIsNull()
     {
         // Arrange
         IServiceCollection? services = null;
@@ -85,8 +78,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotStateConverter should register ISnapshotStateConverter.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
-    public void AddSnapshotStateConverterRegistersConverter()
+        public void AddSnapshotStateConverterRegistersConverter()
     {
         // Arrange
         ServiceCollection services = new();
@@ -106,8 +98,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotStateConverter should return the service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("DI Registration")]
-    public void AddSnapshotStateConverterReturnsServiceCollection()
+        public void AddSnapshotStateConverterReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
@@ -123,8 +114,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotStateConverter should throw when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void AddSnapshotStateConverterThrowsWhenServicesIsNull()
+        public void AddSnapshotStateConverterThrowsWhenServicesIsNull()
     {
         // Arrange
         IServiceCollection? services = null;
