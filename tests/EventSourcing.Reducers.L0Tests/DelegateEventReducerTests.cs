@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 
 namespace Mississippi.EventSourcing.Reducers.L0Tests;
@@ -8,9 +7,6 @@ namespace Mississippi.EventSourcing.Reducers.L0Tests;
 /// <summary>
 ///     Tests for <see cref="DelegateEventReducer{TEvent,TProjection}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Reducers")]
-[AllureSubSuite("Delegate Event Reducer")]
 public sealed class DelegateEventReducerTests
 {
     private sealed class MutableProjection
