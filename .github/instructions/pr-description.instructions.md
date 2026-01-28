@@ -10,6 +10,30 @@ Governing thought: PR descriptions should communicate business value, explain th
 
 ## Rules (RFC 2119)
 
+### PR Titles
+
+- PR titles **MUST** be human-readable descriptions of what the change accomplishes (not implementation details). Why: Titles appear in changelogs, release notes, and git history.
+- PR titles **MUST** be updated on each commit/push when the scope or nature of the change evolves. Why: Stale titles mislead reviewers and pollute history.
+- PR titles **MUST** end with a semver bump suffix for GitVersion (`+semver: <type>`). Why: Repository uses `commit-message-incrementing: Enabled` to derive versions from squash-merge commit messages.
+
+**Semver suffix patterns (choose one):**
+
+| Change Type | Suffix | When to Use |
+|-------------|--------|-------------|
+| Breaking change | `+semver: breaking` | Removes/renames public APIs, changes behavior in incompatible ways |
+| New feature | `+semver: feature` | Adds new capabilities without breaking existing behavior |
+| Bug fix | `+semver: fix` | Corrects defects without adding features |
+| No version bump | `+semver: skip` | Docs-only, CI config, refactors with no public API changes |
+
+**Title examples:**
+
+- `Add fire-and-forget event effects for async side effects +semver: feature`
+- `Fix null reference in aggregate grain activation +semver: fix`
+- `Remove deprecated ILegacyEventStore interface +semver: breaking`
+- `Update PR template and authoring instructions +semver: skip`
+
+### PR Descriptions
+
 - PR descriptions **MUST** be updated on each commit/push when a PR exists for the branch. Why: Keeps the description synchronized with the actual changes.
 - Authors **MUST** compare the branch against `main` to understand all changes before writing or updating the description. Why: Ensures the description reflects the complete diff.
 - Authors **MUST** include a Business Value section explaining why the change matters. Why: Reviewers and future maintainers need context beyond "what" to understand "why".
@@ -27,9 +51,10 @@ All contributors creating or updating pull requests.
 
 ## At-a-Glance Quick-Start
 
+- Title format: `<Human-readable summary> +semver: <feature|fix|breaking|skip>`
 - Before writing: `git diff main...HEAD --stat` to see all changes
 - Use the PR template in `.github/PULL_REQUEST_TEMPLATE.md`
-- Update description on every push if PR exists
+- Update title and description on every push if PR exists
 - Focus on business value first, implementation details second
 
 ## Procedure
