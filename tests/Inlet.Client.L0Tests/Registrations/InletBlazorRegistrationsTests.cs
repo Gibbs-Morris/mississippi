@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,17 +9,13 @@ namespace Mississippi.Inlet.Client.L0Tests.Registrations;
 /// <summary>
 ///     Tests for <see cref="InletBlazorRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Registrations")]
-[AllureSubSuite("InletBlazorRegistrations")]
 public sealed class InletBlazorRegistrationsTests
 {
     /// <summary>
     ///     AddInletBlazor returns the service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
-    public void AddInletBlazorReturnsServiceCollection()
+        public void AddInletBlazorReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
@@ -36,8 +31,7 @@ public sealed class InletBlazorRegistrationsTests
     ///     AddInletBlazorSignalR accepts null configure action and returns the service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("SignalR")]
-    public void AddInletBlazorSignalRAcceptsNullConfigureAndReturnsServiceCollection()
+        public void AddInletBlazorSignalRAcceptsNullConfigureAndReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
@@ -53,8 +47,7 @@ public sealed class InletBlazorRegistrationsTests
     ///     AddInletBlazorSignalR invokes configure action when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("SignalR")]
-    public void AddInletBlazorSignalRInvokesConfigureAction()
+        public void AddInletBlazorSignalRInvokesConfigureAction()
     {
         // Arrange
         ServiceCollection services = new();
@@ -72,8 +65,7 @@ public sealed class InletBlazorRegistrationsTests
     ///     AddInletBlazorSignalR throws ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("SignalR")]
-    public void AddInletBlazorSignalRThrowsWhenServicesIsNull()
+        public void AddInletBlazorSignalRThrowsWhenServicesIsNull()
     {
         // Arrange
         IServiceCollection? services = null;
@@ -86,8 +78,7 @@ public sealed class InletBlazorRegistrationsTests
     ///     AddInletBlazor throws ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
-    public void AddInletBlazorThrowsWhenServicesIsNull()
+        public void AddInletBlazorThrowsWhenServicesIsNull()
     {
         // Arrange
         IServiceCollection? services = null;
