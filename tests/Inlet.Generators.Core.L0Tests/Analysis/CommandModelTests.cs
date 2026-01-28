@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.CodeAnalysis;
 
@@ -16,9 +15,6 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Analysis;
 /// <summary>
 ///     Tests for <see cref="Core.Analysis.CommandModel" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Generators Core")]
-[AllureSubSuite("Command Model")]
 public class CommandModelTests
 {
     /// <summary>
