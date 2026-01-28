@@ -79,6 +79,7 @@
     <Project Path="src/EventSourcing.Sagas/EventSourcing.Sagas.csproj" />
   </Folder>
   <Folder Name="/Tests/">
+    <Project Path="tests/EventSourcing.Sagas.L0Tests/EventSourcing.Sagas.L0Tests.csproj" />
     <Project Path="tests/Inlet.Generators.Core.L0Tests/Inlet.Generators.Core.L0Tests.csproj" />
     <Project Path="tests/Inlet.Silo.Generators.L0Tests/Inlet.Silo.Generators.L0Tests.csproj" />
   </Folder>
