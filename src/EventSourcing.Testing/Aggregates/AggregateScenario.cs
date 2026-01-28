@@ -308,8 +308,9 @@ public sealed class AggregateScenario<TAggregate>
         // Check that no failure events were emitted
         emittedEvents.Select(evt => evt.GetType().Name)
             .Should()
-            .NotContain(name => name.Contains("Failed", StringComparison.Ordinal),
-                        "Expected success events, but got a failure event");
+            .NotContain(
+                name => name.Contains("Failed", StringComparison.Ordinal),
+                "Expected success events, but got a failure event");
 
         return this;
     }
@@ -320,9 +321,7 @@ public sealed class AggregateScenario<TAggregate>
     /// <param name="command">The command to execute.</param>
     /// <returns>This scenario for fluent chaining.</returns>
     /// <exception cref="InvalidOperationException">Thrown if no handler is found for the command.</exception>
-    public AggregateScenario<TAggregate> When(
-        object command
-    )
+    public AggregateScenario<TAggregate> When(object command)
     {
         ArgumentNullException.ThrowIfNull(command);
         whenCommand = command;
