@@ -46,7 +46,11 @@ internal sealed class FireAndForgetEffectWorkerGrain<TEvent, TAggregate>
     ///     Initializes a new instance of the <see cref="FireAndForgetEffectWorkerGrain{TEvent, TAggregate}" /> class.
     /// </summary>
     /// <param name="grainContext">The Orleans grain context.</param>
-    /// <param name="serviceProvider">The service provider for resolving effects.</param>
+    /// <param name="serviceProvider">
+    ///     The service provider for resolving effects. This is a factory pattern exception
+    ///     to the no-service-locator rule - the grain must resolve effects by type name at runtime
+    ///     since the specific effect implementation is determined by the envelope payload.
+    /// </param>
     /// <param name="logger">Logger instance.</param>
     public FireAndForgetEffectWorkerGrain(
         IGrainContext grainContext,

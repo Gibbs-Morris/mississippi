@@ -354,11 +354,26 @@ internal sealed class GenericAggregateGrain<TAggregate>
             foreach (IFireAndForgetEffectRegistration<TAggregate> registration in
                      FireAndForgetEffectRegistrations.Where(r => r.EventType == eventType))
             {
-                registration.Dispatch(GrainFactory, eventData, currentState, brookKey, eventPosition);
-                FireAndForgetEffectMetrics.RecordDispatch(
-                    typeof(TAggregate).Name,
-                    eventType.Name,
-                    registration.EffectTypeName);
+                try
+                {
+                    Logger.FireAndForgetEffectDispatched(
+                        registration.EffectTypeName,
+                        eventType.Name,
+                        brookKey);
+                    registration.Dispatch(GrainFactory, eventData, currentState, brookKey, eventPosition);
+                    FireAndForgetEffectMetrics.RecordDispatch(
+                        typeof(TAggregate).Name,
+                        eventType.Name,
+                        registration.EffectTypeName);
+                }
+                catch (Exception ex) when (!IsCriticalException(ex))
+                {
+                    Logger.FireAndForgetEffectFailed(
+                        registration.EffectTypeName,
+                        eventType.Name,
+                        brookKey,
+                        ex);
+                }
             }
         }
     }

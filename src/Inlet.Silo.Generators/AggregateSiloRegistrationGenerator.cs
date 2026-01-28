@@ -268,8 +268,8 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         string reducersNamespace = aggregate.Model.Namespace + ".Reducers";
         sb.AppendUsing(reducersNamespace);
 
-        // Add using for effects namespace if there are effects
-        if (aggregate.Effects.Count > 0)
+        // Add using for effects namespace if there are effects (sync or fire-and-forget)
+        if ((aggregate.Effects.Count > 0) || (aggregate.FireAndForgetEffects.Count > 0))
         {
             string effectsNamespace = aggregate.Model.Namespace + ".Effects";
             sb.AppendUsing(effectsNamespace);
