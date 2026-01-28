@@ -218,12 +218,10 @@ public sealed class ProjectionScenario<TProjection>
         object evt
     )
     {
-        foreach (IEventReducer<TProjection> reducer in reducers)
+        IEventReducer<TProjection>? matchingReducer = reducers.FirstOrDefault(r => CanHandle(r, evt));
+        if (matchingReducer is not null)
         {
-            if (CanHandle(reducer, evt))
-            {
-                return ApplyWithReducer(reducer, state, evt);
-            }
+            return ApplyWithReducer(matchingReducer, state, evt);
         }
 
         throw new InvalidOperationException($"No reducer registered for event type {evt.GetType().Name}.");
