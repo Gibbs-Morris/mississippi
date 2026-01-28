@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,9 +12,6 @@ namespace Mississippi.Inlet.Blazor.Server.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InProcessProjectionNotifier" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Blazor.Server")]
-[AllureSuite("Notifiers")]
-[AllureSubSuite("InProcessProjectionNotifier")]
 public sealed class InProcessProjectionNotifierTests : IDisposable
 {
     private readonly IServerProjectionNotifier notifier;
@@ -44,8 +40,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should continue invoking other callbacks when one throws.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
-    public void NotifyProjectionChangedContinuesWhenCallbackThrows()
+        public void NotifyProjectionChangedContinuesWhenCallbackThrows()
     {
         // Arrange
         bool secondCallbackInvoked = false;
@@ -69,8 +64,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should not invoke disposed subscription callback.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP017:Prefer using",
         Justification = "Testing explicit disposal behavior")]
@@ -92,8 +86,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should not invoke subscriber for different entity.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
-    public void NotifyProjectionChangedDoesNotInvokeForDifferentEntity()
+        public void NotifyProjectionChangedDoesNotInvokeForDifferentEntity()
     {
         // Arrange
         bool callbackInvoked = false;
@@ -110,8 +103,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should not invoke subscriber for different projection type.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
-    public void NotifyProjectionChangedDoesNotInvokeForDifferentProjectionType()
+        public void NotifyProjectionChangedDoesNotInvokeForDifferentProjectionType()
     {
         // Arrange
         bool callbackInvoked = false;
@@ -128,8 +120,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should not invoke callback when no subscriptions.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
-    [SuppressMessage(
+        [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
         Justification = "This test verifies no exception is thrown when notifying without subscribers")]
@@ -146,8 +137,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should invoke subscriber callback.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
-    public void NotifyProjectionChangedInvokesCallback()
+        public void NotifyProjectionChangedInvokesCallback()
     {
         // Arrange
         ProjectionUpdatedEvent? receivedEvent = null;
@@ -167,8 +157,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should invoke multiple subscribers.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
-    public void NotifyProjectionChangedInvokesMultipleSubscribers()
+        public void NotifyProjectionChangedInvokesMultipleSubscribers()
     {
         // Arrange
         int callCount = 0;
@@ -186,8 +175,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should throw when entityId is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void NotifyProjectionChangedThrowsWhenEntityIdEmpty()
+        public void NotifyProjectionChangedThrowsWhenEntityIdEmpty()
     {
         // Act & Assert
         ArgumentException exception =
@@ -199,8 +187,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should throw when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void NotifyProjectionChangedThrowsWhenEntityIdNull()
+        public void NotifyProjectionChangedThrowsWhenEntityIdNull()
     {
         // Act & Assert
         ArgumentNullException exception =
@@ -212,8 +199,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should throw when projectionType is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void NotifyProjectionChangedThrowsWhenProjectionTypeEmpty()
+        public void NotifyProjectionChangedThrowsWhenProjectionTypeEmpty()
     {
         // Act & Assert
         ArgumentException exception =
@@ -225,8 +211,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should throw when projectionType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void NotifyProjectionChangedThrowsWhenProjectionTypeNull()
+        public void NotifyProjectionChangedThrowsWhenProjectionTypeNull()
     {
         // Act & Assert
         ArgumentNullException exception =
@@ -238,8 +223,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should return a disposable subscription.
     /// </summary>
     [Fact]
-    [AllureFeature("Subscription")]
-    public void SubscribeReturnsDisposable()
+        public void SubscribeReturnsDisposable()
     {
         // Act
         using IDisposable subscription = notifier.Subscribe("TestProjection", "entity-1", _ => { });
@@ -252,8 +236,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when callback is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Lambda expression throws before returning")]
@@ -269,8 +252,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when entityId is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Lambda expression throws before returning")]
@@ -286,8 +268,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Lambda expression throws before returning")]
@@ -303,8 +284,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when projectionType is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Lambda expression throws before returning")]
@@ -320,8 +300,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when projectionType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Lambda expression throws before returning")]
@@ -337,8 +316,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscription collection should be cleaned up when all subscriptions are disposed.
     /// </summary>
     [Fact]
-    [AllureFeature("Subscription")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP017:Prefer using",
         Justification = "Testing explicit disposal behavior")]
@@ -366,8 +344,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscription dispose can be called multiple times.
     /// </summary>
     [Fact]
-    [AllureFeature("Subscription")]
-    [SuppressMessage(
+        [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
         Justification = "This test verifies no exception is thrown on multiple dispose calls")]
