@@ -1,4 +1,3 @@
-using Allure.Xunit.Attributes;
 
 using Mississippi.Common.Abstractions;
 
@@ -8,17 +7,13 @@ namespace Mississippi.Inlet.Server.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletServerOptions" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Server")]
-[AllureSuite("Configuration")]
-[AllureSubSuite("InletServerOptions")]
 public sealed class InletServerOptionsTests
 {
     /// <summary>
     ///     AllClientsStreamNamespace should have correct default value.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
-    public void AllClientsStreamNamespaceHasCorrectDefault()
+        public void AllClientsStreamNamespaceHasCorrectDefault()
     {
         // Arrange
         InletServerOptions options = new();
@@ -31,8 +26,7 @@ public sealed class InletServerOptionsTests
     ///     AllClientsStreamNamespace should be settable.
     /// </summary>
     [Fact]
-    [AllureFeature("Property Setters")]
-    public void AllClientsStreamNamespaceIsSettable()
+        public void AllClientsStreamNamespaceIsSettable()
     {
         // Arrange
         InletServerOptions options = new();
@@ -48,8 +42,7 @@ public sealed class InletServerOptionsTests
     ///     HeartbeatIntervalMinutes should have correct default value.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
-    public void HeartbeatIntervalMinutesHasCorrectDefault()
+        public void HeartbeatIntervalMinutesHasCorrectDefault()
     {
         // Arrange
         InletServerOptions options = new();
@@ -62,8 +55,7 @@ public sealed class InletServerOptionsTests
     ///     HeartbeatIntervalMinutes should be settable.
     /// </summary>
     [Fact]
-    [AllureFeature("Property Setters")]
-    public void HeartbeatIntervalMinutesIsSettable()
+        public void HeartbeatIntervalMinutesIsSettable()
     {
         // Arrange
         InletServerOptions options = new();
@@ -79,8 +71,7 @@ public sealed class InletServerOptionsTests
     ///     ServerStreamNamespace should have correct default value.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
-    public void ServerStreamNamespaceHasCorrectDefault()
+        public void ServerStreamNamespaceHasCorrectDefault()
     {
         // Arrange
         InletServerOptions options = new();
@@ -93,8 +84,7 @@ public sealed class InletServerOptionsTests
     ///     ServerStreamNamespace should be settable.
     /// </summary>
     [Fact]
-    [AllureFeature("Property Setters")]
-    public void ServerStreamNamespaceIsSettable()
+        public void ServerStreamNamespaceIsSettable()
     {
         // Arrange
         InletServerOptions options = new();
@@ -110,8 +100,7 @@ public sealed class InletServerOptionsTests
     ///     StreamProviderName should have correct default value.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
-    public void StreamProviderNameHasCorrectDefault()
+        public void StreamProviderNameHasCorrectDefault()
     {
         // Arrange
         InletServerOptions options = new();
@@ -124,8 +113,7 @@ public sealed class InletServerOptionsTests
     ///     StreamProviderName should be settable.
     /// </summary>
     [Fact]
-    [AllureFeature("Property Setters")]
-    public void StreamProviderNameIsSettable()
+        public void StreamProviderNameIsSettable()
     {
         // Arrange
         InletServerOptions options = new();
