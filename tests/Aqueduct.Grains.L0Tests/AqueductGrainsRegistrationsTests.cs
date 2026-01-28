@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -19,17 +18,13 @@ namespace Mississippi.Aqueduct.Grains.L0Tests;
 /// <summary>
 ///     Tests for <see cref="AqueductGrainsRegistrations" />.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Extensions")]
-[AllureSubSuite("AqueductGrainsRegistrations")]
 public sealed class AqueductGrainsRegistrationsTests
 {
     /// <summary>
     ///     UseAqueduct should configure all options from AqueductSiloOptions.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
-    public void UseAqueductConfiguresAllOptions()
+        public void UseAqueductConfiguresAllOptions()
     {
         // Arrange
         ServiceCollection services = [];
@@ -60,8 +55,7 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should register AqueductGrainFactory as singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void UseAqueductRegistersAqueductGrainFactory()
+        public void UseAqueductRegistersAqueductGrainFactory()
     {
         // Arrange
         ServiceCollection services = [];
@@ -81,8 +75,7 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should register AqueductOptions.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void UseAqueductRegistersAqueductOptions()
+        public void UseAqueductRegistersAqueductOptions()
     {
         // Arrange
         ServiceCollection services = [];
@@ -102,8 +95,7 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should return the same silo builder for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void UseAqueductReturnsSameSiloBuilder()
+        public void UseAqueductReturnsSameSiloBuilder()
     {
         // Arrange
         ServiceCollection services = [];
@@ -121,8 +113,7 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should throw when configureOptions is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void UseAqueductThrowsWhenConfigureOptionsIsNull()
+        public void UseAqueductThrowsWhenConfigureOptionsIsNull()
     {
         // Arrange
         ISiloBuilder siloBuilder = Substitute.For<ISiloBuilder>();
@@ -137,8 +128,7 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct should throw when siloBuilder is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void UseAqueductThrowsWhenSiloBuilderIsNull()
+        public void UseAqueductThrowsWhenSiloBuilderIsNull()
     {
         // Arrange
         ISiloBuilder siloBuilder = null!;
@@ -152,8 +142,7 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct with default options should use MississippiDefaults.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
-    public void UseAqueductWithDefaultOptionsUsesMississippiDefaults()
+        public void UseAqueductWithDefaultOptionsUsesMississippiDefaults()
     {
         // Arrange
         ServiceCollection services = [];
@@ -177,8 +166,7 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct with no action should return the same silo builder.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void UseAqueductWithNoActionReturnsSameSiloBuilder()
+        public void UseAqueductWithNoActionReturnsSameSiloBuilder()
     {
         // Arrange
         ServiceCollection services = [];
@@ -196,8 +184,7 @@ public sealed class AqueductGrainsRegistrationsTests
     ///     UseAqueduct with no action should throw when siloBuilder is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void UseAqueductWithNoActionThrowsWhenSiloBuilderIsNull()
+        public void UseAqueductWithNoActionThrowsWhenSiloBuilderIsNull()
     {
         // Arrange
         ISiloBuilder siloBuilder = null!;
