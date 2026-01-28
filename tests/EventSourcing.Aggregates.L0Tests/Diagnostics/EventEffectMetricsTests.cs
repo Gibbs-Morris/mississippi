@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Aggregates.Diagnostics;
 
@@ -13,9 +12,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests.Diagnostics;
 /// <summary>
 ///     Tests for <see cref="EventEffectMetrics" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("EventEffectMetrics")]
 public sealed class EventEffectMetricsTests : IDisposable
 {
     private readonly MeterListener listener;
@@ -61,8 +57,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordEffectError records error metric with correct tags.
     /// </summary>
     [Fact]
-    [AllureFeature("Metrics")]
-    public void RecordEffectErrorRecordsMetricWithTags()
+        public void RecordEffectErrorRecordsMetricWithTags()
     {
         // Act
         EventEffectMetrics.RecordEffectError("TestAggregate", "TestEffect", "TestEvent");
@@ -82,8 +77,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordEffectExecution records count and duration metrics.
     /// </summary>
     [Fact]
-    [AllureFeature("Metrics")]
-    public void RecordEffectExecutionRecordsCountAndDuration()
+        public void RecordEffectExecutionRecordsCountAndDuration()
     {
         // Act
         EventEffectMetrics.RecordEffectExecution("TestAggregate", "TestEffect", "TestEvent", 42.5, true);
@@ -107,8 +101,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordEffectExecution records failure result tag when not successful.
     /// </summary>
     [Fact]
-    [AllureFeature("Metrics")]
-    public void RecordEffectExecutionRecordsFailureResult()
+        public void RecordEffectExecutionRecordsFailureResult()
     {
         // Act
         EventEffectMetrics.RecordEffectExecution("TestAggregate", "TestEffect", "TestEvent", 10.0, false);
@@ -125,8 +118,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordEventYielded records yielded event metric with correct tags.
     /// </summary>
     [Fact]
-    [AllureFeature("Metrics")]
-    public void RecordEventYieldedRecordsMetricWithTags()
+        public void RecordEventYieldedRecordsMetricWithTags()
     {
         // Act
         EventEffectMetrics.RecordEventYielded("TestAggregate", "TestEffect", "YieldedEvent");
@@ -146,8 +138,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordIterationLimitReached records metric with aggregate key tag.
     /// </summary>
     [Fact]
-    [AllureFeature("Metrics")]
-    public void RecordIterationLimitReachedRecordsMetricWithTags()
+        public void RecordIterationLimitReachedRecordsMetricWithTags()
     {
         // Act
         EventEffectMetrics.RecordIterationLimitReached("TestAggregate", "test-key-123");
@@ -165,8 +156,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordSlowEffect records slow effect metric with correct tags.
     /// </summary>
     [Fact]
-    [AllureFeature("Metrics")]
-    public void RecordSlowEffectRecordsMetricWithTags()
+        public void RecordSlowEffectRecordsMetricWithTags()
     {
         // Act
         EventEffectMetrics.RecordSlowEffect("TestAggregate", "SlowEffect", "TestEvent");
