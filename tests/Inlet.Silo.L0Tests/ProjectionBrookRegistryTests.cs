@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,9 +12,6 @@ namespace Mississippi.Inlet.Silo.L0Tests;
 /// <summary>
 ///     Tests for ProjectionBrookRegistry via <see cref="IProjectionBrookRegistry" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Silo")]
-[AllureSuite("Registry")]
-[AllureSubSuite("ProjectionBrookRegistry")]
 public sealed class ProjectionBrookRegistryTests : IDisposable
 {
     private readonly IProjectionBrookRegistry registry;
@@ -43,8 +39,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetAllPaths should return empty for new registry.
     /// </summary>
     [Fact]
-    [AllureFeature("Enumeration")]
-    public void GetAllPathsReturnsEmptyForNewRegistry()
+        public void GetAllPathsReturnsEmptyForNewRegistry()
     {
         // Act
         string[] paths = registry.GetAllPaths().ToArray();
@@ -57,8 +52,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetAllPaths should return registered projections.
     /// </summary>
     [Fact]
-    [AllureFeature("Enumeration")]
-    public void GetAllPathsReturnsRegisteredProjections()
+        public void GetAllPathsReturnsRegisteredProjections()
     {
         // Arrange
         registry.Register("cascade/channels", "brook1");
@@ -77,8 +71,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetBrookName should return null for unknown projection.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void GetBrookNameReturnsNullForUnknownProjection()
+        public void GetBrookNameReturnsNullForUnknownProjection()
     {
         // Act
         string? brookName = registry.GetBrookName("UnknownProjection");
@@ -91,8 +84,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetBrookName should return registered brook name.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void GetBrookNameReturnsRegisteredBrookName()
+        public void GetBrookNameReturnsRegisteredBrookName()
     {
         // Arrange
         registry.Register("LookupProjection", "lookup-brook");
@@ -108,8 +100,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     GetBrookName should throw when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void GetBrookNameThrowsWhenPathNull()
+        public void GetBrookNameThrowsWhenPathNull()
     {
         // Act & Assert
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => registry.GetBrookName(null!));
@@ -120,8 +111,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     Register should overwrite existing mapping.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
-    public void RegisterOverwritesExistingMapping()
+        public void RegisterOverwritesExistingMapping()
     {
         // Arrange
         registry.Register("TestProjection", "old-brook");
@@ -138,8 +128,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     Register should store the mapping.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
-    public void RegisterStoresMapping()
+        public void RegisterStoresMapping()
     {
         // Act
         registry.Register("TestProjection", "test-brook");
@@ -153,8 +142,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     Register should throw when brookName is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void RegisterThrowsWhenBrookNameNull()
+        public void RegisterThrowsWhenBrookNameNull()
     {
         // Act & Assert
         ArgumentNullException exception =
@@ -166,8 +154,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     Register should throw when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void RegisterThrowsWhenPathNull()
+        public void RegisterThrowsWhenPathNull()
     {
         // Act & Assert
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => registry.Register(null!, "brook"));
@@ -178,8 +165,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     TryGetBrookName should return false for unknown projection.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void TryGetBrookNameReturnsFalseForUnknownProjection()
+        public void TryGetBrookNameReturnsFalseForUnknownProjection()
     {
         // Act
         bool result = registry.TryGetBrookName("UnknownProjection", out string? brookName);
@@ -193,8 +179,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     TryGetBrookName should return true and brook name for registered projection.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void TryGetBrookNameReturnsTrueForRegisteredProjection()
+        public void TryGetBrookNameReturnsTrueForRegisteredProjection()
     {
         // Arrange
         registry.Register("TestProjection", "test-brook");
@@ -211,8 +196,7 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     ///     TryGetBrookName should throw when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void TryGetBrookNameThrowsWhenPathNull()
+        public void TryGetBrookNameThrowsWhenPathNull()
     {
         // Act & Assert
         ArgumentNullException exception =
