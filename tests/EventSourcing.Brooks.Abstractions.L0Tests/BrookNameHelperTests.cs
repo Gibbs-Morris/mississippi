@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
@@ -10,9 +9,6 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="BrookNameHelper" /> functionality.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Brook Name Helper")]
 public class BrookNameHelperTests
 {
     /// <summary>
