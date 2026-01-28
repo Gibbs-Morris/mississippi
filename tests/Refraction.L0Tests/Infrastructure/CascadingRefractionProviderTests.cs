@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.Components;
 
@@ -13,16 +12,13 @@ namespace Mississippi.Refraction.L0Tests.Infrastructure;
 /// <summary>
 ///     Tests for <see cref="CascadingRefractionProvider" />.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Infrastructure")]
 public sealed class CascadingRefractionProviderTests
 {
     /// <summary>
     ///     CascadingRefractionProvider has ChildContent parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CascadingRefractionProvider")]
-    public void CascadingRefractionProviderHasChildContentParameter()
+        public void CascadingRefractionProviderHasChildContentParameter()
     {
         // Arrange
         Type componentType = typeof(CascadingRefractionProvider);
@@ -40,8 +36,7 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider has ReducedMotion parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CascadingRefractionProvider")]
-    public void CascadingRefractionProviderHasReducedMotionParameter()
+        public void CascadingRefractionProviderHasReducedMotionParameter()
     {
         // Arrange
         Type componentType = typeof(CascadingRefractionProvider);
@@ -59,8 +54,7 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("CascadingRefractionProvider")]
-    public void CascadingRefractionProviderInheritsFromComponentBase()
+        public void CascadingRefractionProviderInheritsFromComponentBase()
     {
         // Arrange
         Type componentType = typeof(CascadingRefractionProvider);
@@ -73,8 +67,7 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider ReducedMotion defaults to false.
     /// </summary>
     [Fact]
-    [AllureFeature("CascadingRefractionProvider")]
-    public void CascadingRefractionProviderReducedMotionDefaultsToFalse()
+        public void CascadingRefractionProviderReducedMotionDefaultsToFalse()
     {
         // Arrange
         CascadingRefractionProvider provider = new();
