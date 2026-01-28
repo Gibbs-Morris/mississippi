@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,9 +20,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests.Subscriptions;
 /// <summary>
 ///     Unit tests for <see cref="UxProjectionSubscriptionGrain" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionSubscriptionGrain")]
 public sealed class UxProjectionSubscriptionGrainTests
 {
     private const string ConnectionId = "connection-abc123";
