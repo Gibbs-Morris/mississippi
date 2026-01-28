@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Bunit;
 
@@ -15,16 +14,13 @@ namespace Mississippi.Refraction.L0Tests.Components.Organisms;
 /// <summary>
 ///     Smoke tests for <see cref="Pane" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Organisms")]
 public sealed class PaneTests : BunitContext
 {
     /// <summary>
     ///     Pane Depth defaults to Mid.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneDepthDefaultsToMid()
+        public void PaneDepthDefaultsToMid()
     {
         // Arrange
         Pane pane = new();
@@ -37,8 +33,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane does not render footer when null.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneDoesNotRenderFooterWhenNull()
+        public void PaneDoesNotRenderFooterWhenNull()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>();
@@ -51,8 +46,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane does not render header when title is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneDoesNotRenderHeaderWhenTitleIsEmpty()
+        public void PaneDoesNotRenderHeaderWhenTitleIsEmpty()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(c => c.Title, string.Empty));
@@ -65,8 +59,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneHasAdditionalAttributesParameter()
+        public void PaneHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Pane).GetProperty("AdditionalAttributes");
@@ -82,8 +75,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane has ChildContent parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneHasChildContentParameter()
+        public void PaneHasChildContentParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Pane).GetProperty("ChildContent");
@@ -99,8 +91,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane has Depth parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneHasDepthParameter()
+        public void PaneHasDepthParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Pane).GetProperty("Depth");
@@ -115,8 +106,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane has Footer parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneHasFooterParameter()
+        public void PaneHasFooterParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Pane).GetProperty("Footer");
@@ -132,8 +122,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneHasStateParameter()
+        public void PaneHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Pane).GetProperty("State");
@@ -148,8 +137,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane has Title parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneHasTitleParameter()
+        public void PaneHasTitleParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Pane).GetProperty("Title");
@@ -164,8 +152,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane has Variant parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneHasVariantParameter()
+        public void PaneHasVariantParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Pane).GetProperty("Variant");
@@ -180,8 +167,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneInheritsFromComponentBase()
+        public void PaneInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(Pane)));
@@ -191,8 +177,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersAdditionalAttributes()
+        public void PaneRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>(p => p.AddUnmatched("data-testid", "pane-1"));
@@ -205,8 +190,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders child content.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersChildContent()
+        public void PaneRendersChildContent()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>(p => p.AddChildContent(
@@ -220,8 +204,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders custom depth.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersCustomDepth()
+        public void PaneRendersCustomDepth()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(c => c.Depth, RefractionDepthBands.Far));
@@ -235,8 +218,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders custom variant.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersCustomVariant()
+        public void PaneRendersCustomVariant()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(c => c.Variant, RefractionPaneVariants.Orbital));
@@ -250,8 +232,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders default depth.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersDefaultDepth()
+        public void PaneRendersDefaultDepth()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>();
@@ -265,8 +246,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders default variant.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersDefaultVariant()
+        public void PaneRendersDefaultVariant()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>();
@@ -280,8 +260,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders footer when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersFooterWhenProvided()
+        public void PaneRendersFooterWhenProvided()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(
@@ -297,8 +276,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders title when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersTitleWhenProvided()
+        public void PaneRendersTitleWhenProvided()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>(p => p.Add(c => c.Title, "Test Title"));
@@ -312,8 +290,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneRendersWithDefaultState()
+        public void PaneRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<Pane> cut = Render<Pane>();
@@ -327,8 +304,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneStateDefaultsToIdle()
+        public void PaneStateDefaultsToIdle()
     {
         // Arrange
         Pane pane = new();
@@ -341,8 +317,7 @@ public sealed class PaneTests : BunitContext
     ///     Pane Variant defaults to Primary.
     /// </summary>
     [Fact]
-    [AllureFeature("Pane")]
-    public void PaneVariantDefaultsToPrimary()
+        public void PaneVariantDefaultsToPrimary()
     {
         // Arrange
         Pane pane = new();
