@@ -347,12 +347,10 @@ public sealed class AggregateScenario<TAggregate>
         object evt
     )
     {
-        foreach (IEventReducer<TAggregate> reducer in reducers)
+        IEventReducer<TAggregate>? reducer = reducers.FirstOrDefault(r => CanHandle(r, evt));
+        if (reducer is not null)
         {
-            if (CanHandle(reducer, evt))
-            {
-                return ApplyWithReducer(reducer, state, evt);
-            }
+            return ApplyWithReducer(reducer, state, evt);
         }
 
         throw new InvalidOperationException($"No reducer registered for event type {evt.GetType().Name}.");
@@ -363,12 +361,10 @@ public sealed class AggregateScenario<TAggregate>
         object command
     )
     {
-        foreach (ICommandHandler<TAggregate> handler in handlers)
+        ICommandHandler<TAggregate>? handler = handlers.FirstOrDefault(h => CanHandleCommand(h, command));
+        if (handler is not null)
         {
-            if (CanHandleCommand(handler, command))
-            {
-                return ExecuteWithHandler(handler, state, command);
-            }
+            return ExecuteWithHandler(handler, state, command);
         }
 
         throw new InvalidOperationException($"No handler registered for command type {command.GetType().Name}.");
