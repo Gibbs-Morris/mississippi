@@ -14,12 +14,6 @@ namespace Mississippi.Reservoir.Abstractions.Actions;
 ///         They carry the minimal data needed for reducers and effects to do their work.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed record IncrementCounterAction : IAction;
-///         public sealed record SetUserNameAction(string Name) : IAction;
-///     </code>
-/// </example>
 public interface IAction
 {
 }
