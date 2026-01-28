@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Bunit;
 
@@ -15,16 +14,13 @@ namespace Mississippi.Refraction.L0Tests.Components.Organisms;
 /// <summary>
 ///     Tests for <see cref="SchematicViewer" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Organisms")]
 public sealed class SchematicViewerTests : BunitContext
 {
     /// <summary>
     ///     SchematicViewer does not render caption when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerDoesNotRenderCaptionWhenEmpty()
+        public void SchematicViewerDoesNotRenderCaptionWhenEmpty()
     {
         // Act
         using IRenderedComponent<SchematicViewer> cut =
@@ -38,8 +34,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerHasAdditionalAttributesParameter()
+        public void SchematicViewerHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(SchematicViewer).GetProperty("AdditionalAttributes");
@@ -55,8 +50,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer has Caption parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerHasCaptionParameter()
+        public void SchematicViewerHasCaptionParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(SchematicViewer).GetProperty("Caption");
@@ -72,8 +66,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer has ChildContent parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerHasChildContentParameter()
+        public void SchematicViewerHasChildContentParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(SchematicViewer).GetProperty("ChildContent");
@@ -89,8 +82,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerHasStateParameter()
+        public void SchematicViewerHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(SchematicViewer).GetProperty("State");
@@ -105,8 +97,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerInheritsFromComponentBase()
+        public void SchematicViewerInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(SchematicViewer)));
@@ -116,8 +107,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersAdditionalAttributes()
+        public void SchematicViewerRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<SchematicViewer> cut =
@@ -131,8 +121,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders caption when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersCaptionWhenProvided()
+        public void SchematicViewerRendersCaptionWhenProvided()
     {
         // Act
         using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>(p => p.Add(
@@ -148,8 +137,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders child content in viewport.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersChildContentInViewport()
+        public void SchematicViewerRendersChildContentInViewport()
     {
         // Act
         using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>(p => p.AddChildContent(
@@ -163,8 +151,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersCustomState()
+        public void SchematicViewerRendersCustomState()
     {
         // Act
         using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>(p => p.Add(
@@ -180,8 +167,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders viewport.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersViewport()
+        public void SchematicViewerRendersViewport()
     {
         // Act
         using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>();
@@ -194,8 +180,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerRendersWithDefaultState()
+        public void SchematicViewerRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<SchematicViewer> cut = Render<SchematicViewer>();
@@ -209,8 +194,7 @@ public sealed class SchematicViewerTests : BunitContext
     ///     SchematicViewer State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("SchematicViewer")]
-    public void SchematicViewerStateDefaultsToIdle()
+        public void SchematicViewerStateDefaultsToIdle()
     {
         // Arrange
         SchematicViewer component = new();
