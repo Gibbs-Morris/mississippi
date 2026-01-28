@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Client.Abstractions.State;
 
@@ -10,9 +9,6 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ProjectionCache" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Core")]
-[AllureSubSuite("ProjectionCache")]
 public sealed class ProjectionCacheTests
 {
     private readonly ProjectionCache sut = new();
@@ -26,8 +22,7 @@ public sealed class ProjectionCacheTests
     ///     GetProjectionError returns error after SetError.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void GetProjectionErrorReturnsErrorAfterSetError()
+        public void GetProjectionErrorReturnsErrorAfterSetError()
     {
         // Arrange
         InvalidOperationException error = new("Test error");
@@ -45,8 +40,7 @@ public sealed class ProjectionCacheTests
     ///     GetProjectionError returns null for non-existent entity.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void GetProjectionErrorReturnsNullForNonExistentEntity()
+        public void GetProjectionErrorReturnsNullForNonExistentEntity()
     {
         // Act
         Exception? result = sut.GetProjectionError<TestProjection>("non-existent");
@@ -59,16 +53,14 @@ public sealed class ProjectionCacheTests
     ///     GetProjectionError throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void GetProjectionErrorThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void GetProjectionErrorThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.GetProjectionError<TestProjection>(null!));
 
     /// <summary>
     ///     GetProjection returns data after SetLoaded.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void GetProjectionReturnsDataAfterSetLoaded()
+        public void GetProjectionReturnsDataAfterSetLoaded()
     {
         // Arrange
         TestProjection projection = new("Test", 42);
@@ -87,8 +79,7 @@ public sealed class ProjectionCacheTests
     ///     GetProjection returns null for non-existent entity.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void GetProjectionReturnsNullForNonExistentEntity()
+        public void GetProjectionReturnsNullForNonExistentEntity()
     {
         // Act
         TestProjection? result = sut.GetProjection<TestProjection>("non-existent");
@@ -101,8 +92,7 @@ public sealed class ProjectionCacheTests
     ///     GetProjectionState returns null for non-existent entity.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void GetProjectionStateReturnsNullWhenNotExists()
+        public void GetProjectionStateReturnsNullWhenNotExists()
     {
         // Act
         IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("non-existent");
@@ -115,8 +105,7 @@ public sealed class ProjectionCacheTests
     ///     GetProjectionState returns state after SetLoaded.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void GetProjectionStateReturnsStateWhenExists()
+        public void GetProjectionStateReturnsStateWhenExists()
     {
         // Arrange
         TestProjection projection = new("Test", 42);
@@ -136,24 +125,21 @@ public sealed class ProjectionCacheTests
     ///     GetProjectionState throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void GetProjectionStateThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void GetProjectionStateThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.GetProjectionState<TestProjection>(null!));
 
     /// <summary>
     ///     GetProjection throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void GetProjectionThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void GetProjectionThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.GetProjection<TestProjection>(null!));
 
     /// <summary>
     ///     GetProjectionVersion returns -1 for non-existent entity.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void GetProjectionVersionReturnsNegativeOneForNonExistentEntity()
+        public void GetProjectionVersionReturnsNegativeOneForNonExistentEntity()
     {
         // Act
         long result = sut.GetProjectionVersion<TestProjection>("non-existent");
@@ -166,8 +152,7 @@ public sealed class ProjectionCacheTests
     ///     GetProjectionVersion returns version after SetLoaded.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void GetProjectionVersionReturnsVersionAfterSetLoaded()
+        public void GetProjectionVersionReturnsVersionAfterSetLoaded()
     {
         // Arrange
         TestProjection projection = new("Test", 42);
@@ -184,16 +169,14 @@ public sealed class ProjectionCacheTests
     ///     GetProjectionVersion throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void GetProjectionVersionThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void GetProjectionVersionThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.GetProjectionVersion<TestProjection>(null!));
 
     /// <summary>
     ///     IsProjectionConnected returns false for non-existent entity.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void IsProjectionConnectedReturnsFalseForNonExistentEntity()
+        public void IsProjectionConnectedReturnsFalseForNonExistentEntity()
     {
         // Act
         bool result = sut.IsProjectionConnected<TestProjection>("non-existent");
@@ -206,8 +189,7 @@ public sealed class ProjectionCacheTests
     ///     IsProjectionConnected returns true after SetConnection with true.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void IsProjectionConnectedReturnsTrueAfterSetConnection()
+        public void IsProjectionConnectedReturnsTrueAfterSetConnection()
     {
         // Arrange
         sut.SetConnection<TestProjection>("entity-1", true);
@@ -223,16 +205,14 @@ public sealed class ProjectionCacheTests
     ///     IsProjectionConnected throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void IsProjectionConnectedThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void IsProjectionConnectedThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.IsProjectionConnected<TestProjection>(null!));
 
     /// <summary>
     ///     IsProjectionLoading returns false for non-existent entity.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void IsProjectionLoadingReturnsFalseForNonExistentEntity()
+        public void IsProjectionLoadingReturnsFalseForNonExistentEntity()
     {
         // Act
         bool result = sut.IsProjectionLoading<TestProjection>("non-existent");
@@ -245,8 +225,7 @@ public sealed class ProjectionCacheTests
     ///     IsProjectionLoading returns true after SetLoading.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    public void IsProjectionLoadingReturnsTrueAfterSetLoading()
+        public void IsProjectionLoadingReturnsTrueAfterSetLoading()
     {
         // Arrange
         sut.SetLoading<TestProjection>("entity-1");
@@ -262,24 +241,21 @@ public sealed class ProjectionCacheTests
     ///     IsProjectionLoading throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void IsProjectionLoadingThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void IsProjectionLoadingThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.IsProjectionLoading<TestProjection>(null!));
 
     /// <summary>
     ///     SetConnection throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void SetConnectionThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void SetConnectionThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.SetConnection<TestProjection>(null!, true));
 
     /// <summary>
     ///     SetConnection updates existing state preserving data.
     /// </summary>
     [Fact]
-    [AllureFeature("State Updates")]
-    public void SetConnectionUpdatesExistingStatePreservingData()
+        public void SetConnectionUpdatesExistingStatePreservingData()
     {
         // Arrange
         TestProjection projection = new("Test", 42);
@@ -297,8 +273,7 @@ public sealed class ProjectionCacheTests
     ///     SetError throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void SetErrorThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void SetErrorThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.SetError<TestProjection>(
             null!,
             new InvalidOperationException("Test")));
@@ -307,32 +282,28 @@ public sealed class ProjectionCacheTests
     ///     SetError throws when exception is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void SetErrorThrowsArgumentNullExceptionWhenExceptionIsNull() =>
+        public void SetErrorThrowsArgumentNullExceptionWhenExceptionIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.SetError<TestProjection>("entity-1", null!));
 
     /// <summary>
     ///     SetLoaded throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void SetLoadedThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void SetLoadedThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.SetLoaded(null!, new TestProjection("Test"), 1L));
 
     /// <summary>
     ///     SetLoading throws when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void SetLoadingThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
+        public void SetLoadingThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
         Assert.Throws<ArgumentNullException>(() => sut.SetLoading<TestProjection>(null!));
 
     /// <summary>
     ///     SetUpdated delegates to SetLoaded.
     /// </summary>
     [Fact]
-    [AllureFeature("State Updates")]
-    public void SetUpdatedDelegatesToSetLoaded()
+        public void SetUpdatedDelegatesToSetLoaded()
     {
         // Arrange
         TestProjection projection = new("Test", 42);
