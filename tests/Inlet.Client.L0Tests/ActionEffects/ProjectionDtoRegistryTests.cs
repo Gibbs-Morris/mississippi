@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.L0Tests.Helpers;
@@ -11,17 +10,13 @@ namespace Mississippi.Inlet.Client.L0Tests.ActionEffects;
 /// <summary>
 ///     Tests for <see cref="ProjectionDtoRegistry" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("ActionEffects")]
-[AllureSubSuite("ProjectionDtoRegistry")]
 public sealed class ProjectionDtoRegistryTests
 {
     /// <summary>
     ///     GetDtoType returns null for unknown path.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void GetDtoTypeReturnsNullForUnknownPath()
+        public void GetDtoTypeReturnsNullForUnknownPath()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -37,8 +32,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetDtoType returns registered type.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void GetDtoTypeReturnsRegisteredType()
+        public void GetDtoTypeReturnsRegisteredType()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -55,8 +49,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetDtoType throws ArgumentNullException when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void GetDtoTypeThrowsWhenPathIsNull()
+        public void GetDtoTypeThrowsWhenPathIsNull()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -69,8 +62,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetPath returns null for unknown type.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void GetPathReturnsNullForUnknownType()
+        public void GetPathReturnsNullForUnknownType()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -86,8 +78,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetPath returns registered path.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void GetPathReturnsRegisteredPath()
+        public void GetPathReturnsRegisteredPath()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -104,8 +95,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     GetPath throws ArgumentNullException when dtoType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Lookup")]
-    public void GetPathThrowsWhenDtoTypeIsNull()
+        public void GetPathThrowsWhenDtoTypeIsNull()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -118,8 +108,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     Register adds bidirectional mapping.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
-    public void RegisterAddsBidirectionalMapping()
+        public void RegisterAddsBidirectionalMapping()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -136,8 +125,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     Register overwrites existing mapping for same path.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
-    public void RegisterOverwritesExistingMappingForSamePath()
+        public void RegisterOverwritesExistingMappingForSamePath()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -154,8 +142,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     Register throws ArgumentNullException when dtoType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
-    public void RegisterThrowsWhenDtoTypeIsNull()
+        public void RegisterThrowsWhenDtoTypeIsNull()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -168,8 +155,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     Register throws ArgumentNullException when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Registration")]
-    public void RegisterThrowsWhenPathIsNull()
+        public void RegisterThrowsWhenPathIsNull()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -182,8 +168,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     ScanAssemblies handles empty array.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
-    public void ScanAssembliesHandlesEmptyArray()
+        public void ScanAssembliesHandlesEmptyArray()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -199,8 +184,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     ScanAssemblies registers types with ProjectionPathAttribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
-    public void ScanAssembliesRegistersDecoratedTypes()
+        public void ScanAssembliesRegistersDecoratedTypes()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -216,8 +200,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     ScanAssemblies scans multiple assemblies.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
-    public void ScanAssembliesScansMultipleAssemblies()
+        public void ScanAssembliesScansMultipleAssemblies()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -233,8 +216,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     ScanAssemblies throws ArgumentNullException when assemblies is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Scanning")]
-    public void ScanAssembliesThrowsWhenAssembliesIsNull()
+        public void ScanAssembliesThrowsWhenAssembliesIsNull()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -247,8 +229,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetDtoType returns false when not found.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
-    public void TryGetDtoTypeReturnsFalseWhenNotFound()
+        public void TryGetDtoTypeReturnsFalseWhenNotFound()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -265,8 +246,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetDtoType returns true and outputs type when found.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
-    public void TryGetDtoTypeReturnsTrueWhenFound()
+        public void TryGetDtoTypeReturnsTrueWhenFound()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -284,8 +264,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetDtoType throws ArgumentNullException when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
-    public void TryGetDtoTypeThrowsWhenPathIsNull()
+        public void TryGetDtoTypeThrowsWhenPathIsNull()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -298,8 +277,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetPath returns false when not found.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
-    public void TryGetPathReturnsFalseWhenNotFound()
+        public void TryGetPathReturnsFalseWhenNotFound()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -316,8 +294,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetPath returns true and outputs path when found.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
-    public void TryGetPathReturnsTrueWhenFound()
+        public void TryGetPathReturnsTrueWhenFound()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
@@ -335,8 +312,7 @@ public sealed class ProjectionDtoRegistryTests
     ///     TryGetPath throws ArgumentNullException when dtoType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("TryGet")]
-    public void TryGetPathThrowsWhenDtoTypeIsNull()
+        public void TryGetPathThrowsWhenDtoTypeIsNull()
     {
         // Arrange
         ProjectionDtoRegistry registry = new();
