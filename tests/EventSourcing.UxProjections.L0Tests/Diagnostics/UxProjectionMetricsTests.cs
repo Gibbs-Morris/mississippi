@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.UxProjections.Diagnostics;
 
@@ -12,9 +11,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests.Diagnostics;
 /// <summary>
 ///     Tests for UX projection metrics.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("Metrics")]
 public sealed class UxProjectionMetricsTests
 {
     private sealed record MetricMeasurement(
@@ -28,8 +24,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordCursorRead should emit metric with projection type tag.
     /// </summary>
     [Fact]
-    [AllureFeature("Cursor Metrics")]
-    public void RecordCursorReadEmitsMetricWithProjectionType()
+        public void RecordCursorReadEmitsMetricWithProjectionType()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -82,8 +77,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordNotificationSent should emit metric with projection type tag.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification Metrics")]
-    public void RecordNotificationSentEmitsMetricWithProjectionType()
+        public void RecordNotificationSentEmitsMetricWithProjectionType()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -136,8 +130,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordQuery should emit count and duration metrics.
     /// </summary>
     [Fact]
-    [AllureFeature("Query Metrics")]
-    public void RecordQueryEmitsCountAndDurationMetrics()
+        public void RecordQueryEmitsCountAndDurationMetrics()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
@@ -222,8 +215,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordQuery with no result should emit empty query metric.
     /// </summary>
     [Fact]
-    [AllureFeature("Query Metrics")]
-    public void RecordQueryWithNoResultEmitsEmptyMetric()
+        public void RecordQueryWithNoResultEmitsEmptyMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -288,8 +280,7 @@ public sealed class UxProjectionMetricsTests
     [Theory]
     [InlineData("subscribe")]
     [InlineData("unsubscribe")]
-    [AllureFeature("Subscription Metrics")]
-    public void RecordSubscriptionEmitsMetricWithActionTag(
+        public void RecordSubscriptionEmitsMetricWithActionTag(
         string action
     )
     {
@@ -344,8 +335,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordVersionCacheHit should emit metric with projection type tag.
     /// </summary>
     [Fact]
-    [AllureFeature("Cache Metrics")]
-    public void RecordVersionCacheHitEmitsMetricWithProjectionType()
+        public void RecordVersionCacheHitEmitsMetricWithProjectionType()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
