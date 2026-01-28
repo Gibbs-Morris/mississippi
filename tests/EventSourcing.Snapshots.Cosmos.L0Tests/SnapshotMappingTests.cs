@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Mapping;
@@ -13,9 +12,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for snapshot mapping utilities.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots Cosmos")]
-[AllureSubSuite("Snapshot Mapping")]
 public sealed class SnapshotMappingTests
 {
     private static readonly SnapshotStreamKey StreamKey = new("TEST.BROOK", "type", "id", "hash");
