@@ -31,7 +31,6 @@ public interface ICommandExecutingAction : IAction
     /// <summary>
     ///     Gets the name of the command type being executed.
     /// </summary>
-    /// <example>"OpenAccount", "DepositFunds".</example>
     string CommandType { get; }
 
     /// <summary>
