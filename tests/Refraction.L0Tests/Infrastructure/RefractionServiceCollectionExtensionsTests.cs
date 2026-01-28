@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,16 +12,13 @@ namespace Mississippi.Refraction.L0Tests.Infrastructure;
 /// <summary>
 ///     Tests for <see cref="RefractionServiceCollectionExtensions" />.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Infrastructure")]
 public sealed class RefractionServiceCollectionExtensionsTests
 {
     /// <summary>
     ///     AddRefraction is static extension method.
     /// </summary>
     [Fact]
-    [AllureFeature("RefractionServiceCollectionExtensions")]
-    public void AddRefractionIsStaticExtensionMethod()
+        public void AddRefractionIsStaticExtensionMethod()
     {
         // Arrange
         MethodInfo? method = typeof(RefractionServiceCollectionExtensions).GetMethod("AddRefraction");
@@ -36,8 +32,7 @@ public sealed class RefractionServiceCollectionExtensionsTests
     ///     AddRefraction returns service collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("RefractionServiceCollectionExtensions")]
-    public void AddRefractionReturnsServiceCollectionForChaining()
+        public void AddRefractionReturnsServiceCollectionForChaining()
     {
         // Arrange
         ServiceCollection services = new();
@@ -53,8 +48,7 @@ public sealed class RefractionServiceCollectionExtensionsTests
     ///     RefractionServiceCollectionExtensions class is static.
     /// </summary>
     [Fact]
-    [AllureFeature("RefractionServiceCollectionExtensions")]
-    public void RefractionServiceCollectionExtensionsClassIsStatic()
+        public void RefractionServiceCollectionExtensionsClassIsStatic()
     {
         // Arrange
         Type extensionsType = typeof(RefractionServiceCollectionExtensions);
