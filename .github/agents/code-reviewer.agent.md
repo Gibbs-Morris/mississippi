@@ -124,7 +124,6 @@ Apply these checks to files that implement grain interfaces (types implementing 
 - [ ] `Method_Scenario_Expected` naming
 - [ ] Arrange-Act-Assert pattern
 - [ ] FluentAssertions
-- [ ] Allure attributes (if applicable)
 
 ### Project Files
 

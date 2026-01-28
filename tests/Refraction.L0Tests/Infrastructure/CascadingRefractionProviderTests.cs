@@ -1,8 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.AspNetCore.Components;
 
 using Mississippi.Refraction.Infrastructure;
@@ -13,15 +11,12 @@ namespace Mississippi.Refraction.L0Tests.Infrastructure;
 /// <summary>
 ///     Tests for <see cref="CascadingRefractionProvider" />.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Infrastructure")]
 public sealed class CascadingRefractionProviderTests
 {
     /// <summary>
     ///     CascadingRefractionProvider has ChildContent parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CascadingRefractionProvider")]
     public void CascadingRefractionProviderHasChildContentParameter()
     {
         // Arrange
@@ -40,7 +35,6 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider has ReducedMotion parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("CascadingRefractionProvider")]
     public void CascadingRefractionProviderHasReducedMotionParameter()
     {
         // Arrange
@@ -59,7 +53,6 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("CascadingRefractionProvider")]
     public void CascadingRefractionProviderInheritsFromComponentBase()
     {
         // Arrange
@@ -73,7 +66,6 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider ReducedMotion defaults to false.
     /// </summary>
     [Fact]
-    [AllureFeature("CascadingRefractionProvider")]
     public void CascadingRefractionProviderReducedMotionDefaultsToFalse()
     {
         // Arrange

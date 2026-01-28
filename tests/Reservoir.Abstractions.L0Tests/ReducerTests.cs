@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
@@ -9,9 +7,6 @@ namespace Mississippi.Reservoir.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ActionReducerBase{TAction,TState}" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Reservoir.Abstractions")]
-[AllureSuite("Core")]
-[AllureSubSuite("Reducer")]
 public sealed class ReducerTests
 {
     /// <summary>
@@ -58,7 +53,6 @@ public sealed class ReducerTests
     ///     Reduce should apply transformation for matching action.
     /// </summary>
     [Fact]
-    [AllureFeature("Reduction")]
     public void ReduceAppliesTransformation()
     {
         // Arrange
@@ -79,7 +73,6 @@ public sealed class ReducerTests
     ///     TryReduce should return false and return original state for non-matching action type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Matching")]
     public void TryReduceReturnsFalseForNonMatchingActionType()
     {
         // Arrange
@@ -101,7 +94,6 @@ public sealed class ReducerTests
     ///     TryReduce should return true and produce new state for matching action type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Matching")]
     public void TryReduceReturnsTrueForMatchingActionType()
     {
         // Arrange

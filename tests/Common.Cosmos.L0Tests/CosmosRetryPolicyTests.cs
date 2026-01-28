@@ -5,8 +5,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -18,9 +16,6 @@ namespace Mississippi.Common.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="CosmosRetryPolicy" />.
 /// </summary>
-[AllureParentSuite("Core")]
-[AllureSuite("Cosmos")]
-[AllureSubSuite("Retry Policy")]
 public sealed class CosmosRetryPolicyTests
 {
     /// <summary>

@@ -4,8 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
@@ -14,9 +12,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="EventEffectBase{TEvent,TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("EventEffectBase")]
 public sealed class EventEffectBaseTests
 {
     /// <summary>
@@ -55,7 +50,6 @@ public sealed class EventEffectBaseTests
     ///     CanHandle returns false for non-matching event type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
     public void CanHandleReturnsFalseForNonMatchingEventType()
     {
         // Arrange
@@ -73,7 +67,6 @@ public sealed class EventEffectBaseTests
     ///     CanHandle returns true for matching event type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
     public void CanHandleReturnsTrueForMatchingEventType()
     {
         // Arrange
@@ -91,7 +84,6 @@ public sealed class EventEffectBaseTests
     ///     CanHandle throws ArgumentNullException when event is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void CanHandleThrowsArgumentNullExceptionWhenEventIsNull()
     {
         // Arrange
@@ -106,7 +98,6 @@ public sealed class EventEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task HandleAsyncDispatchesToTypedMethodForMatchingEvent()
     {
         // Arrange
@@ -131,7 +122,6 @@ public sealed class EventEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task HandleAsyncReturnsEmptyForNonMatchingEvent()
     {
         // Arrange
@@ -154,7 +144,6 @@ public sealed class EventEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when event is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void HandleAsyncThrowsArgumentNullExceptionWhenEventIsNull()
     {
         // Arrange

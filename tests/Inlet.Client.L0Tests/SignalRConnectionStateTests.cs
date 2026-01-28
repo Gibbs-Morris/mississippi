@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.SignalRConnection;
 
 
@@ -10,16 +8,12 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for SignalR connection state.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("SignalR Connection")]
-[AllureSubSuite("State")]
 public sealed class SignalRConnectionStateTests
 {
     /// <summary>
     ///     ConnectionId can be set via init.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void ConnectionIdCanBeSet()
     {
         // Arrange
@@ -39,7 +33,6 @@ public sealed class SignalRConnectionStateTests
     ///     ConnectionId is null by default.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void ConnectionIdIsNullByDefault()
     {
         // Act
@@ -53,7 +46,6 @@ public sealed class SignalRConnectionStateTests
     ///     Default status is Disconnected.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void DefaultStatusIsDisconnected()
     {
         // Act
@@ -67,7 +59,6 @@ public sealed class SignalRConnectionStateTests
     ///     FeatureKey returns expected value.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void FeatureKeyReturnsExpectedValue()
     {
         // Act
@@ -81,7 +72,6 @@ public sealed class SignalRConnectionStateTests
     ///     LastConnectedAt can be set via init.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void LastConnectedAtCanBeSet()
     {
         // Arrange
@@ -101,7 +91,6 @@ public sealed class SignalRConnectionStateTests
     ///     LastConnectedAt is null by default.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void LastConnectedAtIsNullByDefault()
     {
         // Act
@@ -115,7 +104,6 @@ public sealed class SignalRConnectionStateTests
     ///     LastDisconnectedAt is null by default.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void LastDisconnectedAtIsNullByDefault()
     {
         // Act
@@ -129,7 +117,6 @@ public sealed class SignalRConnectionStateTests
     ///     LastError is null by default.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void LastErrorIsNullByDefault()
     {
         // Act
@@ -143,7 +130,6 @@ public sealed class SignalRConnectionStateTests
     ///     LastMessageReceivedAt is null by default.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void LastMessageReceivedAtIsNullByDefault()
     {
         // Act
@@ -157,7 +143,6 @@ public sealed class SignalRConnectionStateTests
     ///     ReconnectAttemptCount can be set via init.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void ReconnectAttemptCountCanBeSet()
     {
         // Arrange
@@ -177,7 +162,6 @@ public sealed class SignalRConnectionStateTests
     ///     ReconnectAttemptCount is zero by default.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void ReconnectAttemptCountIsZeroByDefault()
     {
         // Act
@@ -191,7 +175,6 @@ public sealed class SignalRConnectionStateTests
     ///     Status can be set via init.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void StatusCanBeSet()
     {
         // Act

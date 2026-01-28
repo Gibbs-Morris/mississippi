@@ -1,14 +1,8 @@
-using Allure.Xunit.Attributes;
-
-
 namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateErrorCodes" /> constants.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates Abstractions")]
-[AllureSubSuite("Error Codes")]
 public class AggregateErrorCodesTests
 {
     /// <summary>

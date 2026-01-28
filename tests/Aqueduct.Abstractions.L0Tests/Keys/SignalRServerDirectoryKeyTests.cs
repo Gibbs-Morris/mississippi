@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Aqueduct.Abstractions.Keys;
 
 
@@ -10,9 +8,6 @@ namespace Mississippi.Aqueduct.Abstractions.L0Tests.Keys;
 /// <summary>
 ///     Tests for <see cref="SignalRServerDirectoryKey" />.
 /// </summary>
-[AllureParentSuite("ASP.NET Core")]
-[AllureSuite("SignalR Orleans")]
-[AllureSubSuite("Server Directory Key")]
 public sealed class SignalRServerDirectoryKeyTests
 {
     /// <summary>

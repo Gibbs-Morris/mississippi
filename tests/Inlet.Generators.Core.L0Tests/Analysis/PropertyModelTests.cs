@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Immutable;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.CodeAnalysis;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
@@ -15,9 +13,6 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Analysis;
 /// <summary>
 ///     Tests for <see cref="Core.Analysis.PropertyModel" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Generators Core")]
-[AllureSubSuite("Property Model")]
 public class PropertyModelTests
 {
     /// <summary>

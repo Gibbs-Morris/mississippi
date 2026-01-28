@@ -1,16 +1,11 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="OperationResult" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates Abstractions")]
-[AllureSubSuite("Operation Result")]
 public class OperationResultTests
 {
     /// <summary>

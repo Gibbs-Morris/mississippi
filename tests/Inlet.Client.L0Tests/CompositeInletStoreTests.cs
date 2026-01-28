@@ -1,8 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
@@ -14,9 +12,6 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for <see cref="CompositeInletStore" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Core")]
-[AllureSubSuite("CompositeInletStore")]
 public sealed class CompositeInletStoreTests : IDisposable
 {
     private readonly ProjectionCache cache = new();
@@ -62,7 +57,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Constructor should throw when projectionCache is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -74,7 +68,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Constructor should throw when store is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -86,7 +79,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Dispatch should delegate to underlying store.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void DispatchDelegatesToStore()
     {
         // Arrange
@@ -106,7 +98,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Dispose should be callable multiple times without error.
     /// </summary>
     [Fact]
-    [AllureFeature("Disposal")]
     [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
@@ -144,7 +135,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     GetProjection should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void GetProjectionDelegatesToCache()
     {
         // Arrange
@@ -164,7 +154,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     GetProjectionError should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void GetProjectionErrorDelegatesToCache()
     {
         // Arrange
@@ -184,7 +173,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     GetProjectionState should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void GetProjectionStateDelegatesToCache()
     {
         // Arrange
@@ -206,7 +194,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     GetProjectionVersion should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void GetProjectionVersionDelegatesToCache()
     {
         // Arrange
@@ -225,7 +212,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     IsProjectionConnected should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void IsProjectionConnectedDelegatesToCache()
     {
         // Arrange
@@ -243,7 +229,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     IsProjectionLoading should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void IsProjectionLoadingDelegatesToCache()
     {
         // Arrange
@@ -261,7 +246,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetConnection should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void SetConnectionDelegatesToCache()
     {
         // Arrange
@@ -278,7 +262,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetError should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void SetErrorDelegatesToCache()
     {
         // Arrange
@@ -298,7 +281,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetLoaded should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void SetLoadedDelegatesToCache()
     {
         // Arrange
@@ -319,7 +301,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetLoading should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void SetLoadingDelegatesToCache()
     {
         // Arrange
@@ -336,7 +317,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetUpdated should delegate to projection cache.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void SetUpdatedDelegatesToCache()
     {
         // Arrange
@@ -357,7 +337,6 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Subscribe should delegate to underlying store.
     /// </summary>
     [Fact]
-    [AllureFeature("Delegation")]
     public void SubscribeDelegatesToStore()
     {
         // Arrange

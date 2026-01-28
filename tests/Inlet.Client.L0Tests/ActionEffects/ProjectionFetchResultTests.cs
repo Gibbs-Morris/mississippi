@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.ActionEffects;
 
 
@@ -10,16 +8,12 @@ namespace Mississippi.Inlet.Client.L0Tests.ActionEffects;
 /// <summary>
 ///     Tests for <see cref="ProjectionFetchResult" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("ActionEffects")]
-[AllureSubSuite("ProjectionFetchResult")]
 public sealed class ProjectionFetchResultTests
 {
     /// <summary>
     ///     Create generic sets Data property.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
     public void CreateGenericSetsData()
     {
         // Arrange
@@ -39,7 +33,6 @@ public sealed class ProjectionFetchResultTests
     ///     Create generic sets IsNotFound to false.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
     public void CreateGenericSetsIsNotFoundFalse()
     {
         // Arrange
@@ -59,7 +52,6 @@ public sealed class ProjectionFetchResultTests
     ///     Create generic sets Version property.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
     public void CreateGenericSetsVersion()
     {
         // Arrange
@@ -79,7 +71,6 @@ public sealed class ProjectionFetchResultTests
     ///     Create generic throws ArgumentNullException when data is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
     public void CreateGenericThrowsWhenDataIsNull()
     {
         // Arrange
@@ -93,7 +84,6 @@ public sealed class ProjectionFetchResultTests
     ///     Create object overload sets Data property.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
     public void CreateObjectSetsData()
     {
         // Arrange
@@ -113,7 +103,6 @@ public sealed class ProjectionFetchResultTests
     ///     Create object overload sets Version property.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
     public void CreateObjectSetsVersion()
     {
         // Arrange
@@ -133,7 +122,6 @@ public sealed class ProjectionFetchResultTests
     ///     Create object overload throws ArgumentNullException when data is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
     public void CreateObjectThrowsWhenDataIsNull()
     {
         // Arrange
@@ -147,7 +135,6 @@ public sealed class ProjectionFetchResultTests
     ///     Data init property can be set via object initializer.
     /// </summary>
     [Fact]
-    [AllureFeature("Properties")]
     public void DataInitPropertyCanBeSet()
     {
         // Arrange
@@ -170,7 +157,6 @@ public sealed class ProjectionFetchResultTests
     ///     IsNotFound init property can be set via object initializer.
     /// </summary>
     [Fact]
-    [AllureFeature("Properties")]
     public void IsNotFoundInitPropertyCanBeSet()
     {
         // Act
@@ -187,7 +173,6 @@ public sealed class ProjectionFetchResultTests
     ///     NotFound sentinel has IsNotFound set to true.
     /// </summary>
     [Fact]
-    [AllureFeature("Sentinel")]
     public void NotFoundSentinelHasIsNotFoundTrue()
     {
         // Act
@@ -201,7 +186,6 @@ public sealed class ProjectionFetchResultTests
     ///     NotFound sentinel has null Data.
     /// </summary>
     [Fact]
-    [AllureFeature("Sentinel")]
     public void NotFoundSentinelHasNullData()
     {
         // Act
@@ -215,7 +199,6 @@ public sealed class ProjectionFetchResultTests
     ///     NotFound sentinel has zero Version.
     /// </summary>
     [Fact]
-    [AllureFeature("Sentinel")]
     public void NotFoundSentinelHasZeroVersion()
     {
         // Act
@@ -229,7 +212,6 @@ public sealed class ProjectionFetchResultTests
     ///     NotFound sentinel is singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Sentinel")]
     public void NotFoundSentinelIsSingleton()
     {
         // Act
@@ -244,7 +226,6 @@ public sealed class ProjectionFetchResultTests
     ///     Version init property can be set via object initializer.
     /// </summary>
     [Fact]
-    [AllureFeature("Properties")]
     public void VersionInitPropertyCanBeSet()
     {
         // Act

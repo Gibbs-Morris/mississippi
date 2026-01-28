@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -15,9 +13,6 @@ namespace Mississippi.Inlet.Client.Generators.L0Tests;
 /// <summary>
 ///     Tests for <see cref="CommandClientMappersGenerator" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Client Generators")]
-[AllureSubSuite("Command Client Mappers Generator")]
 public class CommandClientMappersGeneratorTests
 {
     /// <summary>

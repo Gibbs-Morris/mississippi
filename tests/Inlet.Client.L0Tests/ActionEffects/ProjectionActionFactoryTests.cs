@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -12,16 +10,12 @@ namespace Mississippi.Inlet.Client.L0Tests.ActionEffects;
 /// <summary>
 ///     Tests for <see cref="ProjectionActionFactory" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("ActionEffects")]
-[AllureSubSuite("ProjectionActionFactory")]
 public sealed class ProjectionActionFactoryTests
 {
     /// <summary>
     ///     CreateError returns ProjectionErrorAction with correct generic type.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateError")]
     public void CreateErrorReturnsCorrectType()
     {
         // Arrange
@@ -38,7 +32,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateError sets EntityId property.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateError")]
     public void CreateErrorSetsEntityId()
     {
         // Arrange
@@ -57,7 +50,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateError sets Error property.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateError")]
     public void CreateErrorSetsError()
     {
         // Arrange
@@ -76,7 +68,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateError throws ArgumentNullException when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateError")]
     public void CreateErrorThrowsWhenEntityIdIsNull()
     {
         // Arrange
@@ -91,7 +82,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateError throws ArgumentNullException when error is null.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateError")]
     public void CreateErrorThrowsWhenErrorIsNull()
     {
         // Act & Assert
@@ -103,7 +93,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateError throws ArgumentNullException when projectionType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateError")]
     public void CreateErrorThrowsWhenProjectionTypeIsNull()
     {
         // Arrange
@@ -117,7 +106,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoaded allows null data.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoaded")]
     public void CreateLoadedAllowsNullData()
     {
         // Act
@@ -133,7 +121,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoaded returns ProjectionLoadedAction with correct generic type.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoaded")]
     public void CreateLoadedReturnsCorrectType()
     {
         // Arrange
@@ -153,7 +140,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoaded sets Data property.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoaded")]
     public void CreateLoadedSetsData()
     {
         // Arrange
@@ -175,7 +161,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoaded sets EntityId property.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoaded")]
     public void CreateLoadedSetsEntityId()
     {
         // Arrange
@@ -197,7 +182,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoaded sets Version property.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoaded")]
     public void CreateLoadedSetsVersion()
     {
         // Arrange
@@ -219,7 +203,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoaded throws ArgumentNullException when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoaded")]
     public void CreateLoadedThrowsWhenEntityIdIsNull()
     {
         // Act & Assert
@@ -231,7 +214,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoaded throws ArgumentNullException when projectionType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoaded")]
     public void CreateLoadedThrowsWhenProjectionTypeIsNull()
     {
         // Act & Assert
@@ -242,7 +224,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoading returns ProjectionLoadingAction with correct generic type.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoading")]
     public void CreateLoadingReturnsCorrectType()
     {
         // Act
@@ -256,7 +237,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoading sets EntityId property.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoading")]
     public void CreateLoadingSetsEntityId()
     {
         // Act
@@ -272,7 +252,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoading throws ArgumentNullException when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoading")]
     public void CreateLoadingThrowsWhenEntityIdIsNull()
     {
         // Act & Assert
@@ -284,7 +263,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateLoading throws ArgumentNullException when projectionType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateLoading")]
     public void CreateLoadingThrowsWhenProjectionTypeIsNull()
     {
         // Act & Assert
@@ -295,7 +273,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateUpdated allows null data.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateUpdated")]
     public void CreateUpdatedAllowsNullData()
     {
         // Act
@@ -311,7 +288,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateUpdated returns ProjectionUpdatedAction with correct generic type.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateUpdated")]
     public void CreateUpdatedReturnsCorrectType()
     {
         // Arrange
@@ -331,7 +307,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateUpdated sets Data property.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateUpdated")]
     public void CreateUpdatedSetsData()
     {
         // Arrange
@@ -353,7 +328,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateUpdated sets EntityId property.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateUpdated")]
     public void CreateUpdatedSetsEntityId()
     {
         // Arrange
@@ -375,7 +349,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateUpdated sets Version property.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateUpdated")]
     public void CreateUpdatedSetsVersion()
     {
         // Arrange
@@ -397,7 +370,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateUpdated throws ArgumentNullException when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateUpdated")]
     public void CreateUpdatedThrowsWhenEntityIdIsNull()
     {
         // Act & Assert
@@ -409,7 +381,6 @@ public sealed class ProjectionActionFactoryTests
     ///     CreateUpdated throws ArgumentNullException when projectionType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("CreateUpdated")]
     public void CreateUpdatedThrowsWhenProjectionTypeIsNull()
     {
         // Act & Assert

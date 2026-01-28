@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Immutable;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.Commands;
 
@@ -12,16 +10,12 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for AggregateCommandStateReducers.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Commands")]
-[AllureSubSuite("AggregateCommandStateReducers")]
 public sealed class AggregateCommandStateReducersTests
 {
     /// <summary>
     ///     ComputeCommandExecuting adds entry to history.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandExecuting")]
     public void ComputeCommandExecutingAddsEntryToHistory()
     {
         // Arrange
@@ -41,7 +35,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandExecuting adds command to in-flight set.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandExecuting")]
     public void ComputeCommandExecutingAddsToInFlightSet()
     {
         // Arrange
@@ -60,7 +53,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandExecuting creates history entry with Executing status.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandExecuting")]
     public void ComputeCommandExecutingCreatesEntryWithExecutingStatus()
     {
         // Arrange
@@ -79,7 +71,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandExecuting enforces max history entries.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandExecuting")]
     public void ComputeCommandExecutingEnforcesMaxHistoryEntries()
     {
         // Arrange
@@ -108,7 +99,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandExecuting throws on null action.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandExecuting")]
     public void ComputeCommandExecutingThrowsOnNullAction()
     {
         // Arrange
@@ -122,7 +112,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandExecuting throws on null state.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandExecuting")]
     public void ComputeCommandExecutingThrowsOnNullState()
     {
         // Arrange
@@ -137,7 +126,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandFailed removes command from in-flight set.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandFailed")]
     public void ComputeCommandFailedRemovesFromInFlightSet()
     {
         // Arrange
@@ -159,7 +147,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandFailed throws on null action.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandFailed")]
     public void ComputeCommandFailedThrowsOnNullAction()
     {
         // Arrange
@@ -173,7 +160,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandFailed throws on null state.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandFailed")]
     public void ComputeCommandFailedThrowsOnNullState()
     {
         // Arrange
@@ -187,7 +173,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandFailed updates history entry to Failed.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandFailed")]
     public void ComputeCommandFailedUpdatesHistoryEntryToFailed()
     {
         // Arrange
@@ -215,7 +200,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandSucceeded removes command from in-flight set.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandSucceeded")]
     public void ComputeCommandSucceededRemovesFromInFlightSet()
     {
         // Arrange
@@ -237,7 +221,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandSucceeded throws on null action.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandSucceeded")]
     public void ComputeCommandSucceededThrowsOnNullAction()
     {
         // Arrange
@@ -251,7 +234,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandSucceeded throws on null state.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandSucceeded")]
     public void ComputeCommandSucceededThrowsOnNullState()
     {
         // Arrange
@@ -266,7 +248,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ComputeCommandSucceeded updates history entry to Succeeded.
     /// </summary>
     [Fact]
-    [AllureFeature("ComputeCommandSucceeded")]
     public void ComputeCommandSucceededUpdatesHistoryEntryToSucceeded()
     {
         // Arrange
@@ -294,7 +275,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandExecuting adds command to in-flight set.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandExecuting")]
     public void ReduceCommandExecutingAddsToInFlightSet()
     {
         // Arrange
@@ -312,7 +292,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandExecuting clears error state.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandExecuting")]
     public void ReduceCommandExecutingClearsErrorState()
     {
         // Arrange
@@ -335,7 +314,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandExecuting clears LastCommandSucceeded.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandExecuting")]
     public void ReduceCommandExecutingClearsLastCommandSucceeded()
     {
         // Arrange
@@ -356,7 +334,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandExecuting throws on null state.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandExecuting")]
     public void ReduceCommandExecutingThrowsOnNullState()
     {
         // Arrange
@@ -371,7 +348,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandFailed sets error state.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandFailed")]
     public void ReduceCommandFailedSetsErrorState()
     {
         // Arrange
@@ -398,7 +374,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandFailed sets LastCommandSucceeded to false.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandFailed")]
     public void ReduceCommandFailedSetsLastCommandSucceededToFalse()
     {
         // Arrange
@@ -424,7 +399,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandFailed throws on null state.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandFailed")]
     public void ReduceCommandFailedThrowsOnNullState()
     {
         // Arrange
@@ -439,7 +413,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandSucceeded clears error state.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandSucceeded")]
     public void ReduceCommandSucceededClearsErrorState()
     {
         // Arrange
@@ -468,7 +441,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandSucceeded sets LastCommandSucceeded to true.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandSucceeded")]
     public void ReduceCommandSucceededSetsLastCommandSucceededToTrue()
     {
         // Arrange
@@ -494,7 +466,6 @@ public sealed class AggregateCommandStateReducersTests
     ///     ReduceCommandSucceeded throws on null state.
     /// </summary>
     [Fact]
-    [AllureFeature("ReduceCommandSucceeded")]
     public void ReduceCommandSucceededThrowsOnNullState()
     {
         // Arrange
