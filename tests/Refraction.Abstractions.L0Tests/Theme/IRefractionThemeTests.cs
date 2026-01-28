@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Refraction.Abstractions.Theme;
 
@@ -10,16 +9,13 @@ namespace Mississippi.Refraction.Abstractions.L0Tests.Theme;
 /// <summary>
 ///     Contract verification tests for <see cref="IRefractionTheme" />.
 /// </summary>
-[AllureSuite("Refraction.Abstractions")]
-[AllureSubSuite("Theme")]
 public sealed class IRefractionThemeTests
 {
     /// <summary>
     ///     Verifies the interface defines required color properties.
     /// </summary>
     [Fact]
-    [AllureFeature("IRefractionTheme")]
-    public void IRefractionThemeDefinesRequiredColorProperties()
+        public void IRefractionThemeDefinesRequiredColorProperties()
     {
         // Arrange
         Type interfaceType = typeof(IRefractionTheme);
@@ -36,8 +32,7 @@ public sealed class IRefractionThemeTests
     ///     Verifies the interface defines required spacing and timing properties.
     /// </summary>
     [Fact]
-    [AllureFeature("IRefractionTheme")]
-    public void IRefractionThemeDefinesSpacingAndTimingProperties()
+        public void IRefractionThemeDefinesSpacingAndTimingProperties()
     {
         // Arrange
         Type interfaceType = typeof(IRefractionTheme);
