@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 
 namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
@@ -8,9 +7,6 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="BrookAsyncReaderKey" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Brook Async Reader Key")]
 public sealed class BrookAsyncReaderKeyTests
 {
     /// <summary>
