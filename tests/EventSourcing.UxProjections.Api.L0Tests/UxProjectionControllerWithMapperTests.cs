@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,9 +21,6 @@ namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionControllerBase{TProjection, TDto}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections API")]
-[AllureSubSuite("UxProjectionControllerBase with Mapper")]
 public sealed class UxProjectionControllerWithMapperTests
 {
     private const string TestEntityId = "entity-123";
@@ -81,8 +77,7 @@ public sealed class UxProjectionControllerWithMapperTests
     ///     Verifies that constructor accepts valid parameters.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorAcceptsValidParameters()
+        public void ConstructorAcceptsValidParameters()
     {
         // Arrange
         Mock<IUxProjectionGrainFactory> factoryMock = new();
@@ -101,8 +96,7 @@ public sealed class UxProjectionControllerWithMapperTests
     ///     Verifies that constructor throws when factory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenFactoryIsNull()
+        public void ConstructorThrowsWhenFactoryIsNull()
     {
         // Arrange
         Mock<IMapper<TestProjection, TestDto>> mapperMock = new();
@@ -118,8 +112,7 @@ public sealed class UxProjectionControllerWithMapperTests
     ///     Verifies that constructor throws when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenLoggerIsNull()
+        public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
         Mock<IUxProjectionGrainFactory> factoryMock = new();
@@ -136,8 +129,7 @@ public sealed class UxProjectionControllerWithMapperTests
     ///     Verifies that constructor throws when mapper is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenMapperIsNull()
+        public void ConstructorThrowsWhenMapperIsNull()
     {
         // Arrange
         Mock<IUxProjectionGrainFactory> factoryMock = new();
@@ -154,8 +146,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
-    public async Task GetAsyncReturns304WhenIfNoneMatchMatches()
+        public async Task GetAsyncReturns304WhenIfNoneMatchMatches()
     {
         // Arrange
         const long version = 42;
@@ -182,8 +173,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
-    public async Task GetAsyncReturnsCacheControlHeader()
+        public async Task GetAsyncReturnsCacheControlHeader()
     {
         // Arrange
         TestProjection expectedProjection = new(100);
@@ -211,8 +201,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
-    public async Task GetAsyncReturnsDataWhenIfNoneMatchDoesNotMatch()
+        public async Task GetAsyncReturnsDataWhenIfNoneMatchDoesNotMatch()
     {
         // Arrange
         const long currentVersion = 42;
@@ -245,8 +234,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
-    public async Task GetAsyncReturnsETagHeader()
+        public async Task GetAsyncReturnsETagHeader()
     {
         // Arrange
         const long version = 42;
@@ -276,8 +264,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAsync")]
-    public async Task GetAsyncReturnsNotFoundWhenPositionIsNotSet()
+        public async Task GetAsyncReturnsNotFoundWhenPositionIsNotSet()
     {
         // Arrange
         BrookPosition notSetPosition = new(-1);
@@ -302,8 +289,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAsync")]
-    public async Task GetAsyncReturnsNotFoundWhenProjectionIsNull()
+        public async Task GetAsyncReturnsNotFoundWhenProjectionIsNull()
     {
         // Arrange
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
@@ -327,8 +313,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAsync")]
-    public async Task GetAsyncReturnsOkWithMappedDtoWhenProjectionFound()
+        public async Task GetAsyncReturnsOkWithMappedDtoWhenProjectionFound()
     {
         // Arrange
         TestProjection expectedProjection = new(42);
@@ -357,8 +342,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAtVersionAsync")]
-    public async Task GetAtVersionAsyncReturnsNotFoundWhenProjectionIsNull()
+        public async Task GetAtVersionAsyncReturnsNotFoundWhenProjectionIsNull()
     {
         // Arrange
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
@@ -382,8 +366,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAtVersionAsync")]
-    public async Task GetAtVersionAsyncReturnsOkWithMappedDtoWhenProjectionFound()
+        public async Task GetAtVersionAsyncReturnsOkWithMappedDtoWhenProjectionFound()
     {
         // Arrange
         const long version = 10;
@@ -420,8 +403,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetLatestVersionAsync")]
-    public async Task GetLatestVersionAsyncReturnsNotFoundWhenPositionIsNotSet()
+        public async Task GetLatestVersionAsyncReturnsNotFoundWhenPositionIsNotSet()
     {
         // Arrange
         BrookPosition notSetPosition = new(-1);
@@ -444,8 +426,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetLatestVersionAsync")]
-    public async Task GetLatestVersionAsyncReturnsOkWhenVersionFound()
+        public async Task GetLatestVersionAsyncReturnsOkWhenVersionFound()
     {
         // Arrange
         BrookPosition expectedPosition = new(42);
@@ -470,8 +451,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Mapping")]
-    public async Task MapperIsInvokedForGetAtVersionAsync()
+        public async Task MapperIsInvokedForGetAtVersionAsync()
     {
         // Arrange
         TestProjection capturedProjection = null!;
@@ -504,8 +484,7 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Mapping")]
-    public async Task MapperIsInvokedWithCorrectProjection()
+        public async Task MapperIsInvokedWithCorrectProjection()
     {
         // Arrange
         TestProjection capturedProjection = null!;
