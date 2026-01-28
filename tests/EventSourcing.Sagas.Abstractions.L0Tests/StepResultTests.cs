@@ -132,8 +132,11 @@ public sealed class StepResultTests
     [Fact]
     public void SucceededWithNullEventsArrayThrowsArgumentNullException()
     {
+        // Arrange - explicit variable to disambiguate overload resolution
+        object[]? nullArray = null;
+
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => StepResult.Succeeded((object[])null!));
+        Assert.Throws<ArgumentNullException>(() => StepResult.Succeeded(nullArray!));
     }
 
     /// <summary>
