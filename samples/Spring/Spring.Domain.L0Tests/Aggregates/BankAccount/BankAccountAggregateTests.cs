@@ -1,7 +1,5 @@
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
@@ -20,9 +18,6 @@ namespace Spring.Domain.L0Tests.Aggregates.BankAccount;
 ///     These tests validate complete aggregate workflows using the unified
 ///     testing harness with Given/When/Then semantics.
 /// </remarks>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("BankAccountAggregate Scenarios")]
 public sealed class BankAccountAggregateTests
 {
     /// <summary>
@@ -41,7 +36,6 @@ public sealed class BankAccountAggregateTests
     ///     Complete account lifecycle from open through transactions.
     /// </summary>
     [Fact]
-    [AllureFeature("Account Lifecycle")]
     public void CompleteAccountLifecycleScenario()
     {
         // This test demonstrates a full lifecycle scenario
@@ -91,7 +85,6 @@ public sealed class BankAccountAggregateTests
     ///     Depositing to an existing account should update balance.
     /// </summary>
     [Fact]
-    [AllureFeature("Transactions")]
     public void DepositToExistingAccountUpdatesBalance()
     {
         // Arrange & Act & Assert
@@ -120,7 +113,6 @@ public sealed class BankAccountAggregateTests
     ///     Depositing to a non-existent account should fail.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void DepositToNonExistentAccountFails()
     {
         // Arrange & Act & Assert
@@ -141,7 +133,6 @@ public sealed class BankAccountAggregateTests
     ///     Multiple transactions should maintain correct balance.
     /// </summary>
     [Fact]
-    [AllureFeature("Transactions")]
     public void MultipleTransactionsMaintainCorrectBalance()
     {
         // Arrange
@@ -185,7 +176,6 @@ public sealed class BankAccountAggregateTests
     ///     Opening a new account should establish initial state.
     /// </summary>
     [Fact]
-    [AllureFeature("Account Lifecycle")]
     public void OpenAccountEstablishesInitialState()
     {
         // Arrange & Act & Assert
@@ -209,7 +199,6 @@ public sealed class BankAccountAggregateTests
     ///     Opening an already open account should fail.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void OpenAlreadyOpenAccountFails()
     {
         // Arrange & Act & Assert
@@ -232,7 +221,6 @@ public sealed class BankAccountAggregateTests
     ///     State after failed command should remain unchanged.
     /// </summary>
     [Fact]
-    [AllureFeature("State Isolation")]
     public void StateAfterFailedCommandRemainsUnchanged()
     {
         // Arrange
@@ -261,7 +249,6 @@ public sealed class BankAccountAggregateTests
     ///     Withdrawing from an existing account should update balance.
     /// </summary>
     [Fact]
-    [AllureFeature("Transactions")]
     public void WithdrawFromExistingAccountUpdatesBalance()
     {
         // Arrange & Act & Assert
@@ -290,7 +277,6 @@ public sealed class BankAccountAggregateTests
     ///     Withdrawing more than balance should fail.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void WithdrawMoreThanBalanceFails()
     {
         // Arrange & Act & Assert

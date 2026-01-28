@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
@@ -15,9 +13,6 @@ namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
 /// <summary>
 ///     Tests for <see cref="OpenAccountHandler" />.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("OpenAccountHandler")]
 public sealed class OpenAccountHandlerTests
 {
     private readonly OpenAccountHandler handler = new();
@@ -26,7 +21,6 @@ public sealed class OpenAccountHandlerTests
     ///     Opening an account with empty holder name should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void OpenAccountWithEmptyNameFailsWithInvalidCommand()
     {
         // Arrange
@@ -40,7 +34,6 @@ public sealed class OpenAccountHandlerTests
     ///     Opening an account with negative initial deposit should fail.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void OpenAccountWithNegativeDepositFailsWithInvalidCommand()
     {
         // Arrange
@@ -54,7 +47,6 @@ public sealed class OpenAccountHandlerTests
     ///     Opening an account with valid data should emit AccountOpened event.
     /// </summary>
     [Fact]
-    [AllureFeature("Account Opening")]
     public void OpenAccountWithValidDataEmitsAccountOpened()
     {
         // Arrange
@@ -75,7 +67,6 @@ public sealed class OpenAccountHandlerTests
     ///     Opening an account with whitespace-only holder name should fail.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void OpenAccountWithWhitespaceNameFailsWithInvalidCommand()
     {
         // Arrange
@@ -89,7 +80,6 @@ public sealed class OpenAccountHandlerTests
     ///     Opening an account with zero initial deposit should succeed.
     /// </summary>
     [Fact]
-    [AllureFeature("Account Opening")]
     public void OpenAccountWithZeroDepositSucceeds()
     {
         // Arrange
@@ -114,7 +104,6 @@ public sealed class OpenAccountHandlerTests
     ///     Opening an already open account should fail with AlreadyExists.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void OpenAlreadyOpenAccountFailsWithAlreadyExists()
     {
         // Arrange

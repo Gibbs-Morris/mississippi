@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
@@ -25,9 +23,6 @@ namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Effects;
 ///         command to the <see cref="TransactionInvestigationQueueAggregate" />.
 ///     </para>
 /// </remarks>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("BankAccount Effects")]
 public sealed class HighValueTransactionEffectTests
 {
     private static readonly DateTimeOffset TestTimestamp = new(2025, 1, 15, 12, 0, 0, TimeSpan.Zero);
@@ -37,7 +32,6 @@ public sealed class HighValueTransactionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("AML Threshold")]
     public async Task DepositAboveThresholdShouldDispatchFlagTransactionCommandAsync()
     {
         // Arrange
@@ -76,7 +70,6 @@ public sealed class HighValueTransactionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("AML Threshold")]
     public async Task DepositAtThresholdShouldNotTriggerFlaggingAsync()
     {
         // Arrange
@@ -111,7 +104,6 @@ public sealed class HighValueTransactionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("AML Threshold")]
     public async Task DepositBelowThresholdShouldNotTriggerFlaggingAsync()
     {
         // Arrange
@@ -146,7 +138,6 @@ public sealed class HighValueTransactionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("AML Threshold")]
     public async Task DepositJustAboveThresholdShouldTriggerFlaggingAsync()
     {
         // Arrange
@@ -185,7 +176,6 @@ public sealed class HighValueTransactionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("Cross-Aggregate Dispatch")]
     public async Task FlagTransactionShouldIncludeTimestampAsync()
     {
         // Arrange
@@ -223,7 +213,6 @@ public sealed class HighValueTransactionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("Cross-Aggregate Dispatch")]
     public async Task ShouldDispatchToGlobalInvestigationQueueAsync()
     {
         // Arrange
@@ -261,7 +250,6 @@ public sealed class HighValueTransactionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test.</returns>
     [Fact]
-    [AllureFeature("Error Handling")]
     public async Task ShouldHandleFailedFlagTransactionGracefullyAsync()
     {
         // Arrange

@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Projections.BankAccountLedger;
 using Spring.Domain.Projections.BankAccountLedger.Reducers;
@@ -13,9 +11,6 @@ namespace Spring.Domain.L0Tests.Projections.BankAccountLedger;
 /// <summary>
 ///     Tests for <see cref="FundsWithdrawnLedgerReducer" />.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Projections")]
-[AllureSubSuite("BankAccountLedger - FundsWithdrawn")]
 public sealed class FundsWithdrawnLedgerReducerTests
 {
     private readonly FundsWithdrawnLedgerReducer reducer = new();
@@ -24,7 +19,6 @@ public sealed class FundsWithdrawnLedgerReducerTests
     ///     Mixed deposit and withdrawal entries maintain correct ordering.
     /// </summary>
     [Fact]
-    [AllureFeature("Ordering")]
     public void MixedEntriesMaintainCorrectOrdering()
     {
         // Arrange
@@ -69,7 +63,6 @@ public sealed class FundsWithdrawnLedgerReducerTests
     ///     Reducing FundsWithdrawn adds a withdrawal entry to the ledger.
     /// </summary>
     [Fact]
-    [AllureFeature("Ledger Entries")]
     public void ReduceAddWithdrawalEntryToLedger()
     {
         // Arrange
@@ -97,7 +90,6 @@ public sealed class FundsWithdrawnLedgerReducerTests
     ///     Ledger entries are capped at MaxEntries (20).
     /// </summary>
     [Fact]
-    [AllureFeature("Entry Limits")]
     public void ReduceCapsEntriesAtMaxEntries()
     {
         // Arrange - entries stored most-recent-first (descending sequence order)
@@ -133,7 +125,6 @@ public sealed class FundsWithdrawnLedgerReducerTests
     ///     Reducing FundsWithdrawn increments the current sequence.
     /// </summary>
     [Fact]
-    [AllureFeature("Sequencing")]
     public void ReduceIncrementsCurrentSequence()
     {
         // Arrange
@@ -159,7 +150,6 @@ public sealed class FundsWithdrawnLedgerReducerTests
     ///     New entries are prepended (most recent first).
     /// </summary>
     [Fact]
-    [AllureFeature("Ordering")]
     public void ReducePrependsNewEntry()
     {
         // Arrange
@@ -195,7 +185,6 @@ public sealed class FundsWithdrawnLedgerReducerTests
     ///     Reducing returns a new projection instance (immutability check).
     /// </summary>
     [Fact]
-    [AllureFeature("Immutability")]
     public void ReduceReturnsNewInstance()
     {
         // Arrange
@@ -220,7 +209,6 @@ public sealed class FundsWithdrawnLedgerReducerTests
     ///     Reducing with null event throws ArgumentNullException.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ReduceWithNullEventThrowsArgumentNullException()
     {
         // Arrange
@@ -241,7 +229,6 @@ public sealed class FundsWithdrawnLedgerReducerTests
     ///     Withdrawal with zero amount still adds an entry.
     /// </summary>
     [Fact]
-    [AllureFeature("Edge Cases")]
     public void ReduceWithZeroAmountAddsEntry()
     {
         // Arrange

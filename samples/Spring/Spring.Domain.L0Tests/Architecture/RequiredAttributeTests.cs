@@ -2,8 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
@@ -51,9 +49,6 @@ namespace Spring.Domain.L0Tests.Architecture;
 ///         </item>
 ///     </list>
 /// </remarks>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Architecture")]
-[AllureSubSuite("Required Attributes")]
 public sealed class RequiredAttributeTests
 {
     private static readonly Assembly DomainAssembly = typeof(BankAccountAggregate).Assembly;
@@ -122,7 +117,6 @@ public sealed class RequiredAttributeTests
     ///     All aggregates should have Alias attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Aggregates")]
     public void AggregatesShouldHaveAliasAttribute()
     {
         // Arrange & Act
@@ -141,7 +135,6 @@ public sealed class RequiredAttributeTests
     ///     All aggregates should have BrookName attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Aggregates")]
     public void AggregatesShouldHaveBrookNameAttribute()
     {
         // Arrange & Act
@@ -160,7 +153,6 @@ public sealed class RequiredAttributeTests
     ///     All aggregates should have GenerateSerializer attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Aggregates")]
     public void AggregatesShouldHaveGenerateSerializerAttribute()
     {
         // Arrange & Act
@@ -179,7 +171,6 @@ public sealed class RequiredAttributeTests
     ///     All aggregates should have SnapshotStorageName attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Aggregates")]
     public void AggregatesShouldHaveSnapshotStorageNameAttribute()
     {
         // Arrange & Act
@@ -198,7 +189,6 @@ public sealed class RequiredAttributeTests
     ///     All commands should have Alias attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Commands")]
     public void CommandsShouldHaveAliasAttribute()
     {
         // Arrange & Act
@@ -217,7 +207,6 @@ public sealed class RequiredAttributeTests
     ///     All commands should have GenerateSerializer attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Commands")]
     public void CommandsShouldHaveGenerateSerializerAttribute()
     {
         // Arrange & Act
@@ -236,7 +225,6 @@ public sealed class RequiredAttributeTests
     ///     Event Alias values should follow naming convention.
     /// </summary>
     [Fact]
-    [AllureFeature("Events")]
     public void EventAliasValuesShouldFollowNamingConvention()
     {
         // Arrange & Act
@@ -257,7 +245,6 @@ public sealed class RequiredAttributeTests
     ///     All events should have Alias attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Events")]
     public void EventsShouldHaveAliasAttribute()
     {
         // Arrange & Act
@@ -275,7 +262,6 @@ public sealed class RequiredAttributeTests
     ///     All events should have EventStorageName attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Events")]
     public void EventsShouldHaveEventStorageNameAttribute()
     {
         // Arrange & Act
@@ -294,7 +280,6 @@ public sealed class RequiredAttributeTests
     ///     All events should have GenerateSerializer attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Events")]
     public void EventsShouldHaveGenerateSerializerAttribute()
     {
         // Arrange & Act
@@ -312,7 +297,6 @@ public sealed class RequiredAttributeTests
     ///     All projections should have Alias attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Projections")]
     public void ProjectionsShouldHaveAliasAttribute()
     {
         // Arrange & Act
@@ -331,7 +315,6 @@ public sealed class RequiredAttributeTests
     ///     All projections should have BrookName attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Projections")]
     public void ProjectionsShouldHaveBrookNameAttribute()
     {
         // Arrange & Act
@@ -350,7 +333,6 @@ public sealed class RequiredAttributeTests
     ///     All projections should have GenerateSerializer attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Projections")]
     public void ProjectionsShouldHaveGenerateSerializerAttribute()
     {
         // Arrange & Act
@@ -369,7 +351,6 @@ public sealed class RequiredAttributeTests
     ///     All projections should have SnapshotStorageName attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Projections")]
     public void ProjectionsShouldHaveSnapshotStorageNameAttribute()
     {
         // Arrange & Act

@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
@@ -15,9 +13,6 @@ namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
 /// <summary>
 ///     Tests for <see cref="DepositFundsHandler" />.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("DepositFundsHandler")]
 public sealed class DepositFundsHandlerTests
 {
     private readonly DepositFundsHandler handler = new();
@@ -36,7 +31,6 @@ public sealed class DepositFundsHandlerTests
     ///     Depositing funds to an open account should emit FundsDeposited event.
     /// </summary>
     [Fact]
-    [AllureFeature("Deposits")]
     public void DepositFundsToOpenAccountEmitsFundsDeposited()
     {
         // Arrange
@@ -59,7 +53,6 @@ public sealed class DepositFundsHandlerTests
     ///     Depositing a large amount should succeed.
     /// </summary>
     [Fact]
-    [AllureFeature("Deposits")]
     public void DepositLargeAmountSucceeds()
     {
         // Arrange
@@ -81,7 +74,6 @@ public sealed class DepositFundsHandlerTests
     ///     Depositing negative amount should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void DepositNegativeAmountFailsWithInvalidCommand()
     {
         // Arrange
@@ -98,7 +90,6 @@ public sealed class DepositFundsHandlerTests
     ///     Depositing to a closed account should fail with InvalidState.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void DepositToClosedAccountFailsWithInvalidState()
     {
         // Arrange
@@ -119,7 +110,6 @@ public sealed class DepositFundsHandlerTests
     ///     Depositing to null state (no account) should fail with InvalidState.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void DepositToNullStateFailsWithInvalidState()
     {
         // Arrange
@@ -136,7 +126,6 @@ public sealed class DepositFundsHandlerTests
     ///     Depositing zero amount should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void DepositZeroAmountFailsWithInvalidCommand()
     {
         // Arrange

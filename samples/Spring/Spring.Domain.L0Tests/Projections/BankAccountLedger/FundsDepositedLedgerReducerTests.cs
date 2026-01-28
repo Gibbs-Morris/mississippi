@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Projections.BankAccountLedger;
 using Spring.Domain.Projections.BankAccountLedger.Reducers;
@@ -13,9 +11,6 @@ namespace Spring.Domain.L0Tests.Projections.BankAccountLedger;
 /// <summary>
 ///     Tests for <see cref="FundsDepositedLedgerReducer" />.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Projections")]
-[AllureSubSuite("BankAccountLedger - FundsDeposited")]
 public sealed class FundsDepositedLedgerReducerTests
 {
     private readonly FundsDepositedLedgerReducer reducer = new();
@@ -24,7 +19,6 @@ public sealed class FundsDepositedLedgerReducerTests
     ///     Reducing FundsDeposited adds a deposit entry to the ledger.
     /// </summary>
     [Fact]
-    [AllureFeature("Ledger Entries")]
     public void ReduceAddDepositEntryToLedger()
     {
         // Arrange
@@ -52,7 +46,6 @@ public sealed class FundsDepositedLedgerReducerTests
     ///     Ledger entries are capped at MaxEntries (20).
     /// </summary>
     [Fact]
-    [AllureFeature("Entry Limits")]
     public void ReduceCapsEntriesAtMaxEntries()
     {
         // Arrange - entries stored most-recent-first (descending sequence order)
@@ -88,7 +81,6 @@ public sealed class FundsDepositedLedgerReducerTests
     ///     Reducing FundsDeposited increments the current sequence.
     /// </summary>
     [Fact]
-    [AllureFeature("Sequencing")]
     public void ReduceIncrementsCurrentSequence()
     {
         // Arrange
@@ -114,7 +106,6 @@ public sealed class FundsDepositedLedgerReducerTests
     ///     New entries are prepended (most recent first).
     /// </summary>
     [Fact]
-    [AllureFeature("Ordering")]
     public void ReducePrependsNewEntry()
     {
         // Arrange
@@ -149,7 +140,6 @@ public sealed class FundsDepositedLedgerReducerTests
     ///     Reducing returns a new projection instance (immutability check).
     /// </summary>
     [Fact]
-    [AllureFeature("Immutability")]
     public void ReduceReturnsNewInstance()
     {
         // Arrange
@@ -174,7 +164,6 @@ public sealed class FundsDepositedLedgerReducerTests
     ///     Reducing with null event throws ArgumentNullException.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ReduceWithNullEventThrowsArgumentNullException()
     {
         // Arrange
@@ -195,7 +184,6 @@ public sealed class FundsDepositedLedgerReducerTests
     ///     Deposit with zero amount still adds an entry.
     /// </summary>
     [Fact]
-    [AllureFeature("Edge Cases")]
     public void ReduceWithZeroAmountAddsEntry()
     {
         // Arrange

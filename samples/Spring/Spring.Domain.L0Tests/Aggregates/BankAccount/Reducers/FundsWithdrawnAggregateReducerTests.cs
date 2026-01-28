@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Aggregates.BankAccount.Reducers;
@@ -10,9 +8,6 @@ namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Reducers;
 /// <summary>
 ///     Tests for <see cref="FundsWithdrawnReducer" /> for the aggregate.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("FundsWithdrawnReducer (Aggregate)")]
 public sealed class FundsWithdrawnAggregateReducerTests
 {
     private readonly FundsWithdrawnReducer reducer = new();
@@ -31,7 +26,6 @@ public sealed class FundsWithdrawnAggregateReducerTests
     ///     Reducing FundsWithdrawn should decrease balance by amount.
     /// </summary>
     [Fact]
-    [AllureFeature("Balance Updates")]
     public void FundsWithdrawnDecreasesBalance()
     {
         // Arrange
@@ -51,7 +45,6 @@ public sealed class FundsWithdrawnAggregateReducerTests
     ///     Reducing FundsWithdrawn should increment withdrawal count.
     /// </summary>
     [Fact]
-    [AllureFeature("Counters")]
     public void FundsWithdrawnIncrementsWithdrawalCount()
     {
         // Arrange
@@ -71,7 +64,6 @@ public sealed class FundsWithdrawnAggregateReducerTests
     ///     Reducing FundsWithdrawn should not change other properties.
     /// </summary>
     [Fact]
-    [AllureFeature("State Isolation")]
     public void FundsWithdrawnPreservesOtherProperties()
     {
         // Arrange
@@ -93,7 +85,6 @@ public sealed class FundsWithdrawnAggregateReducerTests
     ///     Reducer should produce expected complete state.
     /// </summary>
     [Fact]
-    [AllureFeature("Balance Updates")]
     public void FundsWithdrawnProducesExpectedState()
     {
         // Arrange
@@ -120,7 +111,6 @@ public sealed class FundsWithdrawnAggregateReducerTests
     ///     Reducing FundsWithdrawn with null event should throw.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void FundsWithdrawnWithNullEventThrows()
     {
         // Act

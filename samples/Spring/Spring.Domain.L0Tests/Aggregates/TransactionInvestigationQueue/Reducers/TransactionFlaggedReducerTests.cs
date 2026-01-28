@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Spring.Domain.Aggregates.TransactionInvestigationQueue;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Reducers;
@@ -10,9 +8,6 @@ namespace Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Reducer
 /// <summary>
 ///     Tests for <see cref="TransactionFlaggedReducer" />.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("TransactionFlaggedReducer")]
 public sealed class TransactionFlaggedReducerTests
 {
     private static readonly DateTimeOffset TestTimestamp = new(2025, 1, 15, 10, 30, 0, TimeSpan.Zero);
@@ -23,7 +18,6 @@ public sealed class TransactionFlaggedReducerTests
     ///     Reducing TransactionFlagged increments the total flagged count.
     /// </summary>
     [Fact]
-    [AllureFeature("State Reduction")]
     public void ReduceIncrementsTotalFlaggedCount()
     {
         // Arrange
@@ -50,7 +44,6 @@ public sealed class TransactionFlaggedReducerTests
     ///     Reducing multiple events accumulates the count correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("State Reduction")]
     public void ReduceMultipleEventsAccumulatesCount()
     {
         // Arrange
@@ -85,7 +78,6 @@ public sealed class TransactionFlaggedReducerTests
     ///     Reducing TransactionFlagged on null state creates new aggregate with count 1.
     /// </summary>
     [Fact]
-    [AllureFeature("State Reduction")]
     public void ReduceOnNullStateCreatesNewAggregateWithCountOne()
     {
         // Arrange
@@ -109,7 +101,6 @@ public sealed class TransactionFlaggedReducerTests
     ///     Reducing returns a new instance (immutability check).
     /// </summary>
     [Fact]
-    [AllureFeature("Immutability")]
     public void ReduceReturnsNewInstance()
     {
         // Arrange
@@ -136,7 +127,6 @@ public sealed class TransactionFlaggedReducerTests
     ///     Reducing with null event throws ArgumentNullException.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ReduceWithNullEventThrowsArgumentNullException()
     {
         // Arrange

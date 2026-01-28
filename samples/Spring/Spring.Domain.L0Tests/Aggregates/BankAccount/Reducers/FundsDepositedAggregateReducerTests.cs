@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Aggregates.BankAccount.Reducers;
@@ -10,9 +8,6 @@ namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Reducers;
 /// <summary>
 ///     Tests for <see cref="FundsDepositedReducer" /> for the aggregate.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("FundsDepositedReducer (Aggregate)")]
 public sealed class FundsDepositedAggregateReducerTests
 {
     private readonly FundsDepositedReducer reducer = new();
@@ -31,7 +26,6 @@ public sealed class FundsDepositedAggregateReducerTests
     ///     Reducing FundsDeposited should increase balance by amount.
     /// </summary>
     [Fact]
-    [AllureFeature("Balance Updates")]
     public void FundsDepositedIncreasesBalance()
     {
         // Arrange
@@ -51,7 +45,6 @@ public sealed class FundsDepositedAggregateReducerTests
     ///     Reducing FundsDeposited should increment deposit count.
     /// </summary>
     [Fact]
-    [AllureFeature("Counters")]
     public void FundsDepositedIncrementsDepositCount()
     {
         // Arrange
@@ -71,7 +64,6 @@ public sealed class FundsDepositedAggregateReducerTests
     ///     Reducing FundsDeposited should not change other properties.
     /// </summary>
     [Fact]
-    [AllureFeature("State Isolation")]
     public void FundsDepositedPreservesOtherProperties()
     {
         // Arrange
@@ -93,7 +85,6 @@ public sealed class FundsDepositedAggregateReducerTests
     ///     Reducer should produce expected complete state.
     /// </summary>
     [Fact]
-    [AllureFeature("Balance Updates")]
     public void FundsDepositedProducesExpectedState()
     {
         // Arrange
@@ -120,7 +111,6 @@ public sealed class FundsDepositedAggregateReducerTests
     ///     Reducing FundsDeposited with null event should throw.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void FundsDepositedWithNullEventThrows()
     {
         // Act

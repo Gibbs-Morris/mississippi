@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 using Spring.Domain.Projections.FlaggedTransactions;
 using Spring.Domain.Projections.FlaggedTransactions.Reducers;
@@ -13,9 +11,6 @@ namespace Spring.Domain.L0Tests.Projections.FlaggedTransactions;
 /// <summary>
 ///     Tests for <see cref="TransactionFlaggedProjectionReducer" />.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Projections")]
-[AllureSubSuite("FlaggedTransactions")]
 public sealed class TransactionFlaggedProjectionReducerTests
 {
     private static readonly DateTimeOffset FlaggedTimestamp = new(2025, 1, 15, 10, 5, 0, TimeSpan.Zero);
@@ -28,7 +23,6 @@ public sealed class TransactionFlaggedProjectionReducerTests
     ///     Reducing TransactionFlagged adds a flagged transaction entry.
     /// </summary>
     [Fact]
-    [AllureFeature("Flagged Entries")]
     public void ReduceAddsFlaggedTransactionEntry()
     {
         // Arrange
@@ -62,7 +56,6 @@ public sealed class TransactionFlaggedProjectionReducerTests
     ///     Flagged entries are capped at MaxEntries (30).
     /// </summary>
     [Fact]
-    [AllureFeature("Entry Limits")]
     public void ReduceCapsEntriesAtMaxEntries()
     {
         // Arrange - entries stored most-recent-first (descending sequence order)
@@ -103,7 +96,6 @@ public sealed class TransactionFlaggedProjectionReducerTests
     ///     Reducing TransactionFlagged increments the current sequence.
     /// </summary>
     [Fact]
-    [AllureFeature("Sequencing")]
     public void ReduceIncrementsCurrentSequence()
     {
         // Arrange
@@ -132,7 +124,6 @@ public sealed class TransactionFlaggedProjectionReducerTests
     ///     All event data is correctly mapped to the flagged transaction entry.
     /// </summary>
     [Fact]
-    [AllureFeature("Data Mapping")]
     public void ReduceMapsAllEventDataCorrectly()
     {
         // Arrange
@@ -166,7 +157,6 @@ public sealed class TransactionFlaggedProjectionReducerTests
     ///     New entries are prepended (most recent first).
     /// </summary>
     [Fact]
-    [AllureFeature("Ordering")]
     public void ReducePrependsNewEntry()
     {
         // Arrange
@@ -206,7 +196,6 @@ public sealed class TransactionFlaggedProjectionReducerTests
     ///     Reducing returns a new projection instance (immutability check).
     /// </summary>
     [Fact]
-    [AllureFeature("Immutability")]
     public void ReduceReturnsNewInstance()
     {
         // Arrange
@@ -234,7 +223,6 @@ public sealed class TransactionFlaggedProjectionReducerTests
     ///     Reducing with null event throws ArgumentNullException.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ReduceWithNullEventThrowsArgumentNullException()
     {
         // Arrange

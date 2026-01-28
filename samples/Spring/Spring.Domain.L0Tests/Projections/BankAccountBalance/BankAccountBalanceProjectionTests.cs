@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Domain.Projections.BankAccountBalance.Reducers;
@@ -11,9 +9,6 @@ namespace Spring.Domain.L0Tests.Projections.BankAccountBalance;
 ///     Integration tests for the BankAccountBalance projection using the full reducer chain.
 ///     Demonstrates realistic event replay scenarios.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Projections")]
-[AllureSubSuite("BankAccountBalance - Scenarios")]
 public sealed class BankAccountBalanceProjectionTests
 {
     /// <summary>

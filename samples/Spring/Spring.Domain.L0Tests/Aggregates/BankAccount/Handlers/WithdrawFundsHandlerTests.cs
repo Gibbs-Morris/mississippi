@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
@@ -15,9 +13,6 @@ namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
 /// <summary>
 ///     Tests for <see cref="WithdrawFundsHandler" />.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("WithdrawFundsHandler")]
 public sealed class WithdrawFundsHandlerTests
 {
     private readonly WithdrawFundsHandler handler = new();
@@ -38,7 +33,6 @@ public sealed class WithdrawFundsHandlerTests
     ///     Withdrawing entire balance should succeed.
     /// </summary>
     [Fact]
-    [AllureFeature("Withdrawals")]
     public void WithdrawEntireBalanceSucceeds()
     {
         // Arrange
@@ -60,7 +54,6 @@ public sealed class WithdrawFundsHandlerTests
     ///     Withdrawing from closed account should fail with InvalidState.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void WithdrawFromClosedAccountFailsWithInvalidState()
     {
         // Arrange
@@ -82,7 +75,6 @@ public sealed class WithdrawFundsHandlerTests
     ///     Withdrawing from null state should fail with InvalidState.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void WithdrawFromNullStateFailsWithInvalidState()
     {
         // Arrange
@@ -99,7 +91,6 @@ public sealed class WithdrawFundsHandlerTests
     ///     Withdrawing funds within balance should emit FundsWithdrawn event.
     /// </summary>
     [Fact]
-    [AllureFeature("Withdrawals")]
     public void WithdrawFundsWithinBalanceEmitsFundsWithdrawn()
     {
         // Arrange
@@ -122,7 +113,6 @@ public sealed class WithdrawFundsHandlerTests
     ///     Withdrawing more than balance should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void WithdrawMoreThanBalanceFailsWithInvalidCommand()
     {
         // Arrange
@@ -143,7 +133,6 @@ public sealed class WithdrawFundsHandlerTests
     ///     Withdrawing negative amount should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void WithdrawNegativeAmountFailsWithInvalidCommand()
     {
         // Arrange
@@ -160,7 +149,6 @@ public sealed class WithdrawFundsHandlerTests
     ///     Withdrawing zero amount should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void WithdrawZeroAmountFailsWithInvalidCommand()
     {
         // Arrange

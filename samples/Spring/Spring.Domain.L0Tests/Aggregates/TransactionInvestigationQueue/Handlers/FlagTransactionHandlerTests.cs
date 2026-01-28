@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
@@ -17,9 +15,6 @@ namespace Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Handler
 /// <summary>
 ///     Tests for <see cref="FlagTransactionHandler" />.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("FlagTransactionHandler")]
 public sealed class FlagTransactionHandlerTests
 {
     private static readonly DateTimeOffset FlaggedTimestamp = new(2025, 1, 15, 11, 0, 0, TimeSpan.Zero);
@@ -39,7 +34,6 @@ public sealed class FlagTransactionHandlerTests
     ///     Flagging preserves the original transaction timestamp.
     /// </summary>
     [Fact]
-    [AllureFeature("Transaction Flagging")]
     public void FlagPreservesOriginalTransactionTimestamp()
     {
         // Arrange
@@ -64,7 +58,6 @@ public sealed class FlagTransactionHandlerTests
     ///     Flagging a transaction with existing aggregate state should still succeed.
     /// </summary>
     [Fact]
-    [AllureFeature("Transaction Flagging")]
     public void FlagTransactionWithExistingStateSucceeds()
     {
         // Arrange
@@ -93,7 +86,6 @@ public sealed class FlagTransactionHandlerTests
     ///     Flagging a valid transaction should emit TransactionFlagged event.
     /// </summary>
     [Fact]
-    [AllureFeature("Transaction Flagging")]
     public void FlagValidTransactionEmitsTransactionFlagged()
     {
         // Arrange
@@ -120,7 +112,6 @@ public sealed class FlagTransactionHandlerTests
     ///     Flagging with empty account ID should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void FlagWithEmptyAccountIdFailsWithInvalidCommand()
     {
         // Arrange
@@ -139,7 +130,6 @@ public sealed class FlagTransactionHandlerTests
     ///     Flagging with negative amount should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void FlagWithNegativeAmountFailsWithInvalidCommand()
     {
         // Arrange
@@ -158,7 +148,6 @@ public sealed class FlagTransactionHandlerTests
     ///     Flagging with very large amount should succeed.
     /// </summary>
     [Fact]
-    [AllureFeature("Transaction Flagging")]
     public void FlagWithVeryLargeAmountSucceeds()
     {
         // Arrange
@@ -182,7 +171,6 @@ public sealed class FlagTransactionHandlerTests
     ///     Flagging with whitespace-only account ID should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void FlagWithWhitespaceAccountIdFailsWithInvalidCommand()
     {
         // Arrange
@@ -201,7 +189,6 @@ public sealed class FlagTransactionHandlerTests
     ///     Flagging with zero amount should fail with InvalidCommand.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void FlagWithZeroAmountFailsWithInvalidCommand()
     {
         // Arrange

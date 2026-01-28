@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Domain.Projections.BankAccountBalance.Reducers;
@@ -10,9 +8,6 @@ namespace Spring.Domain.L0Tests.Projections.BankAccountBalance;
 /// <summary>
 ///     Tests for <see cref="AccountOpenedBalanceReducer" />.
 /// </summary>
-[AllureParentSuite("Spring Domain")]
-[AllureSuite("Projections")]
-[AllureSubSuite("BankAccountBalance - AccountOpened")]
 public sealed class AccountOpenedBalanceReducerTests
 {
     private readonly AccountOpenedBalanceReducer reducer = new();
