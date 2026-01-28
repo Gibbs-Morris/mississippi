@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,9 +14,6 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletClientRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("Configuration")]
-[AllureSubSuite("InletClientRegistrations")]
 public sealed class InletClientRegistrationsTests
 {
     /// <summary>
@@ -30,8 +26,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IInletStore as CompositeInletStore.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletRegistersIInletStoreAsCompositeInletStore()
+        public void AddInletRegistersIInletStoreAsCompositeInletStore()
     {
         // Arrange
         ServiceCollection services = [];
@@ -49,8 +44,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IProjectionCache as ProjectionCache singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletRegistersIProjectionCacheAsSingleton()
+        public void AddInletRegistersIProjectionCacheAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
@@ -70,8 +64,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IProjectionUpdateNotifier as ProjectionNotifier.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletRegistersIProjectionUpdateNotifierAsProjectionNotifier()
+        public void AddInletRegistersIProjectionUpdateNotifierAsProjectionNotifier()
     {
         // Arrange
         ServiceCollection services = [];
@@ -89,8 +82,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IStore as singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletRegistersIStoreAsSingleton()
+        public void AddInletRegistersIStoreAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
@@ -109,8 +101,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IStore as Store.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletRegistersIStoreAsStore()
+        public void AddInletRegistersIStoreAsStore()
     {
         // Arrange
         ServiceCollection services = [];
@@ -128,8 +119,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IProjectionRegistry.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletRegistersProjectionRegistry()
+        public void AddInletRegistersProjectionRegistry()
     {
         // Arrange
         ServiceCollection services = [];
@@ -148,8 +138,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void AddInletWithNullServicesThrowsArgumentNullException()
+        public void AddInletWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
         IServiceCollection? services = null;
@@ -162,8 +151,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath should register path in IConfigureProjectionRegistry.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddProjectionPathRegistersConfiguration()
+        public void AddProjectionPathRegistersConfiguration()
     {
         // Arrange
         ServiceCollection services = [];
@@ -182,8 +170,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath should throw ArgumentNullException when path is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void AddProjectionPathWithNullPathThrowsArgumentNullException()
+        public void AddProjectionPathWithNullPathThrowsArgumentNullException()
     {
         // Arrange
         ServiceCollection services = [];
@@ -196,8 +183,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void AddProjectionPathWithNullServicesThrowsArgumentNullException()
+        public void AddProjectionPathWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
         IServiceCollection? services = null;
@@ -210,8 +196,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath configuration should register path in registry.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void ProjectionPathConfigurationRegistersPathInRegistry()
+        public void ProjectionPathConfigurationRegistersPathInRegistry()
     {
         // Arrange
         ServiceCollection services = [];
