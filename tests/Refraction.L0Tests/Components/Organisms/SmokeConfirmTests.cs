@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Bunit;
 
@@ -15,16 +14,13 @@ namespace Mississippi.Refraction.L0Tests.Components.Organisms;
 /// <summary>
 ///     Tests for <see cref="SmokeConfirm" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Organisms")]
 public sealed class SmokeConfirmTests : BunitContext
 {
     /// <summary>
     ///     SmokeConfirm does not render consequence element when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmDoesNotRenderConsequenceWhenEmpty()
+        public void SmokeConfirmDoesNotRenderConsequenceWhenEmpty()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p.Add(c => c.Consequence, string.Empty));
@@ -37,8 +33,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm does not render title element when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmDoesNotRenderTitleWhenEmpty()
+        public void SmokeConfirmDoesNotRenderTitleWhenEmpty()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p.Add(c => c.Title, string.Empty));
@@ -51,8 +46,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmHasAdditionalAttributesParameter()
+        public void SmokeConfirmHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(SmokeConfirm).GetProperty("AdditionalAttributes");
@@ -68,8 +62,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has CancelText parameter with default Cancel.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmHasCancelTextParameterWithDefaultCancel()
+        public void SmokeConfirmHasCancelTextParameterWithDefaultCancel()
     {
         // Arrange
         PropertyInfo? prop = typeof(SmokeConfirm).GetProperty("CancelText");
@@ -86,8 +79,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has ConfirmText parameter with default Confirm.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmHasConfirmTextParameterWithDefaultConfirm()
+        public void SmokeConfirmHasConfirmTextParameterWithDefaultConfirm()
     {
         // Arrange
         PropertyInfo? prop = typeof(SmokeConfirm).GetProperty("ConfirmText");
@@ -104,8 +96,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has Consequence parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmHasConsequenceParameter()
+        public void SmokeConfirmHasConsequenceParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(SmokeConfirm).GetProperty("Consequence");
@@ -121,8 +112,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has OnCancel EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmHasOnCancelEventCallback()
+        public void SmokeConfirmHasOnCancelEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(SmokeConfirm).GetProperty("OnCancel");
@@ -136,8 +126,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has OnConfirm EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmHasOnConfirmEventCallback()
+        public void SmokeConfirmHasOnConfirmEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(SmokeConfirm).GetProperty("OnConfirm");
@@ -151,8 +140,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmHasStateParameter()
+        public void SmokeConfirmHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(SmokeConfirm).GetProperty("State");
@@ -167,8 +155,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm has Title parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmHasTitleParameter()
+        public void SmokeConfirmHasTitleParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(SmokeConfirm).GetProperty("Title");
@@ -183,8 +170,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmInheritsFromComponentBase()
+        public void SmokeConfirmInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(SmokeConfirm)));
@@ -194,8 +180,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm invokes OnCancel when cancel button is clicked.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmInvokesOnCancelWhenCancelButtonClicked()
+        public void SmokeConfirmInvokesOnCancelWhenCancelButtonClicked()
     {
         // Arrange
         bool wasCancelled = false;
@@ -214,8 +199,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm invokes OnConfirm when confirm button is clicked.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmInvokesOnConfirmWhenConfirmButtonClicked()
+        public void SmokeConfirmInvokesOnConfirmWhenConfirmButtonClicked()
     {
         // Arrange
         bool wasConfirmed = false;
@@ -234,8 +218,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders action buttons.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersActionButtons()
+        public void SmokeConfirmRendersActionButtons()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>();
@@ -249,8 +232,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersAdditionalAttributes()
+        public void SmokeConfirmRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p.AddUnmatched(
@@ -265,8 +247,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders aria-labelledby attribute when title is provided.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersAriaLabelledByWhenTitleProvided()
+        public void SmokeConfirmRendersAriaLabelledByWhenTitleProvided()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p.Add(c => c.Title, "Confirm Delete"));
@@ -281,8 +262,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders consequence when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersConsequenceWhenProvided()
+        public void SmokeConfirmRendersConsequenceWhenProvided()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p.Add(
@@ -298,8 +278,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders custom cancel text.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersCustomCancelText()
+        public void SmokeConfirmRendersCustomCancelText()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p.Add(c => c.CancelText, "Abort"));
@@ -313,8 +292,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders custom confirm text.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersCustomConfirmText()
+        public void SmokeConfirmRendersCustomConfirmText()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p.Add(c => c.ConfirmText, "Proceed"));
@@ -328,8 +306,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersCustomState()
+        public void SmokeConfirmRendersCustomState()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p.Add(
@@ -345,8 +322,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders title when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersTitleWhenProvided()
+        public void SmokeConfirmRendersTitleWhenProvided()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p.Add(c => c.Title, "Test Title"));
@@ -360,8 +336,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersWithDefaultState()
+        public void SmokeConfirmRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>();
@@ -375,8 +350,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm renders with dialog role for accessibility.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmRendersWithDialogRoleForAccessibility()
+        public void SmokeConfirmRendersWithDialogRoleForAccessibility()
     {
         // Act
         using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>();
@@ -390,8 +364,7 @@ public sealed class SmokeConfirmTests : BunitContext
     ///     SmokeConfirm State defaults to Latent.
     /// </summary>
     [Fact]
-    [AllureFeature("SmokeConfirm")]
-    public void SmokeConfirmStateDefaultsToLatent()
+        public void SmokeConfirmStateDefaultsToLatent()
     {
         // Arrange
         SmokeConfirm component = new();
