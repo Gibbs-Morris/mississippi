@@ -1,4 +1,3 @@
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Brooks.Reader;
 
@@ -8,17 +7,13 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
 /// <summary>
 ///     Tests for <see cref="BrookReaderOptions" />.
 /// </summary>
-[AllureParentSuite("Mississippi.EventSourcing.Brooks")]
-[AllureSuite("Reader")]
-[AllureSubSuite("BrookReaderOptions")]
 public sealed class BrookReaderOptionsTests
 {
     /// <summary>
     ///     BrookSliceSize should be initializable to a custom value.
     /// </summary>
     [Fact]
-    [AllureFeature("Configuration")]
-    public void BrookSliceSizeCanBeInitialized()
+        public void BrookSliceSizeCanBeInitialized()
     {
         // Arrange & Act
         BrookReaderOptions sut = new()
@@ -34,8 +29,7 @@ public sealed class BrookReaderOptionsTests
     ///     BrookSliceSize should default to 100.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
-    public void BrookSliceSizeDefaultsTo100()
+        public void BrookSliceSizeDefaultsTo100()
     {
         // Arrange & Act
         BrookReaderOptions sut = new();
@@ -53,8 +47,7 @@ public sealed class BrookReaderOptionsTests
     [InlineData(10)]
     [InlineData(1000)]
     [InlineData(10000)]
-    [AllureFeature("Configuration")]
-    public void BrookSliceSizeSupportsVariousValues(
+        public void BrookSliceSizeSupportsVariousValues(
         long sliceSize
     )
     {
