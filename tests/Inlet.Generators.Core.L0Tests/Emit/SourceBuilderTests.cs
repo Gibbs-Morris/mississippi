@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Generators.Core.Emit;
 
@@ -10,9 +9,6 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Emit;
 /// <summary>
 ///     Tests for <see cref="SourceBuilder" /> fluent code generation API.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Generators Core")]
-[AllureSubSuite("Source Builder")]
 public class SourceBuilderTests
 {
     /// <summary>
