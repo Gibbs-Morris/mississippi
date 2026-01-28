@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Bunit;
 
@@ -15,16 +14,13 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// <summary>
 ///     Smoke tests for <see cref="InputField" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Atoms")]
 public sealed class InputFieldTests : BunitContext
 {
     /// <summary>
     ///     InputField associates label with input via Id.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldAssociatesLabelWithInputViaId()
+        public void InputFieldAssociatesLabelWithInputViaId()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p
@@ -40,8 +36,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField does not render label when empty.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldDoesNotRenderLabelWhenEmpty()
+        public void InputFieldDoesNotRenderLabelWhenEmpty()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Label, string.Empty));
@@ -54,8 +49,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasAdditionalAttributesParameter()
+        public void InputFieldHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("AdditionalAttributes");
@@ -71,8 +65,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Id parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasIdParameter()
+        public void InputFieldHasIdParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Id");
@@ -87,8 +80,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has IsDisabled parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasIsDisabledParameter()
+        public void InputFieldHasIsDisabledParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("IsDisabled");
@@ -103,8 +95,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has IsReadOnly parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasIsReadOnlyParameter()
+        public void InputFieldHasIsReadOnlyParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("IsReadOnly");
@@ -119,8 +110,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Label parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasLabelParameter()
+        public void InputFieldHasLabelParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Label");
@@ -135,8 +125,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has OnBlur EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasOnBlurEventCallback()
+        public void InputFieldHasOnBlurEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("OnBlur");
@@ -152,8 +141,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has OnFocus EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasOnFocusEventCallback()
+        public void InputFieldHasOnFocusEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("OnFocus");
@@ -169,8 +157,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Placeholder parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasPlaceholderParameter()
+        public void InputFieldHasPlaceholderParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Placeholder");
@@ -185,8 +172,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasStateParameter()
+        public void InputFieldHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("State");
@@ -201,8 +187,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Type parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasTypeParameter()
+        public void InputFieldHasTypeParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Type");
@@ -217,8 +202,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has ValueChanged EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasValueChangedEventCallback()
+        public void InputFieldHasValueChangedEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("ValueChanged");
@@ -234,8 +218,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Value parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldHasValueParameter()
+        public void InputFieldHasValueParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Value");
@@ -250,8 +233,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldInheritsFromComponentBase()
+        public void InputFieldInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(InputField)));
@@ -261,8 +243,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField invokes OnBlur when input loses focus.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldInvokesOnBlurWhenInputLosesFocus()
+        public void InputFieldInvokesOnBlurWhenInputLosesFocus()
     {
         // Arrange
         bool wasBlurred = false;
@@ -281,8 +262,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField invokes OnFocus when input receives focus.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldInvokesOnFocusWhenInputReceivesFocus()
+        public void InputFieldInvokesOnFocusWhenInputReceivesFocus()
     {
         // Arrange
         bool wasFocused = false;
@@ -301,8 +281,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField invokes ValueChanged when input changes.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldInvokesValueChangedWhenInputChanges()
+        public void InputFieldInvokesValueChangedWhenInputChanges()
     {
         // Arrange
         string? receivedValue = null;
@@ -321,8 +300,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersAdditionalAttributes()
+        public void InputFieldRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.AddUnmatched("data-testid", "input-1"));
@@ -335,8 +313,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersCustomState()
+        public void InputFieldRendersCustomState()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(
@@ -352,8 +329,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders disabled state correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersDisabledStateCorrectly()
+        public void InputFieldRendersDisabledStateCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsDisabled, true));
@@ -366,8 +342,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders input type correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersInputTypeCorrectly()
+        public void InputFieldRendersInputTypeCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Type, "password"));
@@ -380,8 +355,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders label when provided.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersLabelWhenProvided()
+        public void InputFieldRendersLabelWhenProvided()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p
@@ -397,8 +371,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders placeholder correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersPlaceholderCorrectly()
+        public void InputFieldRendersPlaceholderCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Placeholder, "Enter value"));
@@ -411,8 +384,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders readonly state correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersReadOnlyStateCorrectly()
+        public void InputFieldRendersReadOnlyStateCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsReadOnly, true));
@@ -425,8 +397,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders value correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersValueCorrectly()
+        public void InputFieldRendersValueCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Value, "Initial value"));
@@ -439,8 +410,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldRendersWithDefaultState()
+        public void InputFieldRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>();
@@ -454,8 +424,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldStateDefaultsToIdle()
+        public void InputFieldStateDefaultsToIdle()
     {
         // Arrange
         InputField inputField = new();
@@ -468,8 +437,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField Type defaults to text.
     /// </summary>
     [Fact]
-    [AllureFeature("InputField")]
-    public void InputFieldTypeDefaultsToText()
+        public void InputFieldTypeDefaultsToText()
     {
         // Arrange
         InputField inputField = new();
