@@ -20,6 +20,17 @@ internal sealed class BatchSizeEstimator : IBatchSizeEstimator
     // This includes: batch headers, response metadata, and internal overhead
     private const long BatchOverheadBytes = 8192; // be conservative for transactional batch envelope
 
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="BatchSizeEstimator" /> class.
+    /// </summary>
+    /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
+    public BatchSizeEstimator(
+        TimeProvider? timeProvider = null
+    ) =>
+        TimeProvider = timeProvider ?? TimeProvider.System;
+
+    private TimeProvider TimeProvider { get; }
+
     private static long EstimateEventSizeWithoutSerialization(
         BrookEvent brookEvent
     )
@@ -135,7 +146,7 @@ internal sealed class BatchSizeEstimator : IBatchSizeEstimator
                 EventType = brookEvent.EventType ?? string.Empty,
                 DataContentType = brookEvent.DataContentType,
                 Data = brookEvent.Data.ToArray(),
-                Time = brookEvent.Time ?? DateTimeOffset.UtcNow,
+                Time = brookEvent.Time ?? TimeProvider.GetUtcNow(),
             };
             string serialized = JsonConvert.SerializeObject(eventDoc);
             int actualSize = Encoding.UTF8.GetByteCount(serialized);
