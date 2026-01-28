@@ -1,4 +1,3 @@
-using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Server.Abstractions;
 
@@ -8,17 +7,13 @@ namespace Mississippi.Inlet.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletHubConstants" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Abstractions")]
-[AllureSuite("Core")]
-[AllureSubSuite("InletHubConstants")]
 public sealed class InletHubConstantsTests
 {
     /// <summary>
     ///     HubName should have expected value.
     /// </summary>
     [Fact]
-    [AllureFeature("Constants")]
-    public void HubNameHasExpectedValue()
+        public void HubNameHasExpectedValue()
     {
         // Assert
         Assert.Equal("InletHub", InletHubConstants.HubName);
@@ -28,8 +23,7 @@ public sealed class InletHubConstantsTests
     ///     ProjectionUpdatedMethod should have expected value.
     /// </summary>
     [Fact]
-    [AllureFeature("Constants")]
-    public void ProjectionUpdatedMethodHasExpectedValue()
+        public void ProjectionUpdatedMethodHasExpectedValue()
     {
         // Assert
         Assert.Equal("ProjectionUpdated", InletHubConstants.ProjectionUpdatedMethod);
@@ -39,8 +33,7 @@ public sealed class InletHubConstantsTests
     ///     SubscribeMethod should have expected value.
     /// </summary>
     [Fact]
-    [AllureFeature("Constants")]
-    public void SubscribeMethodHasExpectedValue()
+        public void SubscribeMethodHasExpectedValue()
     {
         // Assert
         Assert.Equal("SubscribeAsync", InletHubConstants.SubscribeMethod);
@@ -50,8 +43,7 @@ public sealed class InletHubConstantsTests
     ///     UnsubscribeMethod should have expected value.
     /// </summary>
     [Fact]
-    [AllureFeature("Constants")]
-    public void UnsubscribeMethodHasExpectedValue()
+        public void UnsubscribeMethodHasExpectedValue()
     {
         // Assert
         Assert.Equal("UnsubscribeAsync", InletHubConstants.UnsubscribeMethod);
