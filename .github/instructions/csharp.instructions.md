@@ -25,6 +25,7 @@ Governing thought: Write SOLID, testable, cloud-ready C# with internal-by-defaul
 - Classes **SHOULD** be records/immutable where feasible and only inheritable with clear need; interfaces **SHOULD** be public only when part of deliberate API; members **SHOULD** expose least privilege. Why: Reduces coupling and breaks.
 - New third-party dependencies **MAY** be added only with explicit approval or when extending already-adopted tech. Why: Limits supply-chain risk and sprawl.
 - All logging **SHOULD** use LoggerExtensions per logging rules. Why: Maintains performance and consistency.
+- Code that requires current date/time **MUST** inject `TimeProvider` rather than calling `DateTime.Now`, `DateTime.UtcNow`, or `DateTimeOffset.UtcNow` directly; tests **SHOULD** use `Microsoft.Extensions.TimeProvider.Testing.FakeTimeProvider` for deterministic assertions. Why: Enables deterministic testing and avoids flaky time-dependent tests.
 
 ## Scope and Audience
 
@@ -34,6 +35,7 @@ C# contributors across Mississippi and Samples, including Orleans code.
 
 - Default visibility to `internal`; justify any widening in XML docs.
 - Use DI property pattern and options pattern; no raw config parameters.
+- Inject `TimeProvider` for date/time; use `FakeTimeProvider` in tests.
 - Avoid blocking/parallel loops in Orleans; use async + `Task.WhenAll`.
 - Place public contracts in `.Abstractions`; keep implementations internal.
 - Keep analyzers on; fix warnings instead of suppressing.

@@ -15,6 +15,7 @@
         <Project Path="samples\Spring\Spring.Server\Spring.Server.csproj" />
         <Project Path="samples\Spring\Spring.Silo\Spring.Silo.csproj" />
         <Project Path="samples\Spring\Spring.AppHost\Spring.AppHost.csproj" />
+        <Project Path="samples\Spring\Spring.Domain.L0Tests\Spring.Domain.L0Tests.csproj" />
         <Project Path="samples\Spring\Spring.L2Tests\Spring.L2Tests.csproj" />
     </Folder>
 </Solution>
