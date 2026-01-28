@@ -20,7 +20,7 @@ Governing thought: Default to fast, deterministic L0 tests with high coverage an
 - L2 tests **SHOULD** be used only when real infrastructure is required (HTTP APIs, SignalR, Cosmos/Blob storage, etc.). Why: Keeps lower levels pure and deterministic.
 - Each implementation solution **SHOULD** include separate L0Tests, L1Tests, and L2Tests projects. Why: Keeps scopes clear and enables targeted pipelines.
 - Each L2 test project **SHOULD** have a companion Aspire AppHost project that provisions required dependencies and emulators. Why: Makes integration tests repeatable and self-contained.
-- Tests **MUST** be deterministic/isolated (no sleeps, no shared mutable state, no real network in L0); time/random **SHOULD** be injected/faked. Why: Prevents flakiness.
+- Tests **MUST** be deterministic/isolated (no sleeps, no shared mutable state, no real network in L0); time **MUST** use `FakeTimeProvider` from `Microsoft.Extensions.TimeProvider.Testing` when production code injects `TimeProvider`; random seeds **SHOULD** be fixed or injected. Why: Prevents flakiness and enables reproducible assertions.
 - Coverage targets: changed code **MUST** aim for 100% with **MUST NOT** regress coverage on touched files; solution-wide **MUST** stay >=80% and **SHOULD** target 95-100% where feasible. Why: Protects behavior and gates.
 - Mississippi projects **MUST** run mutation testing and maintain or raise the score; mutation runs **MUST** be allowed to finish (~30 minutes) and mutation scripts **MUST** be preceded by `dotnet tool restore` and a clean build. Why: Mutation score enforces assertion quality.
 - Mutation work **MUST NOT** change production code solely to kill mutants unless the mutant is provably unkillable via tests; any such change **MUST** be justified. Why: Preserves intended behavior.
@@ -56,7 +56,7 @@ Filter uses `FullyQualifiedName` matching on project naming convention (e.g., `*
 ## Core Principles
 
 - Prefer L0 (pure, in-memory) for speed; step to L1 then L2 when needed, with L2 backed by real infra via Aspire.
-- Determinism first: inject time/random, isolate file system and ports, avoid sleeps.
+- Determinism first: use `FakeTimeProvider` for time, fix random seeds, isolate file system and ports, avoid sleeps.
 - High coverage and mutation strength on changed code; no regressions.
 - Mississippi vs Samples: Samples showcase patterns (minimal tests, no mutation gate); Mississippi enforces full gates.
 - Use summarizer outputs and scratchpad tasks instead of manual tracking.
