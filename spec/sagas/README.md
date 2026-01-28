@@ -44,12 +44,14 @@ Sagas follow the same patterns as the rest of Mississippi:
 
 Steps have a single `ExecuteAsync` method. Verification is declarative via attributes.
 
-**Rationale**: 
+**Rationale**:
+
 - Matches existing patterns (`CommandHandlerBase` has one `HandleCore`, `EventReducerBase` has one `ReduceCore`)
 - Simpler DX — developers implement one method
 - Verification is infrastructure concern, not business logic
 
 **API Shape**:
+
 ```csharp
 /// <summary>
 ///     Base class for saga steps. Mirrors CommandHandlerBase pattern.
@@ -80,6 +82,7 @@ public sealed record StepResult
 ```
 
 **Verification via attributes** (infrastructure handles polling):
+
 ```csharp
 [SagaStep(Order = 1)]
 [AwaitCondition<PaymentProjection>(
@@ -102,11 +105,13 @@ public sealed class ReserveHotelStep : SagaStepBase<HolidayBookingSagaState> { .
 **Decision**: Default to immediate compensation on failure, configurable per saga via attribute
 
 **Rationale**:
+
 - Immediate compensation is the safest default (fail fast, clean up)
 - Some sagas may want retries before compensating
 - Configuration at saga level keeps step logic simple
 
 **API Shape**:
+
 ```csharp
 [SagaOptions(
     CompensationStrategy = CompensationStrategy.Immediate,  // Default
@@ -136,12 +141,14 @@ public enum CompensationStrategy
 **Decision**: Store step tracking in saga state only if commands need it; projections handle external visibility
 
 **Rationale**:
+
 - Saga state is internal to the aggregate
 - If command handlers need to make decisions based on step history, store it
 - External consumers (UI, monitoring) use the `SagaStatusProjection`
 - Everything flows through the event stream—projections can derive any view
 
 **Guidance**:
+
 - Keep saga aggregate state domain-focused
 - Add step tracking fields only when command logic requires them
 - The prebuilt `SagaStatusProjection` provides standard visibility without polluting domain state
@@ -153,11 +160,13 @@ public enum CompensationStrategy
 **Decision**: Use declarative verification attributes (same as aggregate verification)
 
 **Rationale**:
+
 - Sagas and aggregates are the same core object
 - Verification is infrastructure concern, not step business logic
 - Consistent mechanism reduces cognitive load
 
 **Implementation**:
+
 ```csharp
 [SagaStep(Order = 2)]
 [AwaitAggregateState<ChildSagaState>(s => s.Phase == SagaPhase.Completed)]
@@ -182,6 +191,7 @@ public sealed class InvokeChildSagaStep(
 ```
 
 Infrastructure handles:
+
 - Polling child saga state via reminder
 - Checking `Phase == Completed` condition
 - Proceeding to next step or triggering compensation on failure
@@ -195,11 +205,13 @@ Infrastructure handles:
 **Decision**: Configured via attribute on the saga, applies to step execution + verification
 
 **Rationale**:
+
 - Consistent with other saga-level configuration (Decision #2)
 - Timeout behavior is cross-cutting, not step-specific logic
 - Keeps step implementations focused on business logic
 
 **API Shape**:
+
 ```csharp
 [SagaOptions(
     DefaultStepTimeout = "00:05:00",  // 5 minutes default
@@ -222,12 +234,14 @@ public sealed class LongRunningStep : SagaStepBase<OrderFulfillmentSagaState> { 
 **Decision**: Saga is an aggregate; add polling/verification as aggregate-level capability
 
 **Rationale**:
+
 - Saga = aggregate + extra bits (steps, verification, compensation)
 - Polling/verification is useful for advanced aggregate use cases too
 - Keep aggregates and projections as building blocks for higher patterns
 - May need to inherit from aggregate grain to add reminder-based polling
 
 **Implementation Approach**:
+
 1. Add optional `IRemindable` support to `GenericAggregateGrain<T>` (or subclass)
 2. Saga-specific behavior (step orchestration) via saga-specific command handlers and effects
 3. Framework provides base commands: `StartSagaCommand`, `ContinueSagaCommand`, `TimeoutCommand`, `CancelSagaCommand`
@@ -242,11 +256,13 @@ public sealed class LongRunningStep : SagaStepBase<OrderFulfillmentSagaState> { 
 **Decision**: Attribute-based with source generator validation, constructor injection for dependencies
 
 **Rationale**:
+
 - Consistent with existing Mississippi patterns (commands, reducers, projections)
 - Constructor injection matches `CommandHandlerBase` — no grab-bag context
 - Source generator can detect conflicts (duplicate order, missing steps) at compile time
 
 **API Shape**:
+
 ```csharp
 [SagaStep(Order = 1)]
 public sealed class ReservePaymentStep(
@@ -276,6 +292,7 @@ public sealed class CreateShipmentStep(...) : SagaStepBase<OrderSagaState> { ...
 ```
 
 **Source Generator Responsibilities**:
+
 - Validate no duplicate `Order` values for same saga
 - Validate step classes have parameterless or DI-injectable constructor
 - Generate step registry for runtime discovery
@@ -288,11 +305,13 @@ public sealed class CreateShipmentStep(...) : SagaStepBase<OrderSagaState> { ...
 **Decision**: Needs further design; consider step-based versioning with hash (similar to reducer hash)
 
 **Rationale**:
+
 - Complex problem: step logic, order, and compensation can all change
 - Reducer hash pattern already exists and works well
 - In-flight sagas may need to complete with original logic
 
 **Initial Thinking**:
+
 - Compute hash from step definitions (order, types, configuration)
 - Store hash when saga starts
 - On saga resume, compare stored hash vs current
@@ -302,6 +321,7 @@ public sealed class CreateShipmentStep(...) : SagaStepBase<OrderSagaState> { ...
   - Migration handler (advanced)
 
 **Deferred**: Full design to be completed in follow-up spec. For v1, consider:
+
 - Store step version/hash at saga start
 - Fail saga on version mismatch (safe default)
 - Log warning for operator intervention
@@ -323,7 +343,7 @@ public sealed class CreateShipmentStep(...) : SagaStepBase<OrderSagaState> { ...
 
 ## Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         SagaGrain<TSaga>                            │
 │         (extends GenericAggregateGrain or implements IRemindable)   │
@@ -694,6 +714,7 @@ public interface IEventEffect<TAggregate>
 ```
 
 **Key behaviors** (from `GenericAggregateGrain`):
+
 - Effects run **synchronously** after events are persisted
 - Yielded events are persisted immediately to the same aggregate's brook
 - Loop continues until no events yielded (max 10 iterations)
@@ -808,7 +829,7 @@ return OperationResult.Ok<IReadOnlyList<object>>([
 
 ### Saga Steps vs Effects
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Saga Step                                   │
 │    (Dispatches command, handles verification/compensation)         │

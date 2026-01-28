@@ -8,6 +8,7 @@
 ## The Problem
 
 A user wants to book a holiday package:
+
 1. Reserve a **hotel** room
 2. Reserve a **taxi** transfer  
 3. Reserve a **flight**
@@ -15,6 +16,7 @@ A user wants to book a holiday package:
 If any reservation fails, all successful reservations must be cancelled.
 
 **Key Questions**:
+
 - How do IDs flow from saga to external systems and back?
 - How does the saga know which external booking IDs to cancel?
 - How does context (correlation ID, saga ID, user ID) propagate?
@@ -37,7 +39,7 @@ If any reservation fails, all successful reservations must be cancelled.
 
 ### Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    HolidayBookingSaga                               │
 │                                                                     │
@@ -274,7 +276,7 @@ public sealed class ReserveHotelStep : HttpServiceStep<HolidayBookingSagaState>
 
 ### Complete Flow Diagram
 
-```
+```text
 ┌──────────┐     ┌─────────────────────────────────────────────────────────┐
 │  Client  │     │              HolidayBookingSaga                         │
 └────┬─────┘     └─────────────────────────────────────────────────────────┘
@@ -333,7 +335,7 @@ public sealed class ReserveHotelStep : HttpServiceStep<HolidayBookingSagaState>
 
 ### Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    HolidayBookingSaga                               │
 │                                                                     │
@@ -620,7 +622,7 @@ public sealed record HolidayBookingSagaState
 
 ### Complete Flow Diagram (Option B)
 
-```
+```text
 ┌──────────┐     ┌─────────────────────────────────────────────────────────┐
 │  Client  │     │              HolidayBookingSaga                         │
 └────┬─────┘     └─────────────────────────────────────────────────────────┘
@@ -688,7 +690,7 @@ public sealed record HolidayBookingSagaState
 
 ### Option A: Saga Owns Everything
 
-```
+```text
 BookingId (saga key)
     │
     ├──► HotelConfirmationId (from external API)
@@ -702,7 +704,7 @@ Context headers on every HTTP call:
 
 ### Option B: Saga References Aggregates
 
-```
+```text
 BookingId (saga key)
     │
     ├──► HotelReservationId ──► HotelReservationAggregate
@@ -807,12 +809,13 @@ public interface IAggregateEffectContext
 | State ownership | ❌ Saga owns external IDs | ✅ Each aggregate owns its domain |
 | Compensation | ❌ Saga must call HTTP DELETE | ✅ Aggregate handles its own cancel |
 
-**Recommendation**: 
+**Recommendation**:
 
 - **Use Option B for production systems** — Better separation, reusability, testability
 - **Option A is acceptable** for simple, one-off integrations where creating aggregates is overkill
 
 **Both patterns should be supported** — Mississippi should provide:
+
 1. `HttpServiceStep<TSaga>` for Option A (direct HTTP)
 2. `AggregateCommandStep<TSaga, TTarget>` for Option B (aggregate orchestration)
 3. `EventEffectBase<TEvent, TAggregate>` for all server-side effects (yield events or `yield break;`)
@@ -836,6 +839,7 @@ The `topic/server-effect` PR implements the actual effect pattern:
 ### Corrected Option B Pattern
 
 All effects use `EventEffectBase`:
+
 - Yield events when you have results to persist
 - Use `yield break;` for fire-and-forget side effects
 
