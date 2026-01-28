@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Inlet.Client.SignalRConnection;
 
@@ -10,17 +9,13 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for SignalR connection reducers.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet")]
-[AllureSuite("SignalR Connection")]
-[AllureSubSuite("Reducers")]
 public sealed class SignalRConnectionReducersTests
 {
     /// <summary>
     ///     OnConnected clears last error.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnConnectedClearsLastError()
+        public void OnConnectedClearsLastError()
     {
         // Arrange
         SignalRConnectionState state = new()
@@ -40,8 +35,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnConnected resets reconnect attempt count.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnConnectedResetsReconnectAttemptCount()
+        public void OnConnectedResetsReconnectAttemptCount()
     {
         // Arrange
         SignalRConnectionState state = new()
@@ -61,8 +55,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnConnected sets connection ID from action.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnConnectedSetsConnectionIdFromAction()
+        public void OnConnectedSetsConnectionIdFromAction()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -80,8 +73,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnConnected sets last connected timestamp.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnConnectedSetsLastConnectedAt()
+        public void OnConnectedSetsLastConnectedAt()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -99,8 +91,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnConnected sets status to Connected.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnConnectedSetsStatusToConnected()
+        public void OnConnectedSetsStatusToConnected()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -117,8 +108,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnConnecting clears last error.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnConnectingClearsLastError()
+        public void OnConnectingClearsLastError()
     {
         // Arrange
         SignalRConnectionState state = new()
@@ -138,8 +128,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnConnecting sets status to Connecting.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnConnectingSetsStatusToConnecting()
+        public void OnConnectingSetsStatusToConnecting()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -156,8 +145,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnDisconnected clears connection ID.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnDisconnectedClearsConnectionId()
+        public void OnDisconnectedClearsConnectionId()
     {
         // Arrange
         SignalRConnectionState state = new()
@@ -177,8 +165,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnDisconnected sets last disconnected timestamp.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnDisconnectedSetsLastDisconnectedAt()
+        public void OnDisconnectedSetsLastDisconnectedAt()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -196,8 +183,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnDisconnected sets last error from action.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnDisconnectedSetsLastError()
+        public void OnDisconnectedSetsLastError()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -215,8 +201,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnDisconnected sets status to Disconnected.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnDisconnectedSetsStatusToDisconnected()
+        public void OnDisconnectedSetsStatusToDisconnected()
     {
         // Arrange
         SignalRConnectionState state = new()
@@ -236,8 +221,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnMessageReceived updates last message received timestamp.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnMessageReceivedUpdatesTimestamp()
+        public void OnMessageReceivedUpdatesTimestamp()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -255,8 +239,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnReconnected clears last error.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnReconnectedClearsLastError()
+        public void OnReconnectedClearsLastError()
     {
         // Arrange
         SignalRConnectionState state = new()
@@ -276,8 +259,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnReconnected resets reconnect attempt count.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnReconnectedResetsReconnectAttemptCount()
+        public void OnReconnectedResetsReconnectAttemptCount()
     {
         // Arrange
         SignalRConnectionState state = new()
@@ -297,8 +279,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnReconnected sets connection ID from action.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnReconnectedSetsConnectionId()
+        public void OnReconnectedSetsConnectionId()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -316,8 +297,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnReconnected sets status to Connected.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnReconnectedSetsStatusToConnected()
+        public void OnReconnectedSetsStatusToConnected()
     {
         // Arrange
         SignalRConnectionState state = new()
@@ -337,8 +317,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnReconnecting sets last error from action.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnReconnectingSetsLastError()
+        public void OnReconnectingSetsLastError()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -356,8 +335,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnReconnecting sets reconnect attempt count from action.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnReconnectingSetsReconnectAttemptCount()
+        public void OnReconnectingSetsReconnectAttemptCount()
     {
         // Arrange
         SignalRConnectionState state = new();
@@ -375,8 +353,7 @@ public sealed class SignalRConnectionReducersTests
     ///     OnReconnecting sets status to Reconnecting.
     /// </summary>
     [Fact]
-    [AllureFeature("Reducers")]
-    public void OnReconnectingSetsStatusToReconnecting()
+        public void OnReconnectingSetsStatusToReconnecting()
     {
         // Arrange
         SignalRConnectionState state = new();
