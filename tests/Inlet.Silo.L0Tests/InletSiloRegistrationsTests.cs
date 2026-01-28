@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,17 +14,13 @@ namespace Mississippi.Inlet.Silo.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InletSiloRegistrations" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Silo")]
-[AllureSuite("Extensions")]
-[AllureSubSuite("InletSiloRegistrations")]
 public sealed class InletSiloRegistrationsTests
 {
     /// <summary>
     ///     AddInletSilo can be called multiple times.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletSiloCanBeCalledMultipleTimes()
+        public void AddInletSiloCanBeCalledMultipleTimes()
     {
         // Arrange
         ServiceCollection services = [];
@@ -44,8 +39,7 @@ public sealed class InletSiloRegistrationsTests
     ///     AddInletSilo should register as singleton.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletSiloRegistersAsSingleton()
+        public void AddInletSiloRegistersAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
@@ -64,8 +58,7 @@ public sealed class InletSiloRegistrationsTests
     ///     AddInletSilo should register IProjectionBrookRegistry.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletSiloRegistersIProjectionBrookRegistry()
+        public void AddInletSiloRegistersIProjectionBrookRegistry()
     {
         // Arrange
         ServiceCollection services = [];
@@ -83,8 +76,7 @@ public sealed class InletSiloRegistrationsTests
     ///     AddInletSilo should return the same services collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Service Registration")]
-    public void AddInletSiloReturnsSameCollection()
+        public void AddInletSiloReturnsSameCollection()
     {
         // Arrange
         ServiceCollection services = [];
@@ -100,8 +92,7 @@ public sealed class InletSiloRegistrationsTests
     ///     AddInletSilo should throw when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void AddInletSiloThrowsWhenServicesNull()
+        public void AddInletSiloThrowsWhenServicesNull()
     {
         // Arrange
         IServiceCollection services = null!;
@@ -115,8 +106,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies discovers types with ProjectionPathAttribute.
     /// </summary>
     [Fact]
-    [AllureFeature("Assembly Scanning")]
-    public void ScanProjectionAssembliesDiscoversProjectionPathAttribute()
+        public void ScanProjectionAssembliesDiscoversProjectionPathAttribute()
     {
         // Arrange
         ServiceCollection services = [];
@@ -136,8 +126,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies replaces existing registry.
     /// </summary>
     [Fact]
-    [AllureFeature("Assembly Scanning")]
-    public void ScanProjectionAssembliesReplacesExistingRegistry()
+        public void ScanProjectionAssembliesReplacesExistingRegistry()
     {
         // Arrange
         ServiceCollection services = [];
@@ -158,8 +147,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies should return the same services collection for chaining.
     /// </summary>
     [Fact]
-    [AllureFeature("Assembly Scanning")]
-    public void ScanProjectionAssembliesReturnsSameCollection()
+        public void ScanProjectionAssembliesReturnsSameCollection()
     {
         // Arrange
         ServiceCollection services = [];
@@ -175,8 +163,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies should throw when assemblies is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void ScanProjectionAssembliesThrowsWhenAssembliesNull()
+        public void ScanProjectionAssembliesThrowsWhenAssembliesNull()
     {
         // Arrange
         ServiceCollection services = [];
@@ -191,8 +178,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies should throw when services is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void ScanProjectionAssembliesThrowsWhenServicesNull()
+        public void ScanProjectionAssembliesThrowsWhenServicesNull()
     {
         // Arrange
         IServiceCollection services = null!;
@@ -207,8 +193,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies uses BrookNameAttribute value when present.
     /// </summary>
     [Fact]
-    [AllureFeature("Assembly Scanning")]
-    public void ScanProjectionAssembliesUsesBrookNameAttributeWhenPresent()
+        public void ScanProjectionAssembliesUsesBrookNameAttributeWhenPresent()
     {
         // Arrange
         ServiceCollection services = [];
@@ -228,8 +213,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies uses path as brook name when BrookNameAttribute is absent.
     /// </summary>
     [Fact]
-    [AllureFeature("Assembly Scanning")]
-    public void ScanProjectionAssembliesUsesPathAsBrookNameByDefault()
+        public void ScanProjectionAssembliesUsesPathAsBrookNameByDefault()
     {
         // Arrange
         ServiceCollection services = [];
@@ -249,8 +233,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies with no assemblies creates empty registry.
     /// </summary>
     [Fact]
-    [AllureFeature("Assembly Scanning")]
-    public void ScanProjectionAssembliesWithNoAssembliesCreatesEmptyRegistry()
+        public void ScanProjectionAssembliesWithNoAssembliesCreatesEmptyRegistry()
     {
         // Arrange
         ServiceCollection services = [];
