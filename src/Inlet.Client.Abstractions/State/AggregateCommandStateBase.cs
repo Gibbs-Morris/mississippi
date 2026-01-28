@@ -34,15 +34,6 @@ namespace Mississippi.Inlet.Client.Abstractions.State;
 ///         <see cref="IAggregateCommandState" /> and add any aggregate-specific state.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         internal sealed record BankAccountAggregateState : AggregateCommandStateBase, IAggregateCommandState
-///         {
-///             public static string FeatureKey => "bankAccountAggregate";
-///             // Add aggregate-specific state here if needed
-///         }
-///     </code>
-/// </example>
 public abstract record AggregateCommandStateBase
 {
     /// <summary>
