@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -15,9 +14,6 @@ namespace Mississippi.Inlet.Silo.Generators.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ProjectionSiloRegistrationGenerator" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Silo Generators")]
-[AllureSubSuite("Projection Silo Registration Generator")]
 public class ProjectionSiloRegistrationGeneratorTests
 {
     /// <summary>
