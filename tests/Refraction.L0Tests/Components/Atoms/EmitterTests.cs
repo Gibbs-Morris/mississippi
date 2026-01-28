@@ -1,6 +1,5 @@
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Bunit;
 
@@ -15,16 +14,13 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// <summary>
 ///     Smoke tests for <see cref="Emitter" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Atoms")]
 public sealed class EmitterTests : BunitContext
 {
     /// <summary>
     ///     Emitter has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterHasAdditionalAttributesParameter()
+        public void EmitterHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Emitter).GetProperty("AdditionalAttributes");
@@ -40,8 +36,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has OnActivate EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterHasOnActivateEventCallback()
+        public void EmitterHasOnActivateEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(Emitter).GetProperty("OnActivate");
@@ -57,8 +52,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has OnFocus EventCallback.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterHasOnFocusEventCallback()
+        public void EmitterHasOnFocusEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(Emitter).GetProperty("OnFocus");
@@ -74,8 +68,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterHasStateParameter()
+        public void EmitterHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Emitter).GetProperty("State");
@@ -90,8 +83,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterInheritsFromComponentBase()
+        public void EmitterInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(Emitter)));
@@ -101,8 +93,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter invokes OnActivate when clicked.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterInvokesOnActivateWhenClicked()
+        public void EmitterInvokesOnActivateWhenClicked()
     {
         // Arrange
         bool wasActivated = false;
@@ -127,8 +118,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter invokes OnFocus when focused.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterInvokesOnFocusWhenFocused()
+        public void EmitterInvokesOnFocusWhenFocused()
     {
         // Arrange
         bool wasFocused = false;
@@ -153,8 +143,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterRendersAdditionalAttributes()
+        public void EmitterRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("data-testid", "emitter-1"));
@@ -167,8 +156,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterRendersCustomState()
+        public void EmitterRendersCustomState()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(c => c.State, RefractionStates.Active));
@@ -182,8 +170,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders seed indicator.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterRendersSeedIndicator()
+        public void EmitterRendersSeedIndicator()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>();
@@ -196,8 +183,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders with button role for accessibility.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterRendersWithButtonRoleForAccessibility()
+        public void EmitterRendersWithButtonRoleForAccessibility()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>();
@@ -211,8 +197,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterRendersWithDefaultState()
+        public void EmitterRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>();
@@ -226,8 +211,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders with tabindex for keyboard accessibility.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterRendersWithTabindexForKeyboardAccessibility()
+        public void EmitterRendersWithTabindexForKeyboardAccessibility()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>();
@@ -241,8 +225,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter State defaults to Idle.
     /// </summary>
     [Fact]
-    [AllureFeature("Emitter")]
-    public void EmitterStateDefaultsToIdle()
+        public void EmitterStateDefaultsToIdle()
     {
         // Arrange
         Emitter emitter = new();
