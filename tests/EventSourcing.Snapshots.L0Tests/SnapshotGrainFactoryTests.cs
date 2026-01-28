@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
@@ -16,9 +15,6 @@ namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotGrainFactory" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots")]
-[AllureSubSuite("Snapshot Grain Factory")]
 public sealed class SnapshotGrainFactoryTests
 {
     private static SnapshotGrainFactory CreateFactory(
@@ -35,8 +31,7 @@ public sealed class SnapshotGrainFactoryTests
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
     [Fact]
-    [AllureFeature("Construction")]
-    public void ConstructorSucceedsWithValidDependencies()
+        public void ConstructorSucceedsWithValidDependencies()
     {
         // Arrange
         Mock<IGrainFactory> grainFactoryMock = new();
@@ -53,8 +48,7 @@ public sealed class SnapshotGrainFactoryTests
     ///     Constructor should throw ArgumentNullException when grainFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void ConstructorThrowsArgumentNullExceptionWhenGrainFactoryIsNull()
+        public void ConstructorThrowsArgumentNullExceptionWhenGrainFactoryIsNull()
     {
         // Arrange
         Mock<ILogger<SnapshotGrainFactory>> loggerMock = new();
@@ -69,8 +63,7 @@ public sealed class SnapshotGrainFactoryTests
     ///     Constructor should throw ArgumentNullException when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
-    public void ConstructorThrowsArgumentNullExceptionWhenLoggerIsNull()
+        public void ConstructorThrowsArgumentNullExceptionWhenLoggerIsNull()
     {
         // Arrange
         Mock<IGrainFactory> grainFactoryMock = new();
@@ -85,8 +78,7 @@ public sealed class SnapshotGrainFactoryTests
     ///     Verifies that GetSnapshotCacheGrain returns a grain from the underlying factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
-    public void GetSnapshotCacheGrainReturnsGrainFromFactory()
+        public void GetSnapshotCacheGrainReturnsGrainFromFactory()
     {
         // Arrange
         SnapshotKey key = new(new("TEST.BROOK", "TestProjection", "entity-1", "hash123"), 5);
@@ -112,8 +104,7 @@ public sealed class SnapshotGrainFactoryTests
     ///     Verifies that GetSnapshotPersisterGrain returns a grain from the underlying factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory")]
-    public void GetSnapshotPersisterGrainReturnsGrainFromFactory()
+        public void GetSnapshotPersisterGrainReturnsGrainFromFactory()
     {
         // Arrange
         SnapshotKey key = new(new("TEST.BROOK", "TestProjection", "entity-1", "hash123"), 5);
