@@ -32,6 +32,8 @@ public sealed class RootEventEffectTests
         public async IAsyncEnumerable<object> HandleAsync(
             object eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -65,6 +67,8 @@ public sealed class RootEventEffectTests
         public override async IAsyncEnumerable<object> HandleAsync(
             TestEvent eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -87,6 +91,8 @@ public sealed class RootEventEffectTests
         protected override Task HandleSimpleAsync(
             TestEvent eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             CancellationToken cancellationToken
         )
         {
@@ -109,6 +115,8 @@ public sealed class RootEventEffectTests
         public override async IAsyncEnumerable<object> HandleAsync(
             TestEvent eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -142,7 +150,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -166,7 +174,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -189,7 +197,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -214,7 +222,7 @@ public sealed class RootEventEffectTests
         TestAggregate state = new(1);
 
         // Act
-        await foreach (object item in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object item in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             _ = item; // Consume the enumerable
         }
@@ -238,7 +246,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -258,7 +266,12 @@ public sealed class RootEventEffectTests
         TestAggregate state = new(1);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => sut.DispatchAsync(null!, state, CancellationToken.None));
+        Assert.Throws<ArgumentNullException>(() => sut.DispatchAsync(
+            null!,
+            state,
+            "test-brook",
+            1L,
+            CancellationToken.None));
     }
 
     /// <summary>
@@ -275,7 +288,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }

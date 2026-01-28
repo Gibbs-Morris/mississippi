@@ -33,6 +33,8 @@ public sealed class EventEffectBaseTests
         public override async IAsyncEnumerable<object> HandleAsync(
             TestEvent eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -107,7 +109,7 @@ public sealed class EventEffectBaseTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.HandleAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.HandleAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -131,7 +133,7 @@ public sealed class EventEffectBaseTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.HandleAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.HandleAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -153,7 +155,9 @@ public sealed class EventEffectBaseTests
 
         // Act & Assert
         // Note: The exception is thrown synchronously on method call, not during async enumeration
-        IAsyncEnumerable<object> CallHandleAsync() => effect.HandleAsync(null!, state, CancellationToken.None);
+        IAsyncEnumerable<object> CallHandleAsync() =>
+            effect.HandleAsync(null!, state, "test-brook", 1L, CancellationToken.None);
+
         Assert.Throws<ArgumentNullException>(CallHandleAsync);
     }
 }

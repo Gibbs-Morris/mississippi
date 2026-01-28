@@ -15,20 +15,6 @@ namespace Spring.Domain.L0Tests.Fixtures;
 ///         This fixture eliminates boilerplate by pre-registering all reducers
 ///         for the FlaggedTransactions projection.
 ///     </para>
-///     <example>
-///         <code>
-///         // Quick projection testing
-///         var result = FlaggedTransactionsFixture.Replay(
-///             new TransactionFlagged { AccountId = "acc-1", Amount = 10000m, ... },
-///             new TransactionFlagged { AccountId = "acc-2", Amount = 20000m, ... });
-///         result.Entries.Should().HaveCount(2);
-///
-///         // Scenario testing
-///         FlaggedTransactionsFixture.Empty()
-///             .When(new TransactionFlagged { AccountId = "acc-1", Amount = 15000m, ... })
-///             .ThenAssert(p => p.Entries.Should().ContainSingle());
-///         </code>
-///     </example>
 /// </remarks>
 public static class FlaggedTransactionsFixture
 {

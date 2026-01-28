@@ -30,19 +30,6 @@ namespace Mississippi.EventSourcing.Testing.Projections;
 ///             </description>
 ///         </item>
 ///     </list>
-///     <example>
-///         <code>
-///         // Pattern 1: Apply and assert
-///         var result = reducer.Apply(initialState, depositEvent);
-///         result.Balance.Should().Be(150m);
-///
-///         // Pattern 2: ShouldProduce for exact match
-///         reducer.ShouldProduce(
-///             initialState,
-///             depositEvent,
-///             expectedProjection);
-///         </code>
-///     </example>
 /// </remarks>
 public static class ReducerTestExtensions
 {

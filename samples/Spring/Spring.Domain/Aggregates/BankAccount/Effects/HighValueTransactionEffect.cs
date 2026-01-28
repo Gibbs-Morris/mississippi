@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
-
-using Orleans.Runtime;
+using Mississippi.EventSourcing.Brooks.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue;
@@ -51,25 +50,20 @@ internal sealed class HighValueTransactionEffect : SimpleEventEffectBase<FundsDe
     ///     Initializes a new instance of the <see cref="HighValueTransactionEffect" /> class.
     /// </summary>
     /// <param name="aggregateGrainFactory">Factory for resolving aggregate grains.</param>
-    /// <param name="grainContext">The Orleans grain context providing access to the current grain identity.</param>
     /// <param name="logger">The logger instance.</param>
     /// <param name="timeProvider">The time provider for generating timestamps. Uses system time if null.</param>
     public HighValueTransactionEffect(
         IAggregateGrainFactory aggregateGrainFactory,
-        IGrainContext grainContext,
         ILogger<HighValueTransactionEffect> logger,
         TimeProvider? timeProvider = null
     )
     {
         AggregateGrainFactory = aggregateGrainFactory;
-        GrainContext = grainContext;
         Logger = logger;
         TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
     private IAggregateGrainFactory AggregateGrainFactory { get; }
-
-    private IGrainContext GrainContext { get; }
 
     private ILogger<HighValueTransactionEffect> Logger { get; }
 
@@ -79,6 +73,8 @@ internal sealed class HighValueTransactionEffect : SimpleEventEffectBase<FundsDe
     protected override async Task HandleSimpleAsync(
         FundsDeposited eventData,
         BankAccountAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     )
     {
@@ -88,8 +84,8 @@ internal sealed class HighValueTransactionEffect : SimpleEventEffectBase<FundsDe
             return;
         }
 
-        // Extract the account ID from the grain's primary key
-        string accountId = GrainContext.GrainId.Key.ToString() ?? string.Empty;
+        // Extract the entity ID (account ID) from the brook key
+        string accountId = BrookKey.FromString(brookKey).EntityId;
         Logger.LogHighValueTransactionDetected(accountId, eventData.Amount, AmlThreshold);
         FlagTransaction command = new()
         {

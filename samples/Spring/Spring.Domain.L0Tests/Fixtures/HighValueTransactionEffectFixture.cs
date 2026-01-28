@@ -18,22 +18,6 @@ namespace Spring.Domain.L0Tests.Fixtures;
 ///     <para>
 ///         Reduces the verbose effect test setup to fluent one-liners. Handles all mock wiring internally.
 ///     </para>
-///     <example>
-///         <code>
-///         // Before (verbose)
-///         var harness = EffectTestHarness&lt;HighValueTransactionEffect, FundsDeposited, BankAccountAggregate&gt;
-///             .Create()
-///             .WithGrainKey("acc-123")
-///             .WithAggregateGrainResponse&lt;TransactionInvestigationQueueAggregate&gt;("global", OperationResult.Ok());
-///         var effect = harness.Build((f, c, l) => new HighValueTransactionEffect(f, c, l));
-///         await harness.InvokeAsync(effect, event, state);
-///         harness.DispatchedCommands.ShouldHaveDispatched&lt;FlagTransaction&gt;();
-///
-///         // After (concise)
-///         var result = await HighValueTransactionEffectFixture.ProcessDeposit("acc-123", 15_000m);
-///         result.ShouldHaveDispatchedFlagTransaction();
-///         </code>
-///     </example>
 /// </remarks>
 public static class HighValueTransactionEffectFixture
 {
@@ -58,9 +42,9 @@ public static class HighValueTransactionEffectFixture
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
         HighValueTransactionEffect effect = harness.Build((
             factory,
-            context,
+            _,
             logger
-        ) => new(factory, context, logger));
+        ) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = depositAmount,

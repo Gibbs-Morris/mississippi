@@ -13,22 +13,6 @@ namespace Spring.Domain.L0Tests.Fixtures;
 ///         This fixture eliminates boilerplate by pre-registering all reducers
 ///         for the BankAccountBalance projection. Use the static factory methods for common scenarios.
 ///     </para>
-///     <example>
-///         <code>
-///         // Quick projection testing
-///         BankAccountBalanceFixture.OpenAccount("John", 100m)
-///             .When(new FundsDeposited { Amount = 50m })
-///             .ThenAssert(p => p.Balance.Should().Be(150m));
-///
-///         // Replay multiple events
-///         BankAccountBalanceFixture.CreateHarness()
-///             .ApplyEvents(
-///                 new AccountOpened { HolderName = "Test", InitialDeposit = 100m },
-///                 new FundsDeposited { Amount = 50m },
-///                 new FundsWithdrawn { Amount = 25m })
-///             .Balance.Should().Be(125m);
-///         </code>
-///     </example>
 /// </remarks>
 public static class BankAccountBalanceFixture
 {

@@ -23,13 +23,18 @@ using Orleans.Hosting;
 using Orleans.Runtime;
 
 using Spring.Domain.Projections.BankAccountBalance;
+using Spring.Domain.Services;
 using Spring.Silo.Registrations;
+using Spring.Silo.Services;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Register HttpClient factory for effects that call external APIs
 builder.Services.AddHttpClient();
+
+// Register notification service (stub for demo, replace with real provider in production)
+builder.Services.AddSingleton<INotificationService, StubNotificationService>();
 
 // Register Spring domain aggregates
 builder.Services.AddBankAccountAggregate();

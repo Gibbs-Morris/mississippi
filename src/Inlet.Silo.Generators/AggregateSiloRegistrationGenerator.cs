@@ -133,6 +133,37 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Finds fire-and-forget event effects for an aggregate in the Effects sub-namespace.
+    /// </summary>
+    private static List<FireAndForgetEffectInfo> FindFireAndForgetEffectsForAggregate(
+        INamespaceSymbol aggregateNamespace,
+        INamedTypeSymbol aggregateSymbol
+    )
+    {
+        List<FireAndForgetEffectInfo> effects = [];
+
+        // Look for Effects sub-namespace
+        INamespaceSymbol? effectsNs = aggregateNamespace.GetNamespaceMembers()
+            .FirstOrDefault(ns => ns.Name == "Effects");
+        if (effectsNs is null)
+        {
+            return effects;
+        }
+
+        // Find all types that extend FireAndForgetEventEffectBase<TEvent, TAggregate>
+        foreach (INamedTypeSymbol typeSymbol in effectsNs.GetTypeMembers())
+        {
+            FireAndForgetEffectInfo? effectInfo = TryCreateFireAndForgetEffectInfo(typeSymbol, aggregateSymbol);
+            if (effectInfo is not null)
+            {
+                effects.Add(effectInfo);
+            }
+        }
+
+        return effects;
+    }
+
+    /// <summary>
     ///     Finds command handlers for an aggregate in the Handlers sub-namespace.
     /// </summary>
     private static List<HandlerInfo> FindHandlersForAggregate(
@@ -237,8 +268,8 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         string reducersNamespace = aggregate.Model.Namespace + ".Reducers";
         sb.AppendUsing(reducersNamespace);
 
-        // Add using for effects namespace if there are effects
-        if (aggregate.Effects.Count > 0)
+        // Add using for effects namespace if there are effects (sync or fire-and-forget)
+        if ((aggregate.Effects.Count > 0) || (aggregate.FireAndForgetEffects.Count > 0))
         {
             string effectsNamespace = aggregate.Model.Namespace + ".Effects";
             sb.AppendUsing(effectsNamespace);
@@ -303,6 +334,19 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             foreach (EffectInfo effect in aggregate.Effects)
             {
                 sb.AppendLine($"services.AddEventEffect<{effect.TypeName}, {aggregate.Model.TypeName}>();");
+            }
+
+            sb.AppendLine();
+        }
+
+        // Register fire-and-forget event effects if present
+        if (aggregate.FireAndForgetEffects.Count > 0)
+        {
+            sb.AppendLine("// Register fire-and-forget event effects");
+            foreach (FireAndForgetEffectInfo effect in aggregate.FireAndForgetEffects)
+            {
+                sb.AppendLine(
+                    $"services.AddFireAndForgetEventEffect<{effect.TypeName}, {effect.EventTypeName}, {aggregate.Model.TypeName}>();");
             }
 
             sb.AppendLine();
@@ -435,6 +479,25 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Determines if a type extends FireAndForgetEventEffectBase.
+    /// </summary>
+    private static bool IsFireAndForgetEventEffectBaseType(
+        INamedTypeSymbol baseType
+    )
+    {
+        if (!baseType.IsGenericType)
+        {
+            return false;
+        }
+
+        INamedTypeSymbol? constructedFrom = baseType.ConstructedFrom;
+        return constructedFrom is not null &&
+               (constructedFrom.MetadataName == "FireAndForgetEventEffectBase`2") &&
+               (constructedFrom.ContainingNamespace.ToDisplayString() ==
+                "Mississippi.EventSourcing.Aggregates.Abstractions");
+    }
+
+    /// <summary>
     ///     Attempts to create an EffectInfo from a type symbol if it's a valid event effect.
     /// </summary>
     private static EffectInfo? TryCreateEffectInfo(
@@ -444,6 +507,32 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     {
         INamedTypeSymbol? baseType = typeSymbol.BaseType;
         if (baseType is null || !IsEventEffectBaseType(baseType))
+        {
+            return null;
+        }
+
+        // Verify the second type argument is our aggregate
+        if ((baseType.TypeArguments.Length != 2) ||
+            !SymbolEqualityComparer.Default.Equals(baseType.TypeArguments[1], aggregateSymbol))
+        {
+            return null;
+        }
+
+        // Extract event type
+        ITypeSymbol eventType = baseType.TypeArguments[0];
+        return new(typeSymbol.ToDisplayString(), typeSymbol.Name, eventType.ToDisplayString(), eventType.Name);
+    }
+
+    /// <summary>
+    ///     Attempts to create a FireAndForgetEffectInfo from a type symbol if it's a valid fire-and-forget effect.
+    /// </summary>
+    private static FireAndForgetEffectInfo? TryCreateFireAndForgetEffectInfo(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol aggregateSymbol
+    )
+    {
+        INamedTypeSymbol? baseType = typeSymbol.BaseType;
+        if (baseType is null || !IsFireAndForgetEventEffectBaseType(baseType))
         {
             return null;
         }
@@ -578,6 +667,9 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         List<EffectInfo> effects = containingNs is not null
             ? FindEffectsForAggregate(containingNs, typeSymbol, effectBaseSymbol, simpleEffectBaseSymbol)
             : [];
+        List<FireAndForgetEffectInfo> fireAndForgetEffects = containingNs is not null
+            ? FindFireAndForgetEffectsForAggregate(containingNs, typeSymbol)
+            : [];
 
         // Only generate if there are handlers or reducers
         if ((handlers.Count == 0) && (reducers.Count == 0))
@@ -587,7 +679,7 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
 
         // Output namespace: {DomainRoot}.Silo.Registrations based on aggregate namespace
         string outputNamespace = NamingConventions.GetSiloRegistrationNamespace(model.Namespace, targetRootNamespace);
-        return new(model, handlers, reducers, effects, outputNamespace);
+        return new(model, handlers, reducers, effects, fireAndForgetEffects, outputNamespace);
     }
 
     /// <summary>
@@ -649,6 +741,7 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             List<HandlerInfo> handlers,
             List<ReducerInfo> reducers,
             List<EffectInfo> effects,
+            List<FireAndForgetEffectInfo> fireAndForgetEffects,
             string outputNamespace
         )
         {
@@ -656,10 +749,13 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             Handlers = handlers;
             Reducers = reducers;
             Effects = effects;
+            FireAndForgetEffects = fireAndForgetEffects;
             OutputNamespace = outputNamespace;
         }
 
         public List<EffectInfo> Effects { get; }
+
+        public List<FireAndForgetEffectInfo> FireAndForgetEffects { get; }
 
         public List<HandlerInfo> Handlers { get; }
 
@@ -676,6 +772,33 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     private sealed class EffectInfo
     {
         public EffectInfo(
+            string fullTypeName,
+            string typeName,
+            string eventFullTypeName,
+            string eventTypeName
+        )
+        {
+            FullTypeName = fullTypeName;
+            TypeName = typeName;
+            EventFullTypeName = eventFullTypeName;
+            EventTypeName = eventTypeName;
+        }
+
+        public string EventFullTypeName { get; }
+
+        public string EventTypeName { get; }
+
+        public string FullTypeName { get; }
+
+        public string TypeName { get; }
+    }
+
+    /// <summary>
+    ///     Information about a fire-and-forget event effect.
+    /// </summary>
+    private sealed class FireAndForgetEffectInfo
+    {
+        public FireAndForgetEffectInfo(
             string fullTypeName,
             string typeName,
             string eventFullTypeName,
