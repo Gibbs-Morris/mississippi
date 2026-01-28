@@ -87,15 +87,14 @@ public sealed class AggregateScenario<TAggregate>
     {
         Type reducerType = reducer.GetType();
         Type eventType = evt.GetType();
-        foreach (Type iface in reducerType.GetInterfaces())
+        Type? iface = reducerType.GetInterfaces()
+            .FirstOrDefault(i => i.IsGenericType &&
+                                 (i.GetGenericTypeDefinition() == typeof(IEventReducer<,>)) &&
+                                 (i.GetGenericArguments()[0] == eventType));
+        if (iface is not null)
         {
-            if (iface.IsGenericType &&
-                (iface.GetGenericTypeDefinition() == typeof(IEventReducer<,>)) &&
-                (iface.GetGenericArguments()[0] == eventType))
-            {
-                MethodInfo? method = iface.GetMethod("Reduce");
-                return (TAggregate)method!.Invoke(reducer, [state, evt])!;
-            }
+            MethodInfo? method = iface.GetMethod("Reduce");
+            return (TAggregate)method!.Invoke(reducer, [state, evt])!;
         }
 
         throw new InvalidOperationException($"Cannot apply event {eventType.Name}.");
