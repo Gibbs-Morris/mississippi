@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.EventSourcing.Aggregates.Diagnostics;
 
@@ -11,9 +10,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests.Diagnostics;
 /// <summary>
 ///     Tests for aggregate command execution metrics.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("Metrics")]
 public sealed class AggregateMetricsTests
 {
     private sealed record MetricMeasurement(
@@ -27,8 +23,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandFailure should emit command count with failure result.
     /// </summary>
     [Fact]
-    [AllureFeature("Command Failure Metrics")]
-    public void RecordCommandFailureEmitsCommandCount()
+        public void RecordCommandFailureEmitsCommandCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -92,8 +87,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandFailure should emit command duration histogram.
     /// </summary>
     [Fact]
-    [AllureFeature("Command Failure Metrics")]
-    public void RecordCommandFailureEmitsDuration()
+        public void RecordCommandFailureEmitsDuration()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -138,8 +132,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandFailure should emit command error count.
     /// </summary>
     [Fact]
-    [AllureFeature("Command Failure Metrics")]
-    public void RecordCommandFailureEmitsErrorCount()
+        public void RecordCommandFailureEmitsErrorCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -184,8 +177,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandSuccess should emit command count with success result.
     /// </summary>
     [Fact]
-    [AllureFeature("Command Success Metrics")]
-    public void RecordCommandSuccessEmitsCommandCount()
+        public void RecordCommandSuccessEmitsCommandCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -249,8 +241,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandSuccess should emit events produced count when events are produced.
     /// </summary>
     [Fact]
-    [AllureFeature("Command Success Metrics")]
-    public void RecordCommandSuccessEmitsEventsProduced()
+        public void RecordCommandSuccessEmitsEventsProduced()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -294,8 +285,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandSuccess should not emit events produced count when no events are produced.
     /// </summary>
     [Fact]
-    [AllureFeature("Command Success Metrics")]
-    public void RecordCommandSuccessNoEventsProducedDoesNotEmitEventMetric()
+        public void RecordCommandSuccessNoEventsProducedDoesNotEmitEventMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -338,8 +328,7 @@ public sealed class AggregateMetricsTests
     ///     RecordConcurrencyConflict should emit concurrency conflict count.
     /// </summary>
     [Fact]
-    [AllureFeature("Concurrency Metrics")]
-    public void RecordConcurrencyConflictEmitsCount()
+        public void RecordConcurrencyConflictEmitsCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -385,8 +374,7 @@ public sealed class AggregateMetricsTests
     ///     RecordStateFetch should emit state fetch duration histogram.
     /// </summary>
     [Fact]
-    [AllureFeature("State Metrics")]
-    public void RecordStateFetchEmitsDuration()
+        public void RecordStateFetchEmitsDuration()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
