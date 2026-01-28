@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
@@ -19,9 +18,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionVersionedCacheGrain{TProjection}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionVersionedCacheGrain")]
 public sealed class UxProjectionVersionedCacheGrainTests
 {
     private const string ValidPrimaryKey = "TEST.MODULE.STREAM|entity-123|42";
@@ -64,8 +60,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should initialize properties correctly.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorInitializesPropertiesCorrectly()
+        public void ConstructorInitializesPropertiesCorrectly()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -81,8 +76,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when grainContext is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenGrainContextIsNull()
+        public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
@@ -101,8 +95,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenLoggerIsNull()
+        public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -121,8 +114,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when rootReducer is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenRootReducerIsNull()
+        public void ConstructorThrowsWhenRootReducerIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -141,8 +133,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when snapshotGrainFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
-    public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
+        public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -162,8 +153,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("State Access")]
-    public async Task GetAsyncReturnsProjectionLoadedOnActivation()
+        public async Task GetAsyncReturnsProjectionLoadedOnActivation()
     {
         // Arrange
         TestProjection expectedProjection = new(123);
@@ -191,8 +181,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("State Access")]
-    public async Task GetAsyncReturnsProjectionValueFromActivation()
+        public async Task GetAsyncReturnsProjectionValueFromActivation()
     {
         // Arrange
         TestProjection expectedProjection = new(42);
@@ -219,8 +208,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Caching")]
-    public async Task GetAsyncReturnsSameProjectionOnSubsequentCalls()
+        public async Task GetAsyncReturnsSameProjectionOnSubsequentCalls()
     {
         // Arrange
         TestProjection expectedProjection = new(99);
@@ -248,8 +236,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Key Construction")]
-    public async Task OnActivateAsyncExtractsBrookNameFromKey()
+        public async Task OnActivateAsyncExtractsBrookNameFromKey()
     {
         // Arrange
         SnapshotKey? capturedKey = null;
@@ -276,8 +263,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
-    public async Task OnActivateAsyncParsesVersionedKeyCorrectly()
+        public async Task OnActivateAsyncParsesVersionedKeyCorrectly()
     {
         // Arrange
         TestProjection testProjection = new(0);
@@ -301,8 +287,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
-    public async Task OnActivateAsyncPassesCancellationTokenToSnapshotGrain()
+        public async Task OnActivateAsyncPassesCancellationTokenToSnapshotGrain()
     {
         // Arrange
         using CancellationTokenSource cts = new();
@@ -336,8 +321,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
-    public async Task OnActivateAsyncThrowsWhenPrimaryKeyIsInvalid()
+        public async Task OnActivateAsyncThrowsWhenPrimaryKeyIsInvalid()
     {
         // Arrange
         UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(primaryKey: "invalid-key-format");
@@ -351,8 +335,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Key Construction")]
-    public async Task OnActivateAsyncUsesCorrectSnapshotKeyFormat()
+        public async Task OnActivateAsyncUsesCorrectSnapshotKeyFormat()
     {
         // Arrange
         SnapshotKey? capturedKey = null;
