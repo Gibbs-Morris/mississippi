@@ -1,4 +1,3 @@
-using Allure.Xunit.Attributes;
 
 using Mississippi.Aqueduct.Abstractions.Messages;
 
@@ -8,9 +7,6 @@ namespace Mississippi.Aqueduct.Abstractions.L0Tests.Messages;
 /// <summary>
 ///     Tests for <see cref="ServerMessage" />.
 /// </summary>
-[AllureParentSuite("ASP.NET Core")]
-[AllureSuite("SignalR Orleans")]
-[AllureSubSuite("Server Message")]
 public sealed class ServerMessageTests
 {
     /// <summary>
