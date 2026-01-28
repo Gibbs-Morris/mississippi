@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -17,9 +16,6 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotStorageProvider" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots Cosmos")]
-[AllureSubSuite("Storage Provider")]
 public sealed class SnapshotStorageProviderTests
 {
     private static readonly SnapshotStreamKey StreamKey = new("TEST.BROOK", "type", "id", "hash");
