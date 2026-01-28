@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -15,9 +13,6 @@ namespace Mississippi.Inlet.Silo.Generators.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SagaSiloRegistrationGenerator" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Silo Generators")]
-[AllureSubSuite("Saga Silo Registration Generator")]
 public class SagaSiloRegistrationGeneratorTests
 {
     /// <summary>
@@ -121,9 +116,6 @@ public class SagaSiloRegistrationGeneratorTests
     ///     Verifies that the generator handles a saga with only reducers (no steps/compensations).
     /// </summary>
     [Fact]
-    [AllureTag("L0")]
-    [AllureFeature("Code Generation")]
-    [AllureStory("Generate saga registration for reducer-only saga")]
     public void GeneratorHandlesSagaWithOnlyReducers()
     {
         // Arrange: Saga with only reducers
@@ -159,7 +151,8 @@ public class SagaSiloRegistrationGeneratorTests
                           """;
 
         // Act
-        (var _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) = RunGenerator(source);
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(source);
 
         // Assert: No errors
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
@@ -180,9 +173,6 @@ public class SagaSiloRegistrationGeneratorTests
     ///     Verifies that the generator produces a valid registration file for a saga with steps, compensations, and reducers.
     /// </summary>
     [Fact]
-    [AllureTag("L0")]
-    [AllureFeature("Code Generation")]
-    [AllureStory("Generate saga registration extension methods")]
     public void GeneratorProducesValidRegistrationForCompleteSaga()
     {
         // Arrange: Saga with steps, compensations, and reducers
@@ -243,7 +233,8 @@ public class SagaSiloRegistrationGeneratorTests
                           """;
 
         // Act
-        (var _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) = RunGenerator(source);
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(source);
 
         // Assert: No generator diagnostics
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
@@ -283,9 +274,6 @@ public class SagaSiloRegistrationGeneratorTests
     ///     Verifies that the generator does not produce output when the saga attribute is missing.
     /// </summary>
     [Fact]
-    [AllureTag("L0")]
-    [AllureFeature("Code Generation")]
-    [AllureStory("Skip generation for unmarked saga types")]
     public void GeneratorSkipsSagaWithoutAttribute()
     {
         // Arrange: Saga without [GenerateSagaEndpoints] attribute
@@ -304,7 +292,8 @@ public class SagaSiloRegistrationGeneratorTests
                           """;
 
         // Act
-        (var _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) = RunGenerator(source);
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(source);
 
         // Assert: No errors
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
@@ -318,9 +307,6 @@ public class SagaSiloRegistrationGeneratorTests
     ///     Verifies that the generator produces correct namespace when RootNamespace differs from assembly name.
     /// </summary>
     [Fact]
-    [AllureTag("L0")]
-    [AllureFeature("Code Generation")]
-    [AllureStory("Use correct namespace for saga registrations")]
     public void GeneratorUsesCorrectTargetNamespace()
     {
         // Arrange: Saga in a domain namespace
@@ -356,7 +342,8 @@ public class SagaSiloRegistrationGeneratorTests
                           """;
 
         // Act
-        (var _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) = RunGenerator(source);
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(source);
 
         // Assert: No errors
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));

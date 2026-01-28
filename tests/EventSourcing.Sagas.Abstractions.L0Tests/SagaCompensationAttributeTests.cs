@@ -1,16 +1,11 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.Sagas.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SagaCompensationAttribute" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Sagas Abstractions")]
-[AllureSubSuite("Saga Compensation Attribute")]
 public sealed class SagaCompensationAttributeTests
 {
     /// <summary>
@@ -28,7 +23,6 @@ public sealed class SagaCompensationAttributeTests
     ///     Constructor should set ForStep property.
     /// </summary>
     [Fact]
-    [AllureFeature("Attribute Construction")]
     public void ConstructorSetsForStepProperty()
     {
         // Arrange - verify the sample step is meaningful
@@ -45,7 +39,6 @@ public sealed class SagaCompensationAttributeTests
     ///     Constructor should throw when forStep is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void ConstructorThrowsWhenForStepIsNull()
     {
         // Act & Assert

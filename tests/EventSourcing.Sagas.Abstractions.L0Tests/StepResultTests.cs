@@ -1,24 +1,18 @@
 using System;
 using System.Collections.Generic;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.Sagas.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="StepResult" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Sagas Abstractions")]
-[AllureSubSuite("Step Result")]
 public sealed class StepResultTests
 {
     /// <summary>
     ///     Failed should allow null error message.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void FailedAllowsNullErrorMessage()
     {
         // Act
@@ -34,7 +28,6 @@ public sealed class StepResultTests
     ///     Failed should return a failed result with error details.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void FailedReturnsFailureWithErrorDetails()
     {
         // Act
@@ -51,7 +44,6 @@ public sealed class StepResultTests
     ///     Failed with empty error code should throw ArgumentException.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void FailedWithEmptyErrorCodeThrowsArgumentException()
     {
         // Act & Assert
@@ -62,7 +54,6 @@ public sealed class StepResultTests
     ///     Failed with null error code should throw ArgumentException.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void FailedWithNullErrorCodeThrowsArgumentException()
     {
         // Act & Assert
@@ -73,7 +64,6 @@ public sealed class StepResultTests
     ///     Failed with whitespace error code should throw ArgumentException.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void FailedWithWhitespaceErrorCodeThrowsArgumentException()
     {
         // Act & Assert
@@ -84,7 +74,6 @@ public sealed class StepResultTests
     ///     Succeeded should return cached instance for efficiency.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void SucceededReturnsSameInstance()
     {
         // Act
@@ -99,7 +88,6 @@ public sealed class StepResultTests
     ///     Succeeded should return a successful result with no events.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void SucceededReturnsSuccessWithNoEvents()
     {
         // Act
@@ -116,7 +104,6 @@ public sealed class StepResultTests
     ///     Succeeded with events should return a successful result with events.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void SucceededWithEventsReturnsSuccessWithEvents()
     {
         // Arrange
@@ -143,18 +130,16 @@ public sealed class StepResultTests
     ///     Succeeded with null events array should throw ArgumentNullException.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void SucceededWithNullEventsArrayThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => StepResult.Succeeded(null!));
+        Assert.Throws<ArgumentNullException>(() => StepResult.Succeeded((object[])null!));
     }
 
     /// <summary>
     ///     Succeeded with null events list should throw ArgumentNullException.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void SucceededWithNullEventsListThrowsArgumentNullException()
     {
         // Act & Assert

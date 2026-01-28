@@ -1,23 +1,17 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.Sagas.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SagaStepAttribute" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Sagas Abstractions")]
-[AllureSubSuite("Saga Step Attribute")]
 public sealed class SagaStepAttributeTests
 {
     /// <summary>
     ///     Constructor should set Order property.
     /// </summary>
     [Fact]
-    [AllureFeature("Attribute Construction")]
     public void ConstructorSetsOrderProperty()
     {
         // Act
@@ -35,7 +29,6 @@ public sealed class SagaStepAttributeTests
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(-100)]
-    [AllureFeature("Argument Validation")]
     public void ConstructorThrowsWhenOrderLessThanOne(
         int invalidOrder
     )
@@ -50,7 +43,6 @@ public sealed class SagaStepAttributeTests
     ///     Timeout property should be null by default.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
     public void TimeoutPropertyIsNullByDefault()
     {
         // Act
@@ -64,7 +56,6 @@ public sealed class SagaStepAttributeTests
     ///     Timeout property should be settable.
     /// </summary>
     [Fact]
-    [AllureFeature("Attribute Construction")]
     public void TimeoutPropertyIsSettable()
     {
         // Act

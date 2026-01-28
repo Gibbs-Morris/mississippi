@@ -1,21 +1,14 @@
-using Allure.Xunit.Attributes;
-
-
 namespace Mississippi.EventSourcing.Sagas.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SagaOptionsAttribute" /> default values.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Sagas Abstractions")]
-[AllureSubSuite("Saga Options Attribute")]
 public sealed class SagaOptionsAttributeTests
 {
     /// <summary>
     ///     Default CompensationStrategy should be Immediate.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
     public void DefaultCompensationStrategyIsImmediate()
     {
         // Act
@@ -29,7 +22,6 @@ public sealed class SagaOptionsAttributeTests
     ///     Default MaxRetries should be 3.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
     public void DefaultMaxRetriesIsThree()
     {
         // Act
@@ -43,7 +35,6 @@ public sealed class SagaOptionsAttributeTests
     ///     Default DefaultStepTimeout should be null.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
     public void DefaultStepTimeoutIsNull()
     {
         // Act
@@ -57,7 +48,6 @@ public sealed class SagaOptionsAttributeTests
     ///     Default TimeoutBehavior should be FailAndCompensate.
     /// </summary>
     [Fact]
-    [AllureFeature("Default Values")]
     public void DefaultTimeoutBehaviorIsFailAndCompensate()
     {
         // Act
@@ -71,7 +61,6 @@ public sealed class SagaOptionsAttributeTests
     ///     Properties should be settable.
     /// </summary>
     [Fact]
-    [AllureFeature("Attribute Construction")]
     public void PropertiesAreSettable()
     {
         // Act

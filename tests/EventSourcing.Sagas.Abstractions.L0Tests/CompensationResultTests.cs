@@ -1,23 +1,17 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 
 namespace Mississippi.EventSourcing.Sagas.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="CompensationResult" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Sagas Abstractions")]
-[AllureSubSuite("Compensation Result")]
 public sealed class CompensationResultTests
 {
     /// <summary>
     ///     Failed should allow null error message.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void FailedAllowsNullErrorMessage()
     {
         // Act
@@ -33,7 +27,6 @@ public sealed class CompensationResultTests
     ///     Failed should return a failed result with error details.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void FailedReturnsFailureWithErrorDetails()
     {
         // Act
@@ -50,7 +43,6 @@ public sealed class CompensationResultTests
     ///     Failed with empty error code should throw ArgumentException.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void FailedWithEmptyErrorCodeThrowsArgumentException()
     {
         // Act & Assert
@@ -61,7 +53,6 @@ public sealed class CompensationResultTests
     ///     Failed with null error code should throw ArgumentException.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void FailedWithNullErrorCodeThrowsArgumentException()
     {
         // Act & Assert
@@ -72,7 +63,6 @@ public sealed class CompensationResultTests
     ///     Failed with whitespace error code should throw ArgumentException.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void FailedWithWhitespaceErrorCodeThrowsArgumentException()
     {
         // Act & Assert
@@ -83,7 +73,6 @@ public sealed class CompensationResultTests
     ///     Skipped should return cached instance for efficiency.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void SkippedReturnsSameInstance()
     {
         // Act
@@ -98,7 +87,6 @@ public sealed class CompensationResultTests
     ///     Skipped should return a skipped result.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void SkippedReturnsSkippedResult()
     {
         // Act
@@ -115,7 +103,6 @@ public sealed class CompensationResultTests
     ///     Succeeded should return cached instance for efficiency.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void SucceededReturnsSameInstance()
     {
         // Act
@@ -130,7 +117,6 @@ public sealed class CompensationResultTests
     ///     Succeeded should return a successful result.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
     public void SucceededReturnsSuccessResult()
     {
         // Act
