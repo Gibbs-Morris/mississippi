@@ -34,7 +34,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         </item>
 ///     </list>
 /// </remarks>
-
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class GenerateCommandAttribute : Attribute
 {
