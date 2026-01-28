@@ -30,10 +30,8 @@ internal sealed class StubNotificationService : INotificationService
     /// <param name="logger">The logger instance.</param>
     public StubNotificationService(
         ILogger<StubNotificationService> logger
-    )
-    {
+    ) =>
         Logger = logger;
-    }
 
     private ILogger<StubNotificationService> Logger { get; }
 

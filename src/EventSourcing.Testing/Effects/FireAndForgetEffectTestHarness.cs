@@ -38,10 +38,6 @@ public sealed class FireAndForgetEffectTestHarness<TEffect, TEvent, TAggregate>
 
     private readonly List<(Type AggregateType, string EntityId, object Command)> dispatchedCommands = [];
 
-    private string brookKey = "TEST.DOMAIN.ENTITY|test-entity";
-
-    private long eventPosition = 1;
-
     private FireAndForgetEffectTestHarness()
     {
     }
@@ -49,7 +45,7 @@ public sealed class FireAndForgetEffectTestHarness<TEffect, TEvent, TAggregate>
     /// <summary>
     ///     Gets the configured brook key for this test.
     /// </summary>
-    public string BrookKey => brookKey;
+    public string BrookKey { get; private set; } = "TEST.DOMAIN.ENTITY|test-entity";
 
     /// <summary>
     ///     Gets the list of commands dispatched to aggregate grains during effect execution.
@@ -60,7 +56,7 @@ public sealed class FireAndForgetEffectTestHarness<TEffect, TEvent, TAggregate>
     /// <summary>
     ///     Gets the configured event position for this test.
     /// </summary>
-    public long EventPosition => eventPosition;
+    public long EventPosition { get; private set; } = 1;
 
     /// <summary>
     ///     Gets the logger mock for verifying log calls.
@@ -117,7 +113,7 @@ public sealed class FireAndForgetEffectTestHarness<TEffect, TEvent, TAggregate>
     )
     {
         ArgumentNullException.ThrowIfNull(effect);
-        await effect.HandleAsync(eventData, aggregateState, brookKey, eventPosition, cancellationToken);
+        await effect.HandleAsync(eventData, aggregateState, BrookKey, EventPosition, cancellationToken);
     }
 
     /// <summary>
@@ -154,7 +150,7 @@ public sealed class FireAndForgetEffectTestHarness<TEffect, TEvent, TAggregate>
         string key
     )
     {
-        brookKey = key;
+        BrookKey = key;
         return this;
     }
 
@@ -167,7 +163,7 @@ public sealed class FireAndForgetEffectTestHarness<TEffect, TEvent, TAggregate>
         string entityId
     )
     {
-        brookKey = $"TEST.DOMAIN.ENTITY|{entityId}";
+        BrookKey = $"TEST.DOMAIN.ENTITY|{entityId}";
         return this;
     }
 
@@ -180,7 +176,7 @@ public sealed class FireAndForgetEffectTestHarness<TEffect, TEvent, TAggregate>
         long position
     )
     {
-        eventPosition = position;
+        EventPosition = position;
         return this;
     }
 }

@@ -17,7 +17,8 @@ internal static partial class WithdrawalNotificationEffectLoggerExtensions
     /// <param name="remainingBalance">The remaining balance after withdrawal.</param>
     [LoggerMessage(
         Level = LogLevel.Debug,
-        Message = "Sending withdrawal notification for account {AccountId}: £{Amount} withdrawn, £{RemainingBalance} remaining")]
+        Message =
+            "Sending withdrawal notification for account {AccountId}: £{Amount} withdrawn, £{RemainingBalance} remaining")]
     public static partial void LogSendingWithdrawalNotification(
         this ILogger logger,
         string accountId,

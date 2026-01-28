@@ -36,8 +36,7 @@ namespace Spring.Domain.Aggregates.BankAccount.Effects;
 ///         </list>
 ///     </para>
 /// </remarks>
-internal sealed class WithdrawalNotificationEffect
-    : FireAndForgetEventEffectBase<FundsWithdrawn, BankAccountAggregate>
+internal sealed class WithdrawalNotificationEffect : FireAndForgetEventEffectBase<FundsWithdrawn, BankAccountAggregate>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="WithdrawalNotificationEffect" /> class.

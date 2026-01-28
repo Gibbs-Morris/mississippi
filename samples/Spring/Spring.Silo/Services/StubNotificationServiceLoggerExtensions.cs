@@ -17,7 +17,8 @@ internal static partial class StubNotificationServiceLoggerExtensions
     /// <param name="remainingBalance">The remaining balance.</param>
     [LoggerMessage(
         Level = LogLevel.Information,
-        Message = "[STUB] Would send withdrawal notification: account {AccountId}, £{Amount} withdrawn, £{RemainingBalance} remaining")]
+        Message =
+            "[STUB] Would send withdrawal notification: account {AccountId}, £{Amount} withdrawn, £{RemainingBalance} remaining")]
     public static partial void LogWithdrawalNotification(
         this ILogger logger,
         string accountId,
