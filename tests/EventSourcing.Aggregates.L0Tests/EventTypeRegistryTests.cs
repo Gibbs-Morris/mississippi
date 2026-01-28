@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 
 namespace Mississippi.EventSourcing.Aggregates.L0Tests;
@@ -8,9 +7,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="EventTypeRegistry" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("Event Type Registry")]
 public class EventTypeRegistryTests
 {
     /// <summary>
