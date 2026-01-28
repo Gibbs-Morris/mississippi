@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
@@ -16,9 +15,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="AggregateGrainFactory" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("Grain Factory")]
 public class AggregateGrainFactoryTests
 {
     /// <summary>
