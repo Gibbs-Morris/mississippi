@@ -117,12 +117,11 @@ public sealed class ReducerTestHarness<TProjection>
         where TEvent : class
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        foreach (IEventReducer<TProjection> reducer in reducers)
+        IEventReducer<TEvent, TProjection>? typedReducer =
+            reducers.OfType<IEventReducer<TEvent, TProjection>>().FirstOrDefault();
+        if (typedReducer is not null)
         {
-            if (reducer is IEventReducer<TEvent, TProjection> typedReducer)
-            {
-                return typedReducer.Reduce(InitialState, eventData);
-            }
+            return typedReducer.Reduce(InitialState, eventData);
         }
 
         throw new InvalidOperationException(
