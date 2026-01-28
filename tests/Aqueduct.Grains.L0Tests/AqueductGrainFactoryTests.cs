@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 
@@ -17,17 +16,13 @@ namespace Mississippi.Aqueduct.Grains.L0Tests;
 /// <summary>
 ///     Tests for <see cref="AqueductGrainFactory" /> in the Grains assembly.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Grains")]
-[AllureSubSuite("AqueductGrainFactory")]
 public sealed class AqueductGrainFactoryTests
 {
     /// <summary>
     ///     Constructor should throw when grainFactory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void ConstructorThrowsWhenGrainFactoryIsNull()
+        public void ConstructorThrowsWhenGrainFactoryIsNull()
     {
         // Arrange
         ILogger<AqueductGrainFactory> logger = Substitute.For<ILogger<AqueductGrainFactory>>();
@@ -40,8 +35,7 @@ public sealed class AqueductGrainFactoryTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
-    public void ConstructorThrowsWhenLoggerIsNull()
+        public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -54,8 +48,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetClientGrain with key should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
-    public void GetClientGrainWithKeyReturnsGrain()
+        public void GetClientGrainWithKeyReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -77,8 +70,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetClientGrain with strings should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
-    public void GetClientGrainWithStringsReturnsGrain()
+        public void GetClientGrainWithStringsReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -99,8 +91,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetGroupGrain with key should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
-    public void GetGroupGrainWithKeyReturnsGrain()
+        public void GetGroupGrainWithKeyReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -122,8 +113,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetGroupGrain with strings should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
-    public void GetGroupGrainWithStringsReturnsGrain()
+        public void GetGroupGrainWithStringsReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -144,8 +134,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetServerDirectoryGrain with default should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
-    public void GetServerDirectoryGrainDefaultReturnsGrain()
+        public void GetServerDirectoryGrainDefaultReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -165,8 +154,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetServerDirectoryGrain with key should return grain from factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Grain Resolution")]
-    public void GetServerDirectoryGrainWithKeyReturnsGrain()
+        public void GetServerDirectoryGrainWithKeyReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
