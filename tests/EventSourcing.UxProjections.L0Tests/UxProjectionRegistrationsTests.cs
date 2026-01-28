@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,9 +12,6 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionRegistrations" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections")]
-[AllureSubSuite("UxProjectionRegistrations")]
 public sealed class UxProjectionRegistrationsTests
 {
     /// <summary>
