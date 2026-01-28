@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -20,7 +19,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-        public void EmitterHasAdditionalAttributesParameter()
+    public void EmitterHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Emitter).GetProperty("AdditionalAttributes");
@@ -36,7 +35,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has OnActivate EventCallback.
     /// </summary>
     [Fact]
-        public void EmitterHasOnActivateEventCallback()
+    public void EmitterHasOnActivateEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(Emitter).GetProperty("OnActivate");
@@ -52,7 +51,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has OnFocus EventCallback.
     /// </summary>
     [Fact]
-        public void EmitterHasOnFocusEventCallback()
+    public void EmitterHasOnFocusEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(Emitter).GetProperty("OnFocus");
@@ -68,7 +67,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter has State parameter.
     /// </summary>
     [Fact]
-        public void EmitterHasStateParameter()
+    public void EmitterHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Emitter).GetProperty("State");
@@ -83,7 +82,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter inherits from ComponentBase.
     /// </summary>
     [Fact]
-        public void EmitterInheritsFromComponentBase()
+    public void EmitterInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(Emitter)));
@@ -93,7 +92,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter invokes OnActivate when clicked.
     /// </summary>
     [Fact]
-        public void EmitterInvokesOnActivateWhenClicked()
+    public void EmitterInvokesOnActivateWhenClicked()
     {
         // Arrange
         bool wasActivated = false;
@@ -118,7 +117,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter invokes OnFocus when focused.
     /// </summary>
     [Fact]
-        public void EmitterInvokesOnFocusWhenFocused()
+    public void EmitterInvokesOnFocusWhenFocused()
     {
         // Arrange
         bool wasFocused = false;
@@ -143,7 +142,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders additional attributes.
     /// </summary>
     [Fact]
-        public void EmitterRendersAdditionalAttributes()
+    public void EmitterRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("data-testid", "emitter-1"));
@@ -156,7 +155,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders custom state.
     /// </summary>
     [Fact]
-        public void EmitterRendersCustomState()
+    public void EmitterRendersCustomState()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(c => c.State, RefractionStates.Active));
@@ -170,7 +169,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders seed indicator.
     /// </summary>
     [Fact]
-        public void EmitterRendersSeedIndicator()
+    public void EmitterRendersSeedIndicator()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>();
@@ -183,7 +182,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders with button role for accessibility.
     /// </summary>
     [Fact]
-        public void EmitterRendersWithButtonRoleForAccessibility()
+    public void EmitterRendersWithButtonRoleForAccessibility()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>();
@@ -197,7 +196,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders with default state.
     /// </summary>
     [Fact]
-        public void EmitterRendersWithDefaultState()
+    public void EmitterRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>();
@@ -211,7 +210,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter renders with tabindex for keyboard accessibility.
     /// </summary>
     [Fact]
-        public void EmitterRendersWithTabindexForKeyboardAccessibility()
+    public void EmitterRendersWithTabindexForKeyboardAccessibility()
     {
         // Act
         using IRenderedComponent<Emitter> cut = Render<Emitter>();
@@ -225,7 +224,7 @@ public sealed class EmitterTests : BunitContext
     ///     Emitter State defaults to Idle.
     /// </summary>
     [Fact]
-        public void EmitterStateDefaultsToIdle()
+    public void EmitterStateDefaultsToIdle()
     {
         // Arrange
         Emitter emitter = new();

@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -19,7 +18,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-        public void CommandOrbitHasAdditionalAttributesParameter()
+    public void CommandOrbitHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(CommandOrbit).GetProperty("AdditionalAttributes");
@@ -35,7 +34,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit has ChildContent parameter.
     /// </summary>
     [Fact]
-        public void CommandOrbitHasChildContentParameter()
+    public void CommandOrbitHasChildContentParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(CommandOrbit).GetProperty("ChildContent");
@@ -51,7 +50,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit has OnActionSelected EventCallback.
     /// </summary>
     [Fact]
-        public void CommandOrbitHasOnActionSelectedEventCallback()
+    public void CommandOrbitHasOnActionSelectedEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(CommandOrbit).GetProperty("OnActionSelected");
@@ -67,7 +66,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit has OnDismiss EventCallback.
     /// </summary>
     [Fact]
-        public void CommandOrbitHasOnDismissEventCallback()
+    public void CommandOrbitHasOnDismissEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(CommandOrbit).GetProperty("OnDismiss");
@@ -82,7 +81,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit has State parameter.
     /// </summary>
     [Fact]
-        public void CommandOrbitHasStateParameter()
+    public void CommandOrbitHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(CommandOrbit).GetProperty("State");
@@ -97,7 +96,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit inherits from ComponentBase.
     /// </summary>
     [Fact]
-        public void CommandOrbitInheritsFromComponentBase()
+    public void CommandOrbitInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(CommandOrbit)));
@@ -107,7 +106,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit renders additional attributes.
     /// </summary>
     [Fact]
-        public void CommandOrbitRendersAdditionalAttributes()
+    public void CommandOrbitRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<CommandOrbit>
@@ -121,7 +120,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit renders child content.
     /// </summary>
     [Fact]
-        public void CommandOrbitRendersChildContent()
+    public void CommandOrbitRendersChildContent()
     {
         // Act
         using IRenderedComponent<CommandOrbit> cut = Render<CommandOrbit>(p => p.AddChildContent(
@@ -135,7 +134,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit renders custom state.
     /// </summary>
     [Fact]
-        public void CommandOrbitRendersCustomState()
+    public void CommandOrbitRendersCustomState()
     {
         // Act
         using IRenderedComponent<CommandOrbit> cut = Render<CommandOrbit>(p => p.Add(
@@ -151,7 +150,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit renders with default state.
     /// </summary>
     [Fact]
-        public void CommandOrbitRendersWithDefaultState()
+    public void CommandOrbitRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<CommandOrbit> cut = Render<CommandOrbit>();
@@ -165,7 +164,7 @@ public sealed class CommandOrbitTests : BunitContext
     ///     CommandOrbit State defaults to Latent.
     /// </summary>
     [Fact]
-        public void CommandOrbitStateDefaultsToLatent()
+    public void CommandOrbitStateDefaultsToLatent()
     {
         // Arrange
         CommandOrbit orbit = new();

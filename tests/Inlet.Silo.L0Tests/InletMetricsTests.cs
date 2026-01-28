@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 
-
 using Mississippi.Inlet.Silo.Diagnostics;
 
 
@@ -76,7 +75,7 @@ public sealed class InletMetricsTests : IDisposable
     ///     InletMetrics MeterName should be correct.
     /// </summary>
     [Fact]
-        public void MeterNameIsCorrect()
+    public void MeterNameIsCorrect()
     {
         Assert.Equal("Mississippi.Inlet", InletMetrics.MeterName);
     }
@@ -85,7 +84,7 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordCursorEventReceived should record a counter measurement.
     /// </summary>
     [Fact]
-        public void RecordCursorEventReceivedRecordsCounter()
+    public void RecordCursorEventReceivedRecordsCounter()
     {
         // Arrange
         string brookName = "test-brook";
@@ -105,7 +104,7 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordNotificationError should record a counter measurement with tags.
     /// </summary>
     [Fact]
-        public void RecordNotificationErrorRecordsCounterWithTags()
+    public void RecordNotificationErrorRecordsCounterWithTags()
     {
         // Arrange
         string projectionPath = "/api/test";
@@ -127,7 +126,7 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordNotificationSent should record counter and histogram measurements.
     /// </summary>
     [Fact]
-        public void RecordNotificationSentRecordsCounterAndHistogram()
+    public void RecordNotificationSentRecordsCounterAndHistogram()
     {
         // Arrange
         string projectionPath = "/api/orders";
@@ -158,7 +157,7 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordSubscription should record a counter measurement with action tag.
     /// </summary>
     [Fact]
-        public void RecordSubscriptionRecordsCounterWithActionTag()
+    public void RecordSubscriptionRecordsCounterWithActionTag()
     {
         // Arrange
         string projectionPath = "/api/customers";
@@ -180,7 +179,7 @@ public sealed class InletMetricsTests : IDisposable
     ///     RecordSubscription with unsubscribe action should record correctly.
     /// </summary>
     [Fact]
-        public void RecordSubscriptionWithUnsubscribeRecordsCorrectly()
+    public void RecordSubscriptionWithUnsubscribeRecordsCorrectly()
     {
         // Arrange
         string projectionPath = "/api/products";

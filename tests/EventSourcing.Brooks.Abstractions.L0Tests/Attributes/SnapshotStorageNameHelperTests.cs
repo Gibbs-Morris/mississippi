@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 
-
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 

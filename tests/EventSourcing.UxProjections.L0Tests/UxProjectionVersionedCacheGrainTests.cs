@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Reducers.Abstractions;
@@ -60,7 +59,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should initialize properties correctly.
     /// </summary>
     [Fact]
-        public void ConstructorInitializesPropertiesCorrectly()
+    public void ConstructorInitializesPropertiesCorrectly()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -76,7 +75,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when grainContext is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenGrainContextIsNull()
+    public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
@@ -95,7 +94,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenLoggerIsNull()
+    public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -114,7 +113,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when rootReducer is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenRootReducerIsNull()
+    public void ConstructorThrowsWhenRootReducerIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -133,7 +132,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     ///     Constructor should throw when snapshotGrainFactory is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
+    public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -153,7 +152,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturnsProjectionLoadedOnActivation()
+    public async Task GetAsyncReturnsProjectionLoadedOnActivation()
     {
         // Arrange
         TestProjection expectedProjection = new(123);
@@ -181,7 +180,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturnsProjectionValueFromActivation()
+    public async Task GetAsyncReturnsProjectionValueFromActivation()
     {
         // Arrange
         TestProjection expectedProjection = new(42);
@@ -208,7 +207,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturnsSameProjectionOnSubsequentCalls()
+    public async Task GetAsyncReturnsSameProjectionOnSubsequentCalls()
     {
         // Arrange
         TestProjection expectedProjection = new(99);
@@ -236,7 +235,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncExtractsBrookNameFromKey()
+    public async Task OnActivateAsyncExtractsBrookNameFromKey()
     {
         // Arrange
         SnapshotKey? capturedKey = null;
@@ -263,7 +262,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncParsesVersionedKeyCorrectly()
+    public async Task OnActivateAsyncParsesVersionedKeyCorrectly()
     {
         // Arrange
         TestProjection testProjection = new(0);
@@ -287,7 +286,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncPassesCancellationTokenToSnapshotGrain()
+    public async Task OnActivateAsyncPassesCancellationTokenToSnapshotGrain()
     {
         // Arrange
         using CancellationTokenSource cts = new();
@@ -321,7 +320,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncThrowsWhenPrimaryKeyIsInvalid()
+    public async Task OnActivateAsyncThrowsWhenPrimaryKeyIsInvalid()
     {
         // Arrange
         UxProjectionVersionedCacheGrain<TestProjection> grain = CreateGrain(primaryKey: "invalid-key-format");
@@ -335,7 +334,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncUsesCorrectSnapshotKeyFormat()
+    public async Task OnActivateAsyncUsesCorrectSnapshotKeyFormat()
     {
         // Arrange
         SnapshotKey? capturedKey = null;

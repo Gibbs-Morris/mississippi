@@ -1,6 +1,5 @@
 using System;
 
-
 using Microsoft.CodeAnalysis;
 
 using Mississippi.Inlet.Generators.Core.Analysis;

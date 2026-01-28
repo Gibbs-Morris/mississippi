@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -18,7 +17,7 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should accept null configuration action.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies null action.")]
@@ -38,7 +37,7 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should apply configuration options.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies configuration.")]
@@ -61,7 +60,7 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should register HubLifetimeManager via TryAddSingleton.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies registration.")]
@@ -85,7 +84,7 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should register SignalR services.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies registration.")]
@@ -105,7 +104,7 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should return the same service collection for chaining.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies chaining.")]
@@ -126,7 +125,7 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletServer should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Null argument test.")]
@@ -143,7 +142,7 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletSignalRGrainObserver should return the same service collection for chaining.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Test method verifies chaining.")]
@@ -163,7 +162,7 @@ public sealed class InletServerRegistrationsTests
     ///     AddInletSignalRGrainObserver should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "Null argument test.")]

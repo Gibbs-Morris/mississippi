@@ -1,6 +1,5 @@
 using System;
 
-
 using EventStorageNameAttribute = Mississippi.EventSourcing.Brooks.Abstractions.Attributes.EventStorageNameAttribute;
 
 

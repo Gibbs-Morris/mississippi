@@ -1,4 +1,3 @@
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.SignalRConnection;
@@ -15,7 +14,7 @@ public sealed class SignalRConnectionRegistrationsTests
     ///     AddSignalRConnectionFeature can be called multiple times without error.
     /// </summary>
     [Fact]
-        public void AddSignalRConnectionFeatureCanBeCalledMultipleTimes()
+    public void AddSignalRConnectionFeatureCanBeCalledMultipleTimes()
     {
         // Arrange
         ServiceCollection services = new();
@@ -32,7 +31,7 @@ public sealed class SignalRConnectionRegistrationsTests
     ///     AddSignalRConnectionFeature registers all reducers.
     /// </summary>
     [Fact]
-        public void AddSignalRConnectionFeatureRegistersAllReducers()
+    public void AddSignalRConnectionFeatureRegistersAllReducers()
     {
         // Arrange
         ServiceCollection services = new();
@@ -49,7 +48,7 @@ public sealed class SignalRConnectionRegistrationsTests
     ///     AddSignalRConnectionFeature returns the service collection for chaining.
     /// </summary>
     [Fact]
-        public void AddSignalRConnectionFeatureReturnsServiceCollection()
+    public void AddSignalRConnectionFeatureReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();

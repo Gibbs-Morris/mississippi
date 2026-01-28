@@ -1,5 +1,3 @@
-
-
 namespace Mississippi.Common.Abstractions.L0Tests;
 
 /// <summary>
@@ -11,7 +9,7 @@ public sealed class MississippiDefaultsTests
     ///     ContainerIds.Brooks should be "brooks".
     /// </summary>
     [Fact]
-        public void ContainerIdsBrooksHasExpectedValue()
+    public void ContainerIdsBrooksHasExpectedValue()
     {
         // Assert
         Assert.Equal("brooks", MississippiDefaults.ContainerIds.Brooks);
@@ -21,7 +19,7 @@ public sealed class MississippiDefaultsTests
     ///     ContainerIds.Locks should be "locks".
     /// </summary>
     [Fact]
-        public void ContainerIdsLocksHasExpectedValue()
+    public void ContainerIdsLocksHasExpectedValue()
     {
         // Assert
         Assert.Equal("locks", MississippiDefaults.ContainerIds.Locks);
@@ -31,7 +29,7 @@ public sealed class MississippiDefaultsTests
     ///     ContainerIds.Snapshots should be "snapshots".
     /// </summary>
     [Fact]
-        public void ContainerIdsSnapshotsHasExpectedValue()
+    public void ContainerIdsSnapshotsHasExpectedValue()
     {
         // Assert
         Assert.Equal("snapshots", MississippiDefaults.ContainerIds.Snapshots);
@@ -41,7 +39,7 @@ public sealed class MississippiDefaultsTests
     ///     DatabaseId should be "mississippi".
     /// </summary>
     [Fact]
-        public void DatabaseIdHasExpectedValue()
+    public void DatabaseIdHasExpectedValue()
     {
         // Assert
         Assert.Equal("mississippi", MississippiDefaults.DatabaseId);
@@ -51,7 +49,7 @@ public sealed class MississippiDefaultsTests
     ///     ServiceKeys.BlobLocking should be "mississippi-blob-locking".
     /// </summary>
     [Fact]
-        public void ServiceKeysBlobLockingHasExpectedValue()
+    public void ServiceKeysBlobLockingHasExpectedValue()
     {
         // Assert
         Assert.Equal("mississippi-blob-locking", MississippiDefaults.ServiceKeys.BlobLocking);
@@ -61,7 +59,7 @@ public sealed class MississippiDefaultsTests
     ///     ServiceKeys.CosmosBrooks should be "mississippi-cosmos-brooks".
     /// </summary>
     [Fact]
-        public void ServiceKeysCosmosBrooksHasExpectedValue()
+    public void ServiceKeysCosmosBrooksHasExpectedValue()
     {
         // Assert
         Assert.Equal("mississippi-cosmos-brooks", MississippiDefaults.ServiceKeys.CosmosBrooks);
@@ -71,7 +69,7 @@ public sealed class MississippiDefaultsTests
     ///     ServiceKeys.CosmosSnapshots should be "mississippi-cosmos-snapshots".
     /// </summary>
     [Fact]
-        public void ServiceKeysCosmosSnapshotsHasExpectedValue()
+    public void ServiceKeysCosmosSnapshotsHasExpectedValue()
     {
         // Assert
         Assert.Equal("mississippi-cosmos-snapshots", MississippiDefaults.ServiceKeys.CosmosSnapshots);
@@ -81,7 +79,7 @@ public sealed class MississippiDefaultsTests
     ///     StreamNamespaces.AllClients should be "mississippi-all-clients".
     /// </summary>
     [Fact]
-        public void StreamNamespacesAllClientsHasExpectedValue()
+    public void StreamNamespacesAllClientsHasExpectedValue()
     {
         // Assert
         Assert.Equal("mississippi-all-clients", MississippiDefaults.StreamNamespaces.AllClients);
@@ -91,7 +89,7 @@ public sealed class MississippiDefaultsTests
     ///     StreamNamespaces.Server should be "mississippi-server".
     /// </summary>
     [Fact]
-        public void StreamNamespacesServerHasExpectedValue()
+    public void StreamNamespacesServerHasExpectedValue()
     {
         // Assert
         Assert.Equal("mississippi-server", MississippiDefaults.StreamNamespaces.Server);
@@ -101,7 +99,7 @@ public sealed class MississippiDefaultsTests
     ///     StreamProviderName should be "mississippi-streaming".
     /// </summary>
     [Fact]
-        public void StreamProviderNameHasExpectedValue()
+    public void StreamProviderNameHasExpectedValue()
     {
         // Assert
         Assert.Equal("mississippi-streaming", MississippiDefaults.StreamProviderName);

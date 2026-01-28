@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-
 using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
 
 
@@ -24,7 +23,7 @@ public sealed class LockMetricsTests
     ///     Lock key sanitization should extract brook name from full key.
     /// </summary>
     [Fact]
-        public void LockKeySanitizationExtractsBrookName()
+    public void LockKeySanitizationExtractsBrookName()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -68,7 +67,7 @@ public sealed class LockMetricsTests
     ///     RecordAcquireFailure should emit acquire count with failure result.
     /// </summary>
     [Fact]
-        public void RecordAcquireFailureEmitsAcquireCount()
+    public void RecordAcquireFailureEmitsAcquireCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -145,7 +144,7 @@ public sealed class LockMetricsTests
     ///     RecordAcquireFailure should emit acquire duration histogram.
     /// </summary>
     [Fact]
-        public void RecordAcquireFailureEmitsDuration()
+    public void RecordAcquireFailureEmitsDuration()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -189,7 +188,7 @@ public sealed class LockMetricsTests
     ///     RecordAcquireFailure should emit failure count.
     /// </summary>
     [Fact]
-        public void RecordAcquireFailureEmitsFailureCount()
+    public void RecordAcquireFailureEmitsFailureCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -233,7 +232,7 @@ public sealed class LockMetricsTests
     ///     RecordAcquireSuccess should emit acquire count with success result.
     /// </summary>
     [Fact]
-        public void RecordAcquireSuccessEmitsAcquireCount()
+    public void RecordAcquireSuccessEmitsAcquireCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -310,7 +309,7 @@ public sealed class LockMetricsTests
     ///     RecordAcquireSuccess should emit retry attempts histogram.
     /// </summary>
     [Fact]
-        public void RecordAcquireSuccessEmitsRetryAttempts()
+    public void RecordAcquireSuccessEmitsRetryAttempts()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -354,7 +353,7 @@ public sealed class LockMetricsTests
     ///     RecordContentionWait should emit contention wait count.
     /// </summary>
     [Fact]
-        public void RecordContentionWaitEmitsCount()
+    public void RecordContentionWaitEmitsCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -398,7 +397,7 @@ public sealed class LockMetricsTests
     ///     RecordHeldDuration should emit held duration histogram.
     /// </summary>
     [Fact]
-        public void RecordHeldDurationEmitsDuration()
+    public void RecordHeldDurationEmitsDuration()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];

@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -19,7 +18,7 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-        public void TelemetryStripHasAdditionalAttributesParameter()
+    public void TelemetryStripHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(TelemetryStrip).GetProperty("AdditionalAttributes");
@@ -35,7 +34,7 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip has ChildContent parameter.
     /// </summary>
     [Fact]
-        public void TelemetryStripHasChildContentParameter()
+    public void TelemetryStripHasChildContentParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(TelemetryStrip).GetProperty("ChildContent");
@@ -51,7 +50,7 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip has State parameter.
     /// </summary>
     [Fact]
-        public void TelemetryStripHasStateParameter()
+    public void TelemetryStripHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(TelemetryStrip).GetProperty("State");
@@ -66,7 +65,7 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip inherits from ComponentBase.
     /// </summary>
     [Fact]
-        public void TelemetryStripInheritsFromComponentBase()
+    public void TelemetryStripInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(TelemetryStrip)));
@@ -76,7 +75,7 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip renders additional attributes.
     /// </summary>
     [Fact]
-        public void TelemetryStripRendersAdditionalAttributes()
+    public void TelemetryStripRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<TelemetryStrip> cut =
@@ -90,7 +89,7 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip renders child content.
     /// </summary>
     [Fact]
-        public void TelemetryStripRendersChildContent()
+    public void TelemetryStripRendersChildContent()
     {
         // Act
         using IRenderedComponent<TelemetryStrip> cut = Render<TelemetryStrip>(p => p.AddChildContent(
@@ -104,7 +103,7 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip renders custom state.
     /// </summary>
     [Fact]
-        public void TelemetryStripRendersCustomState()
+    public void TelemetryStripRendersCustomState()
     {
         // Act
         using IRenderedComponent<TelemetryStrip> cut = Render<TelemetryStrip>(p => p.Add(
@@ -120,7 +119,7 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip renders with default state.
     /// </summary>
     [Fact]
-        public void TelemetryStripRendersWithDefaultState()
+    public void TelemetryStripRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<TelemetryStrip> cut = Render<TelemetryStrip>();
@@ -134,7 +133,7 @@ public sealed class TelemetryStripTests : BunitContext
     ///     TelemetryStrip State defaults to Quiet.
     /// </summary>
     [Fact]
-        public void TelemetryStripStateDefaultsToQuiet()
+    public void TelemetryStripStateDefaultsToQuiet()
     {
         // Arrange
         TelemetryStrip component = new();

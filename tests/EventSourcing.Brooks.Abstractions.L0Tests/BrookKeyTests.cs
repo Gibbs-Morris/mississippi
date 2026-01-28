@@ -1,7 +1,6 @@
 using System;
 
 
-
 namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 
 /// <summary>

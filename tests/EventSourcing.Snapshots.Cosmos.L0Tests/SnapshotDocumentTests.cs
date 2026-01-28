@@ -1,4 +1,3 @@
-
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 
 

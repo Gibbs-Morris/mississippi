@@ -1,6 +1,5 @@
 using System;
 
-
 using SnapshotStorageNameAttribute =
     Mississippi.EventSourcing.Brooks.Abstractions.Attributes.SnapshotStorageNameAttribute;
 

@@ -1,4 +1,3 @@
-
 using Mississippi.Inlet.Client.Abstractions.State;
 
 
@@ -13,7 +12,7 @@ public sealed class InletConnectionStateTests
     ///     InletConnectionState can be instantiated.
     /// </summary>
     [Fact]
-        public void CanBeInstantiated()
+    public void CanBeInstantiated()
     {
         // Act
         InletConnectionState state = new();
@@ -26,7 +25,7 @@ public sealed class InletConnectionStateTests
     ///     FeatureKey returns expected value.
     /// </summary>
     [Fact]
-        public void FeatureKeyReturnsExpectedValue()
+    public void FeatureKeyReturnsExpectedValue()
     {
         // Act
         string featureKey = InletConnectionState.FeatureKey;
@@ -39,7 +38,7 @@ public sealed class InletConnectionStateTests
     ///     InletConnectionState is a record type with value equality.
     /// </summary>
     [Fact]
-        public void HasValueEquality()
+    public void HasValueEquality()
     {
         // Arrange
         InletConnectionState state1 = new();

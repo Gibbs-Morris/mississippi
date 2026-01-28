@@ -1,6 +1,5 @@
 using System;
 
-
 using Microsoft.Extensions.DependencyInjection;
 
 
@@ -15,7 +14,7 @@ public sealed class InletBlazorRegistrationsTests
     ///     AddInletBlazor returns the service collection for chaining.
     /// </summary>
     [Fact]
-        public void AddInletBlazorReturnsServiceCollection()
+    public void AddInletBlazorReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
@@ -31,7 +30,7 @@ public sealed class InletBlazorRegistrationsTests
     ///     AddInletBlazorSignalR accepts null configure action and returns the service collection for chaining.
     /// </summary>
     [Fact]
-        public void AddInletBlazorSignalRAcceptsNullConfigureAndReturnsServiceCollection()
+    public void AddInletBlazorSignalRAcceptsNullConfigureAndReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
@@ -47,7 +46,7 @@ public sealed class InletBlazorRegistrationsTests
     ///     AddInletBlazorSignalR invokes configure action when provided.
     /// </summary>
     [Fact]
-        public void AddInletBlazorSignalRInvokesConfigureAction()
+    public void AddInletBlazorSignalRInvokesConfigureAction()
     {
         // Arrange
         ServiceCollection services = new();
@@ -65,7 +64,7 @@ public sealed class InletBlazorRegistrationsTests
     ///     AddInletBlazorSignalR throws ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-        public void AddInletBlazorSignalRThrowsWhenServicesIsNull()
+    public void AddInletBlazorSignalRThrowsWhenServicesIsNull()
     {
         // Arrange
         IServiceCollection? services = null;
@@ -78,7 +77,7 @@ public sealed class InletBlazorRegistrationsTests
     ///     AddInletBlazor throws ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-        public void AddInletBlazorThrowsWhenServicesIsNull()
+    public void AddInletBlazorThrowsWhenServicesIsNull()
     {
         // Arrange
         IServiceCollection? services = null;

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-
 using Mississippi.Aqueduct.Grains.Diagnostics;
 
 
@@ -25,7 +24,7 @@ public sealed class AqueductMetricsTests
     ///     RecordClientConnect should emit metric with hub name tag.
     /// </summary>
     [Fact]
-        public void RecordClientConnectEmitsMetricWithHubName()
+    public void RecordClientConnectEmitsMetricWithHubName()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -68,7 +67,7 @@ public sealed class AqueductMetricsTests
     ///     RecordClientDisconnect should emit metric with hub name tag.
     /// </summary>
     [Fact]
-        public void RecordClientDisconnectEmitsMetricWithHubName()
+    public void RecordClientDisconnectEmitsMetricWithHubName()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -111,7 +110,7 @@ public sealed class AqueductMetricsTests
     ///     RecordClientMessageSent should emit count and duration metrics.
     /// </summary>
     [Fact]
-        public void RecordClientMessageSentEmitsCountAndDurationMetrics()
+    public void RecordClientMessageSentEmitsCountAndDurationMetrics()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
@@ -176,7 +175,7 @@ public sealed class AqueductMetricsTests
     ///     RecordDeadServers should emit metric only when count is positive.
     /// </summary>
     [Fact]
-        public void RecordDeadServersEmitsMetricOnlyWhenPositive()
+    public void RecordDeadServersEmitsMetricOnlyWhenPositive()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -216,7 +215,7 @@ public sealed class AqueductMetricsTests
     ///     RecordGroupJoin should emit metric with hub name tag.
     /// </summary>
     [Fact]
-        public void RecordGroupJoinEmitsMetricWithHubName()
+    public void RecordGroupJoinEmitsMetricWithHubName()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -259,7 +258,7 @@ public sealed class AqueductMetricsTests
     ///     RecordGroupLeave should emit metric with hub name tag.
     /// </summary>
     [Fact]
-        public void RecordGroupLeaveEmitsMetricWithHubName()
+    public void RecordGroupLeaveEmitsMetricWithHubName()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -302,7 +301,7 @@ public sealed class AqueductMetricsTests
     ///     RecordGroupMessageSent should emit count and fanout metrics.
     /// </summary>
     [Fact]
-        public void RecordGroupMessageSentEmitsCountAndFanoutMetrics()
+    public void RecordGroupMessageSentEmitsCountAndFanoutMetrics()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
@@ -366,7 +365,7 @@ public sealed class AqueductMetricsTests
     ///     RecordServerHeartbeat should emit metric.
     /// </summary>
     [Fact]
-        public void RecordServerHeartbeatEmitsMetric()
+    public void RecordServerHeartbeatEmitsMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -400,7 +399,7 @@ public sealed class AqueductMetricsTests
     ///     RecordServerRegister should emit metric.
     /// </summary>
     [Fact]
-        public void RecordServerRegisterEmitsMetric()
+    public void RecordServerRegisterEmitsMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];

@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
@@ -20,7 +19,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookCursorMovedEvent can be created with a position.
     /// </summary>
     [Fact]
-        public void BrookCursorMovedEventCanBeCreatedWithPosition()
+    public void BrookCursorMovedEventCanBeCreatedWithPosition()
     {
         // Arrange & Act
         BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", new(10));
@@ -34,7 +33,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookCursorMovedEvent stores position correctly.
     /// </summary>
     [Fact]
-        public void BrookCursorMovedEventStoresPositionCorrectly()
+    public void BrookCursorMovedEventStoresPositionCorrectly()
     {
         // Arrange
         BrookPosition position = new(100);
@@ -51,7 +50,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookCursorMovedEvent with negative position represents not set.
     /// </summary>
     [Fact]
-        public void BrookCursorMovedEventWithNegativePositionRepresentsNotSet()
+    public void BrookCursorMovedEventWithNegativePositionRepresentsNotSet()
     {
         // Arrange & Act
         BrookCursorMovedEvent cursorEvent = new("TEST.BROOK:entity-1", new(-1));
@@ -65,7 +64,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition equality works correctly.
     /// </summary>
     [Fact]
-        public void BrookPositionEqualityWorksCorrectly()
+    public void BrookPositionEqualityWorksCorrectly()
     {
         // Arrange
         BrookPosition a = new(5);
@@ -81,7 +80,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition hash codes are equal for equal values.
     /// </summary>
     [Fact]
-        public void BrookPositionHashCodesAreEqualForEqualValues()
+    public void BrookPositionHashCodesAreEqualForEqualValues()
     {
         // Arrange
         BrookPosition position1 = new(100);
@@ -95,7 +94,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition implicit conversion from int works.
     /// </summary>
     [Fact]
-        public void BrookPositionImplicitConversionFromIntWorks()
+    public void BrookPositionImplicitConversionFromIntWorks()
     {
         // Arrange & Act
         BrookPosition position = 42;
@@ -108,7 +107,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition comparison handles negative values correctly.
     /// </summary>
     [Fact]
-        public void BrookPositionIsNewerThanHandlesNegativeValues()
+    public void BrookPositionIsNewerThanHandlesNegativeValues()
     {
         // Arrange
         BrookPosition negative = new(-1);
@@ -125,7 +124,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition IsNewerThan returns correct comparison.
     /// </summary>
     [Fact]
-        public void BrookPositionIsNewerThanReturnsCorrectComparison()
+    public void BrookPositionIsNewerThanReturnsCorrectComparison()
     {
         // Arrange
         BrookPosition older = new(5);
@@ -141,7 +140,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition comparison handles equal values correctly.
     /// </summary>
     [Fact]
-        public void BrookPositionIsNewerThanReturnsFalseForEqualValues()
+    public void BrookPositionIsNewerThanReturnsFalseForEqualValues()
     {
         // Arrange
         BrookPosition position1 = new(50);
@@ -156,7 +155,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition minus one is the initial state.
     /// </summary>
     [Fact]
-        public void BrookPositionMinusOneIsInitialState()
+    public void BrookPositionMinusOneIsInitialState()
     {
         // Arrange
         BrookPosition initial = new(-1);
@@ -169,7 +168,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition NotSet returns true for default position.
     /// </summary>
     [Fact]
-        public void BrookPositionNotSetReturnsTrueForDefault()
+    public void BrookPositionNotSetReturnsTrueForDefault()
     {
         // Arrange
         BrookPosition notSet = new(-1);
@@ -184,7 +183,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that BrookPosition with value zero is considered set.
     /// </summary>
     [Fact]
-        public void BrookPositionZeroIsConsideredSet()
+    public void BrookPositionZeroIsConsideredSet()
     {
         // Arrange
         BrookPosition zero = new(0);
@@ -199,7 +198,7 @@ public sealed class UxProjectionCursorGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task IUxProjectionCursorGrainDeactivateAsyncCompletes()
+    public async Task IUxProjectionCursorGrainDeactivateAsyncCompletes()
     {
         // Arrange
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
@@ -215,7 +214,7 @@ public sealed class UxProjectionCursorGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task IUxProjectionCursorGrainGetPositionAsyncReturnsPosition()
+    public async Task IUxProjectionCursorGrainGetPositionAsyncReturnsPosition()
     {
         // Arrange
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
@@ -233,7 +232,7 @@ public sealed class UxProjectionCursorGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task IUxProjectionCursorGrainSetPositionAsyncCanBeMocked()
+    public async Task IUxProjectionCursorGrainSetPositionAsyncCanBeMocked()
     {
         // Arrange
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
@@ -253,7 +252,7 @@ public sealed class UxProjectionCursorGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task MultipleCursorGrainsTrackDifferentPositions()
+    public async Task MultipleCursorGrainsTrackDifferentPositions()
     {
         // Arrange
         Mock<IUxProjectionCursorGrain> grain1Mock = new();
@@ -275,7 +274,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that cursor grain factory resolves cursor grains correctly.
     /// </summary>
     [Fact]
-        public void UxProjectionGrainFactoryGetCursorGrainResolves()
+    public void UxProjectionGrainFactoryGetCursorGrainResolves()
     {
         // Arrange
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
@@ -294,7 +293,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey at max length is accepted.
     /// </summary>
     [Fact]
-        public void UxProjectionKeyAcceptsMaxLengthEntityId()
+    public void UxProjectionKeyAcceptsMaxLengthEntityId()
     {
         // Arrange
         string maxLengthEntityId = new('x', 4192);
@@ -310,7 +309,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey correctly parses the primary key format.
     /// </summary>
     [Fact]
-        public void UxProjectionKeyFromStringParsesValidKey()
+    public void UxProjectionKeyFromStringParsesValidKey()
     {
         // Act
         UxProjectionKey key = UxProjectionKey.FromString("entity-123");
@@ -323,7 +322,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey FromString throws for null string.
     /// </summary>
     [Fact]
-        public void UxProjectionKeyFromStringThrowsForNullString()
+    public void UxProjectionKeyFromStringThrowsForNullString()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => UxProjectionKey.FromString(null!));
@@ -333,7 +332,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey implicit conversion to string works.
     /// </summary>
     [Fact]
-        public void UxProjectionKeyImplicitConversionToStringWorks()
+    public void UxProjectionKeyImplicitConversionToStringWorks()
     {
         // Arrange
         UxProjectionKey key = new("entity-123");
@@ -349,7 +348,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey roundtrips through ToString and FromString.
     /// </summary>
     [Fact]
-        public void UxProjectionKeyRoundtripsThroughSerialization()
+    public void UxProjectionKeyRoundtripsThroughSerialization()
     {
         // Arrange
         UxProjectionKey original = new("test-id");
@@ -366,7 +365,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey stores entity ID correctly.
     /// </summary>
     [Fact]
-        public void UxProjectionKeyStoresEntityIdCorrectly()
+    public void UxProjectionKeyStoresEntityIdCorrectly()
     {
         // Act
         UxProjectionKey key = new("my-entity");
@@ -379,7 +378,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey throws when entity ID exceeds max length.
     /// </summary>
     [Fact]
-        public void UxProjectionKeyThrowsWhenEntityIdExceedsMaxLength()
+    public void UxProjectionKeyThrowsWhenEntityIdExceedsMaxLength()
     {
         // Arrange
         string tooLongEntityId = new('x', 4193);
@@ -392,7 +391,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey throws when entity ID is null.
     /// </summary>
     [Fact]
-        public void UxProjectionKeyThrowsWhenEntityIdIsNull()
+    public void UxProjectionKeyThrowsWhenEntityIdIsNull()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new UxProjectionKey(null!));
@@ -402,7 +401,7 @@ public sealed class UxProjectionCursorGrainTests
     ///     Verifies that UxProjectionKey ToString returns the entity ID.
     /// </summary>
     [Fact]
-        public void UxProjectionKeyToStringReturnsEntityId()
+    public void UxProjectionKeyToStringReturnsEntityId()
     {
         // Arrange
         UxProjectionKey key = new("entity-123");

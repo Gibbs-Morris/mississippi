@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -45,7 +44,7 @@ public sealed class SnapshotPersisterGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncParsesKeyCorrectly()
+    public async Task OnActivateAsyncParsesKeyCorrectly()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = new();
@@ -67,7 +66,7 @@ public sealed class SnapshotPersisterGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task PersistAsyncWritesToStorage()
+    public async Task PersistAsyncWritesToStorage()
     {
         // Arrange
         const string reducerHash = "test-hash";

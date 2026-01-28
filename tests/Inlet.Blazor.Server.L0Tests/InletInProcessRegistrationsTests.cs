@@ -1,6 +1,5 @@
 using System;
 
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Server.Abstractions;
@@ -17,7 +16,7 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess can be called multiple times without error.
     /// </summary>
     [Fact]
-        public void AddInletInProcessCanBeCalledMultipleTimes()
+    public void AddInletInProcessCanBeCalledMultipleTimes()
     {
         // Arrange
         ServiceCollection services = [];
@@ -37,7 +36,7 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should register InProcessProjectionNotifier as singleton.
     /// </summary>
     [Fact]
-        public void AddInletInProcessRegistersAsSingleton()
+    public void AddInletInProcessRegistersAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
@@ -57,7 +56,7 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should register IServerProjectionNotifier.
     /// </summary>
     [Fact]
-        public void AddInletInProcessRegistersIServerProjectionNotifier()
+    public void AddInletInProcessRegistersIServerProjectionNotifier()
     {
         // Arrange
         ServiceCollection services = [];
@@ -76,7 +75,7 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should return the same services collection for chaining.
     /// </summary>
     [Fact]
-        public void AddInletInProcessReturnsSameCollection()
+    public void AddInletInProcessReturnsSameCollection()
     {
         // Arrange
         ServiceCollection services = [];
@@ -92,7 +91,7 @@ public sealed class InletInProcessRegistrationsTests
     ///     AddInletInProcess should throw when services is null.
     /// </summary>
     [Fact]
-        public void AddInletInProcessThrowsWhenServicesNull()
+    public void AddInletInProcessThrowsWhenServicesNull()
     {
         // Arrange
         IServiceCollection services = null!;

@@ -1,4 +1,3 @@
-
 using Mississippi.Inlet.Generators.Core.Naming;
 
 

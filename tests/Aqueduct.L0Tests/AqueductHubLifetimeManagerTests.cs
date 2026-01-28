@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
-
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -54,7 +53,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "AddToGroupAsync Calls Group Grain")]
-        public async Task AddToGroupAsyncShouldCallGroupGrain()
+    public async Task AddToGroupAsyncShouldCallGroupGrain()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
@@ -74,7 +73,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "AddToGroupAsync Throws When ConnectionId Is Empty")]
-        public async Task AddToGroupAsyncShouldThrowWhenConnectionIdIsEmpty()
+    public async Task AddToGroupAsyncShouldThrowWhenConnectionIdIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -88,7 +87,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "AddToGroupAsync Throws When GroupName Is Empty")]
-        public async Task AddToGroupAsyncShouldThrowWhenGroupNameIsEmpty()
+    public async Task AddToGroupAsyncShouldThrowWhenGroupNameIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -101,7 +100,7 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
     [Fact(DisplayName = "Constructor Succeeds With Valid Dependencies")]
-        public void ConstructorShouldSucceedWithValidDependencies()
+    public void ConstructorShouldSucceedWithValidDependencies()
     {
         // Arrange
         IServerIdProvider serverIdProvider = CreateServerIdProvider();
@@ -131,7 +130,7 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when connectionRegistry is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ConnectionRegistry Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -161,7 +160,7 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when grainFactory is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When GrainFactory Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -191,7 +190,7 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when heartbeatManager is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When HeartbeatManager Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -221,7 +220,7 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Logger Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -250,7 +249,7 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when messageSender is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When MessageSender Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -280,7 +279,7 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when serverIdProvider is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ServerIdProvider Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -310,7 +309,7 @@ public sealed class AqueductHubLifetimeManagerTests
     ///     Constructor should throw when streamSubscriptionManager is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When StreamSubscriptionManager Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -341,7 +340,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "OnConnectedAsync Throws When Connection Is Null")]
-        public async Task OnConnectedAsyncShouldThrowWhenConnectionIsNull()
+    public async Task OnConnectedAsyncShouldThrowWhenConnectionIsNull()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -355,7 +354,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "OnDisconnectedAsync Throws When Connection Is Null")]
-        public async Task OnDisconnectedAsyncShouldThrowWhenConnectionIsNull()
+    public async Task OnDisconnectedAsyncShouldThrowWhenConnectionIsNull()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -369,7 +368,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "RemoveFromGroupAsync Calls Group Grain")]
-        public async Task RemoveFromGroupAsyncShouldCallGroupGrain()
+    public async Task RemoveFromGroupAsyncShouldCallGroupGrain()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
@@ -389,7 +388,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "RemoveFromGroupAsync Throws When ConnectionId Is Empty")]
-        public async Task RemoveFromGroupAsyncShouldThrowWhenConnectionIdIsEmpty()
+    public async Task RemoveFromGroupAsyncShouldThrowWhenConnectionIdIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -403,7 +402,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "RemoveFromGroupAsync Throws When GroupName Is Empty")]
-        public async Task RemoveFromGroupAsyncShouldThrowWhenGroupNameIsEmpty()
+    public async Task RemoveFromGroupAsyncShouldThrowWhenGroupNameIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -417,7 +416,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionAsync Routes Via Client Grain If Not Local")]
-        public async Task SendConnectionAsyncShouldRouteViaClientGrainIfNotLocal()
+    public async Task SendConnectionAsyncShouldRouteViaClientGrainIfNotLocal()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
@@ -442,7 +441,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionAsync Sends To Local Connection If Found")]
-        public async Task SendConnectionAsyncShouldSendToLocalConnectionIfFound()
+    public async Task SendConnectionAsyncShouldSendToLocalConnectionIfFound()
     {
         // Arrange
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
@@ -466,7 +465,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionAsync Throws When ConnectionId Is Empty")]
-        public async Task SendConnectionAsyncShouldThrowWhenConnectionIdIsEmpty()
+    public async Task SendConnectionAsyncShouldThrowWhenConnectionIdIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -480,7 +479,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionAsync Throws When MethodName Is Empty")]
-        public async Task SendConnectionAsyncShouldThrowWhenMethodNameIsEmpty()
+    public async Task SendConnectionAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -494,7 +493,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendConnectionsAsync Throws When ConnectionIds Is Null")]
-        public async Task SendConnectionsAsyncShouldThrowWhenConnectionIdsIsNull()
+    public async Task SendConnectionsAsyncShouldThrowWhenConnectionIdsIsNull()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -508,7 +507,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupAsync Calls Group Grain")]
-        public async Task SendGroupAsyncShouldCallGroupGrain()
+    public async Task SendGroupAsyncShouldCallGroupGrain()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
@@ -529,7 +528,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupAsync Throws When GroupName Is Empty")]
-        public async Task SendGroupAsyncShouldThrowWhenGroupNameIsEmpty()
+    public async Task SendGroupAsyncShouldThrowWhenGroupNameIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -543,7 +542,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupAsync Throws When MethodName Is Empty")]
-        public async Task SendGroupAsyncShouldThrowWhenMethodNameIsEmpty()
+    public async Task SendGroupAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -557,7 +556,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupExceptAsync Throws When GroupName Is Empty")]
-        public async Task SendGroupExceptAsyncShouldThrowWhenGroupNameIsEmpty()
+    public async Task SendGroupExceptAsyncShouldThrowWhenGroupNameIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -571,7 +570,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupExceptAsync Throws When MethodName Is Empty")]
-        public async Task SendGroupExceptAsyncShouldThrowWhenMethodNameIsEmpty()
+    public async Task SendGroupExceptAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -585,7 +584,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendGroupsAsync Throws When GroupNames Is Null")]
-        public async Task SendGroupsAsyncShouldThrowWhenGroupNamesIsNull()
+    public async Task SendGroupsAsyncShouldThrowWhenGroupNamesIsNull()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -599,7 +598,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendUserAsync Throws When MethodName Is Empty")]
-        public async Task SendUserAsyncShouldThrowWhenMethodNameIsEmpty()
+    public async Task SendUserAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -613,7 +612,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendUserAsync Throws When UserId Is Empty")]
-        public async Task SendUserAsyncShouldThrowWhenUserIdIsEmpty()
+    public async Task SendUserAsyncShouldThrowWhenUserIdIsEmpty()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
@@ -627,7 +626,7 @@ public sealed class AqueductHubLifetimeManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendUsersAsync Throws When UserIds Is Null")]
-        public async Task SendUsersAsyncShouldThrowWhenUserIdsIsNull()
+    public async Task SendUsersAsyncShouldThrowWhenUserIdsIsNull()
     {
         // Arrange
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();

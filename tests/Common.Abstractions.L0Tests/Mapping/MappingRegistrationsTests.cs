@@ -1,6 +1,5 @@
 using System.Globalization;
 
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;

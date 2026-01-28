@@ -1,7 +1,6 @@
 using System;
 
 
-
 namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
 
 /// <summary>

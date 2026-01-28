@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-
 using Mississippi.EventSourcing.Snapshots.Diagnostics;
 
 
@@ -25,7 +24,7 @@ public sealed class SnapshotMetricsTests
     ///     RecordActivation should emit failure metric on failure.
     /// </summary>
     [Fact]
-        public void RecordActivationFailureEmitsFailureMetric()
+    public void RecordActivationFailureEmitsFailureMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -87,7 +86,7 @@ public sealed class SnapshotMetricsTests
     ///     RecordActivation should emit count and duration metrics for success.
     /// </summary>
     [Fact]
-        public void RecordActivationSuccessEmitsMetrics()
+    public void RecordActivationSuccessEmitsMetrics()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
@@ -170,7 +169,7 @@ public sealed class SnapshotMetricsTests
     ///     RecordBaseUsed should emit metric with snapshot type.
     /// </summary>
     [Fact]
-        public void RecordBaseUsedEmitsMetric()
+    public void RecordBaseUsedEmitsMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -223,7 +222,7 @@ public sealed class SnapshotMetricsTests
     ///     RecordCacheHit should emit metric with snapshot type.
     /// </summary>
     [Fact]
-        public void RecordCacheHitEmitsMetric()
+    public void RecordCacheHitEmitsMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -276,7 +275,7 @@ public sealed class SnapshotMetricsTests
     ///     RecordCacheMiss should emit metric with snapshot type.
     /// </summary>
     [Fact]
-        public void RecordCacheMissEmitsMetric()
+    public void RecordCacheMissEmitsMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -329,7 +328,7 @@ public sealed class SnapshotMetricsTests
     ///     RecordPersist should emit count and duration metrics.
     /// </summary>
     [Fact]
-        public void RecordPersistEmitsMetrics()
+    public void RecordPersistEmitsMetrics()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
@@ -409,7 +408,7 @@ public sealed class SnapshotMetricsTests
     ///     RecordRebuild should emit duration and event count metrics.
     /// </summary>
     [Fact]
-        public void RecordRebuildEmitsMetrics()
+    public void RecordRebuildEmitsMetrics()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> doubleMeasurements = [];
@@ -484,7 +483,7 @@ public sealed class SnapshotMetricsTests
     ///     RecordReducerHashMismatch should emit metric with snapshot type.
     /// </summary>
     [Fact]
-        public void RecordReducerHashMismatchEmitsMetric()
+    public void RecordReducerHashMismatchEmitsMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -537,7 +536,7 @@ public sealed class SnapshotMetricsTests
     ///     RecordStateSize should emit metric with snapshot type.
     /// </summary>
     [Fact]
-        public void RecordStateSizeEmitsMetric()
+    public void RecordStateSizeEmitsMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];

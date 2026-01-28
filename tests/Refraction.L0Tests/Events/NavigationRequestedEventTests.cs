@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-
 using Mississippi.Refraction.Events;
 
 
@@ -16,7 +15,7 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent can be created with parameters.
     /// </summary>
     [Fact]
-        public void NavigationRequestedEventCanBeCreatedWithParameters()
+    public void NavigationRequestedEventCanBeCreatedWithParameters()
     {
         // Arrange
         Dictionary<string, object> parameters = new()
@@ -37,7 +36,7 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent can be created with target only.
     /// </summary>
     [Fact]
-        public void NavigationRequestedEventCanBeCreatedWithTargetOnly()
+    public void NavigationRequestedEventCanBeCreatedWithTargetOnly()
     {
         // Arrange & Act
         NavigationRequestedEvent evt = new("/home");
@@ -51,7 +50,7 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent implements record equality.
     /// </summary>
     [Fact]
-        public void NavigationRequestedEventImplementsRecordEquality()
+    public void NavigationRequestedEventImplementsRecordEquality()
     {
         // Arrange
         NavigationRequestedEvent evt1 = new("/settings");
@@ -65,7 +64,7 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent is sealed record.
     /// </summary>
     [Fact]
-        public void NavigationRequestedEventIsSealedRecord()
+    public void NavigationRequestedEventIsSealedRecord()
     {
         // Arrange
         Type eventType = typeof(NavigationRequestedEvent);
@@ -79,7 +78,7 @@ public sealed class NavigationRequestedEventTests
     ///     NavigationRequestedEvent parameters defaults to null.
     /// </summary>
     [Fact]
-        public void NavigationRequestedEventParametersDefaultsToNull()
+    public void NavigationRequestedEventParametersDefaultsToNull()
     {
         // Arrange & Act
         NavigationRequestedEvent evt = new("/dashboard");

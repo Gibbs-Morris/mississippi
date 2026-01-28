@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -20,7 +19,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField associates label with input via Id.
     /// </summary>
     [Fact]
-        public void InputFieldAssociatesLabelWithInputViaId()
+    public void InputFieldAssociatesLabelWithInputViaId()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p
@@ -36,7 +35,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField does not render label when empty.
     /// </summary>
     [Fact]
-        public void InputFieldDoesNotRenderLabelWhenEmpty()
+    public void InputFieldDoesNotRenderLabelWhenEmpty()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Label, string.Empty));
@@ -49,7 +48,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has AdditionalAttributes parameter with CaptureUnmatchedValues.
     /// </summary>
     [Fact]
-        public void InputFieldHasAdditionalAttributesParameter()
+    public void InputFieldHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("AdditionalAttributes");
@@ -65,7 +64,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Id parameter.
     /// </summary>
     [Fact]
-        public void InputFieldHasIdParameter()
+    public void InputFieldHasIdParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Id");
@@ -80,7 +79,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has IsDisabled parameter.
     /// </summary>
     [Fact]
-        public void InputFieldHasIsDisabledParameter()
+    public void InputFieldHasIsDisabledParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("IsDisabled");
@@ -95,7 +94,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has IsReadOnly parameter.
     /// </summary>
     [Fact]
-        public void InputFieldHasIsReadOnlyParameter()
+    public void InputFieldHasIsReadOnlyParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("IsReadOnly");
@@ -110,7 +109,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Label parameter.
     /// </summary>
     [Fact]
-        public void InputFieldHasLabelParameter()
+    public void InputFieldHasLabelParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Label");
@@ -125,7 +124,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has OnBlur EventCallback.
     /// </summary>
     [Fact]
-        public void InputFieldHasOnBlurEventCallback()
+    public void InputFieldHasOnBlurEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("OnBlur");
@@ -141,7 +140,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has OnFocus EventCallback.
     /// </summary>
     [Fact]
-        public void InputFieldHasOnFocusEventCallback()
+    public void InputFieldHasOnFocusEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("OnFocus");
@@ -157,7 +156,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Placeholder parameter.
     /// </summary>
     [Fact]
-        public void InputFieldHasPlaceholderParameter()
+    public void InputFieldHasPlaceholderParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Placeholder");
@@ -172,7 +171,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has State parameter.
     /// </summary>
     [Fact]
-        public void InputFieldHasStateParameter()
+    public void InputFieldHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("State");
@@ -187,7 +186,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Type parameter.
     /// </summary>
     [Fact]
-        public void InputFieldHasTypeParameter()
+    public void InputFieldHasTypeParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Type");
@@ -202,7 +201,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has ValueChanged EventCallback.
     /// </summary>
     [Fact]
-        public void InputFieldHasValueChangedEventCallback()
+    public void InputFieldHasValueChangedEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("ValueChanged");
@@ -218,7 +217,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField has Value parameter.
     /// </summary>
     [Fact]
-        public void InputFieldHasValueParameter()
+    public void InputFieldHasValueParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(InputField).GetProperty("Value");
@@ -233,7 +232,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField inherits from ComponentBase.
     /// </summary>
     [Fact]
-        public void InputFieldInheritsFromComponentBase()
+    public void InputFieldInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(InputField)));
@@ -243,7 +242,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField invokes OnBlur when input loses focus.
     /// </summary>
     [Fact]
-        public void InputFieldInvokesOnBlurWhenInputLosesFocus()
+    public void InputFieldInvokesOnBlurWhenInputLosesFocus()
     {
         // Arrange
         bool wasBlurred = false;
@@ -262,7 +261,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField invokes OnFocus when input receives focus.
     /// </summary>
     [Fact]
-        public void InputFieldInvokesOnFocusWhenInputReceivesFocus()
+    public void InputFieldInvokesOnFocusWhenInputReceivesFocus()
     {
         // Arrange
         bool wasFocused = false;
@@ -281,7 +280,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField invokes ValueChanged when input changes.
     /// </summary>
     [Fact]
-        public void InputFieldInvokesValueChangedWhenInputChanges()
+    public void InputFieldInvokesValueChangedWhenInputChanges()
     {
         // Arrange
         string? receivedValue = null;
@@ -300,7 +299,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders additional attributes.
     /// </summary>
     [Fact]
-        public void InputFieldRendersAdditionalAttributes()
+    public void InputFieldRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.AddUnmatched("data-testid", "input-1"));
@@ -313,7 +312,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders custom state.
     /// </summary>
     [Fact]
-        public void InputFieldRendersCustomState()
+    public void InputFieldRendersCustomState()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(
@@ -329,7 +328,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders disabled state correctly.
     /// </summary>
     [Fact]
-        public void InputFieldRendersDisabledStateCorrectly()
+    public void InputFieldRendersDisabledStateCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsDisabled, true));
@@ -342,7 +341,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders input type correctly.
     /// </summary>
     [Fact]
-        public void InputFieldRendersInputTypeCorrectly()
+    public void InputFieldRendersInputTypeCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Type, "password"));
@@ -355,7 +354,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders label when provided.
     /// </summary>
     [Fact]
-        public void InputFieldRendersLabelWhenProvided()
+    public void InputFieldRendersLabelWhenProvided()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p
@@ -371,7 +370,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders placeholder correctly.
     /// </summary>
     [Fact]
-        public void InputFieldRendersPlaceholderCorrectly()
+    public void InputFieldRendersPlaceholderCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Placeholder, "Enter value"));
@@ -384,7 +383,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders readonly state correctly.
     /// </summary>
     [Fact]
-        public void InputFieldRendersReadOnlyStateCorrectly()
+    public void InputFieldRendersReadOnlyStateCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsReadOnly, true));
@@ -397,7 +396,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders value correctly.
     /// </summary>
     [Fact]
-        public void InputFieldRendersValueCorrectly()
+    public void InputFieldRendersValueCorrectly()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Value, "Initial value"));
@@ -410,7 +409,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField renders with default state.
     /// </summary>
     [Fact]
-        public void InputFieldRendersWithDefaultState()
+    public void InputFieldRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<InputField> cut = Render<InputField>();
@@ -424,7 +423,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField State defaults to Idle.
     /// </summary>
     [Fact]
-        public void InputFieldStateDefaultsToIdle()
+    public void InputFieldStateDefaultsToIdle()
     {
         // Arrange
         InputField inputField = new();
@@ -437,7 +436,7 @@ public sealed class InputFieldTests : BunitContext
     ///     InputField Type defaults to text.
     /// </summary>
     [Fact]
-        public void InputFieldTypeDefaultsToText()
+    public void InputFieldTypeDefaultsToText()
     {
         // Arrange
         InputField inputField = new();

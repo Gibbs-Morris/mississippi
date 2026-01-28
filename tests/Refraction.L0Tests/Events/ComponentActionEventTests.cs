@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Refraction.Events;
 
 
@@ -15,7 +14,7 @@ public sealed class ComponentActionEventTests
     ///     ComponentActionEvent can be created with action id.
     /// </summary>
     [Fact]
-        public void ComponentActionEventCanBeCreatedWithActionId()
+    public void ComponentActionEventCanBeCreatedWithActionId()
     {
         // Arrange & Act
         ComponentActionEvent evt = new("submit");
@@ -29,7 +28,7 @@ public sealed class ComponentActionEventTests
     ///     ComponentActionEvent can be created with payload.
     /// </summary>
     [Fact]
-        public void ComponentActionEventCanBeCreatedWithPayload()
+    public void ComponentActionEventCanBeCreatedWithPayload()
     {
         // Arrange
         var payload = new
@@ -51,7 +50,7 @@ public sealed class ComponentActionEventTests
     ///     ComponentActionEvent implements record equality.
     /// </summary>
     [Fact]
-        public void ComponentActionEventImplementsRecordEquality()
+    public void ComponentActionEventImplementsRecordEquality()
     {
         // Arrange
         ComponentActionEvent evt1 = new("click");
@@ -65,7 +64,7 @@ public sealed class ComponentActionEventTests
     ///     ComponentActionEvent is sealed record.
     /// </summary>
     [Fact]
-        public void ComponentActionEventIsSealedRecord()
+    public void ComponentActionEventIsSealedRecord()
     {
         // Arrange
         Type eventType = typeof(ComponentActionEvent);
@@ -79,7 +78,7 @@ public sealed class ComponentActionEventTests
     ///     ComponentActionEvent payload defaults to null.
     /// </summary>
     [Fact]
-        public void ComponentActionEventPayloadDefaultsToNull()
+    public void ComponentActionEventPayloadDefaultsToNull()
     {
         // Arrange & Act
         ComponentActionEvent evt = new("toggle");

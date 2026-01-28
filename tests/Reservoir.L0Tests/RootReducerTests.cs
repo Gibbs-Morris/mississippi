@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -77,7 +76,7 @@ public sealed class RootReducerTests
     ///     Constructor should throw ArgumentNullException when reducers is null.
     /// </summary>
     [Fact]
-        public void ConstructorWithNullReducersThrowsArgumentNullException()
+    public void ConstructorWithNullReducersThrowsArgumentNullException()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new RootReducer<TestState>(null!));
@@ -87,7 +86,7 @@ public sealed class RootReducerTests
     ///     RootReducer should apply both indexed and fallback reducers.
     /// </summary>
     [Fact]
-        public void ReduceAppliesBothIndexedAndFallbackReducers()
+    public void ReduceAppliesBothIndexedAndFallbackReducers()
     {
         // Arrange
         RootReducer<TestState> sut = new([new IncrementActionReducer(), new FallbackActionReducer()]);
@@ -107,7 +106,7 @@ public sealed class RootReducerTests
     ///     RootReducer should apply matching reducer.
     /// </summary>
     [Fact]
-        public void ReduceAppliesMatchingReducer()
+    public void ReduceAppliesMatchingReducer()
     {
         // Arrange
         RootReducer<TestState> sut = new([new IncrementActionReducer()]);
@@ -127,7 +126,7 @@ public sealed class RootReducerTests
     ///     RootReducer should apply multiple matching reducers in order.
     /// </summary>
     [Fact]
-        public void ReduceAppliesMultipleReducersInOrder()
+    public void ReduceAppliesMultipleReducersInOrder()
     {
         // Arrange
         RootReducer<TestState> sut = new([new IncrementActionReducer(), new IncrementActionReducer()]);
@@ -147,7 +146,7 @@ public sealed class RootReducerTests
     ///     RootReducer should handle fallback reducers (IActionReducer without specific TAction).
     /// </summary>
     [Fact]
-        public void ReduceHandlesFallbackReducers()
+    public void ReduceHandlesFallbackReducers()
     {
         // Arrange
         RootReducer<TestState> sut = new([new FallbackActionReducer()]);
@@ -167,7 +166,7 @@ public sealed class RootReducerTests
     ///     RootReducer should return same state when no reducers match.
     /// </summary>
     [Fact]
-        public void ReduceReturnsOriginalStateWhenNoReducersMatch()
+    public void ReduceReturnsOriginalStateWhenNoReducersMatch()
     {
         // Arrange
         RootReducer<TestState> sut = new([]);
@@ -187,7 +186,7 @@ public sealed class RootReducerTests
     ///     Reduce should throw ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-        public void ReduceWithNullActionThrowsArgumentNullException()
+    public void ReduceWithNullActionThrowsArgumentNullException()
     {
         // Arrange
         RootReducer<TestState> sut = new([]);

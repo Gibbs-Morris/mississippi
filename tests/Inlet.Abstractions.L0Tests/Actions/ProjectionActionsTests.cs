@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Inlet.Client.Abstractions.Actions;
 
 
@@ -21,7 +20,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor should set properties.
     /// </summary>
     [Fact]
-        public void ProjectionConnectionChangedActionConstructorSetsProperties()
+    public void ProjectionConnectionChangedActionConstructorSetsProperties()
     {
         // Act
         ProjectionConnectionChangedAction<TestProjection> sut = new("entity-1", true);
@@ -36,7 +35,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionConnectionChangedAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-        public void ProjectionConnectionChangedActionWithNullEntityIdThrows()
+    public void ProjectionConnectionChangedActionWithNullEntityIdThrows()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionConnectionChangedAction<TestProjection>(null!, true));
@@ -46,7 +45,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor should set properties.
     /// </summary>
     [Fact]
-        public void ProjectionErrorActionConstructorSetsProperties()
+    public void ProjectionErrorActionConstructorSetsProperties()
     {
         // Arrange
         InvalidOperationException error = new("Test error");
@@ -64,7 +63,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-        public void ProjectionErrorActionWithNullEntityIdThrows()
+    public void ProjectionErrorActionWithNullEntityIdThrows()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
@@ -75,7 +74,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionErrorAction constructor should throw for null error.
     /// </summary>
     [Fact]
-        public void ProjectionErrorActionWithNullErrorThrows()
+    public void ProjectionErrorActionWithNullErrorThrows()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionErrorAction<TestProjection>("entity-1", null!));
@@ -85,7 +84,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction can have null data.
     /// </summary>
     [Fact]
-        public void ProjectionLoadedActionAllowsNullData()
+    public void ProjectionLoadedActionAllowsNullData()
     {
         // Act
         ProjectionLoadedAction<TestProjection> sut = new("entity-1", null, 0L);
@@ -98,7 +97,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor should set properties.
     /// </summary>
     [Fact]
-        public void ProjectionLoadedActionConstructorSetsProperties()
+    public void ProjectionLoadedActionConstructorSetsProperties()
     {
         // Arrange
         TestProjection data = new("Test");
@@ -116,7 +115,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadedAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-        public void ProjectionLoadedActionWithNullEntityIdThrows()
+    public void ProjectionLoadedActionWithNullEntityIdThrows()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionLoadedAction<TestProjection>(null!, null, 0));
@@ -126,7 +125,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor should set properties.
     /// </summary>
     [Fact]
-        public void ProjectionLoadingActionConstructorSetsProperties()
+    public void ProjectionLoadingActionConstructorSetsProperties()
     {
         // Act
         ProjectionLoadingAction<TestProjection> sut = new("entity-1");
@@ -140,7 +139,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionLoadingAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-        public void ProjectionLoadingActionWithNullEntityIdThrows()
+    public void ProjectionLoadingActionWithNullEntityIdThrows()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionLoadingAction<TestProjection>(null!));
@@ -150,7 +149,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor should set properties.
     /// </summary>
     [Fact]
-        public void ProjectionUpdatedActionConstructorSetsProperties()
+    public void ProjectionUpdatedActionConstructorSetsProperties()
     {
         // Arrange
         TestProjection data = new("Test");
@@ -168,7 +167,7 @@ public sealed class ProjectionActionsTests
     ///     ProjectionUpdatedAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-        public void ProjectionUpdatedActionWithNullEntityIdThrows()
+    public void ProjectionUpdatedActionWithNullEntityIdThrows()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ProjectionUpdatedAction<TestProjection>(null!, null, 0));
@@ -178,7 +177,7 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor should set properties.
     /// </summary>
     [Fact]
-        public void RefreshProjectionActionConstructorSetsProperties()
+    public void RefreshProjectionActionConstructorSetsProperties()
     {
         // Act
         RefreshProjectionAction<TestProjection> sut = new("entity-1");
@@ -192,7 +191,7 @@ public sealed class ProjectionActionsTests
     ///     RefreshProjectionAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-        public void RefreshProjectionActionWithNullEntityIdThrows()
+    public void RefreshProjectionActionWithNullEntityIdThrows()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new RefreshProjectionAction<TestProjection>(null!));
@@ -202,7 +201,7 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor should set properties.
     /// </summary>
     [Fact]
-        public void SubscribeToProjectionActionConstructorSetsProperties()
+    public void SubscribeToProjectionActionConstructorSetsProperties()
     {
         // Act
         SubscribeToProjectionAction<TestProjection> sut = new("entity-1");
@@ -216,7 +215,7 @@ public sealed class ProjectionActionsTests
     ///     SubscribeToProjectionAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-        public void SubscribeToProjectionActionWithNullEntityIdThrows()
+    public void SubscribeToProjectionActionWithNullEntityIdThrows()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new SubscribeToProjectionAction<TestProjection>(null!));
@@ -226,7 +225,7 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor should set properties.
     /// </summary>
     [Fact]
-        public void UnsubscribeFromProjectionActionConstructorSetsProperties()
+    public void UnsubscribeFromProjectionActionConstructorSetsProperties()
     {
         // Act
         UnsubscribeFromProjectionAction<TestProjection> sut = new("entity-1");
@@ -240,7 +239,7 @@ public sealed class ProjectionActionsTests
     ///     UnsubscribeFromProjectionAction constructor should throw for null entityId.
     /// </summary>
     [Fact]
-        public void UnsubscribeFromProjectionActionWithNullEntityIdThrows()
+    public void UnsubscribeFromProjectionActionWithNullEntityIdThrows()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new UnsubscribeFromProjectionAction<TestProjection>(null!));

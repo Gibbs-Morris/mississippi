@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Inlet.Client.SignalRConnection;
 
 
@@ -15,7 +14,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRConnectedAction allows null connection ID.
     /// </summary>
     [Fact]
-        public void SignalRConnectedActionAllowsNullConnectionId()
+    public void SignalRConnectedActionAllowsNullConnectionId()
     {
         // Arrange
         DateTimeOffset timestamp = DateTimeOffset.UtcNow;
@@ -31,7 +30,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRConnectedAction constructor sets properties correctly.
     /// </summary>
     [Fact]
-        public void SignalRConnectedActionConstructorSetsPropertiesCorrectly()
+    public void SignalRConnectedActionConstructorSetsPropertiesCorrectly()
     {
         // Arrange
         string connectionId = "conn-123";
@@ -49,7 +48,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRConnectingAction constructor creates instance.
     /// </summary>
     [Fact]
-        public void SignalRConnectingActionConstructorCreatesInstance()
+    public void SignalRConnectingActionConstructorCreatesInstance()
     {
         // Act
         SignalRConnectingAction action = new();
@@ -62,7 +61,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRDisconnectedAction allows null error.
     /// </summary>
     [Fact]
-        public void SignalRDisconnectedActionAllowsNullError()
+    public void SignalRDisconnectedActionAllowsNullError()
     {
         // Arrange
         DateTimeOffset timestamp = DateTimeOffset.UtcNow;
@@ -78,7 +77,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRDisconnectedAction constructor sets properties correctly.
     /// </summary>
     [Fact]
-        public void SignalRDisconnectedActionConstructorSetsPropertiesCorrectly()
+    public void SignalRDisconnectedActionConstructorSetsPropertiesCorrectly()
     {
         // Arrange
         string error = "Connection lost";
@@ -96,7 +95,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRMessageReceivedAction constructor sets property correctly.
     /// </summary>
     [Fact]
-        public void SignalRMessageReceivedActionConstructorSetsPropertyCorrectly()
+    public void SignalRMessageReceivedActionConstructorSetsPropertyCorrectly()
     {
         // Arrange
         DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
@@ -112,7 +111,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRReconnectedAction allows null connection ID.
     /// </summary>
     [Fact]
-        public void SignalRReconnectedActionAllowsNullConnectionId()
+    public void SignalRReconnectedActionAllowsNullConnectionId()
     {
         // Arrange
         DateTimeOffset timestamp = DateTimeOffset.UtcNow;
@@ -128,7 +127,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRReconnectedAction constructor sets properties correctly.
     /// </summary>
     [Fact]
-        public void SignalRReconnectedActionConstructorSetsPropertiesCorrectly()
+    public void SignalRReconnectedActionConstructorSetsPropertiesCorrectly()
     {
         // Arrange
         string connectionId = "conn-456";
@@ -146,7 +145,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRReconnectingAction allows null error.
     /// </summary>
     [Fact]
-        public void SignalRReconnectingActionAllowsNullError()
+    public void SignalRReconnectingActionAllowsNullError()
     {
         // Arrange
         int attemptNumber = 1;
@@ -162,7 +161,7 @@ public sealed class SignalRConnectionActionTests
     ///     SignalRReconnectingAction constructor sets properties correctly.
     /// </summary>
     [Fact]
-        public void SignalRReconnectingActionConstructorSetsPropertiesCorrectly()
+    public void SignalRReconnectingActionConstructorSetsPropertiesCorrectly()
     {
         // Arrange
         string error = "Network error";

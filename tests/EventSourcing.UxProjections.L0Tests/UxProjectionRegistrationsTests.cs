@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.UxProjections.Abstractions;

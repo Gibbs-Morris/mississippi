@@ -2,7 +2,6 @@ using System;
 using System.Reflection;
 
 
-
 namespace Mississippi.EventSourcing.Reducers.Abstractions.L0Tests;
 
 /// <summary>

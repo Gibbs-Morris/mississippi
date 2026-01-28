@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-
 using Mississippi.Refraction.Abstractions.Focus;
 
 
@@ -16,7 +15,7 @@ public sealed class IFocusManagerTests
     ///     Verifies the interface defines focus navigation methods.
     /// </summary>
     [Fact]
-        public void IFocusManagerDefinesFocusNavigationMethods()
+    public void IFocusManagerDefinesFocusNavigationMethods()
     {
         // Arrange
         Type interfaceType = typeof(IFocusManager);
@@ -32,7 +31,7 @@ public sealed class IFocusManagerTests
     ///     Verifies TryFocus returns bool.
     /// </summary>
     [Fact]
-        public void IFocusManagerTryFocusReturnsBool()
+    public void IFocusManagerTryFocusReturnsBool()
     {
         // Arrange
         Type interfaceType = typeof(IFocusManager);

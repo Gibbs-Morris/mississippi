@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
@@ -58,7 +57,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Constructor should throw when projectionCache is null.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Assert.Throws catches the exception before any object is created")]
@@ -69,7 +68,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Constructor should throw when store is null.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Assert.Throws catches the exception before any object is created")]
@@ -80,7 +79,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Dispatch should delegate to underlying store.
     /// </summary>
     [Fact]
-        public void DispatchDelegatesToStore()
+    public void DispatchDelegatesToStore()
     {
         // Arrange
         IAction? capturedAction = null;
@@ -99,7 +98,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Dispose should be callable multiple times without error.
     /// </summary>
     [Fact]
-        [SuppressMessage(
+    [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
         Justification = "This test verifies no exception is thrown on multiple dispose calls")]
@@ -136,7 +135,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     GetProjection should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void GetProjectionDelegatesToCache()
+    public void GetProjectionDelegatesToCache()
     {
         // Arrange
         TestProjection data = new("Test");
@@ -155,7 +154,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     GetProjectionError should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void GetProjectionErrorDelegatesToCache()
+    public void GetProjectionErrorDelegatesToCache()
     {
         // Arrange
         InvalidOperationException error = new("Test error");
@@ -174,7 +173,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     GetProjectionState should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void GetProjectionStateDelegatesToCache()
+    public void GetProjectionStateDelegatesToCache()
     {
         // Arrange
         TestProjection data = new("Test");
@@ -195,7 +194,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     GetProjectionVersion should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void GetProjectionVersionDelegatesToCache()
+    public void GetProjectionVersionDelegatesToCache()
     {
         // Arrange
         TestProjection data = new("Test");
@@ -213,7 +212,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     IsProjectionConnected should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void IsProjectionConnectedDelegatesToCache()
+    public void IsProjectionConnectedDelegatesToCache()
     {
         // Arrange
         cache.SetConnection<TestProjection>("entity-1", true);
@@ -230,7 +229,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     IsProjectionLoading should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void IsProjectionLoadingDelegatesToCache()
+    public void IsProjectionLoadingDelegatesToCache()
     {
         // Arrange
         cache.SetLoading<TestProjection>("entity-1");
@@ -247,7 +246,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetConnection should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void SetConnectionDelegatesToCache()
+    public void SetConnectionDelegatesToCache()
     {
         // Arrange
         using CompositeInletStore sut = new(store, cache);
@@ -263,7 +262,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetError should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void SetErrorDelegatesToCache()
+    public void SetErrorDelegatesToCache()
     {
         // Arrange
         using CompositeInletStore sut = new(store, cache);
@@ -282,7 +281,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetLoaded should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void SetLoadedDelegatesToCache()
+    public void SetLoadedDelegatesToCache()
     {
         // Arrange
         using CompositeInletStore sut = new(store, cache);
@@ -302,7 +301,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetLoading should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void SetLoadingDelegatesToCache()
+    public void SetLoadingDelegatesToCache()
     {
         // Arrange
         using CompositeInletStore sut = new(store, cache);
@@ -318,7 +317,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     SetUpdated should delegate to projection cache.
     /// </summary>
     [Fact]
-        public void SetUpdatedDelegatesToCache()
+    public void SetUpdatedDelegatesToCache()
     {
         // Arrange
         using CompositeInletStore sut = new(store, cache);
@@ -338,7 +337,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     ///     Subscribe should delegate to underlying store.
     /// </summary>
     [Fact]
-        public void SubscribeDelegatesToStore()
+    public void SubscribeDelegatesToStore()
     {
         // Arrange
         using CompositeInletStore sut = new(store, cache);

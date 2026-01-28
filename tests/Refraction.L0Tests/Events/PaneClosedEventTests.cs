@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Refraction.Events;
 
 
@@ -15,7 +14,7 @@ public sealed class PaneClosedEventTests
     ///     PaneClosedEvent can be created with reason.
     /// </summary>
     [Fact]
-        public void PaneClosedEventCanBeCreatedWithReason()
+    public void PaneClosedEventCanBeCreatedWithReason()
     {
         // Arrange & Act
         PaneClosedEvent evt = new("keyboard-escape");
@@ -28,7 +27,7 @@ public sealed class PaneClosedEventTests
     ///     PaneClosedEvent implements record equality.
     /// </summary>
     [Fact]
-        public void PaneClosedEventImplementsRecordEquality()
+    public void PaneClosedEventImplementsRecordEquality()
     {
         // Arrange
         PaneClosedEvent evt1 = new("click-outside");
@@ -42,7 +41,7 @@ public sealed class PaneClosedEventTests
     ///     PaneClosedEvent is sealed record.
     /// </summary>
     [Fact]
-        public void PaneClosedEventIsSealedRecord()
+    public void PaneClosedEventIsSealedRecord()
     {
         // Arrange
         Type eventType = typeof(PaneClosedEvent);
@@ -56,7 +55,7 @@ public sealed class PaneClosedEventTests
     ///     PaneClosedEvent Reason property is accessible.
     /// </summary>
     [Fact]
-        public void PaneClosedEventReasonPropertyIsAccessible()
+    public void PaneClosedEventReasonPropertyIsAccessible()
     {
         // Arrange
         PaneClosedEvent evt = new("action-complete");

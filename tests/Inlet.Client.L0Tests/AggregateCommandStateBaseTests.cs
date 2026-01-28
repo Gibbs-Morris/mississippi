@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Immutable;
 
-
 using Mississippi.Inlet.Client.Abstractions.Commands;
 
 
@@ -16,7 +15,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     CommandHistory can be set via init.
     /// </summary>
     [Fact]
-        public void CommandHistoryCanBeSet()
+    public void CommandHistoryCanBeSet()
     {
         // Arrange
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -39,7 +38,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     Default CommandHistory is empty.
     /// </summary>
     [Fact]
-        public void DefaultCommandHistoryIsEmpty()
+    public void DefaultCommandHistoryIsEmpty()
     {
         // Act
         ConcreteAggregateState state = new();
@@ -52,7 +51,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     Default ErrorCode is null.
     /// </summary>
     [Fact]
-        public void DefaultErrorCodeIsNull()
+    public void DefaultErrorCodeIsNull()
     {
         // Act
         ConcreteAggregateState state = new();
@@ -65,7 +64,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     Default ErrorMessage is null.
     /// </summary>
     [Fact]
-        public void DefaultErrorMessageIsNull()
+    public void DefaultErrorMessageIsNull()
     {
         // Act
         ConcreteAggregateState state = new();
@@ -78,7 +77,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     Default InFlightCommands is empty.
     /// </summary>
     [Fact]
-        public void DefaultInFlightCommandsIsEmpty()
+    public void DefaultInFlightCommandsIsEmpty()
     {
         // Act
         ConcreteAggregateState state = new();
@@ -91,7 +90,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     Default LastCommandSucceeded is null.
     /// </summary>
     [Fact]
-        public void DefaultLastCommandSucceededIsNull()
+    public void DefaultLastCommandSucceededIsNull()
     {
         // Act
         ConcreteAggregateState state = new();
@@ -104,7 +103,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     ErrorCode can be set via init.
     /// </summary>
     [Fact]
-        public void ErrorCodeCanBeSet()
+    public void ErrorCodeCanBeSet()
     {
         // Act
         ConcreteAggregateState state = new()
@@ -120,7 +119,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     ErrorMessage can be set via init.
     /// </summary>
     [Fact]
-        public void ErrorMessageCanBeSet()
+    public void ErrorMessageCanBeSet()
     {
         // Act
         ConcreteAggregateState state = new()
@@ -136,7 +135,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     InFlightCommands can be set via init.
     /// </summary>
     [Fact]
-        public void InFlightCommandsCanBeSet()
+    public void InFlightCommandsCanBeSet()
     {
         // Act
         ConcreteAggregateState state = new()
@@ -152,7 +151,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     IsExecuting returns false when InFlightCommands is empty.
     /// </summary>
     [Fact]
-        public void IsExecutingReturnsFalseWhenEmpty()
+    public void IsExecutingReturnsFalseWhenEmpty()
     {
         // Act
         ConcreteAggregateState state = new();
@@ -165,7 +164,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     IsExecuting returns true when InFlightCommands is not empty.
     /// </summary>
     [Fact]
-        public void IsExecutingReturnsTrueWhenNotEmpty()
+    public void IsExecutingReturnsTrueWhenNotEmpty()
     {
         // Arrange
         ConcreteAggregateState state = new()
@@ -181,7 +180,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     LastCommandSucceeded can be set to false.
     /// </summary>
     [Fact]
-        public void LastCommandSucceededCanBeSetToFalse()
+    public void LastCommandSucceededCanBeSetToFalse()
     {
         // Act
         ConcreteAggregateState state = new()
@@ -197,7 +196,7 @@ public sealed class AggregateCommandStateBaseTests
     ///     LastCommandSucceeded can be set to true.
     /// </summary>
     [Fact]
-        public void LastCommandSucceededCanBeSetToTrue()
+    public void LastCommandSucceededCanBeSetToTrue()
     {
         // Act
         ConcreteAggregateState state = new()

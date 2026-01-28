@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -64,7 +63,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures the constructor throws ArgumentNullException when grainContext is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenGrainContextIsNull()
+    public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
         IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
@@ -85,7 +84,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures the constructor throws ArgumentNullException when logger is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenLoggerIsNull()
+    public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
         Mock<IGrainContext> context = new();
@@ -106,7 +105,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures the constructor throws ArgumentNullException when streamIdFactory is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenStreamIdFactoryIsNull()
+    public void ConstructorThrowsWhenStreamIdFactoryIsNull()
     {
         // Arrange
         Mock<IGrainContext> context = new();
@@ -127,7 +126,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures the constructor throws ArgumentNullException when streamProviderOptions is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenStreamProviderOptionsIsNull()
+    public void ConstructorThrowsWhenStreamProviderOptionsIsNull()
     {
         // Arrange
         Mock<IGrainContext> context = new();
@@ -149,7 +148,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task DeactivateAsyncCompletesWithoutError()
+    public async Task DeactivateAsyncCompletesWithoutError()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -166,7 +165,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task GetPositionAsyncReturnsInitialMinusOnePosition()
+    public async Task GetPositionAsyncReturnsInitialMinusOnePosition()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -183,7 +182,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     ///     Ensures GrainContext property returns the injected context.
     /// </summary>
     [Fact]
-        public void GrainContextReturnsInjectedContext()
+    public void GrainContextReturnsInjectedContext()
     {
         // Arrange
         (UxProjectionCursorGrain sut, Mock<IGrainContext> contextMock, Mock<ILogger<UxProjectionCursorGrain>> _,
@@ -202,7 +201,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnActivateAsyncLogsErrorWhenPrimaryKeyInvalid()
+    public async Task OnActivateAsyncLogsErrorWhenPrimaryKeyInvalid()
     {
         // Arrange
         Mock<IGrainContext> context = new();
@@ -251,7 +250,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnActivateAsyncThrowsWhenPrimaryKeyInvalid()
+    public async Task OnActivateAsyncThrowsWhenPrimaryKeyInvalid()
     {
         // Arrange
         Mock<IGrainContext> context = new();
@@ -278,7 +277,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnCompletedAsyncCompletesWithoutError()
+    public async Task OnCompletedAsyncCompletesWithoutError()
     {
         // Arrange
         (UxProjectionCursorGrain sut, Mock<IGrainContext> _, Mock<ILogger<UxProjectionCursorGrain>> loggerMock,
@@ -305,7 +304,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnErrorAsyncCompletesWithoutThrowing()
+    public async Task OnErrorAsyncCompletesWithoutThrowing()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -323,7 +322,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnErrorAsyncLogsError()
+    public async Task OnErrorAsyncLogsError()
     {
         // Arrange
         (UxProjectionCursorGrain sut, Mock<IGrainContext> _, Mock<ILogger<UxProjectionCursorGrain>> loggerMock,
@@ -351,7 +350,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnNextAsyncHandlesLargePositionValues()
+    public async Task OnNextAsyncHandlesLargePositionValues()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -370,7 +369,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnNextAsyncIgnoresEqualPosition()
+    public async Task OnNextAsyncIgnoresEqualPosition()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -389,7 +388,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnNextAsyncIgnoresOlderPosition()
+    public async Task OnNextAsyncIgnoresOlderPosition()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -408,7 +407,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnNextAsyncThrowsWhenItemIsNull()
+    public async Task OnNextAsyncThrowsWhenItemIsNull()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -422,7 +421,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnNextAsyncUpdatesFromMinusOneToZero()
+    public async Task OnNextAsyncUpdatesFromMinusOneToZero()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -441,7 +440,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnNextAsyncUpdatesPositionMultipleTimes()
+    public async Task OnNextAsyncUpdatesPositionMultipleTimes()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -465,7 +464,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task OnNextAsyncUpdatesPositionWhenNewer()
+    public async Task OnNextAsyncUpdatesPositionWhenNewer()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
@@ -484,7 +483,7 @@ public sealed class UxProjectionCursorGrainUnitTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task PositionIsTrackedCorrectlyAfterSequentialEvents()
+    public async Task PositionIsTrackedCorrectlyAfterSequentialEvents()
     {
         // Arrange
         UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);

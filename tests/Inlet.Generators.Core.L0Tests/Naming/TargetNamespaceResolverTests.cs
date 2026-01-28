@@ -1,6 +1,5 @@
 using System;
 
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 

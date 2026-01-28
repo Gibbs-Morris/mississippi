@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions;
@@ -26,7 +25,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IInletStore as CompositeInletStore.
     /// </summary>
     [Fact]
-        public void AddInletRegistersIInletStoreAsCompositeInletStore()
+    public void AddInletRegistersIInletStoreAsCompositeInletStore()
     {
         // Arrange
         ServiceCollection services = [];
@@ -44,7 +43,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IProjectionCache as ProjectionCache singleton.
     /// </summary>
     [Fact]
-        public void AddInletRegistersIProjectionCacheAsSingleton()
+    public void AddInletRegistersIProjectionCacheAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
@@ -64,7 +63,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IProjectionUpdateNotifier as ProjectionNotifier.
     /// </summary>
     [Fact]
-        public void AddInletRegistersIProjectionUpdateNotifierAsProjectionNotifier()
+    public void AddInletRegistersIProjectionUpdateNotifierAsProjectionNotifier()
     {
         // Arrange
         ServiceCollection services = [];
@@ -82,7 +81,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IStore as singleton.
     /// </summary>
     [Fact]
-        public void AddInletRegistersIStoreAsSingleton()
+    public void AddInletRegistersIStoreAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
@@ -101,7 +100,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IStore as Store.
     /// </summary>
     [Fact]
-        public void AddInletRegistersIStoreAsStore()
+    public void AddInletRegistersIStoreAsStore()
     {
         // Arrange
         ServiceCollection services = [];
@@ -119,7 +118,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should register IProjectionRegistry.
     /// </summary>
     [Fact]
-        public void AddInletRegistersProjectionRegistry()
+    public void AddInletRegistersProjectionRegistry()
     {
         // Arrange
         ServiceCollection services = [];
@@ -138,7 +137,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddInlet should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-        public void AddInletWithNullServicesThrowsArgumentNullException()
+    public void AddInletWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
         IServiceCollection? services = null;
@@ -151,7 +150,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath should register path in IConfigureProjectionRegistry.
     /// </summary>
     [Fact]
-        public void AddProjectionPathRegistersConfiguration()
+    public void AddProjectionPathRegistersConfiguration()
     {
         // Arrange
         ServiceCollection services = [];
@@ -170,7 +169,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath should throw ArgumentNullException when path is null.
     /// </summary>
     [Fact]
-        public void AddProjectionPathWithNullPathThrowsArgumentNullException()
+    public void AddProjectionPathWithNullPathThrowsArgumentNullException()
     {
         // Arrange
         ServiceCollection services = [];
@@ -183,7 +182,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-        public void AddProjectionPathWithNullServicesThrowsArgumentNullException()
+    public void AddProjectionPathWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
         IServiceCollection? services = null;
@@ -196,7 +195,7 @@ public sealed class InletClientRegistrationsTests
     ///     AddProjectionPath configuration should register path in registry.
     /// </summary>
     [Fact]
-        public void ProjectionPathConfigurationRegistersPathInRegistry()
+    public void ProjectionPathConfigurationRegistersPathInRegistry()
     {
         // Arrange
         ServiceCollection services = [];

@@ -1,6 +1,5 @@
 using System;
 
-
 using BrookNameAttribute = Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute;
 
 

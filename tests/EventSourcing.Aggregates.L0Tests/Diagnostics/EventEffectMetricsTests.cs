@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 
-
 using Mississippi.EventSourcing.Aggregates.Diagnostics;
 
 
@@ -57,7 +56,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordEffectError records error metric with correct tags.
     /// </summary>
     [Fact]
-        public void RecordEffectErrorRecordsMetricWithTags()
+    public void RecordEffectErrorRecordsMetricWithTags()
     {
         // Act
         EventEffectMetrics.RecordEffectError("TestAggregate", "TestEffect", "TestEvent");
@@ -77,7 +76,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordEffectExecution records count and duration metrics.
     /// </summary>
     [Fact]
-        public void RecordEffectExecutionRecordsCountAndDuration()
+    public void RecordEffectExecutionRecordsCountAndDuration()
     {
         // Act
         EventEffectMetrics.RecordEffectExecution("TestAggregate", "TestEffect", "TestEvent", 42.5, true);
@@ -101,7 +100,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordEffectExecution records failure result tag when not successful.
     /// </summary>
     [Fact]
-        public void RecordEffectExecutionRecordsFailureResult()
+    public void RecordEffectExecutionRecordsFailureResult()
     {
         // Act
         EventEffectMetrics.RecordEffectExecution("TestAggregate", "TestEffect", "TestEvent", 10.0, false);
@@ -118,7 +117,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordEventYielded records yielded event metric with correct tags.
     /// </summary>
     [Fact]
-        public void RecordEventYieldedRecordsMetricWithTags()
+    public void RecordEventYieldedRecordsMetricWithTags()
     {
         // Act
         EventEffectMetrics.RecordEventYielded("TestAggregate", "TestEffect", "YieldedEvent");
@@ -138,7 +137,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordIterationLimitReached records metric with aggregate key tag.
     /// </summary>
     [Fact]
-        public void RecordIterationLimitReachedRecordsMetricWithTags()
+    public void RecordIterationLimitReachedRecordsMetricWithTags()
     {
         // Act
         EventEffectMetrics.RecordIterationLimitReached("TestAggregate", "test-key-123");
@@ -156,7 +155,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     ///     RecordSlowEffect records slow effect metric with correct tags.
     /// </summary>
     [Fact]
-        public void RecordSlowEffectRecordsMetricWithTags()
+    public void RecordSlowEffectRecordsMetricWithTags()
     {
         // Act
         EventEffectMetrics.RecordSlowEffect("TestAggregate", "SlowEffect", "TestEvent");

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
@@ -22,7 +21,7 @@ public sealed class LocalMessageSenderTests
     ///     Constructor should succeed with valid logger.
     /// </summary>
     [Fact(DisplayName = "Constructor Succeeds With Valid Logger")]
-        public void ConstructorShouldSucceedWithValidLogger()
+    public void ConstructorShouldSucceedWithValidLogger()
     {
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
@@ -38,7 +37,7 @@ public sealed class LocalMessageSenderTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Logger Is Null")]
-        public void ConstructorShouldThrowWhenLoggerIsNull()
+    public void ConstructorShouldThrowWhenLoggerIsNull()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new LocalMessageSender(null!));
@@ -49,7 +48,7 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Succeeds With Empty Args")]
-        public async Task SendAsyncShouldSucceedWithEmptyArgs()
+    public async Task SendAsyncShouldSucceedWithEmptyArgs()
     {
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
@@ -69,7 +68,7 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Succeeds With Valid Arguments")]
-        public async Task SendAsyncShouldSucceedWithValidArguments()
+    public async Task SendAsyncShouldSucceedWithValidArguments()
     {
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
@@ -90,7 +89,7 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Throws When Connection Is Null")]
-        public async Task SendAsyncShouldThrowWhenConnectionIsNull()
+    public async Task SendAsyncShouldThrowWhenConnectionIsNull()
     {
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
@@ -106,7 +105,7 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Throws When MethodName Is Empty")]
-        public async Task SendAsyncShouldThrowWhenMethodNameIsEmpty()
+    public async Task SendAsyncShouldThrowWhenMethodNameIsEmpty()
     {
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
@@ -123,7 +122,7 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Throws When MethodName Is Null")]
-        public async Task SendAsyncShouldThrowWhenMethodNameIsNull()
+    public async Task SendAsyncShouldThrowWhenMethodNameIsNull()
     {
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
@@ -140,7 +139,7 @@ public sealed class LocalMessageSenderTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "SendAsync Works With Array Args")]
-        public async Task SendAsyncShouldWorkWithArrayArgs()
+    public async Task SendAsyncShouldWorkWithArrayArgs()
     {
         // Arrange
         ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();

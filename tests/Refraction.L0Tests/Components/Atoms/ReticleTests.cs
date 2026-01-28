@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -19,7 +18,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-        public void ReticleHasAdditionalAttributesParameter()
+    public void ReticleHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Reticle).GetProperty("AdditionalAttributes");
@@ -35,7 +34,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle has Mode parameter.
     /// </summary>
     [Fact]
-        public void ReticleHasModeParameter()
+    public void ReticleHasModeParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Reticle).GetProperty("Mode");
@@ -51,7 +50,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle has State parameter.
     /// </summary>
     [Fact]
-        public void ReticleHasStateParameter()
+    public void ReticleHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(Reticle).GetProperty("State");
@@ -66,7 +65,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle inherits from ComponentBase.
     /// </summary>
     [Fact]
-        public void ReticleInheritsFromComponentBase()
+    public void ReticleInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(Reticle)));
@@ -76,7 +75,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle Mode defaults to Focus.
     /// </summary>
     [Fact]
-        public void ReticleModeDefaultsToFocus()
+    public void ReticleModeDefaultsToFocus()
     {
         // Arrange
         Reticle component = new();
@@ -89,7 +88,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders additional attributes.
     /// </summary>
     [Fact]
-        public void ReticleRendersAdditionalAttributes()
+    public void ReticleRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>(p => p.AddUnmatched("data-testid", "reticle-1"));
@@ -102,7 +101,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders custom mode.
     /// </summary>
     [Fact]
-        public void ReticleRendersCustomMode()
+    public void ReticleRendersCustomMode()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>(p => p.Add(
@@ -118,7 +117,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders default mode.
     /// </summary>
     [Fact]
-        public void ReticleRendersDefaultMode()
+    public void ReticleRendersDefaultMode()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>();
@@ -132,7 +131,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders ring indicator.
     /// </summary>
     [Fact]
-        public void ReticleRendersRingIndicator()
+    public void ReticleRendersRingIndicator()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>();
@@ -145,7 +144,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle renders with default state.
     /// </summary>
     [Fact]
-        public void ReticleRendersWithDefaultState()
+    public void ReticleRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<Reticle> cut = Render<Reticle>();
@@ -159,7 +158,7 @@ public sealed class ReticleTests : BunitContext
     ///     Reticle State defaults to Idle.
     /// </summary>
     [Fact]
-        public void ReticleStateDefaultsToIdle()
+    public void ReticleStateDefaultsToIdle()
     {
         // Arrange
         Reticle component = new();

@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Inlet.Client.Abstractions.Commands;
 
 
@@ -15,7 +14,7 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting creates entry with Executing status.
     /// </summary>
     [Fact]
-        public void CreateExecutingCreatesEntryWithExecutingStatus()
+    public void CreateExecutingCreatesEntryWithExecutingStatus()
     {
         // Arrange
         string commandId = "cmd-123";
@@ -33,7 +32,7 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets CommandId.
     /// </summary>
     [Fact]
-        public void CreateExecutingSetsCommandId()
+    public void CreateExecutingSetsCommandId()
     {
         // Arrange
         string commandId = "cmd-456";
@@ -52,7 +51,7 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets CommandType.
     /// </summary>
     [Fact]
-        public void CreateExecutingSetsCommandType()
+    public void CreateExecutingSetsCommandType()
     {
         // Arrange
         string commandType = "DepositCommand";
@@ -68,7 +67,7 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets CompletedAt to null.
     /// </summary>
     [Fact]
-        public void CreateExecutingSetsCompletedAtToNull()
+    public void CreateExecutingSetsCompletedAtToNull()
     {
         // Act
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -84,7 +83,7 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets ErrorCode to null.
     /// </summary>
     [Fact]
-        public void CreateExecutingSetsErrorCodeToNull()
+    public void CreateExecutingSetsErrorCodeToNull()
     {
         // Act
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -100,7 +99,7 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets ErrorMessage to null.
     /// </summary>
     [Fact]
-        public void CreateExecutingSetsErrorMessageToNull()
+    public void CreateExecutingSetsErrorMessageToNull()
     {
         // Act
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -116,7 +115,7 @@ public sealed class CommandHistoryEntryTests
     ///     CreateExecuting sets StartedAt.
     /// </summary>
     [Fact]
-        public void CreateExecutingSetsStartedAt()
+    public void CreateExecutingSetsStartedAt()
     {
         // Arrange
         DateTimeOffset startedAt = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
@@ -132,7 +131,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed allows null ErrorCode.
     /// </summary>
     [Fact]
-        public void ToFailedAllowsNullErrorCode()
+    public void ToFailedAllowsNullErrorCode()
     {
         // Arrange
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -151,7 +150,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed allows null ErrorMessage.
     /// </summary>
     [Fact]
-        public void ToFailedAllowsNullErrorMessage()
+    public void ToFailedAllowsNullErrorMessage()
     {
         // Arrange
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -170,7 +169,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed preserves original CommandId.
     /// </summary>
     [Fact]
-        public void ToFailedPreservesCommandId()
+    public void ToFailedPreservesCommandId()
     {
         // Arrange
         string commandId = "cmd-preserve";
@@ -190,7 +189,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed returns entry with Failed status.
     /// </summary>
     [Fact]
-        public void ToFailedReturnsEntryWithFailedStatus()
+    public void ToFailedReturnsEntryWithFailedStatus()
     {
         // Arrange
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -210,7 +209,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed sets CompletedAt.
     /// </summary>
     [Fact]
-        public void ToFailedSetsCompletedAt()
+    public void ToFailedSetsCompletedAt()
     {
         // Arrange
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -230,7 +229,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed sets ErrorCode.
     /// </summary>
     [Fact]
-        public void ToFailedSetsErrorCode()
+    public void ToFailedSetsErrorCode()
     {
         // Arrange
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -250,7 +249,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToFailed sets ErrorMessage.
     /// </summary>
     [Fact]
-        public void ToFailedSetsErrorMessage()
+    public void ToFailedSetsErrorMessage()
     {
         // Arrange
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -270,7 +269,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded preserves original CommandId.
     /// </summary>
     [Fact]
-        public void ToSucceededPreservesCommandId()
+    public void ToSucceededPreservesCommandId()
     {
         // Arrange
         string commandId = "cmd-preserve";
@@ -290,7 +289,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded preserves CommandType.
     /// </summary>
     [Fact]
-        public void ToSucceededPreservesCommandType()
+    public void ToSucceededPreservesCommandType()
     {
         // Arrange
         string commandType = "DepositCommand";
@@ -307,7 +306,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded preserves StartedAt.
     /// </summary>
     [Fact]
-        public void ToSucceededPreservesStartedAt()
+    public void ToSucceededPreservesStartedAt()
     {
         // Arrange
         DateTimeOffset startedAt = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
@@ -324,7 +323,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded returns entry with Succeeded status.
     /// </summary>
     [Fact]
-        public void ToSucceededReturnsEntryWithSucceededStatus()
+    public void ToSucceededReturnsEntryWithSucceededStatus()
     {
         // Arrange
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
@@ -343,7 +342,7 @@ public sealed class CommandHistoryEntryTests
     ///     ToSucceeded sets CompletedAt.
     /// </summary>
     [Fact]
-        public void ToSucceededSetsCompletedAt()
+    public void ToSucceededSetsCompletedAt()
     {
         // Arrange
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(

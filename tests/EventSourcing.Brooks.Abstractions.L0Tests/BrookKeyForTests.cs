@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
@@ -36,7 +35,7 @@ public class BrookKeyForTests
     ///     ForGrain should create a key using the grain's brook name attribute.
     /// </summary>
     [Fact]
-        public void ForGrainCreatesKeyWithBrookName()
+    public void ForGrainCreatesKeyWithBrookName()
     {
         BrookKey key = BrookKey.ForGrain<TestGrain>("entity-123");
         Assert.Equal("TEST.MODULE.STREAM", key.BrookName);
@@ -47,7 +46,7 @@ public class BrookKeyForTests
     ///     ForGrain should create keys that convert to correct string format.
     /// </summary>
     [Fact]
-        public void ForGrainCreatesKeyWithCorrectStringFormat()
+    public void ForGrainCreatesKeyWithCorrectStringFormat()
     {
         BrookKey key = BrookKey.ForGrain<TestGrain>("order-456");
         string stringKey = key;
@@ -58,7 +57,7 @@ public class BrookKeyForTests
     ///     ForType should create a key using the type's brook name attribute.
     /// </summary>
     [Fact]
-        public void ForTypeCreatesKeyWithBrookName()
+    public void ForTypeCreatesKeyWithBrookName()
     {
         BrookKey key = BrookKey.ForType<TestProjection>("entity-789");
         Assert.Equal("PROJ.DOMAIN.ENTITY", key.BrookName);
@@ -69,7 +68,7 @@ public class BrookKeyForTests
     ///     ForType should create keys that convert to correct string format.
     /// </summary>
     [Fact]
-        public void ForTypeCreatesKeyWithCorrectStringFormat()
+    public void ForTypeCreatesKeyWithCorrectStringFormat()
     {
         BrookKey key = BrookKey.ForType<TestProjection>("proj-456");
         string stringKey = key;
@@ -80,7 +79,7 @@ public class BrookKeyForTests
     ///     ForType should throw InvalidOperationException when type lacks BrookNameAttribute.
     /// </summary>
     [Fact]
-        public void ForTypeThrowsWhenTypeLacksBrookNameAttribute()
+    public void ForTypeThrowsWhenTypeLacksBrookNameAttribute()
     {
         InvalidOperationException exception =
             Assert.Throws<InvalidOperationException>(() => BrookKey.ForType<UnattributedType>("entity-123"));
@@ -91,7 +90,7 @@ public class BrookKeyForTests
     ///     ForType should work with any type decorated with BrookNameAttribute, not just grains.
     /// </summary>
     [Fact]
-        public void ForTypeWorksWithNonGrainTypes()
+    public void ForTypeWorksWithNonGrainTypes()
     {
         // TestProjection is a record, not a grain class
         BrookKey key = BrookKey.ForType<TestProjection>("record-123");

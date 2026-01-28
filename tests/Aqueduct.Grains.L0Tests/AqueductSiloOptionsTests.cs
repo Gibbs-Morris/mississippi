@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Common.Abstractions;
 
 using NSubstitute;
@@ -23,7 +22,7 @@ public sealed class AqueductSiloOptionsTests
     ///     Constructor should throw when siloBuilder is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenSiloBuilderIsNull()
+    public void ConstructorThrowsWhenSiloBuilderIsNull()
     {
         Assert.Throws<ArgumentNullException>(() => new AqueductSiloOptions(null!));
     }
@@ -32,7 +31,7 @@ public sealed class AqueductSiloOptionsTests
     ///     Default property values should be set correctly.
     /// </summary>
     [Fact]
-        public void DefaultPropertyValuesAreSetCorrectly()
+    public void DefaultPropertyValuesAreSetCorrectly()
     {
         // Arrange
         ISiloBuilder siloBuilder = Substitute.For<ISiloBuilder>();
@@ -52,7 +51,7 @@ public sealed class AqueductSiloOptionsTests
     ///     Properties should be settable.
     /// </summary>
     [Fact]
-        public void PropertiesAreSettable()
+    public void PropertiesAreSettable()
     {
         // Arrange
         ISiloBuilder siloBuilder = Substitute.For<ISiloBuilder>();
@@ -80,7 +79,7 @@ public sealed class AqueductSiloOptionsTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-        public void UseMemoryStreamsWithCustomNamesThrowsWhenPubSubStoreNameInvalid(
+    public void UseMemoryStreamsWithCustomNamesThrowsWhenPubSubStoreNameInvalid(
         string? invalidStoreName
     )
     {
@@ -99,7 +98,7 @@ public sealed class AqueductSiloOptionsTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-        public void UseMemoryStreamsWithCustomNamesThrowsWhenStreamProviderNameInvalid(
+    public void UseMemoryStreamsWithCustomNamesThrowsWhenStreamProviderNameInvalid(
         string? invalidProviderName
     )
     {

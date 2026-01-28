@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
-
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;

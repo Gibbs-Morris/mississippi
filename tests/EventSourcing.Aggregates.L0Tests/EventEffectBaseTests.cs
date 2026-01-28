@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
@@ -51,7 +50,7 @@ public sealed class EventEffectBaseTests
     ///     CanHandle returns false for non-matching event type.
     /// </summary>
     [Fact]
-        public void CanHandleReturnsFalseForNonMatchingEventType()
+    public void CanHandleReturnsFalseForNonMatchingEventType()
     {
         // Arrange
         TestEffect sut = new();
@@ -68,7 +67,7 @@ public sealed class EventEffectBaseTests
     ///     CanHandle returns true for matching event type.
     /// </summary>
     [Fact]
-        public void CanHandleReturnsTrueForMatchingEventType()
+    public void CanHandleReturnsTrueForMatchingEventType()
     {
         // Arrange
         TestEffect sut = new();
@@ -85,7 +84,7 @@ public sealed class EventEffectBaseTests
     ///     CanHandle throws ArgumentNullException when event is null.
     /// </summary>
     [Fact]
-        public void CanHandleThrowsArgumentNullExceptionWhenEventIsNull()
+    public void CanHandleThrowsArgumentNullExceptionWhenEventIsNull()
     {
         // Arrange
         TestEffect sut = new();
@@ -99,7 +98,7 @@ public sealed class EventEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncDispatchesToTypedMethodForMatchingEvent()
+    public async Task HandleAsyncDispatchesToTypedMethodForMatchingEvent()
     {
         // Arrange
         TestEffect sut = new();
@@ -123,7 +122,7 @@ public sealed class EventEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncReturnsEmptyForNonMatchingEvent()
+    public async Task HandleAsyncReturnsEmptyForNonMatchingEvent()
     {
         // Arrange
         TestEffect sut = new();
@@ -145,7 +144,7 @@ public sealed class EventEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when event is null.
     /// </summary>
     [Fact]
-        public void HandleAsyncThrowsArgumentNullExceptionWhenEventIsNull()
+    public void HandleAsyncThrowsArgumentNullExceptionWhenEventIsNull()
     {
         // Arrange
         TestEffect sut = new();

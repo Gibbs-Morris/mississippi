@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Inlet.Client.Abstractions.Configuration;
 
 
@@ -15,7 +14,7 @@ public sealed class InletOptionsTests
     ///     Default AutoReconnect should be true.
     /// </summary>
     [Fact]
-        public void AutoReconnectDefaultsToTrue()
+    public void AutoReconnectDefaultsToTrue()
     {
         // Act
         InletOptions sut = new();
@@ -28,7 +27,7 @@ public sealed class InletOptionsTests
     ///     AutoReconnect should be settable.
     /// </summary>
     [Fact]
-        public void AutoReconnectIsSettable()
+    public void AutoReconnectIsSettable()
     {
         // Arrange
         InletOptions sut = new();
@@ -44,7 +43,7 @@ public sealed class InletOptionsTests
     ///     Default DefaultTimeout should be 30 seconds.
     /// </summary>
     [Fact]
-        public void DefaultTimeoutDefaultsTo30Seconds()
+    public void DefaultTimeoutDefaultsTo30Seconds()
     {
         // Act
         InletOptions sut = new();
@@ -57,7 +56,7 @@ public sealed class InletOptionsTests
     ///     DefaultTimeout should be settable.
     /// </summary>
     [Fact]
-        public void DefaultTimeoutIsSettable()
+    public void DefaultTimeoutIsSettable()
     {
         // Arrange
         InletOptions sut = new();
@@ -73,7 +72,7 @@ public sealed class InletOptionsTests
     ///     Default MaxReconnectAttempts should be 5.
     /// </summary>
     [Fact]
-        public void MaxReconnectAttemptsDefaultsTo5()
+    public void MaxReconnectAttemptsDefaultsTo5()
     {
         // Act
         InletOptions sut = new();
@@ -86,7 +85,7 @@ public sealed class InletOptionsTests
     ///     MaxReconnectAttempts should be settable.
     /// </summary>
     [Fact]
-        public void MaxReconnectAttemptsIsSettable()
+    public void MaxReconnectAttemptsIsSettable()
     {
         // Arrange
         InletOptions sut = new();
@@ -102,7 +101,7 @@ public sealed class InletOptionsTests
     ///     Default ReconnectDelay should be 5 seconds.
     /// </summary>
     [Fact]
-        public void ReconnectDelayDefaultsTo5Seconds()
+    public void ReconnectDelayDefaultsTo5Seconds()
     {
         // Act
         InletOptions sut = new();
@@ -115,7 +114,7 @@ public sealed class InletOptionsTests
     ///     ReconnectDelay should be settable.
     /// </summary>
     [Fact]
-        public void ReconnectDelayIsSettable()
+    public void ReconnectDelayIsSettable()
     {
         // Arrange
         InletOptions sut = new();

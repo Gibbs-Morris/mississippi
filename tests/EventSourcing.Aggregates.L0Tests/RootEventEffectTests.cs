@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
@@ -122,7 +121,7 @@ public sealed class RootEventEffectTests
     ///     Constructor should throw ArgumentNullException when effects is null.
     /// </summary>
     [Fact]
-        public void ConstructorWithNullEffectsThrowsArgumentNullException()
+    public void ConstructorWithNullEffectsThrowsArgumentNullException()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new RootEventEffect<TestAggregate>(null!));
@@ -133,7 +132,7 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task DispatchAsyncContinuesToOtherEffectsWhenOneThrows()
+    public async Task DispatchAsyncContinuesToOtherEffectsWhenOneThrows()
     {
         // Arrange
         TrackingSimpleEffect trackingEffect = new();
@@ -157,7 +156,7 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task DispatchAsyncDispatchesToFallbackEffects()
+    public async Task DispatchAsyncDispatchesToFallbackEffects()
     {
         // Arrange
         FallbackEffect fallbackEffect = new();
@@ -181,7 +180,7 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task DispatchAsyncDispatchesToMatchingEffectAndYieldsEvents()
+    public async Task DispatchAsyncDispatchesToMatchingEffectAndYieldsEvents()
     {
         // Arrange
         RootEventEffect<TestAggregate> sut = new([new YieldingEffect()]);
@@ -205,7 +204,7 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task DispatchAsyncInvokesMultipleEffectsForSameEventType()
+    public async Task DispatchAsyncInvokesMultipleEffectsForSameEventType()
     {
         // Arrange
         TrackingSimpleEffect effect1 = new();
@@ -230,7 +229,7 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task DispatchAsyncReturnsEmptyWhenNoEffectsMatch()
+    public async Task DispatchAsyncReturnsEmptyWhenNoEffectsMatch()
     {
         // Arrange
         RootEventEffect<TestAggregate> sut = new([new YieldingEffect()]);
@@ -252,7 +251,7 @@ public sealed class RootEventEffectTests
     ///     DispatchAsync throws ArgumentNullException when eventData is null.
     /// </summary>
     [Fact]
-        public void DispatchAsyncThrowsArgumentNullExceptionWhenEventDataIsNull()
+    public void DispatchAsyncThrowsArgumentNullExceptionWhenEventDataIsNull()
     {
         // Arrange
         RootEventEffect<TestAggregate> sut = new([]);
@@ -267,7 +266,7 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task DispatchAsyncWithLoggerDoesNotThrow()
+    public async Task DispatchAsyncWithLoggerDoesNotThrow()
     {
         // Arrange
         RootEventEffect<TestAggregate> sut = new([new YieldingEffect()]);
@@ -289,7 +288,7 @@ public sealed class RootEventEffectTests
     ///     EffectCount returns correct count when effects are registered.
     /// </summary>
     [Fact]
-        public void EffectCountReturnsCorrectCountWhenEffectsRegistered()
+    public void EffectCountReturnsCorrectCountWhenEffectsRegistered()
     {
         // Arrange
         RootEventEffect<TestAggregate> sut = new([new YieldingEffect(), new TrackingSimpleEffect()]);
@@ -302,7 +301,7 @@ public sealed class RootEventEffectTests
     ///     EffectCount returns zero when no effects are registered.
     /// </summary>
     [Fact]
-        public void EffectCountReturnsZeroWhenNoEffectsRegistered()
+    public void EffectCountReturnsZeroWhenNoEffectsRegistered()
     {
         // Arrange
         RootEventEffect<TestAggregate> sut = new([]);

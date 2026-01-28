@@ -1,7 +1,6 @@
 using System;
 
 
-
 namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
 
 /// <summary>
@@ -13,7 +12,7 @@ public sealed class AggregateServiceAttributeTests
     ///     Authorize property should default to null.
     /// </summary>
     [Fact]
-        public void AuthorizePropertyDefaultsToNull()
+    public void AuthorizePropertyDefaultsToNull()
     {
         // Arrange & Act
         AggregateServiceAttribute attribute = new("users");
@@ -26,7 +25,7 @@ public sealed class AggregateServiceAttributeTests
     ///     Authorize property should be settable.
     /// </summary>
     [Fact]
-        public void AuthorizePropertyIsSettable()
+    public void AuthorizePropertyIsSettable()
     {
         // Arrange
         AggregateServiceAttribute attribute = new("users");
@@ -42,7 +41,7 @@ public sealed class AggregateServiceAttributeTests
     ///     Constructor should succeed with valid route.
     /// </summary>
     [Fact]
-        public void ConstructorSucceedsWithValidRoute()
+    public void ConstructorSucceedsWithValidRoute()
     {
         // Arrange & Act
         AggregateServiceAttribute attribute = new("users");
@@ -55,7 +54,7 @@ public sealed class AggregateServiceAttributeTests
     ///     Constructor should throw ArgumentNullException when route is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenRouteIsNull()
+    public void ConstructorThrowsWhenRouteIsNull()
     {
         // Arrange, Act & Assert
         Assert.Throws<ArgumentNullException>(() => new AggregateServiceAttribute(null!));
@@ -65,7 +64,7 @@ public sealed class AggregateServiceAttributeTests
     ///     GenerateApi property should default to true.
     /// </summary>
     [Fact]
-        public void GenerateApiPropertyDefaultsToTrue()
+    public void GenerateApiPropertyDefaultsToTrue()
     {
         // Arrange & Act
         AggregateServiceAttribute attribute = new("users");
@@ -78,7 +77,7 @@ public sealed class AggregateServiceAttributeTests
     ///     GenerateApi property should be settable.
     /// </summary>
     [Fact]
-        public void GenerateApiPropertyIsSettable()
+    public void GenerateApiPropertyIsSettable()
     {
         // Arrange
         AggregateServiceAttribute attribute = new("users");
@@ -94,7 +93,7 @@ public sealed class AggregateServiceAttributeTests
     ///     Route property should return the value passed to constructor.
     /// </summary>
     [Fact]
-        public void RoutePropertyReturnsConstructorValue()
+    public void RoutePropertyReturnsConstructorValue()
     {
         // Arrange & Act
         AggregateServiceAttribute attribute = new("orders");

@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Silo.Abstractions;
@@ -20,7 +19,7 @@ public sealed class InletSiloRegistrationsTests
     ///     AddInletSilo can be called multiple times.
     /// </summary>
     [Fact]
-        public void AddInletSiloCanBeCalledMultipleTimes()
+    public void AddInletSiloCanBeCalledMultipleTimes()
     {
         // Arrange
         ServiceCollection services = [];
@@ -39,7 +38,7 @@ public sealed class InletSiloRegistrationsTests
     ///     AddInletSilo should register as singleton.
     /// </summary>
     [Fact]
-        public void AddInletSiloRegistersAsSingleton()
+    public void AddInletSiloRegistersAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
@@ -58,7 +57,7 @@ public sealed class InletSiloRegistrationsTests
     ///     AddInletSilo should register IProjectionBrookRegistry.
     /// </summary>
     [Fact]
-        public void AddInletSiloRegistersIProjectionBrookRegistry()
+    public void AddInletSiloRegistersIProjectionBrookRegistry()
     {
         // Arrange
         ServiceCollection services = [];
@@ -76,7 +75,7 @@ public sealed class InletSiloRegistrationsTests
     ///     AddInletSilo should return the same services collection for chaining.
     /// </summary>
     [Fact]
-        public void AddInletSiloReturnsSameCollection()
+    public void AddInletSiloReturnsSameCollection()
     {
         // Arrange
         ServiceCollection services = [];
@@ -92,7 +91,7 @@ public sealed class InletSiloRegistrationsTests
     ///     AddInletSilo should throw when services is null.
     /// </summary>
     [Fact]
-        public void AddInletSiloThrowsWhenServicesNull()
+    public void AddInletSiloThrowsWhenServicesNull()
     {
         // Arrange
         IServiceCollection services = null!;
@@ -106,7 +105,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies discovers types with ProjectionPathAttribute.
     /// </summary>
     [Fact]
-        public void ScanProjectionAssembliesDiscoversProjectionPathAttribute()
+    public void ScanProjectionAssembliesDiscoversProjectionPathAttribute()
     {
         // Arrange
         ServiceCollection services = [];
@@ -126,7 +125,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies replaces existing registry.
     /// </summary>
     [Fact]
-        public void ScanProjectionAssembliesReplacesExistingRegistry()
+    public void ScanProjectionAssembliesReplacesExistingRegistry()
     {
         // Arrange
         ServiceCollection services = [];
@@ -147,7 +146,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies should return the same services collection for chaining.
     /// </summary>
     [Fact]
-        public void ScanProjectionAssembliesReturnsSameCollection()
+    public void ScanProjectionAssembliesReturnsSameCollection()
     {
         // Arrange
         ServiceCollection services = [];
@@ -163,7 +162,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies should throw when assemblies is null.
     /// </summary>
     [Fact]
-        public void ScanProjectionAssembliesThrowsWhenAssembliesNull()
+    public void ScanProjectionAssembliesThrowsWhenAssembliesNull()
     {
         // Arrange
         ServiceCollection services = [];
@@ -178,7 +177,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies should throw when services is null.
     /// </summary>
     [Fact]
-        public void ScanProjectionAssembliesThrowsWhenServicesNull()
+    public void ScanProjectionAssembliesThrowsWhenServicesNull()
     {
         // Arrange
         IServiceCollection services = null!;
@@ -193,7 +192,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies uses BrookNameAttribute value when present.
     /// </summary>
     [Fact]
-        public void ScanProjectionAssembliesUsesBrookNameAttributeWhenPresent()
+    public void ScanProjectionAssembliesUsesBrookNameAttributeWhenPresent()
     {
         // Arrange
         ServiceCollection services = [];
@@ -213,7 +212,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies uses path as brook name when BrookNameAttribute is absent.
     /// </summary>
     [Fact]
-        public void ScanProjectionAssembliesUsesPathAsBrookNameByDefault()
+    public void ScanProjectionAssembliesUsesPathAsBrookNameByDefault()
     {
         // Arrange
         ServiceCollection services = [];
@@ -233,7 +232,7 @@ public sealed class InletSiloRegistrationsTests
     ///     ScanProjectionAssemblies with no assemblies creates empty registry.
     /// </summary>
     [Fact]
-        public void ScanProjectionAssembliesWithNoAssembliesCreatesEmptyRegistry()
+    public void ScanProjectionAssembliesWithNoAssembliesCreatesEmptyRegistry()
     {
         // Arrange
         ServiceCollection services = [];

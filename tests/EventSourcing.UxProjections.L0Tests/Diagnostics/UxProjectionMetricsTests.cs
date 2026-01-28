@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-
 using Mississippi.EventSourcing.UxProjections.Diagnostics;
 
 
@@ -24,7 +23,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordCursorRead should emit metric with projection type tag.
     /// </summary>
     [Fact]
-        public void RecordCursorReadEmitsMetricWithProjectionType()
+    public void RecordCursorReadEmitsMetricWithProjectionType()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -77,7 +76,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordNotificationSent should emit metric with projection type tag.
     /// </summary>
     [Fact]
-        public void RecordNotificationSentEmitsMetricWithProjectionType()
+    public void RecordNotificationSentEmitsMetricWithProjectionType()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -130,7 +129,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordQuery should emit count and duration metrics.
     /// </summary>
     [Fact]
-        public void RecordQueryEmitsCountAndDurationMetrics()
+    public void RecordQueryEmitsCountAndDurationMetrics()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
@@ -215,7 +214,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordQuery with no result should emit empty query metric.
     /// </summary>
     [Fact]
-        public void RecordQueryWithNoResultEmitsEmptyMetric()
+    public void RecordQueryWithNoResultEmitsEmptyMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -280,7 +279,7 @@ public sealed class UxProjectionMetricsTests
     [Theory]
     [InlineData("subscribe")]
     [InlineData("unsubscribe")]
-        public void RecordSubscriptionEmitsMetricWithActionTag(
+    public void RecordSubscriptionEmitsMetricWithActionTag(
         string action
     )
     {
@@ -335,7 +334,7 @@ public sealed class UxProjectionMetricsTests
     ///     RecordVersionCacheHit should emit metric with projection type tag.
     /// </summary>
     [Fact]
-        public void RecordVersionCacheHitEmitsMetricWithProjectionType()
+    public void RecordVersionCacheHitEmitsMetricWithProjectionType()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];

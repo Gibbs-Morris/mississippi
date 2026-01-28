@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.EventSourcing.UxProjections.L0Tests.Infrastructure;
@@ -24,7 +23,7 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task CursorGrainActivatesWithValidKeyFormat()
+    public async Task CursorGrainActivatesWithValidKeyFormat()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
         UxProjectionCursorKey key =
@@ -43,7 +42,7 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task CursorGrainReturnsInitialMinusOnePosition()
+    public async Task CursorGrainReturnsInitialMinusOnePosition()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
         UxProjectionCursorKey key =
@@ -63,7 +62,7 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task DeactivateAsyncCompletesWithoutError()
+    public async Task DeactivateAsyncCompletesWithoutError()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
         UxProjectionCursorKey key =
@@ -83,7 +82,7 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task GrainReferenceObtainedMultipleTimesIsSameGrain()
+    public async Task GrainReferenceObtainedMultipleTimesIsSameGrain()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
         UxProjectionCursorKey key =
@@ -104,7 +103,7 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task MultipleCursorGrainsReturnIndependentInitialPositions()
+    public async Task MultipleCursorGrainsReturnIndependentInitialPositions()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
         UxProjectionCursorKey key1 =
@@ -128,7 +127,7 @@ public sealed class UxProjectionCursorGrainIntegrationTests
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-        public async Task SameGrainReferenceReturnsConsistentPosition()
+    public async Task SameGrainReferenceReturnsConsistentPosition()
     {
         // Arrange - use UxProjectionCursorKey format (brookName|entityId)
         UxProjectionCursorKey key =

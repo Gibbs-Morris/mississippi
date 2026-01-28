@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Azure;
 
 using Microsoft.Extensions.Logging.Abstractions;

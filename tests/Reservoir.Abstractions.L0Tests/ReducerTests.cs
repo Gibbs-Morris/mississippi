@@ -1,4 +1,3 @@
-
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
@@ -54,7 +53,7 @@ public sealed class ReducerTests
     ///     Reduce should apply transformation for matching action.
     /// </summary>
     [Fact]
-        public void ReduceAppliesTransformation()
+    public void ReduceAppliesTransformation()
     {
         // Arrange
         IncrementActionReducer sut = new();
@@ -74,7 +73,7 @@ public sealed class ReducerTests
     ///     TryReduce should return false and return original state for non-matching action type.
     /// </summary>
     [Fact]
-        public void TryReduceReturnsFalseForNonMatchingActionType()
+    public void TryReduceReturnsFalseForNonMatchingActionType()
     {
         // Arrange
         IncrementActionReducer sut = new();
@@ -95,7 +94,7 @@ public sealed class ReducerTests
     ///     TryReduce should return true and produce new state for matching action type.
     /// </summary>
     [Fact]
-        public void TryReduceReturnsTrueForMatchingActionType()
+    public void TryReduceReturnsTrueForMatchingActionType()
     {
         // Arrange
         IncrementActionReducer sut = new();

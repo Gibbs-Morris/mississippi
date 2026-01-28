@@ -1,6 +1,5 @@
 using System;
 
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -28,7 +27,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotCaching should register ISnapshotGrainFactory.
     /// </summary>
     [Fact]
-        public void AddSnapshotCachingRegistersSnapshotGrainFactory()
+    public void AddSnapshotCachingRegistersSnapshotGrainFactory()
     {
         // Arrange
         ServiceCollection services = new();
@@ -49,7 +48,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotCaching should return the service collection for chaining.
     /// </summary>
     [Fact]
-        public void AddSnapshotCachingReturnsServiceCollection()
+    public void AddSnapshotCachingReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
@@ -65,7 +64,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotCaching should throw when services is null.
     /// </summary>
     [Fact]
-        public void AddSnapshotCachingThrowsWhenServicesIsNull()
+    public void AddSnapshotCachingThrowsWhenServicesIsNull()
     {
         // Arrange
         IServiceCollection? services = null;
@@ -78,7 +77,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotStateConverter should register ISnapshotStateConverter.
     /// </summary>
     [Fact]
-        public void AddSnapshotStateConverterRegistersConverter()
+    public void AddSnapshotStateConverterRegistersConverter()
     {
         // Arrange
         ServiceCollection services = new();
@@ -98,7 +97,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotStateConverter should return the service collection for chaining.
     /// </summary>
     [Fact]
-        public void AddSnapshotStateConverterReturnsServiceCollection()
+    public void AddSnapshotStateConverterReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
@@ -114,7 +113,7 @@ public sealed class SnapshotRegistrationsTests
     ///     AddSnapshotStateConverter should throw when services is null.
     /// </summary>
     [Fact]
-        public void AddSnapshotStateConverterThrowsWhenServicesIsNull()
+    public void AddSnapshotStateConverterThrowsWhenServicesIsNull()
     {
         // Arrange
         IServiceCollection? services = null;

@@ -1,7 +1,6 @@
 using System;
 
 
-
 namespace Mississippi.EventSourcing.Reducers.L0Tests;
 
 /// <summary>

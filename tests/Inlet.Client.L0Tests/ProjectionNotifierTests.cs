@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
@@ -52,21 +51,21 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     Constructor should throw when projectionCache is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenProjectionCacheIsNull() =>
+    public void ConstructorThrowsWhenProjectionCacheIsNull() =>
         Assert.Throws<ArgumentNullException>(() => new ProjectionNotifier(store, null!));
 
     /// <summary>
     ///     Constructor should throw when store is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenStoreIsNull() =>
+    public void ConstructorThrowsWhenStoreIsNull() =>
         Assert.Throws<ArgumentNullException>(() => new ProjectionNotifier(null!, cache));
 
     /// <summary>
     ///     NotifyConnectionChanged should dispatch action.
     /// </summary>
     [Fact]
-        public void NotifyConnectionChangedDispatchesAction()
+    public void NotifyConnectionChangedDispatchesAction()
     {
         // Arrange
         IAction? dispatchedAction = null;
@@ -89,7 +88,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyConnectionChanged should handle disconnect.
     /// </summary>
     [Fact]
-        public void NotifyConnectionChangedHandlesDisconnect()
+    public void NotifyConnectionChangedHandlesDisconnect()
     {
         // Arrange
         ProjectionNotifier sut = new(store, cache);
@@ -106,7 +105,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyConnectionChanged should throw when entityId is null.
     /// </summary>
     [Fact]
-        public void NotifyConnectionChangedThrowsWhenEntityIdIsNull()
+    public void NotifyConnectionChangedThrowsWhenEntityIdIsNull()
     {
         // Arrange
         ProjectionNotifier sut = new(store, cache);
@@ -119,7 +118,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyConnectionChanged should update cache.
     /// </summary>
     [Fact]
-        public void NotifyConnectionChangedUpdatesCache()
+    public void NotifyConnectionChangedUpdatesCache()
     {
         // Arrange
         ProjectionNotifier sut = new(store, cache);
@@ -135,7 +134,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyError should dispatch action.
     /// </summary>
     [Fact]
-        public void NotifyErrorDispatchesAction()
+    public void NotifyErrorDispatchesAction()
     {
         // Arrange
         IAction? dispatchedAction = null;
@@ -158,7 +157,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyError should throw when entityId is null.
     /// </summary>
     [Fact]
-        public void NotifyErrorThrowsWhenEntityIdIsNull()
+    public void NotifyErrorThrowsWhenEntityIdIsNull()
     {
         // Arrange
         ProjectionNotifier sut = new(store, cache);
@@ -172,7 +171,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyError should throw when exception is null.
     /// </summary>
     [Fact]
-        public void NotifyErrorThrowsWhenExceptionIsNull()
+    public void NotifyErrorThrowsWhenExceptionIsNull()
     {
         // Arrange
         ProjectionNotifier sut = new(store, cache);
@@ -185,7 +184,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyError should update cache.
     /// </summary>
     [Fact]
-        public void NotifyErrorUpdatesCache()
+    public void NotifyErrorUpdatesCache()
     {
         // Arrange
         ProjectionNotifier sut = new(store, cache);
@@ -204,7 +203,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyProjectionUpdated should dispatch action.
     /// </summary>
     [Fact]
-        public void NotifyProjectionUpdatedDispatchesAction()
+    public void NotifyProjectionUpdatedDispatchesAction()
     {
         // Arrange
         IAction? dispatchedAction = null;
@@ -228,7 +227,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyProjectionUpdated should handle null data.
     /// </summary>
     [Fact]
-        public void NotifyProjectionUpdatedHandlesNullData()
+    public void NotifyProjectionUpdatedHandlesNullData()
     {
         // Arrange
         ProjectionNotifier sut = new(store, cache);
@@ -245,7 +244,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyProjectionUpdated should throw when entityId is null.
     /// </summary>
     [Fact]
-        public void NotifyProjectionUpdatedThrowsWhenEntityIdIsNull()
+    public void NotifyProjectionUpdatedThrowsWhenEntityIdIsNull()
     {
         // Arrange
         ProjectionNotifier sut = new(store, cache);
@@ -258,7 +257,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     ///     NotifyProjectionUpdated should update cache.
     /// </summary>
     [Fact]
-        public void NotifyProjectionUpdatedUpdatesCache()
+    public void NotifyProjectionUpdatedUpdatesCache()
     {
         // Arrange
         ProjectionNotifier sut = new(store, cache);

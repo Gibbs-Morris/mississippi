@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-
 using Mississippi.Refraction.Abstractions.Motion;
 
 
@@ -16,7 +15,7 @@ public sealed class IMotionPreferencesTests
     ///     Verifies the interface defines motion preference properties.
     /// </summary>
     [Fact]
-        public void IMotionPreferencesDefinesMotionPreferenceProperties()
+    public void IMotionPreferencesDefinesMotionPreferenceProperties()
     {
         // Arrange
         Type interfaceType = typeof(IMotionPreferences);
@@ -32,7 +31,7 @@ public sealed class IMotionPreferencesTests
     ///     Verifies DurationMultiplier is double type.
     /// </summary>
     [Fact]
-        public void IMotionPreferencesDurationMultiplierIsDouble()
+    public void IMotionPreferencesDurationMultiplierIsDouble()
     {
         // Arrange
         Type interfaceType = typeof(IMotionPreferences);

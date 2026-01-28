@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-
 using Mississippi.EventSourcing.Snapshots.Cosmos.Diagnostics;
 
 
@@ -24,7 +23,7 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordDelete should emit metric with snapshot type.
     /// </summary>
     [Fact]
-        public void RecordDeleteEmitsMetric()
+    public void RecordDeleteEmitsMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -68,7 +67,7 @@ public sealed class SnapshotStorageMetricsTests
     /// </summary>
     /// <param name="prunedCount">The pruned count to test.</param>
     [Theory]
-        [InlineData(0)]
+    [InlineData(0)]
     [InlineData(-1)]
     public void RecordPruneDoesNotEmitWhenCountIsZeroOrNegative(
         int prunedCount
@@ -110,7 +109,7 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordPrune should emit metric with pruned count.
     /// </summary>
     [Fact]
-        public void RecordPruneEmitsMetricWithCount()
+    public void RecordPruneEmitsMetricWithCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -153,7 +152,7 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordRead should emit count and duration metrics when found.
     /// </summary>
     [Fact]
-        public void RecordReadEmitsMetricsWhenFound()
+    public void RecordReadEmitsMetricsWhenFound()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
@@ -218,7 +217,7 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordRead should emit not_found result when not found.
     /// </summary>
     [Fact]
-        public void RecordReadEmitsNotFoundResult()
+    public void RecordReadEmitsNotFoundResult()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -269,7 +268,7 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordWrite should not emit size metric when size is zero.
     /// </summary>
     [Fact]
-        public void RecordWriteDoesNotEmitSizeWhenZero()
+    public void RecordWriteDoesNotEmitSizeWhenZero()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -316,7 +315,7 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordWrite should emit failure result on failure.
     /// </summary>
     [Fact]
-        public void RecordWriteEmitsFailureResult()
+    public void RecordWriteEmitsFailureResult()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -367,7 +366,7 @@ public sealed class SnapshotStorageMetricsTests
     ///     RecordWrite should emit count, duration, and size metrics on success.
     /// </summary>
     [Fact]
-        public void RecordWriteEmitsMetricsWithSize()
+    public void RecordWriteEmitsMetricsWithSize()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];

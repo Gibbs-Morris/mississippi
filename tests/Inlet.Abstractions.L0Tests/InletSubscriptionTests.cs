@@ -1,4 +1,3 @@
-
 using Mississippi.Inlet.Silo.Abstractions;
 
 
@@ -13,7 +12,7 @@ public sealed class InletSubscriptionTests
     ///     Constructor should set all properties correctly.
     /// </summary>
     [Fact]
-        public void ConstructorSetsAllProperties()
+    public void ConstructorSetsAllProperties()
     {
         // Arrange & Act
         InletSubscription sut = new("sub-1", "cascade/channels", "entity-1");
@@ -28,7 +27,7 @@ public sealed class InletSubscriptionTests
     ///     Two subscriptions with different values should not be equal.
     /// </summary>
     [Fact]
-        public void DifferentSubscriptionsAreNotEqual()
+    public void DifferentSubscriptionsAreNotEqual()
     {
         // Arrange
         InletSubscription sub1 = new("sub-1", "cascade/channels", "entity-1");
@@ -42,7 +41,7 @@ public sealed class InletSubscriptionTests
     ///     Two subscriptions with same values should be equal.
     /// </summary>
     [Fact]
-        public void EqualSubscriptionsAreEqual()
+    public void EqualSubscriptionsAreEqual()
     {
         // Arrange
         InletSubscription sub1 = new("sub-1", "cascade/channels", "entity-1");

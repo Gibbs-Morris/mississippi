@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 
-
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
 

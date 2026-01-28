@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
-
 using Mississippi.Common.Abstractions.Mapping;
 
 using Moq;

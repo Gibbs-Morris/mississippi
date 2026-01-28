@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -21,7 +20,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-        public void NotificationPulseHasAdditionalAttributesParameter()
+    public void NotificationPulseHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(NotificationPulse).GetProperty("AdditionalAttributes");
@@ -37,7 +36,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse has ChildContent parameter.
     /// </summary>
     [Fact]
-        public void NotificationPulseHasChildContentParameter()
+    public void NotificationPulseHasChildContentParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(NotificationPulse).GetProperty("ChildContent");
@@ -53,7 +52,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse has OnDismiss EventCallback.
     /// </summary>
     [Fact]
-        public void NotificationPulseHasOnDismissEventCallback()
+    public void NotificationPulseHasOnDismissEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(NotificationPulse).GetProperty("OnDismiss");
@@ -67,7 +66,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse has OnExpand EventCallback.
     /// </summary>
     [Fact]
-        public void NotificationPulseHasOnExpandEventCallback()
+    public void NotificationPulseHasOnExpandEventCallback()
     {
         // Arrange
         PropertyInfo? prop = typeof(NotificationPulse).GetProperty("OnExpand");
@@ -82,7 +81,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse has State parameter.
     /// </summary>
     [Fact]
-        public void NotificationPulseHasStateParameter()
+    public void NotificationPulseHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(NotificationPulse).GetProperty("State");
@@ -97,7 +96,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse inherits from ComponentBase.
     /// </summary>
     [Fact]
-        public void NotificationPulseInheritsFromComponentBase()
+    public void NotificationPulseInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(NotificationPulse)));
@@ -107,7 +106,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse invokes OnExpand when clicked.
     /// </summary>
     [Fact]
-        public void NotificationPulseInvokesOnExpandWhenClicked()
+    public void NotificationPulseInvokesOnExpandWhenClicked()
     {
         // Arrange
         bool wasExpanded = false;
@@ -132,7 +131,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders additional attributes.
     /// </summary>
     [Fact]
-        public void NotificationPulseRendersAdditionalAttributes()
+    public void NotificationPulseRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<NotificationPulse> cut =
@@ -146,7 +145,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders child content.
     /// </summary>
     [Fact]
-        public void NotificationPulseRendersChildContent()
+    public void NotificationPulseRendersChildContent()
     {
         // Act
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p.AddChildContent(
@@ -161,7 +160,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders custom state.
     /// </summary>
     [Fact]
-        public void NotificationPulseRendersCustomState()
+    public void NotificationPulseRendersCustomState()
     {
         // Act
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p.Add(
@@ -177,7 +176,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders dot indicator.
     /// </summary>
     [Fact]
-        public void NotificationPulseRendersDotIndicator()
+    public void NotificationPulseRendersDotIndicator()
     {
         // Act
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
@@ -190,7 +189,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders with default state.
     /// </summary>
     [Fact]
-        public void NotificationPulseRendersWithDefaultState()
+    public void NotificationPulseRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
@@ -204,7 +203,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders with status role for accessibility.
     /// </summary>
     [Fact]
-        public void NotificationPulseRendersWithStatusRoleForAccessibility()
+    public void NotificationPulseRendersWithStatusRoleForAccessibility()
     {
         // Act
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
@@ -218,7 +217,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse renders with tabindex for keyboard accessibility.
     /// </summary>
     [Fact]
-        public void NotificationPulseRendersWithTabindexForKeyboardAccessibility()
+    public void NotificationPulseRendersWithTabindexForKeyboardAccessibility()
     {
         // Act
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
@@ -232,7 +231,7 @@ public sealed class NotificationPulseTests : BunitContext
     ///     NotificationPulse State defaults to New.
     /// </summary>
     [Fact]
-        public void NotificationPulseStateDefaultsToNew()
+    public void NotificationPulseStateDefaultsToNew()
     {
         // Arrange
         NotificationPulse component = new();

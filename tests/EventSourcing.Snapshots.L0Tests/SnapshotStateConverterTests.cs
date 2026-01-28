@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.EventSourcing.Serialization.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 
@@ -29,7 +28,7 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that FromEnvelope deserializes the state from the envelope.
     /// </summary>
     [Fact]
-        public void FromEnvelopeDeserializesState()
+    public void FromEnvelopeDeserializesState()
     {
         // Arrange
         TestState expectedState = new()
@@ -60,7 +59,7 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that FromEnvelope throws when the envelope is null.
     /// </summary>
     [Fact]
-        public void FromEnvelopeThrowsWhenEnvelopeIsNull()
+    public void FromEnvelopeThrowsWhenEnvelopeIsNull()
     {
         // Arrange
         Mock<ISerializationProvider> serializationProviderMock = new();
@@ -74,7 +73,7 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that ToEnvelope serializes the state with the provided event reducer hash.
     /// </summary>
     [Fact]
-        public void ToEnvelopeSerializesStateWithReducerHash()
+    public void ToEnvelopeSerializesStateWithReducerHash()
     {
         // Arrange
         const string reducerHash = "test-hash";
@@ -102,7 +101,7 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that ToEnvelope throws when the event reducer hash is null.
     /// </summary>
     [Fact]
-        public void ToEnvelopeThrowsWhenReducerHashIsNull()
+    public void ToEnvelopeThrowsWhenReducerHashIsNull()
     {
         // Arrange
         Mock<ISerializationProvider> serializationProviderMock = new();
@@ -120,7 +119,7 @@ public sealed class SnapshotStateConverterTests
     ///     Verifies that ToEnvelope throws when the state is null.
     /// </summary>
     [Fact]
-        public void ToEnvelopeThrowsWhenStateIsNull()
+    public void ToEnvelopeThrowsWhenStateIsNull()
     {
         // Arrange
         Mock<ISerializationProvider> serializationProviderMock = new();

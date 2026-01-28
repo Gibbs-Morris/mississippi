@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Inlet.Client.ActionEffects;
 
 
@@ -15,7 +14,7 @@ public sealed class ProjectionFetchResultTests
     ///     Create generic sets Data property.
     /// </summary>
     [Fact]
-        public void CreateGenericSetsData()
+    public void CreateGenericSetsData()
     {
         // Arrange
         TestProjection data = new()
@@ -34,7 +33,7 @@ public sealed class ProjectionFetchResultTests
     ///     Create generic sets IsNotFound to false.
     /// </summary>
     [Fact]
-        public void CreateGenericSetsIsNotFoundFalse()
+    public void CreateGenericSetsIsNotFoundFalse()
     {
         // Arrange
         TestProjection data = new()
@@ -53,7 +52,7 @@ public sealed class ProjectionFetchResultTests
     ///     Create generic sets Version property.
     /// </summary>
     [Fact]
-        public void CreateGenericSetsVersion()
+    public void CreateGenericSetsVersion()
     {
         // Arrange
         TestProjection data = new()
@@ -72,7 +71,7 @@ public sealed class ProjectionFetchResultTests
     ///     Create generic throws ArgumentNullException when data is null.
     /// </summary>
     [Fact]
-        public void CreateGenericThrowsWhenDataIsNull()
+    public void CreateGenericThrowsWhenDataIsNull()
     {
         // Arrange
         TestProjection? data = null;
@@ -85,7 +84,7 @@ public sealed class ProjectionFetchResultTests
     ///     Create object overload sets Data property.
     /// </summary>
     [Fact]
-        public void CreateObjectSetsData()
+    public void CreateObjectSetsData()
     {
         // Arrange
         object data = new TestProjection
@@ -104,7 +103,7 @@ public sealed class ProjectionFetchResultTests
     ///     Create object overload sets Version property.
     /// </summary>
     [Fact]
-        public void CreateObjectSetsVersion()
+    public void CreateObjectSetsVersion()
     {
         // Arrange
         object data = new TestProjection
@@ -123,7 +122,7 @@ public sealed class ProjectionFetchResultTests
     ///     Create object overload throws ArgumentNullException when data is null.
     /// </summary>
     [Fact]
-        public void CreateObjectThrowsWhenDataIsNull()
+    public void CreateObjectThrowsWhenDataIsNull()
     {
         // Arrange
         object? data = null;
@@ -136,7 +135,7 @@ public sealed class ProjectionFetchResultTests
     ///     Data init property can be set via object initializer.
     /// </summary>
     [Fact]
-        public void DataInitPropertyCanBeSet()
+    public void DataInitPropertyCanBeSet()
     {
         // Arrange
         TestProjection data = new()
@@ -158,7 +157,7 @@ public sealed class ProjectionFetchResultTests
     ///     IsNotFound init property can be set via object initializer.
     /// </summary>
     [Fact]
-        public void IsNotFoundInitPropertyCanBeSet()
+    public void IsNotFoundInitPropertyCanBeSet()
     {
         // Act
         ProjectionFetchResult result = new()
@@ -174,7 +173,7 @@ public sealed class ProjectionFetchResultTests
     ///     NotFound sentinel has IsNotFound set to true.
     /// </summary>
     [Fact]
-        public void NotFoundSentinelHasIsNotFoundTrue()
+    public void NotFoundSentinelHasIsNotFoundTrue()
     {
         // Act
         ProjectionFetchResult result = ProjectionFetchResult.NotFound;
@@ -187,7 +186,7 @@ public sealed class ProjectionFetchResultTests
     ///     NotFound sentinel has null Data.
     /// </summary>
     [Fact]
-        public void NotFoundSentinelHasNullData()
+    public void NotFoundSentinelHasNullData()
     {
         // Act
         ProjectionFetchResult result = ProjectionFetchResult.NotFound;
@@ -200,7 +199,7 @@ public sealed class ProjectionFetchResultTests
     ///     NotFound sentinel has zero Version.
     /// </summary>
     [Fact]
-        public void NotFoundSentinelHasZeroVersion()
+    public void NotFoundSentinelHasZeroVersion()
     {
         // Act
         ProjectionFetchResult result = ProjectionFetchResult.NotFound;
@@ -213,7 +212,7 @@ public sealed class ProjectionFetchResultTests
     ///     NotFound sentinel is singleton.
     /// </summary>
     [Fact]
-        public void NotFoundSentinelIsSingleton()
+    public void NotFoundSentinelIsSingleton()
     {
         // Act
         ProjectionFetchResult first = ProjectionFetchResult.NotFound;
@@ -227,7 +226,7 @@ public sealed class ProjectionFetchResultTests
     ///     Version init property can be set via object initializer.
     /// </summary>
     [Fact]
-        public void VersionInitPropertyCanBeSet()
+    public void VersionInitPropertyCanBeSet()
     {
         // Act
         ProjectionFetchResult result = new()

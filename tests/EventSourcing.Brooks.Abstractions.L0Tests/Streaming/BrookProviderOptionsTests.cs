@@ -1,4 +1,3 @@
-
 using Mississippi.Common.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 
@@ -14,7 +13,7 @@ public sealed class BrookProviderOptionsTests
     ///     OrleansStreamProviderName should be settable.
     /// </summary>
     [Fact]
-        public void OrleansStreamProviderNameCanBeSet()
+    public void OrleansStreamProviderNameCanBeSet()
     {
         // Arrange
         BrookProviderOptions sut = new();
@@ -31,7 +30,7 @@ public sealed class BrookProviderOptionsTests
     ///     OrleansStreamProviderName should default to MississippiDefaults.StreamProviderName.
     /// </summary>
     [Fact]
-        public void OrleansStreamProviderNameDefaultsToMississippiDefaultsStreamProviderName()
+    public void OrleansStreamProviderNameDefaultsToMississippiDefaultsStreamProviderName()
     {
         // Arrange & Act
         BrookProviderOptions sut = new();

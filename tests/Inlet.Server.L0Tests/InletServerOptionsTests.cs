@@ -1,4 +1,3 @@
-
 using Mississippi.Common.Abstractions;
 
 
@@ -13,7 +12,7 @@ public sealed class InletServerOptionsTests
     ///     AllClientsStreamNamespace should have correct default value.
     /// </summary>
     [Fact]
-        public void AllClientsStreamNamespaceHasCorrectDefault()
+    public void AllClientsStreamNamespaceHasCorrectDefault()
     {
         // Arrange
         InletServerOptions options = new();
@@ -26,7 +25,7 @@ public sealed class InletServerOptionsTests
     ///     AllClientsStreamNamespace should be settable.
     /// </summary>
     [Fact]
-        public void AllClientsStreamNamespaceIsSettable()
+    public void AllClientsStreamNamespaceIsSettable()
     {
         // Arrange
         InletServerOptions options = new();
@@ -42,7 +41,7 @@ public sealed class InletServerOptionsTests
     ///     HeartbeatIntervalMinutes should have correct default value.
     /// </summary>
     [Fact]
-        public void HeartbeatIntervalMinutesHasCorrectDefault()
+    public void HeartbeatIntervalMinutesHasCorrectDefault()
     {
         // Arrange
         InletServerOptions options = new();
@@ -55,7 +54,7 @@ public sealed class InletServerOptionsTests
     ///     HeartbeatIntervalMinutes should be settable.
     /// </summary>
     [Fact]
-        public void HeartbeatIntervalMinutesIsSettable()
+    public void HeartbeatIntervalMinutesIsSettable()
     {
         // Arrange
         InletServerOptions options = new();
@@ -71,7 +70,7 @@ public sealed class InletServerOptionsTests
     ///     ServerStreamNamespace should have correct default value.
     /// </summary>
     [Fact]
-        public void ServerStreamNamespaceHasCorrectDefault()
+    public void ServerStreamNamespaceHasCorrectDefault()
     {
         // Arrange
         InletServerOptions options = new();
@@ -84,7 +83,7 @@ public sealed class InletServerOptionsTests
     ///     ServerStreamNamespace should be settable.
     /// </summary>
     [Fact]
-        public void ServerStreamNamespaceIsSettable()
+    public void ServerStreamNamespaceIsSettable()
     {
         // Arrange
         InletServerOptions options = new();
@@ -100,7 +99,7 @@ public sealed class InletServerOptionsTests
     ///     StreamProviderName should have correct default value.
     /// </summary>
     [Fact]
-        public void StreamProviderNameHasCorrectDefault()
+    public void StreamProviderNameHasCorrectDefault()
     {
         // Arrange
         InletServerOptions options = new();
@@ -113,7 +112,7 @@ public sealed class InletServerOptionsTests
     ///     StreamProviderName should be settable.
     /// </summary>
     [Fact]
-        public void StreamProviderNameIsSettable()
+    public void StreamProviderNameIsSettable()
     {
         // Arrange
         InletServerOptions options = new();

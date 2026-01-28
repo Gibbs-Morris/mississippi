@@ -1,4 +1,3 @@
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Serialization.Abstractions;
@@ -15,7 +14,7 @@ public sealed class ServiceRegistrationTests
     ///     AddJsonSerialization should register ISerializationProvider.
     /// </summary>
     [Fact]
-        public void AddJsonSerializationRegistersSerializationProvider()
+    public void AddJsonSerializationRegistersSerializationProvider()
     {
         // Arrange
         ServiceCollection services = new();
@@ -34,7 +33,7 @@ public sealed class ServiceRegistrationTests
     ///     AddJsonSerialization should return the service collection for chaining.
     /// </summary>
     [Fact]
-        public void AddJsonSerializationReturnsServiceCollection()
+    public void AddJsonSerializationReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();

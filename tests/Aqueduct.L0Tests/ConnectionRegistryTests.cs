@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-
 using Microsoft.AspNetCore.SignalR;
 
 using Mississippi.Testing.Utilities.SignalR;

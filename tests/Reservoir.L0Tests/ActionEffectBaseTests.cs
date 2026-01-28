@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -57,7 +56,7 @@ public sealed class ActionEffectBaseTests
     ///     CanHandle returns false for non-matching action type.
     /// </summary>
     [Fact]
-        public void CanHandleReturnsFalseForNonMatchingActionType()
+    public void CanHandleReturnsFalseForNonMatchingActionType()
     {
         // Arrange
         TestEffect sut = new();
@@ -74,7 +73,7 @@ public sealed class ActionEffectBaseTests
     ///     CanHandle returns true for matching action type.
     /// </summary>
     [Fact]
-        public void CanHandleReturnsTrueForMatchingActionType()
+    public void CanHandleReturnsTrueForMatchingActionType()
     {
         // Arrange
         TestEffect sut = new();
@@ -91,7 +90,7 @@ public sealed class ActionEffectBaseTests
     ///     CanHandle throws ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-        public void CanHandleThrowsArgumentNullExceptionWhenActionIsNull()
+    public void CanHandleThrowsArgumentNullExceptionWhenActionIsNull()
     {
         // Arrange
         TestEffect sut = new();
@@ -105,7 +104,7 @@ public sealed class ActionEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncDispatchesToTypedMethodForMatchingAction()
+    public async Task HandleAsyncDispatchesToTypedMethodForMatchingAction()
     {
         // Arrange
         TestEffect sut = new();
@@ -129,7 +128,7 @@ public sealed class ActionEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncReturnsEmptyForNonMatchingAction()
+    public async Task HandleAsyncReturnsEmptyForNonMatchingAction()
     {
         // Arrange
         TestEffect sut = new();
@@ -151,7 +150,7 @@ public sealed class ActionEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-        public void HandleAsyncThrowsArgumentNullExceptionWhenActionIsNull()
+    public void HandleAsyncThrowsArgumentNullExceptionWhenActionIsNull()
     {
         // Arrange
         TestEffect sut = new();

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-
 using Mississippi.EventSourcing.Aggregates.Diagnostics;
 
 
@@ -23,7 +22,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandFailure should emit command count with failure result.
     /// </summary>
     [Fact]
-        public void RecordCommandFailureEmitsCommandCount()
+    public void RecordCommandFailureEmitsCommandCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -87,7 +86,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandFailure should emit command duration histogram.
     /// </summary>
     [Fact]
-        public void RecordCommandFailureEmitsDuration()
+    public void RecordCommandFailureEmitsDuration()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -132,7 +131,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandFailure should emit command error count.
     /// </summary>
     [Fact]
-        public void RecordCommandFailureEmitsErrorCount()
+    public void RecordCommandFailureEmitsErrorCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -177,7 +176,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandSuccess should emit command count with success result.
     /// </summary>
     [Fact]
-        public void RecordCommandSuccessEmitsCommandCount()
+    public void RecordCommandSuccessEmitsCommandCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -241,7 +240,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandSuccess should emit events produced count when events are produced.
     /// </summary>
     [Fact]
-        public void RecordCommandSuccessEmitsEventsProduced()
+    public void RecordCommandSuccessEmitsEventsProduced()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -285,7 +284,7 @@ public sealed class AggregateMetricsTests
     ///     RecordCommandSuccess should not emit events produced count when no events are produced.
     /// </summary>
     [Fact]
-        public void RecordCommandSuccessNoEventsProducedDoesNotEmitEventMetric()
+    public void RecordCommandSuccessNoEventsProducedDoesNotEmitEventMetric()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -328,7 +327,7 @@ public sealed class AggregateMetricsTests
     ///     RecordConcurrencyConflict should emit concurrency conflict count.
     /// </summary>
     [Fact]
-        public void RecordConcurrencyConflictEmitsCount()
+    public void RecordConcurrencyConflictEmitsCount()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
@@ -374,7 +373,7 @@ public sealed class AggregateMetricsTests
     ///     RecordStateFetch should emit state fetch duration histogram.
     /// </summary>
     [Fact]
-        public void RecordStateFetchEmitsDuration()
+    public void RecordStateFetchEmitsDuration()
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];

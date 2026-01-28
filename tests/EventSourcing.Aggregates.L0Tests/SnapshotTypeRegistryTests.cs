@@ -1,7 +1,6 @@
 using System;
 
 
-
 namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 
 /// <summary>

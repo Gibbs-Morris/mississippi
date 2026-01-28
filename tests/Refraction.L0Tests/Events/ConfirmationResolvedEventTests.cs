@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Refraction.Events;
 
 
@@ -15,7 +14,7 @@ public sealed class ConfirmationResolvedEventTests
     ///     ConfirmationResolvedEvent can be created with confirmed false.
     /// </summary>
     [Fact]
-        public void ConfirmationResolvedEventCanBeCreatedWithConfirmedFalse()
+    public void ConfirmationResolvedEventCanBeCreatedWithConfirmedFalse()
     {
         // Arrange & Act
         ConfirmationResolvedEvent evt = new(false);
@@ -28,7 +27,7 @@ public sealed class ConfirmationResolvedEventTests
     ///     ConfirmationResolvedEvent can be created with confirmed true.
     /// </summary>
     [Fact]
-        public void ConfirmationResolvedEventCanBeCreatedWithConfirmedTrue()
+    public void ConfirmationResolvedEventCanBeCreatedWithConfirmedTrue()
     {
         // Arrange & Act
         ConfirmationResolvedEvent evt = new(true);
@@ -41,7 +40,7 @@ public sealed class ConfirmationResolvedEventTests
     ///     ConfirmationResolvedEvent Confirmed property is accessible.
     /// </summary>
     [Fact]
-        public void ConfirmationResolvedEventConfirmedPropertyIsAccessible()
+    public void ConfirmationResolvedEventConfirmedPropertyIsAccessible()
     {
         // Arrange
         ConfirmationResolvedEvent evt = new(true);
@@ -57,7 +56,7 @@ public sealed class ConfirmationResolvedEventTests
     ///     ConfirmationResolvedEvent implements record equality.
     /// </summary>
     [Fact]
-        public void ConfirmationResolvedEventImplementsRecordEquality()
+    public void ConfirmationResolvedEventImplementsRecordEquality()
     {
         // Arrange
         ConfirmationResolvedEvent evt1 = new(true);
@@ -71,7 +70,7 @@ public sealed class ConfirmationResolvedEventTests
     ///     ConfirmationResolvedEvent is sealed record.
     /// </summary>
     [Fact]
-        public void ConfirmationResolvedEventIsSealedRecord()
+    public void ConfirmationResolvedEventIsSealedRecord()
     {
         // Arrange
         Type eventType = typeof(ConfirmationResolvedEvent);

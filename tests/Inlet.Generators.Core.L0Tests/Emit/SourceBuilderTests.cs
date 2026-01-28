@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Inlet.Generators.Core.Emit;
 
 

@@ -1,6 +1,5 @@
 using System;
 
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
@@ -22,7 +21,7 @@ public sealed class AqueductGrainFactoryTests
     ///     Constructor should throw when grainFactory is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenGrainFactoryIsNull()
+    public void ConstructorThrowsWhenGrainFactoryIsNull()
     {
         // Arrange
         ILogger<AqueductGrainFactory> logger = Substitute.For<ILogger<AqueductGrainFactory>>();
@@ -35,7 +34,7 @@ public sealed class AqueductGrainFactoryTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenLoggerIsNull()
+    public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -48,7 +47,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetClientGrain with key should return grain from factory.
     /// </summary>
     [Fact]
-        public void GetClientGrainWithKeyReturnsGrain()
+    public void GetClientGrainWithKeyReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -70,7 +69,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetClientGrain with strings should return grain from factory.
     /// </summary>
     [Fact]
-        public void GetClientGrainWithStringsReturnsGrain()
+    public void GetClientGrainWithStringsReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -91,7 +90,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetGroupGrain with key should return grain from factory.
     /// </summary>
     [Fact]
-        public void GetGroupGrainWithKeyReturnsGrain()
+    public void GetGroupGrainWithKeyReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -113,7 +112,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetGroupGrain with strings should return grain from factory.
     /// </summary>
     [Fact]
-        public void GetGroupGrainWithStringsReturnsGrain()
+    public void GetGroupGrainWithStringsReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -134,7 +133,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetServerDirectoryGrain with default should return grain from factory.
     /// </summary>
     [Fact]
-        public void GetServerDirectoryGrainDefaultReturnsGrain()
+    public void GetServerDirectoryGrainDefaultReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
@@ -154,7 +153,7 @@ public sealed class AqueductGrainFactoryTests
     ///     GetServerDirectoryGrain with key should return grain from factory.
     /// </summary>
     [Fact]
-        public void GetServerDirectoryGrainWithKeyReturnsGrain()
+    public void GetServerDirectoryGrainWithKeyReturnsGrain()
     {
         // Arrange
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();

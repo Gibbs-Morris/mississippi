@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
@@ -48,7 +47,7 @@ public sealed class UxProjectionGrainTests
     ///     Verifies that constructor throws when grainContext is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenGrainContextIsNull()
+    public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
         Mock<IUxProjectionGrainFactory> uxProjectionGrainFactoryMock = new();
@@ -65,7 +64,7 @@ public sealed class UxProjectionGrainTests
     ///     Verifies that constructor throws when logger is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenLoggerIsNull()
+    public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -82,7 +81,7 @@ public sealed class UxProjectionGrainTests
     ///     Verifies that constructor throws when uxProjectionGrainFactory is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenUxProjectionGrainFactoryIsNull()
+    public void ConstructorThrowsWhenUxProjectionGrainFactoryIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -100,7 +99,7 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncDelegatesToVersionedCacheGrain()
+    public async Task GetAsyncDelegatesToVersionedCacheGrain()
     {
         // Arrange
         TestProjection expectedProjection = new(42);
@@ -132,7 +131,7 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncFetchesNewVersionWhenPositionAdvances()
+    public async Task GetAsyncFetchesNewVersionWhenPositionAdvances()
     {
         // Arrange
         TestProjection projection1 = new(42);
@@ -172,7 +171,7 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncPassesCorrectVersionedKeyToFactory()
+    public async Task GetAsyncPassesCorrectVersionedKeyToFactory()
     {
         // Arrange
         UxProjectionVersionedCacheKey? capturedKey = null;
@@ -206,7 +205,7 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturnsNullWhenCursorPositionIsNotSet()
+    public async Task GetAsyncReturnsNullWhenCursorPositionIsNotSet()
     {
         // Arrange
         Mock<IUxProjectionCursorGrain> cursorGrainMock = new();
@@ -233,7 +232,7 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAtVersionAsyncReturnsNullWhenVersionIsNotSet()
+    public async Task GetAtVersionAsyncReturnsNullWhenVersionIsNotSet()
     {
         // Arrange
         BrookPosition notSetVersion = new(-1);
@@ -257,7 +256,7 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAtVersionAsyncUsesVersionedCacheGrain()
+    public async Task GetAtVersionAsyncUsesVersionedCacheGrain()
     {
         // Arrange
         BrookPosition requestedVersion = new(10);
@@ -289,7 +288,7 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetLatestVersionAsyncReturnsPositionFromCursor()
+    public async Task GetLatestVersionAsyncReturnsPositionFromCursor()
     {
         // Arrange
         BrookPosition expectedPosition = new(42);
@@ -313,7 +312,7 @@ public sealed class UxProjectionGrainTests
     ///     Verifies that GrainContext property returns the injected context.
     /// </summary>
     [Fact]
-        public void GrainContextReturnsInjectedContext()
+    public void GrainContextReturnsInjectedContext()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -328,7 +327,7 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncCompletesSuccessfullyWithAnyEntityIdFormat()
+    public async Task OnActivateAsyncCompletesSuccessfullyWithAnyEntityIdFormat()
     {
         // Arrange - any string is now a valid entity ID
         UxProjectionGrain<TestProjection> grain = CreateGrain(primaryKey: "any-valid-entity-id");
@@ -345,7 +344,7 @@ public sealed class UxProjectionGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncCompletesSuccessfullyWithValidPrimaryKey()
+    public async Task OnActivateAsyncCompletesSuccessfullyWithValidPrimaryKey()
     {
         // Arrange
         UxProjectionGrain<TestProjection> grain = CreateGrain();

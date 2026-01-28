@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

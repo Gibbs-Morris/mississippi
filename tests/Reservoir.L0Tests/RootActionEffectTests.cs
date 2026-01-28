@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -128,7 +127,7 @@ public sealed class RootActionEffectTests
     ///     Constructor should throw ArgumentNullException when effects is null.
     /// </summary>
     [Fact]
-        public void ConstructorWithNullEffectsThrowsArgumentNullException()
+    public void ConstructorWithNullEffectsThrowsArgumentNullException()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new RootActionEffect<TestState>(null!));
@@ -139,7 +138,7 @@ public sealed class RootActionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncContinuesToOtherEffectsWhenOneThrows()
+    public async Task HandleAsyncContinuesToOtherEffectsWhenOneThrows()
     {
         // Arrange
         TrackingSimpleEffect trackingEffect = new();
@@ -163,7 +162,7 @@ public sealed class RootActionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncDispatchesToFallbackEffects()
+    public async Task HandleAsyncDispatchesToFallbackEffects()
     {
         // Arrange
         FallbackEffect fallbackEffect = new();
@@ -187,7 +186,7 @@ public sealed class RootActionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncDispatchesToMatchingEffectAndYieldsActions()
+    public async Task HandleAsyncDispatchesToMatchingEffectAndYieldsActions()
     {
         // Arrange
         RootActionEffect<TestState> sut = new([new YieldingEffect()]);
@@ -211,7 +210,7 @@ public sealed class RootActionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncInvokesMultipleEffectsForSameActionType()
+    public async Task HandleAsyncInvokesMultipleEffectsForSameActionType()
     {
         // Arrange
         TrackingSimpleEffect effect1 = new();
@@ -236,7 +235,7 @@ public sealed class RootActionEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncReturnsEmptyWhenNoEffectsMatch()
+    public async Task HandleAsyncReturnsEmptyWhenNoEffectsMatch()
     {
         // Arrange
         RootActionEffect<TestState> sut = new([new YieldingEffect()]);
@@ -258,7 +257,7 @@ public sealed class RootActionEffectTests
     ///     HandleAsync throws ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-        public void HandleAsyncThrowsArgumentNullExceptionWhenActionIsNull()
+    public void HandleAsyncThrowsArgumentNullExceptionWhenActionIsNull()
     {
         // Arrange
         RootActionEffect<TestState> sut = new([]);
@@ -274,7 +273,7 @@ public sealed class RootActionEffectTests
     ///     HasEffects returns false when no effects are registered.
     /// </summary>
     [Fact]
-        public void HasEffectsReturnsFalseWhenNoEffectsRegistered()
+    public void HasEffectsReturnsFalseWhenNoEffectsRegistered()
     {
         // Arrange
         RootActionEffect<TestState> sut = new([]);
@@ -287,7 +286,7 @@ public sealed class RootActionEffectTests
     ///     HasEffects returns true when effects are registered.
     /// </summary>
     [Fact]
-        public void HasEffectsReturnsTrueWhenEffectsRegistered()
+    public void HasEffectsReturnsTrueWhenEffectsRegistered()
     {
         // Arrange
         RootActionEffect<TestState> sut = new([new YieldingEffect()]);

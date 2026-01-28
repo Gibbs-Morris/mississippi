@@ -1,4 +1,3 @@
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Refraction.Pages.Infrastructure;
@@ -15,7 +14,7 @@ public sealed class RefractionPagesServiceCollectionExtensionsTests
     ///     AddRefractionPages returns the service collection for chaining.
     /// </summary>
     [Fact]
-        public void AddRefractionPagesReturnsServiceCollection()
+    public void AddRefractionPagesReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();

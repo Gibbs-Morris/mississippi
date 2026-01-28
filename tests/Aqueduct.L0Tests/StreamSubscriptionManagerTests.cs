@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -37,7 +36,7 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
     [Fact(DisplayName = "Constructor Succeeds With Valid Dependencies")]
-        public void ConstructorShouldSucceedWithValidDependencies()
+    public void ConstructorShouldSucceedWithValidDependencies()
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
@@ -58,7 +57,7 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should throw when clusterClient is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ClusterClient Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -80,7 +79,7 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Logger Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -102,7 +101,7 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should throw when options is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Options Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -124,7 +123,7 @@ public sealed class StreamSubscriptionManagerTests
     ///     Constructor should throw when serverIdProvider is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ServerIdProvider Is Null")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -147,7 +146,7 @@ public sealed class StreamSubscriptionManagerTests
     ///     Dispose should be idempotent.
     /// </summary>
     [Fact(DisplayName = "Dispose Is Idempotent")]
-        [SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP016:Don't use disposed instance",
         Justification = "Testing idempotent disposal behavior")]
@@ -178,7 +177,7 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Throws When HubName Is Empty")]
-        public async Task EnsureInitializedAsyncShouldThrowWhenHubNameIsEmpty()
+    public async Task EnsureInitializedAsyncShouldThrowWhenHubNameIsEmpty()
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
@@ -196,7 +195,7 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Throws When HubName Is Null")]
-        public async Task EnsureInitializedAsyncShouldThrowWhenHubNameIsNull()
+    public async Task EnsureInitializedAsyncShouldThrowWhenHubNameIsNull()
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
@@ -214,7 +213,7 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Throws When OnAllMessage Is Null")]
-        public async Task EnsureInitializedAsyncShouldThrowWhenOnAllMessageIsNull()
+    public async Task EnsureInitializedAsyncShouldThrowWhenOnAllMessageIsNull()
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
@@ -232,7 +231,7 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Throws When OnServerMessage Is Null")]
-        public async Task EnsureInitializedAsyncShouldThrowWhenOnServerMessageIsNull()
+    public async Task EnsureInitializedAsyncShouldThrowWhenOnServerMessageIsNull()
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
@@ -250,7 +249,7 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "EnsureInitializedAsync Uses Provider ServerId")]
-        public async Task EnsureInitializedAsyncShouldUseProviderServerId()
+    public async Task EnsureInitializedAsyncShouldUseProviderServerId()
     {
         // Arrange
         string serverId = "server-123";
@@ -295,7 +294,7 @@ public sealed class StreamSubscriptionManagerTests
     ///     IsInitialized should be false before initialization.
     /// </summary>
     [Fact(DisplayName = "IsInitialized Is False Before Initialization")]
-        public void IsInitializedShouldBeFalseBeforeInitialization()
+    public void IsInitializedShouldBeFalseBeforeInitialization()
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
@@ -314,7 +313,7 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "PublishToAllAsync Throws When Message Is Null")]
-        public async Task PublishToAllAsyncShouldThrowWhenMessageIsNull()
+    public async Task PublishToAllAsyncShouldThrowWhenMessageIsNull()
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
@@ -331,7 +330,7 @@ public sealed class StreamSubscriptionManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "PublishToAllAsync Throws When Stream Not Initialized")]
-        public async Task PublishToAllAsyncShouldThrowWhenStreamNotInitialized()
+    public async Task PublishToAllAsyncShouldThrowWhenStreamNotInitialized()
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();
@@ -354,7 +353,7 @@ public sealed class StreamSubscriptionManagerTests
     ///     ServerId should be unique across instances.
     /// </summary>
     [Fact(DisplayName = "ServerId Is Unique Across Instances")]
-        public void ServerIdShouldBeUniqueAcrossInstances()
+    public void ServerIdShouldBeUniqueAcrossInstances()
     {
         // Arrange
         IClusterClient clusterClient = Substitute.For<IClusterClient>();

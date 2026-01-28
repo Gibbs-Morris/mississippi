@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
@@ -26,14 +25,14 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Constructor should throw when projectionCache is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenProjectionCacheIsNull() =>
+    public void ConstructorThrowsWhenProjectionCacheIsNull() =>
         Assert.Throws<ArgumentNullException>(() => new ProjectionCacheMiddleware(null!));
 
     /// <summary>
     ///     Invoke should call next middleware for any action.
     /// </summary>
     [Fact]
-        public void InvokeCallsNextMiddleware()
+    public void InvokeCallsNextMiddleware()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -52,7 +51,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle ProjectionLoadedAction with null data.
     /// </summary>
     [Fact]
-        public void InvokeHandlesLoadedActionWithNullData()
+    public void InvokeHandlesLoadedActionWithNullData()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -71,7 +70,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle ProjectionUpdatedAction with null data.
     /// </summary>
     [Fact]
-        public void InvokeHandlesUpdatedActionWithNullData()
+    public void InvokeHandlesUpdatedActionWithNullData()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -90,7 +89,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle ProjectionConnectionChangedAction without cache update.
     /// </summary>
     [Fact]
-        public void InvokePassesThroughConnectionChangedAction()
+    public void InvokePassesThroughConnectionChangedAction()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -110,7 +109,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle ProjectionErrorAction without cache update.
     /// </summary>
     [Fact]
-        public void InvokePassesThroughErrorAction()
+    public void InvokePassesThroughErrorAction()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -130,7 +129,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should pass through non-projection actions without modification.
     /// </summary>
     [Fact]
-        public void InvokePassesThroughNonProjectionActions()
+    public void InvokePassesThroughNonProjectionActions()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -149,7 +148,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle RefreshProjectionAction without cache update.
     /// </summary>
     [Fact]
-        public void InvokePassesThroughRefreshAction()
+    public void InvokePassesThroughRefreshAction()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -168,7 +167,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle SubscribeToProjectionAction without cache update.
     /// </summary>
     [Fact]
-        public void InvokePassesThroughSubscribeAction()
+    public void InvokePassesThroughSubscribeAction()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -187,7 +186,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should handle UnsubscribeFromProjectionAction without cache update.
     /// </summary>
     [Fact]
-        public void InvokePassesThroughUnsubscribeAction()
+    public void InvokePassesThroughUnsubscribeAction()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -206,7 +205,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should call SetLoaded on ProjectionLoadedAction.
     /// </summary>
     [Fact]
-        public void InvokeSetsLoadedOnProjectionLoadedAction()
+    public void InvokeSetsLoadedOnProjectionLoadedAction()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -228,7 +227,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should call SetLoading on ProjectionLoadingAction.
     /// </summary>
     [Fact]
-        public void InvokeSetsLoadingOnProjectionLoadingAction()
+    public void InvokeSetsLoadingOnProjectionLoadingAction()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -246,7 +245,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should call SetUpdated on ProjectionUpdatedAction.
     /// </summary>
     [Fact]
-        public void InvokeSetsUpdatedOnProjectionUpdatedAction()
+    public void InvokeSetsUpdatedOnProjectionUpdatedAction()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -268,7 +267,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should throw when action is null.
     /// </summary>
     [Fact]
-        public void InvokeThrowsWhenActionIsNull()
+    public void InvokeThrowsWhenActionIsNull()
     {
         // Arrange
         ProjectionCache cache = new();
@@ -282,7 +281,7 @@ public sealed class ProjectionCacheMiddlewareTests
     ///     Invoke should throw when nextAction is null.
     /// </summary>
     [Fact]
-        public void InvokeThrowsWhenNextActionIsNull()
+    public void InvokeThrowsWhenNextActionIsNull()
     {
         // Arrange
         ProjectionCache cache = new();

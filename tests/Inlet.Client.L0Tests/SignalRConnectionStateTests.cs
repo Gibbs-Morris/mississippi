@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Inlet.Client.SignalRConnection;
 
 
@@ -15,7 +14,7 @@ public sealed class SignalRConnectionStateTests
     ///     ConnectionId can be set via init.
     /// </summary>
     [Fact]
-        public void ConnectionIdCanBeSet()
+    public void ConnectionIdCanBeSet()
     {
         // Arrange
         string connectionId = "conn-123";
@@ -34,7 +33,7 @@ public sealed class SignalRConnectionStateTests
     ///     ConnectionId is null by default.
     /// </summary>
     [Fact]
-        public void ConnectionIdIsNullByDefault()
+    public void ConnectionIdIsNullByDefault()
     {
         // Act
         SignalRConnectionState state = new();
@@ -47,7 +46,7 @@ public sealed class SignalRConnectionStateTests
     ///     Default status is Disconnected.
     /// </summary>
     [Fact]
-        public void DefaultStatusIsDisconnected()
+    public void DefaultStatusIsDisconnected()
     {
         // Act
         SignalRConnectionState state = new();
@@ -60,7 +59,7 @@ public sealed class SignalRConnectionStateTests
     ///     FeatureKey returns expected value.
     /// </summary>
     [Fact]
-        public void FeatureKeyReturnsExpectedValue()
+    public void FeatureKeyReturnsExpectedValue()
     {
         // Act
         string featureKey = SignalRConnectionState.FeatureKey;
@@ -73,7 +72,7 @@ public sealed class SignalRConnectionStateTests
     ///     LastConnectedAt can be set via init.
     /// </summary>
     [Fact]
-        public void LastConnectedAtCanBeSet()
+    public void LastConnectedAtCanBeSet()
     {
         // Arrange
         DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
@@ -92,7 +91,7 @@ public sealed class SignalRConnectionStateTests
     ///     LastConnectedAt is null by default.
     /// </summary>
     [Fact]
-        public void LastConnectedAtIsNullByDefault()
+    public void LastConnectedAtIsNullByDefault()
     {
         // Act
         SignalRConnectionState state = new();
@@ -105,7 +104,7 @@ public sealed class SignalRConnectionStateTests
     ///     LastDisconnectedAt is null by default.
     /// </summary>
     [Fact]
-        public void LastDisconnectedAtIsNullByDefault()
+    public void LastDisconnectedAtIsNullByDefault()
     {
         // Act
         SignalRConnectionState state = new();
@@ -118,7 +117,7 @@ public sealed class SignalRConnectionStateTests
     ///     LastError is null by default.
     /// </summary>
     [Fact]
-        public void LastErrorIsNullByDefault()
+    public void LastErrorIsNullByDefault()
     {
         // Act
         SignalRConnectionState state = new();
@@ -131,7 +130,7 @@ public sealed class SignalRConnectionStateTests
     ///     LastMessageReceivedAt is null by default.
     /// </summary>
     [Fact]
-        public void LastMessageReceivedAtIsNullByDefault()
+    public void LastMessageReceivedAtIsNullByDefault()
     {
         // Act
         SignalRConnectionState state = new();
@@ -144,7 +143,7 @@ public sealed class SignalRConnectionStateTests
     ///     ReconnectAttemptCount can be set via init.
     /// </summary>
     [Fact]
-        public void ReconnectAttemptCountCanBeSet()
+    public void ReconnectAttemptCountCanBeSet()
     {
         // Arrange
         int count = 5;
@@ -163,7 +162,7 @@ public sealed class SignalRConnectionStateTests
     ///     ReconnectAttemptCount is zero by default.
     /// </summary>
     [Fact]
-        public void ReconnectAttemptCountIsZeroByDefault()
+    public void ReconnectAttemptCountIsZeroByDefault()
     {
         // Act
         SignalRConnectionState state = new();
@@ -176,7 +175,7 @@ public sealed class SignalRConnectionStateTests
     ///     Status can be set via init.
     /// </summary>
     [Fact]
-        public void StatusCanBeSet()
+    public void StatusCanBeSet()
     {
         // Act
         SignalRConnectionState state = new()

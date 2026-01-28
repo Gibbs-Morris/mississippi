@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-
 using Microsoft.AspNetCore.Components;
 
 using Mississippi.Refraction.Infrastructure;
@@ -18,7 +17,7 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider has ChildContent parameter.
     /// </summary>
     [Fact]
-        public void CascadingRefractionProviderHasChildContentParameter()
+    public void CascadingRefractionProviderHasChildContentParameter()
     {
         // Arrange
         Type componentType = typeof(CascadingRefractionProvider);
@@ -36,7 +35,7 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider has ReducedMotion parameter.
     /// </summary>
     [Fact]
-        public void CascadingRefractionProviderHasReducedMotionParameter()
+    public void CascadingRefractionProviderHasReducedMotionParameter()
     {
         // Arrange
         Type componentType = typeof(CascadingRefractionProvider);
@@ -54,7 +53,7 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider inherits from ComponentBase.
     /// </summary>
     [Fact]
-        public void CascadingRefractionProviderInheritsFromComponentBase()
+    public void CascadingRefractionProviderInheritsFromComponentBase()
     {
         // Arrange
         Type componentType = typeof(CascadingRefractionProvider);
@@ -67,7 +66,7 @@ public sealed class CascadingRefractionProviderTests
     ///     CascadingRefractionProvider ReducedMotion defaults to false.
     /// </summary>
     [Fact]
-        public void CascadingRefractionProviderReducedMotionDefaultsToFalse()
+    public void CascadingRefractionProviderReducedMotionDefaultsToFalse()
     {
         // Arrange
         CascadingRefractionProvider provider = new();

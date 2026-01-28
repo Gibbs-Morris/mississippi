@@ -4,7 +4,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Abstractions;
@@ -95,7 +94,7 @@ public sealed class ReservoirRegistrationsTests
     ///     AddActionEffect should register feature-scoped action effect in DI.
     /// </summary>
     [Fact]
-        public void AddActionEffectRegistersFeatureScopedEffectInDI()
+    public void AddActionEffectRegistersFeatureScopedEffectInDI()
     {
         // Arrange
         ServiceCollection services = [];
@@ -113,7 +112,7 @@ public sealed class ReservoirRegistrationsTests
     ///     AddMiddleware should register middleware in DI.
     /// </summary>
     [Fact]
-        public void AddMiddlewareRegistersMiddlewareInDI()
+    public void AddMiddlewareRegistersMiddlewareInDI()
     {
         // Arrange
         ServiceCollection services = [];
@@ -131,7 +130,7 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReducer with delegate should register reducer in DI.
     /// </summary>
     [Fact]
-        public void AddReducerWithDelegateRegistersReducerInDI()
+    public void AddReducerWithDelegateRegistersReducerInDI()
     {
         // Arrange
         ServiceCollection services = [];
@@ -155,7 +154,7 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReducer with null delegate should throw ArgumentNullException.
     /// </summary>
     [Fact]
-        public void AddReducerWithNullDelegateThrowsArgumentNullException()
+    public void AddReducerWithNullDelegateThrowsArgumentNullException()
     {
         // Arrange
         ServiceCollection services = [];
@@ -168,7 +167,7 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReducer with type should register reducer in DI.
     /// </summary>
     [Fact]
-        public void AddReducerWithTypeRegistersReducerInDI()
+    public void AddReducerWithTypeRegistersReducerInDI()
     {
         // Arrange
         ServiceCollection services = [];
@@ -189,7 +188,7 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReservoir should not replace existing IStore registration.
     /// </summary>
     [Fact]
-        public void AddReservoirDoesNotReplaceExistingRegistration()
+    public void AddReservoirDoesNotReplaceExistingRegistration()
     {
         // Arrange
         ServiceCollection services = [];
@@ -208,7 +207,7 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReservoir should register IStore as scoped.
     /// </summary>
     [Fact]
-        public void AddReservoirRegistersIStoreAsScoped()
+    public void AddReservoirRegistersIStoreAsScoped()
     {
         // Arrange
         ServiceCollection services = [];
@@ -228,7 +227,7 @@ public sealed class ReservoirRegistrationsTests
     ///     AddReservoir should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-        public void AddReservoirWithNullServicesThrowsArgumentNullException()
+    public void AddReservoirWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
         IServiceCollection? services = null;
@@ -241,7 +240,7 @@ public sealed class ReservoirRegistrationsTests
     ///     AddRootReducer should register root reducer in DI.
     /// </summary>
     [Fact]
-        public void AddRootReducerRegistersRootReducerInDI()
+    public void AddRootReducerRegistersRootReducerInDI()
     {
         // Arrange
         ServiceCollection services = [];

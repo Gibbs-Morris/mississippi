@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
@@ -40,7 +39,7 @@ public sealed class DelegateActionReducerTests
     ///     Constructor should throw ArgumentNullException when reduce delegate is null.
     /// </summary>
     [Fact]
-        public void ConstructorWithNullDelegateThrowsArgumentNullException()
+    public void ConstructorWithNullDelegateThrowsArgumentNullException()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new DelegateActionReducer<IncrementAction, TestState>(null!));
@@ -50,7 +49,7 @@ public sealed class DelegateActionReducerTests
     ///     DelegateActionReducer should invoke delegate when action matches.
     /// </summary>
     [Fact]
-        public void ReduceInvokesDelegateWhenActionMatches()
+    public void ReduceInvokesDelegateWhenActionMatches()
     {
         // Arrange
         DelegateActionReducer<IncrementAction, TestState> sut = new((
@@ -76,7 +75,7 @@ public sealed class DelegateActionReducerTests
     ///     TryReduce should return false and return original state for non-matching action type.
     /// </summary>
     [Fact]
-        public void TryReduceReturnsFalseAndReturnsOriginalStateForNonMatchingActionType()
+    public void TryReduceReturnsFalseAndReturnsOriginalStateForNonMatchingActionType()
     {
         // Arrange
         DelegateActionReducer<IncrementAction, TestState> sut = new((
@@ -103,7 +102,7 @@ public sealed class DelegateActionReducerTests
     ///     TryReduce should return true and produce new state for matching action type.
     /// </summary>
     [Fact]
-        public void TryReduceReturnsTrueAndProducesNewStateForMatchingActionType()
+    public void TryReduceReturnsTrueAndProducesNewStateForMatchingActionType()
     {
         // Arrange
         DelegateActionReducer<IncrementAction, TestState> sut = new((

@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -82,7 +81,7 @@ public sealed class UxProjectionControllerTests
     ///     Verifies that constructor accepts valid factory.
     /// </summary>
     [Fact]
-        public void ConstructorAcceptsValidFactory()
+    public void ConstructorAcceptsValidFactory()
     {
         // Arrange
         Mock<IUxProjectionGrainFactory> factoryMock = new();
@@ -99,7 +98,7 @@ public sealed class UxProjectionControllerTests
     ///     Verifies that constructor throws when factory is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenFactoryIsNull()
+    public void ConstructorThrowsWhenFactoryIsNull()
     {
         // Act & Assert
         Mock<IMapper<TestProjection, TestProjection>> mapperMock = new();
@@ -114,7 +113,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturns304WhenIfNoneMatchMatches()
+    public async Task GetAsyncReturns304WhenIfNoneMatchMatches()
     {
         // Arrange
         const long version = 42;
@@ -139,7 +138,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturnsCacheControlHeader()
+    public async Task GetAsyncReturnsCacheControlHeader()
     {
         // Arrange
         TestProjection expectedProjection = new(100);
@@ -164,7 +163,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturnsDataWhenIfNoneMatchDoesNotMatch()
+    public async Task GetAsyncReturnsDataWhenIfNoneMatchDoesNotMatch()
     {
         // Arrange
         const long currentVersion = 42;
@@ -193,7 +192,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturnsETagHeader()
+    public async Task GetAsyncReturnsETagHeader()
     {
         // Arrange
         const long version = 42;
@@ -220,7 +219,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturnsNotFoundWhenProjectionIsNull()
+    public async Task GetAsyncReturnsNotFoundWhenProjectionIsNull()
     {
         // Arrange
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
@@ -241,7 +240,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAsyncReturnsOkWhenProjectionFound()
+    public async Task GetAsyncReturnsOkWhenProjectionFound()
     {
         // Arrange
         TestProjection expectedProjection = new(42);
@@ -266,7 +265,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAtVersionAsyncReturnsNotFoundWhenProjectionIsNull()
+    public async Task GetAtVersionAsyncReturnsNotFoundWhenProjectionIsNull()
     {
         // Arrange
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
@@ -288,7 +287,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetAtVersionAsyncReturnsOkWhenProjectionFound()
+    public async Task GetAtVersionAsyncReturnsOkWhenProjectionFound()
     {
         // Arrange
         const long version = 10;
@@ -321,7 +320,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetLatestVersionAsyncReturnsNotFoundWhenPositionIsNotSet()
+    public async Task GetLatestVersionAsyncReturnsNotFoundWhenPositionIsNotSet()
     {
         // Arrange
         BrookPosition notSetPosition = new(-1);
@@ -343,7 +342,7 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetLatestVersionAsyncReturnsOkWhenVersionFound()
+    public async Task GetLatestVersionAsyncReturnsOkWhenVersionFound()
     {
         // Arrange
         BrookPosition expectedPosition = new(42);

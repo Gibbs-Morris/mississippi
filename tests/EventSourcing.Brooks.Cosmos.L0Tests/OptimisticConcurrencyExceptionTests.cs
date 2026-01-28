@@ -1,7 +1,6 @@
 using System;
 
 
-
 namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
 
 /// <summary>
@@ -13,7 +12,7 @@ public sealed class OptimisticConcurrencyExceptionTests
     ///     Default constructor should create exception with null message.
     /// </summary>
     [Fact]
-        public void DefaultConstructorCreatesExceptionWithNullMessage()
+    public void DefaultConstructorCreatesExceptionWithNullMessage()
     {
         // Arrange & Act
         OptimisticConcurrencyException exception = new();
@@ -26,7 +25,7 @@ public sealed class OptimisticConcurrencyExceptionTests
     ///     Exception should derive from Exception base class.
     /// </summary>
     [Fact]
-        public void ExceptionDerivesFromExceptionBaseClass()
+    public void ExceptionDerivesFromExceptionBaseClass()
     {
         // Arrange & Act
         OptimisticConcurrencyException exception = new("test");
@@ -39,7 +38,7 @@ public sealed class OptimisticConcurrencyExceptionTests
     ///     Message and inner exception constructor should set both properties.
     /// </summary>
     [Fact]
-        public void MessageAndInnerExceptionConstructorSetsBothProperties()
+    public void MessageAndInnerExceptionConstructorSetsBothProperties()
     {
         // Arrange
         const string message = "Concurrency conflict detected";
@@ -57,7 +56,7 @@ public sealed class OptimisticConcurrencyExceptionTests
     ///     Message constructor should set the message.
     /// </summary>
     [Fact]
-        public void MessageConstructorSetsMessage()
+    public void MessageConstructorSetsMessage()
     {
         // Arrange
         const string message = "Concurrency conflict detected";

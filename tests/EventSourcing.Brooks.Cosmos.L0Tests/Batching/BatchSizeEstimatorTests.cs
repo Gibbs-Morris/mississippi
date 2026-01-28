@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Cosmos.Batching;
 using Mississippi.EventSourcing.Brooks.Cosmos.Storage;

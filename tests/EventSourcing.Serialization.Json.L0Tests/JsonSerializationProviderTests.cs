@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-
 namespace Mississippi.EventSourcing.Serialization.Json.L0Tests;
 
 /// <summary>

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
-
 using Mississippi.Inlet.Silo.Abstractions;
 using Mississippi.Inlet.Silo.Grains;
 using Mississippi.Inlet.Silo.L0Tests.Infrastructure;

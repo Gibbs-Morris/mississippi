@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -97,7 +96,7 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when brookEventConverter is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenBrookEventConverterIsNull()
+    public void ConstructorThrowsWhenBrookEventConverterIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -126,7 +125,7 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when brookGrainFactory is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenBrookGrainFactoryIsNull()
+    public void ConstructorThrowsWhenBrookGrainFactoryIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -155,7 +154,7 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when grainContext is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenGrainContextIsNull()
+    public void ConstructorThrowsWhenGrainContextIsNull()
     {
         // Arrange
         Mock<ISnapshotStorageReader> storageReaderMock = new();
@@ -184,7 +183,7 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when logger is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenLoggerIsNull()
+    public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -213,7 +212,7 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when retentionOptions is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenRetentionOptionsIsNull()
+    public void ConstructorThrowsWhenRetentionOptionsIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -242,7 +241,7 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when rootReducer is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenRootReducerIsNull()
+    public void ConstructorThrowsWhenRootReducerIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -271,7 +270,7 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when snapshotGrainFactory is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
+    public void ConstructorThrowsWhenSnapshotGrainFactoryIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -300,7 +299,7 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when snapshotStateConverter is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenSnapshotStateConverterIsNull()
+    public void ConstructorThrowsWhenSnapshotStateConverterIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -329,7 +328,7 @@ public sealed class SnapshotCacheGrainTests
     ///     Verifies that constructor throws when snapshotStorageReader is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenSnapshotStorageReaderIsNull()
+    public void ConstructorThrowsWhenSnapshotStorageReaderIsNull()
     {
         // Arrange
         Mock<IGrainContext> grainContextMock = CreateDefaultGrainContext();
@@ -359,7 +358,7 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task GetStateAsyncReturnsCachedState()
+    public async Task GetStateAsyncReturnsCachedState()
     {
         // Arrange
         const string reducerHash = "test-hash";
@@ -400,7 +399,7 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncLoadsFromStorageWhenSnapshotExists()
+    public async Task OnActivateAsyncLoadsFromStorageWhenSnapshotExists()
     {
         // Arrange
         const string reducerHash = "test-hash";
@@ -440,7 +439,7 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncRebuildsFromStreamWhenNoSnapshotExists()
+    public async Task OnActivateAsyncRebuildsFromStreamWhenNoSnapshotExists()
     {
         // Arrange
         const string reducerHash = "test-hash";
@@ -487,7 +486,7 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncRebuildsWhenReducerHashIsEmpty()
+    public async Task OnActivateAsyncRebuildsWhenReducerHashIsEmpty()
     {
         // Arrange
         const string currentReducerHash = "current-hash";
@@ -553,7 +552,7 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncRebuildsWhenReducerHashMismatch()
+    public async Task OnActivateAsyncRebuildsWhenReducerHashMismatch()
     {
         // Arrange
         const string currentReducerHash = "current-hash";
@@ -620,7 +619,7 @@ public sealed class SnapshotCacheGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-        public async Task OnActivateAsyncRequestsPersistenceWhenRebuilt()
+    public async Task OnActivateAsyncRequestsPersistenceWhenRebuilt()
     {
         // Arrange
         const string reducerHash = "test-hash";

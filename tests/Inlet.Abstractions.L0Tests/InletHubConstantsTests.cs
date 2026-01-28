@@ -1,4 +1,3 @@
-
 using Mississippi.Inlet.Server.Abstractions;
 
 
@@ -13,7 +12,7 @@ public sealed class InletHubConstantsTests
     ///     HubName should have expected value.
     /// </summary>
     [Fact]
-        public void HubNameHasExpectedValue()
+    public void HubNameHasExpectedValue()
     {
         // Assert
         Assert.Equal("InletHub", InletHubConstants.HubName);
@@ -23,7 +22,7 @@ public sealed class InletHubConstantsTests
     ///     ProjectionUpdatedMethod should have expected value.
     /// </summary>
     [Fact]
-        public void ProjectionUpdatedMethodHasExpectedValue()
+    public void ProjectionUpdatedMethodHasExpectedValue()
     {
         // Assert
         Assert.Equal("ProjectionUpdated", InletHubConstants.ProjectionUpdatedMethod);
@@ -33,7 +32,7 @@ public sealed class InletHubConstantsTests
     ///     SubscribeMethod should have expected value.
     /// </summary>
     [Fact]
-        public void SubscribeMethodHasExpectedValue()
+    public void SubscribeMethodHasExpectedValue()
     {
         // Assert
         Assert.Equal("SubscribeAsync", InletHubConstants.SubscribeMethod);
@@ -43,7 +42,7 @@ public sealed class InletHubConstantsTests
     ///     UnsubscribeMethod should have expected value.
     /// </summary>
     [Fact]
-        public void UnsubscribeMethodHasExpectedValue()
+    public void UnsubscribeMethodHasExpectedValue()
     {
         // Assert
         Assert.Equal("UnsubscribeAsync", InletHubConstants.UnsubscribeMethod);

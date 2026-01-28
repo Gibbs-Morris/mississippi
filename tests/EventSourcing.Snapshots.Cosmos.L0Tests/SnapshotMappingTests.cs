@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Mapping;
 using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;

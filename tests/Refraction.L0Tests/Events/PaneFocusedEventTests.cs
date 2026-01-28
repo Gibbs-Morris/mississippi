@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Refraction.Events;
 
 
@@ -15,7 +14,7 @@ public sealed class PaneFocusedEventTests
     ///     PaneFocusedEvent can be created with pane id.
     /// </summary>
     [Fact]
-        public void PaneFocusedEventCanBeCreatedWithPaneId()
+    public void PaneFocusedEventCanBeCreatedWithPaneId()
     {
         // Arrange & Act
         PaneFocusedEvent evt = new("main-pane");
@@ -28,7 +27,7 @@ public sealed class PaneFocusedEventTests
     ///     PaneFocusedEvent implements record equality.
     /// </summary>
     [Fact]
-        public void PaneFocusedEventImplementsRecordEquality()
+    public void PaneFocusedEventImplementsRecordEquality()
     {
         // Arrange
         PaneFocusedEvent evt1 = new("sidebar");
@@ -42,7 +41,7 @@ public sealed class PaneFocusedEventTests
     ///     PaneFocusedEvent is sealed record.
     /// </summary>
     [Fact]
-        public void PaneFocusedEventIsSealedRecord()
+    public void PaneFocusedEventIsSealedRecord()
     {
         // Arrange
         Type eventType = typeof(PaneFocusedEvent);
@@ -56,7 +55,7 @@ public sealed class PaneFocusedEventTests
     ///     PaneFocusedEvent PaneId property is accessible.
     /// </summary>
     [Fact]
-        public void PaneFocusedEventPaneIdPropertyIsAccessible()
+    public void PaneFocusedEventPaneIdPropertyIsAccessible()
     {
         // Arrange
         PaneFocusedEvent evt = new("detail-pane");

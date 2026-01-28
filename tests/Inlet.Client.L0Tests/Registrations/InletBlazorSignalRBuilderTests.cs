@@ -1,6 +1,5 @@
 using System;
 
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions;
@@ -19,7 +18,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     AddProjectionFetcher returns builder for chaining.
     /// </summary>
     [Fact]
-        public void AddProjectionFetcherReturnsBuilderForChaining()
+    public void AddProjectionFetcherReturnsBuilderForChaining()
     {
         // Arrange
         ServiceCollection services = new();
@@ -36,7 +35,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build registers IHubConnectionProvider as scoped.
     /// </summary>
     [Fact]
-        public void BuildRegistersHubConnectionProviderAsScoped()
+    public void BuildRegistersHubConnectionProviderAsScoped()
     {
         // Arrange
         ServiceCollection services = new();
@@ -55,7 +54,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build registers Lazy IInletStore as scoped.
     /// </summary>
     [Fact]
-        public void BuildRegistersLazyInletStoreAsScoped()
+    public void BuildRegistersLazyInletStoreAsScoped()
     {
         // Arrange
         ServiceCollection services = new();
@@ -74,7 +73,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build registers options as singleton.
     /// </summary>
     [Fact]
-        public void BuildRegistersOptionsAsSingleton()
+    public void BuildRegistersOptionsAsSingleton()
     {
         // Arrange
         ServiceCollection services = new();
@@ -95,7 +94,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build registers IProjectionDtoRegistry as singleton.
     /// </summary>
     [Fact]
-        public void BuildRegistersProjectionDtoRegistryAsSingleton()
+    public void BuildRegistersProjectionDtoRegistryAsSingleton()
     {
         // Arrange
         ServiceCollection services = new();
@@ -114,7 +113,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build with custom fetcher registers it as scoped.
     /// </summary>
     [Fact]
-        public void BuildWithCustomFetcherRegistersItAsScoped()
+    public void BuildWithCustomFetcherRegistersItAsScoped()
     {
         // Arrange
         ServiceCollection services = new();
@@ -136,7 +135,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Build with ScanProjectionDtos registers AutoProjectionFetcher.
     /// </summary>
     [Fact]
-        public void BuildWithScanProjectionDtosRegistersAutoProjectionFetcher()
+    public void BuildWithScanProjectionDtosRegistersAutoProjectionFetcher()
     {
         // Arrange
         ServiceCollection services = new();
@@ -156,7 +155,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Constructor accepts non-null services.
     /// </summary>
     [Fact]
-        public void ConstructorAcceptsNonNullServices()
+    public void ConstructorAcceptsNonNullServices()
     {
         // Arrange
         ServiceCollection services = new();
@@ -172,7 +171,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     Constructor throws ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-        public void ConstructorThrowsWhenServicesIsNull()
+    public void ConstructorThrowsWhenServicesIsNull()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new InletBlazorSignalRBuilder(null!));
@@ -182,7 +181,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     ScanProjectionDtos returns builder for chaining.
     /// </summary>
     [Fact]
-        public void ScanProjectionDtosReturnsBuilderForChaining()
+    public void ScanProjectionDtosReturnsBuilderForChaining()
     {
         // Arrange
         ServiceCollection services = new();
@@ -199,7 +198,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     ScanProjectionDtos throws ArgumentNullException when assemblies is null.
     /// </summary>
     [Fact]
-        public void ScanProjectionDtosThrowsWhenAssembliesIsNull()
+    public void ScanProjectionDtosThrowsWhenAssembliesIsNull()
     {
         // Arrange
         ServiceCollection services = new();
@@ -213,7 +212,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithHubPath returns builder for chaining.
     /// </summary>
     [Fact]
-        public void WithHubPathReturnsBuilderForChaining()
+    public void WithHubPathReturnsBuilderForChaining()
     {
         // Arrange
         ServiceCollection services = new();
@@ -230,7 +229,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithHubPath throws ArgumentException when hubPath is null.
     /// </summary>
     [Fact]
-        public void WithHubPathThrowsWhenHubPathIsNull()
+    public void WithHubPathThrowsWhenHubPathIsNull()
     {
         // Arrange
         ServiceCollection services = new();
@@ -244,7 +243,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithHubPath throws ArgumentException when hubPath is whitespace.
     /// </summary>
     [Fact]
-        public void WithHubPathThrowsWhenHubPathIsWhitespace()
+    public void WithHubPathThrowsWhenHubPathIsWhitespace()
     {
         // Arrange
         ServiceCollection services = new();
@@ -258,7 +257,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithRoutePrefix returns builder for chaining.
     /// </summary>
     [Fact]
-        public void WithRoutePrefixReturnsBuilderForChaining()
+    public void WithRoutePrefixReturnsBuilderForChaining()
     {
         // Arrange
         ServiceCollection services = new();
@@ -275,7 +274,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithRoutePrefix throws ArgumentException when prefix is null.
     /// </summary>
     [Fact]
-        public void WithRoutePrefixThrowsWhenPrefixIsNull()
+    public void WithRoutePrefixThrowsWhenPrefixIsNull()
     {
         // Arrange
         ServiceCollection services = new();
@@ -289,7 +288,7 @@ public sealed class InletBlazorSignalRBuilderTests
     ///     WithRoutePrefix throws ArgumentException when prefix is whitespace.
     /// </summary>
     [Fact]
-        public void WithRoutePrefixThrowsWhenPrefixIsWhitespace()
+    public void WithRoutePrefixThrowsWhenPrefixIsWhitespace()
     {
         // Arrange
         ServiceCollection services = new();

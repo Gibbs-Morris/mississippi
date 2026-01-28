@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 
-
 using Mississippi.Common.Abstractions.Mapping;
 
 using Moq;

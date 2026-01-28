@@ -1,5 +1,3 @@
-
-
 namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
 
 /// <summary>

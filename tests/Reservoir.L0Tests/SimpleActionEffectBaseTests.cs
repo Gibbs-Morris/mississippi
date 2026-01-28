@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -61,7 +60,7 @@ public sealed class SimpleActionEffectBaseTests
     ///     CanHandle returns false for non-matching action type.
     /// </summary>
     [Fact]
-        public void CanHandleReturnsFalseForNonMatchingActionType()
+    public void CanHandleReturnsFalseForNonMatchingActionType()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -78,7 +77,7 @@ public sealed class SimpleActionEffectBaseTests
     ///     CanHandle returns true for matching action type.
     /// </summary>
     [Fact]
-        public void CanHandleReturnsTrueForMatchingActionType()
+    public void CanHandleReturnsTrueForMatchingActionType()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -95,7 +94,7 @@ public sealed class SimpleActionEffectBaseTests
     ///     CanHandle throws ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-        public void CanHandleThrowsArgumentNullExceptionWhenActionIsNull()
+    public void CanHandleThrowsArgumentNullExceptionWhenActionIsNull()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -109,7 +108,7 @@ public sealed class SimpleActionEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoActions()
+    public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoActions()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -135,7 +134,7 @@ public sealed class SimpleActionEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncReturnsEmptyForNonMatchingAction()
+    public async Task HandleAsyncReturnsEmptyForNonMatchingAction()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -159,7 +158,7 @@ public sealed class SimpleActionEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when action is null.
     /// </summary>
     [Fact]
-        public void HandleAsyncThrowsArgumentNullExceptionWhenActionIsNull()
+    public void HandleAsyncThrowsArgumentNullExceptionWhenActionIsNull()
     {
         // Arrange
         TestSimpleEffect sut = new();

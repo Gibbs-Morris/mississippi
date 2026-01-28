@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
@@ -55,7 +54,7 @@ public sealed class SimpleEventEffectBaseTests
     ///     CanHandle returns false for non-matching event type.
     /// </summary>
     [Fact]
-        public void CanHandleReturnsFalseForNonMatchingEventType()
+    public void CanHandleReturnsFalseForNonMatchingEventType()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -72,7 +71,7 @@ public sealed class SimpleEventEffectBaseTests
     ///     CanHandle returns true for matching event type (inherited from EventEffectBase).
     /// </summary>
     [Fact]
-        public void CanHandleReturnsTrueForMatchingEventType()
+    public void CanHandleReturnsTrueForMatchingEventType()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -90,7 +89,7 @@ public sealed class SimpleEventEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-        public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoEvents()
+    public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoEvents()
     {
         // Arrange
         TestSimpleEffect sut = new();
@@ -114,7 +113,7 @@ public sealed class SimpleEventEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when event is null.
     /// </summary>
     [Fact]
-        public void HandleAsyncThrowsArgumentNullExceptionWhenEventIsNull()
+    public void HandleAsyncThrowsArgumentNullExceptionWhenEventIsNull()
     {
         // Arrange
         TestSimpleEffect sut = new();

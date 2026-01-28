@@ -1,6 +1,5 @@
 using System;
 
-
 using Mississippi.Refraction.Abstractions.Theme;
 
 
@@ -15,7 +14,7 @@ public sealed class IRefractionThemeTests
     ///     Verifies the interface defines required color properties.
     /// </summary>
     [Fact]
-        public void IRefractionThemeDefinesRequiredColorProperties()
+    public void IRefractionThemeDefinesRequiredColorProperties()
     {
         // Arrange
         Type interfaceType = typeof(IRefractionTheme);
@@ -32,7 +31,7 @@ public sealed class IRefractionThemeTests
     ///     Verifies the interface defines required spacing and timing properties.
     /// </summary>
     [Fact]
-        public void IRefractionThemeDefinesSpacingAndTimingProperties()
+    public void IRefractionThemeDefinesSpacingAndTimingProperties()
     {
         // Arrange
         Type interfaceType = typeof(IRefractionTheme);

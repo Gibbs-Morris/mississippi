@@ -1,4 +1,3 @@
-
 using Mississippi.EventSourcing.Brooks.Reader;
 
 
@@ -13,7 +12,7 @@ public sealed class BrookReaderOptionsTests
     ///     BrookSliceSize should be initializable to a custom value.
     /// </summary>
     [Fact]
-        public void BrookSliceSizeCanBeInitialized()
+    public void BrookSliceSizeCanBeInitialized()
     {
         // Arrange & Act
         BrookReaderOptions sut = new()
@@ -29,7 +28,7 @@ public sealed class BrookReaderOptionsTests
     ///     BrookSliceSize should default to 100.
     /// </summary>
     [Fact]
-        public void BrookSliceSizeDefaultsTo100()
+    public void BrookSliceSizeDefaultsTo100()
     {
         // Arrange & Act
         BrookReaderOptions sut = new();
@@ -47,7 +46,7 @@ public sealed class BrookReaderOptionsTests
     [InlineData(10)]
     [InlineData(1000)]
     [InlineData(10000)]
-        public void BrookSliceSizeSupportsVariousValues(
+    public void BrookSliceSizeSupportsVariousValues(
         long sliceSize
     )
     {
