@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.AspNetCore.Components;
 
@@ -13,16 +12,13 @@ namespace Mississippi.Refraction.Pages.L0Tests.Scenes;
 /// <summary>
 ///     Tests for <see cref="SceneBase{TState}" />.
 /// </summary>
-[AllureSuite("Refraction.Pages")]
-[AllureSubSuite("Scenes")]
 public sealed class SceneBaseTests
 {
     /// <summary>
     ///     SceneBase has Dispose method.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
-    public void SceneBaseHasDisposeMethod()
+        public void SceneBaseHasDisposeMethod()
     {
         // Arrange
         Type sceneBaseType = typeof(SceneBase<>);
@@ -38,8 +34,7 @@ public sealed class SceneBaseTests
     ///     SceneBase has protected HasError property.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
-    public void SceneBaseHasProtectedHasErrorProperty()
+        public void SceneBaseHasProtectedHasErrorProperty()
     {
         // Arrange
         Type sceneBaseType = typeof(SceneBase<>);
@@ -57,8 +52,7 @@ public sealed class SceneBaseTests
     ///     SceneBase has protected IsLoading property.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
-    public void SceneBaseHasProtectedIsLoadingProperty()
+        public void SceneBaseHasProtectedIsLoadingProperty()
     {
         // Arrange
         Type sceneBaseType = typeof(SceneBase<>);
@@ -76,8 +70,7 @@ public sealed class SceneBaseTests
     ///     SceneBase has protected State property.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
-    public void SceneBaseHasProtectedStateProperty()
+        public void SceneBaseHasProtectedStateProperty()
     {
         // Arrange
         Type sceneBaseType = typeof(SceneBase<>);
@@ -95,8 +88,7 @@ public sealed class SceneBaseTests
     ///     SceneBase has protected Store property with Inject attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
-    public void SceneBaseHasProtectedStorePropertyWithInject()
+        public void SceneBaseHasProtectedStorePropertyWithInject()
     {
         // Arrange
         Type sceneBaseType = typeof(SceneBase<>);
@@ -116,8 +108,7 @@ public sealed class SceneBaseTests
     ///     SceneBase implements IDisposable.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
-    public void SceneBaseImplementsIDisposable()
+        public void SceneBaseImplementsIDisposable()
     {
         // Arrange
         Type sceneBaseType = typeof(SceneBase<>);
@@ -130,8 +121,7 @@ public sealed class SceneBaseTests
     ///     SceneBase inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
-    public void SceneBaseInheritsFromComponentBase()
+        public void SceneBaseInheritsFromComponentBase()
     {
         // Arrange
         Type sceneBaseType = typeof(SceneBase<>);
@@ -144,8 +134,7 @@ public sealed class SceneBaseTests
     ///     SceneBase is abstract.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
-    public void SceneBaseIsAbstract()
+        public void SceneBaseIsAbstract()
     {
         // Arrange
         Type sceneBaseType = typeof(SceneBase<>);
@@ -158,8 +147,7 @@ public sealed class SceneBaseTests
     ///     SceneBase is generic with one type parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
-    public void SceneBaseIsGenericWithOneTypeParameter()
+        public void SceneBaseIsGenericWithOneTypeParameter()
     {
         // Arrange
         Type sceneBaseType = typeof(SceneBase<>);
