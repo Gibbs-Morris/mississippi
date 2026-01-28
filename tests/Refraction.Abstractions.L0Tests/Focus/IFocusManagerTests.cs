@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Refraction.Abstractions.Focus;
 
@@ -11,16 +10,13 @@ namespace Mississippi.Refraction.Abstractions.L0Tests.Focus;
 /// <summary>
 ///     Contract verification tests for <see cref="IFocusManager" />.
 /// </summary>
-[AllureSuite("Refraction.Abstractions")]
-[AllureSubSuite("Focus")]
 public sealed class IFocusManagerTests
 {
     /// <summary>
     ///     Verifies the interface defines focus navigation methods.
     /// </summary>
     [Fact]
-    [AllureFeature("IFocusManager")]
-    public void IFocusManagerDefinesFocusNavigationMethods()
+        public void IFocusManagerDefinesFocusNavigationMethods()
     {
         // Arrange
         Type interfaceType = typeof(IFocusManager);
@@ -36,8 +32,7 @@ public sealed class IFocusManagerTests
     ///     Verifies TryFocus returns bool.
     /// </summary>
     [Fact]
-    [AllureFeature("IFocusManager")]
-    public void IFocusManagerTryFocusReturnsBool()
+        public void IFocusManagerTryFocusReturnsBool()
     {
         // Arrange
         Type interfaceType = typeof(IFocusManager);
