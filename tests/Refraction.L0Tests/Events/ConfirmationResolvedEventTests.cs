@@ -1,6 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
 
 using Mississippi.Refraction.Events;
 
@@ -10,16 +9,13 @@ namespace Mississippi.Refraction.L0Tests.Events;
 /// <summary>
 ///     Tests for <see cref="ConfirmationResolvedEvent" /> record.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Events")]
 public sealed class ConfirmationResolvedEventTests
 {
     /// <summary>
     ///     ConfirmationResolvedEvent can be created with confirmed false.
     /// </summary>
     [Fact]
-    [AllureFeature("ConfirmationResolvedEvent")]
-    public void ConfirmationResolvedEventCanBeCreatedWithConfirmedFalse()
+        public void ConfirmationResolvedEventCanBeCreatedWithConfirmedFalse()
     {
         // Arrange & Act
         ConfirmationResolvedEvent evt = new(false);
@@ -32,8 +28,7 @@ public sealed class ConfirmationResolvedEventTests
     ///     ConfirmationResolvedEvent can be created with confirmed true.
     /// </summary>
     [Fact]
-    [AllureFeature("ConfirmationResolvedEvent")]
-    public void ConfirmationResolvedEventCanBeCreatedWithConfirmedTrue()
+        public void ConfirmationResolvedEventCanBeCreatedWithConfirmedTrue()
     {
         // Arrange & Act
         ConfirmationResolvedEvent evt = new(true);
@@ -46,8 +41,7 @@ public sealed class ConfirmationResolvedEventTests
     ///     ConfirmationResolvedEvent Confirmed property is accessible.
     /// </summary>
     [Fact]
-    [AllureFeature("ConfirmationResolvedEvent")]
-    public void ConfirmationResolvedEventConfirmedPropertyIsAccessible()
+        public void ConfirmationResolvedEventConfirmedPropertyIsAccessible()
     {
         // Arrange
         ConfirmationResolvedEvent evt = new(true);
@@ -63,8 +57,7 @@ public sealed class ConfirmationResolvedEventTests
     ///     ConfirmationResolvedEvent implements record equality.
     /// </summary>
     [Fact]
-    [AllureFeature("ConfirmationResolvedEvent")]
-    public void ConfirmationResolvedEventImplementsRecordEquality()
+        public void ConfirmationResolvedEventImplementsRecordEquality()
     {
         // Arrange
         ConfirmationResolvedEvent evt1 = new(true);
@@ -78,8 +71,7 @@ public sealed class ConfirmationResolvedEventTests
     ///     ConfirmationResolvedEvent is sealed record.
     /// </summary>
     [Fact]
-    [AllureFeature("ConfirmationResolvedEvent")]
-    public void ConfirmationResolvedEventIsSealedRecord()
+        public void ConfirmationResolvedEventIsSealedRecord()
     {
         // Arrange
         Type eventType = typeof(ConfirmationResolvedEvent);
