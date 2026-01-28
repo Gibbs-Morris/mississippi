@@ -76,15 +76,14 @@ public sealed class ReducerTestHarness<TProjection>
     {
         Type reducerType = reducer.GetType();
         Type eventType = evt.GetType();
-        foreach (Type iface in reducerType.GetInterfaces())
+        Type? iface = reducerType.GetInterfaces()
+            .FirstOrDefault(i => i.IsGenericType &&
+                                 (i.GetGenericTypeDefinition() == typeof(IEventReducer<,>)) &&
+                                 (i.GetGenericArguments()[0] == eventType));
+        if (iface is not null)
         {
-            if (iface.IsGenericType &&
-                (iface.GetGenericTypeDefinition() == typeof(IEventReducer<,>)) &&
-                (iface.GetGenericArguments()[0] == eventType))
-            {
-                MethodInfo? method = iface.GetMethod("Reduce");
-                return (TProjection)method!.Invoke(reducer, [state, evt])!;
-            }
+            MethodInfo? method = iface.GetMethod("Reduce");
+            return (TProjection)method!.Invoke(reducer, [state, evt])!;
         }
 
         throw new InvalidOperationException($"Cannot apply event {eventType.Name} with reducer {reducerType.Name}.");
@@ -97,17 +96,10 @@ public sealed class ReducerTestHarness<TProjection>
     {
         Type reducerType = reducer.GetType();
         Type eventType = evt.GetType();
-        foreach (Type iface in reducerType.GetInterfaces())
-        {
-            if (iface.IsGenericType &&
-                (iface.GetGenericTypeDefinition() == typeof(IEventReducer<,>)) &&
-                (iface.GetGenericArguments()[0] == eventType))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return reducerType.GetInterfaces()
+            .Any(iface => iface.IsGenericType &&
+                          (iface.GetGenericTypeDefinition() == typeof(IEventReducer<,>)) &&
+                          (iface.GetGenericArguments()[0] == eventType));
     }
 
     /// <summary>
