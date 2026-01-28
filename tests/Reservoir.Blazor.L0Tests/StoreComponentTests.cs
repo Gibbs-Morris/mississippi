@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,9 +14,6 @@ namespace Mississippi.Reservoir.Blazor.L0Tests;
 /// <summary>
 ///     Tests for <see cref="StoreComponent" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Reservoir.Blazor")]
-[AllureSuite("Components")]
-[AllureSubSuite("StoreComponent")]
 public sealed class StoreComponentTests : IDisposable
 {
     private readonly Store store;
@@ -132,8 +128,7 @@ public sealed class StoreComponentTests : IDisposable
     ///     Dispatch should delegate to the store.
     /// </summary>
     [Fact]
-    [AllureFeature("Dispatch")]
-    public void DispatchDelegatesToStore()
+        public void DispatchDelegatesToStore()
     {
         // Arrange
         using TestStoreComponent sut = new();
@@ -152,8 +147,7 @@ public sealed class StoreComponentTests : IDisposable
     ///     Dispose should be callable multiple times without error.
     /// </summary>
     [Fact]
-    [AllureFeature("Disposal")]
-    [SuppressMessage(
+        [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
         Justification = "This test verifies no exception is thrown on multiple dispose calls")]
@@ -182,8 +176,7 @@ public sealed class StoreComponentTests : IDisposable
     ///     GetState should delegate to the store.
     /// </summary>
     [Fact]
-    [AllureFeature("State Retrieval")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "ServiceProvider and scope are properly disposed via using statements")]
@@ -211,8 +204,7 @@ public sealed class StoreComponentTests : IDisposable
     ///     OnInitialized can be called multiple times (re-disposing subscription).
     /// </summary>
     [Fact]
-    [AllureFeature("Initialization")]
-    [SuppressMessage(
+        [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
         Justification = "This test verifies no exception is thrown when reinitialized")]
@@ -234,8 +226,7 @@ public sealed class StoreComponentTests : IDisposable
     ///     OnInitialized should subscribe to store changes.
     /// </summary>
     [Fact]
-    [AllureFeature("Initialization")]
-    [SuppressMessage(
+        [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
         Justification = "This test verifies no exception is thrown on initialization")]
