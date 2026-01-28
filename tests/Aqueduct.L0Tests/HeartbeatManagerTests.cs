@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,9 +17,6 @@ namespace Mississippi.Aqueduct.L0Tests;
 /// <summary>
 ///     Tests for <see cref="HeartbeatManager" />.
 /// </summary>
-[AllureParentSuite("Aqueduct")]
-[AllureSuite("Core")]
-[AllureSubSuite("HeartbeatManager")]
 public sealed class HeartbeatManagerTests
 {
     private static IServerIdProvider CreateServerIdProvider(
@@ -36,8 +32,7 @@ public sealed class HeartbeatManagerTests
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
     [Fact(DisplayName = "Constructor Succeeds With Valid Dependencies")]
-    [AllureFeature("Construction")]
-    public void ConstructorShouldSucceedWithValidDependencies()
+        public void ConstructorShouldSucceedWithValidDependencies()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
@@ -57,8 +52,7 @@ public sealed class HeartbeatManagerTests
     ///     Constructor should throw when grainFactory is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When GrainFactory Is Null")]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -80,8 +74,7 @@ public sealed class HeartbeatManagerTests
     ///     Constructor should throw when logger is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Logger Is Null")]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -103,8 +96,7 @@ public sealed class HeartbeatManagerTests
     ///     Constructor should throw when options is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When Options Is Null")]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -126,8 +118,7 @@ public sealed class HeartbeatManagerTests
     ///     Constructor should throw when serverIdProvider is null.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ServerIdProvider Is Null")]
-    [AllureFeature("Argument Validation")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test expects exception before object is created")]
@@ -146,8 +137,7 @@ public sealed class HeartbeatManagerTests
     ///     Constructor should use the server ID provided by the provider.
     /// </summary>
     [Fact(DisplayName = "Constructor Uses ServerId Provider Value")]
-    [AllureFeature("Construction")]
-    public void ConstructorShouldUseServerIdProviderValue()
+        public void ConstructorShouldUseServerIdProviderValue()
     {
         // Arrange
         string serverId = "server-123";
@@ -167,8 +157,7 @@ public sealed class HeartbeatManagerTests
     ///     Dispose should be idempotent.
     /// </summary>
     [Fact(DisplayName = "Dispose Is Idempotent")]
-    [AllureFeature("Disposal")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP016:Don't use disposed instance",
         Justification = "Testing idempotent disposal behavior")]
@@ -200,8 +189,7 @@ public sealed class HeartbeatManagerTests
     ///     Dispose should unregister server from directory.
     /// </summary>
     [Fact(DisplayName = "Dispose Unregisters Server From Directory")]
-    [AllureFeature("Disposal")]
-    [SuppressMessage(
+        [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP017:Prefer using",
         Justification = "Testing explicit Dispose behavior")]
@@ -227,8 +215,7 @@ public sealed class HeartbeatManagerTests
     ///     ServerId should be unique across instances.
     /// </summary>
     [Fact(DisplayName = "ServerId Is Unique Across Instances")]
-    [AllureFeature("Construction")]
-    public void ServerIdShouldBeUniqueAcrossInstances()
+        public void ServerIdShouldBeUniqueAcrossInstances()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
@@ -250,8 +237,7 @@ public sealed class HeartbeatManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "StartAsync Is Idempotent")]
-    [AllureFeature("Lifecycle")]
-    public async Task StartAsyncShouldBeIdempotent()
+        public async Task StartAsyncShouldBeIdempotent()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
@@ -275,8 +261,7 @@ public sealed class HeartbeatManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "StartAsync Registers Server With Directory")]
-    [AllureFeature("Lifecycle")]
-    public async Task StartAsyncShouldRegisterServerWithDirectory()
+        public async Task StartAsyncShouldRegisterServerWithDirectory()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
@@ -300,8 +285,7 @@ public sealed class HeartbeatManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "StartAsync Throws When ConnectionCountProvider Is Null")]
-    [AllureFeature("Argument Validation")]
-    public async Task StartAsyncShouldThrowWhenConnectionCountProviderIsNull()
+        public async Task StartAsyncShouldThrowWhenConnectionCountProviderIsNull()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
@@ -318,8 +302,7 @@ public sealed class HeartbeatManagerTests
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact(DisplayName = "StopAsync Unregisters Server From Directory")]
-    [AllureFeature("Lifecycle")]
-    public async Task StopAsyncShouldUnregisterServerFromDirectory()
+        public async Task StopAsyncShouldUnregisterServerFromDirectory()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
