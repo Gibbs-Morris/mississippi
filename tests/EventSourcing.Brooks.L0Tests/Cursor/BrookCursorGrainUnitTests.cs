@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,9 +20,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests.Cursor;
 /// <summary>
 ///     Unit tests for <see cref="BrookCursorGrain" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks")]
-[AllureSubSuite("Brook Cursor Grain Unit")]
 public sealed class BrookCursorGrainUnitTests
 {
     /// <summary>
