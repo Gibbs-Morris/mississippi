@@ -1,6 +1,5 @@
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
 
 using Bunit;
 
@@ -14,16 +13,13 @@ namespace Mississippi.Refraction.L0Tests.Components.Atoms;
 /// <summary>
 ///     Tests for <see cref="ProgressArc" /> component.
 /// </summary>
-[AllureSuite("Refraction")]
-[AllureSubSuite("Atoms")]
 public sealed class ProgressArcTests : BunitContext
 {
     /// <summary>
     ///     ProgressArc has AdditionalAttributes parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcHasAdditionalAttributesParameter()
+        public void ProgressArcHasAdditionalAttributesParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(ProgressArc).GetProperty("AdditionalAttributes");
@@ -39,8 +35,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc has Max parameter with default 100.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcHasMaxParameterWithDefault100()
+        public void ProgressArcHasMaxParameterWithDefault100()
     {
         // Arrange
         PropertyInfo? prop = typeof(ProgressArc).GetProperty("Max");
@@ -57,8 +52,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc has Min parameter with default 0.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcHasMinParameterWithDefault0()
+        public void ProgressArcHasMinParameterWithDefault0()
     {
         // Arrange
         PropertyInfo? prop = typeof(ProgressArc).GetProperty("Min");
@@ -75,8 +69,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc has State parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcHasStateParameter()
+        public void ProgressArcHasStateParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(ProgressArc).GetProperty("State");
@@ -91,8 +84,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc has Value parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcHasValueParameter()
+        public void ProgressArcHasValueParameter()
     {
         // Arrange
         PropertyInfo? prop = typeof(ProgressArc).GetProperty("Value");
@@ -108,8 +100,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcInheritsFromComponentBase()
+        public void ProgressArcInheritsFromComponentBase()
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(ProgressArc)));
@@ -119,8 +110,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc renders additional attributes.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersAdditionalAttributes()
+        public void ProgressArcRendersAdditionalAttributes()
     {
         // Act
         using IRenderedComponent<ProgressArc> cut =
@@ -134,8 +124,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc renders aria-valuemax attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersAriaValuemaxAttribute()
+        public void ProgressArcRendersAriaValuemaxAttribute()
     {
         // Act
         using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>(p => p.Add(c => c.Max, 200));
@@ -149,8 +138,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc renders aria-valuemin attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersAriaValueminAttribute()
+        public void ProgressArcRendersAriaValueminAttribute()
     {
         // Act
         using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>(p => p.Add(c => c.Min, 10));
@@ -164,8 +152,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc renders aria-valuenow attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersAriaValuenowAttribute()
+        public void ProgressArcRendersAriaValuenowAttribute()
     {
         // Act
         using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>(p => p.Add(c => c.Value, 50));
@@ -179,8 +166,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc renders custom state.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersCustomState()
+        public void ProgressArcRendersCustomState()
     {
         // Act
         using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>(p => p.Add(
@@ -196,8 +182,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc renders SVG element.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersSvgElement()
+        public void ProgressArcRendersSvgElement()
     {
         // Act
         using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>();
@@ -210,8 +195,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc renders with default state.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersWithDefaultState()
+        public void ProgressArcRendersWithDefaultState()
     {
         // Act
         using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>();
@@ -225,8 +209,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc renders with progressbar role for accessibility.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcRendersWithProgressbarRoleForAccessibility()
+        public void ProgressArcRendersWithProgressbarRoleForAccessibility()
     {
         // Act
         using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>();
@@ -240,8 +223,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc State defaults to Determinate.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcStateDefaultsToDeterminate()
+        public void ProgressArcStateDefaultsToDeterminate()
     {
         // Arrange
         ProgressArc component = new();
@@ -254,8 +236,7 @@ public sealed class ProgressArcTests : BunitContext
     ///     ProgressArc Value defaults to 0.
     /// </summary>
     [Fact]
-    [AllureFeature("ProgressArc")]
-    public void ProgressArcValueDefaultsToZero()
+        public void ProgressArcValueDefaultsToZero()
     {
         // Arrange
         ProgressArc component = new();
