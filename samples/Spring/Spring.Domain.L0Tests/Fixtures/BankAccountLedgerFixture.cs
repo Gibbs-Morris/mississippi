@@ -15,20 +15,6 @@ namespace Spring.Domain.L0Tests.Fixtures;
 ///         This fixture eliminates boilerplate by pre-registering all reducers
 ///         for the BankAccountLedger projection.
 ///     </para>
-///     <example>
-///         <code>
-///         // Quick projection testing
-///         var result = BankAccountLedgerFixture.Replay(
-///             new FundsDeposited { Amount = 100m },
-///             new FundsWithdrawn { Amount = 50m });
-///         result.Entries.Should().HaveCount(2);
-///
-///         // Scenario testing
-///         BankAccountLedgerFixture.Empty()
-///             .When(new FundsDeposited { Amount = 100m })
-///             .ThenAssert(p => p.Entries.Should().ContainSingle());
-///         </code>
-///     </example>
 /// </remarks>
 public static class BankAccountLedgerFixture
 {

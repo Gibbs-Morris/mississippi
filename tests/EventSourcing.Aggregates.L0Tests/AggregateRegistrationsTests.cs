@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -67,9 +68,27 @@ public class AggregateRegistrationsTests
         public override IAsyncEnumerable<object> HandleAsync(
             TestEvent eventData,
             TestState currentState,
+            string brookKey,
+            long eventPosition,
             CancellationToken cancellationToken
         ) =>
             AsyncEnumerable.Empty<object>();
+    }
+
+    /// <summary>
+    ///     Test fire-and-forget event effect implementation.
+    /// </summary>
+    private sealed class TestFireAndForgetEffect : IFireAndForgetEventEffect<TestEvent, TestState>
+    {
+        /// <inheritdoc />
+        public Task HandleAsync(
+            TestEvent eventData,
+            TestState aggregateState,
+            string brookKey,
+            long eventPosition,
+            CancellationToken cancellationToken
+        ) =>
+            Task.CompletedTask;
     }
 
     /// <summary>
@@ -289,6 +308,79 @@ public class AggregateRegistrationsTests
     {
         IServiceCollection? services = null;
         Assert.Throws<ArgumentNullException>(() => services!.AddEventType<TestEvent>());
+    }
+
+    /// <summary>
+    ///     AddFireAndForgetEventEffect should register the effect in DI.
+    /// </summary>
+    [Fact]
+    public void AddFireAndForgetEventEffectRegistersEffectInDI()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IFireAndForgetEventEffect<TestEvent, TestState>? effect =
+            provider.GetService<IFireAndForgetEventEffect<TestEvent, TestState>>();
+
+        // Assert
+        Assert.NotNull(effect);
+        Assert.IsType<TestFireAndForgetEffect>(effect);
+    }
+
+    /// <summary>
+    ///     AddFireAndForgetEventEffect should register the effect registration for grain discovery.
+    /// </summary>
+    [Fact]
+    public void AddFireAndForgetEventEffectRegistersEffectRegistration()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEnumerable<IFireAndForgetEffectRegistration<TestState>> registrations =
+            provider.GetServices<IFireAndForgetEffectRegistration<TestState>>();
+
+        // Assert
+        IFireAndForgetEffectRegistration<TestState>? registration = registrations.SingleOrDefault();
+        Assert.NotNull(registration);
+        Assert.Equal(typeof(TestEvent), registration.EventType);
+        Assert.Equal(typeof(TestFireAndForgetEffect).FullName, registration.EffectTypeName);
+    }
+
+    /// <summary>
+    ///     AddFireAndForgetEventEffect should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void AddFireAndForgetEventEffectReturnsServiceCollection()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        IServiceCollection result =
+            services.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
+
+        // Assert
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     AddFireAndForgetEventEffect should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddFireAndForgetEventEffectThrowsWhenServicesIsNull()
+    {
+        // Arrange
+        IServiceCollection? services = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() =>
+            services!.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>());
     }
 
     /// <summary>

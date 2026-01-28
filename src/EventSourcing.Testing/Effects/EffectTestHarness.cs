@@ -27,28 +27,11 @@ namespace Mississippi.EventSourcing.Testing.Effects;
 ///         to other aggregates via <see cref="IAggregateGrainFactory" />. It captures
 ///         dispatched commands for verification.
 ///     </para>
-///     <example>
-///         <code>
-///         // Create harness with mocked dependencies
-///         var harness = EffectTestHarness&lt;HighValueTransactionEffect, FundsDeposited, BankAccountAggregate&gt;
-///             .Create()
-///             .WithGrainKey("acc-123")
-///             .WithAggregateGrainResponse&lt;TransactionInvestigationQueueAggregate&gt;(
-///                 "global",
-///                 OperationResult.Ok());
-///
-///         // Build the effect using DI-style constructor
-///         var effect = harness.Build(
-///             (factory, context, logger) =&gt; new HighValueTransactionEffect(factory, context, logger));
-///
-///         // Invoke the effect
-///         await harness.InvokeAsync(effect, depositEvent, currentState);
-///
-///         // Verify command was dispatched
-///         harness.DispatchedCommands.Should().ContainSingle()
-///             .Which.Should().BeOfType&lt;FlagTransaction&gt;();
-///         </code>
-///     </example>
+///     <para>
+///         The harness generates a brook key in the format <c>brookName|entityId</c> from the
+///         configured grain key. By default, the brook name is "TEST.DOMAIN.AGGREGATE" but can
+///         be customized using <see cref="WithBrookName" />.
+///     </para>
 /// </remarks>
 public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
     where TEffect : class
@@ -60,6 +43,10 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
     private readonly List<(Type AggregateType, string EntityId, object Command)> dispatchedCommands = [];
 
     private readonly Mock<IGrainContext> grainContextMock = new();
+
+    private string brookName = "TEST.DOMAIN.AGGREGATE";
+
+    private long eventPosition = 1;
 
     private string grainKey = "test-entity";
 
@@ -117,17 +104,22 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
     {
         ArgumentNullException.ThrowIfNull(effect);
 
+        // Generate brook key in the format brookName|entityId
+        string brookKey = $"{brookName}|{grainKey}";
+
         // Access the protected or public HandleSimpleAsync or HandleAsync method via IEventEffect interface
         Type effectType = effect.GetType();
 
-        // Try HandleSimpleAsync first (for SimpleEventEffectBase)
+        // Try HandleSimpleAsync first (for SimpleEventEffectBase) - 5-parameter signature
         MethodInfo? handleSimpleMethod = effectType.GetMethod(
             "HandleSimpleAsync",
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
-            [typeof(TEvent), typeof(TAggregate), typeof(CancellationToken)]);
+            [typeof(TEvent), typeof(TAggregate), typeof(string), typeof(long), typeof(CancellationToken)]);
         if (handleSimpleMethod != null)
         {
-            Task? task = handleSimpleMethod.Invoke(effect, [eventData, currentState, cancellationToken]) as Task;
+            Task? task = handleSimpleMethod.Invoke(
+                effect,
+                [eventData, currentState, brookKey, eventPosition, cancellationToken]) as Task;
             if (task != null)
             {
                 await task;
@@ -136,14 +128,16 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
             return [];
         }
 
-        // Try HandleAsync for EventEffectBase
+        // Try HandleAsync for EventEffectBase - 5-parameter signature
         MethodInfo? handleAsyncMethod = effectType.GetMethod(
             "HandleAsync",
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
-            [typeof(TEvent), typeof(TAggregate), typeof(CancellationToken)]);
+            [typeof(TEvent), typeof(TAggregate), typeof(string), typeof(long), typeof(CancellationToken)]);
         if (handleAsyncMethod != null)
         {
-            object? result = handleAsyncMethod.Invoke(effect, [eventData, currentState, cancellationToken]);
+            object? result = handleAsyncMethod.Invoke(
+                effect,
+                [eventData, currentState, brookKey, eventPosition, cancellationToken]);
             if (result is IAsyncEnumerable<object> asyncEnumerable)
             {
                 List<object> yieldedObjects = [];
@@ -192,9 +186,39 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
     }
 
     /// <summary>
+    ///     Configures the brook name used when constructing the brook key.
+    /// </summary>
+    /// <param name="name">The brook name (e.g., "SPRING.BANKING.ACCOUNT").</param>
+    /// <returns>The harness for chaining.</returns>
+    /// <remarks>
+    ///     The brook key is constructed as <c>brookName|entityId</c> where entityId comes from
+    ///     <see cref="WithGrainKey" />. The default brook name is "TEST.DOMAIN.AGGREGATE".
+    /// </remarks>
+    public EffectTestHarness<TEffect, TEvent, TAggregate> WithBrookName(
+        string name
+    )
+    {
+        brookName = name;
+        return this;
+    }
+
+    /// <summary>
+    ///     Configures the event position passed to the effect.
+    /// </summary>
+    /// <param name="position">The event position in the brook.</param>
+    /// <returns>The harness for chaining.</returns>
+    public EffectTestHarness<TEffect, TEvent, TAggregate> WithEventPosition(
+        long position
+    )
+    {
+        eventPosition = position;
+        return this;
+    }
+
+    /// <summary>
     ///     Configures the grain context to return the specified grain key.
     /// </summary>
-    /// <param name="key">The grain key.</param>
+    /// <param name="key">The grain key (entity ID portion of the brook key).</param>
     /// <returns>The harness for chaining.</returns>
     public EffectTestHarness<TEffect, TEvent, TAggregate> WithGrainKey(
         string key

@@ -14,21 +14,6 @@ namespace Spring.Domain.L0Tests.Fixtures;
 ///         This fixture eliminates boilerplate by pre-registering all handlers and reducers
 ///         for the BankAccount aggregate. Use the static factory methods for common scenarios.
 ///     </para>
-///     <example>
-///         <code>
-///         // Quick scenario testing
-///         BankAccountFixture.OpenAccount("John", 100m)
-///             .When(new DepositFunds { Amount = 50m })
-///             .ThenState(s => s.Balance.Should().Be(150m));
-///
-///         // Full harness access
-///         var harness = BankAccountFixture.CreateHarness();
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { ... })
-///             .When(command)
-///             .ThenEmits&lt;FundsDeposited&gt;(e => ...);
-///         </code>
-///     </example>
 /// </remarks>
 public static class BankAccountFixture
 {
@@ -79,13 +64,6 @@ public static class BankAccountFixture
     /// <param name="holderName">The account holder's name.</param>
     /// <param name="initialDeposit">The initial deposit amount.</param>
     /// <returns>A scenario ready for <c>When</c>/<c>Then</c> operations.</returns>
-    /// <example>
-    ///     <code>
-    ///     BankAccountFixture.OpenAccount("John", 100m)
-    ///         .When(new DepositFunds { Amount = 50m })
-    ///         .ThenState(s => s.Balance.Should().Be(150m));
-    ///     </code>
-    /// </example>
     public static AggregateScenario<BankAccountAggregate> OpenAccount(
         string holderName,
         decimal initialDeposit = 0m

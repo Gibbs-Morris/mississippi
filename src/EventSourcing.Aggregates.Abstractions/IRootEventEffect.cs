@@ -39,6 +39,8 @@ public interface IRootEventEffect<TAggregate>
     /// </summary>
     /// <param name="eventData">The event to dispatch.</param>
     /// <param name="currentState">The current aggregate state after the event was applied.</param>
+    /// <param name="brookKey">The brook key identifying the aggregate instance.</param>
+    /// <param name="eventPosition">The position of the event in the brook.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
     ///     An async enumerable of additional events yielded by effects.
@@ -47,6 +49,8 @@ public interface IRootEventEffect<TAggregate>
     IAsyncEnumerable<object> DispatchAsync(
         object eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     );
 }

@@ -13,19 +13,6 @@ namespace Mississippi.EventSourcing.Testing.Effects;
 ///         and provides a base for fluent assertions. Domain-specific fixtures
 ///         can inherit from this class to add domain-specific assertion methods.
 ///     </para>
-///     <example>
-///         <code>
-///         // Use directly with harness
-///         var result = harness.ToResult();
-///         result.ShouldHaveDispatched&lt;FlagTransaction&gt;();
-///
-///         // Or create a domain-specific subclass
-///         public class HighValueEffectResult : EffectTestResult
-///         {
-///             public HighValueEffectResult ShouldHaveFlagged() { ... }
-///         }
-///         </code>
-///     </example>
 /// </remarks>
 public class EffectTestResult
 {
