@@ -4,6 +4,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
+
 namespace Spring.Domain.Aggregates.BankAccount.Events;
 
 /// <summary>
@@ -25,14 +26,14 @@ internal sealed record FundsRefunded
     public decimal Amount { get; init; }
 
     /// <summary>
-    ///     Gets the correlation ID linking this refund to the original transfer saga.
-    /// </summary>
-    [Id(1)]
-    public required Guid TransferCorrelationId { get; init; }
-
-    /// <summary>
     ///     Gets the reason for the refund.
     /// </summary>
     [Id(2)]
     public string? Reason { get; init; }
+
+    /// <summary>
+    ///     Gets the correlation ID linking this refund to the original transfer saga.
+    /// </summary>
+    [Id(1)]
+    public required Guid TransferCorrelationId { get; init; }
 }

@@ -590,6 +590,14 @@
           "Microsoft.Orleans.Sdk": "[10.0.0, )"
         }
       },
+      "Mississippi.EventSourcing.Aggregates.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Options": "[10.0.2, )",
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Brooks.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -605,6 +613,7 @@
       "Mississippi.EventSourcing.Sagas.Abstractions": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },

@@ -11,7 +11,4 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.Events;
 /// <param name="Reason">The reason for the final failure.</param>
 /// <param name="Timestamp">When the saga failed.</param>
 [EventStorageName("MISSISSIPPI", "SAGAS", "SAGAFAILED")]
-public sealed record SagaFailedEvent(
-    string Reason,
-    DateTimeOffset Timestamp
-);
+public sealed record SagaFailedEvent(string Reason, DateTimeOffset Timestamp);

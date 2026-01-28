@@ -17,12 +17,12 @@ public interface ISagaStepRegistry<TSaga>
     Type SagaType => typeof(TSaga);
 
     /// <summary>
-    ///     Gets all registered steps in execution order.
-    /// </summary>
-    IReadOnlyList<ISagaStepInfo> Steps { get; }
-
-    /// <summary>
     ///     Gets a hash representing the step definitions for version tracking.
     /// </summary>
     string StepHash { get; }
+
+    /// <summary>
+    ///     Gets all registered steps in execution order.
+    /// </summary>
+    IReadOnlyList<ISagaStepInfo> Steps { get; }
 }

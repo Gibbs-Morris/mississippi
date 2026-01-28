@@ -4,6 +4,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 
 using Orleans;
 
+
 namespace Spring.Domain.Aggregates.BankAccount.Commands;
 
 /// <summary>
@@ -25,14 +26,14 @@ public sealed record DebitForTransfer
     public decimal Amount { get; init; }
 
     /// <summary>
-    ///     Gets the correlation ID linking this debit to the transfer saga.
-    /// </summary>
-    [Id(1)]
-    public required Guid TransferCorrelationId { get; init; }
-
-    /// <summary>
     ///     Gets the destination account ID for the transfer.
     /// </summary>
     [Id(2)]
     public required Guid DestinationAccountId { get; init; }
+
+    /// <summary>
+    ///     Gets the correlation ID linking this debit to the transfer saga.
+    /// </summary>
+    [Id(1)]
+    public required Guid TransferCorrelationId { get; init; }
 }

@@ -4,6 +4,7 @@ using Mississippi.EventSourcing.Reducers.Abstractions;
 
 using Spring.Domain.Sagas.TransferFunds.Events;
 
+
 namespace Spring.Domain.Sagas.TransferFunds.Reducers;
 
 /// <summary>
@@ -18,7 +19,7 @@ internal sealed class TransferInitiatedReducer : EventReducerBase<TransferInitia
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-        return new TransferFundsSagaState
+        return new()
         {
             SourceAccountId = @event.SourceAccountId,
             DestinationAccountId = @event.DestinationAccountId,

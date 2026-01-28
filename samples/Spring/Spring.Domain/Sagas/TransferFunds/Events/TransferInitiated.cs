@@ -4,6 +4,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
+
 namespace Spring.Domain.Sagas.TransferFunds.Events;
 
 /// <summary>
@@ -15,10 +16,10 @@ namespace Spring.Domain.Sagas.TransferFunds.Events;
 internal sealed record TransferInitiated
 {
     /// <summary>
-    ///     Gets the source account ID.
+    ///     Gets the amount to transfer.
     /// </summary>
-    [Id(0)]
-    public required Guid SourceAccountId { get; init; }
+    [Id(2)]
+    public decimal Amount { get; init; }
 
     /// <summary>
     ///     Gets the destination account ID.
@@ -27,14 +28,14 @@ internal sealed record TransferInitiated
     public required Guid DestinationAccountId { get; init; }
 
     /// <summary>
-    ///     Gets the amount to transfer.
-    /// </summary>
-    [Id(2)]
-    public decimal Amount { get; init; }
-
-    /// <summary>
     ///     Gets the timestamp when the transfer was initiated.
     /// </summary>
     [Id(3)]
     public DateTimeOffset InitiatedAt { get; init; }
+
+    /// <summary>
+    ///     Gets the source account ID.
+    /// </summary>
+    [Id(0)]
+    public required Guid SourceAccountId { get; init; }
 }

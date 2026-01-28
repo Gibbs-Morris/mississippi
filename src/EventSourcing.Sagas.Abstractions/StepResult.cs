@@ -16,12 +16,10 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions;
 /// </remarks>
 public sealed record StepResult
 {
-    private static readonly StepResult SucceededInstance = new() { Success = true };
-
-    /// <summary>
-    ///     Gets a value indicating whether the step executed successfully.
-    /// </summary>
-    public bool Success { get; init; }
+    private static readonly StepResult SucceededInstance = new()
+    {
+        Success = true,
+    };
 
     /// <summary>
     ///     Gets the error code when the step failed.
@@ -40,38 +38,9 @@ public sealed record StepResult
     public IReadOnlyList<object> Events { get; init; } = [];
 
     /// <summary>
-    ///     Creates a successful step result with no events.
+    ///     Gets a value indicating whether the step executed successfully.
     /// </summary>
-    /// <returns>A successful <see cref="StepResult" />.</returns>
-    public static StepResult Succeeded() => SucceededInstance;
-
-    /// <summary>
-    ///     Creates a successful step result with business events.
-    /// </summary>
-    /// <param name="events">The business events to persist.</param>
-    /// <returns>A successful <see cref="StepResult" /> with the specified events.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="events" /> is null.</exception>
-    public static StepResult Succeeded(
-        params object[] events
-    )
-    {
-        ArgumentNullException.ThrowIfNull(events);
-        return new StepResult { Success = true, Events = events };
-    }
-
-    /// <summary>
-    ///     Creates a successful step result with business events.
-    /// </summary>
-    /// <param name="events">The business events to persist.</param>
-    /// <returns>A successful <see cref="StepResult" /> with the specified events.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="events" /> is null.</exception>
-    public static StepResult Succeeded(
-        IReadOnlyList<object> events
-    )
-    {
-        ArgumentNullException.ThrowIfNull(events);
-        return new StepResult { Success = true, Events = events };
-    }
+    public bool Success { get; init; }
 
     /// <summary>
     ///     Creates a failed step result.
@@ -90,11 +59,53 @@ public sealed record StepResult
             throw new ArgumentException("Error code cannot be null or whitespace.", nameof(errorCode));
         }
 
-        return new StepResult
+        return new()
         {
             Success = false,
             ErrorCode = errorCode,
             ErrorMessage = errorMessage,
+        };
+    }
+
+    /// <summary>
+    ///     Creates a successful step result with no events.
+    /// </summary>
+    /// <returns>A successful <see cref="StepResult" />.</returns>
+    public static StepResult Succeeded() => SucceededInstance;
+
+    /// <summary>
+    ///     Creates a successful step result with business events.
+    /// </summary>
+    /// <param name="events">The business events to persist.</param>
+    /// <returns>A successful <see cref="StepResult" /> with the specified events.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="events" /> is null.</exception>
+    public static StepResult Succeeded(
+        params object[] events
+    )
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        return new()
+        {
+            Success = true,
+            Events = events,
+        };
+    }
+
+    /// <summary>
+    ///     Creates a successful step result with business events.
+    /// </summary>
+    /// <param name="events">The business events to persist.</param>
+    /// <returns>A successful <see cref="StepResult" /> with the specified events.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="events" /> is null.</exception>
+    public static StepResult Succeeded(
+        IReadOnlyList<object> events
+    )
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        return new()
+        {
+            Success = true,
+            Events = events,
         };
     }
 }

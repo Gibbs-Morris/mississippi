@@ -20,19 +20,9 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.Projections;
 public sealed record SagaStatusProjection
 {
     /// <summary>
-    ///     Gets the unique identifier of the saga instance.
+    ///     Gets when the saga completed, if it has completed.
     /// </summary>
-    public string SagaId { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the type name of the saga state.
-    /// </summary>
-    public string SagaType { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the current phase of the saga.
-    /// </summary>
-    public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
+    public DateTimeOffset? CompletedAt { get; init; }
 
     /// <summary>
     ///     Gets the list of steps that have completed successfully.
@@ -50,17 +40,27 @@ public sealed record SagaStatusProjection
     public ImmutableList<SagaStepRecord> FailedSteps { get; init; } = [];
 
     /// <summary>
-    ///     Gets when the saga started, if it has started.
-    /// </summary>
-    public DateTimeOffset? StartedAt { get; init; }
-
-    /// <summary>
-    ///     Gets when the saga completed, if it has completed.
-    /// </summary>
-    public DateTimeOffset? CompletedAt { get; init; }
-
-    /// <summary>
     ///     Gets the reason for saga failure, if the saga failed.
     /// </summary>
     public string? FailureReason { get; init; }
+
+    /// <summary>
+    ///     Gets the current phase of the saga.
+    /// </summary>
+    public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
+
+    /// <summary>
+    ///     Gets the unique identifier of the saga instance.
+    /// </summary>
+    public string SagaId { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     Gets the type name of the saga state.
+    /// </summary>
+    public string SagaType { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     Gets when the saga started, if it has started.
+    /// </summary>
+    public DateTimeOffset? StartedAt { get; init; }
 }

@@ -4,6 +4,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
+
 namespace Spring.Domain.Sagas.TransferFunds.Events;
 
 /// <summary>
@@ -15,14 +16,14 @@ namespace Spring.Domain.Sagas.TransferFunds.Events;
 internal sealed record SourceAccountDebited
 {
     /// <summary>
-    ///     Gets the source account ID.
-    /// </summary>
-    [Id(0)]
-    public required Guid SourceAccountId { get; init; }
-
-    /// <summary>
     ///     Gets the amount debited.
     /// </summary>
     [Id(1)]
     public decimal Amount { get; init; }
+
+    /// <summary>
+    ///     Gets the source account ID.
+    /// </summary>
+    [Id(0)]
+    public required Guid SourceAccountId { get; init; }
 }

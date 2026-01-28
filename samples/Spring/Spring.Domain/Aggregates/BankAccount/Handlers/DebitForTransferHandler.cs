@@ -5,6 +5,7 @@ using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Spring.Domain.Aggregates.BankAccount.Commands;
 using Spring.Domain.Aggregates.BankAccount.Events;
 
+
 namespace Spring.Domain.Aggregates.BankAccount.Handlers;
 
 /// <summary>

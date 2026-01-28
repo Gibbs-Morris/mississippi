@@ -36,6 +36,12 @@ public sealed record BankAccountAggregate
     public string HolderName { get; init; } = string.Empty;
 
     /// <summary>
+    ///     Gets the total number of incoming transfers received by this account.
+    /// </summary>
+    [Id(6)]
+    public int IncomingTransferCount { get; init; }
+
+    /// <summary>
     ///     Gets a value indicating whether the account has been opened.
     /// </summary>
     [Id(1)]
@@ -46,12 +52,6 @@ public sealed record BankAccountAggregate
     /// </summary>
     [Id(5)]
     public int OutgoingTransferCount { get; init; }
-
-    /// <summary>
-    ///     Gets the total number of incoming transfers received by this account.
-    /// </summary>
-    [Id(6)]
-    public int IncomingTransferCount { get; init; }
 
     /// <summary>
     ///     Gets the total number of withdrawals made from this account.

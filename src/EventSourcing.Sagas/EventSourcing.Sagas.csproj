@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="..\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
     <ProjectReference Include="..\EventSourcing.Sagas.Abstractions\EventSourcing.Sagas.Abstractions.csproj" />
     <ProjectReference Include="..\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
     <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />

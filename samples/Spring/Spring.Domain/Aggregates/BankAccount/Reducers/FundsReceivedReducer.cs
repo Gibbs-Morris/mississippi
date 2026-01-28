@@ -4,6 +4,7 @@ using Mississippi.EventSourcing.Reducers.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount.Events;
 
+
 namespace Spring.Domain.Aggregates.BankAccount.Reducers;
 
 /// <summary>

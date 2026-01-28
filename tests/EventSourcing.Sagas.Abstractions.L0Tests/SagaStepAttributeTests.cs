@@ -41,8 +41,8 @@ public sealed class SagaStepAttributeTests
     )
     {
         // Act & Assert
-        ArgumentOutOfRangeException exception = Assert.Throws<ArgumentOutOfRangeException>(
-            () => new SagaStepAttribute(invalidOrder));
+        ArgumentOutOfRangeException exception =
+            Assert.Throws<ArgumentOutOfRangeException>(() => new SagaStepAttribute(invalidOrder));
         Assert.Equal("order", exception.ParamName);
     }
 
@@ -68,7 +68,10 @@ public sealed class SagaStepAttributeTests
     public void TimeoutPropertyIsSettable()
     {
         // Act
-        SagaStepAttribute attribute = new(1) { Timeout = "00:10:00" };
+        SagaStepAttribute attribute = new(1)
+        {
+            Timeout = "00:10:00",
+        };
 
         // Assert
         Assert.Equal("00:10:00", attribute.Timeout);

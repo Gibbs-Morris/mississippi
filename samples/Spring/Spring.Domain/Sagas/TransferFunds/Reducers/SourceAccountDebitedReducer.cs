@@ -4,6 +4,7 @@ using Mississippi.EventSourcing.Reducers.Abstractions;
 
 using Spring.Domain.Sagas.TransferFunds.Events;
 
+
 namespace Spring.Domain.Sagas.TransferFunds.Reducers;
 
 /// <summary>

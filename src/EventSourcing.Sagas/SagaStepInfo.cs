@@ -11,17 +11,17 @@ namespace Mississippi.EventSourcing.Sagas;
 internal sealed record SagaStepInfo : ISagaStepInfo
 {
     /// <inheritdoc />
+    public Type? CompensationType { get; init; }
+
+    /// <inheritdoc />
+    public required string Name { get; init; }
+
+    /// <inheritdoc />
     public required int Order { get; init; }
 
     /// <inheritdoc />
     public required Type StepType { get; init; }
 
     /// <inheritdoc />
-    public required string Name { get; init; }
-
-    /// <inheritdoc />
     public TimeSpan? Timeout { get; init; }
-
-    /// <inheritdoc />
-    public Type? CompensationType { get; init; }
 }

@@ -12,8 +12,4 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.Events;
 /// <param name="StepOrder">The execution order of the step.</param>
 /// <param name="Timestamp">When the step started.</param>
 [EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPSTARTED")]
-public sealed record SagaStepStartedEvent(
-    string StepName,
-    int StepOrder,
-    DateTimeOffset Timestamp
-);
+public sealed record SagaStepStartedEvent(string StepName, int StepOrder, DateTimeOffset Timestamp);

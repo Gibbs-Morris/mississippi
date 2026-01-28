@@ -26,20 +26,6 @@ public sealed class SagaOptionsAttributeTests
     }
 
     /// <summary>
-    ///     Default TimeoutBehavior should be FailAndCompensate.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Default Values")]
-    public void DefaultTimeoutBehaviorIsFailAndCompensate()
-    {
-        // Act
-        SagaOptionsAttribute attribute = new();
-
-        // Assert
-        Assert.Equal(TimeoutBehavior.FailAndCompensate, attribute.TimeoutBehavior);
-    }
-
-    /// <summary>
     ///     Default MaxRetries should be 3.
     /// </summary>
     [Fact]
@@ -65,6 +51,20 @@ public sealed class SagaOptionsAttributeTests
 
         // Assert
         Assert.Null(attribute.DefaultStepTimeout);
+    }
+
+    /// <summary>
+    ///     Default TimeoutBehavior should be FailAndCompensate.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Default Values")]
+    public void DefaultTimeoutBehaviorIsFailAndCompensate()
+    {
+        // Act
+        SagaOptionsAttribute attribute = new();
+
+        // Assert
+        Assert.Equal(TimeoutBehavior.FailAndCompensate, attribute.TimeoutBehavior);
     }
 
     /// <summary>

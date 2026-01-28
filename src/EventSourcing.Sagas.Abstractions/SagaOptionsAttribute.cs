@@ -30,16 +30,16 @@ public sealed class SagaOptionsAttribute : Attribute
     public string? DefaultStepTimeout { get; set; }
 
     /// <summary>
-    ///     Gets or sets the behavior when a step times out.
-    ///     Defaults to <see cref="Abstractions.TimeoutBehavior.FailAndCompensate" />.
-    /// </summary>
-    public TimeoutBehavior TimeoutBehavior { get; set; } = TimeoutBehavior.FailAndCompensate;
-
-    /// <summary>
     ///     Gets or sets the maximum number of retry attempts for a step before failing.
     ///     Only used when <see cref="CompensationStrategy" /> is
     ///     <see cref="Abstractions.CompensationStrategy.RetryThenCompensate" />.
     ///     Defaults to 3.
     /// </summary>
     public int MaxRetries { get; set; } = 3;
+
+    /// <summary>
+    ///     Gets or sets the behavior when a step times out.
+    ///     Defaults to <see cref="Abstractions.TimeoutBehavior.FailAndCompensate" />.
+    /// </summary>
+    public TimeoutBehavior TimeoutBehavior { get; set; } = TimeoutBehavior.FailAndCompensate;
 }

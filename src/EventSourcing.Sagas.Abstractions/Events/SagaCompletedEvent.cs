@@ -10,6 +10,4 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.Events;
 /// </summary>
 /// <param name="Timestamp">When the saga completed.</param>
 [EventStorageName("MISSISSIPPI", "SAGAS", "SAGACOMPLETED")]
-public sealed record SagaCompletedEvent(
-    DateTimeOffset Timestamp
-);
+public sealed record SagaCompletedEvent(DateTimeOffset Timestamp);

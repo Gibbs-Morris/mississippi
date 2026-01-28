@@ -475,6 +475,26 @@
           "Microsoft.Orleans.Sdk": "[10.0.0, )"
         }
       },
+      "Mississippi.EventSourcing.Aggregates": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
+          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Aggregates.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Options": "[10.0.2, )",
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Brooks": {
         "type": "Project",
         "dependencies": {
@@ -510,6 +530,22 @@
       "Mississippi.EventSourcing.Sagas.Abstractions": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Serialization.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "[10.0.2, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.2, )"
+        }
+      },
+      "Mississippi.EventSourcing.Snapshots.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },

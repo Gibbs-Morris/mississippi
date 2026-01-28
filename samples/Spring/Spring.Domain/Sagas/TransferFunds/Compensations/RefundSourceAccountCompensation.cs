@@ -6,7 +6,8 @@ using Mississippi.EventSourcing.Sagas.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Commands;
-using Spring.Domain.Sagas.TransferFunds.Events;
+using Spring.Domain.Sagas.TransferFunds.Steps;
+
 
 namespace Spring.Domain.Sagas.TransferFunds.Compensations;
 
@@ -18,21 +19,19 @@ namespace Spring.Domain.Sagas.TransferFunds.Compensations;
 ///     was debited but before or during the credit to the destination account.
 ///     It restores the funds to the source account.
 /// </remarks>
-[SagaCompensation(forStep: typeof(Steps.DebitSourceAccountStep))]
+[SagaCompensation(typeof(DebitSourceAccountStep))]
 internal sealed class RefundSourceAccountCompensation : SagaCompensationBase<TransferFundsSagaState>
 {
-    private IAggregateGrainFactory AggregateGrainFactory { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="RefundSourceAccountCompensation" /> class.
     /// </summary>
     /// <param name="aggregateGrainFactory">The factory to resolve aggregate grains.</param>
     public RefundSourceAccountCompensation(
         IAggregateGrainFactory aggregateGrainFactory
-    )
-    {
+    ) =>
         AggregateGrainFactory = aggregateGrainFactory;
-    }
+
+    private IAggregateGrainFactory AggregateGrainFactory { get; }
 
     /// <inheritdoc />
     public override async Task<CompensationResult> CompensateAsync(
@@ -54,9 +53,7 @@ internal sealed class RefundSourceAccountCompensation : SagaCompensationBase<Tra
         }
 
         IGenericAggregateGrain<BankAccountAggregate> grain =
-            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(
-                state.SourceAccountId.ToString());
-
+            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(state.SourceAccountId.ToString());
         OperationResult result = await grain.ExecuteAsync(
             new RefundTransfer
             {
@@ -65,7 +62,6 @@ internal sealed class RefundSourceAccountCompensation : SagaCompensationBase<Tra
                 Reason = state.FailureReason ?? "Transfer rolled back.",
             },
             cancellationToken);
-
         if (!result.Success)
         {
             return CompensationResult.Failed(

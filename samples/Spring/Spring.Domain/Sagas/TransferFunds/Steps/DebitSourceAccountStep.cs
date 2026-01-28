@@ -8,6 +8,7 @@ using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Commands;
 using Spring.Domain.Sagas.TransferFunds.Events;
 
+
 namespace Spring.Domain.Sagas.TransferFunds.Steps;
 
 /// <summary>
@@ -18,21 +19,19 @@ namespace Spring.Domain.Sagas.TransferFunds.Steps;
 ///     If the source account has insufficient funds or is not open,
 ///     the step fails and the saga is aborted without compensation.
 /// </remarks>
-[SagaStep(order: 1, Timeout = "00:00:10")]
+[SagaStep(1, Timeout = "00:00:10")]
 internal sealed class DebitSourceAccountStep : SagaStepBase<TransferFundsSagaState>
 {
-    private IAggregateGrainFactory AggregateGrainFactory { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="DebitSourceAccountStep" /> class.
     /// </summary>
     /// <param name="aggregateGrainFactory">The factory to resolve aggregate grains.</param>
     public DebitSourceAccountStep(
         IAggregateGrainFactory aggregateGrainFactory
-    )
-    {
+    ) =>
         AggregateGrainFactory = aggregateGrainFactory;
-    }
+
+    private IAggregateGrainFactory AggregateGrainFactory { get; }
 
     /// <inheritdoc />
     public override async Task<StepResult> ExecuteAsync(
@@ -42,9 +41,7 @@ internal sealed class DebitSourceAccountStep : SagaStepBase<TransferFundsSagaSta
     )
     {
         IGenericAggregateGrain<BankAccountAggregate> grain =
-            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(
-                state.SourceAccountId.ToString());
-
+            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(state.SourceAccountId.ToString());
         OperationResult result = await grain.ExecuteAsync(
             new DebitForTransfer
             {
@@ -53,7 +50,6 @@ internal sealed class DebitSourceAccountStep : SagaStepBase<TransferFundsSagaSta
                 DestinationAccountId = state.DestinationAccountId,
             },
             cancellationToken);
-
         if (!result.Success)
         {
             return StepResult.Failed(

@@ -12,8 +12,4 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.Events;
 /// <param name="StepOrder">The execution order of the compensated step.</param>
 /// <param name="Timestamp">When the compensation completed.</param>
 [EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPCOMPENSATED")]
-public sealed record SagaStepCompensatedEvent(
-    string StepName,
-    int StepOrder,
-    DateTimeOffset Timestamp
-);
+public sealed record SagaStepCompensatedEvent(string StepName, int StepOrder, DateTimeOffset Timestamp);

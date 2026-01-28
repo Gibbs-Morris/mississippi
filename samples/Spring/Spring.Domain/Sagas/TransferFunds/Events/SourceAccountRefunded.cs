@@ -4,6 +4,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
+
 namespace Spring.Domain.Sagas.TransferFunds.Events;
 
 /// <summary>
@@ -15,12 +16,6 @@ namespace Spring.Domain.Sagas.TransferFunds.Events;
 internal sealed record SourceAccountRefunded
 {
     /// <summary>
-    ///     Gets the source account ID.
-    /// </summary>
-    [Id(0)]
-    public required Guid SourceAccountId { get; init; }
-
-    /// <summary>
     ///     Gets the amount refunded.
     /// </summary>
     [Id(1)]
@@ -31,4 +26,10 @@ internal sealed record SourceAccountRefunded
     /// </summary>
     [Id(2)]
     public string? Reason { get; init; }
+
+    /// <summary>
+    ///     Gets the source account ID.
+    /// </summary>
+    [Id(0)]
+    public required Guid SourceAccountId { get; init; }
 }

@@ -14,32 +14,81 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.L0Tests;
 public sealed class CompensationResultTests
 {
     /// <summary>
-    ///     Succeeded should return a successful result.
+    ///     Failed should allow null error message.
     /// </summary>
     [Fact]
     [AllureFeature("Factory Methods")]
-    public void SucceededReturnsSuccessResult()
+    public void FailedAllowsNullErrorMessage()
     {
         // Act
-        CompensationResult result = CompensationResult.Succeeded();
+        CompensationResult result = CompensationResult.Failed("COMP_ERROR");
 
         // Assert
-        Assert.True(result.Success);
-        Assert.False(result.WasSkipped);
-        Assert.Null(result.ErrorCode);
+        Assert.False(result.Success);
+        Assert.Equal("COMP_ERROR", result.ErrorCode);
         Assert.Null(result.ErrorMessage);
     }
 
     /// <summary>
-    ///     Succeeded should return cached instance for efficiency.
+    ///     Failed should return a failed result with error details.
     /// </summary>
     [Fact]
     [AllureFeature("Factory Methods")]
-    public void SucceededReturnsSameInstance()
+    public void FailedReturnsFailureWithErrorDetails()
     {
         // Act
-        CompensationResult result1 = CompensationResult.Succeeded();
-        CompensationResult result2 = CompensationResult.Succeeded();
+        CompensationResult result = CompensationResult.Failed("COMP_ERROR", "Compensation failed");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.False(result.WasSkipped);
+        Assert.Equal("COMP_ERROR", result.ErrorCode);
+        Assert.Equal("Compensation failed", result.ErrorMessage);
+    }
+
+    /// <summary>
+    ///     Failed with empty error code should throw ArgumentException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Argument Validation")]
+    public void FailedWithEmptyErrorCodeThrowsArgumentException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => CompensationResult.Failed(string.Empty));
+    }
+
+    /// <summary>
+    ///     Failed with null error code should throw ArgumentException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Argument Validation")]
+    public void FailedWithNullErrorCodeThrowsArgumentException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => CompensationResult.Failed(null!));
+    }
+
+    /// <summary>
+    ///     Failed with whitespace error code should throw ArgumentException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Argument Validation")]
+    public void FailedWithWhitespaceErrorCodeThrowsArgumentException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => CompensationResult.Failed("   "));
+    }
+
+    /// <summary>
+    ///     Skipped should return cached instance for efficiency.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Factory Methods")]
+    public void SkippedReturnsSameInstance()
+    {
+        // Act
+        CompensationResult result1 = CompensationResult.Skipped();
+        CompensationResult result2 = CompensationResult.Skipped();
 
         // Assert
         Assert.Same(result1, result2);
@@ -63,83 +112,34 @@ public sealed class CompensationResultTests
     }
 
     /// <summary>
-    ///     Skipped should return cached instance for efficiency.
+    ///     Succeeded should return cached instance for efficiency.
     /// </summary>
     [Fact]
     [AllureFeature("Factory Methods")]
-    public void SkippedReturnsSameInstance()
+    public void SucceededReturnsSameInstance()
     {
         // Act
-        CompensationResult result1 = CompensationResult.Skipped();
-        CompensationResult result2 = CompensationResult.Skipped();
+        CompensationResult result1 = CompensationResult.Succeeded();
+        CompensationResult result2 = CompensationResult.Succeeded();
 
         // Assert
         Assert.Same(result1, result2);
     }
 
     /// <summary>
-    ///     Failed should return a failed result with error details.
+    ///     Succeeded should return a successful result.
     /// </summary>
     [Fact]
     [AllureFeature("Factory Methods")]
-    public void FailedReturnsFailureWithErrorDetails()
+    public void SucceededReturnsSuccessResult()
     {
         // Act
-        CompensationResult result = CompensationResult.Failed("COMP_ERROR", "Compensation failed");
+        CompensationResult result = CompensationResult.Succeeded();
 
         // Assert
-        Assert.False(result.Success);
+        Assert.True(result.Success);
         Assert.False(result.WasSkipped);
-        Assert.Equal("COMP_ERROR", result.ErrorCode);
-        Assert.Equal("Compensation failed", result.ErrorMessage);
-    }
-
-    /// <summary>
-    ///     Failed should allow null error message.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Factory Methods")]
-    public void FailedAllowsNullErrorMessage()
-    {
-        // Act
-        CompensationResult result = CompensationResult.Failed("COMP_ERROR");
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal("COMP_ERROR", result.ErrorCode);
+        Assert.Null(result.ErrorCode);
         Assert.Null(result.ErrorMessage);
-    }
-
-    /// <summary>
-    ///     Failed with null error code should throw ArgumentException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Argument Validation")]
-    public void FailedWithNullErrorCodeThrowsArgumentException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => CompensationResult.Failed(null!));
-    }
-
-    /// <summary>
-    ///     Failed with empty error code should throw ArgumentException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Argument Validation")]
-    public void FailedWithEmptyErrorCodeThrowsArgumentException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => CompensationResult.Failed(string.Empty));
-    }
-
-    /// <summary>
-    ///     Failed with whitespace error code should throw ArgumentException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Argument Validation")]
-    public void FailedWithWhitespaceErrorCodeThrowsArgumentException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => CompensationResult.Failed("   "));
     }
 }

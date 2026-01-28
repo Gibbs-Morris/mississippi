@@ -14,18 +14,16 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions;
 /// </remarks>
 public sealed record CompensationResult
 {
-    private static readonly CompensationResult SucceededInstance = new() { Success = true };
-    private static readonly CompensationResult SkippedInstance = new() { Success = true, WasSkipped = true };
+    private static readonly CompensationResult SkippedInstance = new()
+    {
+        Success = true,
+        WasSkipped = true,
+    };
 
-    /// <summary>
-    ///     Gets a value indicating whether the compensation executed or skipped successfully.
-    /// </summary>
-    public bool Success { get; init; }
-
-    /// <summary>
-    ///     Gets a value indicating whether the compensation was skipped because there was nothing to undo.
-    /// </summary>
-    public bool WasSkipped { get; init; }
+    private static readonly CompensationResult SucceededInstance = new()
+    {
+        Success = true,
+    };
 
     /// <summary>
     ///     Gets the error code when the compensation failed.
@@ -38,16 +36,14 @@ public sealed record CompensationResult
     public string? ErrorMessage { get; init; }
 
     /// <summary>
-    ///     Creates a successful compensation result.
+    ///     Gets a value indicating whether the compensation executed or skipped successfully.
     /// </summary>
-    /// <returns>A successful <see cref="CompensationResult" />.</returns>
-    public static CompensationResult Succeeded() => SucceededInstance;
+    public bool Success { get; init; }
 
     /// <summary>
-    ///     Creates a skipped compensation result indicating there was nothing to undo.
+    ///     Gets a value indicating whether the compensation was skipped because there was nothing to undo.
     /// </summary>
-    /// <returns>A skipped <see cref="CompensationResult" />.</returns>
-    public static CompensationResult Skipped() => SkippedInstance;
+    public bool WasSkipped { get; init; }
 
     /// <summary>
     ///     Creates a failed compensation result.
@@ -66,11 +62,23 @@ public sealed record CompensationResult
             throw new ArgumentException("Error code cannot be null or whitespace.", nameof(errorCode));
         }
 
-        return new CompensationResult
+        return new()
         {
             Success = false,
             ErrorCode = errorCode,
             ErrorMessage = errorMessage,
         };
     }
+
+    /// <summary>
+    ///     Creates a skipped compensation result indicating there was nothing to undo.
+    /// </summary>
+    /// <returns>A skipped <see cref="CompensationResult" />.</returns>
+    public static CompensationResult Skipped() => SkippedInstance;
+
+    /// <summary>
+    ///     Creates a successful compensation result.
+    /// </summary>
+    /// <returns>A successful <see cref="CompensationResult" />.</returns>
+    public static CompensationResult Succeeded() => SucceededInstance;
 }

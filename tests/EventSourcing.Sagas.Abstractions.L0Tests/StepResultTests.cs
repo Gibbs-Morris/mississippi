@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Allure.Xunit.Attributes;
 
@@ -14,78 +15,19 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.L0Tests;
 public sealed class StepResultTests
 {
     /// <summary>
-    ///     Succeeded should return a successful result with no events.
+    ///     Failed should allow null error message.
     /// </summary>
     [Fact]
     [AllureFeature("Factory Methods")]
-    public void SucceededReturnsSuccessWithNoEvents()
+    public void FailedAllowsNullErrorMessage()
     {
         // Act
-        StepResult result = StepResult.Succeeded();
+        StepResult result = StepResult.Failed("TEST_ERROR");
 
         // Assert
-        Assert.True(result.Success);
-        Assert.Empty(result.Events);
-        Assert.Null(result.ErrorCode);
+        Assert.False(result.Success);
+        Assert.Equal("TEST_ERROR", result.ErrorCode);
         Assert.Null(result.ErrorMessage);
-    }
-
-    /// <summary>
-    ///     Succeeded should return cached instance for efficiency.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Factory Methods")]
-    public void SucceededReturnsSameInstance()
-    {
-        // Act
-        StepResult result1 = StepResult.Succeeded();
-        StepResult result2 = StepResult.Succeeded();
-
-        // Assert
-        Assert.Same(result1, result2);
-    }
-
-    /// <summary>
-    ///     Succeeded with events should return a successful result with events.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Factory Methods")]
-    public void SucceededWithEventsReturnsSuccessWithEvents()
-    {
-        // Arrange
-        object event1 = new { Type = "TestEvent1" };
-        object event2 = new { Type = "TestEvent2" };
-
-        // Act
-        StepResult result = StepResult.Succeeded(event1, event2);
-
-        // Assert
-        Assert.True(result.Success);
-        Assert.Equal(2, result.Events.Count);
-        Assert.Same(event1, result.Events[0]);
-        Assert.Same(event2, result.Events[1]);
-    }
-
-    /// <summary>
-    ///     Succeeded with null events array should throw ArgumentNullException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Argument Validation")]
-    public void SucceededWithNullEventsArrayThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => StepResult.Succeeded((object[])null!));
-    }
-
-    /// <summary>
-    ///     Succeeded with null events list should throw ArgumentNullException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Argument Validation")]
-    public void SucceededWithNullEventsListThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => StepResult.Succeeded((System.Collections.Generic.IReadOnlyList<object>)null!));
     }
 
     /// <summary>
@@ -106,19 +48,14 @@ public sealed class StepResultTests
     }
 
     /// <summary>
-    ///     Failed should allow null error message.
+    ///     Failed with empty error code should throw ArgumentException.
     /// </summary>
     [Fact]
-    [AllureFeature("Factory Methods")]
-    public void FailedAllowsNullErrorMessage()
+    [AllureFeature("Argument Validation")]
+    public void FailedWithEmptyErrorCodeThrowsArgumentException()
     {
-        // Act
-        StepResult result = StepResult.Failed("TEST_ERROR");
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal("TEST_ERROR", result.ErrorCode);
-        Assert.Null(result.ErrorMessage);
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => StepResult.Failed(string.Empty));
     }
 
     /// <summary>
@@ -133,17 +70,6 @@ public sealed class StepResultTests
     }
 
     /// <summary>
-    ///     Failed with empty error code should throw ArgumentException.
-    /// </summary>
-    [Fact]
-    [AllureFeature("Argument Validation")]
-    public void FailedWithEmptyErrorCodeThrowsArgumentException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => StepResult.Failed(string.Empty));
-    }
-
-    /// <summary>
     ///     Failed with whitespace error code should throw ArgumentException.
     /// </summary>
     [Fact]
@@ -152,5 +78,86 @@ public sealed class StepResultTests
     {
         // Act & Assert
         Assert.Throws<ArgumentException>(() => StepResult.Failed("   "));
+    }
+
+    /// <summary>
+    ///     Succeeded should return cached instance for efficiency.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Factory Methods")]
+    public void SucceededReturnsSameInstance()
+    {
+        // Act
+        StepResult result1 = StepResult.Succeeded();
+        StepResult result2 = StepResult.Succeeded();
+
+        // Assert
+        Assert.Same(result1, result2);
+    }
+
+    /// <summary>
+    ///     Succeeded should return a successful result with no events.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Factory Methods")]
+    public void SucceededReturnsSuccessWithNoEvents()
+    {
+        // Act
+        StepResult result = StepResult.Succeeded();
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Empty(result.Events);
+        Assert.Null(result.ErrorCode);
+        Assert.Null(result.ErrorMessage);
+    }
+
+    /// <summary>
+    ///     Succeeded with events should return a successful result with events.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Factory Methods")]
+    public void SucceededWithEventsReturnsSuccessWithEvents()
+    {
+        // Arrange
+        object event1 = new
+        {
+            Type = "TestEvent1",
+        };
+        object event2 = new
+        {
+            Type = "TestEvent2",
+        };
+
+        // Act
+        StepResult result = StepResult.Succeeded(event1, event2);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Events.Count);
+        Assert.Same(event1, result.Events[0]);
+        Assert.Same(event2, result.Events[1]);
+    }
+
+    /// <summary>
+    ///     Succeeded with null events array should throw ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Argument Validation")]
+    public void SucceededWithNullEventsArrayThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => StepResult.Succeeded(null!));
+    }
+
+    /// <summary>
+    ///     Succeeded with null events list should throw ArgumentNullException.
+    /// </summary>
+    [Fact]
+    [AllureFeature("Argument Validation")]
+    public void SucceededWithNullEventsListThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => StepResult.Succeeded((IReadOnlyList<object>)null!));
     }
 }
