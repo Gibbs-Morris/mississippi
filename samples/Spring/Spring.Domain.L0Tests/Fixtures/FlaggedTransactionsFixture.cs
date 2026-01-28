@@ -65,14 +65,14 @@ public static class FlaggedTransactionsFixture
         int entryCount
     )
     {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset baseTimestamp = new(2025, 1, 15, 10, 0, 0, TimeSpan.Zero);
         ImmutableArray<FlaggedTransaction> entries = Enumerable.Range(1, entryCount)
             .Select(i => new FlaggedTransaction
             {
                 AccountId = $"account-{i}",
                 Amount = i * 1000m,
-                OriginalTimestamp = now.AddHours((-entryCount + i) - 1),
-                FlaggedTimestamp = now.AddHours(-entryCount + i),
+                OriginalTimestamp = baseTimestamp.AddHours((-entryCount + i) - 1),
+                FlaggedTimestamp = baseTimestamp.AddHours(-entryCount + i),
                 Sequence = (entryCount - i) + 1, // Most recent first
             })
             .ToImmutableArray();

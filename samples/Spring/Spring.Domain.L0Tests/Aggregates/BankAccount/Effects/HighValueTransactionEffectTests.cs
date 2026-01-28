@@ -2,6 +2,8 @@ using System.Threading.Tasks;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.Extensions.Time.Testing;
+
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
@@ -28,6 +30,8 @@ namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Effects;
 [AllureSubSuite("BankAccount Effects")]
 public sealed class HighValueTransactionEffectTests
 {
+    private static readonly DateTimeOffset TestTimestamp = new(2025, 1, 15, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     Verifies that deposits exceeding the AML threshold dispatch a FlagTransaction command.
     /// </summary>
@@ -185,6 +189,7 @@ public sealed class HighValueTransactionEffectTests
     public async Task FlagTransactionShouldIncludeTimestampAsync()
     {
         // Arrange
+        FakeTimeProvider fakeTimeProvider = new(TestTimestamp);
         EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate> harness =
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-timestamp")
@@ -193,7 +198,7 @@ public sealed class HighValueTransactionEffectTests
             factory,
             context,
             logger
-        ) => new(factory, context, logger));
+        ) => new(factory, context, logger, fakeTimeProvider));
         FundsDeposited eventData = new()
         {
             Amount = 100_000m,
@@ -210,7 +215,7 @@ public sealed class HighValueTransactionEffectTests
 
         // Assert
         FlagTransaction command = harness.DispatchedCommands.ShouldHaveDispatched<FlagTransaction>();
-        command.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
+        command.Timestamp.Should().Be(TestTimestamp);
     }
 
     /// <summary>

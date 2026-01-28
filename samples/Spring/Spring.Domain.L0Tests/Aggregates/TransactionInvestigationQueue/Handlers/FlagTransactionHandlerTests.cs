@@ -2,6 +2,8 @@ using System.Collections.Generic;
 
 using Allure.Xunit.Attributes;
 
+using Microsoft.Extensions.Time.Testing;
+
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 using Spring.Domain.Aggregates.TransactionInvestigationQueue;
@@ -20,9 +22,18 @@ namespace Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Handler
 [AllureSubSuite("FlagTransactionHandler")]
 public sealed class FlagTransactionHandlerTests
 {
+    private static readonly DateTimeOffset FlaggedTimestamp = new(2025, 1, 15, 11, 0, 0, TimeSpan.Zero);
+
     private static readonly DateTimeOffset TestTimestamp = new(2025, 1, 15, 10, 30, 0, TimeSpan.Zero);
 
-    private readonly FlagTransactionHandler handler = new();
+    private readonly FakeTimeProvider fakeTimeProvider = new(FlaggedTimestamp);
+
+    private readonly FlagTransactionHandler handler;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="FlagTransactionHandlerTests" /> class.
+    /// </summary>
+    public FlagTransactionHandlerTests() => handler = new(fakeTimeProvider);
 
     /// <summary>
     ///     Flagging preserves the original transaction timestamp.
@@ -102,7 +113,7 @@ public sealed class FlagTransactionHandlerTests
         flagged.AccountId.Should().Be("acc-123");
         flagged.Amount.Should().Be(15_000m);
         flagged.OriginalTimestamp.Should().Be(TestTimestamp);
-        flagged.FlaggedTimestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
+        flagged.FlaggedTimestamp.Should().Be(FlaggedTimestamp);
     }
 
     /// <summary>

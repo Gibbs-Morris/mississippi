@@ -36,7 +36,7 @@ public sealed class TransactionFlaggedReducerTests
             AccountId = "acc-456",
             Amount = 25_000m,
             OriginalTimestamp = TestTimestamp,
-            FlaggedTimestamp = DateTimeOffset.UtcNow,
+            FlaggedTimestamp = TestTimestamp.AddMinutes(5),
         };
 
         // Act
@@ -63,14 +63,14 @@ public sealed class TransactionFlaggedReducerTests
             AccountId = "acc-1",
             Amount = 15_000m,
             OriginalTimestamp = TestTimestamp,
-            FlaggedTimestamp = DateTimeOffset.UtcNow,
+            FlaggedTimestamp = TestTimestamp.AddMinutes(5),
         };
         TransactionFlagged evt2 = new()
         {
             AccountId = "acc-2",
             Amount = 20_000m,
             OriginalTimestamp = TestTimestamp,
-            FlaggedTimestamp = DateTimeOffset.UtcNow,
+            FlaggedTimestamp = TestTimestamp.AddMinutes(10),
         };
 
         // Act
@@ -94,7 +94,7 @@ public sealed class TransactionFlaggedReducerTests
             AccountId = "acc-123",
             Amount = 15_000m,
             OriginalTimestamp = TestTimestamp,
-            FlaggedTimestamp = DateTimeOffset.UtcNow,
+            FlaggedTimestamp = TestTimestamp.AddMinutes(5),
         };
 
         // Act
@@ -122,7 +122,7 @@ public sealed class TransactionFlaggedReducerTests
             AccountId = "acc-123",
             Amount = 15_000m,
             OriginalTimestamp = TestTimestamp,
-            FlaggedTimestamp = DateTimeOffset.UtcNow,
+            FlaggedTimestamp = TestTimestamp.AddMinutes(5),
         };
 
         // Act

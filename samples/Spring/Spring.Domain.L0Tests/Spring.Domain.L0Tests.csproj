@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
         <PackageReference Include="FluentAssertions" />
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj"/>
+        <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj" />
         <ProjectReference Include="..\..\..\src\EventSourcing.Testing\Mississippi.EventSourcing.Testing.csproj" />
     </ItemGroup>
 </Project>
