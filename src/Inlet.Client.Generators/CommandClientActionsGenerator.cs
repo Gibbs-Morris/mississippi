@@ -30,7 +30,7 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class CommandClientActionsGenerator : IIncrementalGenerator
 {
-    private const string ActionsNamespaceImport = "Mississippi.Inlet.Blazor.WebAssembly.Abstractions.Actions";
+    private const string ActionsNamespaceImport = "Mississippi.Inlet.Client.Abstractions.Actions";
 
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";

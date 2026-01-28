@@ -1,0 +1,10 @@
+{
+  "label": "Aggregates",
+  "position": 6,
+  "link": {
+    "type": "doc",
+    "id": "aggregates"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

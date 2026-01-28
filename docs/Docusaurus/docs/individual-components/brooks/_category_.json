@@ -1,0 +1,10 @@
+{
+  "label": "Brooks",
+  "position": 7,
+  "link": {
+    "type": "doc",
+    "id": "brooks"
+  },
+  "collapsible": true,
+  "collapsed": false
+}

@@ -9,8 +9,8 @@ using Mississippi.Aqueduct;
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.UxProjections;
-using Mississippi.Inlet.Orleans;
-using Mississippi.Inlet.Orleans.SignalR;
+using Mississippi.Inlet.Server;
+using Mississippi.Inlet.Silo;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -81,8 +81,8 @@ builder.Services.AddAqueduct<InletHub>(options =>
     options.StreamProviderName = "StreamProvider";
 });
 
-// Add Inlet Orleans SignalR services for real-time projection updates
-builder.Services.AddInletOrleansWithSignalR();
+// Add Inlet Server services for real-time projection updates
+builder.Services.AddInletServer();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add aggregate DTO to command mappers

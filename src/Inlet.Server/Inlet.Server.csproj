@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>ASP.NET Core server components for Inlet. Provides InletHub for SignalR-based projection update notifications. Deploy to ASP.NET web servers hosting SignalR hubs - requires Orleans client connection to silo.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Aqueduct\Aqueduct.csproj" />
+        <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
+        <ProjectReference Include="..\Inlet.Silo\Inlet.Silo.csproj" />
+        <ProjectReference Include="..\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

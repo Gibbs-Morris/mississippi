@@ -88,7 +88,7 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("using System.Net.Http;");
         sb.AppendLine();
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
-        sb.AppendUsing("Mississippi.Inlet.Blazor.WebAssembly.Abstractions.ActionEffects");
+        sb.AppendUsing("Mississippi.Inlet.Client.Abstractions.ActionEffects");
         sb.AppendLine();
         sb.AppendLine($"using {actionsNamespace};");
         sb.AppendLine($"using {dtosNamespace};");

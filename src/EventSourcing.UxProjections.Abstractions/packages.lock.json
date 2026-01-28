@@ -481,7 +481,7 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Projection.Abstractions": {
+      "Mississippi.Inlet.Abstractions": {
         "type": "Project"
       },
       "CloudNative.CloudEvents": {
