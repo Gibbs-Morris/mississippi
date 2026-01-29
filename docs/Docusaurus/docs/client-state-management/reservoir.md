@@ -143,6 +143,22 @@ services.AddReducer<DecrementAction, CounterState>(CounterReducers.Decrement);
 [ReservoirRegistrations.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L139-L148))
 :::
 
+## Built-in Features
+
+Reservoir.Blazor includes ready-to-use features for common Blazor application needs:
+
+| Feature | Description |
+|---------|-------------|
+| [Built-in Navigation](built-in-navigation.md) | Redux-style navigation state with actions for routing, history management, and query parameters |
+| [Built-in Lifecycle](built-in-lifecycle.md) | Application lifecycle tracking with initialization phases for loading states |
+
+Register both with a single call:
+
+```csharp
+builder.Services.AddReservoir();
+builder.Services.AddReservoirBlazorBuiltIns();
+```
+
 ## Learn More
 
 Detailed documentation for each core component:
@@ -154,6 +170,9 @@ Detailed documentation for each core component:
 - [Store](store.md) — Configuration and advanced usage
 - [Middleware](middleware.md) — Cross-cutting concerns
 - [StoreComponent](store-component.md) — Blazor base component for store integration
+- [Built-in Navigation](built-in-navigation.md) — Navigation state management
+- [Built-in Lifecycle](built-in-lifecycle.md) — Application lifecycle management
+- [Testing](testing.md) — Unit testing reducers and effects with StoreTestHarness
 
 ## Source Code
 
@@ -163,4 +182,5 @@ Reservoir is implemented across these packages:
 |---------|---------|
 | [`Mississippi.Reservoir.Abstractions`](https://github.com/Gibbs-Morris/mississippi/tree/main/src/Reservoir.Abstractions) | Interfaces and base classes |
 | [`Mississippi.Reservoir`](https://github.com/Gibbs-Morris/mississippi/tree/main/src/Reservoir) | Core implementation (Store, RootReducer, RootActionEffect) |
-| [`Mississippi.Reservoir.Blazor`](https://github.com/Gibbs-Morris/mississippi/tree/main/src/Reservoir.Blazor) | Blazor integration (StoreComponent) |
+| [`Mississippi.Reservoir.Blazor`](https://github.com/Gibbs-Morris/mississippi/tree/main/src/Reservoir.Blazor) | Blazor integration (StoreComponent, built-in features) |
+| [`Mississippi.Reservoir.Testing`](https://github.com/Gibbs-Morris/mississippi/tree/main/src/Reservoir.Testing) | Test harness for unit testing reducers and effects |
