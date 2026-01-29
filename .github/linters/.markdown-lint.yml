@@ -17,3 +17,8 @@ MD025: false
 
 # MD060: Table column style - disabled due to inconsistent compact/aligned requirements
 MD060: false
+
+# Ignore bundled dependencies
+ignores:
+	- "docs/Docusaurus/node_modules/**"
+	- "**/node_modules/**"
