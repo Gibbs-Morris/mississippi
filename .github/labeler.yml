@@ -1,0 +1,161 @@
+# PR Labeler configuration
+# See https://github.com/actions/labeler for documentation
+#
+# Label naming conventions:
+#   area:<module>     - Framework modules (filter PRs by subsystem)
+#   sample:<name>     - Sample applications
+#   semver:<type>     - Version bump type (parsed from PR title suffix)
+#   documentation     - Docs changes (matches GitHub default label)
+#   ci/cd             - Build/workflow changes
+#   tests-only        - PRs that only modify tests
+#   generators        - Source generator projects
+#   build-config      - MSBuild/versioning infrastructure
+#
+# Semver labels (applied by pr-labeler.yml based on PR title):
+#   semver:breaking   - Title ends with +semver: breaking
+#   semver:feature    - Title ends with +semver: feature
+#   semver:fix        - Title ends with +semver: fix
+#   semver:skip       - Title ends with +semver: skip
+#
+# See: .github/instructions/pr-description.instructions.md
+
+# =============================================================================
+# MODULE LABELS (area:*)
+# =============================================================================
+
+'area:Inlet':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Inlet*/**'
+          - 'tests/Inlet*/**'
+
+'area:Reservoir':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Reservoir*/**'
+          - 'tests/Reservoir*/**'
+
+'area:Aqueduct':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Aqueduct*/**'
+          - 'tests/Aqueduct*/**'
+
+'area:EventSourcing':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/EventSourcing*/**'
+          - 'tests/EventSourcing*/**'
+
+'area:Refraction':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Refraction*/**'
+          - 'tests/Refraction*/**'
+
+'area:Common':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Common*/**'
+          - 'tests/Common*/**'
+
+'area:SDK':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Sdk*/**'
+          - 'tests/Sdk*/**'
+
+# =============================================================================
+# CROSS-CUTTING LABELS
+# =============================================================================
+
+# Source generators deserve special attention (complex, affects DX)
+generators:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Inlet.*.Generators/**'
+          - 'src/Inlet.Generators.*/**'
+          - 'tests/Inlet.*.Generators*/**'
+
+# Storage provider-specific changes
+'storage:Cosmos':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/*.Cosmos/**'
+          - 'tests/**/*.Cosmos*/**'
+
+# Orleans runtime and silo/grain changes
+'runtime:Orleans':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/*.Grains/**'
+          - 'src/**/*.Silo/**'
+          - 'tests/**/*.Grains*/**'
+          - 'tests/**/*.Silo*/**'
+
+# Blazor UI and pages
+'ui:Blazor':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/*.Blazor/**'
+          - 'src/**/*.Pages/**'
+          - 'tests/**/*.Blazor*/**'
+          - 'tests/**/*.Pages*/**'
+
+# Public API surface
+api:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/*.Api/**'
+          - 'tests/**/*.Api*/**'
+
+# Matches GitHub's default 'documentation' label
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '.github/instructions/**'
+          - '**/*.md'
+
+# CI/CD and automation
+'ci/cd':
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/actions/**'
+          - '.github/linters/**'
+          - 'eng/**'
+          - '*.ps1'
+          - '.cursor/rules/**'
+
+# Root build configuration (high-impact, review carefully)
+build-config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'Directory.Build.props'
+          - 'Directory.Packages.props'
+          - 'global.json'
+          - '*.slnx'
+          - 'stryker-config.json'
+          - 'GitVersion.yml'
+
+# PRs that ONLY touch tests (no src changes) - lower risk
+tests-only:
+  - all:
+      - changed-files:
+          - any-glob-to-any-file: 'tests/**'
+          - all-globs-to-all-files: '!src/**'
+
+# =============================================================================
+# SAMPLE LABELS (sample:*)
+# =============================================================================
+
+'sample:Spring':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'samples/Spring/**'
+
+'sample:Crescent':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'samples/Crescent/**'
