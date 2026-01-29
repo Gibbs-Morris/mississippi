@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -41,7 +42,7 @@ namespace Mississippi.Reservoir.Testing;
 ///     </para>
 ///     <code>
 ///         StoreTestHarnessFactory.ForFeature&lt;NavigationState&gt;()
-///             .WithReducer&lt;LocationChangedAction, NavigationState&gt;(NavigationReducers.OnLocationChanged)
+///             .WithReducer&lt;LocationChangedAction&gt;(NavigationReducers.OnLocationChanged)
 ///             .CreateScenario()
 ///             .Given(new NavigationState())
 ///             .When(new LocationChangedAction("https://example.com/page", false))
@@ -52,7 +53,7 @@ namespace Mississippi.Reservoir.Testing;
 public sealed class StoreTestHarness<TState>
     where TState : class, IFeatureState, new()
 {
-    private readonly List<IActionEffect<TState>> effects = [];
+    private readonly List<Func<IServiceProvider, IActionEffect<TState>>> effectFactories = [];
 
     private readonly List<Func<TState, IAction, TState>> reducers = [];
 
@@ -67,8 +68,10 @@ public sealed class StoreTestHarness<TState>
     ///     Creates a new scenario builder for Given/When/Then style testing.
     /// </summary>
     /// <returns>A new <see cref="StoreScenario{TState}" /> initialized with this harness's reducers and effects.</returns>
-    public StoreScenario<TState> CreateScenario() =>
-        new(reducers, effects, InitialState, services.BuildServiceProvider());
+    public StoreScenario<TState> CreateScenario()
+    {
+        return new StoreScenario<TState>(reducers, effectFactories, InitialState, services);
+    }
 
     /// <summary>
     ///     Registers an effect by type.
@@ -76,9 +79,10 @@ public sealed class StoreTestHarness<TState>
     /// <typeparam name="TEffect">The effect type implementing <see cref="IActionEffect{TState}" />.</typeparam>
     /// <returns>This harness for fluent chaining.</returns>
     public StoreTestHarness<TState> WithEffect<TEffect>()
-        where TEffect : class, IActionEffect<TState>, new()
+        where TEffect : class, IActionEffect<TState>
     {
-        effects.Add(new TEffect());
+        services.AddTransient<TEffect>();
+        effectFactories.Add(sp => sp.GetRequiredService<TEffect>());
         return this;
     }
 
@@ -93,7 +97,7 @@ public sealed class StoreTestHarness<TState>
     )
     {
         ArgumentNullException.ThrowIfNull(effect);
-        effects.Add(effect);
+        effectFactories.Add(_ => effect);
         return this;
     }
 

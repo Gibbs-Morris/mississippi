@@ -84,13 +84,13 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
     private void HandleNavigate(
         NavigateAction action
     ) =>
-        NavigationManager.NavigateTo(action.Uri, action.ForceLoad);
+        NavigationManager.NavigateTo(NormalizeInternalUri(action.Uri), action.ForceLoad);
 
     private void HandleReplace(
         ReplaceRouteAction action
     ) =>
         NavigationManager.NavigateTo(
-            action.Uri,
+            NormalizeInternalUri(action.Uri),
             new NavigationOptions
             {
                 ForceLoad = action.ForceLoad,
@@ -128,8 +128,8 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
     )
     {
         // Build the new URI with updated query parameters
-        string newUri = NavigationManager.GetUriWithQueryParameters(
-            action.Parameters.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+        string newUri = NormalizeInternalUri(NavigationManager.GetUriWithQueryParameters(
+            action.Parameters.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)));
         if (action.ReplaceHistory)
         {
             NavigationManager.NavigateTo(
@@ -143,5 +143,27 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
         {
             NavigationManager.NavigateTo(newUri);
         }
+    }
+
+    private string NormalizeInternalUri(
+        string uri
+    )
+    {
+        if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri? absoluteUri))
+        {
+            return uri;
+        }
+
+        Uri baseUri = new(NavigationManager.BaseUri, UriKind.Absolute);
+        bool sameOrigin = string.Equals(absoluteUri.Scheme, baseUri.Scheme, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(absoluteUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase) &&
+            absoluteUri.Port == baseUri.Port;
+        if (!sameOrigin)
+        {
+            throw new InvalidOperationException(
+                "External navigation is not supported by built-in navigation actions. Use an anchor tag for external URLs.");
+        }
+
+        return uri;
     }
 }

@@ -35,6 +35,39 @@ public sealed class StoreTestHarnessTests
         }
     }
 
+    private sealed class TestDependency
+    {
+        public TestDependency(string suffix)
+        {
+            Suffix = suffix;
+        }
+
+        public string Suffix { get; }
+    }
+
+    private sealed class DependencyEffect : ActionEffectBase<SetValueAction, TestState>
+    {
+        public DependencyEffect(
+            TestDependency dependency
+        )
+        {
+            ArgumentNullException.ThrowIfNull(dependency);
+            Dependency = dependency;
+        }
+
+        private TestDependency Dependency { get; }
+
+        public override async IAsyncEnumerable<IAction> HandleAsync(
+            SetValueAction action,
+            TestState currentState,
+            [EnumeratorCancellation] CancellationToken cancellationToken
+        )
+        {
+            await Task.CompletedTask;
+            yield return new ValueSetNotification($"{action.Value}:{Dependency.Suffix}");
+        }
+    }
+
     private sealed record TestState : IFeatureState
     {
         public static string FeatureKey => "test";
@@ -61,7 +94,7 @@ public sealed class StoreTestHarnessTests
                 });
 
         // Act
-        StoreScenario<TestState> scenario = harness.CreateScenario();
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
 
         // Assert
         scenario.State.Value.Should().Be("initial");
@@ -91,7 +124,8 @@ public sealed class StoreTestHarnessTests
             });
 
         // Act & Assert
-        harness.CreateScenario()
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario
             .Given(new SetValueAction("initial"))
             .When(new IncrementAction())
             .ThenState(s =>
@@ -119,8 +153,8 @@ public sealed class StoreTestHarnessTests
             });
 
         // Act
-        StoreScenario<TestState> scenario = harness.CreateScenario()
-            .Given(new SetValueAction("first"), new SetValueAction("second"));
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario.Given(new SetValueAction("first"), new SetValueAction("second"));
 
         // Assert
         scenario.State.Value.Should().Be("second");
@@ -136,12 +170,12 @@ public sealed class StoreTestHarnessTests
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>();
 
         // Act
-        StoreScenario<TestState> scenario = harness.CreateScenario()
-            .GivenState(
-                new()
-                {
-                    Value = "direct",
-                });
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario.GivenState(
+            new()
+            {
+                Value = "direct",
+            });
 
         // Assert
         scenario.State.Value.Should().Be("direct");
@@ -164,8 +198,8 @@ public sealed class StoreTestHarnessTests
             });
 
         // Act
-        StoreScenario<TestState> scenario = harness.CreateScenario()
-            .When(new SetValueAction("test"))
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario.When(new SetValueAction("test"))
             .ThenEmitsNothing();
 
         // Assert
@@ -183,7 +217,8 @@ public sealed class StoreTestHarnessTests
             .WithEffect(new TestEffect());
 
         // Act
-        StoreScenario<TestState> scenario = harness.CreateScenario().When(new SetValueAction("test"));
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario.When(new SetValueAction("test"));
 
         // Assert
         Action act = () => scenario.ThenEmitsNothing();
@@ -201,9 +236,54 @@ public sealed class StoreTestHarnessTests
             .WithEffect(new TestEffect());
 
         // Act & Assert - should not throw
-        harness.CreateScenario()
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario
             .When(new SetValueAction("test"))
             .ThenEmits<ValueSetNotification>(n => n.Value.Should().Be("test"));
+    }
+
+    /// <summary>
+    ///     Verifies that DependencyEffect uses constructor-injected services.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DependencyEffectUsesConstructorDependency()
+    {
+        // Arrange
+        DependencyEffect effect = new(new TestDependency("dep"));
+        TestState state = new();
+        SetValueAction action = new("value");
+
+        // Act
+        List<IAction> emitted = [];
+        await foreach (IAction emittedAction in effect.HandleAsync(action, state, CancellationToken.None))
+        {
+            emitted.Add(emittedAction);
+        }
+
+        // Assert
+        emitted.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(new ValueSetNotification("value:dep"));
+    }
+
+    /// <summary>
+    ///     Verifies that effects resolved by type use services registered via WithService.
+    /// </summary>
+    [Fact]
+    public void WithServiceInjectsDependenciesIntoEffectType()
+    {
+        // Arrange
+        StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
+            .WithService(new TestDependency("dep"))
+            .WithEffect<DependencyEffect>();
+
+        // Act & Assert
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario
+            .When(new SetValueAction("test"))
+            .ThenEmits<ValueSetNotification>(n => n.Value.Should().Be("test:dep"));
     }
 
     /// <summary>
@@ -216,7 +296,8 @@ public sealed class StoreTestHarnessTests
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>();
 
         // Act
-        StoreScenario<TestState> scenario = harness.CreateScenario().When(new SetValueAction("test"));
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario.When(new SetValueAction("test"));
 
         // Assert
         Action act = () => scenario.ThenEmits<ValueSetNotification>();
@@ -240,7 +321,9 @@ public sealed class StoreTestHarnessTests
             });
 
         // Act & Assert - should not throw
-        harness.CreateScenario().When(new SetValueAction("expected")).ThenState(s => s.Value.Should().Be("expected"));
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario.When(new SetValueAction("expected"))
+            .ThenState(s => s.Value.Should().Be("expected"));
     }
 
     /// <summary>
@@ -261,7 +344,8 @@ public sealed class StoreTestHarnessTests
             .WithEffect(new TestEffect());
 
         // Act
-        StoreScenario<TestState> scenario = harness.CreateScenario().When(new SetValueAction("test"));
+        using StoreScenario<TestState> scenario = harness.CreateScenario();
+        scenario.When(new SetValueAction("test"));
 
         // Assert
         scenario.State.Value.Should().Be("test");

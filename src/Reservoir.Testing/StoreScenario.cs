@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
+
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -15,7 +17,7 @@ namespace Mississippi.Reservoir.Testing;
 ///     A fluent scenario builder for Given/When/Then style state testing.
 /// </summary>
 /// <typeparam name="TState">The feature state type being tested.</typeparam>
-public sealed class StoreScenario<TState>
+public sealed class StoreScenario<TState> : IDisposable
     where TState : class, IFeatureState, new()
 {
     private readonly List<IAction> dispatchedActions = [];
@@ -32,21 +34,28 @@ public sealed class StoreScenario<TState>
     ///     Initializes a new instance of the <see cref="StoreScenario{TState}" /> class.
     /// </summary>
     /// <param name="reducers">The reducers to use.</param>
-    /// <param name="effects">The effects to use.</param>
+    /// <param name="effectFactories">Factories for creating effects.</param>
     /// <param name="initialState">The initial state.</param>
-    /// <param name="serviceProvider">The service provider for effect dependencies.</param>
+    /// <param name="services">The service collection for effect dependencies.</param>
     internal StoreScenario(
         List<Func<TState, IAction, TState>> reducers,
-        List<IActionEffect<TState>> effects,
+        List<Func<IServiceProvider, IActionEffect<TState>>> effectFactories,
         TState initialState,
-        IServiceProvider serviceProvider
+        IServiceCollection services
     )
     {
-        ArgumentNullException.ThrowIfNull(serviceProvider);
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(effectFactories);
         this.reducers = reducers;
-        this.effects = effects;
         State = initialState;
+        ServiceProvider = services.BuildServiceProvider();
+        List<IActionEffect<TState>> resolvedEffects = effectFactories
+            .Select(factory => factory(ServiceProvider))
+            .ToList();
+        effects = resolvedEffects;
     }
+
+    private ServiceProvider ServiceProvider { get; }
 
     /// <summary>
     ///     Gets all dispatched actions in order.
@@ -62,6 +71,12 @@ public sealed class StoreScenario<TState>
     ///     Gets the current state.
     /// </summary>
     public TState State { get; private set; }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        ServiceProvider.Dispose();
+    }
 
     /// <summary>
     ///     Establishes initial state by applying actions through reducers.

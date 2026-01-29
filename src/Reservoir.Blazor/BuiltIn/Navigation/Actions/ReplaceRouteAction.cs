@@ -23,7 +23,10 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
 ///         <item>Correcting a URL after initial navigation</item>
 ///     </list>
 /// </remarks>
-/// <param name="Uri">The URI to navigate to. Can be relative or absolute.</param>
+/// <param name="Uri">
+///     The URI to navigate to. Can be relative or an absolute URI that matches the app's origin.
+///     External URLs are not supported by this action.
+/// </param>
 /// <param name="ForceLoad">
 ///     If true, bypasses client-side routing and forces the browser to load the page from the server.
 ///     Default is false.

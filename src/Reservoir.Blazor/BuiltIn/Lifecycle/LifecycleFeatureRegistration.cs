@@ -64,20 +64,9 @@ public static class LifecycleFeatureRegistration
         // Ensure TimeProvider is registered for deterministic timestamps
         services.TryAddSingleton(TimeProvider.System);
 
-        // Register reducers that capture TimeProvider
-        services.AddReducer<AppInitAction, LifecycleState>((
-            state,
-            action
-        ) =>
-        {
-            // Note: In a real scenario, we'd inject TimeProvider, but reducers are pure functions.
-            // For now, use system time. Tests can override the entire reducer.
-            return LifecycleReducers.OnAppInit(state, action, TimeProvider.System);
-        });
-        services.AddReducer<AppReadyAction, LifecycleState>((
-            state,
-            action
-        ) => LifecycleReducers.OnAppReady(state, action, TimeProvider.System));
+        // Register reducers that resolve TimeProvider via DI
+        services.AddReducer<AppInitAction, LifecycleState, AppInitReducer>();
+        services.AddReducer<AppReadyAction, LifecycleState, AppReadyReducer>();
         return services;
     }
 
@@ -94,14 +83,8 @@ public static class LifecycleFeatureRegistration
     {
         ArgumentNullException.ThrowIfNull(timeProvider);
         services.AddSingleton(timeProvider);
-        services.AddReducer<AppInitAction, LifecycleState>((
-            state,
-            action
-        ) => LifecycleReducers.OnAppInit(state, action, timeProvider));
-        services.AddReducer<AppReadyAction, LifecycleState>((
-            state,
-            action
-        ) => LifecycleReducers.OnAppReady(state, action, timeProvider));
+        services.AddReducer<AppInitAction, LifecycleState, AppInitReducer>();
+        services.AddReducer<AppReadyAction, LifecycleState, AppReadyReducer>();
         return services;
     }
 }

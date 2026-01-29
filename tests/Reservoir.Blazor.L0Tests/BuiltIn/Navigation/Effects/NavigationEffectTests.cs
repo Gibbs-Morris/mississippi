@@ -206,6 +206,28 @@ public sealed class NavigationEffectTests
     }
 
     /// <summary>
+    ///     Verifies that NavigateAction rejects external absolute URIs.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleAsyncNavigateActionWithExternalUriThrows()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        NavigationEffect effect = new(nav);
+        NavigateAction action = new("https://contoso.example/target");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("*External navigation*");
+    }
+
+    /// <summary>
     ///     Verifies that HandleAsync for NavigateAction with ForceLoad calls NavigateTo with forceLoad true.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -250,6 +272,28 @@ public sealed class NavigationEffectTests
             .Which.Should()
             .BeEquivalentTo(
                 new TestableNavigationManager.NavigationRecord("https://example.com/replaced", false, true));
+    }
+
+    /// <summary>
+    ///     Verifies that ReplaceRouteAction rejects external absolute URIs.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleAsyncReplaceRouteActionWithExternalUriThrows()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        NavigationEffect effect = new(nav);
+        ReplaceRouteAction action = new("https://contoso.example/replaced");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("*External navigation*");
     }
 
     /// <summary>
