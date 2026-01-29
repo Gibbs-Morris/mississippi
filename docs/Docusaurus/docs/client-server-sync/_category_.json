@@ -1,0 +1,10 @@
+{
+  "label": "Client-Server Sync",
+  "position": 4,
+  "collapsed": false,
+  "collapsible": true,
+  "link": {
+    "type": "doc",
+    "id": "inlet"
+  }
+}
