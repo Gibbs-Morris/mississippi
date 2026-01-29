@@ -8,3 +8,8 @@
 6. Implement handling for DevTools messages (jump/import/commit) in Store.
 7. Add tests for middleware and store state replacement behavior (L0).
 8. Add documentation or README notes (if required).
+
+## Constraints
+
+- Avoid new dependencies unless explicitly approved.
+- Keep changes additive with no breaking API changes unless required.

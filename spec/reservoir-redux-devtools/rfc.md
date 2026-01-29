@@ -53,6 +53,19 @@ Reservoir provides Redux-style state management for Blazor, but lacks integratio
 
 ## Risks
 
+## Requirements and constraints
+
+- DevTools integration MUST be opt-in and disableable for production.
+- Integration SHOULD use existing middleware and subscription hooks where possible.
+- New third-party dependencies require explicit approval; prefer no new dependencies.
+- JS interop must live in Blazor-specific code (Reservoir.Blazor) rather than core Reservoir.
+
+## Assumptions and unknowns
+
+- Assumption: Reservoir.Blazor can host static JS assets or include JS interop via existing patterns. (UNVERIFIED)
+- Assumption: Reservoir actions can be represented with a type/name for DevTools display. (UNVERIFIED)
+- Unknown: Whether state replacement should be supported or restricted to time-travel only. (UNVERIFIED)
+
 - Large state objects could degrade performance when sent to DevTools.
 - Time-travel (state replacement) may break invariants if actions are not replayed.
 
