@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: Draft
+- Status: In progress
 - Size: Medium
 - Approval checkpoint: Yes (introduces new public API for DevTools integration)
 

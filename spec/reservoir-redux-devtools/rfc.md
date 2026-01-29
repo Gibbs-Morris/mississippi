@@ -40,11 +40,13 @@ Reservoir provides Redux-style state management for Blazor, but lacks integratio
 - After each dispatch, call send(action, state).
 - Handle DISPATCH messages from DevTools (JUMP_TO_STATE, JUMP_TO_ACTION, RESET, COMMIT, ROLLBACK, IMPORT_STATE) by replacing state and notifying subscribers.
 - Ignore DevTools messages that cannot be safely deserialized or mapped.
+- DevTools "dispatch" actions that require constructing arbitrary Reservoir actions are ignored by default.
 
 ### Configuration
 
 - ReservoirDevToolsOptions for enablement and options (name, maxAge, latency, features).
 - Optional action/state sanitizers to avoid sending sensitive or large payloads.
+- Enablement modes: Off (default), DevelopmentOnly, Always.
 
 ### Production safety
 
