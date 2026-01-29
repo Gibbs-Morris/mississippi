@@ -46,13 +46,16 @@ internal sealed class SignalRServerDirectoryGrain
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
+    /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
     public SignalRServerDirectoryGrain(
         IGrainContext grainContext,
-        ILogger<SignalRServerDirectoryGrain> logger
+        ILogger<SignalRServerDirectoryGrain> logger,
+        TimeProvider? timeProvider = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
     /// <inheritdoc />
@@ -60,12 +63,14 @@ internal sealed class SignalRServerDirectoryGrain
 
     private ILogger<SignalRServerDirectoryGrain> Logger { get; }
 
+    private TimeProvider TimeProvider { get; }
+
     /// <inheritdoc />
     public Task<ImmutableList<string>> GetDeadServersAsync(
         TimeSpan timeout
     )
     {
-        DateTimeOffset cutoff = DateTimeOffset.UtcNow - timeout;
+        DateTimeOffset cutoff = TimeProvider.GetUtcNow() - timeout;
         ImmutableList<string> deadServers = state.ActiveServers.Values.Where(s => s.LastHeartbeat < cutoff)
             .Select(s => s.ServerId)
             .ToImmutableList();
@@ -93,7 +98,7 @@ internal sealed class SignalRServerDirectoryGrain
 
         SignalRServerInfo updated = existing with
         {
-            LastHeartbeat = DateTimeOffset.UtcNow,
+            LastHeartbeat = TimeProvider.GetUtcNow(),
             ConnectionCount = connectionCount,
         };
         state = state with
@@ -124,7 +129,7 @@ internal sealed class SignalRServerDirectoryGrain
         SignalRServerInfo serverInfo = new()
         {
             ServerId = serverId,
-            LastHeartbeat = DateTimeOffset.UtcNow,
+            LastHeartbeat = TimeProvider.GetUtcNow(),
             ConnectionCount = 0,
         };
         state = state with

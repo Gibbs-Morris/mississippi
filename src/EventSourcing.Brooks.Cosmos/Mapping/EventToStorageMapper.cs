@@ -18,10 +18,18 @@ internal sealed class EventToStorageMapper : IMapper<BrookEvent, EventStorageMod
     /// </summary>
     /// <param name="input">The brook event to map.</param>
     /// <returns>The mapped event storage model.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the input event has no timestamp.</exception>
     public EventStorageModel Map(
         BrookEvent input
-    ) =>
-        new()
+    )
+    {
+        if (input.Time is null)
+        {
+            throw new InvalidOperationException(
+                $"BrookEvent '{input.Id}' has no timestamp. Events must have Time set before mapping to storage.");
+        }
+
+        return new()
         {
             EventId = input.Id ?? string.Empty,
             Source = input.Source,
@@ -29,6 +37,7 @@ internal sealed class EventToStorageMapper : IMapper<BrookEvent, EventStorageMod
             DataContentType = input.DataContentType,
             Data = input.Data.ToArray(),
             DataSizeBytes = input.DataSizeBytes,
-            Time = input.Time ?? DateTimeOffset.UtcNow,
+            Time = input.Time.Value,
         };
+    }
 }

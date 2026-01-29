@@ -21,18 +21,23 @@ internal sealed class BrookEventConverter : IBrookEventConverter
     /// </summary>
     /// <param name="serializationProvider">The provider for event serialization and deserialization.</param>
     /// <param name="eventTypeRegistry">The registry for resolving event type names and CLR types.</param>
+    /// <param name="timeProvider">Time provider for event timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
     public BrookEventConverter(
         ISerializationProvider serializationProvider,
-        IEventTypeRegistry eventTypeRegistry
+        IEventTypeRegistry eventTypeRegistry,
+        TimeProvider? timeProvider = null
     )
     {
         SerializationProvider = serializationProvider ?? throw new ArgumentNullException(nameof(serializationProvider));
         EventTypeRegistry = eventTypeRegistry ?? throw new ArgumentNullException(nameof(eventTypeRegistry));
+        TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
     private IEventTypeRegistry EventTypeRegistry { get; }
 
     private ISerializationProvider SerializationProvider { get; }
+
+    private TimeProvider TimeProvider { get; }
 
     /// <inheritdoc />
     public object ToDomainEvent(
@@ -80,6 +85,7 @@ internal sealed class BrookEventConverter : IBrookEventConverter
                     Data = data.ToArray().ToImmutableArray(),
                     DataContentType = SerializationProvider.Format,
                     DataSizeBytes = data.Length,
+                    Time = TimeProvider.GetUtcNow(),
                 });
         }
 

@@ -52,15 +52,18 @@ internal sealed class SignalRClientGrain
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     /// <param name="options">Configuration options for the Orleans-SignalR bridge.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
+    /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
     public SignalRClientGrain(
         IGrainContext grainContext,
         IOptions<AqueductOptions> options,
-        ILogger<SignalRClientGrain> logger
+        ILogger<SignalRClientGrain> logger,
+        TimeProvider? timeProvider = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
     /// <inheritdoc />
@@ -69,6 +72,8 @@ internal sealed class SignalRClientGrain
     private ILogger<SignalRClientGrain> Logger { get; }
 
     private IOptions<AqueductOptions> Options { get; }
+
+    private TimeProvider TimeProvider { get; }
 
     /// <inheritdoc />
     public Task ConnectAsync(
@@ -85,7 +90,7 @@ internal sealed class SignalRClientGrain
             ConnectionId = connectionId,
             HubName = hubName,
             ServerId = serverId,
-            ConnectedAt = DateTimeOffset.UtcNow,
+            ConnectedAt = TimeProvider.GetUtcNow(),
         };
         AqueductMetrics.RecordClientConnect(hubName);
         Logger.ClientConnected(connectionId, hubName, serverId);

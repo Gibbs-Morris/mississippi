@@ -65,6 +65,7 @@ public static class AggregateRegistrations
         });
         services.TryAddTransient<IBrookEventConverter, BrookEventConverter>();
         services.TryAddTransient<IAggregateGrainFactory, AggregateGrainFactory>();
+        services.TryAddSingleton(TimeProvider.System);
         return services;
     }
 
