@@ -116,6 +116,7 @@ Dispatch(new AppInitAction(TimeProvider.GetUtcNow()));
 | `InitializedAt` | `DateTimeOffset` | Timestamp when initialization began |
 
 The reducer sets:
+
 - `Phase` → `LifecyclePhase.Initializing`
 - `InitializedAt` → the provided timestamp
 
@@ -135,6 +136,7 @@ Dispatch(new AppReadyAction(TimeProvider.GetUtcNow()));
 | `ReadyAt` | `DateTimeOffset` | Timestamp when the app became ready |
 
 The reducer sets:
+
 - `Phase` → `LifecyclePhase.Ready`
 - `ReadyAt` → the provided timestamp
 

@@ -123,6 +123,7 @@ Dispatch(new ReplaceRouteAction("/success", ForceLoad: false));
 ```
 
 Use cases:
+
 - Redirecting after form submission without allowing "back" to the form
 - Updating query parameters for filtering without polluting history
 - Correcting a URL after initial navigation
