@@ -27,6 +27,7 @@ EventSourcing.Snapshots.Blob/
 ├── BlobSnapshotStorageOptions.cs
 ├── BlobSnapshotStorageProviderRegistrations.cs
 ├── BlobSnapshotStorageProviderLoggerExtensions.cs
+├── BlobContainerInitializer.cs
 ├── SnapshotCompression.cs
 ├── IBlobSnapshotRepository.cs
 ├── Compression/
@@ -40,7 +41,7 @@ EventSourcing.Snapshots.Blob/
     ├── IBlobSnapshotOperations.cs
     ├── BlobSnapshotOperations.cs
     ├── BlobSnapshotRepository.cs
-    ├── BlobSnapshotLoggerExtensions.cs
+    ├── BlobSnapshotStorageLoggerExtensions.cs
     └── BlobPathBuilder.cs
 ```
 
@@ -50,6 +51,9 @@ EventSourcing.Snapshots.Blob/
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <InternalsVisibleTo Include="$(AssemblyName).L0Tests"/>
+    </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Azure.Storage.Blobs"/>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
@@ -192,9 +196,22 @@ internal sealed class BlobSnapshotStorageProvider : ISnapshotStorageProvider
 }
 ```
 
-## Phase 5: DI Registration
+## Phase 5: DI Registration & Container Initialization
 
-### 5.1 Registration Extensions
+### 5.1 Container Initializer
+
+**File:** `BlobContainerInitializer.cs`
+
+```csharp
+internal sealed class BlobContainerInitializer : IHostedService
+{
+    // Creates container if not exists on startup
+    // Idempotent - safe for multi-node deployments
+    // Uses BlobContainerClient.CreateIfNotExistsAsync()
+}
+```
+
+### 5.2 Registration Extensions
 
 **File:** `BlobSnapshotStorageProviderRegistrations.cs`
 
@@ -203,7 +220,10 @@ Multiple overloads following Cosmos pattern:
 - `AddBlobSnapshotStorageProvider(string connectionString, Action<BlobSnapshotStorageOptions>?)` - creates keyed client
 - `AddBlobSnapshotStorageProvider(IConfiguration, Action<BlobSnapshotStorageOptions>?)` - from config
 
-Container initialization via `IHostedService`.
+Registers:
+- `BlobContainerInitializer` as `IHostedService`
+- Keyed `BlobContainerClient` with `MississippiDefaults.ServiceKeys.BlobSnapshots`
+- All internal services (operations, repository, compressors)
 
 ## Phase 6: Solution Integration
 
@@ -283,16 +303,17 @@ pwsh ./go.ps1
 | 9 | `src/EventSourcing.Snapshots.Blob/Storage/BlobPathBuilder.cs` | ⬜ |
 | 10 | `src/EventSourcing.Snapshots.Blob/Storage/IBlobSnapshotOperations.cs` | ⬜ |
 | 11 | `src/EventSourcing.Snapshots.Blob/Storage/BlobSnapshotOperations.cs` | ⬜ |
-| 12 | `src/EventSourcing.Snapshots.Blob/Storage/BlobSnapshotLoggerExtensions.cs` | ⬜ |
-| 13 | `src/EventSourcing.Snapshots.Blob/IBlobSnapshotRepository.cs` | ⬜ |
-| 14 | `src/EventSourcing.Snapshots.Blob/Storage/BlobSnapshotRepository.cs` | ⬜ |
-| 15 | `src/EventSourcing.Snapshots.Blob/Diagnostics/BlobSnapshotStorageMetrics.cs` | ⬜ |
-| 16 | `src/EventSourcing.Snapshots.Blob/BlobSnapshotStorageProviderLoggerExtensions.cs` | ⬜ |
-| 17 | `src/EventSourcing.Snapshots.Blob/BlobSnapshotStorageProvider.cs` | ⬜ |
-| 18 | `src/EventSourcing.Snapshots.Blob/BlobSnapshotStorageProviderRegistrations.cs` | ⬜ |
-| 19 | `mississippi.slnx` (update) | ⬜ |
-| 20 | `tests/EventSourcing.Snapshots.Blob.L0Tests/EventSourcing.Snapshots.Blob.L0Tests.csproj` | ⬜ |
-| 21 | Test files (multiple) | ⬜ |
+| 12 | `src/EventSourcing.Snapshots.Blob/Storage/BlobSnapshotStorageLoggerExtensions.cs` | ⬜ |
+| 13 | `src/EventSourcing.Snapshots.Blob/Storage/BlobSnapshotRepository.cs` | ⬜ |
+| 14 | `src/EventSourcing.Snapshots.Blob/IBlobSnapshotRepository.cs` | ⬜ |
+| 15 | `src/EventSourcing.Snapshots.Blob/BlobContainerInitializer.cs` | ⬜ |
+| 16 | `src/EventSourcing.Snapshots.Blob/Diagnostics/BlobSnapshotStorageMetrics.cs` | ⬜ |
+| 17 | `src/EventSourcing.Snapshots.Blob/BlobSnapshotStorageProviderLoggerExtensions.cs` | ⬜ |
+| 18 | `src/EventSourcing.Snapshots.Blob/BlobSnapshotStorageProvider.cs` | ⬜ |
+| 19 | `src/EventSourcing.Snapshots.Blob/BlobSnapshotStorageProviderRegistrations.cs` | ⬜ |
+| 20 | `mississippi.slnx` (update) | ⬜ |
+| 21 | `tests/EventSourcing.Snapshots.Blob.L0Tests/EventSourcing.Snapshots.Blob.L0Tests.csproj` | ⬜ |
+| 22 | Test files (multiple) | ⬜ |
 
 ## Acceptance Criteria
 

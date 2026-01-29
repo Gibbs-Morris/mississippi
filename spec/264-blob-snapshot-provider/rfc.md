@@ -176,6 +176,65 @@ Decision: Hierarchical is more intuitive and aligns with how snapshots are logic
 
 Decision: Keep compression in repository for testability and separation.
 
+## Architecture Decisions
+
+### No Abstractions Project Needed
+
+Unlike some Mississippi libraries, `EventSourcing.Snapshots.Blob` does **not** require a separate `*.Abstractions` project because:
+
+1. **No cross-assembly contracts**: The options and compression enum are consumed only by hosts registering the provider
+2. **Single implementation**: This is the only Blob snapshot implementation (unlike interfaces with multiple implementations)
+3. **Internal types dominate**: Most types (`BlobSnapshotRepository`, `BlobSnapshotOperations`) are internal
+
+The public API surface is minimal:
+- `BlobSnapshotStorageOptions` (configuration)
+- `SnapshotCompression` (enum)
+- `AddBlobSnapshotStorageProvider()` extension methods
+
+These can live in the main project without violating abstractions principles.
+
+### No Mappers Needed (Unlike Cosmos)
+
+The Cosmos provider uses `IMapper<TSource, TDest>` for document transformations because:
+- Cosmos documents have SDK-specific structure (partition key, id, TTL, JSON format)
+- Multiple transformation steps: Document → StorageModel → Envelope
+
+Blob storage is simpler:
+- Data is already raw bytes (`ImmutableArray<byte>`)
+- Metadata stored separately in blob properties
+- No intermediate "document" model needed
+
+The repository directly handles: `SnapshotEnvelope` ↔ `(byte[] compressedData, Dictionary<string,string> metadata)`
+
+## Error Handling Strategy
+
+### Read Operations
+
+| Exception | Handling |
+|-----------|----------|
+| `RequestFailedException` (404 NotFound) | Return `null` (snapshot doesn't exist) |
+| `RequestFailedException` (other) | Log error, rethrow |
+| `OperationCanceledException` | Rethrow (caller cancelled) |
+
+### Write Operations
+
+| Exception | Handling |
+|-----------|----------|
+| `RequestFailedException` (409 Conflict) | Log warning, rethrow (concurrent write) |
+| `RequestFailedException` (other) | Log error, rethrow |
+| Compression failure | Log error, rethrow |
+
+### Retry Policy
+
+Azure SDK handles transient retries internally via `BlobClientOptions.Retry`. No custom `IRetryPolicy` needed (unlike Cosmos which has more complex retry semantics).
+
+### No Domain Exceptions
+
+We do **not** introduce `BlobSnapshotStorageException` because:
+- The interface contract uses nullable returns for "not found"
+- Callers already handle `OperationCanceledException`
+- SDK exceptions provide sufficient context for debugging
+
 ## Security Considerations
 
 - Blob client uses keyed services; credentials are managed by host (Aspire/Azure.Identity)

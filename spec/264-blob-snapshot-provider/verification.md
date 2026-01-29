@@ -112,3 +112,18 @@
 - Verified `System.IO.Compression` is sufficient (no external packages needed)
 - Confirmed batch delete is available for efficient pruning
 - Updated design to use shared `Mississippi.Storage.Snapshots` meter name
+
+## Additional Verification Notes
+
+### Blob Path Character Safety
+
+**Verified**: `SnapshotStreamKey` constructor validates that components do not contain the separator character (`|`). However, blob paths use `/` as separator.
+
+**Risk**: Components containing `/` would break path structure.
+
+**Mitigation**: 
+- `SnapshotStreamKey` already validates components (see `ValidateComponent` method)
+- Add explicit validation in `BlobPathBuilder` to reject or encode `/` characters
+- Add edge case tests for special characters in `BlobPathBuilderTests`
+
+**Recommendation**: URL-encode path components using `Uri.EscapeDataString()` for safety.

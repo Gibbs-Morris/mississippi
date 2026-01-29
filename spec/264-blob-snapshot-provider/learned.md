@@ -55,7 +55,7 @@
 - FluentAssertions for assertions
 - Tests organized per-class with `{ClassName}Tests.cs`
 
-## UNVERIFIED
+## Previously Unverified (Now Resolved)
 
-- Blob batch delete API usage patterns (need to verify `BlobBatchClient` behavior)
-- Compression library integration (standard `System.IO.Compression` vs external)
+- ✅ **Blob batch delete**: Verified. `BlobBatchClient.DeleteBlobsAsync` supports up to 256 blobs per call.
+- ✅ **Compression library**: Verified. Standard `System.IO.Compression` provides `GZipStream` and `BrotliStream` - no external packages needed.
