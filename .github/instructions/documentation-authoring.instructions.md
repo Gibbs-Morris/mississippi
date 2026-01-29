@@ -6,7 +6,7 @@ applyTo: 'docs/**/*.md'
 
 Governing thought: Every documentation page exists to enable a decision or action through clear structure, consistent tone, and predictable navigation.
 
-> Drift check: Review `docs/Docusaurus/docs/contributing/documentation-guide.md` and this file together; they must stay semantically aligned.
+> Drift check: This file defines documentation standards for `docs/Docusaurus/`; update as documentation patterns evolve.
 
 ## Rules (RFC 2119)
 
@@ -75,7 +75,6 @@ Before publishing:
 
 ## References
 
-- Contribution guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
 - Markdown standards: `.github/instructions/markdown.instructions.md`
 - Instruction authoring template: `.github/instructions/authoring.instructions.md`
 - RFC 2119 keywords: `.github/instructions/rfc2119.instructions.md`

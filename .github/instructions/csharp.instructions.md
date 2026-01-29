@@ -20,7 +20,7 @@ Governing thought: Write SOLID, testable, cloud-ready C# with internal-by-defaul
 - Access control: types **MUST** default to `internal`; public/protected/unsealed types **MUST** document justification in XML comments; implementation types **MUST** remain internal unless part of public API. Why: Protects API surface.
 - Grain implementations **MUST** implement `IGrainBase`, be `sealed`, and **MUST NOT** inherit from `Grain`; grain interfaces **MUST** be public only when external callers need them. Why: Follows Orleans 7+ POCO guidance.
 - Orleans code **MUST NOT** use `Parallel.ForEach` or chatty inter-grain calls; prefer async + `Task.WhenAll`. Why: Preserves Orleans threading model.
-- Options/ServiceRegistration types **MAY** be public when part of consumer surface; otherwise **SHOULD** stay internal. Why: Keeps public surface intentional.
+- Options and registration classes (`*Registrations`) **MAY** be public when part of consumer surface; otherwise **SHOULD** stay internal. Why: Keeps public surface intentional.
 - Public contracts **SHOULD** live in `.Abstractions` projects; implementations **MUST** stay in main projects. Why: Supports clean layering.
 - Classes **SHOULD** be records/immutable where feasible and only inheritable with clear need; interfaces **SHOULD** be public only when part of deliberate API; members **SHOULD** expose least privilege. Why: Reduces coupling and breaks.
 - New third-party dependencies **MAY** be added only with explicit approval or when extending already-adopted tech. Why: Limits supply-chain risk and sprawl.
