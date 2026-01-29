@@ -1,3 +1,4 @@
+---
 name: "CoV Mississippi Spec Writer"
 description: Spec-first agent designed for use in the Mississippi framework following the CoV pattern. Produces and implements validated specs.
 metadata:

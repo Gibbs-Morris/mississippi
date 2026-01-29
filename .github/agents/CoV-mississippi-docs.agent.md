@@ -1,3 +1,4 @@
+---
 name: "CoV Mississippi Docs"
 description: Documentation agent designed for use in the Mississippi framework following the CoV pattern. Writes and validates Docusaurus docs under docs/Docusaurus only.
 metadata:

@@ -1,3 +1,4 @@
+---
 name: "CoV Mississippi Refactor"
 description: Refactor-only agent designed for use in the Mississippi framework following the CoV pattern. Validates changes, aligns docs, and refuses net-new features.
 metadata:

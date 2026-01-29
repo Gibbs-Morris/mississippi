@@ -1,3 +1,4 @@
+---
 name: "CoV Mississippi Coding"
 description: Coding agent designed for use in the Mississippi framework following the CoV pattern. Implements and validates changes with enterprise quality.
 metadata:
