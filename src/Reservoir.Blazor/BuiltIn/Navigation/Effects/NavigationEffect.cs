@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -17,14 +16,14 @@ using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
 namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Effects;
 
 /// <summary>
-///     Effect that handles navigation actions by calling NavigationManager or JS interop.
+///     Effect that handles navigation actions by calling NavigationManager.
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         This effect responds to navigation intent actions (<see cref="NavigateAction" />,
 ///         <see cref="ReplaceRouteAction" />, <see cref="SetQueryParamsAction" />,
-///         <see cref="ScrollToAnchorAction" />, <see cref="OpenExternalLinkAction" />)
-///         by invoking the appropriate <see cref="NavigationManager" /> methods or JS interop.
+///         <see cref="ScrollToAnchorAction" />) by invoking the appropriate
+///         <see cref="NavigationManager" /> methods.
 ///     </para>
 ///     <para>
 ///         The effect does not emit any actions; the <see cref="Components.ReservoirNavigationProvider" />
@@ -37,20 +36,14 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
     ///     Initializes a new instance of the <see cref="NavigationEffect" /> class.
     /// </summary>
     /// <param name="navigationManager">The Blazor navigation manager.</param>
-    /// <param name="jsRuntime">The JavaScript runtime for opening external links.</param>
-    /// <exception cref="ArgumentNullException">Thrown if navigationManager or jsRuntime is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if navigationManager is null.</exception>
     public NavigationEffect(
-        NavigationManager navigationManager,
-        IJSRuntime jsRuntime
+        NavigationManager navigationManager
     )
     {
         ArgumentNullException.ThrowIfNull(navigationManager);
-        ArgumentNullException.ThrowIfNull(jsRuntime);
         NavigationManager = navigationManager;
-        JSRuntime = jsRuntime;
     }
-
-    private IJSRuntime JSRuntime { get; }
 
     private NavigationManager NavigationManager { get; }
 
@@ -58,7 +51,7 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
     public bool CanHandle(
         IAction action
     ) =>
-        action is NavigateAction or ReplaceRouteAction or SetQueryParamsAction or ScrollToAnchorAction or OpenExternalLinkAction;
+        action is NavigateAction or ReplaceRouteAction or SetQueryParamsAction or ScrollToAnchorAction;
 
     /// <inheritdoc />
     public async IAsyncEnumerable<IAction> HandleAsync(
@@ -81,12 +74,10 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
             case ScrollToAnchorAction scrollToAnchor:
                 HandleScrollToAnchor(scrollToAnchor);
                 break;
-            case OpenExternalLinkAction openExternal:
-                await HandleOpenExternalLinkAsync(openExternal, cancellationToken).ConfigureAwait(false);
-                break;
         }
 
         // No actions to emit - LocationChangedAction is dispatched by ReservoirNavigationProvider
+        await Task.CompletedTask.ConfigureAwait(false);
         yield break;
     }
 
@@ -94,12 +85,6 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
         NavigateAction action
     ) =>
         NavigationManager.NavigateTo(action.Uri, action.ForceLoad);
-
-    private async Task HandleOpenExternalLinkAsync(
-        OpenExternalLinkAction action,
-        CancellationToken cancellationToken
-    ) =>
-        await JSRuntime.InvokeVoidAsync("open", cancellationToken, action.Url, "_blank").ConfigureAwait(false);
 
     private void HandleReplace(
         ReplaceRouteAction action
