@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
+using Mississippi.Reservoir.State;
 
 
 namespace Mississippi.Reservoir.L0Tests;
@@ -153,6 +154,32 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
+    ///     Store exposing protected hooks for testing snapshots and replacement.
+    /// </summary>
+    private sealed class TestableStore : Store
+    {
+        public TestableStore(
+            IEnumerable<IFeatureStateRegistration> featureRegistrations
+        )
+            : base(featureRegistrations, Array.Empty<IMiddleware>())
+        {
+        }
+
+        public IReadOnlyDictionary<string, object> GetInitialSnapshot() =>
+            GetInitialFeatureStateSnapshot();
+
+        public IReadOnlyDictionary<string, object> GetSnapshot() =>
+            GetFeatureStateSnapshot();
+
+        public void ReplaceSnapshot(
+            IReadOnlyDictionary<string, object> snapshot
+        )
+        {
+            ReplaceFeatureStates(snapshot, notifyListeners: true);
+        }
+    }
+
+    /// <summary>
     ///     Test middleware for unit tests.
     /// </summary>
     private sealed class TestMiddleware : IMiddleware
@@ -248,6 +275,80 @@ public sealed class StoreTests : IDisposable
         // Assert
         await Task.Delay(100);
         Assert.True(secondEffectRan);
+    }
+
+    /// <summary>
+    ///     ReplaceFeatureStates should update compatible feature states.
+    /// </summary>
+    [Fact]
+    public void ReplaceFeatureStatesUpdatesCompatibleState()
+    {
+        // Arrange
+        List<IFeatureStateRegistration> registrations =
+        [
+            new FeatureStateRegistration<TestFeatureState>(),
+        ];
+        using TestableStore store = new(registrations);
+        IReadOnlyDictionary<string, object> newSnapshot = new Dictionary<string, object>
+        {
+            [TestFeatureState.FeatureKey] = new TestFeatureState
+            {
+                Counter = 5,
+            },
+        };
+
+        // Act
+        store.ReplaceSnapshot(newSnapshot);
+
+        // Assert
+        TestFeatureState state = store.GetState<TestFeatureState>();
+        Assert.Equal(5, state.Counter);
+    }
+
+    /// <summary>
+    ///     ReplaceFeatureStates should ignore incompatible feature states.
+    /// </summary>
+    [Fact]
+    public void ReplaceFeatureStatesIgnoresIncompatibleState()
+    {
+        // Arrange
+        List<IFeatureStateRegistration> registrations =
+        [
+            new FeatureStateRegistration<TestFeatureState>(),
+        ];
+        using TestableStore store = new(registrations);
+        IReadOnlyDictionary<string, object> newSnapshot = new Dictionary<string, object>
+        {
+            [TestFeatureState.FeatureKey] = "not-a-state",
+        };
+
+        // Act
+        store.ReplaceSnapshot(newSnapshot);
+
+        // Assert
+        TestFeatureState state = store.GetState<TestFeatureState>();
+        Assert.Equal(0, state.Counter);
+    }
+
+    /// <summary>
+    ///     Initial snapshot should match the initial state values.
+    /// </summary>
+    [Fact]
+    public void InitialSnapshotMatchesInitialState()
+    {
+        // Arrange
+        List<IFeatureStateRegistration> registrations =
+        [
+            new FeatureStateRegistration<TestFeatureState>(),
+        ];
+        using TestableStore store = new(registrations);
+
+        // Act
+        IReadOnlyDictionary<string, object> snapshot = store.GetInitialSnapshot();
+
+        // Assert
+        TestFeatureState state = (TestFeatureState)snapshot[TestFeatureState.FeatureKey];
+        Assert.Equal(0, state.Counter);
     }
 
     /// <summary>

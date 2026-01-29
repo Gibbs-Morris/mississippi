@@ -21,6 +21,8 @@ public class Store : IStore
 {
     private readonly ConcurrentDictionary<string, object> featureStates = new();
 
+    private readonly ConcurrentDictionary<string, object> initialFeatureStates = new();
+
     /// <summary>
     ///     Cache of MethodInfo for HandleAsync methods, keyed by root effect type.
     ///     Avoids repeated reflection lookups on every dispatch.
@@ -67,6 +69,7 @@ public class Store : IStore
         foreach (IFeatureStateRegistration registration in featureRegistrations)
         {
             featureStates[registration.FeatureKey] = registration.InitialState;
+            initialFeatureStates[registration.FeatureKey] = registration.InitialState;
             if (registration.RootReducer is not null)
             {
                 rootReducers[registration.FeatureKey] = registration.RootReducer;
@@ -179,6 +182,7 @@ public class Store : IStore
             rootActionEffects.Clear();
             handleAsyncMethodCache.Clear();
             middlewares.Clear();
+            initialFeatureStates.Clear();
         }
     }
 
@@ -192,6 +196,61 @@ public class Store : IStore
     )
     {
         // Base implementation does nothing; derived classes can override
+    }
+
+    /// <summary>
+    ///     Gets a snapshot of the current feature states keyed by feature key.
+    /// </summary>
+    /// <returns>A snapshot dictionary of feature states.</returns>
+    protected IReadOnlyDictionary<string, object> GetFeatureStateSnapshot() =>
+        new Dictionary<string, object>(featureStates);
+
+    /// <summary>
+    ///     Gets a snapshot of the initial feature states keyed by feature key.
+    /// </summary>
+    /// <returns>A snapshot dictionary of initial feature states.</returns>
+    protected IReadOnlyDictionary<string, object> GetInitialFeatureStateSnapshot() =>
+        new Dictionary<string, object>(initialFeatureStates);
+
+    /// <summary>
+    ///     Replaces existing feature states with the provided values when types are compatible.
+    ///     Missing feature keys are ignored.
+    /// </summary>
+    /// <param name="newStates">The new feature states keyed by feature key.</param>
+    /// <param name="notifyListeners">True to notify subscribers after replacement.</param>
+    protected void ReplaceFeatureStates(
+        IReadOnlyDictionary<string, object> newStates,
+        bool notifyListeners
+    )
+    {
+        ArgumentNullException.ThrowIfNull(newStates);
+
+        foreach (KeyValuePair<string, object> kvp in newStates)
+        {
+            if (!featureStates.TryGetValue(kvp.Key, out object? currentState))
+            {
+                continue;
+            }
+
+            object? newState = kvp.Value;
+            if (newState is null)
+            {
+                continue;
+            }
+
+            Type currentType = currentState.GetType();
+            if (!currentType.IsInstanceOfType(newState))
+            {
+                continue;
+            }
+
+            featureStates[kvp.Key] = newState;
+        }
+
+        if (notifyListeners)
+        {
+            NotifyListeners();
+        }
     }
 
     private Action<IAction> BuildMiddlewarePipeline(
