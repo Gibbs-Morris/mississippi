@@ -15,10 +15,11 @@ Current DevTools time-travel rehydration performs best-effort per-feature replac
 - Implement action dispatch mapping from DevTools.
 - Add new dependencies or change IStore interface.
 
-## Current state (UNVERIFIED)
+## Current state
 
 - ReservoirDevToolsStore replaces feature states per feature if JSON is valid.
 - Invalid or missing feature states are ignored.
+- JUMP_TO_STATE, JUMP_TO_ACTION, and IMPORT_STATE trigger JSON-based rehydration.
 
 ## Proposed design (initial)
 

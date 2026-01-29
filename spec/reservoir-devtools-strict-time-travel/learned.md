@@ -3,10 +3,11 @@
 ## Repository orientation (initial)
 
 - DevTools integration lives in Reservoir.Blazor with ReservoirDevToolsStore and options.
-- Time-travel is implemented via ReplaceStateFromJson -> ReplaceFeatureStates.
+- Time-travel is implemented via ReplaceStateFromJson -> ReplaceStateFromJsonDocument -> ReplaceFeatureStates.
 
-## To verify
+## Verified facts
 
-- Current behavior when time-travel payload is missing or invalid.
-- Best place to enforce strict validation and new options surface.
-- Any tests that should be updated to cover strict behavior.
+- JUMP_TO_STATE/JUMP_TO_ACTION call ReplaceStateFromJson; IMPORT_STATE uses TryExtractImportedStateJson then ReplaceStateFromJson. (src/Reservoir.Blazor/ReservoirDevToolsStore.cs)
+- ReplaceStateFromJsonDocument iterates current snapshot keys and deserializes per-feature; missing/invalid slices are skipped. (src/Reservoir.Blazor/ReservoirDevToolsStore.cs)
+- RESET/ROLLBACK/COMMIT use ReplaceStateFromSnapshot or InitDevToolsAsync without JSON parsing. (src/Reservoir.Blazor/ReservoirDevToolsStore.cs)
+- ReservoirDevToolsOptions is public and the right place to add strict-mode configuration. (src/Reservoir.Blazor/ReservoirDevToolsOptions.cs)
