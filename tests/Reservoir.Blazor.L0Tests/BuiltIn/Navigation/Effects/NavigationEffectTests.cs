@@ -5,10 +5,14 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using Microsoft.JSInterop;
+
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
 using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Effects;
 using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
+
+using Moq;
 
 
 namespace Mississippi.Reservoir.Blazor.L0Tests.BuiltIn.Navigation.Effects;
@@ -18,6 +22,13 @@ namespace Mississippi.Reservoir.Blazor.L0Tests.BuiltIn.Navigation.Effects;
 /// </summary>
 public sealed class NavigationEffectTests
 {
+    private static Mock<IJSRuntime> CreateMockJSRuntime()
+    {
+        Mock<IJSRuntime> mockJs = new();
+        // InvokeVoidAsync has no return value, just need to set up the method
+        return mockJs;
+    }
+
     private static async Task<List<IAction>> CollectEmittedActionsAsync(
         NavigationEffect effect,
         IAction action,
@@ -62,7 +73,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new();
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         LocationChangedAction action = new("https://example.com", false);
 
         // Act
@@ -80,8 +92,28 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new();
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         NavigateAction action = new("https://example.com");
+
+        // Act
+        bool result = effect.CanHandle(action);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that CanHandle returns true for OpenExternalLinkAction.
+    /// </summary>
+    [Fact]
+    public void CanHandleOpenExternalLinkActionReturnsTrue()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
+        OpenExternalLinkAction action = new("https://external.com");
 
         // Act
         bool result = effect.CanHandle(action);
@@ -98,7 +130,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new();
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         ReplaceRouteAction action = new("https://example.com");
 
         // Act
@@ -116,7 +149,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new();
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         ScrollToAnchorAction action = new("section1");
 
         // Act
@@ -134,7 +168,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new();
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         SetQueryParamsAction action = new(
             new Dictionary<string, object?>
             {
@@ -155,11 +190,30 @@ public sealed class NavigationEffectTests
     [Fact]
     public void ConstructorWithNullNavigationManagerThrows()
     {
+        // Arrange
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+
         // Act
-        Action act = () => _ = new NavigationEffect(null!);
+        Action act = () => _ = new NavigationEffect(null!, mockJs.Object);
 
         // Assert
         act.Should().Throw<ArgumentNullException>().WithParameterName("navigationManager");
+    }
+
+    /// <summary>
+    ///     Verifies that constructor throws when IJSRuntime is null.
+    /// </summary>
+    [Fact]
+    public void ConstructorWithNullJSRuntimeThrows()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+
+        // Act
+        Action act = () => _ = new NavigationEffect(nav, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("jsRuntime");
     }
 
     /// <summary>
@@ -171,7 +225,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new();
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         NavigateAction action = new("https://example.com/target");
         NavigationState state = CreateDefaultState();
 
@@ -191,7 +246,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new();
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         NavigateAction action = new("https://example.com/target");
         NavigationState state = CreateDefaultState();
 
@@ -214,7 +270,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new();
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         NavigateAction action = new("https://example.com/target", true);
         NavigationState state = CreateDefaultState();
 
@@ -237,7 +294,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new();
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         ReplaceRouteAction action = new("https://example.com/replaced");
         NavigationState state = CreateDefaultState();
 
@@ -261,7 +319,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new(uri: "https://example.com/page");
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         ScrollToAnchorAction action = new("section1");
         NavigationState state = CreateDefaultState();
 
@@ -285,7 +344,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new(uri: "https://example.com/page#old-section");
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         ScrollToAnchorAction action = new("new-section");
         NavigationState state = CreateDefaultState();
 
@@ -309,7 +369,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new(uri: "https://example.com/page");
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         ScrollToAnchorAction action = new("section1", true);
         NavigationState state = CreateDefaultState();
 
@@ -333,7 +394,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new(uri: "https://example.com/page");
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         SetQueryParamsAction action = new(
             new Dictionary<string, object?>
             {
@@ -360,7 +422,8 @@ public sealed class NavigationEffectTests
     {
         // Arrange
         TestableNavigationManager nav = new(uri: "https://example.com/page");
-        NavigationEffect effect = new(nav);
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
         SetQueryParamsAction action = new(
             new Dictionary<string, object?>
             {
@@ -376,4 +439,55 @@ public sealed class NavigationEffectTests
         nav.Navigations[0].Uri.Should().Contain("key=value");
         nav.Navigations[0].ReplaceHistoryEntry.Should().BeTrue();
     }
+
+    /// <summary>
+    ///     Verifies that OpenExternalLinkAction invokes window.open via JS interop.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleOpenExternalLinkActionCallsWindowOpen()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
+        OpenExternalLinkAction action = new("https://external.com/docs");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        await ConsumeEffectAsync(effect, action, state);
+
+        // Assert
+        mockJs.Verify(
+            js => js.InvokeAsync<object>(
+                "open",
+                It.IsAny<CancellationToken>(),
+                It.Is<object[]>(args =>
+                    args.Length == 2 &&
+                    args[0].Equals("https://external.com/docs") &&
+                    args[1].Equals("_blank"))),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies that OpenExternalLinkAction does not emit any actions.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleOpenExternalLinkActionEmitsNoActions()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        Mock<IJSRuntime> mockJs = CreateMockJSRuntime();
+        NavigationEffect effect = new(nav, mockJs.Object);
+        OpenExternalLinkAction action = new("https://external.com");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        List<IAction> emitted = await CollectEmittedActionsAsync(effect, action, state);
+
+        // Assert
+        emitted.Should().BeEmpty();
+    }
 }
+
