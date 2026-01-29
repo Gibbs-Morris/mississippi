@@ -3,8 +3,8 @@
 ## Status
 
 - Status: Draft
-- Size: Small (initial estimate)
-- Approval checkpoint: TBD
+- Size: Small
+- Approval checkpoint: Yes (public options surface change)
 
 ## Index
 
