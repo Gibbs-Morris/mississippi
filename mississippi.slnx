@@ -33,6 +33,7 @@
   <Folder Name="/Framework/EventSourcing/Snapshots/">
     <Project Path="src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
+    <Project Path="src\EventSourcing.Snapshots.Blob\EventSourcing.Snapshots.Blob.csproj" />
     <Project Path="src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/UxProjections/">
@@ -112,6 +113,7 @@
   </Folder>
   <Folder Name="/Tests/EventSourcing/Snapshots/">
     <Project Path="tests\EventSourcing.Snapshots.Abstractions.L0Tests\EventSourcing.Snapshots.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\EventSourcing.Snapshots.Blob.L0Tests\EventSourcing.Snapshots.Blob.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Snapshots.L0Tests\EventSourcing.Snapshots.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Snapshots.Cosmos.L0Tests\EventSourcing.Snapshots.Cosmos.L0Tests.csproj" />
   </Folder>
