@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="NSubstitute"/>
+        <PackageReference Include="xunit"/>
+        <PackageReference Include="xunit.runner.visualstudio"/>
+        <PackageReference Include="FluentAssertions"/>
+        <PackageReference Include="coverlet.collector"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Blob\EventSourcing.Snapshots.Blob.csproj" />
+        <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
+    </ItemGroup>
+</Project>

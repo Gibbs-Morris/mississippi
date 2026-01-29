@@ -87,6 +87,18 @@ public static class MississippiDefaults
         public const string BlobLocking = "mississippi-blob-locking";
 
         /// <summary>
+        ///     Key for the Blob service client used for snapshot storage.
+        /// </summary>
+        /// <value>The value is <c>"mississippi-blob-snapshots"</c>.</value>
+        public const string BlobSnapshots = "mississippi-blob-snapshots";
+
+        /// <summary>
+        ///     Key for the <c>BlobServiceClient</c> used for snapshot storage.
+        /// </summary>
+        /// <value>The value is <c>"mississippi-blob-snapshots-client"</c>.</value>
+        public const string BlobSnapshotsClient = "mississippi-blob-snapshots-client";
+
+        /// <summary>
         ///     Key for the Cosmos container used for event brooks (event streams).
         /// </summary>
         /// <value>The value is <c>"mississippi-cosmos-brooks"</c>.</value>
