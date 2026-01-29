@@ -8,6 +8,8 @@ description: The Store is the central hub that coordinates feature states, reduc
 
 # Store
 
+## Overview
+
 The Store is the central state container for Reservoir. It coordinates feature states, dispatches actions through the middleware pipeline, invokes reducers to update state, notifies subscribers, and triggers effects for async operations.
 ([IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs))
 
@@ -60,7 +62,7 @@ public static IServiceCollection AddReservoir(
 ([ReservoirRegistrations.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L139-L148))
 
 :::note Scoped Lifetime
-The Store is registered as **scoped** to align with Blazor's per-circuit/per-request model. Each Blazor circuit (or HTTP request scope) gets its own Store instance with independent state.
+The Store is registered as **scoped**. Its lifetime follows the dependency-injection scope configured by the host.
 :::
 
 ## Dispatch Pipeline
@@ -74,6 +76,12 @@ flowchart LR
     C --> D[Notify Subscribers]
     D --> E[Effects]
     E -.->|Returned Actions| A
+    
+    style A fill:#4a9eff,color:#fff
+    style B fill:#f4a261,color:#fff
+    style C fill:#50c878,color:#fff
+    style D fill:#6c5ce7,color:#fff
+    style E fill:#ff6b6b,color:#fff
 ```
 
 ### Pipeline Steps
@@ -104,52 +112,33 @@ private void CoreDispatch(IAction action)
 
 ## Dispatching Actions
 
-Use `Dispatch` to send actions to the store:
+Call `Dispatch` on the store to send actions through the pipeline.
+([IStore.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L26-L33))
 
-```csharp
-IStore store = serviceProvider.GetRequiredService<IStore>();
-store.Dispatch(new IncrementAction());
-```
-
-From a Blazor component inheriting `StoreComponent`:
-
-```csharp
-protected void OnButtonClick()
-{
-    Dispatch(new IncrementAction());
-}
-```
-
-([StoreComponent.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L46-L51))
+Components inheriting `StoreComponent` can call its protected `Dispatch` helper.
+([StoreComponent.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L43-L51))
 
 ### Dispatch Rules
 
-- **Synchronous** — Reducers and subscriber notifications run synchronously on the calling thread
-- **Effects are async** — Effects run asynchronously after dispatch returns
-- **Thread-safe state** — Feature states use `ConcurrentDictionary` for safe concurrent access
+- **Synchronous reducers and listeners** — Reducers run first, then subscribers are notified
+- **Effects are async** — Effects are triggered asynchronously after the reducers and notifications
 - **Null actions throw** — `Dispatch(null)` throws `ArgumentNullException`
 - **Disposed throws** — Dispatching to a disposed store throws `ObjectDisposedException`
 
+([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L214-L228),
+[StoreTests.DispatchAfterDisposeThrowsObjectDisposedException](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L327-L335),
+[StoreTests.DispatchWithNullActionThrowsArgumentNullException](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L338-L345))
+
 ## Reading State
 
-Use `GetState<TState>()` to retrieve the current value of a feature state:
+Use `GetState<TState>()` to retrieve the current value of a feature state. For example, the Spring sample reads from `EntitySelectionState` like this:
 
 ```csharp
-EntitySelectionState selection = store.GetState<EntitySelectionState>();
-string? entityId = selection.EntityId;
+private string? SelectedEntityId => GetState<EntitySelectionState>().EntityId;
 ```
 
-From a Blazor component:
-
-```csharp
-protected override void OnInitialized()
-{
-    EntitySelectionState selection = GetState<EntitySelectionState>();
-    // Use state for initial render
-}
-```
-
-([StoreComponent.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L77-L80))
+([Spring.Index](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor.cs#L121-L125),
+[StoreComponent.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L76-L83))
 
 ### GetState Rules
 
@@ -165,17 +154,8 @@ Call AddFeatureState<EntitySelectionState>() during service registration.
 
 ## Subscribing to Changes
 
-Use `Subscribe` to register a listener that runs after every dispatch:
-
-```csharp
-IDisposable subscription = store.Subscribe(() =>
-{
-    Console.WriteLine("State changed!");
-});
-
-// Later: unsubscribe
-subscription.Dispose();
-```
+Use `Subscribe` to register a listener that runs after every dispatch.
+([IStore.Subscribe](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L46-L53))
 
 ### Subscription Behavior
 
@@ -184,33 +164,20 @@ subscription.Dispose();
 - Dispose the returned `IDisposable` to unsubscribe
 - Subscriptions can be disposed multiple times safely
 
-```csharp
-// From test: unsubscribed listeners don't receive further notifications
-IDisposable subscription = store.Subscribe(() => callCount++);
-store.Dispatch(new IncrementAction()); // callCount = 1
-subscription.Dispose();
-store.Dispatch(new IncrementAction()); // callCount still 1
-```
+([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L214-L228),
+[StoreTests.SubscriptionDisposeCanBeCalledMultipleTimes](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L600-L626))
 
+For an example of unsubscribe behavior, see the unit test.
 ([StoreTests.UnsubscribedListenerDoesNotReceiveNotifications](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L637-L651))
 
 ## Blazor Integration
 
-For Blazor components, inherit from `StoreComponent` instead of managing subscriptions manually:
+For Blazor components, inherit from [`StoreComponent`](store-component.md) instead of managing subscriptions manually:
 
-```csharp
-public class CounterComponent : StoreComponent
-{
-    private int Count => GetState<CounterState>().Count;
+`InletComponent` is a concrete example of a component that derives from `StoreComponent`.
+([InletComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletComponent.cs#L13-L21))
 
-    private void Increment()
-    {
-        Dispatch(new IncrementAction());
-    }
-}
-```
-
-`StoreComponent` handles:
+[`StoreComponent`](store-component.md) handles:
 
 - **Automatic subscription** — Subscribes to the store in `OnInitialized`
 - **Automatic re-render** — Calls `StateHasChanged` when state changes
@@ -240,15 +207,9 @@ The Store can be constructed two ways:
 1. **Via DI (recommended)** — `AddReservoir()` registers the Store with feature registrations and middleware resolved from DI
 2. **Manually** — Pass feature registrations and middleware directly to the constructor
 
-```csharp
-// Manual construction (for testing)
-var store = new Store(
-    featureRegistrations: [new FeatureStateRegistration<TestState>()],
-    middlewaresCollection: [new LoggingMiddleware()]
-);
-```
-
-([Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L58-L86))
+Manual construction is used in tests to validate middleware behavior.
+([Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L58-L86),
+[StoreTests.ConstructorWithMiddlewareCollectionRegistersMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L253-L266))
 
 ### Disposal
 
@@ -258,14 +219,9 @@ The Store implements `IDisposable`. When disposed:
 - All feature states, reducers, and effects are cleared
 - Subsequent `Dispatch`, `GetState`, or `Subscribe` calls throw `ObjectDisposedException`
 
-```csharp
-store.Dispose();
-// Throws ObjectDisposedException:
-store.Dispatch(new SomeAction());
-```
-
-([Store.Dispose](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L104-L108),
-[Store.Dispose(bool)](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L156-L179))
+([StoreTests.DispatchAfterDisposeThrowsObjectDisposedException](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L327-L335),
+[Store.Dispose](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L104-L108),
+[Store.Dispose(bool)](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L156-L182))
 
 ## Effect Error Handling
 
@@ -275,38 +231,7 @@ Effects run asynchronously after dispatch. If an effect throws:
 - Other effects continue to run
 - Effects should handle their own errors by emitting error actions
 
-```csharp
-// From Store.TriggerEffectsAsync
-catch (Exception)
-{
-    // Action effects should handle their own errors by emitting error actions.
-    // Swallow exceptions here to prevent effect failures from breaking dispatch.
-}
-```
-
 ([Store.TriggerEffectsAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L278-L332))
-
-:::tip Effect Error Pattern
-Effects should catch exceptions and emit error actions rather than letting exceptions propagate:
-
-```csharp
-public override async IAsyncEnumerable<IAction> HandleAsync(
-    LoadDataAction action,
-    MyState currentState,
-    [EnumeratorCancellation] CancellationToken cancellationToken)
-{
-    try
-    {
-        var data = await api.GetDataAsync(cancellationToken);
-        yield return new LoadDataSucceededAction(data);
-    }
-    catch (Exception ex)
-    {
-        yield return new LoadDataFailedAction(ex.Message);
-    }
-}
-```
-:::
 
 ## Store Internals
 
@@ -353,7 +278,7 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 | **Dispatch** | Sends actions through middleware → reducers → notify → effects |
 | **GetState** | Returns current feature state snapshot |
 | **Subscribe** | Registers listener called after every dispatch |
-| **Lifetime** | Scoped (per Blazor circuit / HTTP request) |
+| **Lifetime** | Scoped (per DI scope) |
 | **Disposal** | Clears all state and subscriptions; subsequent calls throw |
 | **Error handling** | Effects swallow exceptions; emit error actions instead |
 
@@ -363,8 +288,10 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 
 ## Next Steps
 
+- [Reservoir Overview](./reservoir.md) — Understand the dispatch pipeline end-to-end
 - [Actions](./actions.md) — Define what can happen in your application
 - [Reducers](./reducers.md) — Update state in response to actions
 - [Effects](./effects.md) — Handle async operations and side effects
 - [Middleware](./middleware.md) — Intercept and transform actions
 - [Feature State](./feature-state.md) — Organize state into modular slices
+- [StoreComponent](./store-component.md) — Blazor base component for store integration

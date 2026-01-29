@@ -8,6 +8,8 @@ description: Action reducers are pure functions that transform state based on ac
 
 # Action Reducers
 
+## Overview
+
 Action reducers are pure functions that take the current state and an action, and return a new state. They are the synchronous heart of Reservoir's state management.
 
 ## What Is a Reducer?
@@ -112,18 +114,21 @@ flowchart LR
     R2 -->|Final State| S[(Feature State)]
     
     style A fill:#4a9eff,color:#fff
-    style RR fill:#9b59b6,color:#fff
-    style S fill:#50c878,color:#fff
+    style RR fill:#50c878,color:#fff
+    style R1 fill:#50c878,color:#fff
+    style R2 fill:#50c878,color:#fff
+    style S fill:#9b59b6,color:#fff
 ```
 
 Multiple reducers can handle the same action type. They run in sequence, each receiving the state produced by the previous reducer.
 
 ([RootReducer.Reduce](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/RootReducer.cs#L108-L136))
 
-## Use the `with` Pattern
+## State Updates
 
-Reducers should return a **new state instance** when state changes. Feature states should be immutable records to ensure proper change detection, so use the C# `with` expression for updates.
-([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs))
+Reducers return a **new state instance** when state changes. Feature states are expected to be immutable records, so the C# `with` expression is a common update pattern.
+([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs),
+[Spring sample reducer](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/EntitySelection/EntitySelectionReducers.cs))
 
 ```csharp
 // ✅ Correct: use `with` to create new state
@@ -135,12 +140,6 @@ public static EntitySelectionState SetEntityId(EntitySelectionState state, SetEn
 
 // Use `with` to update only the properties that changed
 ```
-
-The `with` expression copies all properties from the original record and applies only the specified changes. This ensures the original state remains unchanged and supports the change detection noted in the feature state guidance.
-
-:::tip
-Always use `state with { ... }` in reducers. Never mutate properties directly on the incoming state object.
-:::
 
 If the reducer doesn't need to change state, return the original state instance unchanged:
 
@@ -174,10 +173,11 @@ You don't need to call `AddFeatureState` or `AddRootReducer` separately when usi
 | **Delegate registration** | `AddReducer<TAction, TState>(func)` |
 | **Class registration** | `AddReducer<TAction, TState, TReducer>()` |
 | **Base class** | `ActionReducerBase<TAction, TState>` handles type checking |
-| **Immutability** | Always return new state instances with `with` expressions |
+| **Immutability** | Feature states are expected to be immutable records; reducers return new instances when state changes |
 
 ## Next Steps
 
+- [Reservoir Overview](./reservoir.md) — Understand how reducers fit into the dispatch pipeline
 - [Effects](./effects.md) — Handle async operations triggered by actions
 - [Feature State](./feature-state.md) — Organize state into feature slices
 - [Store](./store.md) — Understand the central hub that coordinates reducers, effects, and state

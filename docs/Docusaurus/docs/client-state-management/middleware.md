@@ -8,6 +8,8 @@ description: Middleware intercepts actions in the Reservoir dispatch pipeline—
 
 # Middleware
 
+## Overview
+
 Middleware forms a pipeline between `Dispatch` and reducers. Each middleware can inspect, transform, or block actions, and perform side operations like logging or analytics.
 ([IMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IMiddleware.cs))
 
@@ -59,6 +61,15 @@ flowchart LR
     E --> F[Reducers]
     F --> G[Listeners]
     G --> H[Effects]
+    
+    style A fill:#4a9eff,color:#fff
+    style B fill:#f4a261,color:#fff
+    style C fill:#f4a261,color:#fff
+    style D fill:#f4a261,color:#fff
+    style E fill:#34495e,color:#fff
+    style F fill:#50c878,color:#fff
+    style G fill:#6c5ce7,color:#fff
+    style H fill:#ff6b6b,color:#fff
 ```
 
 ([Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L197-L210))
@@ -219,5 +230,6 @@ public void RegisterMiddlewareAddsToDispatchPipeline()
 
 ## Next Steps
 
+- [Reservoir Overview](./reservoir.md) — See where middleware sits in the pipeline
 - [Feature State](./feature-state.md) — Learn how to define feature state that middleware can inspect
 - [Store](./store.md) — Understand the central hub that coordinates middleware, reducers, and effects

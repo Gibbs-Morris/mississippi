@@ -8,6 +8,8 @@ description: Actions are the foundation of Reservoir state management—immutabl
 
 # Actions
 
+## Overview
+
 Actions are the messages Reservoir processes to update state or run effects. They are the entry point for work handled by the store and its reducers/effects pipeline.
 ([IAction](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/IAction.cs),
 [IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs))
@@ -88,8 +90,11 @@ flowchart LR
     E -.->|May Dispatch| D
     
     style D fill:#4a9eff,color:#fff
+    style M fill:#f4a261,color:#fff
     style R fill:#50c878,color:#fff
+    style L fill:#6c5ce7,color:#fff
     style E fill:#ff6b6b,color:#fff
+    style S fill:#9b59b6,color:#fff
 ```
 
 1. **Middleware** — The action flows through any registered middleware
@@ -100,24 +105,8 @@ flowchart LR
 Multiple feature states can have reducers that respond to the same action because the store runs each feature's root reducer when an action is dispatched.
 ([Store.ReduceFeatureStates](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L236-L271))
 
-## Actions and Effects
-
-Reservoir routes synchronous state changes through reducers and async side effects through action effects. Dispatch an action, and reducers update state immediately while effects handle async work and can dispatch additional actions.
-([IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs),
-[IActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionEffect%7BTState%7D.cs))
-
-```mermaid
-flowchart LR
-    A[Action] --> E[Effect]
-    E -->|Yields| A2[Action]
-    A2 --> R[Reducer Updates State]
-    
-    style A fill:#4a9eff,color:#fff
-    style E fill:#ff6b6b,color:#fff
-    style A2 fill:#4a9eff,color:#fff
-```
-
-This pattern keeps your components simple—they dispatch actions and render state. All the complex orchestration lives in effects.
+Dispatch remains synchronous through reducers and listeners; effects run asynchronously after reducers and listeners complete.
+([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L214-L228))
 
 ## Keep Actions Lean
 
@@ -133,6 +122,7 @@ Actions should carry only the data needed for reducers and effects. The `IAction
 
 ## Next Steps
 
+- [Reservoir Overview](./reservoir.md) — Understand how the pieces fit together
 - [Reducers](./reducers.md) — Learn how reducers transform state based on actions
 - [Effects](./effects.md) — Handle async operations triggered by actions
 - [Feature State](./feature-state.md) — Organize state into feature slices

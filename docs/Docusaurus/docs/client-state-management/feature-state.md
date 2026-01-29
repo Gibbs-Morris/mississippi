@@ -3,12 +3,14 @@ id: feature-state
 title: Feature State
 sidebar_label: Feature State
 sidebar_position: 6
-description: Feature state slices organize Reservoir's state tree into modular, independently testable units—scaling from single-feature apps to large modular systems.
+description: Feature state slices organize Reservoir's state tree into modular units with their own reducers and effects.
 ---
 
 # Feature State
 
-Feature states are independent slices of the Reservoir state tree. Each feature state represents a self-contained piece of application state (UI selection, form data, command status) with its own reducers and effects.
+## Overview
+
+Feature states are independent slices of the Reservoir state tree. Each feature state represents a self-contained piece of application state (UI, forms, session) with its own reducers and effects.
 ([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs))
 
 ## What Is Feature State?
@@ -31,14 +33,7 @@ The `FeatureKey` must be unique across all registered feature states.
 
 ## When to Use Feature State
 
-Use feature state when you need to:
-
-- **Track UI state** — Selected items, expanded panels, navigation context
-- **Manage form data** — Input values, validation state, submission status
-- **Store command status** — Loading, success, failure states for async operations
-- **Cache read data** — Projection data, lookup tables, user preferences
-
-Each concern gets its own feature state, keeping state slices focused and testable.
+Use feature state to model localized UI, forms, and session-oriented state that should live in the store.
 
 ## Defining Feature State
 
@@ -68,8 +63,9 @@ private sealed record TestFeatureState : IFeatureState
 
 ([StoreTests.TestFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L144-L153))
 
-:::tip Use Immutable Records
-Feature states should be immutable records. Use the `with` expression to create new instances with updated values. This ensures proper change detection and prevents accidental mutation.
+:::tip Immutable Record Usage
+In the Spring sample, reducers update feature state by returning new record instances with `state with { ... }`.
+([Spring sample reducer](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/EntitySelection/EntitySelectionReducers.cs))
 :::
 
 ## Registering Feature State
@@ -113,11 +109,7 @@ string? currentEntityId = selection.EntityId;
 From a Blazor component inheriting `StoreComponent`:
 
 ```csharp
-protected override void OnStateChanged()
-{
-    EntitySelectionState selection = GetState<EntitySelectionState>();
-    // React to state changes
-}
+private EntitySelectionState Selection => GetState<EntitySelectionState>();
 ```
 
 ([IStore.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L35-L44),
@@ -130,94 +122,6 @@ InvalidOperationException: No feature state registered for 'entitySelection'.
 Call AddFeatureState<EntitySelectionState>() during service registration.
 ```
 
-## Modular Application Architecture
-
-Reservoir's feature state model scales naturally from small to large applications:
-
-### Small Apps: Single Feature
-
-For simple apps, a single feature state may suffice:
-
-```csharp
-services.AddReservoir();
-services.AddReducer<IncrementAction, CounterState>(
-    (state, action) => state with { Count = state.Count + 1 });
-```
-
-### Medium Apps: Feature Folders
-
-Organize state by feature folder, each with its own state, actions, reducers, and effects:
-
-```
-Features/
-  EntitySelection/
-    EntitySelectionState.cs
-    SetEntityIdAction.cs
-    EntitySelectionReducers.cs
-  BankAccount/
-    BankAccountState.cs
-    BankAccountActions.cs
-    BankAccountReducers.cs
-    BankAccountEffects.cs
-```
-
-Each feature registers independently:
-
-```csharp
-// EntitySelection feature
-services.AddReducer<SetEntityIdAction, EntitySelectionState>(
-    (state, action) => state with { EntityId = action.EntityId });
-
-// BankAccount feature
-services.AddReducer<OpenAccountAction, BankAccountState, OpenAccountReducer>();
-services.AddActionEffect<BankAccountState, OpenAccountEffect>();
-```
-
-### Large Apps: Feature Modules
-
-For large applications, encapsulate feature registration in extension methods:
-
-```csharp
-public static class EntitySelectionFeature
-{
-    public static IServiceCollection AddEntitySelectionFeature(
-        this IServiceCollection services)
-    {
-        services.AddReducer<SetEntityIdAction, EntitySelectionState>(
-            (state, action) => state with { EntityId = action.EntityId });
-        return services;
-    }
-}
-
-public static class BankAccountFeature
-{
-    public static IServiceCollection AddBankAccountFeature(
-        this IServiceCollection services)
-    {
-        services.AddReducer<OpenAccountAction, BankAccountState, OpenAccountReducer>();
-        services.AddReducer<DepositAction, BankAccountState, DepositReducer>();
-        services.AddActionEffect<BankAccountState, DepositEffect>();
-        return services;
-    }
-}
-```
-
-Compose features in `Program.cs`:
-
-```csharp
-services.AddReservoir();
-services.AddEntitySelectionFeature();
-services.AddBankAccountFeature();
-services.AddUserPreferencesFeature();
-```
-
-This pattern:
-
-- Keeps each feature self-contained and testable
-- Enables features to be developed in parallel
-- Allows features to be included/excluded per deployment
-- Scales to dozens of features without registration clutter
-
 ## How Feature State Works
 
 When the store is created, it collects all `IFeatureStateRegistration` instances from DI:
@@ -229,6 +133,13 @@ flowchart TB
     C --> D[Initialize featureStates dictionary]
     C --> E[Wire rootReducers per feature]
     C --> F[Wire rootActionEffects per feature]
+    
+    style A fill:#34495e,color:#fff
+    style B fill:#f4a261,color:#fff
+    style C fill:#9b59b6,color:#fff
+    style D fill:#9b59b6,color:#fff
+    style E fill:#50c878,color:#fff
+    style F fill:#ff6b6b,color:#fff
 ```
 
 Each registration provides:
@@ -244,55 +155,11 @@ Each registration provides:
 [FeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/State/FeatureStateRegistration.cs),
 [Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L58-L86))
 
-## Best Practices
+## Feature Key and Initialization
 
-### Keep Feature States Focused
-
-Each feature state should represent one cohesive concern:
-
-```csharp
-// Good: focused on entity selection
-internal sealed record EntitySelectionState : IFeatureState
-{
-    public static string FeatureKey => "entitySelection";
-    public string? EntityId { get; init; }
-}
-
-// Good: focused on command execution status
-internal sealed record CommandState : IFeatureState
-{
-    public static string FeatureKey => "command";
-    public bool IsLoading { get; init; }
-    public string? Error { get; init; }
-}
-```
-
-### Use Descriptive Feature Keys
-
-Feature keys appear in error messages and debugging. Use descriptive, kebab-case or camelCase keys:
-
-```csharp
-public static string FeatureKey => "entitySelection";    // Good
-public static string FeatureKey => "user-preferences";   // Good
-public static string FeatureKey => "x";                  // Avoid
-```
-
-### Initialize with Sensible Defaults
-
-Feature states are created via parameterless constructor. Ensure defaults are valid:
-
-```csharp
-internal sealed record EntitySelectionState : IFeatureState
-{
-    public static string FeatureKey => "entitySelection";
-    
-    // Default: no entity selected
-    public string? EntityId { get; init; } = null;
-    
-    // Default: not loading
-    public bool IsLoading { get; init; } = false;
-}
-```
+The `FeatureKey` must be unique across all registered feature states. Initial state instances are created via `new TState()` in the registration path, so each feature state type must have a parameterless constructor.
+([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs),
+[FeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/State/FeatureStateRegistration.cs))
 
 ## Summary
 
@@ -302,8 +169,7 @@ internal sealed record EntitySelectionState : IFeatureState
 | **FeatureKey** | Unique string identifier for the state slice |
 | **Registration** | Automatic via `AddReducer`/`AddActionEffect`, or explicit via `AddFeatureState` |
 | **Access** | `store.GetState<TState>()` or `GetState<TState>()` in components |
-| **Modularity** | Each feature registers independently; compose via extension methods |
-| **Scaling** | From single-feature apps to large modular systems |
+| **Initialization** | Initial state is created via `new TState()` in the registration path |
 
 ([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs),
 [IFeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureStateRegistration.cs),
@@ -311,6 +177,7 @@ internal sealed record EntitySelectionState : IFeatureState
 
 ## Next Steps
 
+- [Reservoir Overview](./reservoir.md) — See how feature state participates in dispatch
 - [Store](./store.md) — Understand the central hub that coordinates feature states, reducers, and effects
 - [Reducers](./reducers.md) — Learn how reducers update feature state
 - [Effects](./effects.md) — Learn how effects perform async operations
