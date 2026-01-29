@@ -125,7 +125,7 @@ documentation:
           - '.github/actions/**'
           - '.github/linters/**'
           - 'eng/**'
-                    - '*.ps1'
+          - '*.ps1'
           - '.cursor/rules/**'
 
 # Root build configuration (high-impact, review carefully)
