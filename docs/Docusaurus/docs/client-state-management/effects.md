@@ -1,5 +1,6 @@
 ---
 id: effects-client
+slug: /client-state-management/effects
 title: Effects
 sidebar_label: Effects
 sidebar_position: 4

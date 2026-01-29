@@ -1,5 +1,6 @@
 ---
 id: effects-server
+slug: /server-state-management/effects
 title: Effects
 sidebar_label: Effects
 sidebar_position: 7
