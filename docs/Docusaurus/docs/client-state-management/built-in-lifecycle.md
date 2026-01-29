@@ -269,8 +269,11 @@ The lifecycle actions require the caller to provide timestamps rather than gener
 3. **Consistency** — Timestamps align with your app's time source (useful for distributed systems)
 
 ```csharp
-// Production code
-Dispatch(new AppInitAction(TimeProvider.System.GetUtcNow()));
+// Production code (inject TimeProvider)
+[Inject]
+private TimeProvider TimeProvider { get; set; } = default!;
+
+Dispatch(new AppInitAction(TimeProvider.GetUtcNow()));
 
 // Test code with deterministic time
 var fakeTime = new FakeTimeProvider(new DateTimeOffset(2024, 1, 1, 12, 0, 0, TimeSpan.Zero));

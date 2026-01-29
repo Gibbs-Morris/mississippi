@@ -37,16 +37,8 @@ namespace Mississippi.Reservoir.Testing;
 ///         </item>
 ///     </list>
 ///     <para>
-///         <strong>Example:</strong>
+///         See <c>tests/Reservoir.Testing.L0Tests/StoreTestHarnessTests.cs</c> for usage patterns.
 ///     </para>
-///     <code>
-///         StoreTestHarnessFactory.ForFeature&lt;NavigationState&gt;()
-///             .WithReducer&lt;LocationChangedAction&gt;(NavigationReducers.OnLocationChanged)
-///             .CreateScenario()
-///             .Given(new NavigationState())
-///             .When(new LocationChangedAction("https://example.com/page", false))
-///             .ThenState(s =&gt; s.CurrentUri.Should().Be("https://example.com/page"));
-///     </code>
 /// </remarks>
 /// <typeparam name="TState">The feature state type being tested.</typeparam>
 public sealed class StoreTestHarness<TState>

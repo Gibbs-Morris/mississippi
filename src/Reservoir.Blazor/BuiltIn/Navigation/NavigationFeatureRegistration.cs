@@ -17,12 +17,8 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation;
 ///         It tracks the current URI, previous URI, and navigation count in the store.
 ///     </para>
 ///     <para>
-///         <strong>Usage:</strong>
+///         Register with <see cref="AddBuiltInNavigation" /> after calling <c>AddReservoir</c>.
 ///     </para>
-///     <code>
-///         services.AddReservoir();
-///         services.AddBuiltInNavigation();
-///     </code>
 ///     <para>
 ///         <strong>Important:</strong> You must also render the
 ///         <see cref="Components.ReservoirNavigationProvider" /> component in your app

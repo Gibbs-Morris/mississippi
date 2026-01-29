@@ -16,24 +16,8 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle;
 ///         It tracks the current lifecycle phase (NotStarted, Initializing, Ready) in the store.
 ///     </para>
 ///     <para>
-///         <strong>Usage:</strong>
+///         Register with <see cref="AddBuiltInLifecycle" /> after calling <c>AddReservoir</c>.
 ///     </para>
-///     <code>
-///         services.AddReservoir();
-///         services.AddBuiltInLifecycle();
-///
-///         // In your root component:
-///         protected override void OnInitialized()
-///         {
-///             Dispatch(new AppInitAction(TimeProvider.System.GetUtcNow()));
-///         }
-///
-///         protected override async Task OnInitializedAsync()
-///         {
-///             await LoadDataAsync();
-///             Dispatch(new AppReadyAction(TimeProvider.System.GetUtcNow()));
-///         }
-///     </code>
 /// </remarks>
 public static class LifecycleFeatureRegistration
 {
