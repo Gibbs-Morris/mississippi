@@ -21,3 +21,10 @@
 8. Does the project allow adding a JS file under wwwroot in Reservoir.Blazor, or is there a different asset bundling approach?
 9. Are there any tests for Reservoir.Blazor or Store that would need updating for new middleware hooks?
 10. What is the current policy on adding third-party dependencies (C# or JS) in this repository?
+
+## Coverage mapping
+
+- Claims 1-2: Questions 1-3.
+- Claims 3-4: Questions 4-6.
+- Claim 5: Questions 7 and 10.
+- Claim 6: Questions 8-9.
