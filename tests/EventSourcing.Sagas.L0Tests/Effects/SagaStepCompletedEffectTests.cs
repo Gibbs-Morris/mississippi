@@ -24,6 +24,7 @@ public sealed class SagaStepCompletedEffectTests
     /// <summary>
     ///     HandleAsync emits SagaStepStartedEvent when more steps remain.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldEmitNextStepStartedEventWhenMoreSteps()
     {
@@ -71,6 +72,7 @@ public sealed class SagaStepCompletedEffectTests
     /// <summary>
     ///     HandleAsync emits SagaCompletedEvent when no more steps.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldEmitSagaCompletedEventWhenNoMoreSteps()
     {
@@ -110,6 +112,7 @@ public sealed class SagaStepCompletedEffectTests
     /// <summary>
     ///     HandleAsync finds next step correctly with non-sequential ordering.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldFindNextStepWithNonSequentialOrdering()
     {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 using Mississippi.EventSourcing.Sagas.Abstractions;
 
@@ -11,6 +12,14 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests;
 /// </summary>
 public sealed class StepResultTests
 {
+    private static StepResult InvokeSucceededWithParamsArray(
+        object[]? events
+    )
+    {
+        MethodInfo method = typeof(StepResult).GetMethod(nameof(StepResult.Succeeded), [typeof(object[])])!;
+        return (StepResult)method.Invoke(null, [events])!;
+    }
+
     private sealed record TestEvent(string Name);
 
     /// <summary>
@@ -125,7 +134,9 @@ public sealed class StepResultTests
     public void SucceededWithNullParamsArrayShouldThrow()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => StepResult.Succeeded(null!));
+        TargetInvocationException exception =
+            Assert.Throws<TargetInvocationException>(() => InvokeSucceededWithParamsArray(null));
+        Assert.IsType<ArgumentNullException>(exception.InnerException);
     }
 
     /// <summary>

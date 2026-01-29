@@ -16,6 +16,154 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests;
 public sealed class SagaStepRegistryTests
 {
     /// <summary>
+    ///     Test step 1 for the test saga.
+    /// </summary>
+    [SagaStep(1)]
+    private sealed class Step1 : SagaStepBase<TestSagaWithSteps>
+    {
+        public override Task<StepResult> ExecuteAsync(
+            ISagaContext context,
+            TestSagaWithSteps state,
+            CancellationToken cancellationToken
+        ) =>
+            Task.FromResult(StepResult.Succeeded());
+    }
+
+    /// <summary>
+    ///     Test compensation for Step1.
+    /// </summary>
+    [SagaCompensation(typeof(Step1))]
+    private sealed class Step1Compensation : SagaCompensationBase<TestSagaWithSteps>
+    {
+        public override Task<CompensationResult> CompensateAsync(
+            ISagaContext context,
+            TestSagaWithSteps state,
+            CancellationToken cancellationToken
+        ) =>
+            Task.FromResult(CompensationResult.Succeeded());
+    }
+
+    /// <summary>
+    ///     Test step 2 for the test saga with timeout.
+    /// </summary>
+    [SagaStep(2, Timeout = "00:05:00")]
+    private sealed class Step2 : SagaStepBase<TestSagaWithSteps>
+    {
+        public override Task<StepResult> ExecuteAsync(
+            ISagaContext context,
+            TestSagaWithSteps state,
+            CancellationToken cancellationToken
+        ) =>
+            Task.FromResult(StepResult.Succeeded());
+    }
+
+    /// <summary>
+    ///     Test saga state with defined steps.
+    /// </summary>
+    private sealed record TestSagaWithSteps : ISagaState
+    {
+        public string? CorrelationId { get; init; }
+
+        public int CurrentStepAttempt { get; init; } = 1;
+
+        public int LastCompletedStepIndex { get; init; } = -1;
+
+        public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
+
+        public Guid SagaId { get; init; }
+
+        public DateTimeOffset? StartedAt { get; init; }
+
+        public string? StepHash { get; init; }
+
+        public ISagaState ApplyPhase(
+            SagaPhase phase
+        ) =>
+            this with
+            {
+                Phase = phase,
+            };
+
+        public ISagaState ApplySagaStarted(
+            Guid sagaId,
+            string? correlationId,
+            string? stepHash,
+            DateTimeOffset startedAt
+        ) =>
+            this with
+            {
+                SagaId = sagaId,
+                CorrelationId = correlationId,
+                StepHash = stepHash,
+                StartedAt = startedAt,
+                Phase = SagaPhase.Running,
+            };
+
+        public ISagaState ApplyStepProgress(
+            int lastCompletedStepIndex,
+            int currentStepAttempt
+        ) =>
+            this with
+            {
+                LastCompletedStepIndex = lastCompletedStepIndex,
+                CurrentStepAttempt = currentStepAttempt,
+            };
+    }
+
+    /// <summary>
+    ///     Test saga state without defined steps.
+    /// </summary>
+    private sealed record TestSagaWithoutSteps : ISagaState
+    {
+        public string? CorrelationId { get; init; }
+
+        public int CurrentStepAttempt { get; init; } = 1;
+
+        public int LastCompletedStepIndex { get; init; } = -1;
+
+        public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
+
+        public Guid SagaId { get; init; }
+
+        public DateTimeOffset? StartedAt { get; init; }
+
+        public string? StepHash { get; init; }
+
+        public ISagaState ApplyPhase(
+            SagaPhase phase
+        ) =>
+            this with
+            {
+                Phase = phase,
+            };
+
+        public ISagaState ApplySagaStarted(
+            Guid sagaId,
+            string? correlationId,
+            string? stepHash,
+            DateTimeOffset startedAt
+        ) =>
+            this with
+            {
+                SagaId = sagaId,
+                CorrelationId = correlationId,
+                StepHash = stepHash,
+                StartedAt = startedAt,
+                Phase = SagaPhase.Running,
+            };
+
+        public ISagaState ApplyStepProgress(
+            int lastCompletedStepIndex,
+            int currentStepAttempt
+        ) =>
+            this with
+            {
+                LastCompletedStepIndex = lastCompletedStepIndex,
+                CurrentStepAttempt = currentStepAttempt,
+            };
+    }
+
+    /// <summary>
     ///     Registry for saga with no steps returns empty list.
     /// </summary>
     [Fact]
@@ -203,153 +351,3 @@ public sealed class SagaStepRegistryTests
         }
     }
 }
-
-/// <summary>
-///     Test saga state with defined steps.
-/// </summary>
-#pragma warning disable CA1812 // Test types used via reflection
-internal sealed record TestSagaWithSteps : ISagaState
-{
-    public string? CorrelationId { get; init; }
-
-    public int CurrentStepAttempt { get; init; } = 1;
-
-    public int LastCompletedStepIndex { get; init; } = -1;
-
-    public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
-
-    public Guid SagaId { get; init; }
-
-    public DateTimeOffset? StartedAt { get; init; }
-
-    public string? StepHash { get; init; }
-
-    public ISagaState ApplyPhase(
-        SagaPhase phase
-    ) =>
-        this with
-        {
-            Phase = phase,
-        };
-
-    public ISagaState ApplySagaStarted(
-        Guid sagaId,
-        string? correlationId,
-        string? stepHash,
-        DateTimeOffset startedAt
-    ) =>
-        this with
-        {
-            SagaId = sagaId,
-            CorrelationId = correlationId,
-            StepHash = stepHash,
-            StartedAt = startedAt,
-            Phase = SagaPhase.Running,
-        };
-
-    public ISagaState ApplyStepProgress(
-        int lastCompletedStepIndex,
-        int currentStepAttempt
-    ) =>
-        this with
-        {
-            LastCompletedStepIndex = lastCompletedStepIndex,
-            CurrentStepAttempt = currentStepAttempt,
-        };
-}
-
-/// <summary>
-///     Test saga state without defined steps.
-/// </summary>
-internal sealed record TestSagaWithoutSteps : ISagaState
-{
-    public string? CorrelationId { get; init; }
-
-    public int CurrentStepAttempt { get; init; } = 1;
-
-    public int LastCompletedStepIndex { get; init; } = -1;
-
-    public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
-
-    public Guid SagaId { get; init; }
-
-    public DateTimeOffset? StartedAt { get; init; }
-
-    public string? StepHash { get; init; }
-
-    public ISagaState ApplyPhase(
-        SagaPhase phase
-    ) =>
-        this with
-        {
-            Phase = phase,
-        };
-
-    public ISagaState ApplySagaStarted(
-        Guid sagaId,
-        string? correlationId,
-        string? stepHash,
-        DateTimeOffset startedAt
-    ) =>
-        this with
-        {
-            SagaId = sagaId,
-            CorrelationId = correlationId,
-            StepHash = stepHash,
-            StartedAt = startedAt,
-            Phase = SagaPhase.Running,
-        };
-
-    public ISagaState ApplyStepProgress(
-        int lastCompletedStepIndex,
-        int currentStepAttempt
-    ) =>
-        this with
-        {
-            LastCompletedStepIndex = lastCompletedStepIndex,
-            CurrentStepAttempt = currentStepAttempt,
-        };
-}
-
-/// <summary>
-///     Test step 1 for the test saga.
-/// </summary>
-[SagaStep(1)]
-internal sealed class Step1 : SagaStepBase<TestSagaWithSteps>
-{
-    public override Task<StepResult> ExecuteAsync(
-        ISagaContext context,
-        TestSagaWithSteps state,
-        CancellationToken cancellationToken
-    ) =>
-        Task.FromResult(StepResult.Succeeded());
-}
-
-/// <summary>
-///     Test step 2 for the test saga with timeout.
-/// </summary>
-[SagaStep(2, Timeout = "00:05:00")]
-internal sealed class Step2 : SagaStepBase<TestSagaWithSteps>
-{
-    public override Task<StepResult> ExecuteAsync(
-        ISagaContext context,
-        TestSagaWithSteps state,
-        CancellationToken cancellationToken
-    ) =>
-        Task.FromResult(StepResult.Succeeded());
-}
-
-/// <summary>
-///     Test compensation for Step1.
-/// </summary>
-[SagaCompensation(typeof(Step1))]
-internal sealed class Step1Compensation : SagaCompensationBase<TestSagaWithSteps>
-{
-    public override Task<CompensationResult> CompensateAsync(
-        ISagaContext context,
-        TestSagaWithSteps state,
-        CancellationToken cancellationToken
-    ) =>
-        Task.FromResult(CompensationResult.Succeeded());
-}
-#pragma warning restore CA1812

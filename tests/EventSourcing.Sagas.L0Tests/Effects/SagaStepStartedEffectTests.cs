@@ -22,8 +22,9 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests.Effects;
 /// </summary>
 public sealed class SagaStepStartedEffectTests
 {
-    private static (SagaStepStartedEffect<TestSagaState> Effect, ServiceProvider Provider) CreateEffectWithStep(
-        SagaStepInfo stepInfo
+    private static ServiceProvider CreateEffectWithStep(
+        SagaStepInfo stepInfo,
+        out SagaStepStartedEffect<TestSagaState> effect
     )
     {
         ServiceCollection services = new();
@@ -34,17 +35,14 @@ public sealed class SagaStepStartedEffectTests
         registryMock.Setup(r => r.StepHash).Returns("test-hash");
         FakeTimeProvider timeProvider = new();
         Mock<ILogger<SagaStepStartedEffect<TestSagaState>>> loggerMock = new();
-        SagaStepStartedEffect<TestSagaState> effect = new(
-            registryMock.Object,
-            provider,
-            timeProvider,
-            loggerMock.Object);
-        return (effect, provider);
+        effect = new(registryMock.Object, provider, timeProvider, loggerMock.Object);
+        return provider;
     }
 
     /// <summary>
     ///     HandleAsync emits SagaStepCompletedEvent on successful step execution.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldEmitStepCompletedOnSuccess()
     {
@@ -55,7 +53,7 @@ public sealed class SagaStepStartedEffectTests
             Order = 1,
             StepType = typeof(SuccessfulTestStep),
         };
-        (SagaStepStartedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffectWithStep(stepInfo);
+        using ServiceProvider provider = CreateEffectWithStep(stepInfo, out SagaStepStartedEffect<TestSagaState> sut);
         SagaStepStartedEvent eventData = new("TestStep", 1, DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -79,6 +77,7 @@ public sealed class SagaStepStartedEffectTests
     /// <summary>
     ///     HandleAsync emits SagaStepFailedEvent on exception.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldEmitStepFailedOnException()
     {
@@ -89,7 +88,7 @@ public sealed class SagaStepStartedEffectTests
             Order = 1,
             StepType = typeof(ExceptionThrowingTestStep),
         };
-        (SagaStepStartedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffectWithStep(stepInfo);
+        using ServiceProvider provider = CreateEffectWithStep(stepInfo, out SagaStepStartedEffect<TestSagaState> sut);
         SagaStepStartedEvent eventData = new("TestStep", 1, DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -114,6 +113,7 @@ public sealed class SagaStepStartedEffectTests
     /// <summary>
     ///     HandleAsync emits SagaStepFailedEvent on step failure.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldEmitStepFailedOnFailure()
     {
@@ -124,7 +124,7 @@ public sealed class SagaStepStartedEffectTests
             Order = 1,
             StepType = typeof(FailingTestStep),
         };
-        (SagaStepStartedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffectWithStep(stepInfo);
+        using ServiceProvider provider = CreateEffectWithStep(stepInfo, out SagaStepStartedEffect<TestSagaState> sut);
         SagaStepStartedEvent eventData = new("TestStep", 1, DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -149,6 +149,7 @@ public sealed class SagaStepStartedEffectTests
     /// <summary>
     ///     HandleAsync emits SagaStepFailedEvent on step hash mismatch.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldEmitStepFailedOnHashMismatch()
     {
@@ -159,7 +160,7 @@ public sealed class SagaStepStartedEffectTests
             Order = 1,
             StepType = typeof(SuccessfulTestStep),
         };
-        (SagaStepStartedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffectWithStep(stepInfo);
+        using ServiceProvider provider = CreateEffectWithStep(stepInfo, out SagaStepStartedEffect<TestSagaState> sut);
         SagaStepStartedEvent eventData = new("TestStep", 1, DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -189,6 +190,7 @@ public sealed class SagaStepStartedEffectTests
     ///     the idempotency guard (-1 >= -1) triggers early exit. To test the STEP_NOT_FOUND code path,
     ///     we need LastCompletedStepIndex to be at a valid index (0+) so the guard doesn't trigger.
     /// </remarks>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldEmitStepFailedWhenStepNotFound()
     {
@@ -208,7 +210,7 @@ public sealed class SagaStepStartedEffectTests
         };
         ServiceCollection services = new();
         services.AddTransient<SuccessfulTestStep>();
-        ServiceProvider provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         Mock<ISagaStepRegistry<NonSagaState>> registryMock = new();
         registryMock.Setup(r => r.Steps).Returns([step1, step2]);
         registryMock.Setup(r => r.StepHash).Returns(string.Empty);
@@ -236,6 +238,7 @@ public sealed class SagaStepStartedEffectTests
     /// <summary>
     ///     HandleAsync includes business events from step result.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldIncludeBusinessEventsFromStepResult()
     {
@@ -246,7 +249,7 @@ public sealed class SagaStepStartedEffectTests
             Order = 1,
             StepType = typeof(EventEmittingTestStep),
         };
-        (SagaStepStartedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffectWithStep(stepInfo);
+        using ServiceProvider provider = CreateEffectWithStep(stepInfo, out SagaStepStartedEffect<TestSagaState> sut);
         SagaStepStartedEvent eventData = new("TestStep", 1, DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -271,6 +274,7 @@ public sealed class SagaStepStartedEffectTests
     /// <summary>
     ///     HandleAsync reports correct step name and order in completion event.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldIncludeStepDetailsInCompletionEvent()
     {
@@ -281,7 +285,7 @@ public sealed class SagaStepStartedEffectTests
             Order = 3,
             StepType = typeof(SuccessfulTestStep),
         };
-        (SagaStepStartedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffectWithStep(stepInfo);
+        using ServiceProvider provider = CreateEffectWithStep(stepInfo, out SagaStepStartedEffect<TestSagaState> sut);
         SagaStepStartedEvent eventData = new("ProcessPayment", 3, DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -306,6 +310,7 @@ public sealed class SagaStepStartedEffectTests
     /// <summary>
     ///     HandleAsync skips execution for already completed step (idempotency).
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldSkipAlreadyCompletedStep()
     {
@@ -316,7 +321,7 @@ public sealed class SagaStepStartedEffectTests
             Order = 1,
             StepType = typeof(SuccessfulTestStep),
         };
-        (SagaStepStartedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffectWithStep(stepInfo);
+        using ServiceProvider provider = CreateEffectWithStep(stepInfo, out SagaStepStartedEffect<TestSagaState> sut);
         SagaStepStartedEvent eventData = new("TestStep", 1, DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -339,6 +344,7 @@ public sealed class SagaStepStartedEffectTests
     /// <summary>
     ///     HandleAsync uses empty step hash when state has empty step hash.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldSucceedWithEmptyStepHash()
     {
@@ -349,7 +355,7 @@ public sealed class SagaStepStartedEffectTests
             Order = 1,
             StepType = typeof(SuccessfulTestStep),
         };
-        (SagaStepStartedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffectWithStep(stepInfo);
+        using ServiceProvider provider = CreateEffectWithStep(stepInfo, out SagaStepStartedEffect<TestSagaState> sut);
         SagaStepStartedEvent eventData = new("TestStep", 1, DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -373,6 +379,7 @@ public sealed class SagaStepStartedEffectTests
     /// <summary>
     ///     HandleAsync uses null step hash when state has no step hash.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldSucceedWithNullStepHash()
     {
@@ -383,7 +390,7 @@ public sealed class SagaStepStartedEffectTests
             Order = 1,
             StepType = typeof(SuccessfulTestStep),
         };
-        (SagaStepStartedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffectWithStep(stepInfo);
+        using ServiceProvider provider = CreateEffectWithStep(stepInfo, out SagaStepStartedEffect<TestSagaState> sut);
         SagaStepStartedEvent eventData = new("TestStep", 1, DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -407,6 +414,7 @@ public sealed class SagaStepStartedEffectTests
     /// <summary>
     ///     HandleAsync uses fallback identity when state does not implement ISagaState.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldUseFallbackForNonSagaState()
     {
@@ -419,7 +427,7 @@ public sealed class SagaStepStartedEffectTests
         };
         ServiceCollection services = new();
         services.AddTransient<NonSagaStateSuccessfulStep>();
-        ServiceProvider provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         Mock<ISagaStepRegistry<NonSagaState>> registryMock = new();
         registryMock.Setup(r => r.Steps).Returns([stepInfo]);
         registryMock.Setup(r => r.StepHash).Returns("test-hash");

@@ -109,6 +109,7 @@ public sealed class SagaStepBaseTests
     /// <summary>
     ///     ExecuteAsync receives current state.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task ExecuteAsyncShouldReceiveCurrentState()
     {
@@ -130,6 +131,7 @@ public sealed class SagaStepBaseTests
     /// <summary>
     ///     ExecuteAsync receives saga context.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task ExecuteAsyncShouldReceiveSagaContext()
     {
@@ -149,6 +151,7 @@ public sealed class SagaStepBaseTests
     /// <summary>
     ///     ExecuteAsync respects cancellation token.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task ExecuteAsyncShouldRespectCancellationToken()
     {
@@ -169,6 +172,7 @@ public sealed class SagaStepBaseTests
     /// <summary>
     ///     ExecuteAsync returns StepResult.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task ExecuteAsyncShouldReturnStepResult()
     {

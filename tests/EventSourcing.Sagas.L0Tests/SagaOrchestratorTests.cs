@@ -20,6 +20,7 @@ public sealed class SagaOrchestratorTests
     /// <summary>
     ///     CancelAsync throws NotSupportedException.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task CancelAsyncShouldThrowNotSupportedException()
     {
@@ -35,6 +36,7 @@ public sealed class SagaOrchestratorTests
     /// <summary>
     ///     GetStatusAsync returns null (not yet implemented).
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task GetStatusAsyncShouldReturnNull()
     {
@@ -53,6 +55,7 @@ public sealed class SagaOrchestratorTests
     /// <summary>
     ///     ResumeAsync throws NotSupportedException.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task ResumeAsyncShouldThrowNotSupportedException()
     {
@@ -68,6 +71,7 @@ public sealed class SagaOrchestratorTests
     /// <summary>
     ///     StartAsync calls aggregate grain with StartSagaCommand.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task StartAsyncShouldCallAggregateGrain()
     {
@@ -97,6 +101,7 @@ public sealed class SagaOrchestratorTests
     /// <summary>
     ///     StartAsync supports null correlation ID.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task StartAsyncShouldSupportNullCorrelationId()
     {
@@ -124,6 +129,7 @@ public sealed class SagaOrchestratorTests
     /// <summary>
     ///     StartAsync throws when aggregate grain returns failure.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task StartAsyncShouldThrowWhenGrainReturnsFails()
     {
@@ -141,12 +147,13 @@ public sealed class SagaOrchestratorTests
         InvalidOperationException ex =
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 sut.StartAsync<TestSagaState, TestSagaInput>(sagaId, input));
-        Assert.Contains("SAGA_ALREADY_STARTED", ex.Message);
+        Assert.Contains("SAGA_ALREADY_STARTED", ex.Message, StringComparison.Ordinal);
     }
 
     /// <summary>
     ///     StartAsync throws when input is null.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task StartAsyncShouldThrowWhenInputIsNull()
     {

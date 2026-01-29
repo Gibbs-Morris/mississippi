@@ -22,6 +22,7 @@ public sealed class StartSagaCommandHandlerTests
     /// <summary>
     ///     Handle fails for various running phases.
     /// </summary>
+    /// <param name="phase">The saga phase to test.</param>
     [Theory]
     [InlineData(SagaPhase.Running)]
     [InlineData(SagaPhase.Compensating)]

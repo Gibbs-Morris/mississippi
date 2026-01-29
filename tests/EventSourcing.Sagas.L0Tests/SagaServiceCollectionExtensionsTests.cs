@@ -139,7 +139,7 @@ public sealed class SagaServiceCollectionExtensionsTests
         services.AddSagaOrchestration();
 
         // Assert
-        ServiceProvider provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         ISagaOrchestrator? orchestrator = provider.GetService<ISagaOrchestrator>();
         Assert.NotNull(orchestrator);
     }
@@ -175,7 +175,7 @@ public sealed class SagaServiceCollectionExtensionsTests
         services.AddSaga<TestSagaDefinition>();
 
         // Assert
-        ServiceProvider provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IEventEffect<TestSagaDefinition>> effects =
             provider.GetServices<IEventEffect<TestSagaDefinition>>();
         Assert.NotEmpty(effects);
@@ -194,7 +194,7 @@ public sealed class SagaServiceCollectionExtensionsTests
         services.AddSaga<TestSagaDefinition>();
 
         // Assert
-        ServiceProvider provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         ISagaStepRegistry<TestSagaDefinition>? registry = provider.GetService<ISagaStepRegistry<TestSagaDefinition>>();
         Assert.NotNull(registry);
     }
@@ -229,7 +229,7 @@ public sealed class SagaServiceCollectionExtensionsTests
         services.AddSaga<TestSagaDefinition, TestSagaInput>();
 
         // Assert
-        ServiceProvider provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         ISagaStepRegistry<TestSagaDefinition>? registry = provider.GetService<ISagaStepRegistry<TestSagaDefinition>>();
         Assert.NotNull(registry);
     }
@@ -248,7 +248,7 @@ public sealed class SagaServiceCollectionExtensionsTests
         services.AddSaga<TestSagaDefinition, TestSagaInput>();
 
         // Assert
-        ServiceProvider provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         ICommandHandler<StartSagaCommand<TestSagaInput>, TestSagaDefinition>? handler =
             provider.GetService<ICommandHandler<StartSagaCommand<TestSagaInput>, TestSagaDefinition>>();
         Assert.NotNull(handler);

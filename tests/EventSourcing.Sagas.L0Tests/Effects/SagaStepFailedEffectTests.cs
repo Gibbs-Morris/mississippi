@@ -38,8 +38,9 @@ public sealed class SagaStepFailedEffectTests
         return results;
     }
 
-    private static (SagaStepFailedEffect<TestSagaState> Effect, ServiceProvider Provider) CreateEffect(
-        List<SagaStepInfo> steps
+    private static ServiceProvider CreateEffect(
+        List<SagaStepInfo> steps,
+        out SagaStepFailedEffect<TestSagaState> effect
     )
     {
         ServiceCollection services = new();
@@ -56,16 +57,13 @@ public sealed class SagaStepFailedEffectTests
         registryMock.Setup(r => r.Steps).Returns(steps);
         FakeTimeProvider timeProvider = new();
         Mock<ILogger<SagaStepFailedEffect<TestSagaState>>> loggerMock = new();
-        SagaStepFailedEffect<TestSagaState> effect = new(
-            registryMock.Object,
-            provider,
-            timeProvider,
-            loggerMock.Object);
-        return (effect, provider);
+        effect = new(registryMock.Object, provider, timeProvider, loggerMock.Object);
+        return provider;
     }
 
-    private static (SagaStepFailedEffect<TSaga> Effect, ServiceProvider Provider) CreateEffectForSaga<TSaga>(
-        List<SagaStepInfo> steps
+    private static ServiceProvider CreateEffectForSaga<TSaga>(
+        List<SagaStepInfo> steps,
+        out SagaStepFailedEffect<TSaga> effect
     )
         where TSaga : class
     {
@@ -83,8 +81,8 @@ public sealed class SagaStepFailedEffectTests
         registryMock.Setup(r => r.Steps).Returns(steps);
         FakeTimeProvider timeProvider = new();
         Mock<ILogger<SagaStepFailedEffect<TSaga>>> loggerMock = new();
-        SagaStepFailedEffect<TSaga> effect = new(registryMock.Object, provider, timeProvider, loggerMock.Object);
-        return (effect, provider);
+        effect = new(registryMock.Object, provider, timeProvider, loggerMock.Object);
+        return provider;
     }
 
     private static SagaStepInfo CreateStepInfo(
@@ -103,6 +101,7 @@ public sealed class SagaStepFailedEffectTests
     /// <summary>
     ///     HandleAsync continues compensating other steps even when one fails.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldContinueCompensatingAfterFailure()
     {
@@ -110,7 +109,9 @@ public sealed class SagaStepFailedEffectTests
         SagaStepInfo step1 = CreateStepInfo("Step1", 1, typeof(SuccessfulCompensation));
         SagaStepInfo step2 = CreateStepInfo("Step2", 2, typeof(FailingCompensation));
         SagaStepInfo step3 = CreateStepInfo("Step3", 3, typeof(SuccessfulCompensation));
-        (SagaStepFailedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffect([step1, step2, step3]);
+        using ServiceProvider provider = CreateEffect(
+            [step1, step2, step3],
+            out SagaStepFailedEffect<TestSagaState> sut);
         SagaStepFailedEvent eventData = new("Step4", 4, "FAILED", "Error", DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -155,12 +156,13 @@ public sealed class SagaStepFailedEffectTests
     /// <summary>
     ///     HandleAsync emits SagaStepCompensationFailedEvent when compensation fails.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldEmitCompensationFailedEventOnError()
     {
         // Arrange
         SagaStepInfo step1 = CreateStepInfo("Step1", 1, typeof(FailingCompensation));
-        (SagaStepFailedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffect([step1]);
+        using ServiceProvider provider = CreateEffect([step1], out SagaStepFailedEffect<TestSagaState> sut);
         SagaStepFailedEvent eventData = new("Step2", 2, "FAILED", "Error", DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -188,13 +190,14 @@ public sealed class SagaStepFailedEffectTests
     /// <summary>
     ///     HandleAsync extracts correct saga identity from ISagaState.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldExtractSagaIdentityFromState()
     {
         // Arrange
         Guid expectedSagaId = Guid.NewGuid();
         SagaStepInfo step1 = CreateStepInfo("Step1", 1, typeof(SuccessfulCompensation));
-        (SagaStepFailedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffect([step1]);
+        using ServiceProvider provider = CreateEffect([step1], out SagaStepFailedEffect<TestSagaState> sut);
         SagaStepFailedEvent eventData = new("Step2", 2, "FAILED", "Error", DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -224,12 +227,13 @@ public sealed class SagaStepFailedEffectTests
     /// <summary>
     ///     HandleAsync handles exception in compensation gracefully.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldHandleCompensationException()
     {
         // Arrange
         SagaStepInfo step1 = CreateStepInfo("Step1", 1, typeof(ExceptionThrowingCompensation));
-        (SagaStepFailedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffect([step1]);
+        using ServiceProvider provider = CreateEffect([step1], out SagaStepFailedEffect<TestSagaState> sut);
         SagaStepFailedEvent eventData = new("Step2", 2, "FAILED", "Error", DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -257,11 +261,12 @@ public sealed class SagaStepFailedEffectTests
     /// <summary>
     ///     HandleAsync includes error details in SagaFailedEvent message.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldIncludeErrorDetailsInFailedEvent()
     {
         // Arrange
-        (SagaStepFailedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffect([]);
+        using ServiceProvider provider = CreateEffect([], out SagaStepFailedEffect<TestSagaState> sut);
         SagaStepFailedEvent eventData = new(
             "ProcessPayment",
             3,
@@ -278,14 +283,15 @@ public sealed class SagaStepFailedEffectTests
 
         // Assert
         SagaFailedEvent failedEvent = Assert.IsType<SagaFailedEvent>(results[^1]);
-        Assert.Contains("ProcessPayment", failedEvent.Reason);
-        Assert.Contains("CARD_DECLINED", failedEvent.Reason);
-        Assert.Contains("Insufficient funds", failedEvent.Reason);
+        Assert.Contains("ProcessPayment", failedEvent.Reason, StringComparison.Ordinal);
+        Assert.Contains("CARD_DECLINED", failedEvent.Reason, StringComparison.Ordinal);
+        Assert.Contains("Insufficient funds", failedEvent.Reason, StringComparison.Ordinal);
     }
 
     /// <summary>
     ///     HandleAsync runs compensations in reverse order.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldRunCompensationsInReverseOrder()
     {
@@ -293,7 +299,9 @@ public sealed class SagaStepFailedEffectTests
         SagaStepInfo step1 = CreateStepInfo("Step1", 1, typeof(SuccessfulCompensation));
         SagaStepInfo step2 = CreateStepInfo("Step2", 2, typeof(SuccessfulCompensation));
         SagaStepInfo step3 = CreateStepInfo("Step3", 3, typeof(SuccessfulCompensation));
-        (SagaStepFailedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffect([step1, step2, step3]);
+        using ServiceProvider provider = CreateEffect(
+            [step1, step2, step3],
+            out SagaStepFailedEffect<TestSagaState> sut);
         SagaStepFailedEvent eventData = new("Step3", 3, "FAILED", "Error", DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -322,6 +330,7 @@ public sealed class SagaStepFailedEffectTests
     /// <summary>
     ///     HandleAsync skips steps without compensation types.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncShouldSkipStepsWithoutCompensation()
     {
@@ -334,7 +343,7 @@ public sealed class SagaStepFailedEffectTests
             CompensationType = null,
         };
         SagaStepInfo step2 = CreateStepInfo("Step2", 2, typeof(SuccessfulCompensation));
-        (SagaStepFailedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffect([step1, step2]);
+        using ServiceProvider provider = CreateEffect([step1, step2], out SagaStepFailedEffect<TestSagaState> sut);
         SagaStepFailedEvent eventData = new("Step2", 2, "FAILED", "Error", DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -361,13 +370,14 @@ public sealed class SagaStepFailedEffectTests
     /// <summary>
     ///     HandleAsync with Immediate strategy emits SagaCompensatingEvent, compensations, and SagaFailedEvent.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncWithImmediateStrategyShouldEmitCompensatingAndFailedEvents()
     {
         // Arrange - default TestSagaState has no SagaOptionsAttribute so uses Immediate
         SagaStepInfo step1 = CreateStepInfo("Step1", 1, typeof(SuccessfulCompensation));
         SagaStepInfo step2 = CreateStepInfo("Step2", 2, typeof(SuccessfulCompensation));
-        (SagaStepFailedEffect<TestSagaState> sut, ServiceProvider _) = CreateEffect([step1, step2]);
+        using ServiceProvider provider = CreateEffect([step1, step2], out SagaStepFailedEffect<TestSagaState> sut);
         SagaStepFailedEvent eventData = new("Step2", 2, "ORDER_CANCELLED", "User cancelled", DateTimeOffset.UtcNow);
         TestSagaState state = new()
         {
@@ -387,13 +397,15 @@ public sealed class SagaStepFailedEffectTests
     /// <summary>
     ///     HandleAsync with Manual strategy emits only SagaFailedEvent without compensation.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncWithManualStrategyShouldOnlyEmitSagaFailedEvent()
     {
         // Arrange
         SagaStepInfo step1 = CreateStepInfo("Step1", 1, typeof(SuccessfulCompensation));
-        (SagaStepFailedEffect<ManualStrategySaga> sut, ServiceProvider _) =
-            CreateEffectForSaga<ManualStrategySaga>([step1]);
+        using ServiceProvider provider = CreateEffectForSaga<ManualStrategySaga>(
+            [step1],
+            out SagaStepFailedEffect<ManualStrategySaga> sut);
         SagaStepFailedEvent eventData = new("Step1", 1, "PAYMENT_FAILED", "Insufficient funds", DateTimeOffset.UtcNow);
         ManualStrategySaga state = new()
         {
@@ -406,19 +418,21 @@ public sealed class SagaStepFailedEffectTests
         // Assert
         Assert.Single(results);
         SagaFailedEvent failedEvent = Assert.IsType<SagaFailedEvent>(results[0]);
-        Assert.Contains("PAYMENT_FAILED", failedEvent.Reason);
+        Assert.Contains("PAYMENT_FAILED", failedEvent.Reason, StringComparison.Ordinal);
     }
 
     /// <summary>
     ///     HandleAsync with RetryThenCompensate strategy emits compensation when max retries exceeded.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncWithRetryStrategyShouldCompensateWhenMaxRetriesExceeded()
     {
         // Arrange
         SagaStepInfo step1 = CreateStepInfo("Step1", 1, typeof(SuccessfulCompensation));
-        (SagaStepFailedEffect<RetryStrategySaga> sut, ServiceProvider _) =
-            CreateEffectForSaga<RetryStrategySaga>([step1]);
+        using ServiceProvider provider = CreateEffectForSaga<RetryStrategySaga>(
+            [step1],
+            out SagaStepFailedEffect<RetryStrategySaga> sut);
         SagaStepFailedEvent eventData = new("Step1", 1, "TIMEOUT", "Service unavailable", DateTimeOffset.UtcNow);
         RetryStrategySaga state = new()
         {
@@ -438,13 +452,15 @@ public sealed class SagaStepFailedEffectTests
     /// <summary>
     ///     HandleAsync with RetryThenCompensate strategy emits retry event when under max retries.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task HandleAsyncWithRetryStrategyShouldEmitRetryEventWhenUnderMaxRetries()
     {
         // Arrange
         SagaStepInfo step1 = CreateStepInfo("Step1", 1, typeof(SuccessfulCompensation));
-        (SagaStepFailedEffect<RetryStrategySaga> sut, ServiceProvider _) =
-            CreateEffectForSaga<RetryStrategySaga>([step1]);
+        using ServiceProvider provider = CreateEffectForSaga<RetryStrategySaga>(
+            [step1],
+            out SagaStepFailedEffect<RetryStrategySaga> sut);
         SagaStepFailedEvent eventData = new("Step1", 1, "TIMEOUT", "Service unavailable", DateTimeOffset.UtcNow);
         RetryStrategySaga state = new()
         {

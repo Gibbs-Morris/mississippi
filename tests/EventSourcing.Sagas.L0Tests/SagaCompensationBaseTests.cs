@@ -122,6 +122,7 @@ public sealed class SagaCompensationBaseTests
     /// <summary>
     ///     CompensateAsync receives current state.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task CompensateAsyncShouldReceiveCurrentState()
     {
@@ -143,6 +144,7 @@ public sealed class SagaCompensationBaseTests
     /// <summary>
     ///     CompensateAsync receives saga context.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task CompensateAsyncShouldReceiveSagaContext()
     {
@@ -162,6 +164,7 @@ public sealed class SagaCompensationBaseTests
     /// <summary>
     ///     CompensateAsync respects cancellation token.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task CompensateAsyncShouldRespectCancellationToken()
     {
@@ -182,6 +185,7 @@ public sealed class SagaCompensationBaseTests
     /// <summary>
     ///     CompensateAsync returns CompensationResult.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task CompensateAsyncShouldReturnCompensationResult()
     {
@@ -200,6 +204,7 @@ public sealed class SagaCompensationBaseTests
     /// <summary>
     ///     CompensateAsync can return skipped result.
     /// </summary>
+    /// <returns>A task that completes when the assertion finishes.</returns>
     [Fact]
     public async Task CompensateAsyncShouldSupportSkippedResult()
     {
