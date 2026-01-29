@@ -1,3 +1,5 @@
+using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
+
 using Spring.Client.Features.FlaggedTransactions.Dtos;
 
 
@@ -67,4 +69,6 @@ public sealed partial class Investigations
             subscribedEntityId = GlobalEntityId;
         }
     }
+
+    private void NavigateToIndex() => Dispatch(new NavigateAction("/"));
 }
