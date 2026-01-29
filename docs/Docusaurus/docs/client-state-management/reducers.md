@@ -15,9 +15,11 @@ Action reducers are pure functions that take the current state and an action, an
 A reducer answers the question: *"Given this state and this action, what is the new state?"*
 
 ```csharp
-// (state, action) => newState
-public static CounterState Increment(CounterState state, IncrementAction action)
-    => state with { Count = state.Count + 1 };
+public static EntitySelectionState SetEntityId(EntitySelectionState state, SetEntityIdAction action)
+    => state with
+    {
+        EntityId = string.IsNullOrEmpty(action.EntityId) ? null : action.EntityId,
+    };
 ```
 
 Reducers must be **pure functions**:
@@ -31,7 +33,7 @@ Reducers must be **pure functions**:
 
 Reservoir provides two ways to register reducers, depending on your preference.
 
-### Option 1: Delegate Reducers (Recommended for Simple Cases)
+### Option 1: Delegate Reducers
 
 Register a static method or lambda directly with `AddReducer`:
 
@@ -39,33 +41,30 @@ Register a static method or lambda directly with `AddReducer`:
 // Using a static method from a reducer class
 services.AddReducer<SetEntityIdAction, EntitySelectionState>(EntitySelectionReducers.SetEntityId);
 
-// Using an inline lambda
-services.AddReducer<IncrementAction, CounterState>(
-    (state, action) => state with { Count = state.Count + 1 });
 ```
 
 This approach uses [`DelegateActionReducer<TAction, TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/DelegateActionReducer.cs) internally.
 
-**When to use**: Simple reducers that don't need injected dependencies.
+This option registers a delegate-based reducer for the action/state pair.
+([AddReducer overloads](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L86-L130))
 
 ### Option 2: Class-Based Reducers
 
 Create a class that inherits from [`ActionReducerBase<TAction, TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/ActionReducerBase.cs) and register it with the three-type-parameter overload:
 
 ```csharp
-// The reducer class
-public sealed class SetEntityIdReducer : ActionReducerBase<SetEntityIdAction, EntitySelectionState>
+// Example skeleton (replace MyAction/MyState with your types)
+public sealed class MyReducer : ActionReducerBase<MyAction, MyState>
 {
-    public override EntitySelectionState Reduce(EntitySelectionState state, SetEntityIdAction action)
-        => state with { EntityId = action.EntityId };
+    public override MyState Reduce(MyState state, MyAction action)
+        => state;
 }
 
 // Registration
-services.AddReducer<SetEntityIdAction, EntitySelectionState, SetEntityIdReducer>();
+services.AddReducer<MyAction, MyState, MyReducer>();
 ```
 
-**When to use**: Reducers that need constructor-injected services (though this is rare—reducers should typically be pure).
-
+This option registers the reducer class as a transient service and composes it into the root reducer.
 ([AddReducer overloads](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L86-L130))
 
 ## Organizing Reducers
@@ -85,11 +84,7 @@ internal static class EntitySelectionReducers
             EntityId = string.IsNullOrEmpty(action.EntityId) ? null : action.EntityId,
         };
     
-    public static EntitySelectionState ClearSelection(
-        EntitySelectionState state,
-        ClearSelectionAction action
-    ) =>
-        state with { EntityId = null };
+    // Add more reducer methods as needed for this feature.
 }
 ```
 
@@ -97,7 +92,6 @@ Then register each reducer separately:
 
 ```csharp
 services.AddReducer<SetEntityIdAction, EntitySelectionState>(EntitySelectionReducers.SetEntityId);
-services.AddReducer<ClearSelectionAction, EntitySelectionState>(EntitySelectionReducers.ClearSelection);
 ```
 
 ([Spring sample: EntitySelectionReducers](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/EntitySelection/EntitySelectionReducers.cs))
@@ -128,39 +122,30 @@ Multiple reducers can handle the same action type. They run in sequence, each re
 
 ## Use the `with` Pattern
 
-Reducers must return a **new state instance** when state changes. Use the C# `with` expression for immutable records:
+Reducers should return a **new state instance** when state changes. Feature states should be immutable records to ensure proper change detection, so use the C# `with` expression for updates.
+([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs))
 
 ```csharp
 // ✅ Correct: use `with` to create new state
 public static EntitySelectionState SetEntityId(EntitySelectionState state, SetEntityIdAction action)
-    => state with { EntityId = action.EntityId };
+    => state with
+    {
+        EntityId = string.IsNullOrEmpty(action.EntityId) ? null : action.EntityId,
+    };
 
-public static EntitySelectionState ClearSelection(EntitySelectionState state, ClearSelectionAction action)
-    => state with { EntityId = null };
+// Use `with` to update only the properties that changed
 ```
 
-The `with` expression copies all properties from the original record and applies only the specified changes. This ensures:
-
-- The original state remains unchanged (immutability)
-- Change detection works correctly (reference comparison)
-- State history can be preserved if needed
+The `with` expression copies all properties from the original record and applies only the specified changes. This ensures the original state remains unchanged and supports the change detection noted in the feature state guidance.
 
 :::tip
 Always use `state with { ... }` in reducers. Never mutate properties directly on the incoming state object.
 :::
 
-```csharp
-// ❌ Wrong: mutates existing state
-public static CounterState IncrementBad(CounterState state, IncrementAction action)
-{
-    state.Count++; // Don't do this!
-    return state;
-}
-```
-
 If the reducer doesn't need to change state, return the original state instance unchanged:
 
 ```csharp
+// Example skeleton (replace MyState/SomeAction with your types)
 public static MyState MaybeUpdate(MyState state, SomeAction action)
 {
     if (!action.ShouldApply)
@@ -186,8 +171,8 @@ You don't need to call `AddFeatureState` or `AddRootReducer` separately when usi
 | Concept | Description |
 |---------|-------------|
 | **Reducer** | Pure function: `(state, action) => newState` |
-| **Delegate registration** | `AddReducer<TAction, TState>(func)` for simple cases |
-| **Class registration** | `AddReducer<TAction, TState, TReducer>()` when you need DI |
+| **Delegate registration** | `AddReducer<TAction, TState>(func)` |
+| **Class registration** | `AddReducer<TAction, TState, TReducer>()` |
 | **Base class** | `ActionReducerBase<TAction, TState>` handles type checking |
 | **Immutability** | Always return new state instances with `with` expressions |
 

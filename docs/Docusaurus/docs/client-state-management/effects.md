@@ -22,11 +22,12 @@ Effects are feature-scoped: each effect is registered for a specific feature sta
 
 Use effects when you need to:
 
-- **Call external APIs** — HTTP requests, WebSocket messages, SignalR invocations
+- **Call external APIs** — HTTP requests or other outbound calls
 - **Perform navigation** — Redirect after a successful action
-- **Log analytics** — Send telemetry or tracking events
 - **Set timers** — Schedule delayed actions
-- **Access browser APIs** — Local storage, clipboard, notifications
+- **Perform logging or analytics** — Emit telemetry without dispatching follow-up actions
+([IActionEffect remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionEffect%7BTState%7D.cs),
+[SimpleActionEffectBase remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/SimpleActionEffectBase.cs))
 
 ## Effect Execution Flow
 
@@ -91,28 +92,17 @@ Both base classes:
 Use [`ActionEffectBase`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/ActionEffectBase.cs) when your effect needs to yield additional actions:
 
 ```csharp
-// Skeleton: effect that yields actions
-public sealed class LoadDataEffect : ActionEffectBase<LoadDataAction, MyFeatureState>
+// From Reservoir.L0Tests
+private sealed class TestEffect : ActionEffectBase<TestAction, TestState>
 {
     public override async IAsyncEnumerable<IAction> HandleAsync(
-        LoadDataAction action,
-        MyFeatureState currentState,
+        TestAction action,
+        TestState currentState,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
-        // Yield a "loading" action
-        yield return new LoadDataStartedAction();
-        
-        try
-        {
-            // Perform async work
-            var data = await FetchDataAsync(action.Id, cancellationToken);
-            yield return new LoadDataSucceededAction(data);
-        }
-        catch (Exception ex)
-        {
-            yield return new LoadDataFailedAction(ex.Message);
-        }
+        await Task.Yield();
+        yield return new OtherAction();
     }
 }
 ```
@@ -129,17 +119,21 @@ The base class handles:
 Use [`SimpleActionEffectBase`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/SimpleActionEffectBase.cs) when your effect performs side effects but does not need to dispatch additional actions:
 
 ```csharp
-// Skeleton: effect that performs work without yielding actions
-public sealed class LogAnalyticsEffect : SimpleActionEffectBase<UserClickedAction, MyFeatureState>
+// From Reservoir.L0Tests
+private sealed class TestSimpleEffect : SimpleActionEffectBase<TestAction, TestState>
 {
+    public TestAction? HandledAction { get; private set; }
+
+    public bool WasHandled { get; private set; }
+
     public override Task HandleAsync(
-        UserClickedAction action,
-        MyFeatureState currentState,
+        TestAction action,
+        TestState currentState,
         CancellationToken cancellationToken
     )
     {
-        // Perform fire-and-forget work (logging, analytics, etc.)
-        Console.WriteLine($"User clicked: {action.ElementId}");
+        WasHandled = true;
+        HandledAction = action;
         return Task.CompletedTask;
     }
 }
@@ -179,7 +173,7 @@ Effects are registered as transient services. Keep them stateless—any state sh
 
 When an action is dispatched, the store triggers effects after reducers and listener notifications:
 
-1. **Action type indexing** — `RootActionEffect` pre-indexes effects by action type at construction for O(1) lookup
+1. **Action type indexing** — `RootActionEffect` pre-indexes effects by action type at construction for fast lookup
 2. **Matching** — Effects registered for the exact action type are invoked first
 3. **Fallback** — Effects whose action type could not be determined at construction use `CanHandle` filtering
 4. **All effects run** — Unlike reducers (first-match-wins), all matching effects are invoked
@@ -191,33 +185,14 @@ When an action is dispatched, the store triggers effects after reducers and list
 
 Effects are responsible for their own error handling. The store catches exceptions to prevent effect failures from breaking dispatch:
 
-- Non-critical exceptions are swallowed per-effect
-- Critical exceptions (`OutOfMemoryException`, `StackOverflowException`, `ThreadInterruptedException`) propagate
+- Non-critical exceptions during enumeration stop that effect and are swallowed
+- The store swallows exceptions while invoking effects to keep dispatch stable
 - Effects should emit error actions rather than throwing
 
 ([Store error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L276-L328),
 [RootActionEffect error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/RootActionEffect.cs#L140-L168))
 
-```csharp
-// Pattern: emit error actions instead of throwing
-public override async IAsyncEnumerable<IAction> HandleAsync(
-    LoadDataAction action,
-    MyFeatureState currentState,
-    [EnumeratorCancellation] CancellationToken cancellationToken
-)
-{
-    try
-    {
-        var data = await FetchDataAsync(action.Id, cancellationToken);
-        yield return new LoadDataSucceededAction(data);
-    }
-    catch (HttpRequestException ex)
-    {
-        // Emit an error action instead of letting the exception propagate
-        yield return new LoadDataFailedAction(ex.Message);
-    }
-}
-```
+
 
 ## Cancellation
 
@@ -227,11 +202,11 @@ Client-side action effects are non-cancellable once started. The store passes `C
 
 ([Store.TriggerEffectsAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L305-L309))
 
-If your effect needs cancellation (e.g., for long-running operations), manage it internally using your own `CancellationTokenSource`.
+
 
 ## Testing Effects
 
-Effects are straightforward to test since they implement a simple interface:
+Reservoir.L0Tests show how effects behave when they handle matching and non-matching actions:
 
 ```csharp
 // From Reservoir.L0Tests
@@ -300,7 +275,9 @@ public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoActions()
 | **Transient lifetime** | Effects are stateless; state flows through actions |
 | **Error handling** | Effects should emit error actions rather than throwing |
 
+([Store error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L276-L328))
+
 ## Next Steps
 
-- **Feature State** — Learn how to define feature state that effects operate on *(coming soon)*
+- [Feature State](./feature-state.md) — Learn how to define feature state that effects operate on
 - **Store** — Understand the central hub that coordinates effects, reducers, and state *(coming soon)*

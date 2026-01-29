@@ -13,12 +13,14 @@ Middleware forms a pipeline between `Dispatch` and reducers. Each middleware can
 
 ## What Is Middleware?
 
-Middleware intercepts actions before they reach reducers. Unlike effects (which run after reducers), middleware runs synchronously during dispatch and can:
+Middleware intercepts actions before they reach reducers. Unlike effects (which run after reducers), middleware runs during dispatch and can:
 
 - **Log actions** — Record every action for debugging or analytics
 - **Transform actions** — Modify or replace actions before reducers see them
 - **Block actions** — Prevent actions from reaching reducers and effects
-- **Perform side operations** — Trigger external work synchronously during dispatch
+- **Perform side operations** — Execute operations like logging, analytics, or persistence
+([IMiddleware remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IMiddleware.cs#L11-L19),
+[Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L213-L231))
 
 ## The IMiddleware Interface
 
@@ -127,84 +129,35 @@ private sealed class OrderedMiddleware : IMiddleware
 Register middleware using `AddMiddleware<TMiddleware>()`:
 
 ```csharp
-services.AddReservoir();
-services.AddMiddleware<LoggingMiddleware>();
-services.AddMiddleware<AnalyticsMiddleware>();
+public static IServiceCollection AddMiddleware<TMiddleware>(
+    this IServiceCollection services
+)
+    where TMiddleware : class, IMiddleware;
 ```
 
 ([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L73-L81))
 
 Middleware is registered as transient and resolved when the store is created.
+([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L73-L81),
+[Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L50-L90))
 
 ### Runtime Registration
 
 You can also register middleware directly on the store after construction:
 
 ```csharp
-store.RegisterMiddleware(new TestMiddleware(() => Console.WriteLine("Action!")));
+public void RegisterMiddleware(
+    IMiddleware middleware
+);
 ```
 
 ([Store.RegisterMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L131-L139))
 
 :::note Registration Timing
 Middleware registered after dispatch has started will be included in subsequent dispatches. Each `Dispatch` call rebuilds the pipeline.
+([Store.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L95-L110),
+[Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L197-L210))
 :::
-
-## Common Patterns
-
-### Logging Middleware
-
-```csharp
-// Skeleton: log every action
-public sealed class LoggingMiddleware : IMiddleware
-{
-    public void Invoke(IAction action, Action<IAction> nextAction)
-    {
-        Console.WriteLine($"Dispatching: {action.GetType().Name}");
-        nextAction(action);
-        Console.WriteLine($"Dispatched: {action.GetType().Name}");
-    }
-}
-```
-
-### Blocking Middleware
-
-```csharp
-// Skeleton: block specific actions
-public sealed class BlockingMiddleware : IMiddleware
-{
-    public void Invoke(IAction action, Action<IAction> nextAction)
-    {
-        if (action is ForbiddenAction)
-        {
-            // Do not call nextAction — action is blocked
-            return;
-        }
-        
-        nextAction(action);
-    }
-}
-```
-
-### Transforming Middleware
-
-```csharp
-// Skeleton: replace or wrap actions
-public sealed class TransformMiddleware : IMiddleware
-{
-    public void Invoke(IAction action, Action<IAction> nextAction)
-    {
-        if (action is LegacyAction legacy)
-        {
-            // Transform to new action type
-            nextAction(new ModernAction(legacy.Value));
-            return;
-        }
-        
-        nextAction(action);
-    }
-}
-```
 
 ## Testing Middleware
 
@@ -258,10 +211,13 @@ public void RegisterMiddlewareAddsToDispatchPipeline()
 | **Pipeline order** | Executes in registration order |
 | **Invoke pattern** | Call `nextAction` to continue; omit to block |
 | **Registration** | `AddMiddleware<T>()` or `store.RegisterMiddleware()` |
-| **Transient lifetime** | Middleware instances are created per store |
-| **Synchronous** | Runs during dispatch, before reducers and effects |
+| **Transient lifetime** | Middleware is registered as transient and resolved when the store is created |
+| **Dispatch order** | Runs before reducers and effects in the dispatch pipeline |
+
+([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L73-L81),
+[Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L213-L231))
 
 ## Next Steps
 
-- **Feature State** — Learn how to define feature state that middleware can inspect *(coming soon)*
+- [Feature State](./feature-state.md) — Learn how to define feature state that middleware can inspect
 - **Store** — Understand the central hub that coordinates middleware, reducers, and effects *(coming soon)*
