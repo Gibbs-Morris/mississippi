@@ -258,8 +258,6 @@ public sealed partial class Index
         }
     }
 
-    private void NavigateToApiDocs() => Dispatch(new NavigateAction("/scalar/v1"));
-
     private void NavigateToInvestigations() => Dispatch(new NavigateAction("/investigations"));
 
     private void OpenAccount() => Dispatch(new OpenAccountAction(SelectedEntityId!, holderName, initialDeposit));
