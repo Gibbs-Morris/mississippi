@@ -24,7 +24,7 @@ namespace Mississippi.Inlet.Client.Generators;
 ///     <list type="bullet">
 ///         <item>Calls all generated <c>Add{Aggregate}AggregateFeature()</c> methods</item>
 ///         <item>Registers Reservoir Blazor built-ins</item>
-///         <item>Configures Inlet client with SignalR and projection scanning</item>
+///         <item>Configures Inlet client with SignalR and explicit projection DTO registrations</item>
 ///     </list>
 ///     <para>
 ///         Example: For <c>[assembly: GenerateInletClientComposite(AppName = "Spring")]</c>,
@@ -39,6 +39,11 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
 
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
+
+    private const string GenerateProjectionEndpointsAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
+
+    private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
     /// <summary>
     ///     Recursively finds commands in a namespace.
@@ -66,6 +71,50 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Recursively finds projections in a namespace.
+    /// </summary>
+    private static void FindProjectionsInNamespace(
+        INamespaceSymbol namespaceSymbol,
+        INamedTypeSymbol generateAttrSymbol,
+        INamedTypeSymbol projectionPathAttrSymbol,
+        List<ProjectionDtoInfo> projections
+    )
+    {
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        {
+            // Check for [GenerateProjectionEndpoints] attribute
+            bool hasGenerateAttribute = typeSymbol.GetAttributes()
+                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
+            if (!hasGenerateAttribute)
+            {
+                continue;
+            }
+
+            // Check for [ProjectionPath] attribute and get path
+            AttributeData? projectionPathAttr = typeSymbol.GetAttributes()
+                .FirstOrDefault(attr =>
+                    SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol));
+            if (projectionPathAttr is null)
+            {
+                continue;
+            }
+
+            // Get the path from constructor argument
+            string? projectionPath = projectionPathAttr.ConstructorArguments.FirstOrDefault().Value?.ToString();
+            if (!string.IsNullOrEmpty(projectionPath))
+            {
+                projections.Add(
+                    new(typeSymbol.ContainingNamespace.ToDisplayString(), typeSymbol.Name, projectionPath!));
+            }
+        }
+
+        foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
+        {
+            FindProjectionsInNamespace(childNs, generateAttrSymbol, projectionPathAttrSymbol, projections);
+        }
+    }
+
+    /// <summary>
     ///     Generates the composite registration class.
     /// </summary>
     private static void GenerateCompositeRegistration(
@@ -86,6 +135,18 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
         foreach (string featureNamespace in info.AggregateFeatureNamespaces.OrderBy(n => n))
         {
             sb.AppendLine($"using {featureNamespace};");
+        }
+
+        // Add using directives for each projection DTO namespace
+        HashSet<string> dtoNamespaces = new(StringComparer.Ordinal);
+        foreach (ProjectionDtoInfo dto in info.ProjectionDtos)
+        {
+            dtoNamespaces.Add(dto.ClientDtoNamespace);
+        }
+
+        foreach (string dtoNamespace in dtoNamespaces.OrderBy(n => n))
+        {
+            sb.AppendLine($"using {dtoNamespace};");
         }
 
         sb.AppendFileScopedNamespace(info.TargetNamespace);
@@ -136,11 +197,34 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
         // Inlet client + SignalR
         sb.AppendLine("// Inlet client with SignalR for real-time projection updates");
         sb.AppendLine("services.AddInletClient();");
-        sb.AppendLine("services.AddInletBlazorSignalR(signalR => signalR");
-        sb.IncreaseIndent();
-        sb.AppendLine($".WithHubPath(\"{info.HubPath}\")");
-        sb.AppendLine($".ScanProjectionDtos(typeof({registrationClassName}).Assembly));");
-        sb.DecreaseIndent();
+
+        // Emit explicit projection DTO registrations instead of runtime scanning
+        if (info.ProjectionDtos.Count > 0)
+        {
+            sb.AppendLine("services.AddInletBlazorSignalR(signalR => signalR");
+            sb.IncreaseIndent();
+            sb.AppendLine($".WithHubPath(\"{info.HubPath}\")");
+            sb.AppendLine(".RegisterProjectionDtos(registry =>");
+            sb.AppendLine("{");
+            sb.IncreaseIndent();
+            foreach (ProjectionDtoInfo dto in info.ProjectionDtos.OrderBy(d => d.Path))
+            {
+                sb.AppendLine($"registry.Register(\"{dto.Path}\", typeof({dto.ClientDtoTypeName}));");
+            }
+
+            sb.DecreaseIndent();
+            sb.AppendLine("}));");
+            sb.DecreaseIndent();
+        }
+        else
+        {
+            // No projections discovered - just configure hub path
+            sb.AppendLine("services.AddInletBlazorSignalR(signalR => signalR");
+            sb.IncreaseIndent();
+            sb.AppendLine($".WithHubPath(\"{info.HubPath}\"));");
+            sb.DecreaseIndent();
+        }
+
         sb.AppendLine();
         sb.AppendLine("return services;");
         sb.CloseBrace();
@@ -206,6 +290,44 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
         }
 
         return namespaces;
+    }
+
+    /// <summary>
+    ///     Discovers projection DTOs from the compilation.
+    /// </summary>
+    private static List<ProjectionDtoInfo> GetProjectionDtosFromCompilation(
+        Compilation compilation,
+        string targetRootNamespace
+    )
+    {
+        List<ProjectionDtoInfo> projections = [];
+        INamedTypeSymbol? generateAttrSymbol =
+            compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+        INamedTypeSymbol? pathAttrSymbol = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
+        if (generateAttrSymbol is null || pathAttrSymbol is null)
+        {
+            return projections;
+        }
+
+        List<ProjectionDtoInfo> rawProjections = [];
+        foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
+        {
+            FindProjectionsInNamespace(
+                referencedAssembly.GlobalNamespace,
+                generateAttrSymbol,
+                pathAttrSymbol,
+                rawProjections);
+        }
+
+        // Convert to client DTO info with computed namespaces and type names
+        foreach (ProjectionDtoInfo raw in rawProjections)
+        {
+            string clientNamespace = NamingConventions.GetClientNamespace(raw.SourceNamespace, targetRootNamespace);
+            string dtoTypeName = NamingConventions.GetDtoName(raw.SourceTypeName);
+            projections.Add(new(raw.SourceNamespace, raw.SourceTypeName, raw.Path, clientNamespace, dtoTypeName));
+        }
+
+        return projections;
     }
 
     /// <summary>
@@ -292,7 +414,10 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
         List<string> commandNamespaces = GetCommandNamespacesFromCompilation(compilation);
         HashSet<string> aggregateNames = GetAggregateNamesFromCommands(commandNamespaces);
         HashSet<string> featureNamespaces = GetFeatureNamespaces(aggregateNames, targetNamespace);
-        return new(appName!, hubPath, targetNamespace, aggregateNames, featureNamespaces);
+
+        // Discover projections
+        List<ProjectionDtoInfo> projectionDtos = GetProjectionDtosFromCompilation(compilation, targetNamespace);
+        return new(appName!, hubPath, targetNamespace, aggregateNames, featureNamespaces, projectionDtos);
     }
 
     /// <summary>
@@ -333,7 +458,8 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
             string hubPath,
             string targetNamespace,
             HashSet<string> aggregateNames,
-            HashSet<string> aggregateFeatureNamespaces
+            HashSet<string> aggregateFeatureNamespaces,
+            List<ProjectionDtoInfo> projectionDtos
         )
         {
             AppName = appName;
@@ -341,6 +467,7 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
             TargetNamespace = targetNamespace;
             AggregateNames = aggregateNames;
             AggregateFeatureNamespaces = aggregateFeatureNamespaces;
+            ProjectionDtos = projectionDtos;
         }
 
         public HashSet<string> AggregateFeatureNamespaces { get; }
@@ -351,6 +478,52 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
 
         public string HubPath { get; }
 
+        public List<ProjectionDtoInfo> ProjectionDtos { get; }
+
         public string TargetNamespace { get; }
+    }
+
+    /// <summary>
+    ///     Information about a projection DTO to register.
+    /// </summary>
+    private sealed class ProjectionDtoInfo
+    {
+        public ProjectionDtoInfo(
+            string sourceNamespace,
+            string sourceTypeName,
+            string path
+        )
+        {
+            SourceNamespace = sourceNamespace;
+            SourceTypeName = sourceTypeName;
+            Path = path;
+            ClientDtoNamespace = string.Empty;
+            ClientDtoTypeName = string.Empty;
+        }
+
+        public ProjectionDtoInfo(
+            string sourceNamespace,
+            string sourceTypeName,
+            string path,
+            string clientDtoNamespace,
+            string clientDtoTypeName
+        )
+        {
+            SourceNamespace = sourceNamespace;
+            SourceTypeName = sourceTypeName;
+            Path = path;
+            ClientDtoNamespace = clientDtoNamespace;
+            ClientDtoTypeName = clientDtoTypeName;
+        }
+
+        public string ClientDtoNamespace { get; }
+
+        public string ClientDtoTypeName { get; }
+
+        public string Path { get; }
+
+        public string SourceNamespace { get; }
+
+        public string SourceTypeName { get; }
     }
 }
