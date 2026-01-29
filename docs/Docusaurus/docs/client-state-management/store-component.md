@@ -217,7 +217,7 @@ private sealed class TestStoreComponent : StoreComponent
 ## Next Steps
 
 - [Reservoir Overview](./reservoir.md) — Learn where StoreComponent fits in the system
-- [Store](store.md) — The central state container that StoreComponent wraps
-- [Actions](actions.md) — The action types dispatched via `Dispatch()`
-- [Feature State](feature-state.md) — The state slices retrieved via `GetState<TState>()`
-- [Reducers](reducers.md) — How dispatched actions transform state
+- [Store](./store.md) — The central state container that StoreComponent wraps
+- [Actions](./actions.md) — The action types dispatched via `Dispatch()`
+- [Feature State](./feature-state.md) — The state slices retrieved via `GetState<TState>()`
+- [Reducers](./reducers.md) — How dispatched actions transform state
