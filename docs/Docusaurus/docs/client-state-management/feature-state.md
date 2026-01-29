@@ -311,6 +311,6 @@ internal sealed record EntitySelectionState : IFeatureState
 
 ## Next Steps
 
-- **Store** — Understand the central hub that coordinates feature states, reducers, and effects *(coming soon)*
+- [Store](./store.md) — Understand the central hub that coordinates feature states, reducers, and effects
 - [Reducers](./reducers.md) — Learn how reducers update feature state
 - [Effects](./effects.md) — Learn how effects perform async operations

@@ -280,4 +280,4 @@ public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoActions()
 ## Next Steps
 
 - [Feature State](./feature-state.md) — Learn how to define feature state that effects operate on
-- **Store** — Understand the central hub that coordinates effects, reducers, and state *(coming soon)*
+- [Store](./store.md) — Understand the central hub that coordinates effects, reducers, and state

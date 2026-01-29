@@ -178,7 +178,6 @@ You don't need to call `AddFeatureState` or `AddRootReducer` separately when usi
 
 ## Next Steps
 
-Detailed documentation for related components is coming soon:
-
-- **Action Effects** — Handle async operations triggered by actions
-- **Feature State** — Organize state into feature slices
+- [Effects](./effects.md) — Handle async operations triggered by actions
+- [Feature State](./feature-state.md) — Organize state into feature slices
+- [Store](./store.md) — Understand the central hub that coordinates reducers, effects, and state

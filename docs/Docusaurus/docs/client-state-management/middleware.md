@@ -220,4 +220,4 @@ public void RegisterMiddlewareAddsToDispatchPipeline()
 ## Next Steps
 
 - [Feature State](./feature-state.md) — Learn how to define feature state that middleware can inspect
-- **Store** — Understand the central hub that coordinates middleware, reducers, and effects *(coming soon)*
+- [Store](./store.md) — Understand the central hub that coordinates middleware, reducers, and effects
