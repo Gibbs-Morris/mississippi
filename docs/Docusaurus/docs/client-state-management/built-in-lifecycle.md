@@ -47,7 +47,8 @@ public partial class MainLayout : StoreComponent
     
     protected override async Task OnInitializedAsync()
     {
-        await LoadInitialDataAsync();
+        // Replace with your initialization tasks (load preferences, establish connections, etc.)
+        await Task.CompletedTask;
         Dispatch(new AppReadyAction(TimeProvider.GetUtcNow()));
     }
 }
@@ -126,8 +127,8 @@ Dispatched when the application has completed initialization.
 
 ```csharp
 // After all initialization tasks complete
-await LoadUserPreferencesAsync();
-await EstablishSignalRConnectionAsync();
+// Replace with your initialization tasks (load preferences, establish connections, etc.)
+await Task.CompletedTask;
 Dispatch(new AppReadyAction(TimeProvider.GetUtcNow()));
 ```
 

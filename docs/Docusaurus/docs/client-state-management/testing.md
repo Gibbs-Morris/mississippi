@@ -30,7 +30,7 @@ public void IncrementAction_IncreasesCounter()
 {
     // Arrange - Create harness with reducers
     var harness = StoreTestHarnessFactory.ForFeature<CounterState>()
-        .WithReducer<IncrementAction>(CounterReducers.Increment);
+        .WithReducer<IncrementAction>((state, _) => state with { Count = state.Count + 1 });
     
     // Act & Assert - Given/When/Then
     harness.CreateScenario()
