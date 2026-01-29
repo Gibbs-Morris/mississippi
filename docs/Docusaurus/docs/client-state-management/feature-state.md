@@ -27,7 +27,7 @@ public interface IFeatureState
 ```
 
 The `FeatureKey` must be unique across all registered feature states.
-([IFeatureState remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs#L11-L14))
+([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs))
 
 ## When to Use Feature State
 
@@ -66,7 +66,7 @@ private sealed record TestFeatureState : IFeatureState
 }
 ```
 
-([StoreTests.TestFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L144-L154))
+([StoreTests.TestFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L144-L153))
 
 :::tip Use Immutable Records
 Feature states should be immutable records. Use the `with` expression to create new instances with updated values. This ensures proper change detection and prevents accidental mutation.
@@ -98,7 +98,7 @@ public static IServiceCollection AddFeatureState<TState>(
 
 :::note Automatic Deduplication
 `AddFeatureState` uses `TryAddEnumerable` to prevent duplicate registrations. You can call it multiple times for the same state type without side effects.
-([ReservoirRegistrations source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L59-L63))
+([ReservoirRegistrations source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L58-L63))
 :::
 
 ## Accessing Feature State
@@ -120,7 +120,7 @@ protected override void OnStateChanged()
 }
 ```
 
-([IStore.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L38-L44),
+([IStore.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L35-L44),
 [Store.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L112-L125))
 
 If the feature state is not registered, `GetState` throws:
@@ -242,7 +242,7 @@ Each registration provides:
 
 ([IFeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureStateRegistration.cs),
 [FeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/State/FeatureStateRegistration.cs),
-[Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L50-L90))
+[Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L58-L86))
 
 ## Best Practices
 
