@@ -4,6 +4,10 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened, edited]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # Label based on changed files (runs on open/sync/reopen)
   label-by-files:
@@ -24,7 +28,6 @@ jobs:
   label-by-semver:
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write
       issues: write
     steps:
       - name: Parse title and apply semver labels
