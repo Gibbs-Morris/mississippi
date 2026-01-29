@@ -8,40 +8,26 @@ description: Actions are the foundation of Reservoir state management—immutabl
 
 # Actions
 
-Actions are the foundation of Reservoir's state management. Every state change in your application starts with an action.
+Actions are the messages Reservoir processes to update state or run effects. They are the entry point for work handled by the store and its reducers/effects pipeline.
+([IAction](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/IAction.cs),
+[IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs))
 
 ## What Is an Action?
 
-An action is a simple, immutable message that describes:
-
-- **What happened** — a user clicked a button, a timer fired, a WebSocket message arrived
-- **What you intend to do** — submit a form, fetch data, navigate to a page
-
-Actions carry just enough data for reducers and effects to do their work. They don't contain logic—they're pure data.
+An action is a simple, immutable message that represents an event that can trigger state changes or effects. Actions carry only the minimal data needed for reducers and effects to do their work.
+([IAction](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/IAction.cs))
 
 ```csharp
-// A simple action with no payload
-public sealed record RefreshDataAction : IAction;
-
-// An action with data
-public sealed record SelectItemAction(string ItemId) : IAction;
-
-// An action with multiple parameters
-public sealed record SubmitOrderAction(string CustomerId, decimal Total, IReadOnlyList<string> ItemIds) : IAction;
+// Example from Spring sample: a simple action with a payload
+internal sealed record SetEntityIdAction(string EntityId) : IAction;
 ```
 
-Actions implement the [`IAction`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/IAction.cs) marker interface. That's it—no methods to implement, no base class required.
+Actions implement the [`IAction`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/IAction.cs) marker interface. The interface describes actions as immutable records that carry minimal data for reducers and effects.
 
 ## Why Actions?
 
-Actions provide a **single point of entry** for all state changes. This has several benefits:
-
-| Benefit | Description |
-|---------|-------------|
-| **Traceability** | Every state change can be logged, debugged, or replayed |
-| **Testability** | Actions are trivial to construct in unit tests |
-| **Decoupling** | Components don't need to know *how* state changes—just *what* they want |
-| **Predictability** | State changes are explicit, not hidden in component code |
+Reservoir uses actions to drive state changes and side effects through the store pipeline. This makes it explicit when state can change and keeps reducers/effects focused on the data they receive.
+([IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs))
 
 ## Dispatching Actions
 
@@ -56,12 +42,12 @@ public class MyComponent : StoreComponent
 {
     private void HandleButtonClick()
     {
-        Dispatch(new RefreshDataAction());
+        Dispatch(new SetEntityIdAction("entity-123"));
     }
     
     private void HandleItemSelected(string itemId)
     {
-        Dispatch(new SelectItemAction(itemId));
+        Dispatch(new SetEntityIdAction(itemId));
     }
 }
 ```
@@ -71,18 +57,18 @@ public class MyComponent : StoreComponent
 Inject `IStore` and call `Dispatch`:
 
 ```csharp
-public class NavigationService
+public class SelectionService
 {
     private IStore Store { get; }
     
-    public NavigationService(IStore store)
+    public SelectionService(IStore store)
     {
         Store = store;
     }
     
-    public void NavigateTo(string route)
+    public void Select(string entityId)
     {
-        Store.Dispatch(new NavigateAction(route));
+        Store.Dispatch(new SetEntityIdAction(entityId));
     }
 }
 ```
@@ -106,154 +92,44 @@ flowchart LR
     style E fill:#ff6b6b,color:#fff
 ```
 
-1. **Middleware** — Cross-cutting concerns (logging, analytics) see the action first
+1. **Middleware** — The action flows through any registered middleware
 2. **Reducers** — Synchronous state updates happen here
-3. **Listeners** — UI components are notified to re-render
-4. **Effects** — Asynchronous work (API calls, navigation) runs last
+3. **Listeners** — Subscribers are notified after the action is processed
+4. **Effects** — Asynchronous work runs last and can yield more actions
 
-Multiple feature states can have reducers that respond to the same action. When you dispatch `RefreshDataAction`, both `UserState` and `ProductState` could update if they have matching reducers.
+Multiple feature states can have reducers that respond to the same action because the store runs each feature's root reducer when an action is dispatched.
+([Store.ReduceFeatureStates](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L236-L271))
 
-## Actions as the Default
+## Actions and Effects
 
-In a well-structured Reservoir application, **everything goes through actions**:
-
-| User Intent | Action Pattern |
-|-------------|----------------|
-| Click a button | Dispatch an action |
-| Submit a form | Dispatch an action with form data |
-| Call an API | Dispatch an action → Effect makes HTTP call → Effect dispatches result action |
-| Handle WebSocket message | Dispatch an action with the message payload |
-| Navigate | Dispatch a navigation action |
-
-This means HTTP requests don't happen directly in components. Instead:
+Reservoir routes synchronous state changes through reducers and async side effects through action effects. Dispatch an action, and reducers update state immediately while effects handle async work and can dispatch additional actions.
+([IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs),
+[IActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionEffect%7BTState%7D.cs))
 
 ```mermaid
 flowchart LR
-    U[User Submits Form] --> A[SubmitOrderAction]
-    A --> E[Effect: HTTP POST]
-    E -->|Success| S[OrderSubmittedAction]
-    E -->|Failure| F[OrderFailedAction]
-    S --> R[Reducer Updates State]
-    F --> R
+    A[Action] --> E[Effect]
+    E -->|Yields| A2[Action]
+    A2 --> R[Reducer Updates State]
     
     style A fill:#4a9eff,color:#fff
     style E fill:#ff6b6b,color:#fff
-    style S fill:#50c878,color:#fff
-    style F fill:#f39c12,color:#fff
+    style A2 fill:#4a9eff,color:#fff
 ```
 
 This pattern keeps your components simple—they dispatch actions and render state. All the complex orchestration lives in effects.
 
-## Form Submission Example
-
-Here's a practical example of capturing form data and dispatching an action:
-
-```csharp
-// The action carries the form data
-public sealed record DepositFundsAction(string AccountId, decimal Amount) : IAction;
-
-// The Blazor component
-@inherits StoreComponent
-
-<EditForm Model="@formModel" OnValidSubmit="@HandleSubmit">
-    <DataAnnotationsValidator />
-    
-    <div>
-        <label>Amount:</label>
-        <InputNumber @bind-Value="formModel.Amount" />
-        <ValidationMessage For="@(() => formModel.Amount)" />
-    </div>
-    
-    <button type="submit" disabled="@IsSubmitting">
-        @(IsSubmitting ? "Submitting..." : "Deposit")
-    </button>
-</EditForm>
-
-@code {
-    private DepositFormModel formModel = new();
-    
-    // Read submitting state from the store (covered in Feature State docs)
-    private bool IsSubmitting => GetState<BankAccountState>().IsSubmitting;
-    
-    private void HandleSubmit()
-    {
-        // Dispatch the action with form data
-        Dispatch(new DepositFundsAction(AccountId, formModel.Amount));
-    }
-    
-    private class DepositFormModel
-    {
-        [Range(0.01, 1_000_000, ErrorMessage = "Amount must be positive")]
-        public decimal Amount { get; set; }
-    }
-}
-```
-
-The component doesn't make HTTP calls or manage loading states directly. It:
-
-1. Captures user input
-2. Validates the form
-3. Dispatches an action with the data
-4. Reads state from the store to show loading/success/error UI
-
-## Naming Conventions
-
-Good action names describe **what happened** or **what you want**, not implementation details:
-
-| ✅ Good | ❌ Avoid |
-|---------|----------|
-| `DepositFundsAction` | `CallDepositApiAction` |
-| `UserLoggedInAction` | `SetUserStateAction` |
-| `OrderSubmittedAction` | `UpdateOrderListAction` |
-| `SearchQueryChangedAction` | `TriggerSearchEffectAction` |
-
-### Action Families
-
-For operations with lifecycle states, use a consistent naming pattern:
-
-```csharp
-// The initiating action (user intent)
-public sealed record DepositFundsAction(string AccountId, decimal Amount) : IAction;
-
-// The "in progress" action (dispatched by effect)
-public sealed record DepositFundsExecutingAction(string CommandId, DateTimeOffset Timestamp) : IAction;
-
-// The success action (dispatched by effect)
-public sealed record DepositFundsSucceededAction(string CommandId, DateTimeOffset Timestamp) : IAction;
-
-// The failure action (dispatched by effect)
-public sealed record DepositFundsFailedAction(
-    string CommandId,
-    string? ErrorCode,
-    string? ErrorMessage,
-    DateTimeOffset Timestamp
-) : IAction;
-```
-
-This pattern lets reducers update state at each stage (show spinner, hide spinner and show result).
-
 ## Keep Actions Lean
 
-Actions should carry **only the data needed** for reducers and effects:
-
-```csharp
-// ✅ Good: carries just what's needed
-public sealed record SelectItemAction(string ItemId) : IAction;
-
-// ❌ Avoid: carrying entire domain objects
-public sealed record SelectItemAction(Item FullItemObject) : IAction;
-```
-
-If reducers or effects need more data, they can look it up from state or fetch it. Actions should be lightweight and serializable.
+Actions should carry only the data needed for reducers and effects. The `IAction` documentation emphasizes minimal payloads to keep actions focused on intent.
+([IAction](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/IAction.cs))
 
 ## Summary
 
 - Actions are immutable records implementing `IAction`
-- Dispatch actions to `IStore` to trigger state changes
+- Dispatch actions to `IStore` to trigger state changes and effects
 - Actions flow through middleware → reducers → listeners → effects
 - Multiple feature states can respond to the same action
-- Use actions for *everything*—including API calls (via effects)
-- Name actions after what happened, not how it's implemented
 
 ## Next Steps
 
