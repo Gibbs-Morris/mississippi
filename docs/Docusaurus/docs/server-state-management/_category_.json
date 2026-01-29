@@ -1,0 +1,10 @@
+{
+  "label": "Server State Management",
+  "position": 4,
+  "collapsed": false,
+  "collapsible": true,
+  "link": {
+    "type": "doc",
+    "id": "domain-modeling"
+  }
+}
