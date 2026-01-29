@@ -38,4 +38,4 @@ PR reviewers in this repository.
 
 - Testing: `.github/instructions/testing.instructions.md`
 - Logging/DI guardrails: `.github/instructions/logging-rules.instructions.md`, `.github/instructions/shared-policies.instructions.md`
-- Documentation agent: `.github/agents/doc-writer.agent.md`
+- Documentation agent: `.github/agents/CoV-mississippi-docs.agent.md`
