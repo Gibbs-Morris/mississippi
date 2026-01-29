@@ -1,0 +1,10 @@
+{
+  "label": "Client State Management",
+  "position": 3,
+  "collapsed": false,
+  "collapsible": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Reservoir is Mississippi's Redux-inspired client-side state management library for Blazor applications."
+  }
+}
