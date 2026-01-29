@@ -44,6 +44,16 @@ Validation mode (when asked to validate an existing doc)
 - Verify each claim against current repository evidence and/or commands/tests.
 - Update the doc so that every remaining technical statement is accurate and properly supported (including fixing/refreshing GitHub source links).
 
+Pedantic documentation alignment expectations
+
+- Be deliberately nit-picky:
+  - correct stale terminology, names, namespaces, file paths, config keys, and examples
+  - update Mermaid diagrams to match reality
+  - fix broken/incorrect links and ensure GitHub links are absolute and target `main`
+  - ensure pages cross-reference appropriately and do not contradict each other
+  - ensure frontmatter/nav placement aligns with the documentation guide
+- Prefer small, focused doc changes, but completeness and correctness win over minimalism.
+
 Enterprise quality bar (always consider)
 
 - Accuracy, correctness, security, reliability, observability, performance, maintainability, backwards compatibility.
@@ -108,5 +118,6 @@ Final output (always include)
 
 - Implementation summary (what/why)
 - Verification evidence (commands/tests run)
+- Coverage evidence (docs file count/list scanned)
 - Risks + mitigations
 - Follow-ups (if any)
