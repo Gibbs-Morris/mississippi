@@ -133,8 +133,9 @@ Actions should carry only the data needed for reducers and effects. The `IAction
 
 ## Next Steps
 
+- **[Action Reducers](./reducers)** — Learn how reducers transform state based on actions
+
 Detailed documentation for related components is coming soon:
 
-- **Action Reducers** — Learn how reducers transform state based on actions
 - **Action Effects** — Handle async operations triggered by actions
 - **Feature State** — Organize state into feature slices
