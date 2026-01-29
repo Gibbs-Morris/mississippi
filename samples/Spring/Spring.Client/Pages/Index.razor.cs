@@ -3,6 +3,7 @@ using System.Globalization;
 
 using Mississippi.Inlet.Client.SignalRConnection;
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.State;
@@ -256,6 +257,8 @@ public sealed partial class Index
             subscribedEntityId = currentEntityId;
         }
     }
+
+    private void NavigateToInvestigations() => Dispatch(new NavigateAction("/investigations"));
 
     private void OpenAccount() => Dispatch(new OpenAccountAction(SelectedEntityId!, holderName, initialDeposit));
 
