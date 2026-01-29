@@ -20,5 +20,5 @@ MD060: false
 
 # Ignore bundled dependencies
 ignores:
-	- "docs/Docusaurus/node_modules/**"
-	- "**/node_modules/**"
+  - "docs/Docusaurus/node_modules/**"
+  - "**/node_modules/**"
