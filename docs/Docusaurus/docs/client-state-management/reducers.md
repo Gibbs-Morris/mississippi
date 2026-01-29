@@ -126,15 +126,30 @@ Multiple reducers can handle the same action type. They run in sequence, each re
 
 ([RootReducer.Reduce](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/RootReducer.cs#L108-L136))
 
-## Returning New State
+## Use the `with` Pattern
 
-Reducers must return a **new state instance** when state changes. Use `with` expressions for immutable records:
+Reducers must return a **new state instance** when state changes. Use the C# `with` expression for immutable records:
 
 ```csharp
-// ✅ Correct: returns new state instance
-public static CounterState Increment(CounterState state, IncrementAction action)
-    => state with { Count = state.Count + 1 };
+// ✅ Correct: use `with` to create new state
+public static EntitySelectionState SetEntityId(EntitySelectionState state, SetEntityIdAction action)
+    => state with { EntityId = action.EntityId };
 
+public static EntitySelectionState ClearSelection(EntitySelectionState state, ClearSelectionAction action)
+    => state with { EntityId = null };
+```
+
+The `with` expression copies all properties from the original record and applies only the specified changes. This ensures:
+
+- The original state remains unchanged (immutability)
+- Change detection works correctly (reference comparison)
+- State history can be preserved if needed
+
+:::tip
+Always use `state with { ... }` in reducers. Never mutate properties directly on the incoming state object.
+:::
+
+```csharp
 // ❌ Wrong: mutates existing state
 public static CounterState IncrementBad(CounterState state, IncrementAction action)
 {
@@ -143,7 +158,7 @@ public static CounterState IncrementBad(CounterState state, IncrementAction acti
 }
 ```
 
-If the reducer doesn't need to change state (action doesn't apply), return the original state instance:
+If the reducer doesn't need to change state, return the original state instance unchanged:
 
 ```csharp
 public static MyState MaybeUpdate(MyState state, SomeAction action)
