@@ -135,6 +135,16 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - Event effects **MUST** be stateless and registered as transient services; the framework auto-registers them via `AddEventEffect<TEffect, TAggregate>()`. Why: Ensures effects are instantiated per invocation with correct DI scope.
 - Event effects can inject Orleans services (e.g., `IAggregateGrainFactory`, `IGrainContext`) to dispatch commands to other aggregates. Why: Enables cross-aggregate workflows like the Spring sample's `HighValueTransactionEffect`.
 
+### Fire-and-Forget Event Effects
+
+- Fire-and-forget effects **MAY** be used for async side effects that should not block the aggregate grain (e.g., external API calls, notifications, analytics). Why: Enables background processing without impacting command latency.
+- Fire-and-forget effects **MUST** inherit from `FireAndForgetEventEffectBase<TEvent, TAggregate>`. Why: Provides strongly-typed event handling with dedicated worker grain execution.
+- Fire-and-forget effects run in a separate worker grain, not the aggregate grain; they provide Orleans single-threaded guarantees but otherwise are infrastructure. Why: Keeps aggregate grains fast while effects can take longer.
+- Fire-and-forget effects **MUST NOT** yield additional events; if further state changes are needed, the effect **MUST** dispatch commands through the normal aggregate command API. Why: Maintains event stream integrity and aggregate ownership of state transitions.
+- Fire-and-forget effects **SHOULD** be placed in an `Effects` sub-namespace under the aggregate (same as regular event effects). Why: Source generators discover effects by namespace convention.
+- Fire-and-forget effects are registered automatically via `AddFireAndForgetEventEffect<TEffect, TEvent, TAggregate>()` when using source generators. Why: Follows the same discovery pattern as regular event effects.
+- Use fire-and-forget effects when the effect may take significant time (external HTTP calls, third-party integrations) and blocking the aggregate is unacceptable. Why: p99 latency improves when slow side effects are offloaded.
+
 ### Storage Providers
 
 - Cosmos DB **SHOULD** be used as the default storage provider for brooks (events) and snapshots; it lends itself well to event sourcing's append-only writes and Aspire integration. Why: Provides scalable, globally distributed storage with excellent developer experience.
