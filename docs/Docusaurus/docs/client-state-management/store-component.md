@@ -175,7 +175,6 @@ private void Deposit() => Dispatch(new DepositFundsAction(SelectedEntityId!, dep
 
 **Source**: [`Index.razor#L92`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor#L92)
 
-
 ## Extending StoreComponent
 
 For specialized scenarios, you can create intermediate base classes that extend StoreComponent. Mississippi provides [`InletComponent`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletComponent.cs) as an example:

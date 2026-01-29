@@ -117,7 +117,7 @@ private EntitySelectionState Selection => GetState<EntitySelectionState>();
 
 If the feature state is not registered, `GetState` throws:
 
-```
+```text
 InvalidOperationException: No feature state registered for 'entitySelection'.
 Call AddFeatureState<EntitySelectionState>() during service registration.
 ```

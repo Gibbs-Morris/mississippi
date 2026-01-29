@@ -199,6 +199,7 @@ Effects are responsible for their own error handling. The store catches exceptio
 
 ([Store error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L276-L328),
 [RootActionEffect error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/RootActionEffect.cs#L140-L260))
+
 ## Cancellation
 
 Client-side action effects are non-cancellable once started. The store passes `CancellationToken.None` to `HandleAsync`:
@@ -206,8 +207,6 @@ Client-side action effects are non-cancellable once started. The store passes `C
 > Client-side action effects are intentionally non-cancellable once started. We pass CancellationToken.None to HandleAsync to indicate that the effect should not depend on external cancellation and must handle its own lifetime.
 
 ([Store.TriggerEffectsAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L305-L309))
-
-
 
 ## Testing Effects
 

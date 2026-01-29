@@ -98,6 +98,7 @@ public class MyComponent : StoreComponent
 ```
 
 The base class:
+
 - Automatically subscribes to store changes on initialization
 - Triggers re-render when any state changes via `StateHasChanged`
 - Disposes the subscription when the component is disposed

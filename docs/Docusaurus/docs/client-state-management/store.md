@@ -145,7 +145,7 @@ private string? SelectedEntityId => GetState<EntitySelectionState>().EntityId;
 - Returns the current snapshot of the feature state
 - Throws `InvalidOperationException` if the feature state is not registered:
 
-```
+```text
 No feature state registered for 'entitySelection'.
 Call AddFeatureState<EntitySelectionState>() during service registration.
 ```
