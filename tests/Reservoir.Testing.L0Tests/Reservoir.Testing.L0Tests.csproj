@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Reservoir.Testing\Mississippi.Reservoir.Testing.csproj" />
+    </ItemGroup>
+
+</Project>
