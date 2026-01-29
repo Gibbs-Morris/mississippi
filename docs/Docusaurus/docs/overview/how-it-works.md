@@ -59,7 +59,7 @@ flowchart LR
     EventStore --> ProjGrain
     SnapStore --> ProjGrain
     EventStore --> InletSubs
-    Hub -.->|Push| Store
+    Hub -.->|Projection updates| Store
 ```
 
 ## Aggregate Lifecycle
