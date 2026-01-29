@@ -15,7 +15,7 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Reducers;
 ///         They are pure functions with no side effects.
 ///     </para>
 ///     <para>
-///         Timestamps are captured using <see cref="TimeProvider" /> to enable deterministic testing.
+///         Timestamps are supplied by the action payload to keep reducers pure.
 ///     </para>
 /// </remarks>
 public static class LifecycleReducers
@@ -25,24 +25,21 @@ public static class LifecycleReducers
     /// </summary>
     /// <param name="state">The current lifecycle state.</param>
     /// <param name="action">The app init action.</param>
-    /// <param name="timeProvider">The time provider for timestamps.</param>
     /// <returns>A new state with phase set to Initializing.</returns>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown if <paramref name="state" /> or <paramref name="timeProvider" /> is
-    ///     null.
+    ///     Thrown if <paramref name="state" /> is null.
     /// </exception>
     public static LifecycleState OnAppInit(
         LifecycleState state,
-        AppInitAction action,
-        TimeProvider timeProvider
+        AppInitAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(action);
         return state with
         {
             Phase = LifecyclePhase.Initializing,
-            InitializedAt = timeProvider.GetUtcNow(),
+            InitializedAt = action.InitializedAt,
         };
     }
 
@@ -51,24 +48,21 @@ public static class LifecycleReducers
     /// </summary>
     /// <param name="state">The current lifecycle state.</param>
     /// <param name="action">The app ready action.</param>
-    /// <param name="timeProvider">The time provider for timestamps.</param>
     /// <returns>A new state with phase set to Ready.</returns>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown if <paramref name="state" /> or <paramref name="timeProvider" /> is
-    ///     null.
+    ///     Thrown if <paramref name="state" /> is null.
     /// </exception>
     public static LifecycleState OnAppReady(
         LifecycleState state,
-        AppReadyAction action,
-        TimeProvider timeProvider
+        AppReadyAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(action);
         return state with
         {
             Phase = LifecyclePhase.Ready,
-            ReadyAt = timeProvider.GetUtcNow(),
+            ReadyAt = action.ReadyAt,
         };
     }
 }

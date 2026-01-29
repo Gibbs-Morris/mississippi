@@ -1,3 +1,5 @@
+using System;
+
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
@@ -16,5 +18,10 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
 ///         to <see cref="State.LifecyclePhase.Initializing" />. You can register effects to perform
 ///         custom initialization logic.
 ///     </para>
+///     <para>
+///         The timestamp must be supplied by the caller at dispatch time (for example, from a
+///         component-injected <see cref="TimeProvider" />).
+///     </para>
 /// </remarks>
-public sealed record AppInitAction : IAction;
+/// <param name="InitializedAt">The timestamp for when initialization began.</param>
+public sealed record AppInitAction(DateTimeOffset InitializedAt) : IAction;

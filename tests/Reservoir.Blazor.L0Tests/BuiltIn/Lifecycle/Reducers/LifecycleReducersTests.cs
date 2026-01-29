@@ -2,7 +2,6 @@ using System;
 
 using FluentAssertions;
 
-using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Reducers;
@@ -25,8 +24,6 @@ public sealed class LifecycleReducersTests
         // Arrange
         DateTimeOffset initTime = new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
         DateTimeOffset readyTime = new(2024, 1, 15, 10, 30, 5, TimeSpan.Zero);
-        FakeTimeProvider fakeTimeForInit = new(initTime);
-        FakeTimeProvider fakeTimeForReady = new(readyTime);
         LifecycleState state = new()
         {
             Phase = LifecyclePhase.NotStarted,
@@ -35,8 +32,8 @@ public sealed class LifecycleReducersTests
         };
 
         // Act
-        LifecycleState afterInit = LifecycleReducers.OnAppInit(state, new(), fakeTimeForInit);
-        LifecycleState afterReady = LifecycleReducers.OnAppReady(afterInit, new(), fakeTimeForReady);
+        LifecycleState afterInit = LifecycleReducers.OnAppInit(state, new AppInitAction(initTime));
+        LifecycleState afterReady = LifecycleReducers.OnAppReady(afterInit, new AppReadyAction(readyTime));
 
         // Assert
         afterReady.Phase.Should().Be(LifecyclePhase.Ready);
@@ -73,17 +70,16 @@ public sealed class LifecycleReducersTests
     public void OnAppInitShouldNotSetReadyAt()
     {
         // Arrange
-        FakeTimeProvider fakeTime = new();
         LifecycleState initialState = new()
         {
             Phase = LifecyclePhase.NotStarted,
             InitializedAt = null,
             ReadyAt = null,
         };
-        AppInitAction action = new();
+        AppInitAction action = new(DateTimeOffset.UtcNow);
 
         // Act
-        LifecycleState result = LifecycleReducers.OnAppInit(initialState, action, fakeTime);
+        LifecycleState result = LifecycleReducers.OnAppInit(initialState, action);
 
         // Assert
         result.ReadyAt.Should().BeNull();
@@ -97,17 +93,16 @@ public sealed class LifecycleReducersTests
     {
         // Arrange
         DateTimeOffset expectedTime = new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
-        FakeTimeProvider fakeTime = new(expectedTime);
         LifecycleState initialState = new()
         {
             Phase = LifecyclePhase.NotStarted,
             InitializedAt = null,
             ReadyAt = null,
         };
-        AppInitAction action = new();
+        AppInitAction action = new(expectedTime);
 
         // Act
-        LifecycleState result = LifecycleReducers.OnAppInit(initialState, action, fakeTime);
+        LifecycleState result = LifecycleReducers.OnAppInit(initialState, action);
 
         // Assert
         result.InitializedAt.Should().Be(expectedTime);
@@ -120,17 +115,16 @@ public sealed class LifecycleReducersTests
     public void OnAppInitShouldSetPhaseToInitializing()
     {
         // Arrange
-        FakeTimeProvider fakeTime = new(new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero));
         LifecycleState initialState = new()
         {
             Phase = LifecyclePhase.NotStarted,
             InitializedAt = null,
             ReadyAt = null,
         };
-        AppInitAction action = new();
+        AppInitAction action = new(new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero));
 
         // Act
-        LifecycleState result = LifecycleReducers.OnAppInit(initialState, action, fakeTime);
+        LifecycleState result = LifecycleReducers.OnAppInit(initialState, action);
 
         // Assert
         result.Phase.Should().Be(LifecyclePhase.Initializing);
@@ -143,7 +137,6 @@ public sealed class LifecycleReducersTests
     public void OnAppReadyShouldPreserveInitializedAt()
     {
         // Arrange
-        FakeTimeProvider fakeTime = new(new(2024, 1, 15, 10, 31, 0, TimeSpan.Zero));
         DateTimeOffset initTime = new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
         LifecycleState initialState = new()
         {
@@ -151,10 +144,10 @@ public sealed class LifecycleReducersTests
             InitializedAt = initTime,
             ReadyAt = null,
         };
-        AppReadyAction action = new();
+        AppReadyAction action = new(new(2024, 1, 15, 10, 31, 0, TimeSpan.Zero));
 
         // Act
-        LifecycleState result = LifecycleReducers.OnAppReady(initialState, action, fakeTime);
+        LifecycleState result = LifecycleReducers.OnAppReady(initialState, action);
 
         // Assert
         result.InitializedAt.Should().Be(initTime);
@@ -167,7 +160,6 @@ public sealed class LifecycleReducersTests
     public void OnAppReadyShouldSetPhaseToReady()
     {
         // Arrange
-        FakeTimeProvider fakeTime = new(new(2024, 1, 15, 10, 31, 0, TimeSpan.Zero));
         DateTimeOffset initTime = new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
         LifecycleState initialState = new()
         {
@@ -175,10 +167,10 @@ public sealed class LifecycleReducersTests
             InitializedAt = initTime,
             ReadyAt = null,
         };
-        AppReadyAction action = new();
+        AppReadyAction action = new(new(2024, 1, 15, 10, 31, 0, TimeSpan.Zero));
 
         // Act
-        LifecycleState result = LifecycleReducers.OnAppReady(initialState, action, fakeTime);
+        LifecycleState result = LifecycleReducers.OnAppReady(initialState, action);
 
         // Assert
         result.Phase.Should().Be(LifecyclePhase.Ready);
@@ -192,7 +184,6 @@ public sealed class LifecycleReducersTests
     {
         // Arrange
         DateTimeOffset expectedTime = new(2024, 1, 15, 10, 31, 0, TimeSpan.Zero);
-        FakeTimeProvider fakeTime = new(expectedTime);
         DateTimeOffset initTime = new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
         LifecycleState initialState = new()
         {
@@ -200,10 +191,10 @@ public sealed class LifecycleReducersTests
             InitializedAt = initTime,
             ReadyAt = null,
         };
-        AppReadyAction action = new();
+        AppReadyAction action = new(expectedTime);
 
         // Act
-        LifecycleState result = LifecycleReducers.OnAppReady(initialState, action, fakeTime);
+        LifecycleState result = LifecycleReducers.OnAppReady(initialState, action);
 
         // Assert
         result.ReadyAt.Should().Be(expectedTime);

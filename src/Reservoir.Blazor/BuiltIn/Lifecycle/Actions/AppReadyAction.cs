@@ -1,3 +1,5 @@
+using System;
+
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
@@ -17,7 +19,12 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
 ///         post-initialization tasks.
 ///     </para>
 ///     <para>
+///         The timestamp must be supplied by the caller at dispatch time (for example, from a
+///         component-injected <see cref="TimeProvider" />).
+///     </para>
+///     <para>
 ///         Components can conditionally render loading states by checking if the phase is Ready.
 ///     </para>
 /// </remarks>
-public sealed record AppReadyAction : IAction;
+/// <param name="ReadyAt">The timestamp for when the application became ready.</param>
+public sealed record AppReadyAction(DateTimeOffset ReadyAt) : IAction;
