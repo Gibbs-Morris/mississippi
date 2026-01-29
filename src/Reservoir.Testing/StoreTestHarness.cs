@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -68,10 +67,7 @@ public sealed class StoreTestHarness<TState>
     ///     Creates a new scenario builder for Given/When/Then style testing.
     /// </summary>
     /// <returns>A new <see cref="StoreScenario{TState}" /> initialized with this harness's reducers and effects.</returns>
-    public StoreScenario<TState> CreateScenario()
-    {
-        return new StoreScenario<TState>(reducers, effectFactories, InitialState, services);
-    }
+    public StoreScenario<TState> CreateScenario() => new(reducers, effectFactories, InitialState, services);
 
     /// <summary>
     ///     Registers an effect by type.

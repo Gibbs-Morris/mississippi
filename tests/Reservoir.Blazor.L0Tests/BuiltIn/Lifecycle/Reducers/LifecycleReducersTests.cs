@@ -2,7 +2,6 @@ using System;
 
 using FluentAssertions;
 
-
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Reducers;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
@@ -32,8 +31,8 @@ public sealed class LifecycleReducersTests
         };
 
         // Act
-        LifecycleState afterInit = LifecycleReducers.OnAppInit(state, new AppInitAction(initTime));
-        LifecycleState afterReady = LifecycleReducers.OnAppReady(afterInit, new AppReadyAction(readyTime));
+        LifecycleState afterInit = LifecycleReducers.OnAppInit(state, new(initTime));
+        LifecycleState afterReady = LifecycleReducers.OnAppReady(afterInit, new(readyTime));
 
         // Assert
         afterReady.Phase.Should().Be(LifecyclePhase.Ready);

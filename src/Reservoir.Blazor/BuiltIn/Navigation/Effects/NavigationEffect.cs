@@ -128,8 +128,9 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
     )
     {
         // Build the new URI with updated query parameters
-        string newUri = NormalizeInternalUri(NavigationManager.GetUriWithQueryParameters(
-            action.Parameters.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)));
+        string newUri = NormalizeInternalUri(
+            NavigationManager.GetUriWithQueryParameters(
+                action.Parameters.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)));
         if (action.ReplaceHistory)
         {
             NavigationManager.NavigateTo(
@@ -156,8 +157,8 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
 
         Uri baseUri = new(NavigationManager.BaseUri, UriKind.Absolute);
         bool sameOrigin = string.Equals(absoluteUri.Scheme, baseUri.Scheme, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(absoluteUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase) &&
-            absoluteUri.Port == baseUri.Port;
+                          string.Equals(absoluteUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase) &&
+                          (absoluteUri.Port == baseUri.Port);
         if (!sameOrigin)
         {
             throw new InvalidOperationException(

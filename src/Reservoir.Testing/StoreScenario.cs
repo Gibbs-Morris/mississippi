@@ -55,8 +55,6 @@ public sealed class StoreScenario<TState> : IDisposable
         effects = resolvedEffects;
     }
 
-    private ServiceProvider ServiceProvider { get; }
-
     /// <summary>
     ///     Gets all dispatched actions in order.
     /// </summary>
@@ -71,6 +69,8 @@ public sealed class StoreScenario<TState> : IDisposable
     ///     Gets the current state.
     /// </summary>
     public TState State { get; private set; }
+
+    private ServiceProvider ServiceProvider { get; }
 
     /// <inheritdoc />
     public void Dispose()

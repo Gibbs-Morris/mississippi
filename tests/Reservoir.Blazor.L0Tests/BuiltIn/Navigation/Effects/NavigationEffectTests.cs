@@ -222,9 +222,7 @@ public sealed class NavigationEffectTests
         Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        await act.Should()
-            .ThrowAsync<InvalidOperationException>()
-            .WithMessage("*External navigation*");
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*External navigation*");
     }
 
     /// <summary>
@@ -291,9 +289,7 @@ public sealed class NavigationEffectTests
         Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        await act.Should()
-            .ThrowAsync<InvalidOperationException>()
-            .WithMessage("*External navigation*");
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*External navigation*");
     }
 
     /// <summary>
