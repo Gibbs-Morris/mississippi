@@ -1,5 +1,5 @@
 ---
-id: effects
+id: effects-client
 title: Effects
 sidebar_label: Effects
 sidebar_position: 4

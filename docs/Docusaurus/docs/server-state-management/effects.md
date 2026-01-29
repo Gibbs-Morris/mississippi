@@ -1,5 +1,5 @@
 ---
-id: effects
+id: effects-server
 title: Effects
 sidebar_label: Effects
 sidebar_position: 7
