@@ -27,13 +27,29 @@ Reservoir provides Redux-style state management for Blazor, but lacks integratio
 
 ## Proposed design (initial)
 
-- Add an opt-in DevTools bridge for Reservoir in Reservoir.Blazor.
-- Use JS interop to connect to window.__REDUX_DEVTOOLS_EXTENSION__.connect and send init/send messages.
-- Create a middleware that captures action + state and forwards to DevTools.
-- Handle DevTools DISPATCH messages to support time-travel (jump/commit/import).
-- Provide configuration options (name, maxAge, latency, features) and state/action sanitizers.
-- Provide an explicit registration extension method to enable DevTools in DI.
-- Ensure no runtime dependency when the extension is absent; integration should no-op.
+### Architecture
+
+- Add a DevTools-aware Store subclass in Reservoir.Blazor that overrides OnActionDispatched to report actions/state to DevTools.
+- Add protected snapshot/restore hooks in Reservoir.Store to enable state replacement without triggering effects.
+- Add a JS interop bridge that connects to window.__REDUX_DEVTOOLS_EXTENSION__.connect, calls init/send, and receives messages.
+- Add DI registration (AddReservoirDevTools) that replaces the scoped IStore with the DevTools store and wires options.
+
+### DevTools protocol usage
+
+- Use connect([options]) to obtain a DevTools connection and call init(state) once.
+- After each dispatch, call send(action, state).
+- Handle DISPATCH messages from DevTools (JUMP_TO_STATE, JUMP_TO_ACTION, RESET, COMMIT, ROLLBACK, IMPORT_STATE) by replacing state and notifying subscribers.
+- Ignore DevTools messages that cannot be safely deserialized or mapped.
+
+### Configuration
+
+- ReservoirDevToolsOptions for enablement and options (name, maxAge, latency, features).
+- Optional action/state sanitizers to avoid sending sensitive or large payloads.
+
+### Production safety
+
+- Integration is opt-in; disabled by default.
+- JS bridge no-ops when DevTools extension is missing.
 
 ## Alternatives
 

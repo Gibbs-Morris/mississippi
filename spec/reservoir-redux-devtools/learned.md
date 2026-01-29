@@ -18,6 +18,8 @@
 - Reservoir.Blazor contains built-in feature registrations (navigation/lifecycle) but no JS interop references. (src/Reservoir.Blazor/**)
 - Reservoir.Blazor currently has no wwwroot or static web assets folder. (src/Reservoir.Blazor)
 - IAction is a marker interface with no intrinsic type/name field. (src/Reservoir.Abstractions/Actions/IAction.cs)
+- Redux DevTools browser extension exposes window.__REDUX_DEVTOOLS_EXTENSION__.connect with subscribe/init/send methods. (https://raw.githubusercontent.com/reduxjs/redux-devtools/main/extension/docs/API/Methods.md)
+- Redux DevTools options include name, maxAge, latency, action/state sanitizers, and features. (https://raw.githubusercontent.com/reduxjs/redux-devtools/main/extension/docs/API/Arguments.md)
 
 ## To verify
 
