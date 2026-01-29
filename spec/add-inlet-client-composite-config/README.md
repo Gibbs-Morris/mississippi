@@ -3,7 +3,7 @@
 ## Status
 - State: Draft
 - Size: Small
-- Approval checkpoint: TBD
+- Approval checkpoint: No (small change, no public contract break or data migration)
 
 ## Index
 - [learned.md](learned.md)

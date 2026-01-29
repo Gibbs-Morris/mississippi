@@ -13,9 +13,9 @@ The composite client registration (`Add{App}Inlet`) is the single entry point fo
 - No new options classes or runtime behavior changes.
 - No documentation updates in this change set.
 
-## Current state (UNVERIFIED)
-- `Add{App}Inlet()` is generated with no overloads.
-- SignalR configuration is fixed to a hub path and DTO registration.
+## Current state
+- `Add{App}Inlet()` is generated and now forwards to an overload with optional SignalR configuration.
+- SignalR configuration defaults to hub path + DTO registration; optional configuration runs after defaults.
 
 ## Proposed design
 - Generate an overload: `Add{App}Inlet(this IServiceCollection services, Action<InletBlazorSignalRBuilder>? configureSignalR)`.
