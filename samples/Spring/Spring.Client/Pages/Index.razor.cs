@@ -161,6 +161,8 @@ public sealed partial class Index
 
     private void NavigateToInvestigations() => Dispatch(new NavigateAction("/investigations"));
 
+    private void NavigateToApiDocs() => Dispatch(new NavigateAction("/scalar/v1"));
+
     private void DepositBurst20() => DispatchBurst(() => new DepositFundsAction(SelectedEntityId!, 5m), 20);
 
     private void DepositBurst200() => DispatchBurst(() => new DepositFundsAction(SelectedEntityId!, 10m), 200);
