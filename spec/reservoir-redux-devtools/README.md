@@ -3,8 +3,8 @@
 ## Status
 
 - Status: Draft
-- Size: Medium (initial estimate)
-- Approval checkpoint: TBD
+- Size: Medium
+- Approval checkpoint: Yes (introduces new public API for DevTools integration)
 
 ## Index
 

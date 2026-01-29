@@ -12,6 +12,13 @@
 - Store has a virtual OnActionDispatched hook and subscribable listeners. (src/Reservoir/Store.cs)
 - Store does not expose a public state replacement API, only GetState and Dispatch. (src/Reservoir.Abstractions/IStore.cs)
 
+## Verified facts
+
+- IStore is registered as scoped via ReservoirRegistrations.AddReservoir. (src/Reservoir/ReservoirRegistrations.cs)
+- Reservoir.Blazor contains built-in feature registrations (navigation/lifecycle) but no JS interop references. (src/Reservoir.Blazor/**)
+- Reservoir.Blazor currently has no wwwroot or static web assets folder. (src/Reservoir.Blazor)
+- IAction is a marker interface with no intrinsic type/name field. (src/Reservoir.Abstractions/Actions/IAction.cs)
+
 ## To verify
 
 - Existing middleware/diagnostics hooks in Reservoir and Reservoir.Blazor beyond current IMiddleware usage.

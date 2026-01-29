@@ -28,3 +28,16 @@
 - Claims 3-4: Questions 4-6.
 - Claim 5: Questions 7 and 10.
 - Claim 6: Questions 8-9.
+
+## Answers (evidence-based)
+
+1. The Store exposes a protected virtual OnActionDispatched hook and a public Subscribe method but no public event or hook beyond that. (src/Reservoir/Store.cs)
+2. No JS interop usage was found in Reservoir.Blazor or other src files; there are no IJSRuntime/JSImport references. (grep: IJSRuntime/JSImport across src)
+3. IStore is registered as scoped in AddReservoir; each DI scope gets its own Store instance. (src/Reservoir/ReservoirRegistrations.cs)
+4. IAction is a marker interface with no required type or name; action identity must be derived from runtime type. (src/Reservoir.Abstractions/Actions/IAction.cs)
+5. The Store exposes no public method to replace state; featureStates is private and only updated through reducers. (src/Reservoir/Store.cs, src/Reservoir.Abstractions/IStore.cs)
+6. There are no built-in middleware implementations in production code; middleware appears only in tests. (src/Reservoir.Abstractions/IMiddleware.cs, tests/Reservoir.L0Tests/StoreTests.cs)
+7. Reservoir.Blazor uses static extension methods for opt-in features under BuiltIn registrations; similar pattern can be followed for DevTools. (src/Reservoir.Blazor/BuiltIn/ReservoirBlazorBuiltInRegistrations.cs)
+8. Reservoir.Blazor does not currently include a wwwroot folder; adding static assets would be new but supported by Razor class library conventions. (src/Reservoir.Blazor)
+9. Reservoir and Reservoir.Blazor already have L0 test projects; new middleware/state-replacement hooks would require new L0 tests. (tests/Reservoir.L0Tests, tests/Reservoir.Blazor.L0Tests)
+10. Repository rules prohibit adding new third-party dependencies without explicit approval. (src/.. instructions: .github/instructions/csharp.instructions.md)

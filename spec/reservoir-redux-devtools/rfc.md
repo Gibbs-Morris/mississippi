@@ -17,11 +17,13 @@ Reservoir provides Redux-style state management for Blazor, but lacks integratio
 - Ship a production-only diagnostics system.
 - Add a dependency that forces DevTools usage in non-Blazor contexts without explicit opt-in.
 
-## Current state (UNVERIFIED)
+## Current state
 
 - Reservoir uses a Store with middleware pipeline, reducers, and async effects.
 - Store exposes Dispatch, GetState, and Subscribe; no devtools-specific hooks exist.
+- Store has a protected OnActionDispatched hook for derived classes.
 - Reservoir.Blazor provides StoreComponent with subscription and rerender integration.
+- Reservoir.Blazor has no JS interop usage or static web assets today.
 
 ## Proposed design (initial)
 
@@ -62,9 +64,9 @@ Reservoir provides Redux-style state management for Blazor, but lacks integratio
 
 ## Assumptions and unknowns
 
-- Assumption: Reservoir.Blazor can host static JS assets or include JS interop via existing patterns. (UNVERIFIED)
-- Assumption: Reservoir actions can be represented with a type/name for DevTools display. (UNVERIFIED)
-- Unknown: Whether state replacement should be supported or restricted to time-travel only. (UNVERIFIED)
+- Assumption: Reservoir.Blazor can host static JS assets using Razor class library conventions.
+- Assumption: Reservoir actions can be represented by runtime type name for DevTools display.
+- Unknown: Whether state replacement should be supported or restricted to time-travel only.
 
 - Large state objects could degrade performance when sent to DevTools.
 - Time-travel (state replacement) may break invariants if actions are not replayed.
