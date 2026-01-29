@@ -12,7 +12,7 @@ Governing thought: Write SOLID, testable, cloud-ready C# with internal-by-defaul
 
 - Code **MUST** follow SOLID and remain unit-testable via clear seams/DI; blocking calls and shared mutable state **MUST NOT** be introduced. Why: Keeps code maintainable and testable.
 - .NET analyzers **MUST** stay enabled; warnings are errors. Suppressions or `#pragma` **MUST NOT** be added without approval. Why: Zero-warnings is mandatory.
-- XML documentation **MUST NOT** include `<example>` blocks with code samples; examples drift over time and become stale/misleading. Readers can refer to real implementation code in the repository instead. Why: Prevents documentation drift and maintenance burden.
+- XML documentation **MUST NOT** include `<example>` or `<code>` blocks with code samples; examples drift over time and become stale/misleading. Readers can refer to real implementation code in the repository instead. Why: Prevents documentation drift and maintenance burden.
 - Injected dependencies **MUST** use the get-only property pattern (`private Type Name { get; }`); field injection/underscored fields **MUST NOT** be used. Why: Aligns with logging and analyzers.
 - Source files **MUST NOT** include copyright/license headers or banners at the top; repository-level licensing already applies. Why: Avoids noisy/stale headers and keeps diffs focused on behavior.
 - Configuration **MUST** use `IOptions<T>`/`IOptionsSnapshot<T>`/`IOptionsMonitor<T>`; constructors **MUST NOT** take raw config primitives. Why: Centralizes config and validation.
