@@ -51,10 +51,6 @@ flowchart LR
 | [`BrookNameAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Attributes/BrookNameAttribute.cs#L7-L73) | Defines brook names in the `{App}.{Module}.{Name}` format with validation. |
 | [`SnapshotStorageNameAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Attributes/SnapshotStorageNameAttribute.cs#L7-L105) | Defines snapshot storage names in the `{App}.{Module}.{Name}.V{Version}` format with validation. |
 
-## References
-
-- https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/Reducers/AccountOpenedBalanceReducer.cs#L1-L28
-
 ## Summary
 
 - Server state modeling flows from commands to events, reducers, effects, and state as implemented by
@@ -64,41 +60,7 @@ flowchart LR
     [`EventStorageNameAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Attributes/EventStorageNameAttribute.cs#L7-L105) and
     [`IEventEffect<TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/IEventEffect.cs#L7-L57).
 
-## Learn More
-
-- [Aggregates](./aggregates.md)
-- [Commands](./commands.md)
-- [Command Handlers](./command-handlers.md)
-- [Events](./events.md)
-- [Aggregate Reducers](./aggregate-reducers.md)
-- [Effects](./effects.md)
-- [Projections](./projections.md)
-- [Projection Reducers](./projection-reducers.md)
-- [Snapshots](./snapshots.md)
-| [`BrookNameAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Attributes/BrookNameAttribute.cs) | Brook naming with validation. |
-| [`SnapshotStorageNameAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Attributes/SnapshotStorageNameAttribute.cs) | Snapshot storage naming with validation. |
-
-## Pages in this section
-
-- [Aggregates](./aggregates.md)
-- [Commands](./commands.md)
-- [Command Handlers](./command-handlers.md)
-- [Events](./events.md)
-- [Aggregate Reducers](./aggregate-reducers.md)
-- [Effects](./effects.md)
-- [Projections](./projections.md)
-- [Projection Reducers](./projection-reducers.md)
-- [Snapshots](./snapshots.md)
-
-## Summary
-
-- Command handlers use [`CommandHandlerBase<TCommand, TSnapshot>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/CommandHandlerBase.cs) with results from
-    [`OperationResult<T>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/OperationResult.cs).
-- Reducers apply events with [`EventReducerBase<TEvent, TProjection>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Reducers.Abstractions/EventReducerBase.cs).
-- Effects run after event persistence through [`IEventEffect<TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/IEventEffect.cs).
-- Snapshot retention rules are defined by [`SnapshotRetentionOptions`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Snapshots.Abstractions/SnapshotRetentionOptions.cs).
-
 ## Next Steps
 
-- Start with [Aggregates](./aggregates.md).
-- Continue to [Commands](./commands.md).
+- Start with [Aggregates](./aggregates.md)
+- Continue to [Commands](./commands.md)
