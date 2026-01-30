@@ -139,7 +139,6 @@ public sealed class InletSiloCompositeGenerator : IIncrementalGenerator
 
         // Add using directive for the Infrastructure namespace (where layered registrations live)
         sb.AppendLine($"using {info.TargetNamespace}.Infrastructure;");
-
         sb.AppendFileScopedNamespace(info.TargetNamespace);
         sb.AppendLine();
         sb.AppendSummary($"Composite registration for all Inlet silo features in the {info.AppName} application.");
@@ -202,10 +201,8 @@ public sealed class InletSiloCompositeGenerator : IIncrementalGenerator
         sb.AppendLine("// Orleans silo (Aqueduct + event sourcing)");
         sb.AppendLine($"builder.Add{info.AppName}OrleansSilo();");
         sb.AppendLine();
-
         sb.AppendLine("return builder;");
         sb.CloseBrace();
-
         sb.AppendLine();
 
         // UseXxxSilo extension method
@@ -231,10 +228,8 @@ public sealed class InletSiloCompositeGenerator : IIncrementalGenerator
         sb.AppendLine("// Health check for Aspire orchestration");
         sb.AppendLine($"app.Map{info.AppName}HealthCheck();");
         sb.AppendLine();
-
         sb.AppendLine("return app;");
         sb.CloseBrace();
-
         sb.CloseBrace();
         context.AddSource($"{registrationClassName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }

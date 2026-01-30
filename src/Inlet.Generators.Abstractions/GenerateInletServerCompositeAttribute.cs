@@ -39,6 +39,14 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 public sealed class GenerateInletServerCompositeAttribute : Attribute
 {
     /// <summary>
+    ///     Gets or sets the API route prefix for projection endpoints.
+    /// </summary>
+    /// <remarks>
+    ///     Defaults to <c>/api</c>, which is the conventional prefix for API routes.
+    /// </remarks>
+    public string ApiPrefix { get; set; } = "/api";
+
+    /// <summary>
     ///     Gets or sets the application name used in generated type and method names.
     /// </summary>
     /// <remarks>
@@ -60,12 +68,4 @@ public sealed class GenerateInletServerCompositeAttribute : Attribute
     ///     Defaults to <c>/hubs/inlet</c>, which is the conventional path used across Mississippi samples.
     /// </remarks>
     public string HubPath { get; set; } = "/hubs/inlet";
-
-    /// <summary>
-    ///     Gets or sets the API route prefix for projection endpoints.
-    /// </summary>
-    /// <remarks>
-    ///     Defaults to <c>/api</c>, which is the conventional prefix for API routes.
-    /// </remarks>
-    public string ApiPrefix { get; set; } = "/api";
 }

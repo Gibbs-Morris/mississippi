@@ -125,13 +125,11 @@ public sealed class InletClientCompositeGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, compositeSource);
-        SyntaxTree tree = runResult.GeneratedTrees.Single(t =>
-            t.FilePath.EndsWith("TestAppInletRegistrations.g.cs", StringComparison.Ordinal));
+        SyntaxTree tree = runResult.GeneratedTrees.Single(t => t.FilePath.EndsWith(
+            "TestAppInletRegistrations.g.cs",
+            StringComparison.Ordinal));
         string generatedCode = tree.GetText().ToString();
-        Assert.Contains(
-            "Action<InletBlazorSignalRBuilder>? configureSignalR",
-            generatedCode,
-            StringComparison.Ordinal);
+        Assert.Contains("Action<InletBlazorSignalRBuilder>? configureSignalR", generatedCode, StringComparison.Ordinal);
         Assert.Contains("configureSignalR?.Invoke(signalR);", generatedCode, StringComparison.Ordinal);
         Assert.Contains("return AddTestAppInlet(services, null);", generatedCode, StringComparison.Ordinal);
     }

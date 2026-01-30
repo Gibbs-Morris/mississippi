@@ -140,7 +140,6 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
 
         // Add using directive for the Infrastructure namespace (where layered registrations live)
         sb.AppendLine($"using {info.TargetNamespace}.Infrastructure;");
-
         sb.AppendFileScopedNamespace(info.TargetNamespace);
         sb.AppendLine();
         sb.AppendSummary($"Composite registration for all Inlet server features in the {info.AppName} application.");
@@ -168,7 +167,8 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
         sb.AppendLine("///         <item>Observability (OpenTelemetry tracing, metrics, logging)</item>");
         sb.AppendLine("///         <item>Orleans client (Aspire-managed clustering)</item>");
         sb.AppendLine("///         <item>API (controllers, OpenAPI, Scalar)</item>");
-        sb.AppendLine("///         <item>Real-time infrastructure (SignalR, Aqueduct, Inlet, aggregates, projections)</item>");
+        sb.AppendLine(
+            "///         <item>Real-time infrastructure (SignalR, Aqueduct, Inlet, aggregates, projections)</item>");
         sb.AppendLine("///     </list>");
         sb.AppendLine("/// </remarks>");
         sb.AppendLine($"public static WebApplicationBuilder {addMethodName}(");
@@ -197,10 +197,8 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
         sb.AppendLine("// Real-time infrastructure (SignalR, Aqueduct, Inlet, aggregates, projections)");
         sb.AppendLine($"builder.Services.Add{info.AppName}Realtime();");
         sb.AppendLine();
-
         sb.AppendLine("return builder;");
         sb.CloseBrace();
-
         sb.AppendLine();
 
         // UseXxxServer extension method
@@ -232,10 +230,8 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
         sb.AppendLine("// Endpoints (OpenAPI, controllers, Inlet hub, health, SPA fallback)");
         sb.AppendLine($"app.Map{info.AppName}Endpoints();");
         sb.AppendLine();
-
         sb.AppendLine("return app;");
         sb.CloseBrace();
-
         sb.CloseBrace();
         context.AddSource($"{registrationClassName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }

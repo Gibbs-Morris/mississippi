@@ -179,10 +179,10 @@ public sealed class InletClientCompositeGenerator : IIncrementalGenerator
         sb.OpenBrace();
         sb.AppendLine($"return {methodName}(services, null);");
         sb.CloseBrace();
-
         sb.AppendLine();
         sb.AppendLine("/// <summary>");
-        sb.AppendLine($"///     Adds all Inlet client features for the {info.AppName} application with optional SignalR configuration.");
+        sb.AppendLine(
+            $"///     Adds all Inlet client features for the {info.AppName} application with optional SignalR configuration.");
         sb.AppendLine("/// </summary>");
         sb.AppendLine("/// <param name=\"services\">The service collection.</param>");
         sb.AppendLine("/// <param name=\"configureSignalR\">An optional SignalR builder configuration.</param>");
