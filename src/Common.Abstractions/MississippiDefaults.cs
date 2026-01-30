@@ -4,20 +4,23 @@ using System.Diagnostics.CodeAnalysis;
 namespace Mississippi.Common.Abstractions;
 
 /// <summary>
-///     Central defaults for Mississippi framework configuration.
-///     All options classes reference these values as their defaults, enabling
-///     zero-configuration setup for simple scenarios while allowing per-library
-///     customization for advanced use cases.
+///     Central defaults and internal constants for Mississippi framework configuration.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <b>Simple usage:</b> Register a single stream provider named
-///         <see cref="StreamProviderName" /> and all Mississippi libraries
-///         will use it automatically.
+///         <b>For user-facing configuration</b>, prefer the appropriate options classes:
 ///     </para>
+///     <list type="bullet">
+///         <item><c>AqueductOptions</c> / <c>AqueductSiloOptions</c> for SignalR backplane settings</item>
+///         <item><c>BrookStorageOptions</c> for event brook Cosmos storage settings</item>
+///         <item><c>SnapshotStorageOptions</c> for snapshot Cosmos storage settings</item>
+///         <item><c>BrookProviderOptions</c> for Orleans stream provider settings</item>
+///         <item><c>InletServerOptions</c> for Inlet server settings</item>
+///     </list>
 ///     <para>
-///         <b>Advanced usage:</b> Register multiple stream providers and configure
-///         each library's options to specify which provider it should use.
+///         <b>ServiceKeys</b> are internal framework constants for DI coordination and should
+///         not typically be referenced by application code. Host applications use registration
+///         extension methods that handle keyed service wiring automatically.
 ///     </para>
 /// </remarks>
 public static class MississippiDefaults
@@ -26,17 +29,29 @@ public static class MississippiDefaults
     ///     Default Cosmos database identifier.
     /// </summary>
     /// <value>The value is <c>"mississippi"</c>.</value>
+    /// <remarks>
+    ///     Prefer using the <c>DatabaseId</c> property on <c>BrookStorageOptions</c> or
+    ///     <c>SnapshotStorageOptions</c> for configuration.
+    /// </remarks>
     public const string DatabaseId = "mississippi";
 
     /// <summary>
     ///     Default Orleans stream provider name used across all Mississippi libraries.
     /// </summary>
     /// <value>The value is <c>"mississippi-streaming"</c>.</value>
+    /// <remarks>
+    ///     Prefer using the <c>StreamProviderName</c> property on the appropriate options class
+    ///     (<c>AqueductOptions</c>, <c>BrookProviderOptions</c>, etc.) for configuration.
+    /// </remarks>
     public const string StreamProviderName = "mississippi-streaming";
 
     /// <summary>
     ///     Default container/collection identifiers for storage.
     /// </summary>
+    /// <remarks>
+    ///     Prefer using the <c>ContainerId</c> property on <c>BrookStorageOptions</c> or
+    ///     <c>SnapshotStorageOptions</c> for configuration.
+    /// </remarks>
     [SuppressMessage(
         "Design",
         "CA1034:Nested types should not be visible",
@@ -114,6 +129,10 @@ public static class MississippiDefaults
     /// <summary>
     ///     Default Orleans stream namespaces for SignalR integration.
     /// </summary>
+    /// <remarks>
+    ///     Prefer using stream namespace properties on <c>AqueductOptions</c>,
+    ///     <c>AqueductSiloOptions</c>, or <c>InletServerOptions</c> for configuration.
+    /// </remarks>
     [SuppressMessage(
         "Design",
         "CA1034:Nested types should not be visible",
