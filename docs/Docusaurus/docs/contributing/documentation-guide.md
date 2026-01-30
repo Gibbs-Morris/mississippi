@@ -10,7 +10,7 @@ description: Opinionated documentation rules for Mississippi Docusaurus authors 
 
 ## Overview
 
-This guide codifies the structure and style used across the client-state-management documentation set and makes it mandatory for new Docusaurus docs in this repo.
+This guide defines the standard structure and style for the client-state-management documentation set and makes it mandatory for all new and updated Docusaurus docs in this repo; existing pages will be updated to follow it over time.
 
 ## Scope
 
@@ -43,12 +43,12 @@ Every doc MUST follow this structure in order:
 2. **H1 title**
 3. **Overview** section
 4. **Core content sections** (problem/concept → mechanics → usage)
-5. **Closing section** (rules below)
+5. **Closing section(s)** (rules below)
 
 ### Closing Section Rules
 
-- If the page is a **section entry** (the doc referenced by a folder's `_category_.json` link), the closing section MUST be **Learn More** with links to all child pages.
-- Otherwise, the closing sections MUST be **Summary** followed by **Next Steps**.
+- If the page is a **section entry** (the doc referenced by a folder's `_category_.json` link), it MUST include a **Learn More** section with links to all child pages. Additional utility sections such as **Source Code**, **Changelog**, or **Release Notes** MAY follow **Learn More**.
+- Otherwise, the page MUST include **Summary** followed by **Next Steps** as its final core content sections. Optional appendix-style sections such as **References** or **Further Reading** MAY follow.
 
 ## Frontmatter (Required)
 
@@ -164,7 +164,7 @@ flowchart LR
 ## Navigation and Information Architecture
 
 - Section entry pages MUST summarize their purpose and list child pages.
-- Component pages MUST end with `Next Steps` links to at least two related pages.
+- Component pages MUST end with a closing navigation section that links to at least two related pages. Acceptable titles include `Next Steps` and `Related Documentation`; new or updated pages SHOULD standardize on `Next Steps`, while legacy pages MAY retain older patterns until they are revised.
 
 ## Visuals and Examples
 
