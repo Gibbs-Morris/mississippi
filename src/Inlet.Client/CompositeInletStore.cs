@@ -105,47 +105,6 @@ public sealed class CompositeInletStore : IInletStore
         ProjectionCache.IsProjectionLoading<T>(entityId);
 
     /// <inheritdoc />
-    public void SetConnection<T>(
-        string entityId,
-        bool isConnected
-    )
-        where T : class =>
-        ProjectionCache.SetConnection<T>(entityId, isConnected);
-
-    /// <inheritdoc />
-    public void SetError<T>(
-        string entityId,
-        Exception exception
-    )
-        where T : class =>
-        ProjectionCache.SetError<T>(entityId, exception);
-
-    /// <inheritdoc />
-    public void SetLoaded<T>(
-        string entityId,
-        T? data,
-        long version
-    )
-        where T : class =>
-        ProjectionCache.SetLoaded(entityId, data, version);
-
-    /// <inheritdoc />
-    public void SetLoading<T>(
-        string entityId
-    )
-        where T : class =>
-        ProjectionCache.SetLoading<T>(entityId);
-
-    /// <inheritdoc />
-    public void SetUpdated<T>(
-        string entityId,
-        T? data,
-        long version
-    )
-        where T : class =>
-        ProjectionCache.SetUpdated(entityId, data, version);
-
-    /// <inheritdoc />
     public IDisposable Subscribe(
         Action listener
     ) =>

@@ -1,7 +1,11 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
+using Microsoft.Extensions.DependencyInjection;
+
+using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Inlet.Client.Abstractions.State;
+using Mississippi.Inlet.Client.Reducers;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -14,12 +18,42 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// </summary>
 public sealed class CompositeInletStoreTests : IDisposable
 {
-    private readonly ProjectionCache cache = new();
+    private readonly ProjectionCache cache;
 
-    private readonly Store store = new();
+    private readonly ServiceProvider serviceProvider;
+
+    private readonly Store store;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="CompositeInletStoreTests" /> class.
+    /// </summary>
+    public CompositeInletStoreTests()
+    {
+        // Set up DI container with Store and ProjectionsFeatureState
+        ServiceCollection services = new();
+        services.AddReservoir();
+        services.AddFeatureState<ProjectionsFeatureState>();
+        services.AddReducer<ProjectionLoadingAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceLoading);
+        services.AddReducer<ProjectionLoadedAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceLoaded);
+        services.AddReducer<ProjectionUpdatedAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceUpdated);
+        services.AddReducer<ProjectionErrorAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceError);
+        services.AddReducer<ProjectionConnectionChangedAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceConnectionChanged);
+        serviceProvider = services.BuildServiceProvider();
+        store = (Store)serviceProvider.GetRequiredService<IStore>();
+        cache = new(store);
+    }
 
     /// <inheritdoc />
-    public void Dispose() => store.Dispose();
+    public void Dispose()
+    {
+        store.Dispose();
+        serviceProvider.Dispose();
+    }
 
     /// <summary>
     ///     Middleware for capturing dispatched actions.
@@ -120,11 +154,15 @@ public sealed class CompositeInletStoreTests : IDisposable
         Justification = "Objects are explicitly disposed as part of the test")]
     public void DisposeCanBeCalledMultipleTimes()
     {
-        // Arrange
-        Store localStore = new();
-        CompositeInletStore sut = new(localStore, cache);
+        // Arrange - create a new isolated store/cache pair for this test
+        using ServiceProvider localServiceProvider = new ServiceCollection().AddReservoir()
+            .AddFeatureState<ProjectionsFeatureState>()
+            .BuildServiceProvider();
+        Store localStore = (Store)localServiceProvider.GetRequiredService<IStore>();
+        ProjectionCache localCache = new(localStore);
+        CompositeInletStore sut = new(localStore, localCache);
 
-        // Act - call dispose twice (which disposes localStore)
+        // Act - call dispose twice
         sut.Dispose();
         sut.Dispose();
 
@@ -139,7 +177,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     {
         // Arrange
         TestProjection data = new("Test");
-        cache.SetLoaded("entity-1", data, 5L);
+        store.Dispatch(new ProjectionLoadedAction<TestProjection>("entity-1", data, 5L));
         using CompositeInletStore sut = new(store, cache);
 
         // Act
@@ -158,7 +196,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     {
         // Arrange
         InvalidOperationException error = new("Test error");
-        cache.SetError<TestProjection>("entity-1", error);
+        store.Dispatch(new ProjectionErrorAction<TestProjection>("entity-1", error));
         using CompositeInletStore sut = new(store, cache);
 
         // Act
@@ -177,7 +215,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     {
         // Arrange
         TestProjection data = new("Test");
-        cache.SetLoaded("entity-1", data, 7L);
+        store.Dispatch(new ProjectionLoadedAction<TestProjection>("entity-1", data, 7L));
         using CompositeInletStore sut = new(store, cache);
 
         // Act
@@ -198,7 +236,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     {
         // Arrange
         TestProjection data = new("Test");
-        cache.SetLoaded("entity-1", data, 42L);
+        store.Dispatch(new ProjectionLoadedAction<TestProjection>("entity-1", data, 42L));
         using CompositeInletStore sut = new(store, cache);
 
         // Act
@@ -215,7 +253,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     public void IsProjectionConnectedDelegatesToCache()
     {
         // Arrange
-        cache.SetConnection<TestProjection>("entity-1", true);
+        store.Dispatch(new ProjectionConnectionChangedAction<TestProjection>("entity-1", true));
         using CompositeInletStore sut = new(store, cache);
 
         // Act
@@ -232,7 +270,7 @@ public sealed class CompositeInletStoreTests : IDisposable
     public void IsProjectionLoadingDelegatesToCache()
     {
         // Arrange
-        cache.SetLoading<TestProjection>("entity-1");
+        store.Dispatch(new ProjectionLoadingAction<TestProjection>("entity-1"));
         using CompositeInletStore sut = new(store, cache);
 
         // Act
@@ -240,97 +278,6 @@ public sealed class CompositeInletStoreTests : IDisposable
 
         // Assert
         Assert.True(result);
-    }
-
-    /// <summary>
-    ///     SetConnection should delegate to projection cache.
-    /// </summary>
-    [Fact]
-    public void SetConnectionDelegatesToCache()
-    {
-        // Arrange
-        using CompositeInletStore sut = new(store, cache);
-
-        // Act
-        sut.SetConnection<TestProjection>("entity-1", true);
-
-        // Assert
-        Assert.True(cache.IsProjectionConnected<TestProjection>("entity-1"));
-    }
-
-    /// <summary>
-    ///     SetError should delegate to projection cache.
-    /// </summary>
-    [Fact]
-    public void SetErrorDelegatesToCache()
-    {
-        // Arrange
-        using CompositeInletStore sut = new(store, cache);
-        InvalidOperationException error = new("Test error");
-
-        // Act
-        sut.SetError<TestProjection>("entity-1", error);
-
-        // Assert
-        Exception? result = cache.GetProjectionError<TestProjection>("entity-1");
-        Assert.NotNull(result);
-        Assert.Equal("Test error", result.Message);
-    }
-
-    /// <summary>
-    ///     SetLoaded should delegate to projection cache.
-    /// </summary>
-    [Fact]
-    public void SetLoadedDelegatesToCache()
-    {
-        // Arrange
-        using CompositeInletStore sut = new(store, cache);
-        TestProjection data = new("Test");
-
-        // Act
-        sut.SetLoaded("entity-1", data, 10L);
-
-        // Assert
-        TestProjection? result = cache.GetProjection<TestProjection>("entity-1");
-        Assert.NotNull(result);
-        Assert.Equal("Test", result.Name);
-        Assert.Equal(10L, cache.GetProjectionVersion<TestProjection>("entity-1"));
-    }
-
-    /// <summary>
-    ///     SetLoading should delegate to projection cache.
-    /// </summary>
-    [Fact]
-    public void SetLoadingDelegatesToCache()
-    {
-        // Arrange
-        using CompositeInletStore sut = new(store, cache);
-
-        // Act
-        sut.SetLoading<TestProjection>("entity-1");
-
-        // Assert
-        Assert.True(cache.IsProjectionLoading<TestProjection>("entity-1"));
-    }
-
-    /// <summary>
-    ///     SetUpdated should delegate to projection cache.
-    /// </summary>
-    [Fact]
-    public void SetUpdatedDelegatesToCache()
-    {
-        // Arrange
-        using CompositeInletStore sut = new(store, cache);
-        TestProjection data = new("Updated");
-
-        // Act
-        sut.SetUpdated("entity-1", data, 15L);
-
-        // Assert
-        TestProjection? result = cache.GetProjection<TestProjection>("entity-1");
-        Assert.NotNull(result);
-        Assert.Equal("Updated", result.Name);
-        Assert.Equal(15L, cache.GetProjectionVersion<TestProjection>("entity-1"));
     }
 
     /// <summary>

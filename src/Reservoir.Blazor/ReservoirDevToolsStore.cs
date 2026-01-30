@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,24 +20,18 @@ namespace Mississippi.Reservoir.Blazor;
 /// </summary>
 internal sealed class ReservoirDevToolsStore : Store
 {
-    private ReservoirDevToolsInterop Interop { get; }
-
-    private ReservoirDevToolsOptions Options { get; }
-
-    private IHostEnvironment? HostEnvironment { get; }
-
     private readonly SemaphoreSlim devToolsLock = new(1, 1);
-
-    private DotNetObjectReference<ReservoirDevToolsStore>? dotNetRef;
-
-    private bool devToolsConnected;
-
-    private bool suppressDevToolsUpdates;
 
     private IReadOnlyDictionary<string, object> committedSnapshot;
 
+    private bool devToolsConnected;
+
+    private DotNetObjectReference<ReservoirDevToolsStore>? dotNetRef;
+
+    private bool suppressDevToolsUpdates;
+
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ReservoirDevToolsStore"/> class.
+    ///     Initializes a new instance of the <see cref="ReservoirDevToolsStore" /> class.
     /// </summary>
     /// <param name="featureRegistrations">The feature state registrations.</param>
     /// <param name="middlewaresCollection">The middleware collection.</param>
@@ -56,40 +49,55 @@ internal sealed class ReservoirDevToolsStore : Store
     {
         ArgumentNullException.ThrowIfNull(interop);
         ArgumentNullException.ThrowIfNull(options);
-
         Interop = interop;
         Options = options.Value;
         HostEnvironment = hostEnvironment;
         committedSnapshot = CreateFeatureStateSnapshot();
     }
 
-    /// <inheritdoc />
-    protected override void OnActionDispatched(
-        IAction action
+    private IHostEnvironment? HostEnvironment { get; }
+
+    private ReservoirDevToolsInterop Interop { get; }
+
+    private ReservoirDevToolsOptions Options { get; }
+
+    private static string? TryExtractImportedStateJson(
+        JsonElement payload
     )
     {
-        if (suppressDevToolsUpdates)
+        if (!payload.TryGetProperty("nextLiftedState", out JsonElement nextLiftedState))
         {
-            return;
+            return null;
         }
 
-        // Fire-and-forget is intentional for DevTools reporting.
-        _ = SendToDevToolsAsync(action);
-    }
-
-    /// <inheritdoc />
-    protected override void Dispose(
-        bool disposing
-    )
-    {
-        if (disposing)
+        if (!nextLiftedState.TryGetProperty("computedStates", out JsonElement computedStates))
         {
-            dotNetRef?.Dispose();
-            dotNetRef = null;
-            devToolsLock.Dispose();
+            return null;
         }
 
-        base.Dispose(disposing);
+        if (computedStates.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        using JsonElement.ArrayEnumerator enumerator = computedStates.EnumerateArray();
+        JsonElement lastState = default;
+        foreach (JsonElement element in enumerator)
+        {
+            lastState = element;
+        }
+
+        if (lastState.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (!lastState.TryGetProperty("state", out JsonElement stateElement))
+        {
+            return null;
+        }
+
+        return stateElement.GetRawText();
     }
 
     /// <summary>
@@ -116,14 +124,123 @@ internal sealed class ReservoirDevToolsStore : Store
         await HandleDevToolsMessageAsync(message);
     }
 
-    private bool IsEnabled()
+    /// <inheritdoc />
+    protected override void Dispose(
+        bool disposing
+    )
     {
-        return Options.Enablement switch
+        if (disposing)
         {
-            ReservoirDevToolsEnablement.Always => true,
-            ReservoirDevToolsEnablement.DevelopmentOnly => HostEnvironment?.IsDevelopment() == true,
-            _ => false,
+            dotNetRef?.Dispose();
+            dotNetRef = null;
+            devToolsLock.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
+    /// <inheritdoc />
+    protected override void OnActionDispatched(
+        IAction action
+    )
+    {
+        if (suppressDevToolsUpdates)
+        {
+            return;
+        }
+
+        // Fire-and-forget is intentional for DevTools reporting.
+        _ = SendToDevToolsAsync(action);
+    }
+
+    private Dictionary<string, object?> BuildOptionsPayload()
+    {
+        Dictionary<string, object?> payload = new(StringComparer.Ordinal);
+        if (!string.IsNullOrWhiteSpace(Options.Name))
+        {
+            payload["name"] = Options.Name;
+        }
+
+        if (Options.MaxAge.HasValue)
+        {
+            payload["maxAge"] = Options.MaxAge.Value;
+        }
+
+        if (Options.Latency.HasValue)
+        {
+            payload["latency"] = Options.Latency.Value;
+        }
+
+        if (Options.AutoPause.HasValue)
+        {
+            payload["autoPause"] = Options.AutoPause.Value;
+        }
+
+        foreach (KeyValuePair<string, object?> option in Options.AdditionalOptions)
+        {
+            payload[option.Key] = option.Value;
+        }
+
+        return payload;
+    }
+
+    private object CreateActionPayload(
+        IAction action
+    )
+    {
+        object? sanitized = Options.ActionSanitizer?.Invoke(action);
+        if (sanitized is not null)
+        {
+            return sanitized;
+        }
+
+        // Serialize action using its runtime type to capture all properties.
+        // IAction is a marker interface with no properties, so we must use
+        // the concrete type for proper serialization to DevTools.
+        string actionJson = JsonSerializer.Serialize(action, action.GetType(), Options.SerializerOptions);
+        JsonElement actionElement = JsonSerializer.Deserialize<JsonElement>(actionJson, Options.SerializerOptions);
+        return new Dictionary<string, object>(StringComparer.Ordinal)
+        {
+            ["type"] = action.GetType().Name,
+            ["payload"] = actionElement,
         };
+    }
+
+    private object CreateStatePayload()
+    {
+        IReadOnlyDictionary<string, object> snapshot = CreateFeatureStateSnapshot();
+        object? sanitized = Options.StateSanitizer?.Invoke(snapshot);
+        if (sanitized is not null)
+        {
+            return sanitized;
+        }
+
+        // Serialize each feature state using its runtime type to capture all properties.
+        // Feature states implement IFeatureState (marker interface), so we must use
+        // concrete types for proper serialization to DevTools.
+        Dictionary<string, JsonElement> serializedSnapshot = new(StringComparer.Ordinal);
+        foreach (KeyValuePair<string, object> kvp in snapshot)
+        {
+            string stateJson = JsonSerializer.Serialize(kvp.Value, kvp.Value.GetType(), Options.SerializerOptions);
+            JsonElement stateElement = JsonSerializer.Deserialize<JsonElement>(stateJson, Options.SerializerOptions);
+            serializedSnapshot[kvp.Key] = stateElement;
+        }
+
+        return serializedSnapshot;
+    }
+
+    private ReservoirDevToolsMessage? DeserializeMessage(
+        string messageJson
+    )
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<ReservoirDevToolsMessage>(messageJson, Options.SerializerOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private async Task<bool> EnsureConnectedAsync()
@@ -246,97 +363,14 @@ internal sealed class ReservoirDevToolsStore : Store
         await Interop.InitAsync(CreateStatePayload());
     }
 
-    private Dictionary<string, object?> BuildOptionsPayload()
+    private bool IsEnabled()
     {
-        Dictionary<string, object?> payload = new(StringComparer.Ordinal);
-        if (!string.IsNullOrWhiteSpace(Options.Name))
+        return Options.Enablement switch
         {
-            payload["name"] = Options.Name;
-        }
-
-        if (Options.MaxAge.HasValue)
-        {
-            payload["maxAge"] = Options.MaxAge.Value;
-        }
-
-        if (Options.Latency.HasValue)
-        {
-            payload["latency"] = Options.Latency.Value;
-        }
-
-        if (Options.AutoPause.HasValue)
-        {
-            payload["autoPause"] = Options.AutoPause.Value;
-        }
-
-        foreach (KeyValuePair<string, object?> option in Options.AdditionalOptions)
-        {
-            payload[option.Key] = option.Value;
-        }
-
-        return payload;
-    }
-
-    private object CreateActionPayload(
-        IAction action
-    )
-    {
-        object? sanitized = Options.ActionSanitizer?.Invoke(action);
-        if (sanitized is not null)
-        {
-            return sanitized;
-        }
-
-        // Serialize action using its runtime type to capture all properties.
-        // IAction is a marker interface with no properties, so we must use
-        // the concrete type for proper serialization to DevTools.
-        string actionJson = JsonSerializer.Serialize(action, action.GetType(), Options.SerializerOptions);
-        JsonElement actionElement = JsonSerializer.Deserialize<JsonElement>(actionJson, Options.SerializerOptions);
-
-        return new Dictionary<string, object>(StringComparer.Ordinal)
-        {
-            ["type"] = action.GetType().Name,
-            ["payload"] = actionElement,
+            ReservoirDevToolsEnablement.Always => true,
+            ReservoirDevToolsEnablement.DevelopmentOnly => HostEnvironment?.IsDevelopment() == true,
+            var _ => false,
         };
-    }
-
-    private object CreateStatePayload()
-    {
-        IReadOnlyDictionary<string, object> snapshot = CreateFeatureStateSnapshot();
-        object? sanitized = Options.StateSanitizer?.Invoke(snapshot);
-        if (sanitized is not null)
-        {
-            return sanitized;
-        }
-
-        // Serialize each feature state using its runtime type to capture all properties.
-        // Feature states implement IFeatureState (marker interface), so we must use
-        // concrete types for proper serialization to DevTools.
-        Dictionary<string, JsonElement> serializedSnapshot = new(StringComparer.Ordinal);
-        foreach (KeyValuePair<string, object> kvp in snapshot)
-        {
-            string stateJson = JsonSerializer.Serialize(kvp.Value, kvp.Value.GetType(), Options.SerializerOptions);
-            JsonElement stateElement = JsonSerializer.Deserialize<JsonElement>(stateJson, Options.SerializerOptions);
-            serializedSnapshot[kvp.Key] = stateElement;
-        }
-
-        return serializedSnapshot;
-    }
-
-    private ReservoirDevToolsMessage? DeserializeMessage(
-        string messageJson
-    )
-    {
-        try
-        {
-            return JsonSerializer.Deserialize<ReservoirDevToolsMessage>(
-                messageJson,
-                Options.SerializerOptions);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
     }
 
     private void ReplaceStateFromJson(
@@ -371,7 +405,6 @@ internal sealed class ReservoirDevToolsStore : Store
 
         IReadOnlyDictionary<string, object> currentSnapshot = CreateFeatureStateSnapshot();
         Dictionary<string, object> newStates = new(StringComparer.Ordinal);
-
         foreach (KeyValuePair<string, object> current in currentSnapshot)
         {
             if (!root.TryGetProperty(current.Key, out JsonElement element))
@@ -420,7 +453,7 @@ internal sealed class ReservoirDevToolsStore : Store
         suppressDevToolsUpdates = true;
         try
         {
-            ReplaceFeatureStates(snapshot, notifyListeners: true);
+            ReplaceFeatureStates(snapshot, true);
         }
         finally
         {
@@ -453,48 +486,5 @@ internal sealed class ReservoirDevToolsStore : Store
         }
     }
 
-    private static string? TryExtractImportedStateJson(
-        JsonElement payload
-    )
-    {
-        if (!payload.TryGetProperty("nextLiftedState", out JsonElement nextLiftedState))
-        {
-            return null;
-        }
-
-        if (!nextLiftedState.TryGetProperty("computedStates", out JsonElement computedStates))
-        {
-            return null;
-        }
-
-        if (computedStates.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-
-        using JsonElement.ArrayEnumerator enumerator = computedStates.EnumerateArray();
-        JsonElement lastState = default;
-        foreach (JsonElement element in enumerator)
-        {
-            lastState = element;
-        }
-
-        if (lastState.ValueKind != JsonValueKind.Object)
-        {
-            return null;
-        }
-
-        if (!lastState.TryGetProperty("state", out JsonElement stateElement))
-        {
-            return null;
-        }
-
-        return stateElement.GetRawText();
-    }
-
-    private sealed record ReservoirDevToolsMessage(
-        string? Type,
-        JsonElement? Payload,
-        string? State
-    );
+    private sealed record ReservoirDevToolsMessage(string? Type, JsonElement? Payload, string? State);
 }

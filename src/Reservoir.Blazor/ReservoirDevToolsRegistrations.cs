@@ -31,7 +31,6 @@ public static class ReservoirDevToolsRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-
         if (configure is not null)
         {
             services.AddOptions<ReservoirDevToolsOptions>().Configure(configure);

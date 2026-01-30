@@ -1,6 +1,12 @@
 using System;
 
+using Microsoft.Extensions.DependencyInjection;
+
+using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Inlet.Client.Abstractions.State;
+using Mississippi.Inlet.Client.Reducers;
+using Mississippi.Reservoir;
+using Mississippi.Reservoir.Abstractions;
 
 
 namespace Mississippi.Inlet.Client.L0Tests;
@@ -8,9 +14,44 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ProjectionCache" />.
 /// </summary>
-public sealed class ProjectionCacheTests
+public sealed class ProjectionCacheTests : IDisposable
 {
-    private readonly ProjectionCache sut = new();
+    private readonly ServiceProvider serviceProvider;
+
+    private readonly Store store;
+
+    private readonly ProjectionCache sut;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ProjectionCacheTests" /> class.
+    /// </summary>
+    public ProjectionCacheTests()
+    {
+        // Set up DI container with Store and ProjectionsFeatureState
+        ServiceCollection services = new();
+        services.AddReservoir();
+        services.AddFeatureState<ProjectionsFeatureState>();
+        services.AddReducer<ProjectionLoadingAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceLoading);
+        services.AddReducer<ProjectionLoadedAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceLoaded);
+        services.AddReducer<ProjectionUpdatedAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceUpdated);
+        services.AddReducer<ProjectionErrorAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceError);
+        services.AddReducer<ProjectionConnectionChangedAction<TestProjection>, ProjectionsFeatureState>(
+            ProjectionsReducer.ReduceConnectionChanged);
+        serviceProvider = services.BuildServiceProvider();
+        store = (Store)serviceProvider.GetRequiredService<IStore>();
+        sut = new(store);
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        store.Dispose();
+        serviceProvider.Dispose();
+    }
 
     /// <summary>
     ///     Test projection record for testing purposes.
@@ -18,14 +59,21 @@ public sealed class ProjectionCacheTests
     private sealed record TestProjection(string Name, int Value = 0);
 
     /// <summary>
-    ///     GetProjectionError returns error after SetError.
+    ///     Constructor should throw when store is null.
     /// </summary>
     [Fact]
-    public void GetProjectionErrorReturnsErrorAfterSetError()
+    public void ConstructorThrowsWhenStoreIsNull() =>
+        Assert.Throws<ArgumentNullException>(() => new ProjectionCache(null!));
+
+    /// <summary>
+    ///     GetProjectionError returns error after dispatch.
+    /// </summary>
+    [Fact]
+    public void GetProjectionErrorReturnsErrorAfterDispatch()
     {
         // Arrange
         InvalidOperationException error = new("Test error");
-        sut.SetError<TestProjection>("entity-1", error);
+        store.Dispatch(new ProjectionErrorAction<TestProjection>("entity-1", error));
 
         // Act
         Exception? result = sut.GetProjectionError<TestProjection>("entity-1");
@@ -56,14 +104,14 @@ public sealed class ProjectionCacheTests
         Assert.Throws<ArgumentNullException>(() => sut.GetProjectionError<TestProjection>(null!));
 
     /// <summary>
-    ///     GetProjection returns data after SetLoaded.
+    ///     GetProjection returns data after dispatch.
     /// </summary>
     [Fact]
-    public void GetProjectionReturnsDataAfterSetLoaded()
+    public void GetProjectionReturnsDataAfterDispatch()
     {
         // Arrange
         TestProjection projection = new("Test", 42);
-        sut.SetLoaded("entity-1", projection, 5L);
+        store.Dispatch(new ProjectionLoadedAction<TestProjection>("entity-1", projection, 5L));
 
         // Act
         TestProjection? result = sut.GetProjection<TestProjection>("entity-1");
@@ -88,6 +136,59 @@ public sealed class ProjectionCacheTests
     }
 
     /// <summary>
+    ///     GetProjectionState includes connected state.
+    /// </summary>
+    [Fact]
+    public void GetProjectionStateIncludesConnectedState()
+    {
+        // Arrange
+        store.Dispatch(new ProjectionConnectionChangedAction<TestProjection>("entity-1", true));
+
+        // Act
+        IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("entity-1");
+
+        // Assert
+        Assert.NotNull(state);
+        Assert.True(state.IsConnected);
+    }
+
+    /// <summary>
+    ///     GetProjectionState includes error information.
+    /// </summary>
+    [Fact]
+    public void GetProjectionStateIncludesErrorInformation()
+    {
+        // Arrange
+        InvalidOperationException error = new("Test error");
+        store.Dispatch(new ProjectionErrorAction<TestProjection>("entity-1", error));
+
+        // Act
+        IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("entity-1");
+
+        // Assert
+        Assert.NotNull(state);
+        Assert.NotNull(state.ErrorException);
+        Assert.Equal("Test error", state.ErrorException.Message);
+    }
+
+    /// <summary>
+    ///     GetProjectionState includes loading state.
+    /// </summary>
+    [Fact]
+    public void GetProjectionStateIncludesLoadingState()
+    {
+        // Arrange
+        store.Dispatch(new ProjectionLoadingAction<TestProjection>("entity-1"));
+
+        // Act
+        IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("entity-1");
+
+        // Assert
+        Assert.NotNull(state);
+        Assert.True(state.IsLoading);
+    }
+
+    /// <summary>
     ///     GetProjectionState returns null for non-existent entity.
     /// </summary>
     [Fact]
@@ -101,14 +202,14 @@ public sealed class ProjectionCacheTests
     }
 
     /// <summary>
-    ///     GetProjectionState returns state after SetLoaded.
+    ///     GetProjectionState returns state after dispatch.
     /// </summary>
     [Fact]
     public void GetProjectionStateReturnsStateWhenExists()
     {
         // Arrange
         TestProjection projection = new("Test", 42);
-        sut.SetLoaded("entity-1", projection, 5L);
+        store.Dispatch(new ProjectionLoadedAction<TestProjection>("entity-1", projection, 5L));
 
         // Act
         IProjectionState<TestProjection>? state = sut.GetProjectionState<TestProjection>("entity-1");
@@ -148,14 +249,14 @@ public sealed class ProjectionCacheTests
     }
 
     /// <summary>
-    ///     GetProjectionVersion returns version after SetLoaded.
+    ///     GetProjectionVersion returns version after dispatch.
     /// </summary>
     [Fact]
-    public void GetProjectionVersionReturnsVersionAfterSetLoaded()
+    public void GetProjectionVersionReturnsVersionAfterDispatch()
     {
         // Arrange
         TestProjection projection = new("Test", 42);
-        sut.SetLoaded("entity-1", projection, 10L);
+        store.Dispatch(new ProjectionLoadedAction<TestProjection>("entity-1", projection, 10L));
 
         // Act
         long result = sut.GetProjectionVersion<TestProjection>("entity-1");
@@ -185,13 +286,13 @@ public sealed class ProjectionCacheTests
     }
 
     /// <summary>
-    ///     IsProjectionConnected returns true after SetConnection with true.
+    ///     IsProjectionConnected returns true after dispatch.
     /// </summary>
     [Fact]
-    public void IsProjectionConnectedReturnsTrueAfterSetConnection()
+    public void IsProjectionConnectedReturnsTrueAfterDispatch()
     {
         // Arrange
-        sut.SetConnection<TestProjection>("entity-1", true);
+        store.Dispatch(new ProjectionConnectionChangedAction<TestProjection>("entity-1", true));
 
         // Act
         bool result = sut.IsProjectionConnected<TestProjection>("entity-1");
@@ -221,13 +322,13 @@ public sealed class ProjectionCacheTests
     }
 
     /// <summary>
-    ///     IsProjectionLoading returns true after SetLoading.
+    ///     IsProjectionLoading returns true after dispatch.
     /// </summary>
     [Fact]
-    public void IsProjectionLoadingReturnsTrueAfterSetLoading()
+    public void IsProjectionLoadingReturnsTrueAfterDispatch()
     {
         // Arrange
-        sut.SetLoading<TestProjection>("entity-1");
+        store.Dispatch(new ProjectionLoadingAction<TestProjection>("entity-1"));
 
         // Act
         bool result = sut.IsProjectionLoading<TestProjection>("entity-1");
@@ -244,76 +345,41 @@ public sealed class ProjectionCacheTests
         Assert.Throws<ArgumentNullException>(() => sut.IsProjectionLoading<TestProjection>(null!));
 
     /// <summary>
-    ///     SetConnection throws when entityId is null.
+    ///     Projection updates should reflect latest state.
     /// </summary>
     [Fact]
-    public void SetConnectionThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
-        Assert.Throws<ArgumentNullException>(() => sut.SetConnection<TestProjection>(null!, true));
-
-    /// <summary>
-    ///     SetConnection updates existing state preserving data.
-    /// </summary>
-    [Fact]
-    public void SetConnectionUpdatesExistingStatePreservingData()
+    public void ProjectionUpdatesReflectLatestState()
     {
         // Arrange
-        TestProjection projection = new("Test", 42);
-        sut.SetLoaded("entity-1", projection, 5L);
+        TestProjection initialProjection = new("Initial", 1);
+        store.Dispatch(new ProjectionLoadedAction<TestProjection>("entity-1", initialProjection, 5L));
 
         // Act
-        sut.SetConnection<TestProjection>("entity-1", true);
-
-        // Assert
-        Assert.True(sut.IsProjectionConnected<TestProjection>("entity-1"));
-        Assert.NotNull(sut.GetProjection<TestProjection>("entity-1"));
-    }
-
-    /// <summary>
-    ///     SetError throws when entityId is null.
-    /// </summary>
-    [Fact]
-    public void SetErrorThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
-        Assert.Throws<ArgumentNullException>(() => sut.SetError<TestProjection>(
-            null!,
-            new InvalidOperationException("Test")));
-
-    /// <summary>
-    ///     SetError throws when exception is null.
-    /// </summary>
-    [Fact]
-    public void SetErrorThrowsArgumentNullExceptionWhenExceptionIsNull() =>
-        Assert.Throws<ArgumentNullException>(() => sut.SetError<TestProjection>("entity-1", null!));
-
-    /// <summary>
-    ///     SetLoaded throws when entityId is null.
-    /// </summary>
-    [Fact]
-    public void SetLoadedThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
-        Assert.Throws<ArgumentNullException>(() => sut.SetLoaded(null!, new TestProjection("Test"), 1L));
-
-    /// <summary>
-    ///     SetLoading throws when entityId is null.
-    /// </summary>
-    [Fact]
-    public void SetLoadingThrowsArgumentNullExceptionWhenEntityIdIsNull() =>
-        Assert.Throws<ArgumentNullException>(() => sut.SetLoading<TestProjection>(null!));
-
-    /// <summary>
-    ///     SetUpdated delegates to SetLoaded.
-    /// </summary>
-    [Fact]
-    public void SetUpdatedDelegatesToSetLoaded()
-    {
-        // Arrange
-        TestProjection projection = new("Test", 42);
-
-        // Act
-        sut.SetUpdated("entity-1", projection, 10L);
+        TestProjection updatedProjection = new("Updated", 99);
+        store.Dispatch(new ProjectionUpdatedAction<TestProjection>("entity-1", updatedProjection, 10L));
 
         // Assert
         TestProjection? result = sut.GetProjection<TestProjection>("entity-1");
         Assert.NotNull(result);
-        Assert.Equal("Test", result.Name);
+        Assert.Equal("Updated", result.Name);
+        Assert.Equal(99, result.Value);
         Assert.Equal(10L, sut.GetProjectionVersion<TestProjection>("entity-1"));
+    }
+
+    /// <summary>
+    ///     State changes should be visible immediately after dispatch.
+    /// </summary>
+    [Fact]
+    public void StateChangesAreVisibleImmediatelyAfterDispatch()
+    {
+        // Act
+        store.Dispatch(new ProjectionLoadingAction<TestProjection>("entity-1"));
+        bool isLoading = sut.IsProjectionLoading<TestProjection>("entity-1");
+        store.Dispatch(new ProjectionLoadedAction<TestProjection>("entity-1", new("Test"), 5L));
+        bool isLoadingAfter = sut.IsProjectionLoading<TestProjection>("entity-1");
+
+        // Assert
+        Assert.True(isLoading);
+        Assert.False(isLoadingAfter);
     }
 }

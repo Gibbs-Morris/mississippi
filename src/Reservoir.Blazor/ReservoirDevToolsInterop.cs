@@ -11,12 +11,10 @@ namespace Mississippi.Reservoir.Blazor;
 /// </summary>
 internal sealed class ReservoirDevToolsInterop : IAsyncDisposable
 {
-    private IJSRuntime JsRuntime { get; }
-
     private IJSObjectReference? module;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ReservoirDevToolsInterop"/> class.
+    ///     Initializes a new instance of the <see cref="ReservoirDevToolsInterop" /> class.
     /// </summary>
     /// <param name="jsRuntime">The JavaScript runtime.</param>
     public ReservoirDevToolsInterop(
@@ -26,6 +24,8 @@ internal sealed class ReservoirDevToolsInterop : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(jsRuntime);
         JsRuntime = jsRuntime;
     }
+
+    private IJSRuntime JsRuntime { get; }
 
     /// <summary>
     ///     Connects to the Redux DevTools extension.
@@ -58,6 +58,16 @@ internal sealed class ReservoirDevToolsInterop : IAsyncDisposable
         await module.InvokeVoidAsync("disconnect");
     }
 
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (module is not null)
+        {
+            await module.DisposeAsync();
+            module = null;
+        }
+    }
+
     /// <summary>
     ///     Initializes the DevTools state.
     /// </summary>
@@ -84,16 +94,6 @@ internal sealed class ReservoirDevToolsInterop : IAsyncDisposable
     {
         IJSObjectReference jsModule = await GetModuleAsync();
         await jsModule.InvokeVoidAsync("send", action, state);
-    }
-
-    /// <inheritdoc />
-    public async ValueTask DisposeAsync()
-    {
-        if (module is not null)
-        {
-            await module.DisposeAsync();
-            module = null;
-        }
     }
 
     private async ValueTask<IJSObjectReference> GetModuleAsync()

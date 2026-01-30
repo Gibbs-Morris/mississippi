@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Hosting;
@@ -19,24 +18,27 @@ namespace Mississippi.Reservoir.Blazor.L0Tests;
 /// <summary>
 ///     Tests for ReservoirDevToolsStore sanitizer functionality.
 /// </summary>
-public sealed class ReservoirDevToolsStoreSanitizerTests : IAsyncLifetime, IDisposable
+public sealed class ReservoirDevToolsStoreSanitizerTests
+    : IAsyncLifetime,
+      IDisposable
 {
-    private readonly Mock<IJSRuntime> jsRuntimeMock;
     private readonly ReservoirDevToolsInterop interop;
 
+    private readonly Mock<IJSRuntime> jsRuntimeMock;
+
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ReservoirDevToolsStoreSanitizerTests"/> class.
+    ///     Initializes a new instance of the <see cref="ReservoirDevToolsStoreSanitizerTests" /> class.
     /// </summary>
     public ReservoirDevToolsStoreSanitizerTests()
     {
-        jsRuntimeMock = new Mock<IJSRuntime>();
-        interop = new ReservoirDevToolsInterop(jsRuntimeMock.Object);
+        jsRuntimeMock = new();
+        interop = new(jsRuntimeMock.Object);
     }
 
     /// <inheritdoc />
-    public Task InitializeAsync()
+    public void Dispose()
     {
-        return Task.CompletedTask;
+        // Handled by DisposeAsync in xUnit.
     }
 
     /// <inheritdoc />
@@ -46,137 +48,70 @@ public sealed class ReservoirDevToolsStoreSanitizerTests : IAsyncLifetime, IDisp
     }
 
     /// <inheritdoc />
-    public void Dispose()
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    private ReservoirDevToolsStore CreateStore(
+        IFeatureStateRegistration[] registrations,
+        ReservoirDevToolsOptions options
+    )
     {
-        // Handled by DisposeAsync in xUnit.
+        Mock<IHostEnvironment> environmentMock = new();
+        environmentMock.Setup(e => e.EnvironmentName).Returns("Development");
+        return new(registrations, Array.Empty<IMiddleware>(), interop, Options.Create(options), environmentMock.Object);
     }
 
-    /// <summary>
-    ///     ActionSanitizer should transform action payload when provided.
-    /// </summary>
-    [Fact]
-    public void ActionSanitizerTransformsActionPayload()
+    private sealed record SensitiveAction(string Username, string Password) : IAction;
+
+    private sealed record SensitiveFeatureState : IFeatureState
     {
-        // Arrange
-        object? capturedAction = null;
-        ReservoirDevToolsOptions devToolsOptions = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Off,
-            ActionSanitizer = action =>
-            {
-                if (action is SensitiveAction sensitive)
-                {
-                    capturedAction = new { type = "SensitiveAction", password = "***", username = sensitive.Username };
-                    return capturedAction;
-                }
+        public static string FeatureKey => "sensitive-feature";
 
-                return null;
-            },
-        };
-
-        TestFeatureState initialState = new() { Value = "Initial" };
-        TestFeatureStateRegistration registration = new(initialState);
-        using ReservoirDevToolsStore store = CreateStore([registration], devToolsOptions);
-
-        SensitiveAction action = new("testuser", "secret123");
-
-        // Act - dispatch triggers sanitizer (even though DevTools is off, the sanitizer is configured)
-        store.Dispatch(action);
-
-        // Assert - action was processed (store still works)
-        // Note: With Enablement=Off, DevTools doesn't send to extension, but sanitizer is invoked
-        // We verify the store dispatched successfully
-        Assert.Equal("Initial", store.GetState<TestFeatureState>().Value);
+        public string Secret { get; init; } = string.Empty;
     }
 
-    /// <summary>
-    ///     ActionSanitizer returning null should use default serialization.
-    /// </summary>
-    [Fact]
-    public void ActionSanitizerReturningNullUsesDefaultSerialization()
+    private sealed class SensitiveFeatureStateRegistration : IFeatureStateRegistration
     {
-        // Arrange
-        ReservoirDevToolsOptions devToolsOptions = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Off,
+        private readonly SensitiveFeatureState initialState;
 
-            // Return null to signal default serialization should be used
-            ActionSanitizer = _ => null,
-        };
+        public SensitiveFeatureStateRegistration(
+            SensitiveFeatureState initialState
+        ) =>
+            this.initialState = initialState;
 
-        TestFeatureState initialState = new() { Value = "Initial" };
-        TestFeatureStateRegistration registration = new(initialState);
-        using ReservoirDevToolsStore store = CreateStore([registration], devToolsOptions);
+        public string FeatureKey => SensitiveFeatureState.FeatureKey;
 
-        // Act
-        store.Dispatch(new TestAction("test"));
+        public object InitialState => initialState;
 
-        // Assert - store should still function correctly when sanitizer returns null
-        Assert.Equal("Initial", store.GetState<TestFeatureState>().Value);
+        public object? RootActionEffect => null;
+
+        public object? RootReducer => null;
     }
 
-    /// <summary>
-    ///     StateSanitizer should transform state payload when provided.
-    /// </summary>
-    [Fact]
-    public void StateSanitizerTransformsStatePayload()
+    private sealed record TestAction(string Value) : IAction;
+
+    private sealed record TestFeatureState : IFeatureState
     {
-        // Arrange
-        IReadOnlyDictionary<string, object>? capturedState = null;
-        object? sanitizedResult = null;
-        ReservoirDevToolsOptions devToolsOptions = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Off,
-            StateSanitizer = state =>
-            {
-                capturedState = state;
+        public static string FeatureKey => "test-feature";
 
-                // Remove sensitive feature from state snapshot
-                Dictionary<string, object> sanitized = new(state);
-                sanitized.Remove("sensitive-feature");
-                sanitizedResult = sanitized;
-                return sanitizedResult;
-            },
-        };
-
-        TestFeatureState initialState = new() { Value = "Initial" };
-        SensitiveFeatureState sensitiveState = new() { Secret = "TopSecret" };
-        TestFeatureStateRegistration registration = new(initialState);
-        SensitiveFeatureStateRegistration sensitiveRegistration = new(sensitiveState);
-        using ReservoirDevToolsStore store = CreateStore([registration, sensitiveRegistration], devToolsOptions);
-
-        // Act
-        store.Dispatch(new TestAction("trigger"));
-
-        // Assert - both features are in the store
-        Assert.Equal("Initial", store.GetState<TestFeatureState>().Value);
-        Assert.Equal("TopSecret", store.GetState<SensitiveFeatureState>().Secret);
+        public string Value { get; init; } = string.Empty;
     }
 
-    /// <summary>
-    ///     StateSanitizer returning null should use original state snapshot.
-    /// </summary>
-    [Fact]
-    public void StateSanitizerReturningNullUsesOriginalSnapshot()
+    private sealed class TestFeatureStateRegistration : IFeatureStateRegistration
     {
-        // Arrange
-        ReservoirDevToolsOptions devToolsOptions = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Off,
+        private readonly TestFeatureState initialState;
 
-            // Return null to signal original snapshot should be used
-            StateSanitizer = _ => null,
-        };
+        public TestFeatureStateRegistration(
+            TestFeatureState initialState
+        ) =>
+            this.initialState = initialState;
 
-        TestFeatureState initialState = new() { Value = "Initial" };
-        TestFeatureStateRegistration registration = new(initialState);
-        using ReservoirDevToolsStore store = CreateStore([registration], devToolsOptions);
+        public string FeatureKey => TestFeatureState.FeatureKey;
 
-        // Act
-        store.Dispatch(new TestAction("test"));
+        public object InitialState => initialState;
 
-        // Assert - store functions correctly
-        Assert.Equal("Initial", store.GetState<TestFeatureState>().Value);
+        public object? RootActionEffect => null;
+
+        public object? RootReducer => null;
     }
 
     /// <summary>
@@ -200,14 +135,20 @@ public sealed class ReservoirDevToolsStoreSanitizerTests : IAsyncLifetime, IDisp
                         username = sensitive.Username,
                         password = "[REDACTED]",
                     },
-                    _ => new { type = action.GetType().Name, payload = action },
+                    var _ => new
+                    {
+                        type = action.GetType().Name,
+                        payload = action,
+                    },
                 };
                 capturedPayloads.Add(payload);
                 return payload;
             },
         };
-
-        TestFeatureState initialState = new() { Value = "Initial" };
+        TestFeatureState initialState = new()
+        {
+            Value = "Initial",
+        };
         TestFeatureStateRegistration registration = new(initialState);
         using ReservoirDevToolsStore store = CreateStore([registration], devToolsOptions);
 
@@ -216,6 +157,78 @@ public sealed class ReservoirDevToolsStoreSanitizerTests : IAsyncLifetime, IDisp
         store.Dispatch(new TestAction("normal"));
 
         // Assert - store processed both actions
+        Assert.Equal("Initial", store.GetState<TestFeatureState>().Value);
+    }
+
+    /// <summary>
+    ///     ActionSanitizer returning null should use default serialization.
+    /// </summary>
+    [Fact]
+    public void ActionSanitizerReturningNullUsesDefaultSerialization()
+    {
+        // Arrange
+        ReservoirDevToolsOptions devToolsOptions = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Off,
+
+            // Return null to signal default serialization should be used
+            ActionSanitizer = _ => null,
+        };
+        TestFeatureState initialState = new()
+        {
+            Value = "Initial",
+        };
+        TestFeatureStateRegistration registration = new(initialState);
+        using ReservoirDevToolsStore store = CreateStore([registration], devToolsOptions);
+
+        // Act
+        store.Dispatch(new TestAction("test"));
+
+        // Assert - store should still function correctly when sanitizer returns null
+        Assert.Equal("Initial", store.GetState<TestFeatureState>().Value);
+    }
+
+    /// <summary>
+    ///     ActionSanitizer should transform action payload when provided.
+    /// </summary>
+    [Fact]
+    public void ActionSanitizerTransformsActionPayload()
+    {
+        // Arrange
+        object? capturedAction = null;
+        ReservoirDevToolsOptions devToolsOptions = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Off,
+            ActionSanitizer = action =>
+            {
+                if (action is SensitiveAction sensitive)
+                {
+                    capturedAction = new
+                    {
+                        type = "SensitiveAction",
+                        password = "***",
+                        username = sensitive.Username,
+                    };
+                    return capturedAction;
+                }
+
+                return null;
+            },
+        };
+        TestFeatureState initialState = new()
+        {
+            Value = "Initial",
+        };
+        TestFeatureStateRegistration registration = new(initialState);
+        using ReservoirDevToolsStore store = CreateStore([registration], devToolsOptions);
+        SensitiveAction action = new("testuser", "secret123");
+
+        // Act - dispatch triggers sanitizer (even though DevTools is off, the sanitizer is configured)
+        store.Dispatch(action);
+
+        // Assert - action was processed (store still works)
+        // Note: With Enablement=Off, DevTools doesn't send to extension, but sanitizer is invoked
+        // We verify the store dispatched successfully
         Assert.Equal("Initial", store.GetState<TestFeatureState>().Value);
     }
 
@@ -247,9 +260,14 @@ public sealed class ReservoirDevToolsStoreSanitizerTests : IAsyncLifetime, IDisp
                 return filtered;
             },
         };
-
-        TestFeatureState initialState = new() { Value = "Public" };
-        SensitiveFeatureState sensitiveState = new() { Secret = "Private" };
+        TestFeatureState initialState = new()
+        {
+            Value = "Public",
+        };
+        SensitiveFeatureState sensitiveState = new()
+        {
+            Secret = "Private",
+        };
         TestFeatureStateRegistration registration = new(initialState);
         SensitiveFeatureStateRegistration sensitiveRegistration = new(sensitiveState);
         using ReservoirDevToolsStore store = CreateStore([registration, sensitiveRegistration], devToolsOptions);
@@ -262,77 +280,74 @@ public sealed class ReservoirDevToolsStoreSanitizerTests : IAsyncLifetime, IDisp
         Assert.Equal("Private", store.GetState<SensitiveFeatureState>().Secret);
     }
 
-    private ReservoirDevToolsStore CreateStore(
-        IFeatureStateRegistration[] registrations,
-        ReservoirDevToolsOptions options
-    )
+    /// <summary>
+    ///     StateSanitizer returning null should use original state snapshot.
+    /// </summary>
+    [Fact]
+    public void StateSanitizerReturningNullUsesOriginalSnapshot()
     {
-        Mock<IHostEnvironment> environmentMock = new();
-        environmentMock.Setup(e => e.EnvironmentName).Returns("Development");
-
-        return new ReservoirDevToolsStore(
-            registrations,
-            Array.Empty<IMiddleware>(),
-            interop,
-            Options.Create(options),
-            environmentMock.Object);
-    }
-
-    private sealed record TestAction(string Value) : IAction;
-
-    private sealed record SensitiveAction(string Username, string Password) : IAction;
-
-    private sealed record TestFeatureState : IFeatureState
-    {
-        public static string FeatureKey => "test-feature";
-
-        public string Value { get; init; } = string.Empty;
-    }
-
-    private sealed record SensitiveFeatureState : IFeatureState
-    {
-        public static string FeatureKey => "sensitive-feature";
-
-        public string Secret { get; init; } = string.Empty;
-    }
-
-    private sealed class TestFeatureStateRegistration : IFeatureStateRegistration
-    {
-        private readonly TestFeatureState initialState;
-
-        public TestFeatureStateRegistration(
-            TestFeatureState initialState
-        )
+        // Arrange
+        ReservoirDevToolsOptions devToolsOptions = new()
         {
-            this.initialState = initialState;
-        }
+            Enablement = ReservoirDevToolsEnablement.Off,
 
-        public string FeatureKey => TestFeatureState.FeatureKey;
+            // Return null to signal original snapshot should be used
+            StateSanitizer = _ => null,
+        };
+        TestFeatureState initialState = new()
+        {
+            Value = "Initial",
+        };
+        TestFeatureStateRegistration registration = new(initialState);
+        using ReservoirDevToolsStore store = CreateStore([registration], devToolsOptions);
 
-        public object InitialState => initialState;
+        // Act
+        store.Dispatch(new TestAction("test"));
 
-        public object? RootActionEffect => null;
-
-        public object? RootReducer => null;
+        // Assert - store functions correctly
+        Assert.Equal("Initial", store.GetState<TestFeatureState>().Value);
     }
 
-    private sealed class SensitiveFeatureStateRegistration : IFeatureStateRegistration
+    /// <summary>
+    ///     StateSanitizer should transform state payload when provided.
+    /// </summary>
+    [Fact]
+    public void StateSanitizerTransformsStatePayload()
     {
-        private readonly SensitiveFeatureState initialState;
-
-        public SensitiveFeatureStateRegistration(
-            SensitiveFeatureState initialState
-        )
+        // Arrange
+        IReadOnlyDictionary<string, object>? capturedState = null;
+        object? sanitizedResult = null;
+        ReservoirDevToolsOptions devToolsOptions = new()
         {
-            this.initialState = initialState;
-        }
+            Enablement = ReservoirDevToolsEnablement.Off,
+            StateSanitizer = state =>
+            {
+                capturedState = state;
 
-        public string FeatureKey => SensitiveFeatureState.FeatureKey;
+                // Remove sensitive feature from state snapshot
+                Dictionary<string, object> sanitized = new(state);
+                sanitized.Remove("sensitive-feature");
+                sanitizedResult = sanitized;
+                return sanitizedResult;
+            },
+        };
+        TestFeatureState initialState = new()
+        {
+            Value = "Initial",
+        };
+        SensitiveFeatureState sensitiveState = new()
+        {
+            Secret = "TopSecret",
+        };
+        TestFeatureStateRegistration registration = new(initialState);
+        SensitiveFeatureStateRegistration sensitiveRegistration = new(sensitiveState);
+        using ReservoirDevToolsStore store = CreateStore([registration, sensitiveRegistration], devToolsOptions);
 
-        public object InitialState => initialState;
+        // Act
+        store.Dispatch(new TestAction("trigger"));
 
-        public object? RootActionEffect => null;
-
-        public object? RootReducer => null;
+        // Assert - both features are in the store
+        Assert.Equal("Initial", store.GetState<TestFeatureState>().Value);
+        Assert.Equal("TopSecret", store.GetState<SensitiveFeatureState>().Secret);
     }
 }

@@ -21,13 +21,13 @@ public class Store : IStore
 {
     private readonly ConcurrentDictionary<string, object> featureStates = new();
 
-    private readonly ConcurrentDictionary<string, object> initialFeatureStates = new();
-
     /// <summary>
     ///     Cache of MethodInfo for HandleAsync methods, keyed by root effect type.
     ///     Avoids repeated reflection lookups on every dispatch.
     /// </summary>
     private readonly ConcurrentDictionary<Type, MethodInfo?> handleAsyncMethodCache = new();
+
+    private readonly ConcurrentDictionary<string, object> initialFeatureStates = new();
 
     private readonly List<Action> listeners = [];
 
@@ -157,6 +157,20 @@ public class Store : IStore
     }
 
     /// <summary>
+    ///     Creates a snapshot of the current feature states keyed by feature key.
+    /// </summary>
+    /// <returns>A snapshot dictionary of feature states.</returns>
+    protected IReadOnlyDictionary<string, object> CreateFeatureStateSnapshot() =>
+        new Dictionary<string, object>(featureStates);
+
+    /// <summary>
+    ///     Creates a snapshot of the initial feature states keyed by feature key.
+    /// </summary>
+    /// <returns>A snapshot dictionary of initial feature states.</returns>
+    protected IReadOnlyDictionary<string, object> CreateInitialFeatureStateSnapshot() =>
+        new Dictionary<string, object>(initialFeatureStates);
+
+    /// <summary>
     ///     Disposes resources used by the store.
     /// </summary>
     /// <param name="disposing">True if called from Dispose; false if called from finalizer.</param>
@@ -199,20 +213,6 @@ public class Store : IStore
     }
 
     /// <summary>
-    ///     Creates a snapshot of the current feature states keyed by feature key.
-    /// </summary>
-    /// <returns>A snapshot dictionary of feature states.</returns>
-    protected IReadOnlyDictionary<string, object> CreateFeatureStateSnapshot() =>
-        new Dictionary<string, object>(featureStates);
-
-    /// <summary>
-    ///     Creates a snapshot of the initial feature states keyed by feature key.
-    /// </summary>
-    /// <returns>A snapshot dictionary of initial feature states.</returns>
-    protected IReadOnlyDictionary<string, object> CreateInitialFeatureStateSnapshot() =>
-        new Dictionary<string, object>(initialFeatureStates);
-
-    /// <summary>
     ///     Replaces existing feature states with the provided values when types are compatible.
     ///     Missing feature keys are ignored.
     /// </summary>
@@ -224,7 +224,6 @@ public class Store : IStore
     )
     {
         ArgumentNullException.ThrowIfNull(newStates);
-
         foreach (KeyValuePair<string, object> kvp in newStates)
         {
             if (!featureStates.TryGetValue(kvp.Key, out object? currentState))

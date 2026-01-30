@@ -6,8 +6,19 @@ using Mississippi.Inlet.Client.Abstractions.State;
 namespace Mississippi.Inlet.Client.Abstractions;
 
 /// <summary>
-///     Cache for server-synced projection states.
+///     Read-only cache for server-synced projection states.
 /// </summary>
+/// <remarks>
+///     <para>
+///         Projection data is managed through Redux actions and reducers.
+///         This interface provides read-only access to the current state.
+///     </para>
+///     <para>
+///         To update projections, dispatch the appropriate action:
+///         <see cref="Actions.RefreshProjectionAction{T}" />,
+///         <see cref="Actions.SubscribeToProjectionAction{T}" />, etc.
+///     </para>
+/// </remarks>
 public interface IProjectionCache
 {
     /// <summary>
@@ -79,75 +90,6 @@ public interface IProjectionCache
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="entityId" /> is null.</exception>
     bool IsProjectionLoading<T>(
         string entityId
-    )
-        where T : class;
-
-    /// <summary>
-    ///     Sets the connection state for a projection.
-    /// </summary>
-    /// <typeparam name="T">The projection type.</typeparam>
-    /// <param name="entityId">The entity identifier.</param>
-    /// <param name="isConnected">Whether the projection is connected.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="entityId" /> is null.</exception>
-    void SetConnection<T>(
-        string entityId,
-        bool isConnected
-    )
-        where T : class;
-
-    /// <summary>
-    ///     Sets the error state for a projection.
-    /// </summary>
-    /// <typeparam name="T">The projection type.</typeparam>
-    /// <param name="entityId">The entity identifier.</param>
-    /// <param name="exception">The error that occurred.</param>
-    /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="entityId" /> or <paramref name="exception" /> is null.
-    /// </exception>
-    void SetError<T>(
-        string entityId,
-        Exception exception
-    )
-        where T : class;
-
-    /// <summary>
-    ///     Sets the loaded state for a projection.
-    /// </summary>
-    /// <typeparam name="T">The projection type.</typeparam>
-    /// <param name="entityId">The entity identifier.</param>
-    /// <param name="data">The loaded data.</param>
-    /// <param name="version">The server version.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="entityId" /> is null.</exception>
-    void SetLoaded<T>(
-        string entityId,
-        T? data,
-        long version
-    )
-        where T : class;
-
-    /// <summary>
-    ///     Sets the loading state for a projection.
-    /// </summary>
-    /// <typeparam name="T">The projection type.</typeparam>
-    /// <param name="entityId">The entity identifier.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="entityId" /> is null.</exception>
-    void SetLoading<T>(
-        string entityId
-    )
-        where T : class;
-
-    /// <summary>
-    ///     Sets the updated state for a projection.
-    /// </summary>
-    /// <typeparam name="T">The projection type.</typeparam>
-    /// <param name="entityId">The entity identifier.</param>
-    /// <param name="data">The updated data.</param>
-    /// <param name="version">The server version.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="entityId" /> is null.</exception>
-    void SetUpdated<T>(
-        string entityId,
-        T? data,
-        long version
     )
         where T : class;
 }

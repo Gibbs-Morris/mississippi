@@ -1,19 +1,37 @@
 using System;
-using System.Collections.Concurrent;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.State;
-using Mississippi.Inlet.Client.State;
+using Mississippi.Reservoir.Abstractions;
 
 
 namespace Mississippi.Inlet.Client;
 
 /// <summary>
-///     Thread-safe cache for server-synced projection states.
+///     Read-only facade over the Store's <see cref="ProjectionsFeatureState" />.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This class provides typed access to projection data stored in the Redux state tree.
+///         All writes occur through dispatched actions and reducers.
+///     </para>
+/// </remarks>
 public sealed class ProjectionCache : IProjectionCache
 {
-    private ConcurrentDictionary<ProjectionKey, object> ProjectionStates { get; } = new();
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ProjectionCache" /> class.
+    /// </summary>
+    /// <param name="store">The store containing projection state.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="store" /> is null.</exception>
+    public ProjectionCache(
+        IStore store
+    )
+    {
+        ArgumentNullException.ThrowIfNull(store);
+        Store = store;
+    }
+
+    private IStore Store { get; }
 
     /// <inheritdoc />
     public T? GetProjection<T>(
@@ -22,13 +40,7 @@ public sealed class ProjectionCache : IProjectionCache
         where T : class
     {
         ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionKey key = new(typeof(T), entityId);
-        if (ProjectionStates.TryGetValue(key, out object? state) && state is ProjectionState<T> typedState)
-        {
-            return typedState.Data;
-        }
-
-        return default;
+        return GetState().GetProjection<T>(entityId);
     }
 
     /// <inheritdoc />
@@ -38,13 +50,7 @@ public sealed class ProjectionCache : IProjectionCache
         where T : class
     {
         ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionKey key = new(typeof(T), entityId);
-        if (ProjectionStates.TryGetValue(key, out object? state) && state is ProjectionState<T> typedState)
-        {
-            return typedState.ErrorException;
-        }
-
-        return null;
+        return GetState().GetProjectionError<T>(entityId);
     }
 
     /// <inheritdoc />
@@ -54,13 +60,13 @@ public sealed class ProjectionCache : IProjectionCache
         where T : class
     {
         ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionKey key = new(typeof(T), entityId);
-        if (ProjectionStates.TryGetValue(key, out object? state) && state is ProjectionState<T> typedState)
+        ProjectionEntry<T>? entry = GetState().GetEntry<T>(entityId);
+        if (entry is null)
         {
-            return typedState;
+            return null;
         }
 
-        return null;
+        return new ProjectionStateAdapter<T>(entry);
     }
 
     /// <inheritdoc />
@@ -70,13 +76,7 @@ public sealed class ProjectionCache : IProjectionCache
         where T : class
     {
         ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionKey key = new(typeof(T), entityId);
-        if (ProjectionStates.TryGetValue(key, out object? state) && state is ProjectionState<T> typedState)
-        {
-            return typedState.Version;
-        }
-
-        return -1;
+        return GetState().GetProjectionVersion<T>(entityId);
     }
 
     /// <inheritdoc />
@@ -86,13 +86,7 @@ public sealed class ProjectionCache : IProjectionCache
         where T : class
     {
         ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionKey key = new(typeof(T), entityId);
-        if (ProjectionStates.TryGetValue(key, out object? state) && state is ProjectionState<T> typedState)
-        {
-            return typedState.IsConnected;
-        }
-
-        return false;
+        return GetState().IsProjectionConnected<T>(entityId);
     }
 
     /// <inheritdoc />
@@ -102,100 +96,32 @@ public sealed class ProjectionCache : IProjectionCache
         where T : class
     {
         ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionKey key = new(typeof(T), entityId);
-        if (ProjectionStates.TryGetValue(key, out object? state) && state is ProjectionState<T> typedState)
-        {
-            return typedState.IsLoading;
-        }
-
-        return false;
+        return GetState().IsProjectionLoading<T>(entityId);
     }
 
-    /// <inheritdoc />
-    public void SetConnection<T>(
-        string entityId,
-        bool isConnected
-    )
+    private ProjectionsFeatureState GetState() => Store.GetState<ProjectionsFeatureState>();
+
+    /// <summary>
+    ///     Adapter that wraps a <see cref="ProjectionEntry{T}" /> as <see cref="IProjectionState{T}" />.
+    /// </summary>
+    private sealed class ProjectionStateAdapter<T> : IProjectionState<T>
         where T : class
     {
-        ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionKey key = new(typeof(T), entityId);
-        ProjectionStates.AddOrUpdate(
-            key,
-            _ => new ProjectionState<T>().WithConnection(isConnected),
-            (
-                _,
-                existing
-            ) =>
-            {
-                if (existing is ProjectionState<T> typedState)
-                {
-                    return typedState.WithConnection(isConnected);
-                }
+        private readonly ProjectionEntry<T> entry;
 
-                return new ProjectionState<T>().WithConnection(isConnected);
-            });
+        public ProjectionStateAdapter(
+            ProjectionEntry<T> entry
+        ) =>
+            this.entry = entry;
+
+        public T? Data => entry.Data;
+
+        public Exception? ErrorException => entry.Error;
+
+        public bool IsConnected => entry.IsConnected;
+
+        public bool IsLoading => entry.IsLoading;
+
+        public long Version => entry.Version;
     }
-
-    /// <inheritdoc />
-    public void SetError<T>(
-        string entityId,
-        Exception exception
-    )
-        where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entityId);
-        ArgumentNullException.ThrowIfNull(exception);
-        ProjectionKey key = new(typeof(T), entityId);
-        ProjectionStates.AddOrUpdate(
-            key,
-            _ => new ProjectionState<T>().WithError(exception),
-            (
-                _,
-                existing
-            ) =>
-            {
-                if (existing is ProjectionState<T> typedState)
-                {
-                    return typedState.WithError(exception);
-                }
-
-                return new ProjectionState<T>().WithError(exception);
-            });
-    }
-
-    /// <inheritdoc />
-    public void SetLoaded<T>(
-        string entityId,
-        T? data,
-        long version
-    )
-        where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionKey key = new(typeof(T), entityId);
-        ProjectionStates[key] = new ProjectionState<T>(data, version, false, true);
-    }
-
-    /// <inheritdoc />
-    public void SetLoading<T>(
-        string entityId
-    )
-        where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionKey key = new(typeof(T), entityId);
-        ProjectionStates[key] = ProjectionState<T>.NotLoaded.WithLoading();
-    }
-
-    /// <inheritdoc />
-    public void SetUpdated<T>(
-        string entityId,
-        T? data,
-        long version
-    )
-        where T : class =>
-        SetLoaded(entityId, data, version);
-
-    private readonly record struct ProjectionKey(Type ProjectionType, string EntityId);
 }
