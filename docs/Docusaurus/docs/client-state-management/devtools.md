@@ -44,15 +44,28 @@ Open DevTools in your browser and navigate to the Redux tab. You will see action
 
 ## Enablement Modes
 
-DevTools integration is disabled by default. Use the `Enablement` property to control when integration is active:
+DevTools integration is disabled by default. Use the `Enablement` property to control when integration is active.
 
-| Mode | Behavior |
-|------|----------|
-| `Off` | DevTools integration is disabled (default) |
-| `DevelopmentOnly` | DevTools integration is enabled only when `IHostEnvironment.IsDevelopment()` returns `true` |
-| `Always` | DevTools integration is enabled in all environments |
+### ReservoirDevToolsEnablement Values
+
+```csharp
+public enum ReservoirDevToolsEnablement
+{
+    Off = 0,            // DevTools integration is disabled (default)
+    DevelopmentOnly = 1, // Enabled only when IHostEnvironment.IsDevelopment() returns true
+    Always = 2,          // Enabled in all environments
+}
+```
+
+| Value | Behavior |
+|-------|----------|
+| `Off` | DevTools integration is disabled. No JavaScript interop occurs. This is the default. |
+| `DevelopmentOnly` | DevTools integration is enabled only when `IHostEnvironment.IsDevelopment()` returns `true`. Recommended for most applications. |
+| `Always` | DevTools integration is enabled in all environments including production. Use with caution. |
 
 ([ReservoirDevToolsEnablement](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L80-L98))
+
+### Example
 
 ```csharp
 builder.Services.AddReservoirDevTools(options =>
@@ -72,14 +85,14 @@ The `ReservoirDevToolsOptions` class provides configuration for the DevTools int
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `Enablement` | `ReservoirDevToolsEnablement` | `Off` | Controls when DevTools integration is active |
-| `Name` | `string?` | `null` | Instance name shown in DevTools |
-| `MaxAge` | `int?` | `null` | Maximum number of actions to retain in history |
-| `Latency` | `int?` | `null` | Batching latency in milliseconds |
-| `AutoPause` | `bool?` | `null` | Auto-pause when DevTools is not open |
-| `IsStrictStateRehydrationEnabled` | `bool` | `false` | Enable strict time-travel state rehydration |
-| `ActionSanitizer` | `Func<IAction, object?>?` | `null` | Transform actions before sending to DevTools |
-| `StateSanitizer` | `Func<IReadOnlyDictionary<string, object>, object?>?` | `null` | Transform state before sending to DevTools |
+| `Enablement` | [`ReservoirDevToolsEnablement`](#reservoirdevtoolsenablement-values) | `Off` | Controls when DevTools integration is active. See [Enablement Modes](#enablement-modes). |
+| `Name` | `string?` | `null` | Instance name shown in DevTools dropdown when multiple instances exist. |
+| `MaxAge` | `int?` | `null` | Maximum number of actions to retain in history. When exceeded, oldest actions are removed. |
+| `Latency` | `int?` | `null` | Batching latency in milliseconds. Actions dispatched within this window are batched together. |
+| `AutoPause` | `bool?` | `null` | When `true`, pauses recording when DevTools window is not open to reduce overhead. |
+| `IsStrictStateRehydrationEnabled` | `bool` | `false` | When `true`, time-travel rejects payloads missing any feature state. See [Strict State Rehydration](#strict-state-rehydration). |
+| `ActionSanitizer` | `Func<IAction, object?>?` | `null` | Transform actions before sending. Return `null` to use default serialization. See [Sanitizers](#sanitizers). |
+| `StateSanitizer` | `Func<IReadOnlyDictionary<string, object>, object?>?` | `null` | Transform state snapshot before sending. Return `null` to use original. See [Sanitizers](#sanitizers). |
 
 ([ReservoirDevToolsOptions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L14-L76))
 
@@ -174,38 +187,67 @@ Use best-effort mode (default) when:
 
 ## Sanitizers
 
-Use sanitizers to transform actions or state before sending to DevTools. This is useful for removing sensitive data or reducing payload size.
+Use sanitizers to transform actions or state before sending to DevTools. This is useful for removing sensitive data (passwords, tokens, PII) or reducing payload size for large states.
+
+### Delegate Signatures
+
+```csharp
+// ActionSanitizer: Transform an action before sending to DevTools
+Func<IAction, object?>? ActionSanitizer
+
+// StateSanitizer: Transform the state snapshot before sending to DevTools
+Func<IReadOnlyDictionary<string, object>, object?>? StateSanitizer
+```
+
+### Return Value Semantics
+
+| Return Value | Behavior |
+|--------------|----------|
+| `null` | Use default serialization (action or state is sent as-is) |
+| Any object | The returned object is serialized and sent instead |
 
 ### Action Sanitizer
+
+Receives each dispatched `IAction` and can return a replacement object for DevTools display:
 
 ```csharp
 builder.Services.AddReservoirDevTools(options =>
 {
     options.ActionSanitizer = action =>
     {
+        // Redact sensitive fields from specific action types
         if (action is LoginAction login)
         {
             return new { type = "LoginAction", username = login.Username, password = "***" };
         }
-        return null; // Use default serialization
+        
+        // Return null to use default serialization for other actions
+        return null;
     };
 });
 ```
 
 ### State Sanitizer
 
+Receives the full state snapshot (keyed by feature key) and can return a modified snapshot:
+
 ```csharp
 builder.Services.AddReservoirDevTools(options =>
 {
     options.StateSanitizer = state =>
     {
-        // Remove sensitive feature state
+        // Remove entire feature states containing sensitive data
         var sanitized = new Dictionary<string, object>(state);
         sanitized.Remove("auth");
+        sanitized.Remove("userProfile");
         return sanitized;
     };
 });
 ```
+
+:::tip
+Sanitizers run on every action dispatch. Keep them fast to avoid impacting application performance. Consider caching sanitizer logic or using pattern matching for efficiency.
+:::
 
 ## Summary
 

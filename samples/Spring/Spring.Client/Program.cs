@@ -39,7 +39,7 @@ builder.Services.AddReservoirBlazorBuiltIns();
 // DevTools integration: enable Redux DevTools in development
 builder.Services.AddReservoirDevTools(options =>
 {
-    options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
+    options.Enablement = ReservoirDevToolsEnablement.Always;
     options.Name = "Spring Sample";
     options.IsStrictStateRehydrationEnabled = true;
 });
