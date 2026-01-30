@@ -173,6 +173,7 @@ Detailed documentation for each core component:
 - [Built-in Navigation](built-in-navigation.md) — Navigation state management
 - [Built-in Lifecycle](built-in-lifecycle.md) — Application lifecycle management
 - [Testing](testing.md) — Unit testing reducers and effects with StoreTestHarness
+- [DevTools](devtools.md) — Redux DevTools integration for time-travel debugging
 
 ## Source Code
 

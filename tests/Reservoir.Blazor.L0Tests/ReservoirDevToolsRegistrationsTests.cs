@@ -1,8 +1,12 @@
 using System;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
 
 using Mississippi.Reservoir.Abstractions;
+
+using Moq;
 
 
 namespace Mississippi.Reservoir.Blazor.L0Tests;
@@ -15,15 +19,17 @@ public sealed class ReservoirDevToolsRegistrationsTests
     /// <summary>
     ///     AddReservoirDevTools should replace the IStore registration.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
     [Fact]
-    public void AddReservoirDevToolsReplacesStoreRegistration()
+    public async Task AddReservoirDevToolsReplacesStoreRegistrationAsync()
     {
         // Arrange
         ServiceCollection services = [];
         services.AddReservoir();
         services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Off);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        using IServiceScope scope = provider.CreateScope();
+        services.AddSingleton(new Mock<IJSRuntime>().Object);
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        await using AsyncServiceScope scope = provider.CreateAsyncScope();
 
         // Act
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();

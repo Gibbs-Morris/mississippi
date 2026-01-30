@@ -22,7 +22,7 @@ export function connect(options, dotNetRef) {
   if (dotNetRef) {
     unsubscribe = connection.subscribe((message) => {
       try {
-        dotNetRef.invokeMethodAsync('OnDevToolsMessage', JSON.stringify(message));
+        dotNetRef.invokeMethodAsync('OnDevToolsMessageAsync', JSON.stringify(message));
       } catch {
         // ignore interop failures
       }

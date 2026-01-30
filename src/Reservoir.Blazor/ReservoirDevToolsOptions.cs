@@ -56,6 +56,23 @@ public sealed class ReservoirDevToolsOptions
     public Func<IReadOnlyDictionary<string, object>, object?>? StateSanitizer { get; set; }
 
     /// <summary>
+    ///     Gets or sets a value indicating whether time-travel state rehydration should be strict.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         When <see langword="true"/>, time-travel operations (jump, reset, import) will only succeed
+    ///         if ALL registered feature states can be successfully deserialized from the incoming payload.
+    ///         If any feature state is missing or fails deserialization, the entire operation is rejected
+    ///         and the current state remains unchanged.
+    ///     </para>
+    ///     <para>
+    ///         When <see langword="false"/> (default), time-travel uses best-effort rehydration: features
+    ///         that cannot be matched or deserialized are skipped, and the rest are applied.
+    ///     </para>
+    /// </remarks>
+    public bool IsStrictStateRehydrationEnabled { get; set; }
+
+    /// <summary>
     ///     Gets the JSON serializer options used for time-travel state rehydration.
     /// </summary>
     public JsonSerializerOptions SerializerOptions { get; } = new(JsonSerializerDefaults.Web)

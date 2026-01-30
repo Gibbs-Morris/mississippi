@@ -199,17 +199,17 @@ public class Store : IStore
     }
 
     /// <summary>
-    ///     Gets a snapshot of the current feature states keyed by feature key.
+    ///     Creates a snapshot of the current feature states keyed by feature key.
     /// </summary>
     /// <returns>A snapshot dictionary of feature states.</returns>
-    protected IReadOnlyDictionary<string, object> GetFeatureStateSnapshot() =>
+    protected IReadOnlyDictionary<string, object> CreateFeatureStateSnapshot() =>
         new Dictionary<string, object>(featureStates);
 
     /// <summary>
-    ///     Gets a snapshot of the initial feature states keyed by feature key.
+    ///     Creates a snapshot of the initial feature states keyed by feature key.
     /// </summary>
     /// <returns>A snapshot dictionary of initial feature states.</returns>
-    protected IReadOnlyDictionary<string, object> GetInitialFeatureStateSnapshot() =>
+    protected IReadOnlyDictionary<string, object> CreateInitialFeatureStateSnapshot() =>
         new Dictionary<string, object>(initialFeatureStates);
 
     /// <summary>

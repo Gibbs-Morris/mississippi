@@ -166,10 +166,10 @@ public sealed class StoreTests : IDisposable
         }
 
         public IReadOnlyDictionary<string, object> GetInitialSnapshot() =>
-            GetInitialFeatureStateSnapshot();
+            CreateInitialFeatureStateSnapshot();
 
         public IReadOnlyDictionary<string, object> GetSnapshot() =>
-            GetFeatureStateSnapshot();
+            CreateFeatureStateSnapshot();
 
         public void ReplaceSnapshot(
             IReadOnlyDictionary<string, object> snapshot

@@ -16,13 +16,16 @@ using Mississippi.Reservoir.Abstractions.State;
 
 namespace Mississippi.Reservoir.Blazor;
 
+/// <summary>
+///     A store implementation that reports actions and state to Redux DevTools.
+/// </summary>
 internal sealed class ReservoirDevToolsStore : Store
 {
-    private readonly ReservoirDevToolsInterop interop;
+    private ReservoirDevToolsInterop Interop { get; }
 
-    private readonly ReservoirDevToolsOptions options;
+    private ReservoirDevToolsOptions Options { get; }
 
-    private readonly IHostEnvironment? hostEnvironment;
+    private IHostEnvironment? HostEnvironment { get; }
 
     private readonly SemaphoreSlim devToolsLock = new(1, 1);
 
@@ -34,6 +37,14 @@ internal sealed class ReservoirDevToolsStore : Store
 
     private IReadOnlyDictionary<string, object> committedSnapshot;
 
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ReservoirDevToolsStore"/> class.
+    /// </summary>
+    /// <param name="featureRegistrations">The feature state registrations.</param>
+    /// <param name="middlewaresCollection">The middleware collection.</param>
+    /// <param name="interop">The DevTools JavaScript interop.</param>
+    /// <param name="options">The DevTools options.</param>
+    /// <param name="hostEnvironment">The optional host environment for environment checks.</param>
     public ReservoirDevToolsStore(
         IEnumerable<IFeatureStateRegistration> featureRegistrations,
         IEnumerable<IMiddleware> middlewaresCollection,
@@ -46,12 +57,13 @@ internal sealed class ReservoirDevToolsStore : Store
         ArgumentNullException.ThrowIfNull(interop);
         ArgumentNullException.ThrowIfNull(options);
 
-        this.interop = interop;
-        this.options = options.Value;
-        this.hostEnvironment = hostEnvironment;
-        committedSnapshot = GetFeatureStateSnapshot();
+        Interop = interop;
+        Options = options.Value;
+        HostEnvironment = hostEnvironment;
+        committedSnapshot = CreateFeatureStateSnapshot();
     }
 
+    /// <inheritdoc />
     protected override void OnActionDispatched(
         IAction action
     )
@@ -61,9 +73,11 @@ internal sealed class ReservoirDevToolsStore : Store
             return;
         }
 
+        // Fire-and-forget is intentional for DevTools reporting.
         _ = SendToDevToolsAsync(action);
     }
 
+    /// <inheritdoc />
     protected override void Dispose(
         bool disposing
     )
@@ -72,14 +86,19 @@ internal sealed class ReservoirDevToolsStore : Store
         {
             dotNetRef?.Dispose();
             dotNetRef = null;
-            _ = interop.DisconnectAsync();
+            devToolsLock.Dispose();
         }
 
         base.Dispose(disposing);
     }
 
+    /// <summary>
+    ///     Handles messages from the Redux DevTools extension.
+    /// </summary>
+    /// <param name="messageJson">The JSON message from DevTools.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     [JSInvokable]
-    public async Task OnDevToolsMessage(
+    public async Task OnDevToolsMessageAsync(
         string messageJson
     )
     {
@@ -99,10 +118,10 @@ internal sealed class ReservoirDevToolsStore : Store
 
     private bool IsEnabled()
     {
-        return options.Enablement switch
+        return Options.Enablement switch
         {
             ReservoirDevToolsEnablement.Always => true,
-            ReservoirDevToolsEnablement.DevelopmentOnly => hostEnvironment?.IsDevelopment() == true,
+            ReservoirDevToolsEnablement.DevelopmentOnly => HostEnvironment?.IsDevelopment() == true,
             _ => false,
         };
     }
@@ -128,15 +147,15 @@ internal sealed class ReservoirDevToolsStore : Store
             }
 
             dotNetRef ??= DotNetObjectReference.Create(this);
-            bool connected = await interop.ConnectAsync(BuildOptionsPayload(), dotNetRef);
+            bool connected = await Interop.ConnectAsync(BuildOptionsPayload(), dotNetRef);
             devToolsConnected = connected;
             if (!connected)
             {
                 return false;
             }
 
-            await interop.InitAsync(CreateStatePayload());
-            committedSnapshot = GetFeatureStateSnapshot();
+            await Interop.InitAsync(CreateStatePayload());
+            committedSnapshot = CreateFeatureStateSnapshot();
             return true;
         }
         catch (JSException)
@@ -194,7 +213,7 @@ internal sealed class ReservoirDevToolsStore : Store
 
                 break;
             case "RESET":
-                ReplaceStateFromSnapshot(GetInitialFeatureStateSnapshot());
+                ReplaceStateFromSnapshot(CreateInitialFeatureStateSnapshot());
                 await InitDevToolsAsync();
                 break;
             case "ROLLBACK":
@@ -202,7 +221,7 @@ internal sealed class ReservoirDevToolsStore : Store
                 await InitDevToolsAsync();
                 break;
             case "COMMIT":
-                committedSnapshot = GetFeatureStateSnapshot();
+                committedSnapshot = CreateFeatureStateSnapshot();
                 await InitDevToolsAsync();
                 break;
             case "IMPORT_STATE":
@@ -224,33 +243,33 @@ internal sealed class ReservoirDevToolsStore : Store
             return;
         }
 
-        await interop.InitAsync(CreateStatePayload());
+        await Interop.InitAsync(CreateStatePayload());
     }
 
-    private object BuildOptionsPayload()
+    private Dictionary<string, object?> BuildOptionsPayload()
     {
         Dictionary<string, object?> payload = new(StringComparer.Ordinal);
-        if (!string.IsNullOrWhiteSpace(options.Name))
+        if (!string.IsNullOrWhiteSpace(Options.Name))
         {
-            payload["name"] = options.Name;
+            payload["name"] = Options.Name;
         }
 
-        if (options.MaxAge.HasValue)
+        if (Options.MaxAge.HasValue)
         {
-            payload["maxAge"] = options.MaxAge.Value;
+            payload["maxAge"] = Options.MaxAge.Value;
         }
 
-        if (options.Latency.HasValue)
+        if (Options.Latency.HasValue)
         {
-            payload["latency"] = options.Latency.Value;
+            payload["latency"] = Options.Latency.Value;
         }
 
-        if (options.AutoPause.HasValue)
+        if (Options.AutoPause.HasValue)
         {
-            payload["autoPause"] = options.AutoPause.Value;
+            payload["autoPause"] = Options.AutoPause.Value;
         }
 
-        foreach (KeyValuePair<string, object?> option in options.AdditionalOptions)
+        foreach (KeyValuePair<string, object?> option in Options.AdditionalOptions)
         {
             payload[option.Key] = option.Value;
         }
@@ -262,7 +281,7 @@ internal sealed class ReservoirDevToolsStore : Store
         IAction action
     )
     {
-        object? sanitized = options.ActionSanitizer?.Invoke(action);
+        object? sanitized = Options.ActionSanitizer?.Invoke(action);
         if (sanitized is not null)
         {
             return sanitized;
@@ -277,8 +296,8 @@ internal sealed class ReservoirDevToolsStore : Store
 
     private object CreateStatePayload()
     {
-        IReadOnlyDictionary<string, object> snapshot = GetFeatureStateSnapshot();
-        object? sanitized = options.StateSanitizer?.Invoke(snapshot);
+        IReadOnlyDictionary<string, object> snapshot = CreateFeatureStateSnapshot();
+        object? sanitized = Options.StateSanitizer?.Invoke(snapshot);
         return sanitized ?? snapshot;
     }
 
@@ -290,7 +309,7 @@ internal sealed class ReservoirDevToolsStore : Store
         {
             return JsonSerializer.Deserialize<ReservoirDevToolsMessage>(
                 messageJson,
-                options.SerializerOptions);
+                Options.SerializerOptions);
         }
         catch (JsonException)
         {
@@ -328,20 +347,41 @@ internal sealed class ReservoirDevToolsStore : Store
             return;
         }
 
-        IReadOnlyDictionary<string, object> currentSnapshot = GetFeatureStateSnapshot();
+        IReadOnlyDictionary<string, object> currentSnapshot = CreateFeatureStateSnapshot();
         Dictionary<string, object> newStates = new(StringComparer.Ordinal);
 
         foreach (KeyValuePair<string, object> current in currentSnapshot)
         {
             if (!root.TryGetProperty(current.Key, out JsonElement element))
             {
+                if (Options.IsStrictStateRehydrationEnabled)
+                {
+                    // Strict mode: reject if any feature is missing.
+                    return;
+                }
+
                 continue;
             }
 
             Type stateType = current.Value.GetType();
-            object? deserialized = element.Deserialize(stateType, options.SerializerOptions);
+            object? deserialized = null;
+            try
+            {
+                deserialized = element.Deserialize(stateType, Options.SerializerOptions);
+            }
+            catch (JsonException)
+            {
+                // Deserialization failed.
+            }
+
             if (deserialized is null)
             {
+                if (Options.IsStrictStateRehydrationEnabled)
+                {
+                    // Strict mode: reject if any feature fails deserialization.
+                    return;
+                }
+
                 continue;
             }
 
@@ -379,7 +419,7 @@ internal sealed class ReservoirDevToolsStore : Store
         {
             object actionPayload = CreateActionPayload(action);
             object statePayload = CreateStatePayload();
-            await interop.SendAsync(actionPayload, statePayload);
+            await Interop.SendAsync(actionPayload, statePayload);
         }
         catch (JSException)
         {
@@ -391,7 +431,7 @@ internal sealed class ReservoirDevToolsStore : Store
         }
     }
 
-    private string? TryExtractImportedStateJson(
+    private static string? TryExtractImportedStateJson(
         JsonElement payload
     )
     {
@@ -410,7 +450,13 @@ internal sealed class ReservoirDevToolsStore : Store
             return null;
         }
 
-        JsonElement lastState = computedStates.EnumerateArray().LastOrDefault();
+        using JsonElement.ArrayEnumerator enumerator = computedStates.EnumerateArray();
+        JsonElement lastState = default;
+        foreach (JsonElement element in enumerator)
+        {
+            lastState = element;
+        }
+
         if (lastState.ValueKind != JsonValueKind.Object)
         {
             return null;
