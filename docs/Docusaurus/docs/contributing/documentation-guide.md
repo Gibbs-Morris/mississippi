@@ -176,6 +176,7 @@ flowchart LR
 
 - Update docs in the same change that modifies behavior or API surface.
 - Keep one source of truth; link instead of duplicating content.
+- Do NOT add "last updated" or timestamp fields; Git history is the source of truth.
 
 ## Writing Checklist
 
