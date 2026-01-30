@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 
-using Spring.Server.Infrastructure;
+using Spring.Server;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
