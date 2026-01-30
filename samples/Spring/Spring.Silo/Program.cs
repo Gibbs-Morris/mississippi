@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 
-using Spring.Silo.Infrastructure;
+using Spring.Silo;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
