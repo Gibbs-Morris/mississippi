@@ -287,10 +287,16 @@ internal sealed class ReservoirDevToolsStore : Store
             return sanitized;
         }
 
-        return new
+        // Serialize action using its runtime type to capture all properties.
+        // IAction is a marker interface with no properties, so we must use
+        // the concrete type for proper serialization to DevTools.
+        string actionJson = JsonSerializer.Serialize(action, action.GetType(), Options.SerializerOptions);
+        JsonElement actionElement = JsonSerializer.Deserialize<JsonElement>(actionJson, Options.SerializerOptions);
+
+        return new Dictionary<string, object>(StringComparer.Ordinal)
         {
-            type = action.GetType().Name,
-            payload = action,
+            ["type"] = action.GetType().Name,
+            ["payload"] = actionElement,
         };
     }
 
@@ -298,7 +304,23 @@ internal sealed class ReservoirDevToolsStore : Store
     {
         IReadOnlyDictionary<string, object> snapshot = CreateFeatureStateSnapshot();
         object? sanitized = Options.StateSanitizer?.Invoke(snapshot);
-        return sanitized ?? snapshot;
+        if (sanitized is not null)
+        {
+            return sanitized;
+        }
+
+        // Serialize each feature state using its runtime type to capture all properties.
+        // Feature states implement IFeatureState (marker interface), so we must use
+        // concrete types for proper serialization to DevTools.
+        Dictionary<string, JsonElement> serializedSnapshot = new(StringComparer.Ordinal);
+        foreach (KeyValuePair<string, object> kvp in snapshot)
+        {
+            string stateJson = JsonSerializer.Serialize(kvp.Value, kvp.Value.GetType(), Options.SerializerOptions);
+            JsonElement stateElement = JsonSerializer.Deserialize<JsonElement>(stateJson, Options.SerializerOptions);
+            serializedSnapshot[kvp.Key] = stateElement;
+        }
+
+        return serializedSnapshot;
     }
 
     private ReservoirDevToolsMessage? DeserializeMessage(
