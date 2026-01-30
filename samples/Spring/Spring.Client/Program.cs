@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client;
+using Mississippi.Reservoir.Blazor;
 using Mississippi.Reservoir.Blazor.BuiltIn;
 
 using Spring.Client;
@@ -34,6 +35,14 @@ builder.Services.AddEntitySelectionFeature();
 
 // Built-in Reservoir features: navigation, lifecycle
 builder.Services.AddReservoirBlazorBuiltIns();
+
+// DevTools integration: enable Redux DevTools in development
+builder.Services.AddReservoirDevTools(options =>
+{
+    options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
+    options.Name = "Spring Sample";
+    options.IsStrictStateRehydrationEnabled = true;
+});
 
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
