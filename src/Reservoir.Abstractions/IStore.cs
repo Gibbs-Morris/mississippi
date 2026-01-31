@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Reservoir.Abstractions.Events;
 using Mississippi.Reservoir.Abstractions.State;
 
 
@@ -20,9 +22,30 @@ namespace Mississippi.Reservoir.Abstractions;
 ///         State is organized into feature slices. Use <see cref="GetState{TState}" /> to access
 ///         feature states. Subscribe to changes via <see cref="Subscribe" />.
 ///     </para>
+///     <para>
+///         External integrations can observe store activity via <see cref="StoreEvents" /> without
+///         requiring inheritance. System actions (<see cref="ISystemAction" />) allow external
+///         components to command the store through the standard dispatch mechanism.
+///     </para>
 /// </remarks>
 public interface IStore : IDisposable
 {
+    /// <summary>
+    ///     Gets an observable stream of store events for external integrations.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Subscribers receive events for action dispatch, state restoration, and initialization.
+    ///         This enables DevTools, logging, analytics, and other integrations to observe store
+    ///         behavior without subclassing.
+    ///     </para>
+    ///     <para>
+    ///         Events are emitted synchronously during dispatch. Subscribers should avoid
+    ///         long-running operations in their handlers to prevent blocking the dispatch pipeline.
+    ///     </para>
+    /// </remarks>
+    IObservable<StoreEventBase> StoreEvents { get; }
+
     /// <summary>
     ///     Dispatches an action to the store.
     ///     Actions are processed by middleware, then action reducers, then effects.
@@ -42,6 +65,12 @@ public interface IStore : IDisposable
     /// </exception>
     TState GetState<TState>()
         where TState : class, IFeatureState;
+
+    /// <summary>
+    ///     Gets a snapshot of all current feature states.
+    /// </summary>
+    /// <returns>A dictionary of feature states keyed by feature key.</returns>
+    IReadOnlyDictionary<string, object> GetStateSnapshot();
 
     /// <summary>
     ///     Subscribes to state changes.

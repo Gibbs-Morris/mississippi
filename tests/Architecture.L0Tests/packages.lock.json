@@ -1011,6 +1011,7 @@
         "dependencies": {
           "Microsoft.AspNetCore.Components": "[10.0.2, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.2, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[10.0.2, )",
           "Mississippi.Reservoir": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }

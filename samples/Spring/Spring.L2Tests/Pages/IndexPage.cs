@@ -334,7 +334,31 @@ public sealed partial class IndexPage
     {
         await EnterAccountIdAsync(accountId);
         await ClickSetAccountAsync();
+        await WaitForAccountHeaderAsync(accountId);
     }
+
+    /// <summary>
+    ///     Waits for the account header to display the expected account ID.
+    /// </summary>
+    /// <param name="accountId">The expected account ID.</param>
+    /// <param name="timeout">Optional timeout in milliseconds.</param>
+    /// <returns>A task representing the wait operation.</returns>
+    public async Task WaitForAccountHeaderAsync(
+        string accountId,
+        float? timeout = null
+    ) =>
+        await page.Locator("main > div > span")
+            .Filter(
+                new()
+                {
+                    HasText = accountId,
+                })
+            .WaitForAsync(
+                new()
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = timeout,
+                });
 
     /// <summary>
     ///     Waits for the balance projection to appear on the page.
@@ -387,6 +411,29 @@ public sealed partial class IndexPage
         float? timeout = null
     ) =>
         await page.Locator("div[role='status']")
+            .WaitForAsync(
+                new()
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = timeout,
+                });
+
+    /// <summary>
+    ///     Waits for the SignalR connection status to reach the expected value.
+    /// </summary>
+    /// <param name="expectedStatus">The expected connection status text (e.g., "Connected").</param>
+    /// <param name="timeout">Optional timeout in milliseconds.</param>
+    /// <returns>A task representing the wait operation.</returns>
+    public async Task WaitForConnectionStatusAsync(
+        string expectedStatus,
+        float? timeout = null
+    ) =>
+        await page.Locator("button[aria-label='Connection status']")
+            .Filter(
+                new()
+                {
+                    HasTextRegex = new($"^{Regex.Escape(expectedStatus)}$"),
+                })
             .WaitForAsync(
                 new()
                 {

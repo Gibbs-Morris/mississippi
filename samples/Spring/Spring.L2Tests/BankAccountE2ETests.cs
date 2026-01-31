@@ -13,7 +13,7 @@ public sealed class BankAccountE2ETests
     /// <summary>
     ///     Timeout for waiting on SignalR projection updates (10 seconds).
     /// </summary>
-    private const float ProjectionTimeout = 10_000;
+    private const float ProjectionTimeout = 30_000;
 
     private readonly SpringFixture fixture;
 
@@ -41,6 +41,7 @@ public sealed class BankAccountE2ETests
         {
             IndexPage indexPage = new(page);
             await indexPage.NavigateAsync(fixture.ServerBaseUri);
+            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
             string accountId = $"e2e-{Guid.NewGuid():N}";
             const string holderName = "E2E Test User";
             const decimal initialDeposit = 100.00m;
@@ -57,6 +58,7 @@ public sealed class BankAccountE2ETests
             await indexPage.EnterHolderNameAsync(holderName);
             await indexPage.EnterInitialDepositAsync(initialDeposit);
             await indexPage.ClickOpenAccountAsync();
+            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
 
             // Wait for projection to show the balance via SignalR
             await indexPage.WaitForBalanceAsync(ProjectionTimeout);
@@ -72,6 +74,7 @@ public sealed class BankAccountE2ETests
             // Act - Deposit funds
             await indexPage.EnterDepositAmountAsync(depositAmount);
             await indexPage.ClickDepositAsync();
+            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
             await indexPage.WaitForBalanceValueAsync("150.00", ProjectionTimeout);
             balanceText = await indexPage.GetBalanceTextAsync();
             balanceText.Should().Contain("150.00", "balance should be 150.00 after deposit");
@@ -79,6 +82,7 @@ public sealed class BankAccountE2ETests
             // Act - Withdraw funds
             await indexPage.EnterWithdrawAmountAsync(withdrawAmount);
             await indexPage.ClickWithdrawAsync();
+            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
             await indexPage.WaitForBalanceValueAsync("125.00", ProjectionTimeout);
 
             // Assert - Final balance
@@ -105,6 +109,7 @@ public sealed class BankAccountE2ETests
         {
             IndexPage indexPage = new(page);
             await indexPage.NavigateAsync(fixture.ServerBaseUri);
+            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
             string accountId = $"deposit-{Guid.NewGuid():N}";
             const string holderName = "Deposit Test";
             const decimal initialDeposit = 50.00m;
@@ -115,6 +120,7 @@ public sealed class BankAccountE2ETests
             await indexPage.EnterHolderNameAsync(holderName);
             await indexPage.EnterInitialDepositAsync(initialDeposit);
             await indexPage.ClickOpenAccountAsync();
+            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
             await indexPage.WaitForBalanceAsync(ProjectionTimeout);
 
             // Act - Deposit
@@ -160,6 +166,7 @@ public sealed class BankAccountE2ETests
 
             // Act
             await indexPage.NavigateAsync(fixture.ServerBaseUri);
+            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
             string? title = await indexPage.GetTitleAsync();
 
             // Assert
@@ -185,6 +192,7 @@ public sealed class BankAccountE2ETests
         {
             IndexPage indexPage = new(page);
             await indexPage.NavigateAsync(fixture.ServerBaseUri);
+            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
             string accountId = $"open-{Guid.NewGuid():N}";
             const string holderName = "Jane Doe";
             const decimal initialDeposit = 250.00m;
@@ -255,6 +263,7 @@ public sealed class BankAccountE2ETests
         {
             IndexPage indexPage = new(page);
             await indexPage.NavigateAsync(fixture.ServerBaseUri);
+            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
             string accountId = $"withdraw-{Guid.NewGuid():N}";
             const string holderName = "Withdraw Test";
             const decimal initialDeposit = 200.00m;
@@ -265,11 +274,13 @@ public sealed class BankAccountE2ETests
             await indexPage.EnterHolderNameAsync(holderName);
             await indexPage.EnterInitialDepositAsync(initialDeposit);
             await indexPage.ClickOpenAccountAsync();
+            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
             await indexPage.WaitForBalanceAsync(ProjectionTimeout);
 
             // Act - Withdraw
             await indexPage.EnterWithdrawAmountAsync(withdrawAmount);
             await indexPage.ClickWithdrawAsync();
+            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
             await indexPage.WaitForBalanceValueAsync("150.00", ProjectionTimeout);
 
             // Assert

@@ -11,10 +11,14 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ProjectionNotifier" />.
 /// </summary>
+/// <remarks>
+///     <para>
+///         The ProjectionNotifier follows pure Redux: it only dispatches actions.
+///         State updates happen through reducers, not through the notifier.
+///     </para>
+/// </remarks>
 public sealed class ProjectionNotifierTests : IDisposable
 {
-    private readonly ProjectionCache cache = new();
-
     private readonly Store store = new();
 
     /// <inheritdoc />
@@ -48,29 +52,45 @@ public sealed class ProjectionNotifierTests : IDisposable
     private sealed record TestProjection(string Name);
 
     /// <summary>
-    ///     Constructor should throw when projectionCache is null.
-    /// </summary>
-    [Fact]
-    public void ConstructorThrowsWhenProjectionCacheIsNull() =>
-        Assert.Throws<ArgumentNullException>(() => new ProjectionNotifier(store, null!));
-
-    /// <summary>
     ///     Constructor should throw when store is null.
     /// </summary>
     [Fact]
     public void ConstructorThrowsWhenStoreIsNull() =>
-        Assert.Throws<ArgumentNullException>(() => new ProjectionNotifier(null!, cache));
+        Assert.Throws<ArgumentNullException>(() => new ProjectionNotifier(null!));
 
     /// <summary>
-    ///     NotifyConnectionChanged should dispatch action.
+    ///     NotifyConnectionChanged should dispatch action with connected=false.
     /// </summary>
     [Fact]
-    public void NotifyConnectionChangedDispatchesAction()
+    public void NotifyConnectionChangedDispatchesActionWithConnectedFalse()
     {
         // Arrange
         IAction? dispatchedAction = null;
         store.RegisterMiddleware(new CaptureMiddleware(a => dispatchedAction = a));
-        ProjectionNotifier sut = new(store, cache);
+        ProjectionNotifier sut = new(store);
+
+        // Act
+        sut.NotifyConnectionChanged<TestProjection>("entity-1", false);
+
+        // Assert
+        Assert.NotNull(dispatchedAction);
+        Assert.IsType<ProjectionConnectionChangedAction<TestProjection>>(dispatchedAction);
+        ProjectionConnectionChangedAction<TestProjection> typed =
+            (ProjectionConnectionChangedAction<TestProjection>)dispatchedAction;
+        Assert.Equal("entity-1", typed.EntityId);
+        Assert.False(typed.IsConnected);
+    }
+
+    /// <summary>
+    ///     NotifyConnectionChanged should dispatch action with connected=true.
+    /// </summary>
+    [Fact]
+    public void NotifyConnectionChangedDispatchesActionWithConnectedTrue()
+    {
+        // Arrange
+        IAction? dispatchedAction = null;
+        store.RegisterMiddleware(new CaptureMiddleware(a => dispatchedAction = a));
+        ProjectionNotifier sut = new(store);
 
         // Act
         sut.NotifyConnectionChanged<TestProjection>("entity-1", true);
@@ -85,53 +105,20 @@ public sealed class ProjectionNotifierTests : IDisposable
     }
 
     /// <summary>
-    ///     NotifyConnectionChanged should handle disconnect.
-    /// </summary>
-    [Fact]
-    public void NotifyConnectionChangedHandlesDisconnect()
-    {
-        // Arrange
-        ProjectionNotifier sut = new(store, cache);
-        sut.NotifyConnectionChanged<TestProjection>("entity-1", true);
-
-        // Act
-        sut.NotifyConnectionChanged<TestProjection>("entity-1", false);
-
-        // Assert
-        Assert.False(cache.IsProjectionConnected<TestProjection>("entity-1"));
-    }
-
-    /// <summary>
     ///     NotifyConnectionChanged should throw when entityId is null.
     /// </summary>
     [Fact]
     public void NotifyConnectionChangedThrowsWhenEntityIdIsNull()
     {
         // Arrange
-        ProjectionNotifier sut = new(store, cache);
+        ProjectionNotifier sut = new(store);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.NotifyConnectionChanged<TestProjection>(null!, true));
     }
 
     /// <summary>
-    ///     NotifyConnectionChanged should update cache.
-    /// </summary>
-    [Fact]
-    public void NotifyConnectionChangedUpdatesCache()
-    {
-        // Arrange
-        ProjectionNotifier sut = new(store, cache);
-
-        // Act
-        sut.NotifyConnectionChanged<TestProjection>("entity-1", true);
-
-        // Assert
-        Assert.True(cache.IsProjectionConnected<TestProjection>("entity-1"));
-    }
-
-    /// <summary>
-    ///     NotifyError should dispatch action.
+    ///     NotifyError should dispatch action with exception.
     /// </summary>
     [Fact]
     public void NotifyErrorDispatchesAction()
@@ -139,7 +126,7 @@ public sealed class ProjectionNotifierTests : IDisposable
         // Arrange
         IAction? dispatchedAction = null;
         store.RegisterMiddleware(new CaptureMiddleware(a => dispatchedAction = a));
-        ProjectionNotifier sut = new(store, cache);
+        ProjectionNotifier sut = new(store);
         InvalidOperationException error = new("Test error");
 
         // Act
@@ -160,7 +147,7 @@ public sealed class ProjectionNotifierTests : IDisposable
     public void NotifyErrorThrowsWhenEntityIdIsNull()
     {
         // Arrange
-        ProjectionNotifier sut = new(store, cache);
+        ProjectionNotifier sut = new(store);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
@@ -174,33 +161,14 @@ public sealed class ProjectionNotifierTests : IDisposable
     public void NotifyErrorThrowsWhenExceptionIsNull()
     {
         // Arrange
-        ProjectionNotifier sut = new(store, cache);
+        ProjectionNotifier sut = new(store);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.NotifyError<TestProjection>("entity-1", null!));
     }
 
     /// <summary>
-    ///     NotifyError should update cache.
-    /// </summary>
-    [Fact]
-    public void NotifyErrorUpdatesCache()
-    {
-        // Arrange
-        ProjectionNotifier sut = new(store, cache);
-        InvalidOperationException error = new("Test error");
-
-        // Act
-        sut.NotifyError<TestProjection>("entity-1", error);
-
-        // Assert
-        Exception? result = cache.GetProjectionError<TestProjection>("entity-1");
-        Assert.NotNull(result);
-        Assert.Equal("Test error", result.Message);
-    }
-
-    /// <summary>
-    ///     NotifyProjectionUpdated should dispatch action.
+    ///     NotifyProjectionUpdated should dispatch action with data and version.
     /// </summary>
     [Fact]
     public void NotifyProjectionUpdatedDispatchesAction()
@@ -208,7 +176,7 @@ public sealed class ProjectionNotifierTests : IDisposable
         // Arrange
         IAction? dispatchedAction = null;
         store.RegisterMiddleware(new CaptureMiddleware(a => dispatchedAction = a));
-        ProjectionNotifier sut = new(store, cache);
+        ProjectionNotifier sut = new(store);
         TestProjection data = new("Updated");
 
         // Act
@@ -224,20 +192,26 @@ public sealed class ProjectionNotifierTests : IDisposable
     }
 
     /// <summary>
-    ///     NotifyProjectionUpdated should handle null data.
+    ///     NotifyProjectionUpdated should dispatch action with null data.
     /// </summary>
     [Fact]
-    public void NotifyProjectionUpdatedHandlesNullData()
+    public void NotifyProjectionUpdatedDispatchesActionWithNullData()
     {
         // Arrange
-        ProjectionNotifier sut = new(store, cache);
+        IAction? dispatchedAction = null;
+        store.RegisterMiddleware(new CaptureMiddleware(a => dispatchedAction = a));
+        ProjectionNotifier sut = new(store);
 
         // Act
         sut.NotifyProjectionUpdated<TestProjection>("entity-1", null, 5L);
 
         // Assert
-        Assert.Null(cache.GetProjection<TestProjection>("entity-1"));
-        Assert.Equal(5L, cache.GetProjectionVersion<TestProjection>("entity-1"));
+        Assert.NotNull(dispatchedAction);
+        Assert.IsType<ProjectionUpdatedAction<TestProjection>>(dispatchedAction);
+        ProjectionUpdatedAction<TestProjection> typed = (ProjectionUpdatedAction<TestProjection>)dispatchedAction;
+        Assert.Equal("entity-1", typed.EntityId);
+        Assert.Null(typed.Data);
+        Assert.Equal(5L, typed.Version);
     }
 
     /// <summary>
@@ -247,29 +221,9 @@ public sealed class ProjectionNotifierTests : IDisposable
     public void NotifyProjectionUpdatedThrowsWhenEntityIdIsNull()
     {
         // Arrange
-        ProjectionNotifier sut = new(store, cache);
+        ProjectionNotifier sut = new(store);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.NotifyProjectionUpdated<TestProjection>(null!, new("Test"), 1L));
-    }
-
-    /// <summary>
-    ///     NotifyProjectionUpdated should update cache.
-    /// </summary>
-    [Fact]
-    public void NotifyProjectionUpdatedUpdatesCache()
-    {
-        // Arrange
-        ProjectionNotifier sut = new(store, cache);
-        TestProjection data = new("Updated");
-
-        // Act
-        sut.NotifyProjectionUpdated("entity-1", data, 10L);
-
-        // Assert
-        TestProjection? result = cache.GetProjection<TestProjection>("entity-1");
-        Assert.NotNull(result);
-        Assert.Equal("Updated", result.Name);
-        Assert.Equal(10L, cache.GetProjectionVersion<TestProjection>("entity-1"));
     }
 }

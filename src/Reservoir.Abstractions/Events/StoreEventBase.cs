@@ -1,0 +1,26 @@
+using System;
+
+
+namespace Mississippi.Reservoir.Abstractions.Events;
+
+/// <summary>
+///     Base record for all store events emitted through <see cref="IStore.StoreEvents" />.
+/// </summary>
+/// <remarks>
+///     <para>
+///         Store events provide an observable stream of what happens inside the store.
+///         External integrations (DevTools, logging, analytics) subscribe to these events
+///         rather than extending the store via inheritance.
+///     </para>
+///     <para>
+///         Events are emitted synchronously during dispatch. Subscribers should not
+///         perform long-running operations in their handlers to avoid blocking dispatch.
+///     </para>
+/// </remarks>
+public abstract record StoreEventBase
+{
+    /// <summary>
+    ///     Gets the UTC timestamp when this event was created.
+    /// </summary>
+    public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
+}

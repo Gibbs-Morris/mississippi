@@ -9,31 +9,27 @@ namespace Mississippi.Inlet.Client;
 
 /// <summary>
 ///     Notifier that dispatches projection update actions to the store.
-///     The <see cref="ProjectionCacheMiddleware" /> intercepts these actions
-///     and updates the <see cref="IProjectionCache" />.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This class follows the pure Redux pattern: it only dispatches actions.
+///         State updates occur through reducers that handle these actions.
+///     </para>
+/// </remarks>
 public sealed class ProjectionNotifier : IProjectionUpdateNotifier
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="ProjectionNotifier" /> class.
     /// </summary>
     /// <param name="store">The store to dispatch actions to.</param>
-    /// <param name="projectionCache">The projection cache to update for connection/error states.</param>
-    /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="store" /> or <paramref name="projectionCache" /> is null.
-    /// </exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="store" /> is null.</exception>
     public ProjectionNotifier(
-        IStore store,
-        IProjectionCache projectionCache
+        IStore store
     )
     {
         ArgumentNullException.ThrowIfNull(store);
-        ArgumentNullException.ThrowIfNull(projectionCache);
         Store = store;
-        ProjectionCache = projectionCache;
     }
-
-    private IProjectionCache ProjectionCache { get; }
 
     private IStore Store { get; }
 
@@ -45,7 +41,6 @@ public sealed class ProjectionNotifier : IProjectionUpdateNotifier
         where T : class
     {
         ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionCache.SetConnection<T>(entityId, isConnected);
         Store.Dispatch(new ProjectionConnectionChangedAction<T>(entityId, isConnected));
     }
 
@@ -58,7 +53,6 @@ public sealed class ProjectionNotifier : IProjectionUpdateNotifier
     {
         ArgumentNullException.ThrowIfNull(entityId);
         ArgumentNullException.ThrowIfNull(exception);
-        ProjectionCache.SetError<T>(entityId, exception);
         Store.Dispatch(new ProjectionErrorAction<T>(entityId, exception));
     }
 
@@ -71,7 +65,6 @@ public sealed class ProjectionNotifier : IProjectionUpdateNotifier
         where T : class
     {
         ArgumentNullException.ThrowIfNull(entityId);
-        ProjectionCache.SetUpdated<T>(entityId, data, version);
         Store.Dispatch(new ProjectionUpdatedAction<T>(entityId, data, version));
     }
 }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Reservoir.Abstractions.Events;
 using Mississippi.Reservoir.Abstractions.State;
 
 
@@ -27,6 +28,8 @@ public class Store : IStore
     /// </summary>
     private readonly ConcurrentDictionary<Type, MethodInfo?> handleAsyncMethodCache = new();
 
+    private readonly ConcurrentDictionary<string, object> initialFeatureStates = new();
+
     private readonly List<Action> listeners = [];
 
     private readonly object listenersLock = new();
@@ -36,6 +39,8 @@ public class Store : IStore
     private readonly ConcurrentDictionary<string, object> rootActionEffects = new();
 
     private readonly ConcurrentDictionary<string, object> rootReducers = new();
+
+    private readonly StoreEventSubject<StoreEventBase> storeEventSubject = new();
 
     private bool disposed;
 
@@ -67,6 +72,7 @@ public class Store : IStore
         foreach (IFeatureStateRegistration registration in featureRegistrations)
         {
             featureStates[registration.FeatureKey] = registration.InitialState;
+            initialFeatureStates[registration.FeatureKey] = registration.InitialState;
             if (registration.RootReducer is not null)
             {
                 rootReducers[registration.FeatureKey] = registration.RootReducer;
@@ -83,7 +89,13 @@ public class Store : IStore
         {
             RegisterMiddleware(middleware);
         }
+
+        // Emit initialization event
+        storeEventSubject.OnNext(new StoreInitializedEvent(GetStateSnapshot()));
     }
+
+    /// <inheritdoc />
+    public IObservable<StoreEventBase> StoreEvents => storeEventSubject;
 
     /// <inheritdoc />
     public void Dispatch(
@@ -92,6 +104,13 @@ public class Store : IStore
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         ArgumentNullException.ThrowIfNull(action);
+
+        // Handle system actions directly without going through user reducers/effects
+        if (action is ISystemAction systemAction)
+        {
+            HandleSystemAction(systemAction);
+            return;
+        }
 
         // Build the middleware pipeline ending with the core dispatch
         Action<IAction> coreDispatch = CoreDispatch;
@@ -123,6 +142,9 @@ public class Store : IStore
             $"No feature state registered for '{featureKey}'. " +
             $"Call AddFeatureState<{typeof(TState).Name}>() during service registration.");
     }
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, object> GetStateSnapshot() => new Dictionary<string, object>(featureStates);
 
     /// <summary>
     ///     Registers a middleware in the dispatch pipeline.
@@ -169,6 +191,7 @@ public class Store : IStore
         disposed = true;
         if (disposing)
         {
+            storeEventSubject.Dispose();
             lock (listenersLock)
             {
                 listeners.Clear();
@@ -179,19 +202,46 @@ public class Store : IStore
             rootActionEffects.Clear();
             handleAsyncMethodCache.Clear();
             middlewares.Clear();
+            initialFeatureStates.Clear();
         }
     }
 
     /// <summary>
-    ///     Hook for derived classes to process actions after action reducers run.
-    ///     Called before action effects are triggered.
+    ///     Gets a snapshot of the initial feature states keyed by feature key.
     /// </summary>
-    /// <param name="action">The action being dispatched.</param>
-    protected virtual void OnActionDispatched(
-        IAction action
+    /// <returns>A snapshot dictionary of initial feature states.</returns>
+    [SuppressMessage(
+        "Design",
+        "CA1024:Use properties where appropriate",
+        Justification = "Returns a new dictionary instance each call; method semantics are correct")]
+    protected IReadOnlyDictionary<string, object> GetInitialStateSnapshot() =>
+        new Dictionary<string, object>(initialFeatureStates);
+
+    private void ApplyStateSnapshot(
+        IReadOnlyDictionary<string, object> newStates
     )
     {
-        // Base implementation does nothing; derived classes can override
+        foreach (KeyValuePair<string, object> kvp in newStates)
+        {
+            if (!featureStates.TryGetValue(kvp.Key, out object? currentState))
+            {
+                continue;
+            }
+
+            object? newState = kvp.Value;
+            if (newState is null)
+            {
+                continue;
+            }
+
+            Type currentType = currentState.GetType();
+            if (!currentType.IsInstanceOfType(newState))
+            {
+                continue;
+            }
+
+            featureStates[kvp.Key] = newState;
+        }
     }
 
     private Action<IAction> BuildMiddlewarePipeline(
@@ -215,17 +265,54 @@ public class Store : IStore
         IAction action
     )
     {
-        // First, run reducers for feature states
+        // Emit pre-dispatch event
+        storeEventSubject.OnNext(new ActionDispatchingEvent(action));
+
+        // Run reducers for feature states
         ReduceFeatureStates(action);
 
-        // Hook for derived classes
-        OnActionDispatched(action);
+        // Emit post-dispatch event with current state snapshot
+        storeEventSubject.OnNext(new ActionDispatchedEvent(action, GetStateSnapshot()));
 
         // Notify listeners of state change
         NotifyListeners();
 
         // Finally, trigger action effects asynchronously
         _ = TriggerEffectsAsync(action);
+    }
+
+    private void HandleSystemAction(
+        ISystemAction systemAction
+    )
+    {
+        // Emit pre-dispatch event for system actions too
+        storeEventSubject.OnNext(new ActionDispatchingEvent(systemAction));
+        IReadOnlyDictionary<string, object> previousSnapshot = GetStateSnapshot();
+        IReadOnlyDictionary<string, object> newSnapshot;
+        bool notify;
+        switch (systemAction)
+        {
+            case RestoreStateAction restoreAction:
+                ApplyStateSnapshot(restoreAction.Snapshot);
+                newSnapshot = GetStateSnapshot();
+                notify = restoreAction.NotifyListeners;
+                break;
+            case ResetToInitialStateAction resetAction:
+                ApplyStateSnapshot(GetInitialStateSnapshot());
+                newSnapshot = GetStateSnapshot();
+                notify = resetAction.NotifyListeners;
+                break;
+            default:
+                // Unknown system action - just emit the dispatching event
+                return;
+        }
+
+        // Emit state restored event
+        storeEventSubject.OnNext(new StateRestoredEvent(previousSnapshot, newSnapshot, systemAction));
+        if (notify)
+        {
+            NotifyListeners();
+        }
     }
 
     private void NotifyListeners()

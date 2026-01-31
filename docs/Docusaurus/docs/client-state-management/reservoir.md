@@ -32,14 +32,17 @@ When a user interaction or system event occurs, an action is dispatched to the s
 flowchart LR
     subgraph Dispatch Pipeline
         A[Action] --> M[Middleware]
-        M --> R[Reducers]
-        R --> N[Notify Listeners]
+        M --> SE1[Emit Event]
+        SE1 --> R[Reducers]
+        R --> SE2[Emit Event]
+        SE2 --> N[Notify Listeners]
         N --> E[Effects]
     end
     
     E -.->|Yields New Actions| A
     R -->|Updates| S[(Feature States)]
     N -->|Triggers| UI[UI Re-render]
+    SE2 -->|Observes| DT[DevTools / Integrations]
     
     style A fill:#4a9eff,color:#fff
     style M fill:#f4a261,color:#fff
@@ -48,17 +51,22 @@ flowchart LR
     style E fill:#ff6b6b,color:#fff
     style S fill:#9b59b6,color:#fff
     style UI fill:#34495e,color:#fff
+    style SE1 fill:#9b59b6,color:#fff
+    style SE2 fill:#9b59b6,color:#fff
+    style DT fill:#2ecc71,color:#fff
 ```
 
 1. **Action Dispatched**: An [`IAction`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/IAction.cs) is dispatched to the [`IStore`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs).
 
 2. **Middleware Pipeline**: Actions pass through registered [`IMiddleware`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IMiddleware.cs) components for logging, analytics, or transformation.
 
-3. **Reducers Execute**: The store invokes [`IRootReducer<TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IRootReducer.cs) for each feature state. Matching reducers produce new immutable state.
+3. **Store Events**: The store emits [`StoreEventBase`](./store.md#observable-store-events) events through `IStore.StoreEvents`, enabling external integrations (like [DevTools](./devtools.md)) to observe activity via composition.
 
-4. **Listeners Notified**: Subscribed listeners (via `Store.Subscribe()`) are notified synchronously after the action is processed.
+4. **Reducers Execute**: The store invokes [`IRootReducer<TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IRootReducer.cs) for each feature state. Matching reducers produce new immutable state.
 
-5. **Effects Triggered**: [`IRootActionEffect<TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IRootActionEffect.cs) dispatches to matching effects asynchronously. Effects can yield new actions, continuing the cycle.
+5. **Listeners Notified**: Subscribed listeners (via `Store.Subscribe()`) are notified synchronously after the action is processed.
+
+6. **Effects Triggered**: [`IRootActionEffect<TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IRootActionEffect.cs) dispatches to matching effects asynchronously. Effects can yield new actions, continuing the cycle.
 
 ## Benefits
 
@@ -173,6 +181,7 @@ Detailed documentation for each core component:
 - [Built-in Navigation](built-in-navigation.md) — Navigation state management
 - [Built-in Lifecycle](built-in-lifecycle.md) — Application lifecycle management
 - [Testing](testing.md) — Unit testing reducers and effects with StoreTestHarness
+- [DevTools](devtools.md) — Redux DevTools integration for time-travel debugging
 
 ## Source Code
 
