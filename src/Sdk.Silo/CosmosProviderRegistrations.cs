@@ -33,35 +33,31 @@ public static class CosmosProviderRegistrations
         ArgumentNullException.ThrowIfNull(builder);
         MississippiCosmosOptions options = new();
         configure?.Invoke(options);
-
         builder.HostBuilder.AddAzureCosmosClient(options.ConnectionName);
         builder.HostBuilder.AddKeyedAzureBlobServiceClient(options.BlobConnectionName);
-
         builder.Services.AddKeyedSingleton(
             MississippiDefaults.ServiceKeys.BlobLocking,
             (
                 sp,
                 _
             ) => sp.GetRequiredKeyedService<BlobServiceClient>(options.BlobConnectionName));
-
         builder.Services.AddKeyedSingleton(
             MississippiDefaults.ServiceKeys.CosmosBrooksClient,
             (
                 sp,
                 _
             ) => sp.GetRequiredService<CosmosClient>());
-
         builder.Services.AddKeyedSingleton(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             (
                 sp,
                 _
             ) => sp.GetRequiredService<CosmosClient>());
-
         string brooksContainerId = string.Concat(options.ContainerPrefix, MississippiDefaults.ContainerIds.Brooks);
-        string snapshotsContainerId = string.Concat(options.ContainerPrefix, MississippiDefaults.ContainerIds.Snapshots);
+        string snapshotsContainerId = string.Concat(
+            options.ContainerPrefix,
+            MississippiDefaults.ContainerIds.Snapshots);
         string lockContainerId = string.Concat(options.ContainerPrefix, MississippiDefaults.ContainerIds.Locks);
-
         builder.Services.AddOptions<BrookStorageOptions>();
         builder.Services.Configure<BrookStorageOptions>(o =>
         {
@@ -70,7 +66,6 @@ public static class CosmosProviderRegistrations
             o.LockContainerName = lockContainerId;
             o.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosBrooksClient;
         });
-
         builder.Services.AddOptions<SnapshotStorageOptions>();
         builder.Services.Configure<SnapshotStorageOptions>(o =>
         {
@@ -78,13 +73,10 @@ public static class CosmosProviderRegistrations
             o.ContainerId = snapshotsContainerId;
             o.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosSnapshotsClient;
         });
-
         builder.Services.AddOptions<BrookProviderOptions>();
         builder.Services.Configure<BrookProviderOptions>(o => o.OrleansStreamProviderName = options.StreamProviderName);
-
         builder.Services.AddCosmosBrookStorageProvider();
         builder.Services.AddCosmosSnapshotStorageProvider();
-
         return builder;
     }
 }

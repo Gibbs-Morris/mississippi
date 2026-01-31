@@ -28,10 +28,8 @@ public static class InMemoryProviderRegistrations
         ArgumentNullException.ThrowIfNull(builder);
         InMemoryProviderOptions options = new();
         configure?.Invoke(options);
-
         builder.Services.AddOptions<BrookProviderOptions>();
         builder.Services.Configure<BrookProviderOptions>(o => o.OrleansStreamProviderName = options.StreamProviderName);
-
         builder.UseOrleans(siloBuilder =>
         {
             siloBuilder.AddMemoryStreams(options.StreamProviderName);
@@ -40,7 +38,6 @@ public static class InMemoryProviderRegistrations
             siloBuilder.AddMemoryGrainStorage(options.StorageNames.Snapshots);
             siloBuilder.AddMemoryGrainStorage(options.StorageNames.Projections);
         });
-
         return builder;
     }
 }

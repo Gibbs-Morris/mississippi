@@ -24,8 +24,7 @@ builder.Services.AddScoped(_ => new HttpClient
 
 // Register all Inlet features (aggregate commands, Reservoir built-ins, SignalR)
 // Generated from [assembly: GenerateInletClientComposite(AppName = "Spring")]
-builder.AddMississippiClient()
-    .AddSpringInlet();
+builder.AddMississippiClient().AddSpringInlet();
 
 // Application-specific features (not covered by composite generator)
 builder.Services.AddEntitySelectionFeature();

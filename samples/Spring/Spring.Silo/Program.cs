@@ -8,8 +8,7 @@ using Spring.Silo;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Composite Spring silo registrations
-builder.AddMississippiSilo()
-	.AddSpringSilo();
+builder.AddMississippiSilo().AddSpringSilo();
 WebApplication app = builder.Build();
 
 // Composite Spring silo endpoint mapping

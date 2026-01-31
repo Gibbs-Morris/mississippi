@@ -22,16 +22,6 @@ public sealed class MississippiServerBuilder
         HostBuilder = hostBuilder ?? throw new ArgumentNullException(nameof(hostBuilder));
 
     /// <summary>
-    ///     Gets the underlying web application builder.
-    /// </summary>
-    public WebApplicationBuilder HostBuilder { get; }
-
-    /// <summary>
-    ///     Gets the service collection for dependency injection.
-    /// </summary>
-    public IServiceCollection Services => HostBuilder.Services;
-
-    /// <summary>
     ///     Gets the configuration manager.
     /// </summary>
     public ConfigurationManager Configuration => HostBuilder.Configuration;
@@ -40,4 +30,14 @@ public sealed class MississippiServerBuilder
     ///     Gets or sets a value indicating whether domain registrations have been applied.
     /// </summary>
     public bool HasDomain { get; set; }
+
+    /// <summary>
+    ///     Gets the underlying web application builder.
+    /// </summary>
+    public WebApplicationBuilder HostBuilder { get; }
+
+    /// <summary>
+    ///     Gets the service collection for dependency injection.
+    /// </summary>
+    public IServiceCollection Services => HostBuilder.Services;
 }

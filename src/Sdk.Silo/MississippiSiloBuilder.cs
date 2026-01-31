@@ -24,6 +24,11 @@ public sealed class MississippiSiloBuilder
         HostBuilder = hostBuilder ?? throw new ArgumentNullException(nameof(hostBuilder));
 
     /// <summary>
+    ///     Gets or sets a value indicating whether domain registrations have been applied.
+    /// </summary>
+    public bool HasDomain { get; set; }
+
+    /// <summary>
     ///     Gets the underlying host builder.
     /// </summary>
     public IHostApplicationBuilder HostBuilder { get; }
@@ -37,11 +42,6 @@ public sealed class MississippiSiloBuilder
     ///     Gets the list of Orleans configuration actions to apply at build time.
     /// </summary>
     internal List<Action<ISiloBuilder>> OrleansConfigurations { get; } = [];
-
-    /// <summary>
-    ///     Gets or sets a value indicating whether domain registrations have been applied.
-    /// </summary>
-    public bool HasDomain { get; set; }
 
     /// <summary>
     ///     Adds an Orleans configuration action for the underlying silo builder.

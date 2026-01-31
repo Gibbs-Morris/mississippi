@@ -9,14 +9,14 @@ namespace Mississippi.Sdk.Client;
 public sealed class MississippiClientOptions
 {
     /// <summary>
-    ///     Gets or sets the base address used for API and SignalR calls.
-    /// </summary>
-    public Uri? BaseAddress { get; set; }
-
-    /// <summary>
     ///     Gets or sets a value indicating whether SignalR should auto-reconnect.
     /// </summary>
     public bool AutoReconnect { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets the base address used for API and SignalR calls.
+    /// </summary>
+    public Uri? BaseAddress { get; set; }
 
     /// <summary>
     ///     Gets or sets the hub path prefix used for SignalR endpoints.

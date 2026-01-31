@@ -39,7 +39,6 @@ public static class MississippiSiloRegistrations
                 configureSilo(siloBuilder);
             }
         });
-
         return mississippiBuilder;
     }
 }

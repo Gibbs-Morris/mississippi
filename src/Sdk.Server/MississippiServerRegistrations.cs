@@ -29,6 +29,6 @@ public static class MississippiServerRegistrations
             builder.Services.Configure(configure);
         }
 
-        return new MississippiServerBuilder(builder);
+        return new(builder);
     }
 }
