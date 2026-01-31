@@ -42,21 +42,19 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         await interop.DisposeAsync();
     }
 
-    private ReduxDevToolsService CreateService(
-        IStore store,
-        ReservoirDevToolsOptions options
-    )
-    {
-        return new(store, interop, Options.Create(options));
-    }
-
-    private Store CreateStore(
+    private static Store CreateStore(
         IFeatureStateRegistration[]? registrations = null
     )
     {
         registrations ??= [new TestFeatureStateRegistration()];
         return new(registrations, Array.Empty<IMiddleware>());
     }
+
+    private ReduxDevToolsService CreateService(
+        IStore store,
+        ReservoirDevToolsOptions options
+    ) =>
+        new(store, interop, Options.Create(options));
 
     private void SetupJsModuleForConnection()
     {
@@ -65,16 +63,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         jsModuleMock.Setup(m => m.InvokeAsync<bool>("connect", It.IsAny<object[]>())).ReturnsAsync(true);
     }
 
-    private sealed record TestAction : IAction;
-
     private sealed record SensitiveAction(string Password) : IAction;
-
-    private sealed record TestFeatureState : IFeatureState
-    {
-        public static string FeatureKey => "test";
-
-        public int Value { get; init; }
-    }
 
     private sealed record SensitiveFeatureState : IFeatureState
     {
@@ -83,22 +72,39 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         public string Token { get; init; } = string.Empty;
     }
 
-    private sealed class TestFeatureStateRegistration : IFeatureStateRegistration
+    private sealed class SensitiveFeatureStateRegistration : IFeatureStateRegistration
     {
-        public string FeatureKey => TestFeatureState.FeatureKey;
+        public string FeatureKey => SensitiveFeatureState.FeatureKey;
 
-        public object InitialState => new TestFeatureState { Value = 0 };
+        public object InitialState =>
+            new SensitiveFeatureState
+            {
+                Token = "secret-token",
+            };
 
         public object? RootActionEffect => null;
 
         public object? RootReducer => null;
     }
 
-    private sealed class SensitiveFeatureStateRegistration : IFeatureStateRegistration
-    {
-        public string FeatureKey => SensitiveFeatureState.FeatureKey;
+    private sealed record TestAction : IAction;
 
-        public object InitialState => new SensitiveFeatureState { Token = "secret-token" };
+    private sealed record TestFeatureState : IFeatureState
+    {
+        public static string FeatureKey => "test";
+
+        public int Value { get; init; }
+    }
+
+    private sealed class TestFeatureStateRegistration : IFeatureStateRegistration
+    {
+        public string FeatureKey => TestFeatureState.FeatureKey;
+
+        public object InitialState =>
+            new TestFeatureState
+            {
+                Value = 0,
+            };
 
         public object? RootActionEffect => null;
 
@@ -106,8 +112,22 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     Action sanitizer default is null.
+    /// </summary>
+    [Fact]
+    public void ActionSanitizerDefaultIsNull()
+    {
+        // Arrange & Act
+        ReservoirDevToolsOptions options = new();
+
+        // Assert
+        Assert.Null(options.ActionSanitizer);
+    }
+
+    /// <summary>
     ///     Action sanitizer should transform actions before sending to DevTools.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ActionSanitizerTransformsActionsBeforeSending()
     {
@@ -119,12 +139,15 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
             Enablement = ReservoirDevToolsEnablement.Always,
             ActionSanitizer = action =>
             {
-                if (action is SensitiveAction sensitive)
+                if (action is SensitiveAction)
                 {
                     return new Dictionary<string, object>(StringComparer.Ordinal)
                     {
                         ["type"] = "SensitiveAction",
-                        ["payload"] = new { Password = "[REDACTED]" },
+                        ["payload"] = new
+                        {
+                            Password = "[REDACTED]",
+                        },
                     };
                 }
 
@@ -133,10 +156,11 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((method, args) => capturedActionPayload = args[0]);
-
+            .Callback<string, object[]>((
+                method,
+                args
+            ) => capturedActionPayload = args[0]);
         await service.StartAsync(CancellationToken.None);
 
         // Dispatch to establish connection
@@ -153,8 +177,132 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     Null sanitizer return should use default serialization.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NullSanitizerReturnUsesDefaultSerialization()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        object? capturedActionPayload = null;
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+            ActionSanitizer = action => null, // Return null to use default
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
+            .Callback<string, object[]>((
+                method,
+                args
+            ) => capturedActionPayload = args[0]);
+        await service.StartAsync(CancellationToken.None);
+
+        // Act
+        store.Dispatch(new TestAction());
+        await Task.Delay(50);
+
+        // Assert - default serialization should have been used
+        Assert.NotNull(capturedActionPayload);
+    }
+
+    /// <summary>
+    ///     Options without sanitizers should serialize normally.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task OptionsWithoutSanitizersSerializeNormally()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        bool sendCalled = false;
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
+            .Callback<string, object[]>((
+                method,
+                args
+            ) => sendCalled = true);
+        await service.StartAsync(CancellationToken.None);
+
+        // Act
+        store.Dispatch(new TestAction());
+        await Task.Delay(50);
+
+        // Assert
+        Assert.True(sendCalled);
+    }
+
+    /// <summary>
+    ///     Sanitizer should not affect actual store state.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SanitizerDoesNotAffectActualStoreState()
+    {
+        // Arrange
+        IFeatureStateRegistration[] registrations = [new SensitiveFeatureStateRegistration()];
+        using Store store = CreateStore(registrations);
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+            StateSanitizer = snapshot =>
+            {
+                Dictionary<string, object> sanitized = new(StringComparer.Ordinal);
+                foreach (KeyValuePair<string, object> kvp in snapshot)
+                {
+                    if (kvp.Key == SensitiveFeatureState.FeatureKey)
+                    {
+                        sanitized[kvp.Key] = new
+                        {
+                            Token = "[REDACTED]",
+                        };
+                    }
+                    else
+                    {
+                        sanitized[kvp.Key] = kvp.Value;
+                    }
+                }
+
+                return sanitized;
+            },
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
+
+        // Act
+        store.Dispatch(new TestAction());
+        await Task.Delay(50);
+
+        // Assert - actual store state should be unchanged
+        SensitiveFeatureState state = store.GetState<SensitiveFeatureState>();
+        Assert.Equal("secret-token", state.Token);
+    }
+
+    /// <summary>
+    ///     State sanitizer default is null.
+    /// </summary>
+    [Fact]
+    public void StateSanitizerDefaultIsNull()
+    {
+        // Arrange & Act
+        ReservoirDevToolsOptions options = new();
+
+        // Assert
+        Assert.Null(options.StateSanitizer);
+    }
+
+    /// <summary>
     ///     State sanitizer should transform state before sending to DevTools.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task StateSanitizerTransformsStateBeforeSending()
     {
@@ -176,7 +324,10 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
                 {
                     if (kvp.Key == SensitiveFeatureState.FeatureKey)
                     {
-                        sanitized[kvp.Key] = new { Token = "[REDACTED]" };
+                        sanitized[kvp.Key] = new
+                        {
+                            Token = "[REDACTED]",
+                        };
                     }
                     else
                     {
@@ -189,10 +340,11 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((method, args) => capturedStatePayload = args[1]);
-
+            .Callback<string, object[]>((
+                method,
+                args
+            ) => capturedStatePayload = args[1]);
         await service.StartAsync(CancellationToken.None);
 
         // Act
@@ -201,135 +353,5 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
 
         // Assert
         Assert.NotNull(capturedStatePayload);
-    }
-
-    /// <summary>
-    ///     Null sanitizer return should use default serialization.
-    /// </summary>
-    [Fact]
-    public async Task NullSanitizerReturnUsesDefaultSerialization()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        object? capturedActionPayload = null;
-        ReservoirDevToolsOptions options = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Always,
-            ActionSanitizer = action => null, // Return null to use default
-        };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((method, args) => capturedActionPayload = args[0]);
-
-        await service.StartAsync(CancellationToken.None);
-
-        // Act
-        store.Dispatch(new TestAction());
-        await Task.Delay(50);
-
-        // Assert - default serialization should have been used
-        Assert.NotNull(capturedActionPayload);
-    }
-
-    /// <summary>
-    ///     Sanitizer should not affect actual store state.
-    /// </summary>
-    [Fact]
-    public async Task SanitizerDoesNotAffectActualStoreState()
-    {
-        // Arrange
-        IFeatureStateRegistration[] registrations = [new SensitiveFeatureStateRegistration()];
-        using Store store = CreateStore(registrations);
-        ReservoirDevToolsOptions options = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Always,
-            StateSanitizer = snapshot =>
-            {
-                Dictionary<string, object> sanitized = new(StringComparer.Ordinal);
-                foreach (KeyValuePair<string, object> kvp in snapshot)
-                {
-                    if (kvp.Key == SensitiveFeatureState.FeatureKey)
-                    {
-                        sanitized[kvp.Key] = new { Token = "[REDACTED]" };
-                    }
-                    else
-                    {
-                        sanitized[kvp.Key] = kvp.Value;
-                    }
-                }
-
-                return sanitized;
-            },
-        };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        await service.StartAsync(CancellationToken.None);
-
-        // Act
-        store.Dispatch(new TestAction());
-        await Task.Delay(50);
-
-        // Assert - actual store state should be unchanged
-        SensitiveFeatureState state = store.GetState<SensitiveFeatureState>();
-        Assert.Equal("secret-token", state.Token);
-    }
-
-    /// <summary>
-    ///     Options without sanitizers should serialize normally.
-    /// </summary>
-    [Fact]
-    public async Task OptionsWithoutSanitizersSerializeNormally()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        bool sendCalled = false;
-        ReservoirDevToolsOptions options = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Always,
-            // No sanitizers configured
-        };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((method, args) => sendCalled = true);
-
-        await service.StartAsync(CancellationToken.None);
-
-        // Act
-        store.Dispatch(new TestAction());
-        await Task.Delay(50);
-
-        // Assert
-        Assert.True(sendCalled);
-    }
-
-    /// <summary>
-    ///     Action sanitizer default is null.
-    /// </summary>
-    [Fact]
-    public void ActionSanitizerDefaultIsNull()
-    {
-        // Arrange & Act
-        ReservoirDevToolsOptions options = new();
-
-        // Assert
-        Assert.Null(options.ActionSanitizer);
-    }
-
-    /// <summary>
-    ///     State sanitizer default is null.
-    /// </summary>
-    [Fact]
-    public void StateSanitizerDefaultIsNull()
-    {
-        // Arrange & Act
-        ReservoirDevToolsOptions options = new();
-
-        // Assert
-        Assert.Null(options.StateSanitizer);
     }
 }

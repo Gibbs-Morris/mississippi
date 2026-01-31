@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -19,28 +18,6 @@ namespace Mississippi.Reservoir.Blazor.L0Tests;
 /// </summary>
 public sealed class ReservoirDevToolsRegistrationsTests
 {
-    /// <summary>
-    ///     AddReservoirDevTools should register ReduxDevToolsService as a hosted service.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task AddReservoirDevToolsRegistersHostedServiceAsync()
-    {
-        // Arrange
-        ServiceCollection services = [];
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
-        services.AddSingleton(new Mock<IJSRuntime>().Object);
-        await using ServiceProvider provider = services.BuildServiceProvider();
-        await using AsyncServiceScope scope = provider.CreateAsyncScope();
-
-        // Act
-        IEnumerable<IHostedService> hostedServices = scope.ServiceProvider.GetServices<IHostedService>();
-
-        // Assert - ReduxDevToolsService should be registered as IHostedService
-        Assert.Contains(hostedServices, s => s.GetType().Name == "ReduxDevToolsService");
-    }
-
     /// <summary>
     ///     AddReservoirDevTools should not replace the IStore registration.
     /// </summary>
@@ -64,16 +41,25 @@ public sealed class ReservoirDevToolsRegistrationsTests
     }
 
     /// <summary>
-    ///     AddReservoirDevTools should throw when services is null.
+    ///     AddReservoirDevTools should register ReduxDevToolsService as a hosted service.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
     [Fact]
-    public void AddReservoirDevToolsWithNullServicesThrows()
+    public async Task AddReservoirDevToolsRegistersHostedServiceAsync()
     {
         // Arrange
-        ServiceCollection? services = null;
+        ServiceCollection services = [];
+        services.AddReservoir();
+        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        services.AddSingleton(new Mock<IJSRuntime>().Object);
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        await using AsyncServiceScope scope = provider.CreateAsyncScope();
 
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddReservoirDevTools());
+        // Act
+        IEnumerable<IHostedService> hostedServices = scope.ServiceProvider.GetServices<IHostedService>();
+
+        // Assert - ReduxDevToolsService should be registered as IHostedService
+        Assert.Contains(hostedServices, s => s.GetType().Name == "ReduxDevToolsService");
     }
 
     /// <summary>
@@ -96,5 +82,18 @@ public sealed class ReservoirDevToolsRegistrationsTests
 
         // Assert
         Assert.NotNull(interop);
+    }
+
+    /// <summary>
+    ///     AddReservoirDevTools should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddReservoirDevToolsWithNullServicesThrows()
+    {
+        // Arrange
+        ServiceCollection? services = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => services!.AddReservoirDevTools());
     }
 }

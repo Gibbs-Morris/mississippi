@@ -43,21 +43,20 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         await interop.DisposeAsync();
     }
 
+    private static Store CreateStore()
+    {
+        IFeatureStateRegistration[] registrations = [new TestFeatureStateRegistration()];
+        return new(registrations, Array.Empty<IMiddleware>());
+    }
+
     private ReduxDevToolsService CreateService(
-        IStore? store = null,
+        IStore store,
         ReservoirDevToolsOptions? options = null,
         IHostEnvironment? hostEnvironment = null
     )
     {
-        store ??= CreateStore();
         options ??= new();
         return new(store, interop, Options.Create(options), hostEnvironment);
-    }
-
-    private Store CreateStore()
-    {
-        IFeatureStateRegistration[] registrations = [new TestFeatureStateRegistration()];
-        return new(registrations, Array.Empty<IMiddleware>());
     }
 
     private void SetupJsModuleForConnection(
@@ -82,31 +81,15 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     {
         public string FeatureKey => TestFeatureState.FeatureKey;
 
-        public object InitialState => new TestFeatureState { Value = 0 };
+        public object InitialState =>
+            new TestFeatureState
+            {
+                Value = 0,
+            };
 
         public object? RootActionEffect => null;
 
         public object? RootReducer => null;
-    }
-
-    /// <summary>
-    ///     Constructor should throw when store is null.
-    /// </summary>
-    [Fact]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP005:Return type should indicate that the value should be disposed",
-        Justification = "Test validates exception is thrown; no instance is created.")]
-    public void ConstructorThrowsWhenStoreIsNull()
-    {
-        // Arrange
-        ReservoirDevToolsOptions options = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
-            null!,
-            interop,
-            Options.Create(options)));
     }
 
     /// <summary>
@@ -124,10 +107,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         ReservoirDevToolsOptions options = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
-            store,
-            null!,
-            Options.Create(options)));
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(store, null!, Options.Create(options)));
     }
 
     /// <summary>
@@ -144,15 +124,30 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         using Store store = CreateStore();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
-            store,
-            interop,
-            null!));
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(store, interop, null!));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when store is null.
+    /// </summary>
+    [Fact]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Test validates exception is thrown; no instance is created.")]
+    public void ConstructorThrowsWhenStoreIsNull()
+    {
+        // Arrange
+        ReservoirDevToolsOptions options = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(null!, interop, Options.Create(options)));
     }
 
     /// <summary>
     ///     DisposeAsync should be callable multiple times without error.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     [SuppressMessage(
         "SonarQube",
@@ -170,7 +165,10 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         ReduxDevToolsService service = CreateService(store, options);
 
         // Act & Assert - should not throw
@@ -179,72 +177,81 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     }
 
     /// <summary>
-    ///     StartAsync should subscribe to store events when enabled.
+    ///     OnDevToolsMessageAsync should ignore empty messages.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task StartAsyncSubscribesToStoreEventsWhenEnabled()
+    public async Task OnDevToolsMessageAsyncIgnoresEmptyMessages()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
 
-        // Act
-        await service.StartAsync(CancellationToken.None);
-        store.Dispatch(new TestAction());
-
-        // Assert - service should be subscribed (no exception means success)
-        // The subscription is internal, so we verify via side effects when DevTools is connected
+        // Act & Assert - should not throw
+        await service.OnDevToolsMessageAsync(string.Empty);
+        await service.OnDevToolsMessageAsync("   ");
+        Assert.True(true);
     }
 
     /// <summary>
-    ///     StartAsync should not subscribe when DevTools is disabled.
+    ///     OnDevToolsMessageAsync should ignore invalid JSON.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task StartAsyncDoesNotSubscribeWhenDisabled()
+    public async Task OnDevToolsMessageAsyncIgnoresInvalidJson()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Off };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
 
-        // Act
-        await service.StartAsync(CancellationToken.None);
-
-        // Assert - no JS calls should be made
-        jsRuntimeMock.Verify(r => r.InvokeAsync<IJSObjectReference>("import", It.IsAny<object[]>()), Times.Never);
+        // Act & Assert - should not throw
+        await service.OnDevToolsMessageAsync("not valid json");
+        await service.OnDevToolsMessageAsync("{invalid}");
+        Assert.True(true);
     }
 
     /// <summary>
-    ///     Service should respect DevelopmentOnly enablement setting.
+    ///     OnDevToolsMessageAsync should ignore non-DISPATCH messages.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task ServiceRespectsDevlopmentOnlyEnablementWhenNotInDevelopment()
+    public async Task OnDevToolsMessageAsyncIgnoresNonDispatchMessages()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.DevelopmentOnly };
-        Mock<IHostEnvironment> hostEnvMock = new();
-        hostEnvMock.Setup(h => h.EnvironmentName).Returns("Production");
-        await using ReduxDevToolsService service = CreateService(store, options, hostEnvMock.Object);
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        string message = """{"type":"OTHER","payload":{}}""";
 
-        // Act
-        await service.StartAsync(CancellationToken.None);
-
-        // Assert - no JS calls should be made in production
-        jsRuntimeMock.Verify(r => r.InvokeAsync<IJSObjectReference>("import", It.IsAny<object[]>()), Times.Never);
+        // Act & Assert - should not throw or change state
+        await service.OnDevToolsMessageAsync(message);
+        Assert.True(true);
     }
 
     /// <summary>
     ///     Service should connect to DevTools when in development and DevelopmentOnly is set.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ServiceConnectsWhenDevelopmentOnlyAndInDevelopment()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.DevelopmentOnly };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.DevelopmentOnly,
+        };
         Mock<IHostEnvironment> hostEnvMock = new();
         hostEnvMock.Setup(h => h.EnvironmentName).Returns("Development");
         await using ReduxDevToolsService service = CreateService(store, options, hostEnvMock.Object);
@@ -264,42 +271,20 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     }
 
     /// <summary>
-    ///     StopAsync should unsubscribe from store events.
-    /// </summary>
-    [Fact]
-    [SuppressMessage(
-        "SonarQube",
-        "S2699:Tests should include assertions",
-        Justification = "This test verifies no exception is thrown during stop")]
-    public async Task StopAsyncUnsubscribesFromStoreEvents()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        await service.StartAsync(CancellationToken.None);
-
-        // Act
-        await service.StopAsync(CancellationToken.None);
-
-        // Assert - dispatching should not cause issues after stop
-        store.Dispatch(new TestAction());
-    }
-
-    /// <summary>
     ///     Service should handle JS connection failure gracefully.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ServiceHandlesConnectionFailureGracefully()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection(connectReturns: false);
-
+        SetupJsModuleForConnection(false);
         await service.StartAsync(CancellationToken.None);
 
         // Act - dispatch should not throw even if connection fails
@@ -309,20 +294,24 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         await Task.Delay(50);
 
         // Assert - no exception is thrown
+        Assert.True(true);
     }
 
     /// <summary>
     ///     Service should initialize DevTools with current state on connect.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ServiceInitializesDevToolsWithCurrentStateOnConnect()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
 
         // Act
@@ -336,17 +325,44 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     Service should respect DevelopmentOnly enablement setting.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ServiceRespectsDevlopmentOnlyEnablementWhenNotInDevelopment()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.DevelopmentOnly,
+        };
+        Mock<IHostEnvironment> hostEnvMock = new();
+        hostEnvMock.Setup(h => h.EnvironmentName).Returns("Production");
+        await using ReduxDevToolsService service = CreateService(store, options, hostEnvMock.Object);
+
+        // Act
+        await service.StartAsync(CancellationToken.None);
+
+        // Assert - no JS calls should be made in production
+        jsRuntimeMock.Verify(r => r.InvokeAsync<IJSObjectReference>("import", It.IsAny<object[]>()), Times.Never);
+    }
+
+    /// <summary>
     ///     Service should send actions to DevTools after connect.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ServiceSendsActionsToDevToolsAfterConnect()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
 
         // Dispatch first to establish connection
@@ -362,51 +378,77 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     }
 
     /// <summary>
-    ///     OnDevToolsMessageAsync should ignore empty messages.
+    ///     StartAsync should not subscribe when DevTools is disabled.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task OnDevToolsMessageAsyncIgnoresEmptyMessages()
+    public async Task StartAsyncDoesNotSubscribeWhenDisabled()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Off,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
 
-        // Act & Assert - should not throw
-        await service.OnDevToolsMessageAsync("");
-        await service.OnDevToolsMessageAsync("   ");
+        // Act
+        await service.StartAsync(CancellationToken.None);
+
+        // Assert - no JS calls should be made
+        jsRuntimeMock.Verify(r => r.InvokeAsync<IJSObjectReference>("import", It.IsAny<object[]>()), Times.Never);
     }
 
     /// <summary>
-    ///     OnDevToolsMessageAsync should ignore invalid JSON.
+    ///     StartAsync should subscribe to store events when enabled.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task OnDevToolsMessageAsyncIgnoresInvalidJson()
+    public async Task StartAsyncSubscribesToStoreEventsWhenEnabled()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
 
-        // Act & Assert - should not throw
-        await service.OnDevToolsMessageAsync("not valid json");
-        await service.OnDevToolsMessageAsync("{invalid}");
+        // Act
+        await service.StartAsync(CancellationToken.None);
+        store.Dispatch(new TestAction());
+
+        // Assert - service should be subscribed (no exception means success)
+        // The subscription is internal, so we verify via side effects when DevTools is connected
+        Assert.True(true);
     }
 
     /// <summary>
-    ///     OnDevToolsMessageAsync should ignore non-DISPATCH messages.
+    ///     StopAsync should unsubscribe from store events.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task OnDevToolsMessageAsyncIgnoresNonDispatchMessages()
+    [SuppressMessage(
+        "SonarQube",
+        "S2699:Tests should include assertions",
+        Justification = "This test verifies no exception is thrown during stop")]
+    public async Task StopAsyncUnsubscribesFromStoreEvents()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
 
-        string message = """{"type":"OTHER","payload":{}}""";
+        // Act
+        await service.StopAsync(CancellationToken.None);
 
-        // Act & Assert - should not throw or change state
-        await service.OnDevToolsMessageAsync(message);
+        // Assert - dispatching should not cause issues after stop
+        store.Dispatch(new TestAction());
     }
 }

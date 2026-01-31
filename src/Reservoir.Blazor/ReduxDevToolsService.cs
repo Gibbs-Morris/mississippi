@@ -29,7 +29,9 @@ namespace Mississippi.Reservoir.Blazor;
 ///         into system actions dispatched to the store, maintaining unidirectional data flow.
 ///     </para>
 /// </remarks>
-internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
+internal sealed class ReduxDevToolsService
+    : IHostedService,
+      IAsyncDisposable
 {
     private readonly SemaphoreSlim devToolsLock = new(1, 1);
 
@@ -76,6 +78,45 @@ internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
     private ReservoirDevToolsOptions Options { get; }
 
     private IStore Store { get; }
+
+    private static string? TryExtractImportedStateJson(
+        JsonElement payload
+    )
+    {
+        if (!payload.TryGetProperty("nextLiftedState", out JsonElement nextLiftedState))
+        {
+            return null;
+        }
+
+        if (!nextLiftedState.TryGetProperty("computedStates", out JsonElement computedStates))
+        {
+            return null;
+        }
+
+        if (computedStates.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        using JsonElement.ArrayEnumerator enumerator = computedStates.EnumerateArray();
+        JsonElement lastState = default;
+        foreach (JsonElement element in enumerator)
+        {
+            lastState = element;
+        }
+
+        if (lastState.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (!lastState.TryGetProperty("state", out JsonElement stateElement))
+        {
+            return null;
+        }
+
+        return stateElement.GetRawText();
+    }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
@@ -144,45 +185,6 @@ internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
         storeEventsSubscription?.Dispose();
         storeEventsSubscription = null;
         return Task.CompletedTask;
-    }
-
-    private static string? TryExtractImportedStateJson(
-        JsonElement payload
-    )
-    {
-        if (!payload.TryGetProperty("nextLiftedState", out JsonElement nextLiftedState))
-        {
-            return null;
-        }
-
-        if (!nextLiftedState.TryGetProperty("computedStates", out JsonElement computedStates))
-        {
-            return null;
-        }
-
-        if (computedStates.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-
-        using JsonElement.ArrayEnumerator enumerator = computedStates.EnumerateArray();
-        JsonElement lastState = default;
-        foreach (JsonElement element in enumerator)
-        {
-            lastState = element;
-        }
-
-        if (lastState.ValueKind != JsonValueKind.Object)
-        {
-            return null;
-        }
-
-        if (!lastState.TryGetProperty("state", out JsonElement stateElement))
-        {
-            return null;
-        }
-
-        return stateElement.GetRawText();
     }
 
     private Dictionary<string, object?> BuildOptionsPayload()
@@ -300,6 +302,7 @@ internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
             }
 
             await Interop.InitAsync(CreateStatePayload(Store.GetStateSnapshot()));
+
             // Note: committedSnapshot is NOT updated here - it was set in constructor
             // and should only be updated via explicit COMMIT command
             return true;
@@ -315,6 +318,28 @@ internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
         finally
         {
             devToolsLock.Release();
+        }
+    }
+
+    /// <summary>
+    ///     Executes an action while suppressing DevTools updates.
+    /// </summary>
+    /// <remarks>
+    ///     Used when dispatching system actions that originate from DevTools itself
+    ///     to prevent feedback loops.
+    /// </remarks>
+    private void ExecuteWithSuppression(
+        Action action
+    )
+    {
+        suppressDevToolsUpdates = true;
+        try
+        {
+            action();
+        }
+        finally
+        {
+            suppressDevToolsUpdates = false;
         }
     }
 
@@ -368,29 +393,11 @@ internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
 
                 break;
             case "RESET":
-                suppressDevToolsUpdates = true;
-                try
-                {
-                    Store.Dispatch(new ResetToInitialStateAction());
-                }
-                finally
-                {
-                    suppressDevToolsUpdates = false;
-                }
-
+                ExecuteWithSuppression(() => Store.Dispatch(new ResetToInitialStateAction()));
                 await InitDevToolsAsync();
                 break;
             case "ROLLBACK":
-                suppressDevToolsUpdates = true;
-                try
-                {
-                    Store.Dispatch(new RestoreStateAction(committedSnapshot));
-                }
-                finally
-                {
-                    suppressDevToolsUpdates = false;
-                }
-
+                ExecuteWithSuppression(() => Store.Dispatch(new RestoreStateAction(committedSnapshot)));
                 await InitDevToolsAsync();
                 break;
             case "COMMIT":
@@ -450,7 +457,6 @@ internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
                 // Fire-and-forget is intentional for DevTools reporting.
                 _ = SendToDevToolsAsync(actionDispatched.Action, actionDispatched.StateSnapshot);
                 break;
-
             case StateRestoredEvent:
                 // State was restored - DevTools will be re-initialized by the handler
                 break;
@@ -558,16 +564,7 @@ internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
             newStates[current.Key] = deserialized;
         }
 
-        suppressDevToolsUpdates = true;
-        try
-        {
-            Store.Dispatch(new RestoreStateAction(newStates));
-        }
-        finally
-        {
-            suppressDevToolsUpdates = false;
-        }
-
+        ExecuteWithSuppression(() => Store.Dispatch(new RestoreStateAction(newStates)));
         return true;
     }
 
@@ -578,14 +575,12 @@ internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
     /// </summary>
     private sealed class StoreEventObserver : IObserver<StoreEventBase>
     {
-        private ReduxDevToolsService Service { get; }
-
         public StoreEventObserver(
             ReduxDevToolsService service
-        )
-        {
+        ) =>
             Service = service;
-        }
+
+        private ReduxDevToolsService Service { get; }
 
         public void OnCompleted()
         {

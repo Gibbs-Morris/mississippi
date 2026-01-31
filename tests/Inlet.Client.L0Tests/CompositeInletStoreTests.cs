@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +8,7 @@ using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Reservoir.Abstractions.Events;
 
 
 namespace Mississippi.Inlet.Client.L0Tests;
@@ -38,6 +40,35 @@ public sealed class CompositeInletStoreTests : IDisposable
     {
         store.Dispose();
         serviceProvider.Dispose();
+    }
+
+    /// <summary>
+    ///     Simple observer for testing observable subscriptions.
+    /// </summary>
+    /// <typeparam name="T">The type of observed values.</typeparam>
+    private sealed class ActionObserver<T> : IObserver<T>
+    {
+        private readonly Action<T> onNext;
+
+        public ActionObserver(
+            Action<T> onNext
+        ) =>
+            this.onNext = onNext;
+
+        public void OnCompleted()
+        {
+        }
+
+        public void OnError(
+            Exception error
+        )
+        {
+        }
+
+        public void OnNext(
+            T value
+        ) =>
+            onNext(value);
     }
 
     /// <summary>
@@ -151,6 +182,42 @@ public sealed class CompositeInletStoreTests : IDisposable
 
         // Assert
         Assert.NotNull(state);
+    }
+
+    /// <summary>
+    ///     GetStateSnapshot should delegate to underlying store.
+    /// </summary>
+    [Fact]
+    public void GetStateSnapshotDelegatesToStore()
+    {
+        // Arrange
+        using CompositeInletStore sut = new(store);
+
+        // Act
+        IReadOnlyDictionary<string, object> snapshot = sut.GetStateSnapshot();
+
+        // Assert
+        Assert.NotNull(snapshot);
+        Assert.True(snapshot.ContainsKey(ProjectionsFeatureState.FeatureKey));
+    }
+
+    /// <summary>
+    ///     StoreEvents should delegate to underlying store.
+    /// </summary>
+    [Fact]
+    public void StoreEventsDelegatesToStore()
+    {
+        // Arrange
+        using CompositeInletStore sut = new(store);
+        int eventCount = 0;
+        using IDisposable subscription =
+            sut.StoreEvents.Subscribe(new ActionObserver<StoreEventBase>(_ => eventCount++));
+
+        // Act
+        sut.Dispatch(new TestAction());
+
+        // Assert - should receive ActionDispatchingEvent and ActionDispatchedEvent
+        Assert.True(eventCount >= 2);
     }
 
     /// <summary>

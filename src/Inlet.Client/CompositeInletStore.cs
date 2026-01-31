@@ -63,8 +63,7 @@ public sealed class CompositeInletStore : IInletStore
         Store.GetState<TState>();
 
     /// <inheritdoc />
-    public IReadOnlyDictionary<string, object> GetStateSnapshot() =>
-        Store.GetStateSnapshot();
+    public IReadOnlyDictionary<string, object> GetStateSnapshot() => Store.GetStateSnapshot();
 
     /// <inheritdoc />
     public IDisposable Subscribe(

@@ -11,7 +11,7 @@ namespace Mississippi.Reservoir.Abstractions.Actions;
 ///     </para>
 ///     <para>
 ///         System actions do not trigger user reducers or effects. They are processed
-///         internally by the store and emit appropriate <see cref="Events.StoreEvent" />s
+///         internally by the store and emit appropriate <see cref="Events.StoreEventBase" />s
 ///         to notify observers of what happened.
 ///     </para>
 /// </remarks>

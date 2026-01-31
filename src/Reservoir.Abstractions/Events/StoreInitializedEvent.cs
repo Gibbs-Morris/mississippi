@@ -17,6 +17,4 @@ namespace Mississippi.Reservoir.Abstractions.Events;
 ///     </para>
 /// </remarks>
 /// <param name="InitialSnapshot">A snapshot of all feature states at initialization.</param>
-public sealed record StoreInitializedEvent(
-    IReadOnlyDictionary<string, object> InitialSnapshot
-) : StoreEventBase;
+public sealed record StoreInitializedEvent(IReadOnlyDictionary<string, object> InitialSnapshot) : StoreEventBase;

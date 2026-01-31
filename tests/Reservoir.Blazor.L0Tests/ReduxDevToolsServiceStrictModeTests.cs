@@ -41,21 +41,19 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         await interop.DisposeAsync();
     }
 
-    private ReduxDevToolsService CreateService(
-        IStore store,
-        ReservoirDevToolsOptions options
-    )
-    {
-        return new(store, interop, Options.Create(options));
-    }
-
-    private Store CreateStore(
+    private static Store CreateStore(
         IFeatureStateRegistration[]? registrations = null
     )
     {
         registrations ??= [new TestFeatureStateRegistration()];
         return new(registrations, Array.Empty<IMiddleware>());
     }
+
+    private ReduxDevToolsService CreateService(
+        IStore store,
+        ReservoirDevToolsOptions options
+    ) =>
+        new(store, interop, Options.Create(options));
 
     private void SetupJsModuleForConnection()
     {
@@ -66,11 +64,16 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
 
     private sealed record IncrementAction : IAction;
 
-    private sealed record TestFeatureState : IFeatureState
+    private sealed class IncrementReducer : ActionReducerBase<IncrementAction, TestFeatureState>
     {
-        public static string FeatureKey => "test";
-
-        public int Value { get; init; }
+        public override TestFeatureState Reduce(
+            TestFeatureState state,
+            IncrementAction action
+        ) =>
+            state with
+            {
+                Value = state.Value + 1,
+            };
     }
 
     private sealed record SecondFeatureState : IFeatureState
@@ -80,156 +83,47 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         public string Name { get; init; } = string.Empty;
     }
 
-    private sealed class IncrementReducer : ActionReducerBase<IncrementAction, TestFeatureState>
-    {
-        public override TestFeatureState Reduce(
-            TestFeatureState state,
-            IncrementAction action
-        ) =>
-            state with { Value = state.Value + 1 };
-    }
-
-    private sealed class TestFeatureStateRegistration : IFeatureStateRegistration
-    {
-        public string FeatureKey => TestFeatureState.FeatureKey;
-
-        public object InitialState => new TestFeatureState { Value = 0 };
-
-        public object? RootActionEffect => null;
-
-        public object RootReducer { get; } = new RootReducer<TestFeatureState>([new IncrementReducer()]);
-    }
-
     private sealed class SecondFeatureStateRegistration : IFeatureStateRegistration
     {
         public string FeatureKey => SecondFeatureState.FeatureKey;
 
-        public object InitialState => new SecondFeatureState { Name = "initial" };
+        public object InitialState =>
+            new SecondFeatureState
+            {
+                Name = "initial",
+            };
 
         public object? RootActionEffect => null;
 
         public object? RootReducer => null;
     }
 
-    /// <summary>
-    ///     Strict mode should reject state when feature is missing from payload.
-    /// </summary>
-    [Fact]
-    public async Task StrictModeRejectsStateWhenFeatureIsMissing()
+    private sealed record TestFeatureState : IFeatureState
     {
-        // Arrange
-        IFeatureStateRegistration[] registrations =
-        [
-            new TestFeatureStateRegistration(),
-            new SecondFeatureStateRegistration(),
-        ];
-        using Store store = CreateStore(registrations);
-        ReservoirDevToolsOptions options = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Always,
-            IsStrictStateRehydrationEnabled = true,
-        };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
+        public static string FeatureKey => "test";
 
-        await service.StartAsync(CancellationToken.None);
-
-        store.Dispatch(new IncrementAction());
-        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
-
-        // Act - JUMP_TO_STATE with only 'test' feature, missing 'second'
-        string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" },
-                "state": "{\"test\":{\"Value\":5}}"
-            }
-            """;
-        await service.OnDevToolsMessageAsync(jumpMessage);
-
-        // Assert - strict mode should reject, state unchanged
-        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
-        Assert.Equal("initial", store.GetState<SecondFeatureState>().Name);
+        public int Value { get; init; }
     }
 
-    /// <summary>
-    ///     Strict mode should reject state when deserialization fails.
-    /// </summary>
-    [Fact]
-    public async Task StrictModeRejectsStateWhenDeserializationFails()
+    private sealed class TestFeatureStateRegistration : IFeatureStateRegistration
     {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Always,
-            IsStrictStateRehydrationEnabled = true,
-        };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
+        public string FeatureKey => TestFeatureState.FeatureKey;
 
-        await service.StartAsync(CancellationToken.None);
-
-        store.Dispatch(new IncrementAction());
-        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
-
-        // Act - JUMP_TO_STATE with incompatible type (string instead of int)
-        string jumpMessage = """
+        public object InitialState =>
+            new TestFeatureState
             {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" },
-                "state": "{\"test\":{\"Value\":\"not-a-number\"}}"
-            }
-            """;
-        await service.OnDevToolsMessageAsync(jumpMessage);
+                Value = 0,
+            };
 
-        // Assert - strict mode should reject, state unchanged
-        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
-    }
+        public object? RootActionEffect => null;
 
-    /// <summary>
-    ///     Strict mode should accept valid state with all features present.
-    /// </summary>
-    [Fact]
-    public async Task StrictModeAcceptsValidStateWithAllFeatures()
-    {
-        // Arrange
-        IFeatureStateRegistration[] registrations =
-        [
-            new TestFeatureStateRegistration(),
-            new SecondFeatureStateRegistration(),
-        ];
-        using Store store = CreateStore(registrations);
-        ReservoirDevToolsOptions options = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Always,
-            IsStrictStateRehydrationEnabled = true,
-        };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        await service.StartAsync(CancellationToken.None);
-
-        store.Dispatch(new IncrementAction());
-
-        // Act - JUMP_TO_STATE with all features
-        string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" },
-                "state": "{\"test\":{\"Value\":42},\"second\":{\"Name\":\"restored\"}}"
-            }
-            """;
-        await service.OnDevToolsMessageAsync(jumpMessage);
-
-        // Assert - should be applied
-        Assert.Equal(42, store.GetState<TestFeatureState>().Value);
-        Assert.Equal("restored", store.GetState<SecondFeatureState>().Name);
+        public object RootReducer { get; } = new RootReducer<TestFeatureState>([new IncrementReducer()]);
     }
 
     /// <summary>
     ///     Non-strict mode should apply partial state updates.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task NonStrictModeAppliesPartialStateUpdates()
     {
@@ -247,19 +141,17 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
-
         store.Dispatch(new IncrementAction());
 
         // Act - JUMP_TO_STATE with only 'test' feature
         string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" },
-                "state": "{\"test\":{\"Value\":99}}"
-            }
-            """;
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" },
+                                 "state": "{\"test\":{\"Value\":99}}"
+                             }
+                             """;
         await service.OnDevToolsMessageAsync(jumpMessage);
 
         // Assert - test should be updated, second unchanged
@@ -270,6 +162,7 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
     /// <summary>
     ///     Non-strict mode should skip features that fail deserialization.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task NonStrictModeSkipsFailedDeserialization()
     {
@@ -287,24 +180,61 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
-
         store.Dispatch(new IncrementAction());
 
         // Act - test has invalid type, second is valid
         string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" },
-                "state": "{\"test\":{\"Value\":\"not-a-number\"},\"second\":{\"Name\":\"updated\"}}"
-            }
-            """;
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" },
+                                 "state": "{\"test\":{\"Value\":\"not-a-number\"},\"second\":{\"Name\":\"updated\"}}"
+                             }
+                             """;
         await service.OnDevToolsMessageAsync(jumpMessage);
 
         // Assert - test unchanged (failed), second updated
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
         Assert.Equal("updated", store.GetState<SecondFeatureState>().Name);
+    }
+
+    /// <summary>
+    ///     Strict mode should accept valid state with all features present.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StrictModeAcceptsValidStateWithAllFeatures()
+    {
+        // Arrange
+        IFeatureStateRegistration[] registrations =
+        [
+            new TestFeatureStateRegistration(),
+            new SecondFeatureStateRegistration(),
+        ];
+        using Store store = CreateStore(registrations);
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+            IsStrictStateRehydrationEnabled = true,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
+        store.Dispatch(new IncrementAction());
+
+        // Act - JUMP_TO_STATE with all features
+        string jumpMessage = """
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" },
+                                 "state": "{\"test\":{\"Value\":42},\"second\":{\"Name\":\"restored\"}}"
+                             }
+                             """;
+        await service.OnDevToolsMessageAsync(jumpMessage);
+
+        // Assert - should be applied
+        Assert.Equal(42, store.GetState<TestFeatureState>().Value);
+        Assert.Equal("restored", store.GetState<SecondFeatureState>().Name);
     }
 
     /// <summary>
@@ -321,43 +251,9 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
     }
 
     /// <summary>
-    ///     Strict mode should reject empty state object.
-    /// </summary>
-    [Fact]
-    public async Task StrictModeRejectsEmptyStateObject()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Always,
-            IsStrictStateRehydrationEnabled = true,
-        };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        await service.StartAsync(CancellationToken.None);
-
-        store.Dispatch(new IncrementAction());
-        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
-
-        // Act - empty state object
-        string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" },
-                "state": "{}"
-            }
-            """;
-        await service.OnDevToolsMessageAsync(jumpMessage);
-
-        // Assert - strict mode should reject
-        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
-    }
-
-    /// <summary>
     ///     Strict mode should reject array state.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task StrictModeRejectsArrayState()
     {
@@ -370,22 +266,128 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
-
         store.Dispatch(new IncrementAction());
 
         // Act - state is an array instead of object
         string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" },
-                "state": "[]"
-            }
-            """;
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" },
+                                 "state": "[]"
+                             }
+                             """;
         await service.OnDevToolsMessageAsync(jumpMessage);
 
         // Assert - should reject
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
+    }
+
+    /// <summary>
+    ///     Strict mode should reject empty state object.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StrictModeRejectsEmptyStateObject()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+            IsStrictStateRehydrationEnabled = true,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
+
+        // Act - empty state object
+        string jumpMessage = """
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" },
+                                 "state": "{}"
+                             }
+                             """;
+        await service.OnDevToolsMessageAsync(jumpMessage);
+
+        // Assert - strict mode should reject
+        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
+    }
+
+    /// <summary>
+    ///     Strict mode should reject state when deserialization fails.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StrictModeRejectsStateWhenDeserializationFails()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+            IsStrictStateRehydrationEnabled = true,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
+
+        // Act - JUMP_TO_STATE with incompatible type (string instead of int)
+        string jumpMessage = """
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" },
+                                 "state": "{\"test\":{\"Value\":\"not-a-number\"}}"
+                             }
+                             """;
+        await service.OnDevToolsMessageAsync(jumpMessage);
+
+        // Assert - strict mode should reject, state unchanged
+        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
+    }
+
+    /// <summary>
+    ///     Strict mode should reject state when feature is missing from payload.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StrictModeRejectsStateWhenFeatureIsMissing()
+    {
+        // Arrange
+        IFeatureStateRegistration[] registrations =
+        [
+            new TestFeatureStateRegistration(),
+            new SecondFeatureStateRegistration(),
+        ];
+        using Store store = CreateStore(registrations);
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+            IsStrictStateRehydrationEnabled = true,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
+
+        // Act - JUMP_TO_STATE with only 'test' feature, missing 'second'
+        string jumpMessage = """
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" },
+                                 "state": "{\"test\":{\"Value\":5}}"
+                             }
+                             """;
+        await service.OnDevToolsMessageAsync(jumpMessage);
+
+        // Assert - strict mode should reject, state unchanged
+        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
+        Assert.Equal("initial", store.GetState<SecondFeatureState>().Name);
     }
 }

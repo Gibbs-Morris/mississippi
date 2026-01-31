@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -43,21 +41,19 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         await interop.DisposeAsync();
     }
 
-    private ReduxDevToolsService CreateService(
-        IStore store,
-        ReservoirDevToolsOptions options
-    )
-    {
-        return new(store, interop, Options.Create(options));
-    }
-
-    private Store CreateStore(
+    private static Store CreateStore(
         IFeatureStateRegistration[]? registrations = null
     )
     {
         registrations ??= [new TestFeatureStateRegistration()];
         return new(registrations, Array.Empty<IMiddleware>());
     }
+
+    private ReduxDevToolsService CreateService(
+        IStore store,
+        ReservoirDevToolsOptions options
+    ) =>
+        new(store, interop, Options.Create(options));
 
     private void SetupJsModuleForConnection()
     {
@@ -66,9 +62,19 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         jsModuleMock.Setup(m => m.InvokeAsync<bool>("connect", It.IsAny<object[]>())).ReturnsAsync(true);
     }
 
-    private sealed record TestAction : IAction;
-
     private sealed record IncrementAction : IAction;
+
+    private sealed class IncrementReducer : ActionReducerBase<IncrementAction, TestFeatureState>
+    {
+        public override TestFeatureState Reduce(
+            TestFeatureState state,
+            IncrementAction action
+        ) =>
+            state with
+            {
+                Value = state.Value + 1,
+            };
+    }
 
     private sealed record TestFeatureState : IFeatureState
     {
@@ -77,20 +83,15 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         public int Value { get; init; }
     }
 
-    private sealed class IncrementReducer : ActionReducerBase<IncrementAction, TestFeatureState>
-    {
-        public override TestFeatureState Reduce(
-            TestFeatureState state,
-            IncrementAction action
-        ) =>
-            state with { Value = state.Value + 1 };
-    }
-
     private sealed class TestFeatureStateRegistration : IFeatureStateRegistration
     {
         public string FeatureKey => TestFeatureState.FeatureKey;
 
-        public object InitialState => new TestFeatureState { Value = 0 };
+        public object InitialState =>
+            new TestFeatureState
+            {
+                Value = 0,
+            };
 
         public object? RootActionEffect => null;
 
@@ -98,160 +99,32 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
     }
 
     /// <summary>
-    ///     JUMP_TO_STATE should restore state from the message.
-    /// </summary>
-    [Fact]
-    public async Task JumpToStateRestoresStateFromMessage()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        await service.StartAsync(CancellationToken.None);
-
-        // Dispatch some actions to change state
-        store.Dispatch(new IncrementAction());
-        store.Dispatch(new IncrementAction());
-        Assert.Equal(2, store.GetState<TestFeatureState>().Value);
-
-        // Act - simulate JUMP_TO_STATE from DevTools with state value=1
-        string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" },
-                "state": "{\"test\":{\"Value\":1}}"
-            }
-            """;
-        await service.OnDevToolsMessageAsync(jumpMessage);
-
-        // Assert - state should be restored to value=1
-        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
-    }
-
-    /// <summary>
-    ///     JUMP_TO_ACTION should restore state from the message.
-    /// </summary>
-    [Fact]
-    public async Task JumpToActionRestoresStateFromMessage()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        await service.StartAsync(CancellationToken.None);
-
-        store.Dispatch(new IncrementAction());
-        store.Dispatch(new IncrementAction());
-        store.Dispatch(new IncrementAction());
-        Assert.Equal(3, store.GetState<TestFeatureState>().Value);
-
-        // Act - simulate JUMP_TO_ACTION
-        string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_ACTION" },
-                "state": "{\"test\":{\"Value\":2}}"
-            }
-            """;
-        await service.OnDevToolsMessageAsync(jumpMessage);
-
-        // Assert
-        Assert.Equal(2, store.GetState<TestFeatureState>().Value);
-    }
-
-    /// <summary>
-    ///     RESET should restore state to initial values.
-    /// </summary>
-    [Fact]
-    public async Task ResetRestoresStateToInitialValues()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        await service.StartAsync(CancellationToken.None);
-
-        store.Dispatch(new IncrementAction());
-        store.Dispatch(new IncrementAction());
-        Assert.Equal(2, store.GetState<TestFeatureState>().Value);
-
-        // Act - simulate RESET from DevTools
-        string resetMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "RESET" }
-            }
-            """;
-        await service.OnDevToolsMessageAsync(resetMessage);
-
-        // Assert - state should be back to initial (0)
-        Assert.Equal(0, store.GetState<TestFeatureState>().Value);
-    }
-
-    /// <summary>
-    ///     ROLLBACK should restore state to committed snapshot.
-    /// </summary>
-    [Fact]
-    public async Task RollbackRestoresStateToCommittedSnapshot()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
-        await using ReduxDevToolsService service = CreateService(store, options);
-        SetupJsModuleForConnection();
-
-        await service.StartAsync(CancellationToken.None);
-
-        // Initial committed snapshot is at value=0
-
-        store.Dispatch(new IncrementAction());
-        store.Dispatch(new IncrementAction());
-        Assert.Equal(2, store.GetState<TestFeatureState>().Value);
-
-        // Act - simulate ROLLBACK
-        string rollbackMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "ROLLBACK" }
-            }
-            """;
-        await service.OnDevToolsMessageAsync(rollbackMessage);
-
-        // Assert - should be back to committed snapshot (0)
-        Assert.Equal(0, store.GetState<TestFeatureState>().Value);
-    }
-
-    /// <summary>
     ///     COMMIT should update the committed snapshot.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CommitUpdatesCommittedSnapshot()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
-
         store.Dispatch(new IncrementAction());
         store.Dispatch(new IncrementAction());
         Assert.Equal(2, store.GetState<TestFeatureState>().Value);
 
         // Act - simulate COMMIT
         string commitMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "COMMIT" }
-            }
-            """;
+                               {
+                                   "type": "DISPATCH",
+                                   "payload": { "type": "COMMIT" }
+                               }
+                               """;
         await service.OnDevToolsMessageAsync(commitMessage);
 
         // Now increment more
@@ -260,11 +133,11 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
 
         // Rollback should now go to committed value=2
         string rollbackMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "ROLLBACK" }
-            }
-            """;
+                                 {
+                                     "type": "DISPATCH",
+                                     "payload": { "type": "ROLLBACK" }
+                                 }
+                                 """;
         await service.OnDevToolsMessageAsync(rollbackMessage);
 
         // Assert
@@ -274,34 +147,36 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
     /// <summary>
     ///     IMPORT_STATE should apply the imported state.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ImportStateAppliesImportedState()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
-
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
         // Act - simulate IMPORT_STATE
         string importMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": {
-                    "type": "IMPORT_STATE",
-                    "nextLiftedState": {
-                        "computedStates": [
-                            { "state": { "test": { "Value": 42 } } }
-                        ]
-                    }
-                }
-            }
-            """;
+                               {
+                                   "type": "DISPATCH",
+                                   "payload": {
+                                       "type": "IMPORT_STATE",
+                                       "nextLiftedState": {
+                                           "computedStates": [
+                                               { "state": { "test": { "Value": 42 } } }
+                                           ]
+                                       }
+                                   }
+                               }
+                               """;
         await service.OnDevToolsMessageAsync(importMessage);
 
         // Assert - state should be imported
@@ -311,33 +186,36 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
     /// <summary>
     ///     IMPORT_STATE should use the last computed state when multiple exist.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ImportStateUsesLastComputedState()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
 
         // Act - simulate IMPORT_STATE with multiple computed states
         string importMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": {
-                    "type": "IMPORT_STATE",
-                    "nextLiftedState": {
-                        "computedStates": [
-                            { "state": { "test": { "Value": 10 } } },
-                            { "state": { "test": { "Value": 20 } } },
-                            { "state": { "test": { "Value": 30 } } }
-                        ]
-                    }
-                }
-            }
-            """;
+                               {
+                                   "type": "DISPATCH",
+                                   "payload": {
+                                       "type": "IMPORT_STATE",
+                                       "nextLiftedState": {
+                                           "computedStates": [
+                                               { "state": { "test": { "Value": 10 } } },
+                                               { "state": { "test": { "Value": 20 } } },
+                                               { "state": { "test": { "Value": 30 } } }
+                                           ]
+                                       }
+                                   }
+                               }
+                               """;
         await service.OnDevToolsMessageAsync(importMessage);
 
         // Assert - should use last state (30)
@@ -345,29 +223,102 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     JUMP_TO_ACTION should restore state from the message.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task JumpToActionRestoresStateFromMessage()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
+        store.Dispatch(new IncrementAction());
+        store.Dispatch(new IncrementAction());
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(3, store.GetState<TestFeatureState>().Value);
+
+        // Act - simulate JUMP_TO_ACTION
+        string jumpMessage = """
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_ACTION" },
+                                 "state": "{\"test\":{\"Value\":2}}"
+                             }
+                             """;
+        await service.OnDevToolsMessageAsync(jumpMessage);
+
+        // Assert
+        Assert.Equal(2, store.GetState<TestFeatureState>().Value);
+    }
+
+    /// <summary>
+    ///     JUMP_TO_STATE should restore state from the message.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task JumpToStateRestoresStateFromMessage()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
+
+        // Dispatch some actions to change state
+        store.Dispatch(new IncrementAction());
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(2, store.GetState<TestFeatureState>().Value);
+
+        // Act - simulate JUMP_TO_STATE from DevTools with state value=1
+        string jumpMessage = """
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" },
+                                 "state": "{\"test\":{\"Value\":1}}"
+                             }
+                             """;
+        await service.OnDevToolsMessageAsync(jumpMessage);
+
+        // Assert - state should be restored to value=1
+        Assert.Equal(1, store.GetState<TestFeatureState>().Value);
+    }
+
+    /// <summary>
     ///     Message with missing state field should be ignored for JUMP messages.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task JumpWithMissingStateIsIgnored()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
-
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
         // Act - JUMP_TO_STATE without state field
         string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" }
-            }
-            """;
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" }
+                             }
+                             """;
         await service.OnDevToolsMessageAsync(jumpMessage);
 
         // Assert - state unchanged
@@ -377,28 +328,30 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
     /// <summary>
     ///     Message with malformed state JSON should be ignored.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task MalformedStateJsonIsIgnored()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
-
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
         // Act - JUMP_TO_STATE with malformed state
         string jumpMessage = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "JUMP_TO_STATE" },
-                "state": "not valid json"
-            }
-            """;
+                             {
+                                 "type": "DISPATCH",
+                                 "payload": { "type": "JUMP_TO_STATE" },
+                                 "state": "not valid json"
+                             }
+                             """;
         await service.OnDevToolsMessageAsync(jumpMessage);
 
         // Assert - state unchanged
@@ -408,27 +361,29 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
     /// <summary>
     ///     Message with null payload type should be ignored.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task NullPayloadTypeIsIgnored()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
-
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
         // Act - DISPATCH with no payload type
         string message = """
-            {
-                "type": "DISPATCH",
-                "payload": { }
-            }
-            """;
+                         {
+                             "type": "DISPATCH",
+                             "payload": { }
+                         }
+                         """;
         await service.OnDevToolsMessageAsync(message);
 
         // Assert - state unchanged
@@ -436,29 +391,99 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     RESET should restore state to initial values.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ResetRestoresStateToInitialValues()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
+        store.Dispatch(new IncrementAction());
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(2, store.GetState<TestFeatureState>().Value);
+
+        // Act - simulate RESET from DevTools
+        string resetMessage = """
+                              {
+                                  "type": "DISPATCH",
+                                  "payload": { "type": "RESET" }
+                              }
+                              """;
+        await service.OnDevToolsMessageAsync(resetMessage);
+
+        // Assert - state should be back to initial (0)
+        Assert.Equal(0, store.GetState<TestFeatureState>().Value);
+    }
+
+    /// <summary>
+    ///     ROLLBACK should restore state to committed snapshot.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RollbackRestoresStateToCommittedSnapshot()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
+        await using ReduxDevToolsService service = CreateService(store, options);
+        SetupJsModuleForConnection();
+        await service.StartAsync(CancellationToken.None);
+
+        // Initial committed snapshot is at value=0
+        store.Dispatch(new IncrementAction());
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(2, store.GetState<TestFeatureState>().Value);
+
+        // Act - simulate ROLLBACK
+        string rollbackMessage = """
+                                 {
+                                     "type": "DISPATCH",
+                                     "payload": { "type": "ROLLBACK" }
+                                 }
+                                 """;
+        await service.OnDevToolsMessageAsync(rollbackMessage);
+
+        // Assert - should be back to committed snapshot (0)
+        Assert.Equal(0, store.GetState<TestFeatureState>().Value);
+    }
+
+    /// <summary>
     ///     DISPATCH with unknown payload type should be ignored.
     /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task UnknownPayloadTypeIsIgnored()
     {
         // Arrange
         using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new() { Enablement = ReservoirDevToolsEnablement.Always };
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-
         await service.StartAsync(CancellationToken.None);
-
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
         // Act
         string message = """
-            {
-                "type": "DISPATCH",
-                "payload": { "type": "UNKNOWN_TYPE" }
-            }
-            """;
+                         {
+                             "type": "DISPATCH",
+                             "payload": { "type": "UNKNOWN_TYPE" }
+                         }
+                         """;
         await service.OnDevToolsMessageAsync(message);
 
         // Assert - state unchanged

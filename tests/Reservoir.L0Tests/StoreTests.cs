@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
-using Mississippi.Reservoir.Abstractions.Events;
 using Mississippi.Reservoir.Abstractions.State;
 using Mississippi.Reservoir.State;
 
@@ -148,7 +147,10 @@ public sealed class StoreTests : IDisposable
         private readonly RootReducer<TestFeatureState> innerReducer = new([new TestFeatureActionReducer()]);
 
         /// <inheritdoc />
-        public TestFeatureState Reduce(TestFeatureState state, IAction action) =>
+        public TestFeatureState Reduce(
+            TestFeatureState state,
+            IAction action
+        ) =>
             innerReducer.Reduce(state, action);
     }
 
@@ -608,38 +610,6 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     RestoreStateAction should restore state from snapshot.
-    /// </summary>
-    [Fact]
-    public void RestoreStateActionRestoresStateFromSnapshot()
-    {
-        // Arrange - create store with reducer
-        IRootReducer<TestFeatureState> reducer = new TestFeatureRootReducer();
-        List<IFeatureStateRegistration> registrations =
-        [
-            new FeatureStateRegistration<TestFeatureState>(reducer),
-        ];
-        using Store store = new(registrations, Array.Empty<IMiddleware>());
-
-        // Increment state
-        store.Dispatch(new IncrementAction());
-        Assert.Equal(1, store.GetState<TestFeatureState>().Counter);
-
-        // Create snapshot with different value
-        IReadOnlyDictionary<string, object> snapshot = new Dictionary<string, object>
-        {
-            [TestFeatureState.FeatureKey] = new TestFeatureState { Counter = 42 },
-        };
-
-        // Act
-        store.Dispatch(new RestoreStateAction(snapshot));
-
-        // Assert
-        TestFeatureState state = store.GetState<TestFeatureState>();
-        Assert.Equal(42, state.Counter);
-    }
-
-    /// <summary>
     ///     RestoreStateAction should ignore incompatible feature states.
     /// </summary>
     [Fact]
@@ -662,6 +632,41 @@ public sealed class StoreTests : IDisposable
         // Assert - state should be unchanged (incompatible type ignored)
         TestFeatureState state = store.GetState<TestFeatureState>();
         Assert.Equal(0, state.Counter);
+    }
+
+    /// <summary>
+    ///     RestoreStateAction should restore state from snapshot.
+    /// </summary>
+    [Fact]
+    public void RestoreStateActionRestoresStateFromSnapshot()
+    {
+        // Arrange - create store with reducer
+        IRootReducer<TestFeatureState> reducer = new TestFeatureRootReducer();
+        List<IFeatureStateRegistration> registrations =
+        [
+            new FeatureStateRegistration<TestFeatureState>(reducer),
+        ];
+        using Store store = new(registrations, Array.Empty<IMiddleware>());
+
+        // Increment state
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(1, store.GetState<TestFeatureState>().Counter);
+
+        // Create snapshot with different value
+        IReadOnlyDictionary<string, object> snapshot = new Dictionary<string, object>
+        {
+            [TestFeatureState.FeatureKey] = new TestFeatureState
+            {
+                Counter = 42,
+            },
+        };
+
+        // Act
+        store.Dispatch(new RestoreStateAction(snapshot));
+
+        // Assert
+        TestFeatureState state = store.GetState<TestFeatureState>();
+        Assert.Equal(42, state.Counter);
     }
 
     /// <summary>
@@ -775,26 +780,5 @@ public sealed class StoreTests : IDisposable
 
         // Assert
         Assert.Equal(1, callCount);
-    }
-
-    /// <summary>
-    ///     Simple observer that invokes an action on each value.
-    /// </summary>
-    /// <typeparam name="T">The type of values to observe.</typeparam>
-    private sealed class ActionObserver<T> : IObserver<T>
-    {
-        private readonly Action<T> onNext;
-
-        public ActionObserver(Action<T> onNext) => this.onNext = onNext;
-
-        public void OnCompleted()
-        {
-        }
-
-        public void OnError(Exception error)
-        {
-        }
-
-        public void OnNext(T value) => onNext(value);
     }
 }

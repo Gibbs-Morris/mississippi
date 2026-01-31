@@ -10,9 +10,9 @@ description: Reservoir integrates with Redux DevTools for time-travel debugging 
 
 ## Overview
 
-Reservoir provides opt-in integration with the [Redux DevTools](https://github.com/reduxjs/redux-devtools) browser extension. When enabled, the DevTools integration reports all dispatched actions and state snapshots, enabling time-travel debugging, state inspection, and action replay.
+Reservoir provides opt-in integration with the [Redux DevTools](https://github.com/reduxjs/redux-devtools) browser extension. When enabled, a background service observes all dispatched actions and state changes, reporting them to DevTools for time-travel debugging, state inspection, and action replay.
 
-This page covers registration, configuration options, enablement modes, and the strict time-travel rehydration feature.
+This page covers registration, configuration options, enablement modes, the composition architecture, and the strict time-travel rehydration feature.
 
 ## Quick Start
 
@@ -28,7 +28,7 @@ builder.Services.AddReservoirDevTools(options =>
 });
 ```
 
-([ReservoirDevToolsRegistrations.AddReservoirDevTools](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsRegistrations.cs#L22-L47))
+([ReservoirDevToolsRegistrations.AddReservoirDevTools](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsRegistrations.cs#L33-L52))
 
 ### 2. Install the Browser Extension
 
@@ -63,7 +63,7 @@ public enum ReservoirDevToolsEnablement
 | `DevelopmentOnly` | DevTools integration is enabled only when `IHostEnvironment.IsDevelopment()` returns `true`. Recommended for most applications. |
 | `Always` | DevTools integration is enabled in all environments including production. Use with caution. |
 
-([ReservoirDevToolsEnablement](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L80-L98))
+([ReservoirDevToolsEnablement](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L85-L107))
 
 ### Example
 
@@ -94,7 +94,7 @@ The `ReservoirDevToolsOptions` class provides configuration for the DevTools int
 | `ActionSanitizer` | `Func<IAction, object?>?` | `null` | Transform actions before sending. Return `null` to use default serialization. See [Sanitizers](#sanitizers). |
 | `StateSanitizer` | `Func<IReadOnlyDictionary<string, object>, object?>?` | `null` | Transform state snapshot before sending. Return `null` to use original. See [Sanitizers](#sanitizers). |
 
-([ReservoirDevToolsOptions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L14-L76))
+([ReservoirDevToolsOptions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L14-L82))
 
 ### Example Configuration
 
@@ -109,37 +109,57 @@ builder.Services.AddReservoirDevTools(options =>
 
 ## How It Works
 
-When DevTools integration is enabled, `AddReservoirDevTools` replaces the default `IStore` registration with `ReservoirDevToolsStore`. This store extends the base `Store` and reports actions and state to the Redux DevTools extension via JavaScript interop.
+DevTools integration uses composition rather than inheritance. When enabled, `AddReservoirDevTools` registers `ReduxDevToolsService` as an `IHostedService` that subscribes to [`IStore.StoreEvents`](./store.md#observable-store-events). This approach keeps the store implementation unchanged while allowing external integrations to observe its activity.
 
 ```mermaid
 flowchart LR
-    A[Dispatch Action] --> B[Reducers]
-    B --> C[Notify Listeners]
-    C --> D[Effects]
-    B --> DT[DevTools Store]
-    DT --> JS[JS Interop]
-    JS --> EXT[Redux DevTools Extension]
+    subgraph Store
+        A[Dispatch Action] --> B[Reducers]
+        B --> C[Notify Listeners]
+        C --> D[Effects]
+        B --> SE[Emit StoreEvent]
+    end
     
-    style DT fill:#f4a261,color:#fff
+    SE --> DTS[ReduxDevToolsService]
+    DTS --> JS[JS Interop]
+    JS --> EXT[Redux DevTools Extension]
+    EXT -.->|Time-Travel Commands| SA[System Actions]
+    SA --> A
+    
+    style SE fill:#9b59b6,color:#fff
+    style DTS fill:#f4a261,color:#fff
     style JS fill:#6c5ce7,color:#fff
     style EXT fill:#50c878,color:#fff
+    style SA fill:#e74c3c,color:#fff
 ```
 
-([ReservoirDevToolsStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsStore.cs#L21-L479))
+### Composition Pattern
+
+1. **Store emits events**: The store publishes [`StoreEventBase`](./store.md#store-event-types) events through `IStore.StoreEvents` during dispatch
+2. **DevTools observes**: `ReduxDevToolsService` subscribes to the event stream and reports actions/state to the browser extension
+3. **Time-travel via system actions**: Commands from DevTools (jump, reset, rollback) are translated into [system actions](./store.md#system-actions) dispatched to the store
+
+This design maintains unidirectional data flow—even time-travel commands go through `Dispatch()`.
+
+([ReduxDevToolsService](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReduxDevToolsService.cs#L32-L155))
 
 ## Time-Travel Debugging
 
-Redux DevTools supports time-travel debugging, allowing you to jump to previous states, reset, rollback, and import/export state. When you perform these operations in DevTools, the store receives messages and updates its state accordingly.
+Redux DevTools supports time-travel debugging, allowing you to jump to previous states, reset, rollback, and import/export state. When you perform these operations in DevTools, the `ReduxDevToolsService` translates them into [system actions](./store.md#system-actions) dispatched to the store.
 
 ### Supported Operations
 
-| Operation | Description |
-|-----------|-------------|
-| **Jump to State** | Navigate to a specific point in action history |
-| **Reset** | Return to the initial state |
-| **Rollback** | Return to the last committed state |
-| **Commit** | Mark current state as the new baseline |
-| **Import** | Load state from an exported JSON file |
+| Operation | System Action | Description |
+|-----------|---------------|-------------|
+| **Jump to State** | `RestoreStateAction` | Navigate to a specific point in action history |
+| **Reset** | `ResetToInitialStateAction` | Return to the initial state registered during startup |
+| **Rollback** | `RestoreStateAction` | Return to the last committed state snapshot |
+| **Commit** | (internal) | Mark current state as the new baseline for rollback |
+| **Import** | `RestoreStateAction` | Load state from an exported JSON file |
+
+:::note
+System actions are handled directly by the store and do not trigger user-defined reducers or effects. They emit `StateRestoredEvent` to notify observers.
+:::
 
 ## Strict State Rehydration
 
@@ -169,7 +189,7 @@ When `IsStrictStateRehydrationEnabled` is `false` (default):
 - Features that fail deserialization are skipped
 - Successfully deserialized features are applied
 
-([ReservoirDevToolsStore.ReplaceStateFromJsonDocument](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsStore.cs#L330-L395))
+([ReduxDevToolsService.TryRestoreStateFromJsonDocument](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReduxDevToolsService.cs#L429-L490))
 
 ### When to Use Strict Mode
 
@@ -253,14 +273,15 @@ Sanitizers run on every action dispatch. Keep them fast to avoid impacting appli
 
 | Concept | Description |
 |---------|-------------|
+| **Architecture** | Composition via `IHostedService` subscribing to `IStore.StoreEvents` |
 | **Registration** | `AddReservoirDevTools()` after `AddReservoir()` |
 | **Enablement** | `Off` (default), `DevelopmentOnly`, or `Always` |
+| **Time-travel** | Commands become system actions (`RestoreStateAction`, `ResetToInitialStateAction`) |
 | **Strict mode** | `IsStrictStateRehydrationEnabled` requires all features in time-travel payloads |
 | **Sanitizers** | Transform actions/state before sending to DevTools |
-| **Time-travel** | Jump, reset, rollback, commit, and import operations are supported |
 
 ## Next Steps
 
-- [Store](./store.md) — Understand the central hub that DevTools extends
+- [Store](./store.md) — Understand the observable store events and system actions that DevTools uses
 - [Reservoir Overview](./reservoir.md) — Learn the dispatch pipeline that DevTools observes
 - [Testing](./testing.md) — Test reducers and effects without DevTools

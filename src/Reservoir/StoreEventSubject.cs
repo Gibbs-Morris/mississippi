@@ -14,7 +14,9 @@ namespace Mississippi.Reservoir;
 ///         System.Reactive. It supports multiple subscribers and thread-safe subscription management.
 ///     </para>
 /// </remarks>
-internal sealed class StoreEventSubject<T> : IObservable<T>, IDisposable
+internal sealed class StoreEventSubject<T>
+    : IObservable<T>,
+      IDisposable
 {
     private readonly object subscribersLock = new();
 

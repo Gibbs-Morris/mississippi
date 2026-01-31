@@ -144,8 +144,7 @@ public class Store : IStore
     }
 
     /// <inheritdoc />
-    public IReadOnlyDictionary<string, object> GetStateSnapshot() =>
-        new Dictionary<string, object>(featureStates);
+    public IReadOnlyDictionary<string, object> GetStateSnapshot() => new Dictionary<string, object>(featureStates);
 
     /// <summary>
     ///     Registers a middleware in the dispatch pipeline.
@@ -218,6 +217,33 @@ public class Store : IStore
     protected IReadOnlyDictionary<string, object> GetInitialStateSnapshot() =>
         new Dictionary<string, object>(initialFeatureStates);
 
+    private void ApplyStateSnapshot(
+        IReadOnlyDictionary<string, object> newStates
+    )
+    {
+        foreach (KeyValuePair<string, object> kvp in newStates)
+        {
+            if (!featureStates.TryGetValue(kvp.Key, out object? currentState))
+            {
+                continue;
+            }
+
+            object? newState = kvp.Value;
+            if (newState is null)
+            {
+                continue;
+            }
+
+            Type currentType = currentState.GetType();
+            if (!currentType.IsInstanceOfType(newState))
+            {
+                continue;
+            }
+
+            featureStates[kvp.Key] = newState;
+        }
+    }
+
     private Action<IAction> BuildMiddlewarePipeline(
         Action<IAction> coreDispatch
     )
@@ -261,11 +287,9 @@ public class Store : IStore
     {
         // Emit pre-dispatch event for system actions too
         storeEventSubject.OnNext(new ActionDispatchingEvent(systemAction));
-
         IReadOnlyDictionary<string, object> previousSnapshot = GetStateSnapshot();
         IReadOnlyDictionary<string, object> newSnapshot;
         bool notify;
-
         switch (systemAction)
         {
             case RestoreStateAction restoreAction:
@@ -273,13 +297,11 @@ public class Store : IStore
                 newSnapshot = GetStateSnapshot();
                 notify = restoreAction.NotifyListeners;
                 break;
-
             case ResetToInitialStateAction resetAction:
                 ApplyStateSnapshot(GetInitialStateSnapshot());
                 newSnapshot = GetStateSnapshot();
                 notify = resetAction.NotifyListeners;
                 break;
-
             default:
                 // Unknown system action - just emit the dispatching event
                 return;
@@ -287,37 +309,9 @@ public class Store : IStore
 
         // Emit state restored event
         storeEventSubject.OnNext(new StateRestoredEvent(previousSnapshot, newSnapshot, systemAction));
-
         if (notify)
         {
             NotifyListeners();
-        }
-    }
-
-    private void ApplyStateSnapshot(
-        IReadOnlyDictionary<string, object> newStates
-    )
-    {
-        foreach (KeyValuePair<string, object> kvp in newStates)
-        {
-            if (!featureStates.TryGetValue(kvp.Key, out object? currentState))
-            {
-                continue;
-            }
-
-            object? newState = kvp.Value;
-            if (newState is null)
-            {
-                continue;
-            }
-
-            Type currentType = currentState.GetType();
-            if (!currentType.IsInstanceOfType(newState))
-            {
-                continue;
-            }
-
-            featureStates[kvp.Key] = newState;
         }
     }
 

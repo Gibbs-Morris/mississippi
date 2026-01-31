@@ -17,6 +17,4 @@ namespace Mississippi.Reservoir.Abstractions.Events;
 ///     </para>
 /// </remarks>
 /// <param name="Action">The action about to be processed.</param>
-public sealed record ActionDispatchingEvent(
-    IAction Action
-) : StoreEventBase;
+public sealed record ActionDispatchingEvent(IAction Action) : StoreEventBase;

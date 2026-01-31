@@ -47,12 +47,6 @@ public interface IStore : IDisposable
     IObservable<StoreEventBase> StoreEvents { get; }
 
     /// <summary>
-    ///     Gets a snapshot of all current feature states.
-    /// </summary>
-    /// <returns>A dictionary of feature states keyed by feature key.</returns>
-    IReadOnlyDictionary<string, object> GetStateSnapshot();
-
-    /// <summary>
     ///     Dispatches an action to the store.
     ///     Actions are processed by middleware, then action reducers, then effects.
     /// </summary>
@@ -71,6 +65,12 @@ public interface IStore : IDisposable
     /// </exception>
     TState GetState<TState>()
         where TState : class, IFeatureState;
+
+    /// <summary>
+    ///     Gets a snapshot of all current feature states.
+    /// </summary>
+    /// <returns>A dictionary of feature states keyed by feature key.</returns>
+    IReadOnlyDictionary<string, object> GetStateSnapshot();
 
     /// <summary>
     ///     Subscribes to state changes.

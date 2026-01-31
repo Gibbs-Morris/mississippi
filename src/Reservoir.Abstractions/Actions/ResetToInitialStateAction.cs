@@ -11,6 +11,4 @@ namespace Mississippi.Reservoir.Abstractions.Actions;
 ///     </para>
 /// </remarks>
 /// <param name="NotifyListeners">Whether to notify subscribers after reset. Defaults to true.</param>
-public sealed record ResetToInitialStateAction(
-    bool NotifyListeners = true
-) : ISystemAction;
+public sealed record ResetToInitialStateAction(bool NotifyListeners = true) : ISystemAction;
