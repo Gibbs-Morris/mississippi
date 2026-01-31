@@ -37,7 +37,7 @@ OrleansService orleans = builder.AddOrleans("default")
     .WithClustering(clusteringTable)
     .WithGrainStorage("Default", grainState)
     .WithMemoryGrainStorage("PubSubStore")
-    .WithMemoryStreaming("StreamProvider");
+    .WithMemoryStreaming("mississippi-streaming");
 
 // Add Spring.Silo - Orleans server that hosts grains
 // WithReference cosmos/blobs for event sourcing storage (Brooks + Snapshots)
