@@ -106,10 +106,12 @@ public static class EntitySelectionSelectors
 ```
 
 :::tip Key Rules for Selectors
+
 - **Pure functions**: No side effects, same input → same output
 - **Single responsibility**: Each selector computes one value
 - **Null validation**: Always validate state parameters
 - **Prefer static methods**: Enables easy testing and composition
+
 :::
 
 ### Using Selectors in Components
@@ -244,6 +246,7 @@ public static Func<TState, TResult> Create<TState, TResult>(
 
 :::note When Memoization Helps
 Memoization is most beneficial when:
+
 - Selector performs expensive computation (filtering, sorting, grouping)
 - Component re-renders frequently but state rarely changes
 - Same selector is called multiple times per render
