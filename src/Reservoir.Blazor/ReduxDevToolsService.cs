@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,15 +11,25 @@ using Microsoft.JSInterop;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
-using Mississippi.Reservoir.Abstractions.State;
+using Mississippi.Reservoir.Abstractions.Events;
 
 
 namespace Mississippi.Reservoir.Blazor;
 
 /// <summary>
-///     A store implementation that reports actions and state to Redux DevTools.
+///     Background service that integrates the Reservoir store with Redux DevTools.
 /// </summary>
-internal sealed class ReservoirDevToolsStore : Store
+/// <remarks>
+///     <para>
+///         This service subscribes to <see cref="IStore.StoreEvents" /> to observe store activity
+///         and reports actions and state to the Redux DevTools browser extension via JavaScript interop.
+///     </para>
+///     <para>
+///         Time-travel commands from DevTools (jump-to-state, reset, rollback, etc.) are translated
+///         into system actions dispatched to the store, maintaining unidirectional data flow.
+///     </para>
+/// </remarks>
+internal sealed class ReduxDevToolsService : IHostedService, IAsyncDisposable
 {
     private readonly SemaphoreSlim devToolsLock = new(1, 1);
 
@@ -26,33 +37,36 @@ internal sealed class ReservoirDevToolsStore : Store
 
     private bool devToolsConnected;
 
-    private DotNetObjectReference<ReservoirDevToolsStore>? dotNetRef;
+    private DotNetObjectReference<ReduxDevToolsService>? dotNetRef;
+
+    private bool isDisposed;
+
+    private IDisposable? storeEventsSubscription;
 
     private bool suppressDevToolsUpdates;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ReservoirDevToolsStore" /> class.
+    ///     Initializes a new instance of the <see cref="ReduxDevToolsService" /> class.
     /// </summary>
-    /// <param name="featureRegistrations">The feature state registrations.</param>
-    /// <param name="middlewaresCollection">The middleware collection.</param>
+    /// <param name="store">The store to observe and control.</param>
     /// <param name="interop">The DevTools JavaScript interop.</param>
     /// <param name="options">The DevTools options.</param>
     /// <param name="hostEnvironment">The optional host environment for environment checks.</param>
-    public ReservoirDevToolsStore(
-        IEnumerable<IFeatureStateRegistration> featureRegistrations,
-        IEnumerable<IMiddleware> middlewaresCollection,
+    public ReduxDevToolsService(
+        IStore store,
         ReservoirDevToolsInterop interop,
         IOptions<ReservoirDevToolsOptions> options,
         IHostEnvironment? hostEnvironment = null
     )
-        : base(featureRegistrations, middlewaresCollection)
     {
+        ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(interop);
         ArgumentNullException.ThrowIfNull(options);
+        Store = store;
         Interop = interop;
         Options = options.Value;
         HostEnvironment = hostEnvironment;
-        committedSnapshot = CreateFeatureStateSnapshot();
+        committedSnapshot = Store.GetStateSnapshot();
     }
 
     private IHostEnvironment? HostEnvironment { get; }
@@ -60,6 +74,77 @@ internal sealed class ReservoirDevToolsStore : Store
     private ReservoirDevToolsInterop Interop { get; }
 
     private ReservoirDevToolsOptions Options { get; }
+
+    private IStore Store { get; }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (isDisposed)
+        {
+            return;
+        }
+
+        isDisposed = true;
+        storeEventsSubscription?.Dispose();
+        storeEventsSubscription = null;
+        dotNetRef?.Dispose();
+        dotNetRef = null;
+        devToolsLock.Dispose();
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Handles messages from the Redux DevTools extension.
+    /// </summary>
+    /// <param name="messageJson">The JSON message from DevTools.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [JSInvokable]
+    public async Task OnDevToolsMessageAsync(
+        string messageJson
+    )
+    {
+        if (string.IsNullOrWhiteSpace(messageJson))
+        {
+            return;
+        }
+
+        ReservoirDevToolsMessage? message = DeserializeMessage(messageJson);
+        if (message is null)
+        {
+            return;
+        }
+
+        await HandleDevToolsMessageAsync(message);
+    }
+
+    /// <inheritdoc />
+    public Task StartAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        if (!IsEnabled())
+        {
+            return Task.CompletedTask;
+        }
+
+        // Dispose any previous subscription before creating a new one
+        storeEventsSubscription?.Dispose();
+
+        // Subscribe to store events
+        storeEventsSubscription = Store.StoreEvents.Subscribe(new StoreEventObserver(this));
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task StopAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        storeEventsSubscription?.Dispose();
+        storeEventsSubscription = null;
+        return Task.CompletedTask;
+    }
 
     private static string? TryExtractImportedStateJson(
         JsonElement payload
@@ -98,59 +183,6 @@ internal sealed class ReservoirDevToolsStore : Store
         }
 
         return stateElement.GetRawText();
-    }
-
-    /// <summary>
-    ///     Handles messages from the Redux DevTools extension.
-    /// </summary>
-    /// <param name="messageJson">The JSON message from DevTools.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [JSInvokable]
-    public async Task OnDevToolsMessageAsync(
-        string messageJson
-    )
-    {
-        if (string.IsNullOrWhiteSpace(messageJson))
-        {
-            return;
-        }
-
-        ReservoirDevToolsMessage? message = DeserializeMessage(messageJson);
-        if (message is null)
-        {
-            return;
-        }
-
-        await HandleDevToolsMessageAsync(message);
-    }
-
-    /// <inheritdoc />
-    protected override void Dispose(
-        bool disposing
-    )
-    {
-        if (disposing)
-        {
-            dotNetRef?.Dispose();
-            dotNetRef = null;
-            devToolsLock.Dispose();
-        }
-
-        base.Dispose(disposing);
-    }
-
-    /// <inheritdoc />
-    protected override void OnActionDispatched(
-        IAction action
-    )
-    {
-        if (suppressDevToolsUpdates)
-        {
-            return;
-        }
-
-        // Fire-and-forget is intentional for DevTools reporting.
-        _ = SendToDevToolsAsync(action);
     }
 
     private Dictionary<string, object?> BuildOptionsPayload()
@@ -206,9 +238,10 @@ internal sealed class ReservoirDevToolsStore : Store
         };
     }
 
-    private object CreateStatePayload()
+    private object CreateStatePayload(
+        IReadOnlyDictionary<string, object> snapshot
+    )
     {
-        IReadOnlyDictionary<string, object> snapshot = CreateFeatureStateSnapshot();
         object? sanitized = Options.StateSanitizer?.Invoke(snapshot);
         if (sanitized is not null)
         {
@@ -258,11 +291,6 @@ internal sealed class ReservoirDevToolsStore : Store
         await devToolsLock.WaitAsync();
         try
         {
-            if (devToolsConnected)
-            {
-                return true;
-            }
-
             dotNetRef ??= DotNetObjectReference.Create(this);
             bool connected = await Interop.ConnectAsync(BuildOptionsPayload(), dotNetRef);
             devToolsConnected = connected;
@@ -271,8 +299,9 @@ internal sealed class ReservoirDevToolsStore : Store
                 return false;
             }
 
-            await Interop.InitAsync(CreateStatePayload());
-            committedSnapshot = CreateFeatureStateSnapshot();
+            await Interop.InitAsync(CreateStatePayload(Store.GetStateSnapshot()));
+            // Note: committedSnapshot is NOT updated here - it was set in constructor
+            // and should only be updated via explicit COMMIT command
             return true;
         }
         catch (JSException)
@@ -289,6 +318,10 @@ internal sealed class ReservoirDevToolsStore : Store
         }
     }
 
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "JSON parsing failures should not crash the service")]
     private async Task HandleDevToolsMessageAsync(
         ReservoirDevToolsMessage message
     )
@@ -325,27 +358,50 @@ internal sealed class ReservoirDevToolsStore : Store
             case "JUMP_TO_ACTION":
                 if (!string.IsNullOrWhiteSpace(message.State))
                 {
-                    ReplaceStateFromJson(message.State);
+                    bool stateApplied = TryRestoreStateFromJson(message.State);
+                    if (!stateApplied)
+                    {
+                        // Re-sync DevTools with current store state when strict mode rejects the jump
+                        await InitDevToolsAsync();
+                    }
                 }
 
                 break;
             case "RESET":
-                ReplaceStateFromSnapshot(CreateInitialFeatureStateSnapshot());
+                suppressDevToolsUpdates = true;
+                try
+                {
+                    Store.Dispatch(new ResetToInitialStateAction());
+                }
+                finally
+                {
+                    suppressDevToolsUpdates = false;
+                }
+
                 await InitDevToolsAsync();
                 break;
             case "ROLLBACK":
-                ReplaceStateFromSnapshot(committedSnapshot);
+                suppressDevToolsUpdates = true;
+                try
+                {
+                    Store.Dispatch(new RestoreStateAction(committedSnapshot));
+                }
+                finally
+                {
+                    suppressDevToolsUpdates = false;
+                }
+
                 await InitDevToolsAsync();
                 break;
             case "COMMIT":
-                committedSnapshot = CreateFeatureStateSnapshot();
+                committedSnapshot = Store.GetStateSnapshot();
                 await InitDevToolsAsync();
                 break;
             case "IMPORT_STATE":
                 string? importedStateJson = TryExtractImportedStateJson(message.Payload.Value);
                 if (!string.IsNullOrWhiteSpace(importedStateJson))
                 {
-                    ReplaceStateFromJson(importedStateJson);
+                    TryRestoreStateFromJson(importedStateJson);
                 }
 
                 await InitDevToolsAsync();
@@ -360,7 +416,7 @@ internal sealed class ReservoirDevToolsStore : Store
             return;
         }
 
-        await Interop.InitAsync(CreateStatePayload());
+        await Interop.InitAsync(CreateStatePayload(Store.GetStateSnapshot()));
     }
 
     private bool IsEnabled()
@@ -373,37 +429,96 @@ internal sealed class ReservoirDevToolsStore : Store
         };
     }
 
-    private void ReplaceStateFromJson(
+    private void OnStoreEvent(
+        StoreEventBase storeEvent
+    )
+    {
+        if (suppressDevToolsUpdates)
+        {
+            return;
+        }
+
+        switch (storeEvent)
+        {
+            case ActionDispatchedEvent actionDispatched:
+                // Don't report system actions to DevTools
+                if (actionDispatched.Action is ISystemAction)
+                {
+                    return;
+                }
+
+                // Fire-and-forget is intentional for DevTools reporting.
+                _ = SendToDevToolsAsync(actionDispatched.Action, actionDispatched.StateSnapshot);
+                break;
+
+            case StateRestoredEvent:
+                // State was restored - DevTools will be re-initialized by the handler
+                break;
+        }
+    }
+
+    private async Task SendToDevToolsAsync(
+        IAction action,
+        IReadOnlyDictionary<string, object> stateSnapshot
+    )
+    {
+        if (!await EnsureConnectedAsync())
+        {
+            return;
+        }
+
+        try
+        {
+            object actionPayload = CreateActionPayload(action);
+            object statePayload = CreateStatePayload(stateSnapshot);
+            await Interop.SendAsync(actionPayload, statePayload);
+        }
+        catch (JSException)
+        {
+            // Ignore JS interop failures to keep app running.
+        }
+        catch (InvalidOperationException)
+        {
+            // Ignore JS interop failures to keep app running.
+        }
+    }
+
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "JSON parsing failures should not crash the service")]
+    private bool TryRestoreStateFromJson(
         string stateJson
     )
     {
-        JsonDocument? document = null;
         try
         {
-            document = JsonDocument.Parse(stateJson);
-            ReplaceStateFromJsonDocument(document);
+            using JsonDocument document = JsonDocument.Parse(stateJson);
+            return TryRestoreStateFromJsonDocument(document);
         }
         catch (JsonException)
         {
             // Ignore invalid payloads.
+            return false;
         }
-        finally
+        catch (Exception)
         {
-            document?.Dispose();
+            // Catch any other parsing failures.
+            return false;
         }
     }
 
-    private void ReplaceStateFromJsonDocument(
+    private bool TryRestoreStateFromJsonDocument(
         JsonDocument document
     )
     {
         JsonElement root = document.RootElement;
         if (root.ValueKind != JsonValueKind.Object)
         {
-            return;
+            return false;
         }
 
-        IReadOnlyDictionary<string, object> currentSnapshot = CreateFeatureStateSnapshot();
+        IReadOnlyDictionary<string, object> currentSnapshot = Store.GetStateSnapshot();
         Dictionary<string, object> newStates = new(StringComparer.Ordinal);
         foreach (KeyValuePair<string, object> current in currentSnapshot)
         {
@@ -412,7 +527,7 @@ internal sealed class ReservoirDevToolsStore : Store
                 if (Options.IsStrictStateRehydrationEnabled)
                 {
                     // Strict mode: reject if any feature is missing.
-                    return;
+                    return false;
                 }
 
                 continue;
@@ -434,7 +549,7 @@ internal sealed class ReservoirDevToolsStore : Store
                 if (Options.IsStrictStateRehydrationEnabled)
                 {
                     // Strict mode: reject if any feature fails deserialization.
-                    return;
+                    return false;
                 }
 
                 continue;
@@ -443,48 +558,52 @@ internal sealed class ReservoirDevToolsStore : Store
             newStates[current.Key] = deserialized;
         }
 
-        ReplaceStateFromSnapshot(newStates);
-    }
-
-    private void ReplaceStateFromSnapshot(
-        IReadOnlyDictionary<string, object> snapshot
-    )
-    {
         suppressDevToolsUpdates = true;
         try
         {
-            ReplaceFeatureStates(snapshot, true);
+            Store.Dispatch(new RestoreStateAction(newStates));
         }
         finally
         {
             suppressDevToolsUpdates = false;
         }
-    }
 
-    private async Task SendToDevToolsAsync(
-        IAction action
-    )
-    {
-        if (!await EnsureConnectedAsync())
-        {
-            return;
-        }
-
-        try
-        {
-            object actionPayload = CreateActionPayload(action);
-            object statePayload = CreateStatePayload();
-            await Interop.SendAsync(actionPayload, statePayload);
-        }
-        catch (JSException)
-        {
-            // Ignore JS interop failures to keep app running.
-        }
-        catch (InvalidOperationException)
-        {
-            // Ignore JS interop failures to keep app running.
-        }
+        return true;
     }
 
     private sealed record ReservoirDevToolsMessage(string? Type, JsonElement? Payload, string? State);
+
+    /// <summary>
+    ///     Observer that forwards store events to the service.
+    /// </summary>
+    private sealed class StoreEventObserver : IObserver<StoreEventBase>
+    {
+        private ReduxDevToolsService Service { get; }
+
+        public StoreEventObserver(
+            ReduxDevToolsService service
+        )
+        {
+            Service = service;
+        }
+
+        public void OnCompleted()
+        {
+            // Store was disposed.
+        }
+
+        public void OnError(
+            Exception error
+        )
+        {
+            // Errors in the event stream are unexpected.
+        }
+
+        public void OnNext(
+            StoreEventBase value
+        )
+        {
+            Service.OnStoreEvent(value);
+        }
+    }
 }

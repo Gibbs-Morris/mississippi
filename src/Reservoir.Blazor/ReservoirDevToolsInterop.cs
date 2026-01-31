@@ -35,7 +35,7 @@ internal sealed class ReservoirDevToolsInterop : IAsyncDisposable
     /// <returns>True if connection succeeded.</returns>
     public async ValueTask<bool> ConnectAsync(
         object options,
-        DotNetObjectReference<ReservoirDevToolsStore> dotNetRef
+        DotNetObjectReference<ReduxDevToolsService> dotNetRef
     )
     {
         ArgumentNullException.ThrowIfNull(options);

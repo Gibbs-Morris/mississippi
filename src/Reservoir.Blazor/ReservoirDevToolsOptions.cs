@@ -40,14 +40,15 @@ public sealed class ReservoirDevToolsOptions
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         When <see langword="true" />, time-travel operations (jump, reset, import) will only succeed
-    ///         if ALL registered feature states can be successfully deserialized from the incoming payload.
-    ///         If any feature state is missing or fails deserialization, the entire operation is rejected
-    ///         and the current state remains unchanged.
+    ///         When <see langword="true" />, JSON-based time-travel operations (jump to state, jump to action,
+    ///         import) will only succeed if ALL registered feature states can be successfully deserialized
+    ///         from the incoming JSON payload. If any feature state is missing or fails deserialization,
+    ///         the entire operation is rejected and the current state remains unchanged.
     ///     </para>
     ///     <para>
-    ///         When <see langword="false" /> (default), time-travel uses best-effort rehydration: features
-    ///         that cannot be matched or deserialized are skipped, and the rest are applied.
+    ///         When <see langword="false" /> (default), JSON-based time-travel uses best-effort rehydration:
+    ///         features that cannot be matched or deserialized are skipped, and the rest are applied.
+    ///         The in-memory <c>RESET</c> operation is not affected by this setting.
     ///     </para>
     /// </remarks>
     public bool IsStrictStateRehydrationEnabled { get; set; }

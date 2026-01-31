@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Reservoir.Abstractions.Events;
 using Mississippi.Reservoir.Abstractions.State;
 
 
@@ -35,6 +37,9 @@ public sealed class CompositeInletStore : IInletStore
         Store = store;
     }
 
+    /// <inheritdoc />
+    public IObservable<StoreEventBase> StoreEvents => Store.StoreEvents;
+
     private IStore Store { get; }
 
     /// <inheritdoc />
@@ -56,6 +61,10 @@ public sealed class CompositeInletStore : IInletStore
     public TState GetState<TState>()
         where TState : class, IFeatureState =>
         Store.GetState<TState>();
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, object> GetStateSnapshot() =>
+        Store.GetStateSnapshot();
 
     /// <inheritdoc />
     public IDisposable Subscribe(

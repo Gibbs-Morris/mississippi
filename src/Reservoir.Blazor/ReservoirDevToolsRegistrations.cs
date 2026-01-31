@@ -3,8 +3,6 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.Reservoir.Abstractions;
-
 
 namespace Mississippi.Reservoir.Blazor;
 
@@ -23,7 +21,14 @@ public static class ReservoirDevToolsRegistrations
     /// <param name="configure">Optional configuration for DevTools options.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <remarks>
-    ///     Register after calling <c>AddReservoir</c>. DevTools integration is opt-in and disabled by default.
+    ///     <para>
+    ///         Register after calling <c>AddReservoir</c>. DevTools integration is opt-in and disabled by default.
+    ///     </para>
+    ///     <para>
+    ///         This registers a background service that subscribes to <c>IStore.StoreEvents</c> and
+    ///         reports actions and state to the Redux DevTools browser extension. Time-travel commands
+    ///         from DevTools are translated into system actions dispatched to the store.
+    ///     </para>
     /// </remarks>
     public static IServiceCollection AddReservoirDevTools(
         this IServiceCollection services,
@@ -41,7 +46,7 @@ public static class ReservoirDevToolsRegistrations
         }
 
         services.TryAddScoped<ReservoirDevToolsInterop>();
-        services.Replace(ServiceDescriptor.Scoped<IStore, ReservoirDevToolsStore>());
+        services.AddHostedService<ReduxDevToolsService>();
         return services;
     }
 }
