@@ -269,6 +269,7 @@ public sealed class TransferFundsSagaTests
         const decimal sourceInitial = 1000m;
         const decimal transferAmount = 250m;
         await OpenAccountAsync(client, sourceId, "Sender", sourceInitial);
+
         // Intentionally do not open the destination account to force a credit failure.
 
         // Act - Start transfer saga (should fail at credit step and compensate)
