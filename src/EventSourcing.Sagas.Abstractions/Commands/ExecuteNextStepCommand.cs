@@ -1,3 +1,6 @@
+using Orleans;
+
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions.Commands;
 
 /// <summary>
@@ -7,4 +10,6 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.Commands;
 ///     This command is dispatched by saga effects after step completion
 ///     to continue the saga workflow. It is not intended for external use.
 /// </remarks>
+[GenerateSerializer]
+[Alias("Mississippi.EventSourcing.Sagas.Abstractions.Commands.ExecuteNextStepCommand")]
 public sealed record ExecuteNextStepCommand;

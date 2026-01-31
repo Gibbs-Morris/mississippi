@@ -1,3 +1,6 @@
+using Orleans;
+
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions.Commands;
 
 /// <summary>
@@ -11,5 +14,9 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.Commands;
 ///     <see cref="Events.SagaStartedEvent" /> and <see cref="Events.SagaStepStartedEvent" />
 ///     to kick off the saga workflow.
 /// </remarks>
-public sealed record StartSagaCommand<TInput>(TInput Input, string? CorrelationId = null)
+[GenerateSerializer]
+[Alias("Mississippi.EventSourcing.Sagas.Abstractions.Commands.StartSagaCommand`1")]
+public sealed record StartSagaCommand<TInput>(
+    [property: Id(0)] TInput Input,
+    [property: Id(1)] string? CorrelationId = null)
     where TInput : class;
