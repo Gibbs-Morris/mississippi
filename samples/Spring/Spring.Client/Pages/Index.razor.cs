@@ -77,8 +77,7 @@ public sealed partial class Index
     /// <summary>
     ///     Gets the current connection identifier.
     /// </summary>
-    private string? ConnectionId =>
-        Select<SignalRConnectionState, string?>(SignalRConnectionSelectors.GetConnectionId);
+    private string? ConnectionId => Select<SignalRConnectionState, string?>(SignalRConnectionSelectors.GetConnectionId);
 
     /// <summary>
     ///     Gets the current connection status.
@@ -139,12 +138,6 @@ public sealed partial class Index
          IsProjectionLoading<BankAccountBalanceProjectionDto>(SelectedEntityId));
 
     /// <summary>
-    ///     Gets the timestamp when the connection was last successfully established.
-    /// </summary>
-    private DateTimeOffset? LastConnectedAt =>
-        Select<SignalRConnectionState, DateTimeOffset?>(SignalRConnectionSelectors.GetLastConnectedAt);
-
-    /// <summary>
     ///     Gets a value indicating whether the last command succeeded.
     /// </summary>
     /// <remarks>
@@ -152,6 +145,12 @@ public sealed partial class Index
     /// </remarks>
     private bool? LastCommandSucceeded =>
         Select<BankAccountAggregateState, bool?>(BankAccountAggregateSelectors.DidLastCommandSucceed);
+
+    /// <summary>
+    ///     Gets the timestamp when the connection was last successfully established.
+    /// </summary>
+    private DateTimeOffset? LastConnectedAt =>
+        Select<SignalRConnectionState, DateTimeOffset?>(SignalRConnectionSelectors.GetLastConnectedAt);
 
     /// <summary>
     ///     Gets the timestamp when the connection was last disconnected.
@@ -162,8 +161,7 @@ public sealed partial class Index
     /// <summary>
     ///     Gets the last error message from the connection.
     /// </summary>
-    private string? LastError =>
-        Select<SignalRConnectionState, string?>(SignalRConnectionSelectors.GetLastError);
+    private string? LastError => Select<SignalRConnectionState, string?>(SignalRConnectionSelectors.GetLastError);
 
     /// <summary>
     ///     Gets the timestamp when the last message was received.
