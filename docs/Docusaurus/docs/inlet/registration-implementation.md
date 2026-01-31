@@ -10,7 +10,8 @@
 
 This document outlines the step-by-step implementation approach to transform Mississippi's registration system from scattered, ordering-sensitive, magic-string-laden setup into a clean 3-line pattern with generated composites and options-driven defaults.
 
-**Target:** 
+**Target:**
+
 ```csharp
 builder.AddMississippiSilo()
        .AddSpringDomain()
@@ -195,6 +196,7 @@ public sealed class GenerateInletServerCompositeAttribute : Attribute
 Location: `src/Inlet.Server.Generators/InletServerCompositeGenerator.cs`
 
 The generator should:
+
 1. Find all aggregates (via `[GenerateCommand]`)
 2. Find all projections (via `[GenerateProjectionEndpoints]`)
 3. Emit `Add{App}Server()` that calls:
@@ -244,6 +246,7 @@ public sealed class GenerateInletSiloCompositeAttribute : Attribute
 Location: `src/Inlet.Silo.Generators/InletSiloCompositeGenerator.cs`
 
 The generator should emit `Add{App}Silo()` that calls:
+
 - Observability
 - Aspire resource setup
 - Domain (aggregates, projections)
@@ -255,6 +258,7 @@ The generator should emit `Add{App}Silo()` that calls:
 #### Step 2.3: Consolidate Layered Registrations
 
 The silo has 6 registration files that need to be templated:
+
 - `SpringAspireRegistrations.cs` → Provider-specific (Cosmos, Blob)
 - `SpringDomainRegistrations.cs` → Generated from aggregates/projections
 - `SpringEventSourcingRegistrations.cs` → Provider-specific (Cosmos)
@@ -309,6 +313,7 @@ public static class MississippiDefaults { ... }
 #### Step 3.3: Update All Usages
 
 Pattern replacement:
+
 - `MississippiDefaults.StreamProviderName` → Use injected options
 - `MississippiDefaults.DatabaseId` → Use `CosmosBrooksOptions.DatabaseId`
 - `MississippiDefaults.ServiceKeys.X` → Use options property
@@ -517,7 +522,7 @@ public void Generator_Produces_Expected_Server_Composite()
 
 ## Appendix: File Tree After Implementation
 
-```
+```text
 src/
 ├── Inlet.Client.Generators/
 │   └── InletClientCompositeGenerator.cs ✅ (exists)

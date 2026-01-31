@@ -24,9 +24,9 @@ using Mississippi.Inlet.Generators.Abstractions;
 [assembly: GenerateInletClientComposite(AppName = "Spring")]
 ```
 
-Source: https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Properties/AssemblyInfo.cs
+Source: [Spring.Client AssemblyInfo](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Properties/AssemblyInfo.cs)
 
-The attribute configures the generated method name and lets you set the hub path via `HubPath` if needed. Source: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateInletClientCompositeAttribute.cs
+The attribute configures the generated method name and lets you set the hub path via `HubPath` if needed. Source: [GenerateInletClientCompositeAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateInletClientCompositeAttribute.cs)
 
 ### 2) Call the generated method in Program.cs
 
@@ -34,7 +34,7 @@ The attribute configures the generated method name and lets you set the hub path
 builder.Services.AddSpringInlet();
 ```
 
-Source: https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs
+Source: [Spring.Client Program](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs)
 
 ### 3) Optional: configure SignalR behavior
 
@@ -48,7 +48,7 @@ builder.Services.AddSpringInlet(signalR =>
 });
 ```
 
-Source: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/InletClientCompositeGenerator.cs
+Source: [InletClientCompositeGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/InletClientCompositeGenerator.cs)
 
 ## Manual registration (advanced scenarios)
 
@@ -69,8 +69,9 @@ builder.Services.AddInletBlazorSignalR(signalR =>
 ```
 
 Reference APIs:
-- `AddInletClient` + `AddInletBlazorSignalR`: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs
-- Reservoir built-ins: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/BuiltIn/ReservoirBlazorBuiltInRegistrations.cs
+
+- `AddInletClient` + `AddInletBlazorSignalR`: [InletBlazorSignalRBuilder](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs)
+- Reservoir built-ins: [ReservoirBlazorBuiltInRegistrations](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/BuiltIn/ReservoirBlazorBuiltInRegistrations.cs)
 
 ## Projection DTO registration options
 
@@ -85,7 +86,7 @@ signalR.RegisterProjectionDtos(registry =>
 });
 ```
 
-Reference: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs
+Reference: [InletBlazorSignalRBuilder](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs)
 
 ### Option B: Assembly scanning (reflection-based)
 
@@ -95,11 +96,11 @@ Use `ScanProjectionDtos` to register DTOs by scanning assemblies for `Projection
 signalR.ScanProjectionDtos(typeof(AccountBalanceProjectionDto).Assembly);
 ```
 
-Reference: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs
+Reference: [InletBlazorSignalRBuilder](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs)
 
 `ProjectionPathAttribute` identifies the path used for subscriptions and fetches:
 
-Source: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Abstractions/ProjectionPathAttribute.cs
+Source: [ProjectionPathAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Abstractions/ProjectionPathAttribute.cs)
 
 ## Route prefix for projection fetches
 
@@ -109,14 +110,14 @@ If you are using the automatic projection fetcher, you can set a custom route pr
 signalR.WithRoutePrefix("/api/projections");
 ```
 
-If you do not set it, the default route prefix is `/api/projections`. Source: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/AutoProjectionFetcher.cs
+If you do not set it, the default route prefix is `/api/projections`. Source: [AutoProjectionFetcher](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/AutoProjectionFetcher.cs)
 
 ## Server requirements (for clients to connect)
 
 Clients expect the server to expose the Inlet hub and projection endpoints. In the Spring sample, this is handled by:
 
-- Mapping the hub: https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Infrastructure/SpringServerMiddlewareRegistrations.cs
-- Registering Inlet server + projection scanning: https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Infrastructure/SpringServerRealtimeRegistrations.cs
+- Mapping the hub: [SpringServerMiddlewareRegistrations](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Infrastructure/SpringServerMiddlewareRegistrations.cs)
+- Registering Inlet server + projection scanning: [SpringServerRealtimeRegistrations](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Infrastructure/SpringServerRealtimeRegistrations.cs)
 
 ## Summary
 

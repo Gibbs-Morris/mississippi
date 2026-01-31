@@ -35,6 +35,7 @@ The `feature/inlet-client-composite-generator` branch has made significant progr
 ### Program.cs Target State (Achieved)
 
 **Spring.Client** (3 lines - using generated composite):
+
 ```csharp
 builder.Services.AddSpringInlet();  // Generated from [assembly: GenerateInletClientComposite]
 builder.Services.AddEntitySelectionFeature();  // App-specific, not generated
@@ -42,6 +43,7 @@ await builder.Build().RunAsync();
 ```
 
 **Spring.Server** (4 lines - using manual composite):
+
 ```csharp
 builder.AddSpringServer();
 WebApplication app = builder.Build();
@@ -50,6 +52,7 @@ await app.RunAsync();
 ```
 
 **Spring.Silo** (4 lines - using manual composite):
+
 ```csharp
 builder.AddSpringSilo();
 WebApplication app = builder.Build();
