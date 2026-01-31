@@ -1,6 +1,3 @@
-using Mississippi.Common.Abstractions;
-
-
 namespace Mississippi.EventSourcing.Brooks.Cosmos;
 
 /// <summary>
@@ -11,24 +8,24 @@ public sealed class BrookStorageOptions
     /// <summary>
     ///     Gets or sets the Cosmos DB container identifier for storing brooks.
     /// </summary>
-    public string ContainerId { get; set; } = MississippiDefaults.ContainerIds.Brooks;
+    public string ContainerId { get; set; } = "brooks";
 
     /// <summary>
     ///     Gets or sets the keyed service key used to resolve the <c>CosmosClient</c> from DI.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Defaults to <see cref="MississippiDefaults.ServiceKeys.CosmosBrooksClient" />.
+    ///         Defaults to <c>"mississippi-cosmos-brooks-client"</c>.
     ///         Override this to share a single <c>CosmosClient</c> across multiple storage providers
     ///         or to use a custom keyed registration.
     ///     </para>
     /// </remarks>
-    public string CosmosClientServiceKey { get; set; } = MississippiDefaults.ServiceKeys.CosmosBrooksClient;
+    public string CosmosClientServiceKey { get; set; } = "mississippi-cosmos-brooks-client";
 
     /// <summary>
     ///     Gets or sets the Cosmos DB database identifier.
     /// </summary>
-    public string DatabaseId { get; set; } = MississippiDefaults.DatabaseId;
+    public string DatabaseId { get; set; } = "mississippi";
 
     /// <summary>
     ///     Gets or sets the duration in seconds for lease expiration.
@@ -43,7 +40,7 @@ public sealed class BrookStorageOptions
     /// <summary>
     ///     Gets or sets the name of the container used for distributed locking.
     /// </summary>
-    public string LockContainerName { get; set; } = MississippiDefaults.ContainerIds.Locks;
+    public string LockContainerName { get; set; } = "locks";
 
     /// <summary>
     ///     Gets or sets the maximum number of events per batch operation.

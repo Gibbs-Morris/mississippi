@@ -14,6 +14,8 @@ namespace Mississippi.Inlet.Client.L0Tests.Registrations;
 /// </summary>
 public sealed class InletBlazorSignalRBuilderTests
 {
+    private sealed record TestProjectionDto(string Value);
+
     /// <summary>
     ///     AddProjectionFetcher returns builder for chaining.
     /// </summary>
@@ -29,6 +31,29 @@ public sealed class InletBlazorSignalRBuilderTests
 
         // Assert
         Assert.Same(builder, result);
+    }
+
+    /// <summary>
+    ///     Build applies explicit projection DTO registrations.
+    /// </summary>
+    [Fact]
+    public void BuildAppliesExplicitProjectionDtoRegistrations()
+    {
+        // Arrange
+        ServiceCollection services = new();
+        InletBlazorSignalRBuilder builder = new(services);
+        builder.RegisterProjectionDtos(registry =>
+        {
+            registry.Register("accounts/balance", typeof(TestProjectionDto));
+        });
+
+        // Act
+        builder.Build();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IProjectionDtoRegistry registry = provider.GetRequiredService<IProjectionDtoRegistry>();
+
+        // Assert
+        Assert.Equal(typeof(TestProjectionDto), registry.GetDtoType("accounts/balance"));
     }
 
     /// <summary>

@@ -23,6 +23,8 @@ public sealed class InletBlazorSignalRBuilder
 {
     private readonly List<Assembly> assembliesToScan = [];
 
+    private readonly List<Action<IProjectionDtoRegistry>> registryConfigurations = [];
+
     private InletSignalRActionEffectOptions options = new();
 
     private Type? projectionFetcherType;
@@ -55,6 +57,34 @@ public sealed class InletBlazorSignalRBuilder
     {
         projectionFetcherType = typeof(TFetcher);
         useAutoFetcher = false;
+        return this;
+    }
+
+    /// <summary>
+    ///     Registers projection DTO types explicitly using a configuration action.
+    /// </summary>
+    /// <param name="configure">An action that configures the projection DTO registry.</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         This method enables the <see cref="AutoProjectionFetcher" /> without requiring
+    ///         runtime assembly scanning. Use this for compile-time known registrations,
+    ///         typically from source generators.
+    ///     </para>
+    ///     <code>
+    ///         builder.RegisterProjectionDtos(registry =&gt;
+    ///         {
+    ///             registry.Register("accounts/balance", typeof(BankAccountBalanceProjectionDto));
+    ///         });
+    ///     </code>
+    /// </remarks>
+    public InletBlazorSignalRBuilder RegisterProjectionDtos(
+        Action<IProjectionDtoRegistry> configure
+    )
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        registryConfigurations.Add(configure);
+        useAutoFetcher = true;
         return this;
     }
 
@@ -117,6 +147,10 @@ public sealed class InletBlazorSignalRBuilder
     /// </summary>
     internal void Build()
     {
+        // Capture configuration lists for the factory closure
+        List<Assembly> scanAssemblies = [.. assembliesToScan];
+        List<Action<IProjectionDtoRegistry>> configurations = [.. registryConfigurations];
+
         // Register options
         Services.TryAddSingleton(options);
 
@@ -124,9 +158,17 @@ public sealed class InletBlazorSignalRBuilder
         Services.TryAddSingleton<IProjectionDtoRegistry>(sp =>
         {
             ProjectionDtoRegistry registry = new();
-            foreach (Assembly assembly in assembliesToScan)
+
+            // Apply assembly scanning (runtime reflection)
+            foreach (Assembly assembly in scanAssemblies)
             {
                 registry.ScanAssemblies(assembly);
+            }
+
+            // Apply explicit configurations (compile-time registrations from generators)
+            foreach (Action<IProjectionDtoRegistry> configure in configurations)
+            {
+                configure(registry);
             }
 
             return registry;

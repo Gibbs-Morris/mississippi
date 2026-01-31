@@ -691,6 +691,9 @@
       "Mississippi.Sdk.Silo": {
         "type": "Project",
         "dependencies": {
+          "Aspire.Azure.Storage.Blobs": "[13.1.0, )",
+          "Aspire.Microsoft.Azure.Cosmos": "[13.1.0, )",
+          "Microsoft.Orleans.Persistence.Memory": "[10.0.0, )",
           "Mississippi.Aqueduct.Grains": "[1.0.0, )",
           "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
           "Mississippi.EventSourcing.Aggregates.Api": "[1.0.0, )",
