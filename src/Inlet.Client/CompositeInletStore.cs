@@ -1,7 +1,6 @@
 using System;
 
 using Mississippi.Inlet.Client.Abstractions;
-using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -10,12 +9,14 @@ using Mississippi.Reservoir.Abstractions.State;
 namespace Mississippi.Inlet.Client;
 
 /// <summary>
-///     Composite implementation of <see cref="IInletStore" /> that delegates to
-///     separate <see cref="IStore" /> and <see cref="IProjectionCache" /> instances.
+///     Implementation of <see cref="IInletStore" /> that wraps an <see cref="IStore" />.
 /// </summary>
 /// <remarks>
-///     This class provides a unified interface for components that need both
-///     Redux-style state management and server-synced projections.
+///     <para>
+///         This class provides a unified interface for components that need
+///         Redux-style state management. Projection state is accessed via
+///         <c>GetState&lt;ProjectionsFeatureState&gt;()</c>.
+///     </para>
 /// </remarks>
 public sealed class CompositeInletStore : IInletStore
 {
@@ -23,22 +24,16 @@ public sealed class CompositeInletStore : IInletStore
     ///     Initializes a new instance of the <see cref="CompositeInletStore" /> class.
     /// </summary>
     /// <param name="store">The underlying Redux-style store.</param>
-    /// <param name="projectionCache">The projection cache for server-synced state.</param>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="store" /> or <paramref name="projectionCache" /> is null.
+    ///     Thrown when <paramref name="store" /> is null.
     /// </exception>
     public CompositeInletStore(
-        IStore store,
-        IProjectionCache projectionCache
+        IStore store
     )
     {
         ArgumentNullException.ThrowIfNull(store);
-        ArgumentNullException.ThrowIfNull(projectionCache);
         Store = store;
-        ProjectionCache = projectionCache;
     }
-
-    private IProjectionCache ProjectionCache { get; }
 
     private IStore Store { get; }
 
@@ -58,51 +53,9 @@ public sealed class CompositeInletStore : IInletStore
     }
 
     /// <inheritdoc />
-    public T? GetProjection<T>(
-        string entityId
-    )
-        where T : class =>
-        ProjectionCache.GetProjection<T>(entityId);
-
-    /// <inheritdoc />
-    public Exception? GetProjectionError<T>(
-        string entityId
-    )
-        where T : class =>
-        ProjectionCache.GetProjectionError<T>(entityId);
-
-    /// <inheritdoc />
-    public IProjectionState<T>? GetProjectionState<T>(
-        string entityId
-    )
-        where T : class =>
-        ProjectionCache.GetProjectionState<T>(entityId);
-
-    /// <inheritdoc />
-    public long GetProjectionVersion<T>(
-        string entityId
-    )
-        where T : class =>
-        ProjectionCache.GetProjectionVersion<T>(entityId);
-
-    /// <inheritdoc />
     public TState GetState<TState>()
         where TState : class, IFeatureState =>
         Store.GetState<TState>();
-
-    /// <inheritdoc />
-    public bool IsProjectionConnected<T>(
-        string entityId
-    )
-        where T : class =>
-        ProjectionCache.IsProjectionConnected<T>(entityId);
-
-    /// <inheritdoc />
-    public bool IsProjectionLoading<T>(
-        string entityId
-    )
-        where T : class =>
-        ProjectionCache.IsProjectionLoading<T>(entityId);
 
     /// <inheritdoc />
     public IDisposable Subscribe(

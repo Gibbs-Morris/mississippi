@@ -40,26 +40,6 @@ public sealed class InletClientRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInlet should register IProjectionCache as ProjectionCache singleton.
-    /// </summary>
-    [Fact]
-    public void AddInletRegistersIProjectionCacheAsSingleton()
-    {
-        // Arrange
-        ServiceCollection services = [];
-
-        // Act
-        services.AddInletClient();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        IProjectionCache cache1 = provider.GetRequiredService<IProjectionCache>();
-        IProjectionCache cache2 = provider.GetRequiredService<IProjectionCache>();
-
-        // Assert
-        Assert.IsType<ProjectionCache>(cache1);
-        Assert.Same(cache1, cache2);
-    }
-
-    /// <summary>
     ///     AddInlet should register IProjectionUpdateNotifier as ProjectionNotifier.
     /// </summary>
     [Fact]

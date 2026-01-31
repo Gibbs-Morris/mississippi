@@ -13,10 +13,14 @@ namespace Mississippi.Inlet.Client.Abstractions.State;
 /// <param name="IsConnected">Whether the projection is connected to the server.</param>
 /// <param name="Error">Any error that occurred.</param>
 public sealed record ProjectionEntry<T>(T? Data, long Version, bool IsLoading, bool IsConnected, Exception? Error)
+    : IProjectionState<T>
     where T : class
 {
     /// <summary>
     ///     An empty entry representing a projection that has not been loaded.
     /// </summary>
     public static readonly ProjectionEntry<T> Empty = new(null, -1, false, false, null);
+
+    /// <inheritdoc />
+    Exception? IProjectionState<T>.ErrorException => Error;
 }

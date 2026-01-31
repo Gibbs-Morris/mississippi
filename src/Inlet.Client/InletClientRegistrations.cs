@@ -27,7 +27,6 @@ public static class InletClientRegistrations
     ///     <para>
     ///         This method registers the following services:
     ///         <list type="bullet">
-    ///             <item><see cref="IProjectionCache" /> - Read-only facade over projection state</item>
     ///             <item><see cref="IStore" /> - Redux-style state container</item>
     ///             <item><see cref="IInletStore" /> - Composite interface for components</item>
     ///             <item><see cref="IProjectionUpdateNotifier" /> - For dispatching projection updates</item>
@@ -38,6 +37,10 @@ public static class InletClientRegistrations
     ///         Use scoped lifetime to match Fluxor pattern:
     ///         Blazor WASM: scoped = singleton (no difference);
     ///         Blazor Server: scoped = per-circuit (each user gets own store).
+    ///     </para>
+    ///     <para>
+    ///         Projection state is stored in <see cref="ProjectionsFeatureState" /> and follows the
+    ///         Redux pattern. Access via <c>store.GetState&lt;ProjectionsFeatureState&gt;()</c>.
     ///     </para>
     /// </remarks>
     public static IServiceCollection AddInletClient(
@@ -55,13 +58,8 @@ public static class InletClientRegistrations
             sp.GetServices<IFeatureStateRegistration>(),
             sp.GetServices<IMiddleware>()));
 
-        // Register the projection cache (reads from Store)
-        services.TryAddScoped<IProjectionCache>(sp => new ProjectionCache(sp.GetRequiredService<IStore>()));
-
-        // Register the composite InletStore for backward compatibility
-        services.TryAddScoped<IInletStore>(sp => new CompositeInletStore(
-            sp.GetRequiredService<IStore>(),
-            sp.GetRequiredService<IProjectionCache>()));
+        // Register the composite InletStore (wraps Store)
+        services.TryAddScoped<IInletStore>(sp => new CompositeInletStore(sp.GetRequiredService<IStore>()));
 
         // Register the projection notifier for dispatching updates
         services.TryAddScoped<IProjectionUpdateNotifier>(sp => new ProjectionNotifier(sp.GetRequiredService<IStore>()));
