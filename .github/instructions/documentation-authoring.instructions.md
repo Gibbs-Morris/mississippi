@@ -6,7 +6,7 @@ applyTo: 'docs/**/*.md'
 
 Governing thought: Every documentation page exists to enable a decision or action through clear structure, consistent tone, and predictable navigation.
 
-> Drift check: Review `docs/Docusaurus/docs/contributing/documentation-guide.md` and this file together; they must stay semantically aligned.
+> Drift check: This file defines documentation standards for `docs/Docusaurus/`; update as documentation patterns evolve.
 
 ## Rules (RFC 2119)
 
@@ -22,7 +22,7 @@ Governing thought: Every documentation page exists to enable a decision or actio
 - Authors **MUST** link concepts, features, and commands to their descriptions on first mention. Why: Enables bottom-up navigation.
 - Code samples **MUST** be minimal but complete, placed in fenced blocks with language identifiers. Why: Working examples accelerate understanding.
 - Diagrams and flowcharts **SHOULD** be used for architecture, processes, and data relationships; all images **MUST** include alt text. Why: Accessibility and comprehension.
-- Authors **MUST** update docs when features, performance characteristics, or components change; pages **MUST** note last updated date. Why: Prevents drift and staleness.
+- Authors **MUST** update docs when features, performance characteristics, or components change; authors **MUST NOT** add "last updated" or timestamp fields because Git history is the source of truth. Why: Prevents drift and conflicting metadata.
 
 ## Scope and Audience
 
@@ -54,10 +54,9 @@ All contributors writing or updating documentation in `docs/Docusaurus/`.
 3. Write H1 title and one-sentence summary.
 4. Draft body sections (H2/H3); keep each section focused.
 5. Add "See also" links and references at bottom.
-6. Note last updated date in metadata or content.
-7. Place file in correct section; verify sidebar depth stays ≤2 levels.
-8. Run markdownlint and fix findings.
-9. Review checklist before committing.
+6. Place file in correct section; verify sidebar depth stays ≤2 levels.
+7. Run markdownlint and fix findings.
+8. Review checklist before committing.
 
 ### Writing Checklist
 
@@ -75,7 +74,6 @@ Before publishing:
 
 ## References
 
-- Contribution guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
 - Markdown standards: `.github/instructions/markdown.instructions.md`
 - Instruction authoring template: `.github/instructions/authoring.instructions.md`
 - RFC 2119 keywords: `.github/instructions/rfc2119.instructions.md`

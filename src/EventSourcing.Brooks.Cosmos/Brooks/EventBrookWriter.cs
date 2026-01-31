@@ -88,6 +88,7 @@ internal sealed class EventBrookWriter : IEventBrookWriter
     /// <param name="eventMapper">The mapper for converting events to storage models.</param>
     /// <param name="recoveryService">The brook recovery service for cursor position management.</param>
     /// <param name="logger">The logger used to record operational diagnostics.</param>
+    /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="TimeProvider.System" />.</param>
     public EventBrookWriter(
         ICosmosRepository repository,
         IDistributedLockManager lockManager,
@@ -96,7 +97,8 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         IOptions<BrookStorageOptions> options,
         IMapper<BrookEvent, EventStorageModel> eventMapper,
         IBrookRecoveryService recoveryService,
-        ILogger<EventBrookWriter> logger
+        ILogger<EventBrookWriter> logger,
+        TimeProvider? timeProvider = null
     )
     {
         Repository = repository;
@@ -107,6 +109,7 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         EventMapper = eventMapper;
         RecoveryService = recoveryService;
         Logger = logger;
+        TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
     private IMapper<BrookEvent, EventStorageModel> EventMapper { get; }
@@ -124,6 +127,8 @@ internal sealed class EventBrookWriter : IEventBrookWriter
     private IRetryPolicy RetryPolicy { get; }
 
     private IBatchSizeEstimator SizeEstimator { get; }
+
+    private TimeProvider TimeProvider { get; }
 
     /// <summary>
     ///     Appends a collection of events to the specified brook.
@@ -235,16 +240,16 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 Options.MaxEventsPerBatch,
                 Options.MaxRequestSizeBytes,
                 null);
-            DateTimeOffset lastRenewal = DateTimeOffset.UtcNow;
+            DateTimeOffset lastRenewal = TimeProvider.GetUtcNow();
             for (int batchIndex = 0; batchIndex < batches.Count; batchIndex++)
             {
                 // Renew the lease periodically based on threshold or every 5 batches
                 if ((batchIndex > 0) &&
                     (((batchIndex % 5) == 0) ||
-                     ((DateTimeOffset.UtcNow - lastRenewal).TotalSeconds >= Options.LeaseRenewalThresholdSeconds)))
+                     ((TimeProvider.GetUtcNow() - lastRenewal).TotalSeconds >= Options.LeaseRenewalThresholdSeconds)))
                 {
                     await distributedLock.RenewAsync(cancellationToken);
-                    lastRenewal = DateTimeOffset.UtcNow;
+                    lastRenewal = TimeProvider.GetUtcNow();
                 }
 
                 IReadOnlyList<BrookEvent> batchEvents = batches[batchIndex];

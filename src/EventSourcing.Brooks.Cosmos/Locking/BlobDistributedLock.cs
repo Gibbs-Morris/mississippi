@@ -19,6 +19,8 @@ internal sealed class BlobDistributedLock : IDistributedLock
 
     private readonly TimeSpan renewalThreshold;
 
+    private readonly TimeProvider timeProvider;
+
     private bool disposed;
 
     private DateTimeOffset lastRenewalTime;
@@ -32,13 +34,15 @@ internal sealed class BlobDistributedLock : IDistributedLock
     /// <param name="leaseDurationSeconds">The duration in seconds for the lease.</param>
     /// <param name="lockKey">The lock key for metrics reporting.</param>
     /// <param name="heldDurationStopwatch">Stopwatch started when lock was acquired, for measuring held duration.</param>
+    /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="TimeProvider.System" />.</param>
     public BlobDistributedLock(
         IBlobLeaseClient leaseClient,
         string lockId,
         int leaseRenewalThresholdSeconds,
         int leaseDurationSeconds,
         string lockKey,
-        Stopwatch heldDurationStopwatch
+        Stopwatch heldDurationStopwatch,
+        TimeProvider? timeProvider = null
     )
     {
         LeaseClient = leaseClient;
@@ -47,7 +51,8 @@ internal sealed class BlobDistributedLock : IDistributedLock
         LeaseDurationSeconds = leaseDurationSeconds;
         this.lockKey = lockKey;
         this.heldDurationStopwatch = heldDurationStopwatch;
-        lastRenewalTime = DateTimeOffset.UtcNow;
+        this.timeProvider = timeProvider ?? TimeProvider.System;
+        lastRenewalTime = this.timeProvider.GetUtcNow();
 
         // Calculate renewal threshold with a safety buffer to account for network latency
         renewalThreshold = TimeSpan.FromSeconds(Math.Max(1, leaseDurationSeconds - leaseRenewalThresholdSeconds - 1));
@@ -107,7 +112,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
     )
     {
         ObjectDisposedException.ThrowIf(disposed, this);
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset now = timeProvider.GetUtcNow();
         TimeSpan timeSinceLastRenewal = now - lastRenewalTime;
 
         // Only renew if we're approaching the expiration threshold
@@ -121,7 +126,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
             await LeaseClient.RenewAsync(cancellationToken: cancellationToken);
 
             // Use the actual completion time to avoid drifting too close to expiration
-            lastRenewalTime = DateTimeOffset.UtcNow;
+            lastRenewalTime = timeProvider.GetUtcNow();
         }
         catch (RequestFailedException ex) when ((ex.Status == 409) || (ex.Status == 404))
         {
