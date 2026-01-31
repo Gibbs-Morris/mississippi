@@ -14,7 +14,7 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///     <list type="bullet">
 ///         <item>
 ///             <description>
-///                 Generate <c>Add{App}Server(WebApplicationBuilder)</c> that configures
+///                 Generate <c>Add{App}Server(MississippiServerBuilder)</c> that configures
 ///                 observability, Orleans client, API controllers, and real-time infrastructure.
 ///             </description>
 ///         </item>
@@ -54,7 +54,7 @@ public sealed class GenerateInletServerCompositeAttribute : Attribute
     ///         For example, <c>AppName = "Spring"</c> generates:
     ///         <list type="bullet">
     ///             <item><c>SpringServerRegistrations</c> (class name)</item>
-    ///             <item><c>AddSpringServer()</c> (extension method for WebApplicationBuilder)</item>
+    ///             <item><c>AddSpringServer()</c> (extension method for MississippiServerBuilder)</item>
     ///             <item><c>UseSpringServer()</c> (extension method for WebApplication)</item>
     ///         </list>
     ///     </para>

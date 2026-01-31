@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Aqueduct.Grains;
@@ -14,15 +13,13 @@ namespace Spring.Silo.Infrastructure;
 /// </summary>
 internal static class SpringOrleansRegistrations
 {
-    private const string StreamProviderName = "StreamProvider";
-
     /// <summary>
     ///     Configures the Orleans silo with Aqueduct and event sourcing.
     /// </summary>
-    /// <param name="builder">The web application builder.</param>
+    /// <param name="builder">The host application builder.</param>
     /// <returns>The builder for chaining.</returns>
-    public static WebApplicationBuilder AddSpringOrleansSilo(
-        this WebApplicationBuilder builder
+    public static IHostApplicationBuilder AddSpringOrleansSilo(
+        this IHostApplicationBuilder builder
     )
     {
         builder.UseOrleans(ConfigureSilo);
@@ -36,9 +33,9 @@ internal static class SpringOrleansRegistrations
         siloBuilder.AddActivityPropagation();
 
         // Configure Aqueduct for SignalR backplane (uses Aspire-configured stream provider)
-        siloBuilder.UseAqueduct(options => options.StreamProviderName = StreamProviderName);
+        siloBuilder.UseAqueduct();
 
         // Configure event sourcing (must match stream provider name from AppHost)
-        siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = StreamProviderName);
+        siloBuilder.AddEventSourcing();
     }
 }

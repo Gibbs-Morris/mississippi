@@ -136,6 +136,7 @@ public sealed class InletSiloCompositeGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.AspNetCore.Builder");
         sb.AppendUsing("Microsoft.Extensions.DependencyInjection");
         sb.AppendLine();
+        sb.AppendUsing("Mississippi.Sdk.Silo");
 
         // Add using directive for the Infrastructure namespace (where layered registrations live)
         sb.AppendLine($"using {info.TargetNamespace}.Infrastructure;");
@@ -158,7 +159,7 @@ public sealed class InletSiloCompositeGenerator : IIncrementalGenerator
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Adds all silo registrations for the {info.AppName} application.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine("/// <param name=\"builder\">The web application builder.</param>");
+        sb.AppendLine("/// <param name=\"builder\">The Mississippi silo builder.</param>");
         sb.AppendLine("/// <returns>The builder for chaining.</returns>");
         sb.AppendLine("/// <remarks>");
         sb.AppendLine("///     This method configures:");
@@ -170,21 +171,21 @@ public sealed class InletSiloCompositeGenerator : IIncrementalGenerator
         sb.AppendLine("///         <item>Orleans silo (Aqueduct + event sourcing)</item>");
         sb.AppendLine("///     </list>");
         sb.AppendLine("/// </remarks>");
-        sb.AppendLine($"public static WebApplicationBuilder {addMethodName}(");
+        sb.AppendLine($"public static MississippiSiloBuilder {addMethodName}(");
         sb.IncreaseIndent();
-        sb.AppendLine("this WebApplicationBuilder builder");
+        sb.AppendLine("this MississippiSiloBuilder builder");
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
 
         // Observability
         sb.AppendLine("// Observability (OpenTelemetry tracing, metrics, logging)");
-        sb.AppendLine($"builder.Add{info.AppName}Observability();");
+        sb.AppendLine($"builder.HostBuilder.Add{info.AppName}Observability();");
         sb.AppendLine();
 
         // Aspire resources
         sb.AppendLine("// Aspire-managed Azure resources (Table, Blob, Cosmos with Mississippi forwarding)");
-        sb.AppendLine($"builder.Add{info.AppName}AspireResources();");
+        sb.AppendLine($"builder.HostBuilder.Add{info.AppName}AspireResources();");
         sb.AppendLine();
 
         // Domain
@@ -199,8 +200,9 @@ public sealed class InletSiloCompositeGenerator : IIncrementalGenerator
 
         // Orleans silo
         sb.AppendLine("// Orleans silo (Aqueduct + event sourcing)");
-        sb.AppendLine($"builder.Add{info.AppName}OrleansSilo();");
+        sb.AppendLine($"builder.HostBuilder.Add{info.AppName}OrleansSilo();");
         sb.AppendLine();
+        sb.AppendLine("builder.HasDomain = true;");
         sb.AppendLine("return builder;");
         sb.CloseBrace();
         sb.AppendLine();

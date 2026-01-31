@@ -14,7 +14,7 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///     <list type="bullet">
 ///         <item>
 ///             <description>
-///                 Generate <c>Add{App}Silo(WebApplicationBuilder)</c> that configures
+///                 Generate <c>Add{App}Silo(MississippiSiloBuilder)</c> that configures
 ///                 observability, Aspire resources, domain, event sourcing, and Orleans silo.
 ///             </description>
 ///         </item>
@@ -46,7 +46,7 @@ public sealed class GenerateInletSiloCompositeAttribute : Attribute
     ///         For example, <c>AppName = "Spring"</c> generates:
     ///         <list type="bullet">
     ///             <item><c>SpringSiloRegistrations</c> (class name)</item>
-    ///             <item><c>AddSpringSilo()</c> (extension method for WebApplicationBuilder)</item>
+    ///             <item><c>AddSpringSilo()</c> (extension method for MississippiSiloBuilder)</item>
     ///             <item><c>UseSpringSilo()</c> (extension method for WebApplication)</item>
     ///         </list>
     ///     </para>

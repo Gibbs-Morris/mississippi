@@ -137,6 +137,7 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.Extensions.DependencyInjection");
         sb.AppendLine();
         sb.AppendUsing("Mississippi.Inlet.Server");
+        sb.AppendUsing("Mississippi.Sdk.Server");
 
         // Add using directive for the Infrastructure namespace (where layered registrations live)
         sb.AppendLine($"using {info.TargetNamespace}.Infrastructure;");
@@ -159,7 +160,7 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Adds all server registrations for the {info.AppName} application.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine("/// <param name=\"builder\">The web application builder.</param>");
+        sb.AppendLine("/// <param name=\"builder\">The Mississippi server builder.</param>");
         sb.AppendLine("/// <returns>The builder for chaining.</returns>");
         sb.AppendLine("/// <remarks>");
         sb.AppendLine("///     This method configures:");
@@ -171,21 +172,21 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
             "///         <item>Real-time infrastructure (SignalR, Aqueduct, Inlet, aggregates, projections)</item>");
         sb.AppendLine("///     </list>");
         sb.AppendLine("/// </remarks>");
-        sb.AppendLine($"public static WebApplicationBuilder {addMethodName}(");
+        sb.AppendLine($"public static MississippiServerBuilder {addMethodName}(");
         sb.IncreaseIndent();
-        sb.AppendLine("this WebApplicationBuilder builder");
+        sb.AppendLine("this MississippiServerBuilder builder");
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
 
         // Observability
         sb.AppendLine("// Observability (OpenTelemetry tracing, metrics, logging)");
-        sb.AppendLine($"builder.Add{info.AppName}ServerObservability();");
+        sb.AppendLine($"builder.HostBuilder.Add{info.AppName}ServerObservability();");
         sb.AppendLine();
 
         // Orleans client
         sb.AppendLine("// Orleans client (Aspire-managed clustering)");
-        sb.AppendLine($"builder.Add{info.AppName}OrleansClient();");
+        sb.AppendLine($"builder.HostBuilder.Add{info.AppName}OrleansClient();");
         sb.AppendLine();
 
         // API
@@ -197,6 +198,7 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
         sb.AppendLine("// Real-time infrastructure (SignalR, Aqueduct, Inlet, aggregates, projections)");
         sb.AppendLine($"builder.Services.Add{info.AppName}Realtime();");
         sb.AppendLine();
+        sb.AppendLine("builder.HasDomain = true;");
         sb.AppendLine("return builder;");
         sb.CloseBrace();
         sb.AppendLine();

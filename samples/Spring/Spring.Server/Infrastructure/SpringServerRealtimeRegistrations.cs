@@ -19,8 +19,6 @@ namespace Spring.Server.Infrastructure;
 /// </summary>
 internal static class SpringServerRealtimeRegistrations
 {
-    private const string StreamProviderName = "StreamProvider";
-
     /// <summary>
     ///     Adds SignalR, Aqueduct, Inlet, and domain infrastructure.
     /// </summary>
@@ -82,6 +80,6 @@ internal static class SpringServerRealtimeRegistrations
     {
         // SignalR with Aqueduct Orleans backplane
         services.AddSignalR();
-        services.AddAqueduct<InletHub>(options => { options.StreamProviderName = StreamProviderName; });
+        services.AddAqueduct<InletHub>();
     }
 }

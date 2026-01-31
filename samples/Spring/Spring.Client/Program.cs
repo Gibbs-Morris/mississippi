@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Sdk.Client;
+
 using Spring.Client;
 using Spring.Client.Features.EntitySelection;
 
@@ -22,7 +24,8 @@ builder.Services.AddScoped(_ => new HttpClient
 
 // Register all Inlet features (aggregate commands, Reservoir built-ins, SignalR)
 // Generated from [assembly: GenerateInletClientComposite(AppName = "Spring")]
-builder.Services.AddSpringInlet();
+builder.AddMississippiClient()
+    .AddSpringInlet();
 
 // Application-specific features (not covered by composite generator)
 builder.Services.AddEntitySelectionFeature();

@@ -49,7 +49,7 @@ public sealed class GenerateInletClientCompositeAttribute : Attribute
     ///         For example, <c>AppName = "Spring"</c> generates:
     ///         <list type="bullet">
     ///             <item><c>SpringInletRegistrations</c> (class name)</item>
-    ///             <item><c>AddSpringInlet()</c> (extension method)</item>
+    ///             <item><c>AddSpringInlet()</c> (extension method for MississippiClientBuilder)</item>
     ///         </list>
     ///     </para>
     /// </remarks>

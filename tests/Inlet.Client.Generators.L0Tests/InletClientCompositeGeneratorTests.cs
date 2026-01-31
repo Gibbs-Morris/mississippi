@@ -131,6 +131,6 @@ public sealed class InletClientCompositeGeneratorTests
         string generatedCode = tree.GetText().ToString();
         Assert.Contains("Action<InletBlazorSignalRBuilder>? configureSignalR", generatedCode, StringComparison.Ordinal);
         Assert.Contains("configureSignalR?.Invoke(signalR);", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("return AddTestAppInlet(services, null);", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("return AddTestAppInlet(builder, null);", generatedCode, StringComparison.Ordinal);
     }
 }
